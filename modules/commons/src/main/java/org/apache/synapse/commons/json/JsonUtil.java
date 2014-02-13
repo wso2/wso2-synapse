@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
@@ -35,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.util.Iterator;
+import java.util.Properties;
 
 public final class JsonUtil {
     private static Log logger = LogFactory.getLog(JsonUtil.class.getName());
@@ -42,6 +44,14 @@ public final class JsonUtil {
 
     private static final QName JSON_OBJECT = new QName("jsonObject");
     private static final QName JSON_ARRAY = new QName("jsonArray");
+
+    private static final boolean processNCNames;
+
+    static {
+        Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
+        String process = properties.getProperty("synapse.commons.json.buildValidNCNames", "false");
+        processNCNames = Boolean.parseBoolean(process.toLowerCase());
+    }
 
     /**
      * Converts the XML payload of a message context into its JSON representation and writes it to an output stream.<br/>
@@ -118,6 +128,7 @@ public final class JsonUtil {
             .autoArray(true)
             .autoPrimitive(true)
             .namespaceDeclarations(false)
+            .namespaceSeparator( '\u0D89')
             .build();
 
     private static final JsonXMLInputFactory jsonXmlInputFactory = new JsonXMLInputFactory(xmlConfig);
@@ -128,6 +139,7 @@ public final class JsonUtil {
             .autoArray(true)
             .autoPrimitive(true)
             .namespaceDeclarations(false)
+            .namespaceSeparator('\u0D89')
             .build();
 
     private static final JsonXMLInputFactory xmlInputFactoryNoPIs = new JsonXMLInputFactory(xmlConfigNoPIs);
@@ -166,7 +178,7 @@ public final class JsonUtil {
             return null;
         }
         return pIs ? getReader(jsonStream)
-                : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(jsonStream, de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1));
+                : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(jsonStream, de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
 
     /**
@@ -181,7 +193,7 @@ public final class JsonUtil {
             logger.error("#getReader. Could not create XMLStreamReader from [null] input stream.");
             return null;
         }
-        return new JsonReaderDelegate(jsonXmlInputFactory.createXMLStreamReader(jsonStream, de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1));
+        return new JsonReaderDelegate(jsonXmlInputFactory.createXMLStreamReader(jsonStream, de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
     // End of to XML conversion...
     //
@@ -227,7 +239,7 @@ public final class JsonUtil {
             XMLEventReader xmlEventReader = xmlInputFactory.createXMLEventReader(
                     new XmlReaderDelegate(xmlInputFactory.createXMLStreamReader(
                             new ByteArrayInputStream(xmlStream.toByteArray())
-                    ))
+                    ), processNCNames)
             );
             XMLEventWriter jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
             jsonWriter.add(xmlEventReader);
