@@ -32,7 +32,9 @@ import javax.xml.stream.util.StreamReaderDelegate;
 final class XmlReaderDelegate extends StreamReaderDelegate {
     private static final Log logger = LogFactory.getLog(XmlReaderDelegate.class.getName());
 
-    public XmlReaderDelegate(XMLStreamReader reader) {
+    private boolean processNCNames;
+
+    public XmlReaderDelegate(XMLStreamReader reader, boolean processNCNames) {
         super(reader);
         /** Possible reader implementations include;
             com.ctc.wstx.sr.ValidatingStreamReader
@@ -42,6 +44,7 @@ final class XmlReaderDelegate extends StreamReaderDelegate {
         if (logger.isDebugEnabled()) {
             logger.debug("#XmlReaderDelegate. Setting XMLStreamReader: " + reader.getClass().getName());
         }
+        this.processNCNames = processNCNames;
     }
 
     public String getLocalName() {
@@ -50,14 +53,31 @@ final class XmlReaderDelegate extends StreamReaderDelegate {
         if (localName == null || "".equals(localName)) {
             return localName;
         }
+        boolean checked = false;
+        String subStr;
         if (localName.charAt(0) == Constants.C_USOCRE) {
             if (localName.startsWith(Constants.PRECEDING_DIGIT)) {
-                newName = localName.substring(Constants.PRECEDING_DIGIT.length(),
-                                           localName.length());
+                subStr = localName.substring(Constants.PRECEDING_DIGIT.length(),
+                        localName.length());
+                if (processNCNames) {
+                    newName = toOrigJsonKey(subStr);
+                    checked = true;
+                } else {
+                    newName = subStr;
+                }
             } else if (localName.startsWith(Constants.PRECEDING_DOLLOR)) {
-                newName = (char) Constants.C_DOLLOR + localName.substring(Constants.PRECEDING_DOLLOR.length(),
-                                           localName.length());
+                subStr = localName.substring(Constants.PRECEDING_DOLLOR.length(),
+                        localName.length());
+                if (processNCNames) {
+                    newName = (char) Constants.C_DOLLOR + toOrigJsonKey(subStr);
+                    checked = true;
+                } else {
+                    newName = (char) Constants.C_DOLLOR + subStr;
+                }
             }
+        }
+        if (!checked && processNCNames) {
+            newName = toOrigJsonKey(newName);
         }
         if (logger.isDebugEnabled()) {
             logger.debug("#getLocalName. old=" + localName + ", new=" + newName);
@@ -72,20 +92,92 @@ final class XmlReaderDelegate extends StreamReaderDelegate {
         if (localName == null || "".equals(localName)) {
             return qName;
         }
+        boolean checked = false;
+        String subStr;
         if (localName.charAt(0) == Constants.C_USOCRE) {
             if (localName.startsWith(Constants.PRECEDING_DIGIT)) {
-                localName =  localName.substring(Constants.PRECEDING_DIGIT.length(),
-                                                 localName.length());
+                subStr = localName.substring(Constants.PRECEDING_DIGIT.length(),
+                        localName.length());
+                if (processNCNames) {
+                    localName =  toOrigJsonKey(subStr);
+                    checked = true;
+                } else {
+                    localName = subStr;
+                }
                 newName = new QName(qName.getNamespaceURI(), localName, qName.getPrefix());
             } else if (localName.startsWith(Constants.PRECEDING_DOLLOR)) {
-                localName =  (char) Constants.C_DOLLOR + localName.substring(Constants.PRECEDING_DOLLOR.length(),
-                                                 localName.length());
+                subStr = localName.substring(Constants.PRECEDING_DOLLOR.length(),
+                        localName.length());
+                if (processNCNames) {
+                    localName =  (char) Constants.C_DOLLOR + toOrigJsonKey(subStr);
+                    checked = true;
+                } else {
+                    localName = (char) Constants.C_DOLLOR + subStr;
+                }
                 newName = new QName(qName.getNamespaceURI(), localName, qName.getPrefix());
+            }
+        }
+        if (!checked && processNCNames) {
+            String newNameP = toOrigJsonKey(localName);
+            if (!localName.equals(newNameP)) {
+                newName = new QName(qName.getNamespaceURI(), newNameP, qName.getPrefix());
             }
         }
         if (logger.isDebugEnabled()) {
             logger.debug("#getName. old=" + localName + ", new=" + newName.getLocalPart());
         }
         return newName;
+    }
+
+    private String toOrigJsonKey(String src) {
+        int indexO, indexN;
+        indexO = indexN = 0;
+        int length = Constants.ID_KEY.length();
+        StringBuilder newStr = new StringBuilder(src.length());
+        int[] index = new int[1];
+        while (indexN < src.length()) {
+            indexN = src.indexOf(Constants.ID_KEY, indexO);
+            if (indexN == -1) {
+                if (indexO == 0) {
+                    return src;
+                }
+                copyChars(src, indexO, src.length(), newStr);
+                break;
+            }
+            copyChars(src, indexO, indexN, newStr);
+            indexO = indexN + length;
+            index[0] = indexO;
+            int character = readInt(src, index);
+            if (character != -1) {
+                newStr.append((char) character);
+                indexO = index[0] + 1;
+            } else {
+                copyChars(src, indexO - length, indexO, newStr);
+            }
+        }
+        return newStr.toString();
+    }
+
+    private static void copyChars(String src, int low, int high, StringBuilder newStr) {
+        for (int i = low; i < high; ++i) {
+            newStr.append(src.charAt(i));
+        }
+    }
+
+    private static int readInt(String s, int[] index) {
+        int value = 0;
+        int l = s.length();
+        while (index[0] < l && index[0] != -1 && s.charAt(index[0]) != '_') {
+            int n = s.charAt(index[0]++) - '0';
+            n = (n >= 0 && n <= 9) ? n : -1;
+            if (n == -1) {
+                return -1;
+            }
+            value = value * 10 + n;
+        }
+        if (value <= 0) {
+            return -1;
+        }
+        return value;
     }
 }

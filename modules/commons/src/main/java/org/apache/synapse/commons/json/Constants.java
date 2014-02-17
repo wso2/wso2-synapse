@@ -43,4 +43,6 @@ final class Constants {
     /** The underscore character */
     public static final int C_USOCRE = '_';
 
+    public static final String ID_KEY = ID + "_";
+
 }

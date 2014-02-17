@@ -1,0 +1,10 @@
+# ignore Intellij-IDEA files
+*.iml
+*.ipr
+*.iws
+
+# ignore logs
+*.log
+
+# ignore target directories
+target/

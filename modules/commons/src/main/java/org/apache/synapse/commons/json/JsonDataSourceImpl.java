@@ -192,28 +192,6 @@ final class JsonDataSourceImpl implements OMDataSource {
     }
 
     public XMLStreamReader getReader() throws XMLStreamException {
-        return new JsonReaderDelegate(xmlInputFactory.createXMLStreamReader(new ByteArrayInputStream(stream)));
-    }
-
-    /**
-     *
-     * @param pIs
-     * @return
-     * @throws javax.xml.stream.XMLStreamException
-     */
-    public XMLStreamReader getReader(boolean pIs) throws XMLStreamException {
-        return pIs ? getReader()
-                   : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(new ByteArrayInputStream(stream)));
-    }
-
-    /**
-     * This method is useful when you need to get an XML reader directly for the input JSON stream <br/>
-     * without adding any additional object wrapper elements such as 'jsonObject' and 'jsonArray'.
-     * @param jsonStream
-     * @return
-     * @throws javax.xml.stream.XMLStreamException
-     */
-    public static XMLStreamReader getReader(InputStream jsonStream) throws XMLStreamException {
-        return new JsonReaderDelegate(xmlInputFactory.createXMLStreamReader(jsonStream));
+        return new JsonReaderDelegate(xmlInputFactory.createXMLStreamReader(new ByteArrayInputStream(stream)), false);
     }
 }
