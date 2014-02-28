@@ -2,6 +2,11 @@
 *.iml
 *.ipr
 *.iws
+*.classpath
+*.settings
+*.project
+*.idea
+
 
 # ignore logs
 *.log
