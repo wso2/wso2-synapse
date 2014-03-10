@@ -37,6 +37,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     protected Log log;
     private final static String TRANSPORT_HEADERS = "TRANSPORT_HEADERS";
+    private final static String[] SESSION_COOKIES = new String[] {"JSESSIONID", "PHPSESSID", "phpMyAdmin", "wordpress_test_cookie"};
 
     protected AbstractDispatcher() {
         log = LogFactory.getLog(this.getClass());
@@ -69,6 +70,14 @@ public abstract class AbstractDispatcher implements Dispatcher {
     }
 
     protected String extractSessionID(MessageContext synCtx, String key) {
+    	SessionCookie sessionCookie = extractSessionCookie(synCtx, key);
+    	if (sessionCookie != null) {
+    		return sessionCookie.getSessionId();
+    	}
+        return null;
+    }
+
+    protected SessionCookie extractSessionCookie(MessageContext synCtx, String key) {
 
         if (key != null) {
             Map headerMap = getTransportHeaderMap(synCtx);
@@ -91,25 +100,40 @@ public abstract class AbstractDispatcher implements Dispatcher {
                     // for example;
                     //      Set-Cookie: JSESSIONID=760764CB72E96A7221506823748CF2AE; Path=/
                     // will result in the session id "JSESSIONID=760764CB72E96A7221506823748CF2AE"
-                    String[] sessionIds = cookie.split(";");
+                    String[] entries = cookie.split(";");
 
-                    if (sessionIds == null || sessionIds.length == 0) {
+                    if (entries == null || entries.length == 0) {
                         if (log.isDebugEnabled()) {
                             log.debug("Cannot find a session id for the cookie : " + cookie);
                         }
                         return null;
                     }
 
-                    for(String sessionId : sessionIds){
-                        if(sessionId != null && (sessionId.indexOf("JSESSIONID") != -1 || sessionId
-								.indexOf("PHPSESSID") != -1 || sessionId.indexOf("phpMyAdmin") != -1 || 
-                                sessionId.indexOf("wordpress_test_cookie") != -1)){
+                    String sessionId = null;
+                    String path = "Path=/";
+                    for (String id : entries) {
+                        if (sessionId == null && id != null && isASessionCookie(id)) {
                             if (log.isDebugEnabled()) {
-                                log.debug("Extracted SessionID : " + sessionId);
+                                log.debug("Extracted SessionID : " + id);
                             }
-                            return sessionId.trim();
+                            // get the new session id
+                            sessionId = id.trim();
+                        } else if (id != null && id.indexOf("Path") != -1) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Extracted Path : " + id);
+                            }
+                            // set the path
+                            path = id.trim();
                         }
                     }
+
+                    if (sessionId != null) {
+                        SessionCookie c = new SessionCookie();
+                        c.setSessionId(sessionId);
+                        c.setPath(path);
+                        return c;
+                    }
+
                     return null;
                 } else {
                     if (log.isDebugEnabled()) {
@@ -125,6 +149,15 @@ public abstract class AbstractDispatcher implements Dispatcher {
         }
         return null;
     }
+    
+	private boolean isASessionCookie(String cookie) {
+		for (String sessionCookie : SESSION_COOKIES) {
+			if (cookie.indexOf(sessionCookie) != -1) {
+				return true;
+			}
+		}
+		return false;
+	}
 
     @SuppressWarnings("unchecked")
 	protected void removeSessionID(MessageContext synCtx, String key) {
