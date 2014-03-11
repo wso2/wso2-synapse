@@ -105,22 +105,19 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
      *
      * @param synCtx MessageContext possibly containing the "Set-Cookie" HTTP header.
      */
-    public void updateSession(MessageContext synCtx) {
+	public void updateSession(MessageContext synCtx) {
 
-        String sessionId = extractSessionID(synCtx, SET_COOKIE);
+		SessionCookie cookie = extractSessionCookie(synCtx, SET_COOKIE);
 
-        if (sessionId != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Found the HTTP header 'Set-Cookie: "
-                        + sessionId + "' for updating the session");
-                log.debug("Using the session id '" + sessionId +
-                        "' extracted from the Set-Cookie header ");
-            }
+		if (cookie != null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Found the HTTP header [Set-Cookie]: " + cookie.toString() + "' for updating the session");
+			}
 
-            SALSessions.getInstance().updateSession(synCtx, sessionId);
-        }
+			SALSessions.getInstance().updateSession(synCtx, cookie);
+		}
 
-    }
+	}
 
     public void unbind(MessageContext synCtx) {
         SALSessions.getInstance().removeSession(extractSessionID(synCtx, COOKIE));
