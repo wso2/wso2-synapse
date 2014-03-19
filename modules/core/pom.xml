@@ -165,7 +165,7 @@
 							javax.xml.namespace;
 							version=0.0.0,
 							!javax.xml.soap,
-							javax.xml.soap; version=0.0.0,
+							javax.xml.soap; version=1.0.0,
 							!org.apache.commons.io,
 							org.apache.commons.io; version=0.0.0,
 							org.quartz.*;version="2.1.1",
