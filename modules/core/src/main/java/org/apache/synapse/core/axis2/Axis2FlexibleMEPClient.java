@@ -574,7 +574,8 @@ public class Axis2FlexibleMEPClient {
             isRestRequest = Constants.Configuration.HTTP_METHOD_GET.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_DELETE.equals(httpMethod)
                     || Constants.Configuration.HTTP_METHOD_PUT.equals(httpMethod)
-                    || RESTConstants.METHOD_OPTIONS.equals(httpMethod);
+                    || RESTConstants.METHOD_OPTIONS.equals(httpMethod)
+                    || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod);
 
             if (!isRestRequest) {
 

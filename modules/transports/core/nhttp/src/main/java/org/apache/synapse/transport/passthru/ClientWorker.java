@@ -163,7 +163,7 @@ public class ClientWorker implements Runnable {
         if (responseMsgCtx == null) {
             return;
         }
-       
+
         try {
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
