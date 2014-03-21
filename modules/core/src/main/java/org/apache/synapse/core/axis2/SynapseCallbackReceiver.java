@@ -423,6 +423,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     		failOver =true;
                     	}
                     }
+                    
+                 // set the properties of the original MC to the new MC
+
+                    for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
+                        synapseInMessageContext.setProperty(
+                                (String) key, synapseOutMsgCtx.getProperty((String) key));
+                    }
                    
                     if(failOver){
                     	 //we may required to handle same message for failover cases only other than that 
