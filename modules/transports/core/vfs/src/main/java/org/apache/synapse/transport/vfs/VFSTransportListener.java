@@ -616,6 +616,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             
         } finally {
             try {
+                fsManager.closeFileSystem(file.getParent().getFileSystem());
                 file.close();
             } catch (FileSystemException warn) {
                  //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
