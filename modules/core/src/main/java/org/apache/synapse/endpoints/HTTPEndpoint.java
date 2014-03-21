@@ -155,7 +155,13 @@ public class HTTPEndpoint extends AbstractEndpoint {
                 evaluatedUri=evaluatedUri.replace("%2F", "/");*/
             } catch(URISyntaxException e) {
                 log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName());
-                evaluatedUri = template.getTemplate();                
+                URL url;
+                try {
+	                url = new URL(URLDecoder.decode(template.expand(), "UTF-8"));
+	                evaluatedUri = url.toString();
+                } catch (Exception e1) {
+                	  log.debug("Error while decoding URL: " + this.getName());
+                }
             } catch(MalformedURLException e) {
                 log.debug("Invalid URL for HTTP Endpoint: " + this.getName());
                 evaluatedUri = template.getTemplate();
