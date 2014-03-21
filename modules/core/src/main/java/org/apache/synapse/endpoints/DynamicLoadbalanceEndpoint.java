@@ -305,6 +305,8 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         faultHandler.setCurrentEp(endpoint);
 
         if (isSessionAffinityBasedLB()) {
+            synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_DEFAULT_SESSION_TIMEOUT, getSessionTimeout());
+            synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_DISPATCHER, dispatcher);
             prepareEndPointSequence(synCtx, endpoint);
             if(newSession) {
             	synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_MEMBER, currentMember);
@@ -312,11 +314,6 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
             	// onFault(...) method can resend only the failed attempts for the first message.
             	synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_FIRST_MESSAGE_IN_SESSION, Boolean.TRUE);
             }
-        }
-
-        if (isSessionAffinityBasedLB()) {
-            synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_DEFAULT_SESSION_TIMEOUT, getSessionTimeout());
-            synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_DISPATCHER, dispatcher);
         }
 
         Map<String, String> memberHosts;
