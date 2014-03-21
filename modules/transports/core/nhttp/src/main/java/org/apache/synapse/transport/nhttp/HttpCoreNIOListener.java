@@ -36,6 +36,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
@@ -805,17 +807,22 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
     }
 
     private String replaceHostname(String url, String hostName) {
-        if (url == null) {
+        if (null == url) {
             return "";
         }
-        boolean valid;
-		int s = url.indexOf("://") + 3;
-		valid = s > 3 ? true : false;
-		int e = url.lastIndexOf(":");
-		valid = e == url.indexOf(":") ? false : true;
-		if (valid) {
-			return url.substring(0, s) + hostName + url.substring(e);
-		}
+        try {
+            URL newURL =  new URL(url);
+            String replaceURL = "";
+            // for default ports such as http->80, https->443
+            if(-1 != newURL.getPort()){
+                replaceURL = newURL.getProtocol() + "://" + hostName+ ":" + newURL.getPort() + newURL.getPath();
+            }else {
+                replaceURL = newURL.getProtocol() + "://" + hostName + newURL.getPath();
+            }
+            return replaceURL;
+        } catch (MalformedURLException e) {
+            log.warn("URL is not in the correct form" + e);
+        }
         return "";
     }
 }
