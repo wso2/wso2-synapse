@@ -146,4 +146,6 @@ public class PassThroughConstants {
 
     //if this property is true in response path, it mean that client sent Accept-Encoding=gzip header
     public static final String REQUEST_ACCEPTS_GZIP ="REQUEST_ACCEPTS_GZIP" ;
+    
+    public static final String HTTP_SC_DESC = "HTTP_SC_DESC";
 }

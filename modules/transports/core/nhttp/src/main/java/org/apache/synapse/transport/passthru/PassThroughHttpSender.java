@@ -436,6 +436,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         SourceResponse sourceResponse = SourceResponseFactory.create(msgContext,
                 sourceRequest, sourceConfiguration);
+        sourceResponse.checkResponseChunkDisable(msgContext);
 
         SourceContext.setResponse(conn, sourceResponse);
 
