@@ -42,6 +42,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.eip.EIPConstants;
+import org.apache.synapse.mediators.template.TemplateContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
@@ -156,6 +157,12 @@ public class MessageHelper {
             }
         }
 
+		Stack<TemplateContext> functionStack =
+		                                       (Stack) synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
+		if (functionStack != null) {
+			newCtx.setProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK, functionStack.clone());
+		}      
+        
         if (log.isDebugEnabled()) {
             log.info("Parent's Fault Stack : " + faultStack
                      + " : Child's Fault Stack :" + newCtx.getFaultStack());
