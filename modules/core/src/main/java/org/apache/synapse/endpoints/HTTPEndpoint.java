@@ -103,10 +103,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
             } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_HEAD)) {
                 synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
                         Constants.Configuration.HTTP_METHOD_HEAD);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PATCH)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_PATCH);                
-            }
+            } 
         }
     }
 
