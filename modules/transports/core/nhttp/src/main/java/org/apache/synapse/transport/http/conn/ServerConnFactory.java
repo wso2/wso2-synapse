@@ -51,7 +51,7 @@ public class ServerConnFactory {
             final Map<InetSocketAddress, SSLContextDetails> sslByIPMap,
             final HttpParams params) {
         super();
-        this.requestFactory = requestFactory != null ? requestFactory : new DefaultHttpRequestFactory();
+        this.requestFactory = requestFactory != null ? requestFactory : new SynapseHTTPRequestFactory();
         this.allocator = allocator != null ? allocator : new HeapByteBufferAllocator();
         this.ssl = ssl;
         this.sslByIPMap = sslByIPMap != null ? new ConcurrentHashMap<InetSocketAddress, SSLContextDetails>(
