@@ -198,7 +198,7 @@ public class PropertyMediator extends AbstractMediator {
                 }
             } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)
                     && synCtx instanceof Axis2MessageContext) {
-                // Removing transport headers
+                // Removing operation scope headers
                 Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
