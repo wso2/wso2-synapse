@@ -291,10 +291,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 } else {
                     int failCount = 0;
                     int successCount = 0;
-                    int processCount = 0;
-                    Integer iFileProcessingInterval = entry.getFileProcessingInterval();
-                    Integer iFileProcessingCount = entry.getFileProcessingCount();
-                    
+
                     if (log.isDebugEnabled()) {
                         log.debug("File name pattern : " + entry.getFileNamePattern());
                     }
@@ -324,7 +321,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     if (log.isDebugEnabled()) {
                                         log.debug("Processing file :" + child);
                                     }
-                                    processCount++;
                                     processFile(entry, child);
                                     successCount++;
                                     // tell moveOrDeleteAfterProcessing() file was success
@@ -379,19 +375,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                         "process");
                             }
                         }
-                        
-                        if(iFileProcessingInterval != null && iFileProcessingInterval > 0){
-                        	try{
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Put the VFS processor to sleep for : " + iFileProcessingInterval);
-                                }                        		
-                        		Thread.sleep(iFileProcessingInterval);
-                        	}catch(InterruptedException ie){
-                        		log.error("Unable to set the interval between file processors." + ie);
-                        	}
-                        }else if(iFileProcessingCount != null && iFileProcessingCount <= processCount){
-                        	break;
-                        }
+
                     }
 
                     if (failCount == 0 && successCount > 0) {
@@ -464,7 +448,15 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 } catch (FileSystemException e) {
                     handleException("Error moving file : " + fileObject + " to " +
                             moveToDirectoryURI, e);
+                }finally{
+                
+	                try {
+	                	fileObject.close();
+	                } catch (FileSystemException warn) {
+
+	                }
                 }
+                
             } else {
                 try {
                     if (log.isDebugEnabled()) {
@@ -616,7 +608,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             
         } finally {
             try {
-                fsManager.closeFileSystem(file.getParent().getFileSystem());
                 file.close();
             } catch (FileSystemException warn) {
                  //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
