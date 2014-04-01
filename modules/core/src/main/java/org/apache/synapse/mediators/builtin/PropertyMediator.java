@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
@@ -195,6 +196,14 @@ public class PropertyMediator extends AbstractMediator {
                 } else {
                     synLog.traceOrDebug("No transport headers found for the message");
                 }
+            } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+                // Removing operation scope headers
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                org.apache.axis2.context.MessageContext axis2MessageCtx =
+                        axis2smc.getAxis2MessageContext();
+                OperationContext axis2oc = axis2MessageCtx.getOperationContext();
+                axis2oc.removeProperty(name);
             }
         }
         synLog.traceOrDebug("End : Property mediator");
