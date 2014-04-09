@@ -88,7 +88,15 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
                             }
                             return sessionInfoObj;
                         }
-                    }
+					} else if (sessionInfoObj != null
+							&& sessionInfoObj.getMember() == null) {
+						// looks like a session attached to a failed member.Just return the session in this case
+						if (log.isDebugEnabled()) {
+							log.debug("sessionInfo object["	+ sessionInfoObj.getId()+ "] found with a null member. "
+									+ "Looks like this is attached to a failed member.");
+						}
+						return sessionInfoObj;
+                     }
                 }
             }
         }

@@ -464,6 +464,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 } catch (FileSystemException e) {
                     handleException("Error moving file : " + fileObject + " to " +
                             moveToDirectoryURI, e);
+                }finally{
+	                try {
+	                	fileObject.close();
+	                } catch (FileSystemException ignore) {
+	                }
                 }
             } else {
                 try {

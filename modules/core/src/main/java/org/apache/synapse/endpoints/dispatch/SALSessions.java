@@ -612,7 +612,7 @@ public class SALSessions {
     }
 
     /**
-     * Removes sessions corresponds to a particular member from the {@link #establishedSessions}
+     * Updates sessions corresponds to a particular member from the {@link #establishedSessions}
      * @param member subjected {@link Member}
      */
     public void removeSessionsOfMember(Member member){
@@ -620,9 +620,14 @@ public class SALSessions {
         	SessionInformation info = iterator.next();
 
             if (member.equals(info.getMember())) {
+            	//We don't want to lose sessions of this member. So we merely set the member to null and
+            	//put it back to establishedSessions so that those can be used later.
+            	info.setMember(null);
                 iterator.remove();
+                
+                establishedSessions.put(info.getId(),info);
                 log.debug("Session associated with member " + member.toString() +
-                          " is Removed ; session id : " + info.getId());
+                		 " is updated ; session id : " + info.getId());
             }
         }
     }
