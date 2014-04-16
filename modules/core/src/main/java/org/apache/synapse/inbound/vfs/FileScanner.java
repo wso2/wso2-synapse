@@ -485,19 +485,17 @@ public class FileScanner implements Runnable {
     private void moveOrDeleteAfterProcessing(FileObject fileObject) throws AxisFault {
 
         String moveToDirectoryURI = null;
-        String moveAfterFail = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE);
-        String moveAfterProcess = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
         try {
             switch (lastCycle) {
                 case 1:
-                    if ("true".equals(moveAfterProcess)) {
-                        moveToDirectoryURI = moveAfterProcess;
+                    if ("true".equals(vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS))) {
+                        moveToDirectoryURI = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
                     }
                     break;
 
                 case 2:
-                    if ("true".equals(moveAfterFail)) {
-                        moveToDirectoryURI = moveAfterFail;
+                    if ("true".equals(vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE))) {
+                        moveToDirectoryURI = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
                     }
                     break;
                 
