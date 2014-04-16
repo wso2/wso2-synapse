@@ -451,6 +451,7 @@ public final class SynapseConstants {
     public static final String FAIL_SAFE_MODE_MESSAGE_PROCESSORS = "messageprocessors";
     public static final String FAIL_SAFE_MODE_MESSAGE_STORES = "messagestores";
     public static final String FAIL_SAFE_MODE_API = "api";
+    public static final String FAIL_SAFE_MODE_INBOUND_ENDPOINT = "inboundendpoint";
     public static final String FAIL_SAFE_MODE_IMPORTS = "import";
     public static final String FAIL_SAFE_MODE_TASKS = "task";
     public static final String FAIL_SAFE_MODE_REGISTRY = "registry";

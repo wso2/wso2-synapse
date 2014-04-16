@@ -26,6 +26,7 @@ import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.vfs.VFSConstants; 
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

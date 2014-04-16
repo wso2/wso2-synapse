@@ -23,6 +23,7 @@ import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.testkit.axis2.TransportDescriptionFactory;
+import org.apache.synapse.commons.vfs.VFSConstants;
 
 public class VFSTransportDescriptionFactory implements TransportDescriptionFactory {
     public TransportInDescription createTransportInDescription() throws Exception {
