@@ -41,6 +41,7 @@ import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants; 
 import org.apache.synapse.commons.vfs.VFSUtils;
 
@@ -429,9 +430,8 @@ public class FileScanner implements Runnable {
             
             if (builder instanceof DataSourceMessageBuilder && "true".equals(streaming)) {
                 in = null;
-                //TODO
-                /*dataSource = ManagedDataSourceFactory.create(
-                        new FileObjectDataSource(file, contentType));*/
+                dataSource = ManagedDataSourceFactory.create(
+                        new FileObjectDataSource(file, contentType));
                 dataSource = null;
             } else {
                 in = new AutoCloseInputStream(content.getInputStream());

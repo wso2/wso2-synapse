@@ -154,6 +154,7 @@
 							org.apache.synapse.metrics.*,
 							org.apache.synapse.registry.*,
 							org.apache.synapse.rest.*,
+							org.apache.synapse.inbound.*,
 							org.apache.synapse.startup.*,
 							org.apache.synapse.util.*,
 							org.apache.synapse.libraries.*,

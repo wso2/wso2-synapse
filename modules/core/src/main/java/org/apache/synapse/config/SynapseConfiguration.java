@@ -48,6 +48,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.eventing.SynapseEventSource;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -177,6 +178,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     private Map<String, API> apiTable = new ConcurrentHashMap<String, API>();
 
+    private Map<String, InboundEndpoint> inboundEndpointMap = new ConcurrentHashMap<String, InboundEndpoint>();
+    
     /**
      * Description/documentation of the configuration
      */
@@ -338,6 +341,39 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return definedTemplates;
     }
 
+	public void addInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
+		if (!inboundEndpointMap.containsKey(name)) {
+			inboundEndpointMap.put(name, inboundEndpoint);
+		} else {
+			handleException("Duplicate inbound  endpoint definition by the name: " + name);
+		}
+	}
+
+	public InboundEndpoint getInboundEndpoint(String name) {
+		return inboundEndpointMap.get(name);
+	}
+
+	public Collection<InboundEndpoint> getInboundEndpoints() {
+		return Collections.unmodifiableCollection(inboundEndpointMap.values());
+	}
+
+	public void updateInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
+		if (!inboundEndpointMap.containsKey(name)) {
+			handleException("No Inbound Endpoint exists by the name: " + name);
+		} else {
+			inboundEndpointMap.put(name, inboundEndpoint);
+		}
+	}
+
+	public void removeInboundEndpoint(String name) {
+		InboundEndpoint inboundEndpoint = inboundEndpointMap.get(name);
+		if (inboundEndpoint != null) {
+			inboundEndpointMap.remove(name);
+		} else {
+			handleException("No Inbound Endpoint exists by the name: " + name);
+		}
+	}   
+    
     public void addAPI(String name, API api) {
         if (!apiTable.containsKey(name)) {
             for (API existingAPI : apiTable.values()) {
@@ -1421,6 +1457,16 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			}
         }
 
+
+		for (InboundEndpoint endpoint : getInboundEndpoints()) {
+			try {
+				endpoint.init(se);
+			} catch (Exception e) {
+				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
+				          e.getMessage());
+			}
+		}      
+        
         // initialize managed mediators
         for (ManagedLifecycle seq : getDefinedSequences().values()) {
             if (seq != null) {
