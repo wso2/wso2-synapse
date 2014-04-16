@@ -458,10 +458,7 @@ public class FileScanner implements Runnable {
                     synapseEnvironment.injectAsync(msgCtx, seq);
                 } else {
                     log.error("Sequence: " + injectingSeq + " not found");
-                }
-                //TODO handle the reply file url
-                // does the service specify a default reply file URI ?
-                String replyFileURI = vfsProperties.getProperty(VFSConstants.REPLY_FILE_URI);                
+                }          
             }            
             finally {
              if(dataSource != null) {
@@ -573,12 +570,4 @@ public class FileScanner implements Runnable {
         msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, true);
         return msgCtx;
     }
-}
-
-/**
- * Streaming.
- * message builder
- * fault sequence
- * reply path
- * */
- 
+} 
