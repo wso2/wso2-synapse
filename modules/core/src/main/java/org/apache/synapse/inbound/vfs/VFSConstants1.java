@@ -1,3 +1,4 @@
+
 /*
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
@@ -17,9 +18,9 @@
  *  under the License.
  */
 
-package org.apache.synapse.transport.vfs;
+package org.apache.synapse.inbound.vfs;
 
-public final class VFSConstants {
+public final class VFSConstants1 {
     
     // vfs transport prefix (e.g. used in an out EPR etc)
     public static final String VFS_PREFIX = "vfs:";
@@ -57,53 +58,14 @@ public final class VFSConstants {
     
     public static final String MAX_RETRY_COUNT = "transport.vfs.MaxRetryCount";
     public static final String RECONNECT_TIMEOUT = "transport.vfs.ReconnectTimeout";
-    public static final String APPEND = "transport.vfs.Append";
 
-    /**
-    * If a rename/move operation failed, we'll keep track of a list in a text file and this will
-     * provide the ability to configure that property file name
-     */
-    public static final String TRANSPORT_FAILED_RECORDS_FILE_NAME =
-            "transport.vfs.FailedRecordsFileName";
-
-    /**
-     * The default name of the failed file
-     */
-    public static final String DEFAULT_FAILED_RECORDS_FILE_NAME =
-            "vfs-move-failed-records.properties";
-
-    /**
-     * The location to place the property file that contains the failed files
-     */
-    public static final String TRANSPORT_FAILED_RECORDS_FILE_DESTINATION =
-            "transport.vfs.FailedRecordsFileDestination";
-
-    /**
-     * The default location to place the record file
-     */
     public static final String DEFAULT_FAILED_RECORDS_FILE_DESTINATION = "repository/conf/";
-
-    /**
-     * Once a record/file is marked as failed we'll try again to move the file after this amount
-     * of milliseconds
-     */
-    public static final String TRANSPORT_FAILED_RECORD_NEXT_RETRY_DURATION =
-            "transport.vfs.FailedRecordNextRetryDuration";
-
-    public static final int DEFAULT_NEXT_RETRY_DURATION = 3000; // 3 seconds
-
-    /**
-     * This specify the folder to which a move failed file should be moved to ( in next successful)
-     * attempt
-     */
-    public static final String TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE =
-            "transport.vfs.MoveAfterFailedMove";
-
-    public static final String TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT =
-            "transport.vfs.MoveFailedRecordTimestampFormat";
-
-    public static final String DEFAULT_TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT =
-            "dd/MM/yyyy/ HH:mm:ss";
+    public static final String DEFAULT_FAILED_RECORDS_FILE_NAME = "vfs-move-failed-records.properties";
+    
+    public static final String FAILED_RECORD_DELIMITER = " ";
+    public static final String TRANSPORT_FAILED_RECORDS_FILE_NAME = "transport.vfs.FailedRecordsFileName";
+    public static final String TRANSPORT_FAILED_RECORDS_FILE_DESTINATION = "transport.vfs.FailedRecordsFileDestination";
+    public static final String DEFAULT_TRANSPORT_FAILED_RECORD_TIMESTAMP_FORMAT = "dd/MM/yyyy/ HH:mm:ss";
 
     /**
      * This specify the interval between files processed (in milliseconds)
@@ -113,16 +75,11 @@ public final class VFSConstants {
      * This specify the file count that will be processed in a cycle/batch 
      * */    
     public static final String TRANSPORT_FILE_COUNT = "transport.vfs.FileProcessCount";
-    
-    public static final String FAILED_RECORD_DELIMITER = " ";
-
-    public static final int DEFAULT_MAX_RETRY_COUNT = 3;
-    public static final long DEFAULT_RECONNECT_TIMEOUT = 30000;
-    
     // transport header property names used by the VFS transport
     public static final String FILE_PATH = "FILE_PATH";
     public static final String FILE_URI = "FILE_URI";
     public static final String FILE_NAME = "FILE_NAME";
     public static final String FILE_LENGTH = "FILE_LENGTH";
-    public static final String LAST_MODIFIED = "LAST_MODIFIED";
+    public static final String LAST_MODIFIED = "LAST_MODIFIED";    
+        
 }

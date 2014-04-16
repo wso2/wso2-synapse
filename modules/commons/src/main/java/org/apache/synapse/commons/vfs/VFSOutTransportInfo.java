@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.transport.vfs;
+package org.apache.synapse.commons.vfs;
 
 import org.apache.axis2.transport.OutTransportInfo;
 import org.apache.axis2.transport.base.BaseUtils;
@@ -54,7 +54,7 @@ public class VFSOutTransportInfo implements OutTransportInfo {
      * 
      * @param outFileURI URI of the file to which the message is delivered
      */
-    VFSOutTransportInfo(String outFileURI, boolean fileLocking) {
+    public VFSOutTransportInfo(String outFileURI, boolean fileLocking) {
 
      	if (outFileURI.startsWith(VFSConstants.VFS_PREFIX)) {
             String vfsURI = outFileURI.substring(VFSConstants.VFS_PREFIX.length());
