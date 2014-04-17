@@ -111,9 +111,10 @@ public class Axis2Sender {
                         AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.FALSE);
             }
 
-            if (messageContext.getEnvelope().hasFault()
-                    && AddressingHelper.isFaultRedirected(messageContext)
-                    && !messageContext.getFaultTo().hasNoneAddress()) {
+			if (messageContext.getEnvelope().hasFault() &&
+				    AddressingHelper.isFaultRedirected(messageContext) &&
+				    (messageContext.getFaultTo() == null || !messageContext.getFaultTo()
+				                                                           .hasNoneAddress())) {
 
                 messageContext.setTo(messageContext.getFaultTo());
                 messageContext.setFaultTo(null);
