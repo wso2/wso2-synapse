@@ -50,6 +50,7 @@ public class InboundEndpoint implements PollingEndpoint, ManagedLifecycle {
 
     }
 
+    /*Inbound Endpoint starts during initialization*/
     public void start() {
 
         if (protocol.equals("jms")) {
