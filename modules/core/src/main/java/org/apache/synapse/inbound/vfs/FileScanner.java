@@ -1,3 +1,21 @@
+/*
+*  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+*
+*  WSO2 Inc. licenses this file to you under the Apache License,
+*  Version 2.0 (the "License"); you may not use this file except
+*  in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*    http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied.  See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
+
 package org.apache.synapse.inbound.vfs;
 
 
@@ -51,7 +69,7 @@ public class FileScanner implements Runnable {
     private static final Log log = LogFactory.getLog(FileScanner.class);
     private Properties vfsProperties;
     private String recordFile = null;
-    private boolean fileLock = false;
+    private boolean fileLock = true;
 
     private FileSystemManager fsManager = null;
     private String name;
@@ -71,8 +89,8 @@ public class FileScanner implements Runnable {
     	this.scanInterval = scanInterval;
     	this.lastRanTime = null;
     	String strFileLock = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_LOCKING);
-    	if(strFileLock != null && strFileLock.toLowerCase().equals("true")){
-    		fileLock = true;
+    	if(strFileLock != null && strFileLock.toLowerCase().equals(VFSConstants.TRANSPORT_FILE_LOCKING_DISABLED)){
+    		fileLock = false;
     	}
     	try{
             StandardFileSystemManager fsm = new StandardFileSystemManager();
@@ -81,6 +99,7 @@ public class FileScanner implements Runnable {
             fsManager = fsm;
     	}catch(Exception e){
         	log.error(e);
+        	throw new RuntimeException(e);
         }
     }
 
@@ -89,6 +108,7 @@ public class FileScanner implements Runnable {
             if (log.isDebugEnabled()) {
                 log.debug("Start : VFS Inbound EP : " + name);
             }
+            //Check if the cycles are running in correct interval and start scan
             long currentTime = (new Date()).getTime();
             if(lastRanTime == null || ((lastRanTime + (scanInterval * 1000)) <= currentTime)){
             	lastRanTime = currentTime;
@@ -107,13 +127,19 @@ public class FileScanner implements Runnable {
         }
     }
 
+    /**
+     * 
+     * Do the file processing operation for the given set of properties
+     * Do the checks and pass the control to processFile method
+     * 
+     * */    
     private void scanFileOrDirectory(){
     	
     	String fileURI = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_FILE_URI);
     	
     	if(fileURI == null || fileURI.trim().equals("")){
-    		log.error("Invalid file url. Check the inbound endpoint configuration. Endpoint Name : " + name);
-    		return;
+    		log.error("Invalid file url. Check the inbound endpoint configuration. Endpoint Name : " + name + ", File URL : " + fileURI);
+    		return;  
     	}
     	
         if (log.isDebugEnabled()) {
@@ -184,20 +210,24 @@ public class FileScanner implements Runnable {
 
                 // if this is a file that would translate to a single message
                 if (children == null || children.length == 0) {
+                	//Fail record is a one that is processed but was not moved or deleted due to an error.
                     boolean isFailedRecord = VFSUtils.isFailRecord(fsManager, fileObject);
 
                     if (fileObject.getType() == FileType.FILE && !isFailedRecord) {
                     	
                         if (!fileLock || (fileLock &&  VFSUtils.acquireLock(fsManager, fileObject))) {
                             try {
-                                processFile(fileObject);                            
+                                processFile(fileObject);  
+                                lastCycle = 1;
                             } catch (AxisFault e) {
+                            	lastCycle = 2;
                                 log.error("Error processing File URI : " + fileObject.getName(), e);                             
                             }
 
                             try {
                                 moveOrDeleteAfterProcessing(fileObject);
                             } catch (AxisFault axisFault) {
+                            	lastCycle = 3;
                                 log.error("File object '" + fileObject.getURL().toString() + "' " + "cloud not be moved", axisFault);                          
                                 VFSUtils.markFailRecord(fsManager, fileObject);
                             }
@@ -209,19 +239,19 @@ public class FileScanner implements Runnable {
                             }
                         } else if (log.isDebugEnabled()) {
                             log.debug("Couldn't get the lock for processing the file : " + fileObject.getName());
-                        } else if (isFailedRecord) {
-                            try {
-                                moveOrDeleteAfterProcessing(fileObject);
-                                VFSUtils.releaseFail(fsManager, fileObject);
-                            } catch (AxisFault axisFault) {
-                                log.error("File object '" + fileObject.getURL().toString() + "' " + "cloud not be moved after first attempt", axisFault);                                                      
-                            }                        	
-                            if (fileLock) {
-                                VFSUtils.releaseLock(fsManager, fileObject);
-                            }                                     
-                            if (log.isDebugEnabled()) {
-                                log.debug("File '" + fileObject.getURL() + "' has been marked as a failed" + " record, it will not process");
-                            }
+                        }
+                    } else if (isFailedRecord) {
+                        try {
+                        	lastCycle = 2;
+                            moveOrDeleteAfterProcessing(fileObject);
+                        } catch (AxisFault axisFault) {
+                            log.error("File object '" + fileObject.getURL().toString() + "' " + "cloud not be moved after first attempt", axisFault);                                                      
+                        }                        	
+                        if (fileLock) {
+                            VFSUtils.releaseLock(fsManager, fileObject);
+                        }                                     
+                        if (log.isDebugEnabled()) {
+                            log.debug("File '" + fileObject.getURL() + "' has been marked as a failed" + " record, it will not process");
                         }
                     }else{
                     	if(log.isDebugEnabled()){
@@ -257,22 +287,22 @@ public class FileScanner implements Runnable {
                         log.debug("File name pattern : " + vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN));
                     }
                     for (FileObject child : children) {
-                        //skipping *.lock file
-                        if(child.getName().getBaseName().endsWith(".lock")){
-                            continue;
-                        }
-                        boolean isFailedRecord = VFSUtils.isFailRecord(fsManager, fileObject);                        
+						// skipping *.lock file
+						if (child.getName().getBaseName().endsWith(".lock") || child.getName().getBaseName().endsWith(".fail")) {
+							continue;
+						}
+                        boolean isFailedRecord = VFSUtils.isFailRecord(fsManager, child);                        
 
                         String strFilePattern = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
                         
-                        if(strFilePattern == null || child.getName().getBaseName().matches(strFilePattern)){
+                        if((strFilePattern == null || child.getName().getBaseName().matches(strFilePattern)) && !isFailedRecord){
                             //child's file name matches the file name pattern or process all files
                             //now we try to get the lock and process
                             if (log.isDebugEnabled()) {
                                 log.debug("Matching file : " + child.getName().getBaseName());
                             }
                             
-                            if((!fileLock || (fileLock && VFSUtils.acquireLock(fsManager, child))) && !isFailedRecord){
+                            if((!fileLock || (fileLock && VFSUtils.acquireLock(fsManager, child)))){
                                 //process the file
                                 try {
                                     if (log.isDebugEnabled()) {
@@ -305,17 +335,18 @@ public class FileScanner implements Runnable {
                                     VFSUtils.releaseLock(fsManager, child);
                                 }
                             } 
-                        }else if(log.isDebugEnabled() && strFilePattern != null && !child.getName().getBaseName().matches(strFilePattern)){
-                            //child's file name does not match the file name pattern                           
-                            log.debug("Non-Matching file : " + child.getName().getBaseName());
                         } else if(isFailedRecord){
+                            if(log.isDebugEnabled() && strFilePattern != null && !child.getName().getBaseName().matches(strFilePattern)){
+                            	//child's file name does not match the file name pattern                           
+                            	log.debug("Non-Matching file : " + child.getName().getBaseName());
+                            }                        	
                             //it is a failed record
                             try {
+                            	lastCycle = 2;
                                 moveOrDeleteAfterProcessing(child);
                             } catch (AxisFault axisFault) {
-                                log.error("File object '" + child.getURL().toString() + "'cloud not be moved, will remain in \"fail\" state", axisFault);
-                                VFSUtils.releaseFail(fsManager, child);
-                            }                        	                        	
+                                log.error("File object '" + child.getURL().toString() + "'cloud not be moved, will remain in \"fail\" state", axisFault);                                
+                            }                        	                        	                            
                             if (fileLock) {
                             	VFSUtils.releaseLock(fsManager, child);
                                 VFSUtils.releaseLock(fsManager, fileObject);
@@ -363,7 +394,10 @@ public class FileScanner implements Runnable {
         }                
     }
 
-    @SuppressWarnings("deprecation")
+    /**
+     * 
+     * Actual processing of the file/folder
+     * */
     private void processFile(FileObject file) throws AxisFault {
 
         try {
@@ -384,7 +418,7 @@ public class FileScanner implements Runnable {
                         
             org.apache.synapse.MessageContext msgCtx = createMessageContext();
             String contentType = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);          
-            if (BaseUtils.isBlank(contentType)) {
+            if (contentType == null || contentType.trim().equals("")) {
                 if (file.getName().getExtension().toLowerCase().endsWith(".xml")) {
                     contentType = "text/xml";
                 } else if (file.getName().getExtension().toLowerCase().endsWith(".txt")) {
@@ -438,6 +472,7 @@ public class FileScanner implements Runnable {
                 dataSource = null;
             }
             
+            //Inject the message to the sequence.
             try {
                 OMElement documentElement;
                 if (in != null) {
@@ -475,6 +510,7 @@ public class FileScanner implements Runnable {
             
         } finally {
             try {
+            	fsManager.closeFileSystem(file.getParent().getFileSystem());
                 file.close();
             } catch (FileSystemException warn) {
                  //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
@@ -482,19 +518,23 @@ public class FileScanner implements Runnable {
             }
         }
     }
+    /**
+     * 
+     * Do the post processing actions
+     * */
     private void moveOrDeleteAfterProcessing(FileObject fileObject) throws AxisFault {
 
         String moveToDirectoryURI = null;
         try {
             switch (lastCycle) {
                 case 1:
-                    if ("true".equals(vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS))) {
+                    if ("MOVE".equals(vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS))) {
                         moveToDirectoryURI = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
                     }
                     break;
 
                 case 2:
-                    if ("true".equals(vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE))) {
+                    if ("MOVE".equals(vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE))) {
                         moveToDirectoryURI = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
                     }
                     break;
@@ -535,29 +575,19 @@ public class FileScanner implements Runnable {
                     log.error("Error deleting file : " + fileObject, e);
                 }
             }
-
+        	if(VFSUtils.isFailRecord(fsManager, fileObject)){
+        		VFSUtils.releaseFail(fsManager, fileObject);            
+        	}
         } catch (FileSystemException e) {
-            String failedFile = vfsProperties.getProperty(VFSConstants.TRANSPORT_FAILED_RECORDS_FILE_NAME);
-            File file = new File(failedFile);
-            if (file.exists()) {
-            	try {
-            		List list = FileUtils.readLines(file);
-            		for (Object aList : list) {
-            			String str = (String) aList;
-            			StringTokenizer st = new StringTokenizer(str, VFSConstants.FAILED_RECORD_DELIMITER);
-            			String fileName = st.nextToken();
-            			if (fileName != null && fileName.equals(fileObject.getName().getBaseName())) {
-            				return;
-            			}
-            		}
-            	} catch (IOException ioe) {
-            		log.fatal("Error while reading the file '" + failedFile + "'", ioe);
-            	}
-            }
-            log.error("Error resolving directory to move after processing : " + moveToDirectoryURI, e);
+        	if(!VFSUtils.isFailRecord(fsManager, fileObject)){
+        		VFSUtils.markFailRecord(fsManager, fileObject);
+            	log.error("Error resolving directory to move after processing : " + moveToDirectoryURI, e);
+        	}
         }
     }    
-        
+    /**
+     * Create the initial message context for the file
+     * */
     private org.apache.synapse.MessageContext createMessageContext() {
         org.apache.synapse.MessageContext msgCtx = synapseEnvironment.createMessageContext();
         MessageContext axis2MsgCtx = ((org.apache.synapse.core.axis2.Axis2MessageContext)msgCtx).getAxis2MessageContext();
