@@ -27,8 +27,10 @@ import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
+import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -388,6 +390,20 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
         }
         return api;
+    }
+
+
+    public static InboundEndpoint defineInboundEndpoint(SynapseConfiguration config, OMElement elem, Properties properties) {
+        InboundEndpoint inboundEndpoint = null;
+        try {
+            inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(elem);
+            config.addInboundEndpoint(inboundEndpoint.getName(), inboundEndpoint);
+        } catch (Exception e) {
+            String msg = "Inbound Endpoint configuration cannot be built";
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT, msg, e);
+        }
+        return inboundEndpoint;
+
     }
 
     private static void handleException(String msg) {
