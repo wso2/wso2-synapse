@@ -86,7 +86,7 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
 		this.injectHandler = injectHandler;
 	}    
     
-    public InputStream poll() {
+    public Message poll() {
         if(logger.isDebugEnabled()) {
             logger.debug("run() - polling messages");
         }
@@ -111,8 +111,7 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
             if(injectHandler != null){
             	injectHandler.invoke(msg);
             }else{
-            	String message = ((TextMessage) msg).getText();
-            	return new AutoCloseInputStream(InboundEndpointUtils.toInputStream(message));
+            	return msg;            	
             }
         } catch (JMSException e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
