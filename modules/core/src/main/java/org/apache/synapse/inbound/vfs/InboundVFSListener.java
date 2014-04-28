@@ -74,7 +74,7 @@ public class InboundVFSListener implements PollingProcessor {
         }
     } */   
     
-    public void start() {    	
+    /*public void start() {    	
         try {
             scheduledExecutorService.scheduleAtFixedRate(fileScanner, 0, this.interval, TimeUnit.SECONDS);
         	/*TaskDescription taskDescription = new TaskDescription();
@@ -131,13 +131,13 @@ public class InboundVFSListener implements PollingProcessor {
             /*if (!submitTask(taskScheduler, taskDescription)) {
                 //log.error("Could not submit task [" + taskDescription.getName() + "] to the Scheduler.");
             }*/
-        } catch (Exception e) {
+        /*} catch (Exception e) {
             String msg = "Error starting up Scheduler : " + e.getMessage();
             e.printStackTrace();
             //log.fatal(msg, e);
             //throw new SynapseException(msg, e);
         }   	
-    }
+    }*/
 
     public String getName() {
         return name;

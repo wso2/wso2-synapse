@@ -23,13 +23,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.inbound.jms.InboundJMSListener;
 import org.apache.synapse.inbound.vfs.InboundVFSListener;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class InboundEndpoint implements PollingEndpoint, ManagedLifecycle {
+public class InboundEndpoint implements ManagedLifecycle {
 
     protected Log log = LogFactory.getLog(InboundEndpoint.class);
 
@@ -50,25 +51,23 @@ public class InboundEndpoint implements PollingEndpoint, ManagedLifecycle {
 
     }
 
-    /*Inbound Endpoint starts during initialization*/
-    public void start() {
-
-        if (protocol.equals("jms")) {
-            /*Properties jmsProperties = Utils.paramsToProperties(parametersMap);
-            InboundJMSListener inboundJMSListener = new InboundJMSListener(name, jmsProperties, interval, injectingSeq, onErrorSeq);
+    public void init(SynapseEnvironment se) {
+        log.info("Initializing Inbound Endpoint: " + getName());
+        synapseEnvironment = se;
+    	if (protocol.equals(InboundEndpointConstants.Protocols.jms.toString())) {
+            Properties jmsProperties = Utils.paramsToProperties(parametersMap);
+            InboundJMSListener inboundJMSListener = new InboundJMSListener(name, jmsProperties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
             inboundJMSListener.init();
-            inboundJMSListener.start();*/
-        }if (protocol.equals("vfs")) {
+        }else if (protocol.equals(InboundEndpointConstants.Protocols.file.toString())) {
             Properties vfsProperties = Utils.paramsToProperties(parametersMap);
             InboundVFSListener inboundVFSListener = new InboundVFSListener(name, vfsProperties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
-            inboundVFSListener.init();
-            inboundVFSListener.start();            
+            inboundVFSListener.init();            
         }
     }
 
-    public MessageContext getMessageContext() {
+    public void destroy() {
+        log.info("Destroying Inbound Endpoint: " + getName());
 
-        return null;
     }
 
     public String getName() {
@@ -141,18 +140,6 @@ public class InboundEndpoint implements PollingEndpoint, ManagedLifecycle {
 
     public String getParameter(String name) {
         return parametersMap.get(name);
-    }
-
-    public void init(SynapseEnvironment se) {
-        log.info("Initializing Inbound Endpoint: " + getName());
-        synapseEnvironment = se;
-        start();
-
-    }
-
-    public void destroy() {
-        log.info("Destroying Inbound Endpoint: " + getName());
-
     }
 
 }

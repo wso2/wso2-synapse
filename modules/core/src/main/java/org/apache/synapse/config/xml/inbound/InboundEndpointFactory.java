@@ -40,7 +40,9 @@ public class InboundEndpointFactory {
         inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)));
         inboundEndpoint.setInterval(Long.parseLong(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_INTERVAL))));
         inboundEndpoint.setSuspend(Boolean.parseBoolean(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND))));
-
+        inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)));
+        inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE)));
+        
         OMElement parametersElt = inboundEndpointElem.getFirstChildWithName(new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
                 InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETERS));
 
@@ -52,11 +54,6 @@ public class InboundEndpointFactory {
             String paramName = parameter.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
             inboundEndpoint.addParameter(paramName, parameter.getText());
         }
-
-        OMElement seqElt = inboundEndpointElem.getFirstChildWithName(new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
-                InboundEndpointConstants.INBOUND_ENDPOINT_SEQ));
-        inboundEndpoint.setInjectingSeq(seqElt.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQ_KEY)));
-        inboundEndpoint.setOnErrorSeq(seqElt.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ON_ERROR_SEQ)));
 
         return inboundEndpoint;
     }
