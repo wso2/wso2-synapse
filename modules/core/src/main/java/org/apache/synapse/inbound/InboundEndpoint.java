@@ -23,14 +23,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.inbound.jms.InboundJMSListener;
 import org.apache.synapse.inbound.vfs.InboundVFSListener;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class InboundEndpoint implements ManagedLifecycle {
+public class InboundEndpoint implements PollingEndpoint, ManagedLifecycle {
 
     protected Log log = LogFactory.getLog(InboundEndpoint.class);
 
@@ -38,33 +37,38 @@ public class InboundEndpoint implements ManagedLifecycle {
     private String protocol;
     private long interval;
     private boolean isSuspend;
+
     private String injectingSeq;
     private String onErrorSeq;
     private Map<String,String> parametersMap = new LinkedHashMap<String,String>();
+
     private String fileName;
+
     private SynapseEnvironment synapseEnvironment;
-    private PollingProcessor pollingProcessor;
-    
-    public void init(SynapseEnvironment se) {
-        log.info("Initializing Inbound Endpoint: " + getName());
-        synapseEnvironment = se;     
-        pollingProcessor = null;
-        Properties properties = InboundEndpointUtils.paramsToProperties(parametersMap);
-    	if (protocol.equals(InboundEndpointConstants.Protocols.jms.toString())) {            
-            pollingProcessor = new InboundJMSListener(name, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
-        }else if (protocol.equals(InboundEndpointConstants.Protocols.file.toString())) {
-        	pollingProcessor = new InboundVFSListener(name, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);           
-        }else{
-        	log.error("Invalid Protocol : " + protocol);
-        	throw new RuntimeException("Invalid protocol for inbound endpoint configuration.");
-        }
-    	pollingProcessor.init();
+
+    public InboundEndpoint() {
+
     }
 
-    public void destroy() {
-        log.info("Destroying Inbound Endpoint: " + getName());
-        synapseEnvironment = null;
-        pollingProcessor.destroy();
+    /*Inbound Endpoint starts during initialization*/
+    public void start() {
+
+        if (protocol.equals("jms")) {
+            /*Properties jmsProperties = Utils.paramsToProperties(parametersMap);
+            InboundJMSListener inboundJMSListener = new InboundJMSListener(name, jmsProperties, interval, injectingSeq, onErrorSeq);
+            inboundJMSListener.init();
+            inboundJMSListener.start();*/
+        }if (protocol.equals("vfs")) {
+            Properties vfsProperties = Utils.paramsToProperties(parametersMap);
+            InboundVFSListener inboundVFSListener = new InboundVFSListener(name, vfsProperties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
+            inboundVFSListener.init();
+            inboundVFSListener.start();            
+        }
+    }
+
+    public MessageContext getMessageContext() {
+
+        return null;
     }
 
     public String getName() {
@@ -137,6 +141,18 @@ public class InboundEndpoint implements ManagedLifecycle {
 
     public String getParameter(String name) {
         return parametersMap.get(name);
-    }    
-    
+    }
+
+    public void init(SynapseEnvironment se) {
+        log.info("Initializing Inbound Endpoint: " + getName());
+        synapseEnvironment = se;
+        start();
+
+    }
+
+    public void destroy() {
+        log.info("Destroying Inbound Endpoint: " + getName());
+
+    }
+
 }
