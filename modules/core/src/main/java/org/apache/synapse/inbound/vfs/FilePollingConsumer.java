@@ -19,16 +19,12 @@
 package org.apache.synapse.inbound.vfs;
 
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.StringTokenizer;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
@@ -45,8 +41,6 @@ import org.apache.axis2.format.DataSourceMessageBuilder;
 import org.apache.axis2.format.ManagedDataSource;
 import org.apache.axis2.format.ManagedDataSourceFactory;
 import org.apache.axis2.transport.TransportUtils;
-import org.apache.axis2.transport.base.BaseUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,33 +52,31 @@ import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.inbound.InjectHandler;
+import org.apache.synapse.inbound.PollingConsumer;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants; 
 import org.apache.synapse.commons.vfs.VFSUtils;
 
 
-public class FileScanner implements Runnable {
+public class FilePollingConsumer implements Runnable, PollingConsumer {
 
-    private static final Log log = LogFactory.getLog(FileScanner.class);
+    private static final Log log = LogFactory.getLog(FilePollingConsumer.class);
     private Properties vfsProperties;
-    private String recordFile = null;
     private boolean fileLock = true;
 
     private FileSystemManager fsManager = null;
     private String name;
-    private String injectingSeq;
-    private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
     private long scanInterval;
     private Long lastRanTime;
     private int lastCycle;
+    private InjectHandler injectHandler;
     
-    public FileScanner(Properties vfsProperties, String name, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment, long scanInterval) {
+
+    public FilePollingConsumer(Properties vfsProperties, String name, SynapseEnvironment synapseEnvironment, long scanInterval) {
     	this.vfsProperties = vfsProperties;
     	this.name = name; 
-    	this.injectingSeq =  injectingSeq;
-    	this.onErrorSeq = onErrorSeq;
     	this.synapseEnvironment = synapseEnvironment;
     	this.scanInterval = scanInterval;
     	this.lastRanTime = null;
@@ -101,8 +93,12 @@ public class FileScanner implements Runnable {
         	log.error(e);
         	throw new RuntimeException(e);
         }
-    }
-
+    }    
+    
+	public void registerHandler(InjectHandler injectHandler){
+		this.injectHandler = injectHandler;
+	}
+    
     public void run() {        
         try {
             if (log.isDebugEnabled()) {
@@ -112,7 +108,7 @@ public class FileScanner implements Runnable {
             long currentTime = (new Date()).getTime();
             if(lastRanTime == null || ((lastRanTime + (scanInterval * 1000)) <= currentTime)){
             	lastRanTime = currentTime;
-            	scanFileOrDirectory();
+            	poll();
             }else if (log.isDebugEnabled()) {
             	log.debug("Skip cycle since cuncurrent rate is higher than the scan interval : VFS Inbound EP : " + name);
             }
@@ -127,19 +123,36 @@ public class FileScanner implements Runnable {
         }
     }
 
+    public void execute() {        
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Start : VFS Inbound EP : " + name);
+            }
+            poll();
+            if (log.isDebugEnabled()) {
+            	log.debug("End : VFS Inbound EP : " + name);
+            }        	
+        } catch (Exception e) {
+            System.err.println("error in executing: It will no longer be run!");
+            log.error("Error while reading file. " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }    
+    
     /**
      * 
      * Do the file processing operation for the given set of properties
      * Do the checks and pass the control to processFile method
      * 
      * */    
-    private void scanFileOrDirectory(){
+    public FileObject poll(){
     	
     	String fileURI = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_FILE_URI);
     	
     	if(fileURI == null || fileURI.trim().equals("")){
     		log.error("Invalid file url. Check the inbound endpoint configuration. Endpoint Name : " + name + ", File URL : " + fileURI);
-    		return;  
+    		return null;  
     	}
     	
         if (log.isDebugEnabled()) {
@@ -180,7 +193,7 @@ public class FileScanner implements Runnable {
             } catch (FileSystemException e) {
                 if (retryCount >= maxRetryCount) {
                     log.error("Repeatedly failed to resolve the file URI: " + VFSUtils.maskURLPassword(fileURI), e);
-                    return;
+                    return null;
                 } else {
                     log.warn("Failed to resolve the file URI: " + VFSUtils.maskURLPassword(fileURI) + ", in attempt " + retryCount + ", " + e.getMessage() + " Retrying in " + reconnectionTimeout + " milliseconds.");
                 }
@@ -237,8 +250,11 @@ public class FileScanner implements Runnable {
                                     log.debug("Removed the lock file '" + fileObject.toString() + ".lock' of the file '" + fileObject.toString());
                                 }
                             }
-                        } else if (log.isDebugEnabled()) {
-                            log.debug("Couldn't get the lock for processing the file : " + fileObject.getName());
+                            if(injectHandler != null){
+                            	return fileObject;
+                            }                             
+                        } else {
+                            log.error("Couldn't get the lock for processing the file : " + fileObject.getName());
                         }
                     } else if (isFailedRecord) {
                         try {
@@ -303,7 +319,7 @@ public class FileScanner implements Runnable {
                             }
                             
                             if((!fileLock || (fileLock && VFSUtils.acquireLock(fsManager, child)))){
-                                //process the file
+                                //process the file                            	
                                 try {
                                     if (log.isDebugEnabled()) {
                                         log.debug("Processing file :" + child);
@@ -334,12 +350,14 @@ public class FileScanner implements Runnable {
                                 if (fileLock && !skipUnlock) {
                                     VFSUtils.releaseLock(fsManager, child);
                                 }
+                                if(injectHandler != null){
+                                	return child;
+                                }                                
                             } 
-                        } else if(isFailedRecord){
-                            if(log.isDebugEnabled() && strFilePattern != null && !child.getName().getBaseName().matches(strFilePattern)){
-                            	//child's file name does not match the file name pattern                           
-                            	log.debug("Non-Matching file : " + child.getName().getBaseName());
-                            }                        	
+                        }else if(log.isDebugEnabled() && strFilePattern != null && !child.getName().getBaseName().matches(strFilePattern) && !isFailedRecord){
+                           	//child's file name does not match the file name pattern                           
+                           	log.debug("Non-Matching file : " + child.getName().getBaseName());                                                    
+                        } else if(isFailedRecord){                       	
                             //it is a failed record
                             try {
                             	lastCycle = 2;
@@ -380,25 +398,26 @@ public class FileScanner implements Runnable {
                 }
             } else {
 				log.warn("Unable to access or read file or directory : " + VFSUtils.maskURLPassword(fileURI)+ "." + " Reason: " + (fileObject.exists()? (fileObject.isReadable()? "Unknown reason":"The file can not be read!"): "The file does not exists!"));
-				return;
+				return null;
             }
         } catch (FileSystemException e) {
             log.error("Error checking for existence and readability : " + VFSUtils.maskURLPassword(fileURI), e);
-            return;
+            return null;
         } catch (Exception e) {
             log.error("Error while processing the file/folder in URL : " + VFSUtils.maskURLPassword(fileURI), e);
-            return;               
+            return null;               
         }
         if (log.isDebugEnabled()) {
             log.debug("End : Scanning directory or file : " + VFSUtils.maskURLPassword(fileURI));
-        }                
+        }              
+        return null;
     }
 
     /**
      * 
      * Actual processing of the file/folder
      * */
-    private void processFile(FileObject file) throws AxisFault {
+    private FileObject processFile(FileObject file) throws AxisFault {
 
         try {
             FileContent content = file.getContent();
@@ -415,99 +434,16 @@ public class FileScanner implements Runnable {
                 transportHeaders.put(VFSConstants.FILE_LENGTH, content.getSize());
                 transportHeaders.put(VFSConstants.LAST_MODIFIED, content.getLastModifiedTime());
             } catch (FileSystemException ignore) {}
-                        
-            org.apache.synapse.MessageContext msgCtx = createMessageContext();
-            String contentType = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);          
-            if (contentType == null || contentType.trim().equals("")) {
-                if (file.getName().getExtension().toLowerCase().endsWith(".xml")) {
-                    contentType = "text/xml";
-                } else if (file.getName().getExtension().toLowerCase().endsWith(".txt")) {
-                    contentType = "text/plain";
-                }
-            } else {
-                // Extract the charset encoding from the configured content type and
-                // set the CHARACTER_SET_ENCODING property as e.g. SOAPBuilder relies on this.
-                String charSetEnc = null;
-                try {
-                    if (contentType != null) {
-                        charSetEnc = new ContentType(contentType).getParameter("charset");
-                    }
-                } catch (ParseException ex) {
-                    // ignore
-                }
-                msgCtx.setProperty(Constants.Configuration.CHARACTER_SET_ENCODING, charSetEnc);
+                                                              
+            if(injectHandler != null){
+            	//injectHandler
+            	injectHandler.invoke(file);
+            }else{
+            	return file;
             }
-            MessageContext axis2MsgCtx = ((org.apache.synapse.core.axis2.Axis2MessageContext)msgCtx).getAxis2MessageContext();      
-           
-            // Determine the message builder to use
-            Builder builder;
-            if (contentType == null) {
-                log.debug("No content type specified. Using SOAP builder.");
-                builder = new SOAPBuilder();
-            } else {
-                int index = contentType.indexOf(';');
-                String type = index > 0 ? contentType.substring(0, index) : contentType;
-                builder = BuilderUtil.getBuilderFromSelector(type, axis2MsgCtx);
-                if (builder == null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("No message builder found for type '" + type +
-                                "'. Falling back to SOAP.");
-                    }
-                    builder = new SOAPBuilder();
-                }
-            }
-
-            // set the message payload to the message context
-            InputStream in;
-            ManagedDataSource dataSource;
-            String streaming = vfsProperties.getProperty(VFSConstants.STREAMING);
-            
-            if (builder instanceof DataSourceMessageBuilder && "true".equals(streaming)) {
-                in = null;
-                dataSource = ManagedDataSourceFactory.create(
-                        new FileObjectDataSource(file, contentType));
-                dataSource = null;
-            } else {
-                in = new AutoCloseInputStream(content.getInputStream());
-                dataSource = null;
-            }
-            
-            //Inject the message to the sequence.
-            try {
-                OMElement documentElement;
-                if (in != null) {
-                    documentElement = builder.processDocument(in, contentType, axis2MsgCtx);
-                } else {
-                    documentElement = ((DataSourceMessageBuilder)builder).processDocument(dataSource, contentType, axis2MsgCtx);
-                }
-                msgCtx.setEnvelope(TransportUtils.createSOAPEnvelope(documentElement));                               
-                if (injectingSeq == null || injectingSeq.equals("")) {
-                    log.error("Sequence name not specified. Sequence : " + injectingSeq);
-                }
-                SequenceMediator seq = (SequenceMediator) synapseEnvironment.getSynapseConfiguration().getSequence(injectingSeq);
-                seq.setErrorHandler(onErrorSeq);
-                if (seq != null) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("injecting message to sequence : " + injectingSeq);
-                    }
-                    synapseEnvironment.injectAsync(msgCtx, seq);
-                } else {
-                    log.error("Sequence: " + injectingSeq + " not found");
-                }          
-            }            
-            finally {
-             if(dataSource != null) {
-					dataSource.destroy();
-				}
-            }
-
-            if (log.isDebugEnabled()) {
-                log.debug("Processed file : " + file + " of Content-type : " + contentType);
-            }
-
+                       
         } catch (FileSystemException e) {
-            log.error("Error reading file content or attributes : " + file, e);
-            
+            log.error("Error reading file content or attributes : " + file, e);            
         } finally {
             try {
             	fsManager.closeFileSystem(file.getParent().getFileSystem());
@@ -517,6 +453,7 @@ public class FileScanner implements Runnable {
                // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
             }
         }
+        return null; 
     }
     /**
      * 
@@ -585,17 +522,5 @@ public class FileScanner implements Runnable {
         	}
         }
     }    
-    /**
-     * Create the initial message context for the file
-     * */
-    private org.apache.synapse.MessageContext createMessageContext() {
-        org.apache.synapse.MessageContext msgCtx = synapseEnvironment.createMessageContext();
-        MessageContext axis2MsgCtx = ((org.apache.synapse.core.axis2.Axis2MessageContext)msgCtx).getAxis2MessageContext();
-        axis2MsgCtx.setServerSide(true);
-        axis2MsgCtx.setMessageID(UUIDGenerator.getUUID());
-        // There is a discrepency in what I thought, Axis2 spawns a nes threads to
-        // send a message is this is TRUE - and I want it to be the other way
-        msgCtx.setProperty(MessageContext.CLIENT_API_NON_BLOCKING, true);
-        return msgCtx;
-    }
+
 } 
