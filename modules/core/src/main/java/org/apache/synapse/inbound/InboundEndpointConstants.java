@@ -32,5 +32,5 @@ public class InboundEndpointConstants {
     public static final String INBOUND_ENDPOINT_SEQ_KEY= "key";
     public static final String INBOUND_ENDPOINT_ON_ERROR_SEQ = "onError";
 
-    public enum Protocols {jms, vfs};
+    public enum Protocols {jms, file};
 }

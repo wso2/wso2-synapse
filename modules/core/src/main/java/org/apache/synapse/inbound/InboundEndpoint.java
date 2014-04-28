@@ -52,7 +52,7 @@ public class InboundEndpoint implements ManagedLifecycle {
         Properties properties = InboundEndpointUtils.paramsToProperties(parametersMap);
     	if (protocol.equals(InboundEndpointConstants.Protocols.jms.toString())) {            
             pollingProcessor = new InboundJMSListener(name, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
-        }else if (protocol.equals(InboundEndpointConstants.Protocols.vfs.toString())) {
+        }else if (protocol.equals(InboundEndpointConstants.Protocols.file.toString())) {
         	pollingProcessor = new InboundVFSListener(name, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);           
         }else{
         	log.error("Invalid Protocol : " + protocol);
