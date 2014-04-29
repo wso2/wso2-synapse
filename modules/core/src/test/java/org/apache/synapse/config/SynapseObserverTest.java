@@ -27,7 +27,7 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.mediators.template.TemplateMediator;
-import org.apache.synapse.startup.quartz.SimpleQuartz;
+import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.axis2.engine.AxisConfiguration;
@@ -86,7 +86,7 @@ public class SynapseObserverTest extends TestCase {
         synapseConfig.removeProxyService(proxy.getName());
         assertItemRemoved(proxy.getName(), PROXY);
 
-        Startup startup = new SimpleQuartz();
+        Startup startup = new StartUpController();
         startup.setName("startup1");
         synapseConfig.addStartup(startup);
         assertItemAdded(startup.getName(), STARTUP);

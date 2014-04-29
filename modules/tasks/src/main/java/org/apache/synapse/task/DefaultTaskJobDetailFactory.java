@@ -58,12 +58,12 @@ public class DefaultTaskJobDetailFactory implements TaskJobDetailFactory {
         
         JobDataMap jobDataMap = new JobDataMap(resources);
 
-        String className = taskDescription.getTaskClass();
-        if (className != null && !"".equals(className)) {
-            jobDataMap.put(TaskDescription.CLASSNAME, className);
-        }
+//        String className = taskDescription.getTaskClass();
+//        if (className != null && !"".equals(className)) {
+//            jobDataMap.put(TaskDescription.CLASSNAME, className); // TODO: synapse Task class name here...
+//        }
 
-        Set xmlProperties = taskDescription.getProperties();
+        Set xmlProperties = taskDescription.getXmlProperties();
         if (xmlProperties != null) {
             jobDataMap.put(TaskDescription.PROPERTIES, xmlProperties);
         }
@@ -73,7 +73,7 @@ public class DefaultTaskJobDetailFactory implements TaskJobDetailFactory {
             throw new SynapseTaskException("Name cannot be found.", log);
         }
 
-        String group = taskDescription.getGroup();
+        String group = taskDescription.getTaskGroup();
         if (group == null || "".equals(group)) {
             group = TaskDescription.DEFAULT_GROUP;
         }

@@ -79,6 +79,7 @@ public class XMLConfigConstants {
     public static final QName MESSAGE_STORE_ELT = new QName(SYNAPSE_NAMESPACE, "messageStore");
     public static final QName MESSAGE_PROCESSOR_ELT = new QName(SYNAPSE_NAMESPACE, "messageProcessor");
     public static final QName API_ELT = new QName(SYNAPSE_NAMESPACE, "api");
+    public static final QName TASK_MANAGER_ELT = new QName(SYNAPSE_NAMESPACE, "taskManager");
 
     public static final String NULL_NAMESPACE = "";
     public static final Object QUARTZ_QNAME   =

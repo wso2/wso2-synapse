@@ -86,6 +86,12 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
                     .getRegistry());
         }
         
+        // then process a remote registry if present
+        if (synCfg.getTaskManager() != null) {
+            TaskManagerSerializer.serializetaskManager(definitions, synCfg
+                    .getTaskManager());
+        }
+        
         serializeImports(definitions, synCfg.getSynapseImports().values());
 
         // add proxy services
