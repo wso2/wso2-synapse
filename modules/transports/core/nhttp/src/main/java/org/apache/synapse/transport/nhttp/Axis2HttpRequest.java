@@ -326,10 +326,20 @@ public class Axis2HttpRequest {
             }
         }
 
+        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
+        int senderTimeout = cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, 60000);
+        long startTime = System.currentTimeMillis();
+
         synchronized (this) {
             while (!readyToStream && !completed) {
                 try {
-                    this.wait();
+                    this.wait(senderTimeout + 10000);
+                    if ((startTime + senderTimeout + 5000) < System.currentTimeMillis()) {
+                        handleException("Thread " + Thread.currentThread().getName() +
+                                " is blocked longer than the send timeout when trying to send the message :" +
+                                msgContext.getMessageID() + ". Releasing thread",
+                                new AxisFault("Sender thread was not notified within send timeout"));
+                    }
                 } catch (InterruptedException ignore) {
                 }
             }
