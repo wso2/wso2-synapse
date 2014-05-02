@@ -211,6 +211,7 @@ public class ClientWorker implements Runnable {
             // used at the sender to set the proper status code when passing the message
             int statusCode = this.response.getStatus();
             responseMsgCtx.setProperty(PassThroughConstants.HTTP_SC, statusCode);
+            responseMsgCtx.setProperty(PassThroughConstants.HTTP_SC_DESC, response.getStatusLine());
             if (statusCode >= 400) {
                 responseMsgCtx.setProperty(PassThroughConstants.FAULT_MESSAGE,
                         PassThroughConstants.TRUE);

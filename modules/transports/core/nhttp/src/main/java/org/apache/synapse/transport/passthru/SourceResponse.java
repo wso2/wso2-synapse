@@ -25,15 +25,29 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.transport.MessageFormatter;
+import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.io.IOUtils;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeSet;
+
+import javax.xml.stream.XMLStreamException;
 
 
 public class SourceResponse {
@@ -54,7 +68,7 @@ public class SourceResponse {
     private ConnectionReuseStrategy connStrategy = new DefaultConnectionReuseStrategy();
     /** Chunk response or not */
     // private boolean chunk = true;
-
+    
     private SourceRequest request = null;
 
     public SourceResponse(SourceConfiguration config, int status, SourceRequest request) {
@@ -115,7 +129,7 @@ public class SourceResponse {
         } else {
             entity.setChunked(true);
         }
-
+        
         response.setEntity(entity);
 
         // set any transport headers
@@ -143,6 +157,29 @@ public class SourceResponse {
         
         sourceConfiguration.getHttpProcessor().process(response, conn.getContext());
         conn.submitResponse(response);        
+    }
+    
+    
+    
+    public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
+
+    	if (responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
+           if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED, false)) {
+               try {
+                   RelayUtils.buildMessage(responseMsgContext,false);
+                   responseMsgContext.getEnvelope().buildWithAttachments();
+               } catch (Exception e) {
+            	  throw new AxisFault(e.getMessage());
+               }
+           }
+            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(responseMsgContext);
+            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+        	formatter.writeTo(responseMsgContext, format, out, false);
+		    TreeSet<String> header = new TreeSet<String>();
+            header.add(String.valueOf(out.toByteArray().length));
+            headers.put(HTTP.CONTENT_LEN,header);
+        } 
     }
 
     /**
@@ -204,4 +241,6 @@ public class SourceResponse {
             headers.remove(name);
         }
     }
+
+    
 }

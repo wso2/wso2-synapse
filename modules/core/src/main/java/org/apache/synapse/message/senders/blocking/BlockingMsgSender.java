@@ -222,9 +222,9 @@ public class BlockingMsgSender {
                 new org.apache.axis2.context.MessageContext();
         if (resultMsgCtx.getEnvelope() != null) {
             returnMsgCtx.setEnvelope(MessageHelper.cloneSOAPEnvelope(resultMsgCtx.getEnvelope()));
-        }
-        if (JsonUtil.hasAJsonPayload(resultMsgCtx)) {
-            JsonUtil.cloneJsonPayload(resultMsgCtx, returnMsgCtx);
+            if (JsonUtil.hasAJsonPayload(resultMsgCtx)) {
+               JsonUtil.cloneJsonPayload(resultMsgCtx, returnMsgCtx);
+            }
         }        
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
                                  resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
