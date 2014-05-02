@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms;
+package org.apache.synapse.protocol.jms;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.builder.Builder;
@@ -33,7 +33,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InboundEndpointUtils;
 import org.apache.synapse.inbound.PollingConsumer;
 import org.apache.synapse.inbound.InjectHandler;
-import org.apache.synapse.inbound.jms.factory.CachedJMSConnectionFactory;
+import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import javax.jms.*;
 import java.io.InputStream;

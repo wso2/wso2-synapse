@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms;
+package org.apache.synapse.protocol.jms;
 
 public class JMSConstants {
 

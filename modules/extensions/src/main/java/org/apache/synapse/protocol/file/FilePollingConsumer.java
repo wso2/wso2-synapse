@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.vfs;
+package org.apache.synapse.protocol.file;
 
 
 import java.io.InputStream;
@@ -406,6 +406,8 @@ public class FilePollingConsumer implements Runnable, PollingConsumer {
         } catch (Exception e) {
             log.error("Error while processing the file/folder in URL : " + VFSUtils.maskURLPassword(fileURI), e);
             return null;               
+        }finally{
+        	
         }
         if (log.isDebugEnabled()) {
             log.debug("End : Scanning directory or file : " + VFSUtils.maskURLPassword(fileURI));

@@ -15,20 +15,19 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-package org.apache.synapse.inbound.vfs;
+package org.apache.synapse.protocol.file;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
-import org.apache.synapse.inbound.jms.InboundJMSListener;
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class InboundVFSListener implements PollingProcessor {
+public class VFSProcessor implements PollingProcessor {
 
 	private FilePollingConsumer fileScanner;
     private String name;
@@ -37,9 +36,9 @@ public class InboundVFSListener implements PollingProcessor {
     private String injectingSeq;
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
-    private static final Log log = LogFactory.getLog(InboundJMSListener.class);
+    private static final Log log = LogFactory.getLog(VFSProcessor.class);
     
-    public InboundVFSListener(String name, Properties vfsProperties, long scanInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
+    public VFSProcessor(String name, Properties vfsProperties, long scanInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
         this.vfsProperties = vfsProperties;
         this.interval = scanInterval;

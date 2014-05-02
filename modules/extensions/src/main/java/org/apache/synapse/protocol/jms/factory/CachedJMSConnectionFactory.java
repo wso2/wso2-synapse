@@ -16,11 +16,11 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms.factory;
+package org.apache.synapse.protocol.jms.factory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.inbound.jms.JMSConstants;
+import org.apache.synapse.protocol.jms.JMSConstants;
 
 import javax.jms.*;
 import java.util.Map;

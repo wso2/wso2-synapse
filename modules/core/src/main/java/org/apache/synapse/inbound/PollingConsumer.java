@@ -18,7 +18,6 @@
 
 package org.apache.synapse.inbound;
 
-import java.io.InputStream;
 
 public interface PollingConsumer {
 	public void registerHandler(InjectHandler processingHandler);

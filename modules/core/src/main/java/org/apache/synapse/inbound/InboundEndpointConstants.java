@@ -30,5 +30,4 @@ public class InboundEndpointConstants {
     public static final String INBOUND_ENDPOINT_PARAMETERS = "parameters";
     public static final String INBOUND_ENDPOINT_PARAMETER = "parameter";
     public static final String INBOUND_ENDPOINT_PARAMETER_NAME = "name";
-    public enum Protocols {jms, file};
 }

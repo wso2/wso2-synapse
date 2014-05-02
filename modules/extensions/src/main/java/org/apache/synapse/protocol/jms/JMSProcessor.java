@@ -16,21 +16,21 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms;
+package org.apache.synapse.protocol.jms;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
-import org.apache.synapse.inbound.jms.factory.CachedJMSConnectionFactory;
+import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class InboundJMSListener implements PollingProcessor {
-    private static final Log log = LogFactory.getLog(InboundJMSListener.class.getName());
+public class JMSProcessor implements PollingProcessor {
+    private static final Log log = LogFactory.getLog(JMSProcessor.class.getName());
 
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
@@ -43,7 +43,7 @@ public class InboundJMSListener implements PollingProcessor {
     private SynapseEnvironment synapseEnvironment;
 
 
-    public InboundJMSListener(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
+    public JMSProcessor(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
         this.jmsProperties = jmsProperties;
         this.interval = pollInterval;

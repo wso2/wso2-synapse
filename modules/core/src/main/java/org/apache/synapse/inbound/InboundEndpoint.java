@@ -22,10 +22,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.xml.MediatorSerializer;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.inbound.jms.InboundJMSListener;
-import org.apache.synapse.inbound.vfs.InboundVFSListener;
 
+import sun.misc.Service;
+
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -44,7 +46,7 @@ public class InboundEndpoint implements ManagedLifecycle {
     private Map<String,String> parametersMap = new LinkedHashMap<String,String>();
 
     private String fileName;
-
+    PollingProcessor pollingProcessor;
     private SynapseEnvironment synapseEnvironment;
 
     public InboundEndpoint() {
@@ -54,20 +56,38 @@ public class InboundEndpoint implements ManagedLifecycle {
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
         synapseEnvironment = se;
-    	if (protocol.equals(InboundEndpointConstants.Protocols.jms.toString())) {
-            Properties jmsProperties = Utils.paramsToProperties(parametersMap);
-            InboundJMSListener inboundJMSListener = new InboundJMSListener(name, jmsProperties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
-            inboundJMSListener.init();
-        }else if (protocol.equals(InboundEndpointConstants.Protocols.file.toString())) {
-            Properties vfsProperties = Utils.paramsToProperties(parametersMap);
-            InboundVFSListener inboundVFSListener = new InboundVFSListener(name, vfsProperties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
-            inboundVFSListener.init();            
+        pollingProcessor = getPollingProcessor();
+        if(pollingProcessor != null){
+        	pollingProcessor.init();
+        }else{
+        	log.error("Polling processor not found for Inbound EP : " + name + " Protocol: " + protocol);
         }
     }
-
+    /**
+     * Register pluggable mediator serializers from the classpath
+     *
+     * This looks for JAR files containing a META-INF/services that adheres to the following
+     * http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html
+     */
+    private PollingProcessor getPollingProcessor(){
+        if (log.isDebugEnabled()) {
+            log.debug("Registering mediator extensions found in the classpath.. ");
+        }
+        // Get polling processors
+        Iterator<PollingProcessorFactory>it = Service.providers(PollingProcessorFactory.class);
+        while (it.hasNext()) {
+        	PollingProcessorFactory factory =  it.next();
+        	Properties properties = Utils.paramsToProperties(parametersMap);
+        	return factory.creatPollingProcessor(protocol, fileName, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
+        }
+        return null;
+    }
+    
     public void destroy() {
         log.info("Destroying Inbound Endpoint: " + getName());
-
+        if(pollingProcessor != null){
+        	pollingProcessor.destroy();
+        }
     }
 
     public String getName() {
