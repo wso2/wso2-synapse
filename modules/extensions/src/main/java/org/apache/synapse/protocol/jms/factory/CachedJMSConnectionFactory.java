@@ -70,30 +70,23 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
         return super.getConnectionFactory();
     }
 
-    public Connection getConnection() {
+    public Connection getConnection(String userName, String password) {
         Connection connection = cachedConnections.get(connectionCount);
         if (connection == null) {
-            return createConnection();
+            return createConnection(userName, password);
         }
 
         return connection;
     }
 
     @Override
-    public Connection createConnection() {
-        Connection connection = super.createConnection();
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
+    public Connection createConnection(String userName, String password){
+        Connection connection = null;
+        if(userName == null || password == null){
+        	connection = super.createConnection();
+        }else{
+        	connection = super.createConnection(userName, password);
         }
-
-        return connection;
-    }
-
-    @Override
-    public Connection createConnection(String userName, String password) throws JMSException {
-        Connection connection = super.createConnection(userName, password);
         cachedConnections.put(connectionCount, connection);
         connectionCount++;
         if(connectionCount >= maxConnectionCount) {

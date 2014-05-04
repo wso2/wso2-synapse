@@ -41,7 +41,7 @@ public class JMSProcessor implements PollingProcessor {
     private String injectingSeq;
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
-
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     public JMSProcessor(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
@@ -50,14 +50,12 @@ public class JMSProcessor implements PollingProcessor {
         this.injectingSeq = injectingSeq;
         this.onErrorSeq = onErrorSeq;
         this.synapseEnvironment = synapseEnvironment;
-    }
-
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    }    
 
     public void init() {
         log.info("Initializing inbound JMS listener for destination " + name);
         jmsConnectionFactory = new CachedJMSConnectionFactory(this.jmsProperties);
-        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, injectingSeq, onErrorSeq, synapseEnvironment);        
+        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties);        
         pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));
         scheduledExecutorService.scheduleAtFixedRate(pollingConsumer, 0, this.interval, TimeUnit.SECONDS);
     }

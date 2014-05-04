@@ -37,6 +37,7 @@ import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import javax.jms.*;
 import java.io.InputStream;
+import java.util.Properties;
 
 public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingConsumer {
 
@@ -47,31 +48,19 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
     private Session session;
     private Destination destination;
     private MessageConsumer messageConsumer;
-    private String injectingSeq;
-    private String onErrorSeq;
-    private SynapseEnvironment synapseEnvironment;
     private InjectHandler injectHandler;
-    
-    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
-        this.injectingSeq = injectingSeq;
-        this.onErrorSeq = onErrorSeq;
-        this.jmsConnectionFactory = jmsConnectionFactory;
-        this.connection = jmsConnectionFactory.getConnection();
-        this.jmsConnectionFactory.start(connection);
-        this.session = jmsConnectionFactory.getSession(connection);
-        this.destination = jmsConnectionFactory.getDestination(connection);
-        this.messageConsumer = createMessageConsumer();
-        this.synapseEnvironment = synapseEnvironment;
-    }
+    private Properties jmsProperties;
 
-    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, SynapseEnvironment synapseEnvironment) {
+    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, Properties jmsProperties) {
         this.jmsConnectionFactory = jmsConnectionFactory;
-        this.connection = jmsConnectionFactory.getConnection();
+        String strUserName = jmsProperties.getProperty(JMSConstants.PARAM_JMS_USERNAME);
+        String strPassword = jmsProperties.getProperty(JMSConstants.PARAM_JMS_PASSWORD);
+        this.connection = jmsConnectionFactory.getConnection(strUserName, strPassword);
         this.jmsConnectionFactory.start(connection);
         this.session = jmsConnectionFactory.getSession(connection);
         this.destination = jmsConnectionFactory.getDestination(connection);
         this.messageConsumer = createMessageConsumer();
-        this.synapseEnvironment = synapseEnvironment;
+        this.jmsProperties = jmsProperties;
     }
     
     public void run() {
@@ -90,9 +79,6 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
         if(logger.isDebugEnabled()) {
             logger.debug("run() - polling messages");
         }
-
-        org.apache.axis2.context.MessageContext axis2MsgCtx = InboundEndpointUtils.createAxis2MessageContext(synapseEnvironment);
-        MessageContext synCtx = InboundEndpointUtils.createSynapseMessageContext(axis2MsgCtx, synapseEnvironment);
 
         try {
             Message msg = messageConsumer.receive(1);
@@ -115,22 +101,10 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
             }
         } catch (JMSException e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
-            handleErrorSequence(synCtx);
-
         } catch (Exception e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
-            handleErrorSequence(synCtx);
         }
         return null;
-    }
-
-    private void handleErrorSequence(MessageContext synCtx) {
-        if(logger.isDebugEnabled()) {
-            logger.debug("handleErrorSequence() - injecting message to error sequence");
-        }
-        if(onErrorSeq != null || !"".equals(onErrorSeq)) {
-            InboundEndpointUtils.injectMessage(synCtx, synapseEnvironment, onErrorSeq);
-        }
     }
 
     public MessageConsumer getMessageConsumer(String messageSelector) {

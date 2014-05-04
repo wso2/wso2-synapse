@@ -37,6 +37,10 @@ public class JMSConstants {
 
     public static final String PARAM_CACHE_LEVEL = "transport.jms.CacheLevel";
 
+    public static final String PARAM_JMS_USERNAME = "transport.jms.UserName";
+    /** The password to use when obtaining a JMS Connection */
+    public static final String PARAM_JMS_PASSWORD = "transport.jms.Password";
+    
     /**
      * Maximum number of shared JMS Connections when sending messages out
      * */
