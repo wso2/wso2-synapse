@@ -52,6 +52,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.axis2.util.XMLPrettyPrinter;
+import org.apache.synapse.task.TaskManager;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -98,6 +99,11 @@ public class MultiXMLConfigurationSerializer {
             if (synapseConfig.getRegistry() != null) {
                 serializeSynapseRegistry(synapseConfig.getRegistry(), synapseConfig, definitions);
             }
+
+            if (synapseConfig.getTaskManager() != null) {
+                serializeTaskManager(synapseConfig.getTaskManager(), synapseConfig, definitions);
+            }
+
 
             serializeProxyServices(synapseConfig.getProxyServices(), synapseConfig, definitions);
             serializeEventSources(synapseConfig.getEventSources(), synapseConfig, definitions);
@@ -238,6 +244,11 @@ public class MultiXMLConfigurationSerializer {
             RegistrySerializer.serializeRegistry(definitions, synapseConfig.getRegistry());
         }
 
+        if (synapseConfig.getTaskManager() != null && !Boolean.valueOf(synapseConfig.getProperty(
+                MultiXMLConfigurationBuilder.SEPARATE_TASK_MANAGER_DEFINITION))) {
+            TaskManagerSerializer.serializetaskManager(definitions, synapseConfig.getTaskManager());
+        }
+
         Collection<ProxyService> proxyServices = synapseConfig.getProxyServices();
         Collection<SynapseEventSource> eventSources = synapseConfig.getEventSources();
         Collection<Startup> tasks = synapseConfig.getStartups();
@@ -355,6 +366,25 @@ public class MultiXMLConfigurationSerializer {
         return registryElem;
     }
 
+    public OMElement serializeTaskManager(TaskManager taskManager, SynapseConfiguration synapseConfig,
+                                              OMElement parent) throws Exception {
+        OMElement taskManagerElem = TaskManagerSerializer.serializetaskManager(null, taskManager);
+        if (!Boolean.valueOf(synapseConfig.getProperty(
+                MultiXMLConfigurationBuilder.SEPARATE_TASK_MANAGER_DEFINITION)) && parent != null) {
+            parent.addChild(taskManagerElem);
+            return taskManagerElem;
+        }
+
+        File taskManagerConf = new File(currentDirectory, MultiXMLConfigurationBuilder.TASK_MANAGER_FILE);
+        if (log.isDebugEnabled()) {
+            log.debug("Serializing Task Manager definition to : " + taskManagerConf.getPath());
+        }
+
+        writeToFile(taskManagerElem, taskManagerConf);
+        return taskManagerElem;
+    }
+
+
     public OMElement serializeProxy(ProxyService service, SynapseConfiguration synapseConfig,
                                     OMElement parent) throws Exception {
 
@@ -403,6 +433,10 @@ public class MultiXMLConfigurationSerializer {
                                    OMElement parent) throws Exception {
 
         File tasksDir = createDirectory(currentDirectory, MultiXMLConfigurationBuilder.TASKS_DIR);
+
+
+
+
         OMElement taskElem = StartupFinder.getInstance().serializeStartup(null, task);
 
         if (task.getFileName() != null) {
