@@ -35,7 +35,7 @@ import java.net.UnknownHostException;
 import java.util.*;
 
 public class StartUpController extends AbstractStartup {
-    private static final Log logger = LogFactory.getLog(StartUpController.class);
+    private static final Log logger = LogFactory.getLog(StartUpController.class.getName());
 
     private TaskDescription taskDescription;
 
@@ -48,13 +48,9 @@ public class StartUpController extends AbstractStartup {
     }
 
     public void destroy() {
-        if (taskDescription == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("There is no Task to be deleted");
-            }
+        if (!destroyTask()) {
             return;
         }
-        destroyTask();
         if (synapseTaskManager.isInitialized()) {
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
             if (taskScheduler != null && taskScheduler.isInitialized()) {
@@ -90,7 +86,11 @@ public class StartUpController extends AbstractStartup {
             Map<String, Object> map = new HashMap<String, Object>();
             map.put(TaskConstants.SYNAPSE_ENV, synapseEnvironment);
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
-            TaskManager taskManager = synapseTaskManager.getTaskManagerImpl(); // TODO: check NULL
+            TaskManager taskManager = synapseTaskManager.getTaskManagerImpl();
+            if (taskManager == null) {
+                logger.error("Could not initialize Start up controller. TaskManager not found.");
+                return;
+            }
             taskManager.setProperties(map);
             taskScheduler.init(synapseEnvironment.getSynapseConfiguration().getProperties(),
                     taskManager);
@@ -110,10 +110,17 @@ public class StartUpController extends AbstractStartup {
         }
     }
 
-    private void destroyTask() {
+    private boolean destroyTask() {
+        if (taskDescription == null) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("There is no Task to be deleted");
+            }
+            return false;
+        }
         if (task instanceof ManagedLifecycle) {
             ((ManagedLifecycle) task).destroy();
         }
+        return true;
     }
 
     private void loadTaskProperties() {
