@@ -16,21 +16,21 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms;
+package org.apache.synapse.protocol.jms;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
-import org.apache.synapse.inbound.jms.factory.CachedJMSConnectionFactory;
+import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class InboundJMSListener implements PollingProcessor {
-    private static final Log log = LogFactory.getLog(InboundJMSListener.class.getName());
+public class JMSProcessor implements PollingProcessor {
+    private static final Log log = LogFactory.getLog(JMSProcessor.class.getName());
 
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
@@ -41,23 +41,21 @@ public class InboundJMSListener implements PollingProcessor {
     private String injectingSeq;
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-
-    public InboundJMSListener(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
+    public JMSProcessor(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
         this.jmsProperties = jmsProperties;
         this.interval = pollInterval;
         this.injectingSeq = injectingSeq;
         this.onErrorSeq = onErrorSeq;
         this.synapseEnvironment = synapseEnvironment;
-    }
-
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    }    
 
     public void init() {
         log.info("Initializing inbound JMS listener for destination " + name);
         jmsConnectionFactory = new CachedJMSConnectionFactory(this.jmsProperties);
-        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, injectingSeq, onErrorSeq, synapseEnvironment);        
+        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties);        
         pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));
         scheduledExecutorService.scheduleAtFixedRate(pollingConsumer, 0, this.interval, TimeUnit.SECONDS);
     }

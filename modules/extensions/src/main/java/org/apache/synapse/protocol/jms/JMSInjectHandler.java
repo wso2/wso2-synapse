@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms;
+package org.apache.synapse.protocol.jms;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -44,7 +44,7 @@ import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.synapse.inbound.InboundEndpointUtils;
 import org.apache.synapse.inbound.InjectHandler;
-import org.apache.synapse.inbound.jms.JMSPollingConsumer;
+import org.apache.synapse.protocol.jms.JMSPollingConsumer;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants; 

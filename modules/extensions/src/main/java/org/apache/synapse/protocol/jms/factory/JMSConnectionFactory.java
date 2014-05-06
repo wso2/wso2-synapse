@@ -16,11 +16,11 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms.factory;
+package org.apache.synapse.protocol.jms.factory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.inbound.jms.JMSConstants;
+import org.apache.synapse.protocol.jms.JMSConstants;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -28,6 +28,16 @@ import javax.naming.InitialContext;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 import java.util.Properties;
+
+
+/**
+ * use of factory
+ * server down and up
+ * jms spec
+ * transport.jms.MessageSelector
+ * isDurable
+ * 
+ * */
 
 public class JMSConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory {
     private static final Log logger = LogFactory.getLog(JMSConnectionFactory.class.getName());
@@ -137,7 +147,7 @@ public class JMSConnectionFactory implements ConnectionFactory, QueueConnectionF
         return null;
     }
 
-    public Connection createConnection(String userName, String password) throws JMSException {
+    public Connection createConnection(String userName, String password) {
         try {
             if(this.destinationType.equals(JMSConstants.JMSDestinationType.QUEUE)) {
                 return ((QueueConnectionFactory) (this.connectionFactory)).createQueueConnection(userName, password);

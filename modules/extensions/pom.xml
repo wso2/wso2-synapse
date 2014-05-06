@@ -61,6 +61,8 @@
                             org.apache.synapse.mediators.spring.*,
                             org.apache.synapse.mediators.throttle.*,
                             org.apache.synapse.mediators.xquery.*,
+                            org.apache.synapse.inboundfactory.*,
+                            org.apache.synapse.protocol.*,
                         </Export-Package>
                         <Import-Package>
                             !org.apache.synapse.format.hessian.*,
@@ -69,6 +71,8 @@
                             !org.apache.synapse.mediators.spring.*,
                             !org.apache.synapse.mediators.throttle.*,
                             !org.apache.synapse.mediators.xquery.*,
+                            !org.apache.synapse.inboundfactory.*,
+                            !org.apache.synapse.protocol.*,                            
                             !javax.xml.namespace,
                             com.sun.phobos.script.*;resolution:=optional,
                             javax.xml.namespace; version=0.0.0,
@@ -299,6 +303,11 @@
             <artifactId>Saxon-HE</artifactId>
             <version>${saxon-HE.version}</version>
         </dependency>
+  	    <dependency>
+  	        <groupId>org.apache.commons</groupId>
+  	        <artifactId>commons-vfs2</artifactId>
+  	        <version>2.0-wso2v9-SNAPSHOT</version>
+  	    </dependency>        
     </dependencies>
     
     <properties>

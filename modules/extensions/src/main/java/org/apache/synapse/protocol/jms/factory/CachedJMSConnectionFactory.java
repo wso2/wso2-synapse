@@ -16,11 +16,11 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms.factory;
+package org.apache.synapse.protocol.jms.factory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.inbound.jms.JMSConstants;
+import org.apache.synapse.protocol.jms.JMSConstants;
 
 import javax.jms.*;
 import java.util.Map;
@@ -70,30 +70,23 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
         return super.getConnectionFactory();
     }
 
-    public Connection getConnection() {
+    public Connection getConnection(String userName, String password) {
         Connection connection = cachedConnections.get(connectionCount);
         if (connection == null) {
-            return createConnection();
+            return createConnection(userName, password);
         }
 
         return connection;
     }
 
     @Override
-    public Connection createConnection() {
-        Connection connection = super.createConnection();
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
+    public Connection createConnection(String userName, String password){
+        Connection connection = null;
+        if(userName == null || password == null){
+        	connection = super.createConnection();
+        }else{
+        	connection = super.createConnection(userName, password);
         }
-
-        return connection;
-    }
-
-    @Override
-    public Connection createConnection(String userName, String password) throws JMSException {
-        Connection connection = super.createConnection(userName, password);
         cachedConnections.put(connectionCount, connection);
         connectionCount++;
         if(connectionCount >= maxConnectionCount) {

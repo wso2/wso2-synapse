@@ -16,7 +16,7 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.vfs;
+package org.apache.synapse.protocol.file;
 
 import java.io.InputStream;
 import java.util.Properties;
@@ -41,7 +41,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.synapse.inbound.InjectHandler;
-import org.apache.synapse.inbound.jms.JMSPollingConsumer;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants; 
@@ -49,7 +48,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 
 public class FileInjectHandler implements InjectHandler {
 
-	private static final Log log = LogFactory.getLog(JMSPollingConsumer.class);
+	private static final Log log = LogFactory.getLog(FileInjectHandler.class);
 	
 	private String injectingSeq;
 	private String onErrorSeq;
