@@ -190,8 +190,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.synapse</groupId>
-			<artifactId>synapse-tasks</artifactId>
-            <version>2.1.2-wso2v4</version>
+			<artifactId>synapse-tasks</artifactId>       
 		</dependency>
 		<dependency>
 			<groupId>org.apache.synapse</groupId>
