@@ -135,7 +135,7 @@ public class JMSConnectionFactory implements ConnectionFactory, QueueConnectionF
 
     public Connection createConnection() {
         try {
-             if(this.destinationType.equals(JMSConstants.JMSDestinationType.QUEUE)) {
+             if(this.destinationType.equals(JMSConstants.JMSDestinationType.QUEUE )) {
                  return ((QueueConnectionFactory) (this.connectionFactory)).createQueueConnection();
              } else if(this.destinationType.equals(JMSConstants.JMSDestinationType.TOPIC)) {
                  return ((TopicConnectionFactory) (this.connectionFactory)).createTopicConnection();
