@@ -24,12 +24,15 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
 import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
+import org.apache.synapse.task.TaskStartupObserver;
+
+
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class JMSProcessor implements PollingProcessor {
+public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
     private static final Log log = LogFactory.getLog(JMSProcessor.class.getName());
 
 
@@ -56,10 +59,13 @@ public class JMSProcessor implements PollingProcessor {
         log.info("Initializing inbound JMS listener for destination " + name);
         jmsConnectionFactory = new CachedJMSConnectionFactory(this.jmsProperties);
         pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties);        
-        pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));
-        scheduledExecutorService.scheduleAtFixedRate(pollingConsumer, 0, this.interval, TimeUnit.SECONDS);
+        pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));        
     }
 
+    public void start() {
+        log.info("Inbound JMS listener Started for destination " + name);
+        scheduledExecutorService.scheduleAtFixedRate(pollingConsumer, 0, this.interval, TimeUnit.SECONDS);
+    } 
     
     public void destroy() {
         log.info("Inbound JMS listener ended for destination " + name);
@@ -72,4 +78,8 @@ public class JMSProcessor implements PollingProcessor {
     public void setName(String name) {
         this.name = name;
     }
+
+	public void update() {
+		start();	
+	}
 }

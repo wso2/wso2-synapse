@@ -350,7 +350,7 @@ public class FilePollingConsumer implements Runnable, PollingConsumer {
                                 if (fileLock && !skipUnlock) {
                                     VFSUtils.releaseLock(fsManager, child);
                                 }
-                                if(injectHandler != null){
+                                if(injectHandler == null){
                                 	return child;
                                 }                                
                             } 

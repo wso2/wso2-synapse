@@ -8,23 +8,25 @@ import org.apache.synapse.core.SynapseEnvironment;
 
 public class FileTask implements org.apache.synapse.task.Task, ManagedLifecycle{
     private static final Log logger = LogFactory.getLog(FileTask.class.getName());
-    private static final int DEFAULT_CONNECTION_TIMEOUT = 20000;
 
-    public FileTask() {
-        System.out.println("##################################333 XXXXXXXXXXXXXXXXXXXXXX");
+    private FilePollingConsumer fileScanner;
+    
+    public FileTask(FilePollingConsumer fileScanner) {
+    	logger.info("File Task initalize.");
+    	this.fileScanner = fileScanner;
     }
 
     public void execute() {
-        System.out.println("org.wso2.carbon.ntaskint.core.Task Executing task---------------->");
-
+    	logger.info("File Task executing.");
+    	fileScanner.execute();
     }
 
 
     public void init(SynapseEnvironment synapseEnvironment) {
-        logger.info("Initializing Task... XXXXXXXXXXXXXXXXXXXXXX");
+        logger.info("Initializing Task.");
     }
 
     public void destroy() {
-        logger.info("Destroying Task... XXXXXXXXXXXXXXXXXXXXXX");
+        logger.info("Destroying Task. ");
     }
 }

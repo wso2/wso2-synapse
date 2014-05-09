@@ -22,14 +22,16 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
 import org.apache.synapse.startup.quartz.StartUpController;
+import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
+
+import org.apache.synapse.task.TaskStartupObserver;
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-public class VFSProcessor implements PollingProcessor,Runnable {
+public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
 
 	private FilePollingConsumer fileScanner;
     private String name;
@@ -39,6 +41,7 @@ public class VFSProcessor implements PollingProcessor,Runnable {
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
     private static final Log log = LogFactory.getLog(VFSProcessor.class);
+    private StartUpController startUpController;
     
     public VFSProcessor(String name, Properties vfsProperties, long scanInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
@@ -57,37 +60,29 @@ public class VFSProcessor implements PollingProcessor,Runnable {
     	fileScanner.registerHandler(new FileInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, vfsProperties));
     	//scheduledExecutorService.scheduleAtFixedRate(fileScanner, 0, this.interval, TimeUnit.SECONDS);
     	start();
-    	/*Thread t = new Thread(this);
-    	t.start();*/
     }
     
     public void destroy() {
         log.info("Inbound file listener ended " + name);
         //scheduledExecutorService.shutdown();
+        startUpController.destroy();
     }
+      
     
-    public void run() {        
+    public void start() {    
+    	log.info("Inbound file listener " + name + " starting ...");
         try {
-        	Thread.sleep(10000);
-        	System.out.println("####################################################");
-        	start();
-        } catch (Exception e) {
-            System.err.println("error in executing: It will no longer be run!");
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }    
-    
-    private void start() {    	
-        try {
+        	Task task = new FileTask(fileScanner);
         	TaskDescription taskDescription = new TaskDescription();
         	taskDescription.setName("testVFS");
         	taskDescription.setTaskGroup("VFS");
-        	taskDescription.setTaskClass(getClass().getClassLoader().loadClass("org.apache.synapse.protocol.file.FileTask"));
         	taskDescription.setInterval(5000);
         	taskDescription.setIntervalInMs(true);
-
-        	StartUpController startUpController = new StartUpController();
+        	taskDescription.setAllowConcurrentExecutions(false);
+        	taskDescription.setStartupObserver(this);
+        	taskDescription.addResource(TaskDescription.INSTANCE, task);
+        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        	startUpController = new StartUpController();
         	startUpController.setTaskDescription(taskDescription);
         	startUpController.init(synapseEnvironment);
 
@@ -106,6 +101,10 @@ public class VFSProcessor implements PollingProcessor,Runnable {
     public void setName(String name) {
         this.name = name;
     }
+
+	public void update() {
+		start();
+	}
 }
 
 
