@@ -79,7 +79,7 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
         	taskDescription.setInterval(5000);
         	taskDescription.setIntervalInMs(true);
         	taskDescription.setAllowConcurrentExecutions(false);
-        	taskDescription.setStartupObserver(this);
+        	taskDescription.setTaskStartupObserver(this);
         	taskDescription.addResource(TaskDescription.INSTANCE, task);
         	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         	startUpController = new StartUpController();

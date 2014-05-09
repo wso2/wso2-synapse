@@ -22,8 +22,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
+import org.apache.synapse.protocol.file.FileTask;
 import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
+import org.apache.synapse.startup.quartz.StartUpController;
+import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskStartupObserver;
 
 
@@ -44,8 +48,8 @@ public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
     private String injectingSeq;
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
+    private StartUpController startUpController;
+    
     public JMSProcessor(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
         this.jmsProperties = jmsProperties;
@@ -59,17 +63,38 @@ public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
         log.info("Initializing inbound JMS listener for destination " + name);
         jmsConnectionFactory = new CachedJMSConnectionFactory(this.jmsProperties);
         pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties);        
-        pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));        
+        pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));
+        start();
     }
 
-    public void start() {
-        log.info("Inbound JMS listener Started for destination " + name);
-        scheduledExecutorService.scheduleAtFixedRate(pollingConsumer, 0, this.interval, TimeUnit.SECONDS);
-    } 
+    public void start() {    
+    	log.info("Inbound JMS listener Started for destination " + name);
+        try {
+        	Task task = new JMSTask(pollingConsumer);
+        	TaskDescription taskDescription = new TaskDescription();
+        	taskDescription.setName("testVFS");
+        	taskDescription.setTaskGroup("VFS");
+        	taskDescription.setInterval(5000);
+        	taskDescription.setIntervalInMs(true);
+        	taskDescription.setAllowConcurrentExecutions(false);
+        	taskDescription.setTaskStartupObserver(this);
+        	taskDescription.addResource(TaskDescription.INSTANCE, task);
+        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        	startUpController = new StartUpController();
+        	startUpController.setTaskDescription(taskDescription);
+        	startUpController.init(synapseEnvironment);
+
+        } catch (Exception e) {
+            String msg = "Error starting up Scheduler : " + e.getMessage();
+            e.printStackTrace();
+            //log.fatal(msg, e);
+            //throw new SynapseException(msg, e);
+        }   	
+    }    
     
     public void destroy() {
         log.info("Inbound JMS listener ended for destination " + name);
-        scheduledExecutorService.shutdown();
+        startUpController.destroy();
     }    
     public String getName() {
         return name;

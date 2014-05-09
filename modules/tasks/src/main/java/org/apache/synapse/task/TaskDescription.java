@@ -35,6 +35,7 @@ public final class TaskDescription {
     private String taskMgrClassName;
     /** Where to receive the message */
     private String sequenceName;
+    private TaskStartupObserver taskStartupObserver;
     private String proxyName;
     private String recipeName;
     private String receiver;
@@ -418,4 +419,13 @@ public final class TaskDescription {
     public void setVolatility(boolean volatility) {
         this.volatility = volatility;
     }
+
+	public TaskStartupObserver getTaskStartupObserver() {
+		return taskStartupObserver;
+	}
+
+	public void setTaskStartupObserver(TaskStartupObserver taskStartupObserver) {
+		this.taskStartupObserver = taskStartupObserver;
+	}
+    
 }

@@ -80,8 +80,10 @@ public class StartUpController extends AbstractStartup {
         resolveTaskImpl(taskDescription, synapseEnvironment);
         loadTaskProperties();
         initializeTask(synapseEnvironment);
-        taskDescription.addResource(TaskDescription.INSTANCE, task);
-        taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        if(taskDescription.getResource(TaskDescription.INSTANCE) == null || taskDescription.getResource(TaskDescription.CLASSNAME) == null){
+        	taskDescription.addResource(TaskDescription.INSTANCE, task);
+        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        }
         try {
             Map<String, Object> map = new HashMap<String, Object>();
             map.put(TaskConstants.SYNAPSE_ENV, synapseEnvironment);
@@ -95,6 +97,7 @@ public class StartUpController extends AbstractStartup {
             taskScheduler.init(synapseEnvironment.getSynapseConfiguration().getProperties(),
                     taskManager);
             if (!submitTask(taskScheduler, taskDescription)) {
+            	repository.removeTaskDescription(taskDescription.getName());
                 logger.error("Could not submit task [" + taskDescription.getName() + "] to the Scheduler.");
             }
         } catch (Exception e) {
@@ -147,7 +150,7 @@ public class StartUpController extends AbstractStartup {
             return false;
         }
         if (taskScheduler != null) {
-            taskScheduler.scheduleTask(taskDescription);
+            return taskScheduler.scheduleTask(taskDescription);
         } else {
             if (logger.isDebugEnabled()) {
                 logger.debug("TaskScheduler cannot be found for :" +
@@ -156,7 +159,6 @@ public class StartUpController extends AbstractStartup {
             }
             return false;
         }
-        return true;
     }
 
     private boolean processPinnedServers(TaskDescription taskDescription, SynapseEnvironment synapseEnvironment) {
