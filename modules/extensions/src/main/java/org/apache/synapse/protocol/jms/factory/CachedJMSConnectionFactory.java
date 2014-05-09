@@ -28,40 +28,20 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class CachedJMSConnectionFactory extends JMSConnectionFactory {
-    private static final Log logger = LogFactory.getLog(CachedJMSConnectionFactory.class.getName());
-
-    private Map<Integer, Connection> cachedConnections = new ConcurrentHashMap<Integer, Connection>();
-    private Map<Integer, Session> cachedSessions = new ConcurrentHashMap<Integer, Session>();
-
-    private volatile int connectionCount = 0;
-    private volatile int sessionCount = 0;
+    private static final Log logger = LogFactory.getLog(CachedJMSConnectionFactory.class);
 
     private int cacheLevel = 0;
-    private int maxConnectionCount = 10;
-    private int maxSessionCount = 10;
 
+    private Connection cachedConnection = null;
+    private Session cachedSession = null;
+    
     public CachedJMSConnectionFactory(Properties properties) {
         super(properties);
-
-        String maxSharedConnectionCount = properties.getProperty(JMSConstants.MAX_JMS_CONNECTIONS);
-        if (null != maxSharedConnectionCount && !"".equals(maxSharedConnectionCount)) {
-            this.maxConnectionCount = Integer.parseInt(maxSharedConnectionCount);
-        } else {
-            this.maxConnectionCount = 10;
-        }
-
         String cacheLevel = properties.getProperty(JMSConstants.PARAM_CACHE_LEVEL);
         if(null != cacheLevel && !"".equals(cacheLevel)) {
             this.cacheLevel = Integer.parseInt(cacheLevel);
         } else {
             this.cacheLevel = JMSConstants.CACHE_NONE;
-        }
-
-        String maxSharedSessionCount = properties.getProperty(JMSConstants.MAX_JMS_SESSIONS);
-        if (null != maxSharedSessionCount && !"".equals(maxSharedSessionCount)) {
-            this.maxSessionCount = Integer.parseInt(maxSharedSessionCount);
-        } else {
-            this.maxSessionCount = 10;
         }
     }
 
@@ -70,12 +50,22 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
         return super.getConnectionFactory();
     }
 
-    public Connection getConnection(String userName, String password) {
-        Connection connection = cachedConnections.get(connectionCount);
-        if (connection == null) {
-            return createConnection(userName, password);
+    public Connection getConnection(String userName, String password) { 
+    	Connection connection = null;
+        if (cachedConnection == null) {
+        	connection = createConnection(userName, password);
+        }else{
+        	connection = cachedConnection;
         }
-
+        if(connection == null){
+        	return null;
+        }
+        try {
+        	connection.start();
+        } catch (JMSException e) {
+            logger.error("JMS Exception while starting connection for factory '" + this.connectionFactoryString + "' " + e.getMessage());
+            resetCache();
+        }        
         return connection;
     }
 
@@ -87,116 +77,57 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
         }else{
         	connection = super.createConnection(userName, password);
         }
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
+        if(this.cacheLevel >= JMSConstants.CACHE_CONNECTION){
+        	cachedConnection = connection;
         }
-
         return connection;
     }
-
-    @Override
-    public QueueConnection createQueueConnection() throws JMSException {
-        QueueConnection connection = super.createQueueConnection();
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
-        }
-
-        return connection;
-    }
-
-    @Override
-    public QueueConnection createQueueConnection(String userName, String password) throws JMSException {
-        QueueConnection connection = super.createQueueConnection(userName, password);
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
-        }
-
-        return connection;
-    }
-
-    @Override
-    public TopicConnection createTopicConnection() throws JMSException {
-        TopicConnection connection = super.createTopicConnection();
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
-        }
-
-        return connection;
-    }
-
-    @Override
-    public TopicConnection createTopicConnection(String userName, String password) throws JMSException {
-        TopicConnection connection = super.createTopicConnection(userName, password);
-        cachedConnections.put(connectionCount, connection);
-        connectionCount++;
-        if(connectionCount >= maxConnectionCount) {
-            connectionCount = 0;
-        }
-
-        return connection;    }
 
     @Override
     public Session getSession(Connection connection) {
-        Session cSession = cachedSessions.get(connectionCount);
-        if (cSession == null) {
+        if (cachedSession == null) {
             return createSession(connection);
-        }
-
-        return cSession;
+        }else{
+        	return cachedSession;
+        }      
     }
 
     @Override
     protected Session createSession(Connection connection) {
-        Session cSession = super.createSession(connection);
-        cachedSessions.put(sessionCount, cSession);
-        sessionCount++;
-        if(sessionCount >= maxSessionCount) {
-            sessionCount = 0;
+        Session session = super.createSession(connection);
+        if(this.cacheLevel >= JMSConstants.CACHE_SESSION){
+        	cachedSession = session;
         }
-
-        return cSession;
-    }
-
-    public void start() {
-        try {
-            for(Map.Entry<Integer, Connection> c: cachedConnections.entrySet()) {
-                c.getValue().start();
-            }
-        } catch (JMSException e) {
-            logger.error("JMS Exception while starting connection for factory '" + this.connectionFactoryString + "' " + e.getMessage());
-        }
-    }
-
-    public void stop() {
-        try {
-            for(Map.Entry<Integer, Connection> c: cachedConnections.entrySet()) {
-                c.getValue().stop();
-            }        } catch (JMSException e) {
-            logger.error("JMS Exception while stopping connection for factory '" + this.connectionFactoryString + "' " + e.getMessage());
-        }
+        return session;
     }
 
     public boolean closeConnection() {
         try {
-            for(Map.Entry<Integer, Connection> c: cachedConnections.entrySet()) {
-                c.getValue().close();
-            }
+        	if(cachedConnection != null){
+        		cachedConnection.close();
+        	}
             return true;
         } catch (JMSException e) {
             logger.error("JMS Exception while closing the connection.");
         }
-
         return false;
     }
 
+    private void resetCache(){
+    	if(cachedConnection != null){
+    		try{
+    			cachedConnection.close();
+    		}catch(JMSException e){}
+    		cachedConnection = null;
+    	}
+    	if(cachedSession != null){
+    		try{
+    			cachedSession.close();
+    		}catch(JMSException e){}
+    		cachedSession = null;
+    	}    	
+    }
+    
     public JMSConstants.JMSDestinationType getDestinationType() {
         return this.destinationType;
     }

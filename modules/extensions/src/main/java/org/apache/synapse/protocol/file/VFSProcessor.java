@@ -21,13 +21,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
+import org.apache.synapse.startup.quartz.StartUpController;
+import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskDescription;
+
+import org.apache.synapse.task.TaskStartupObserver;
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-public class VFSProcessor implements PollingProcessor {
+public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
 
 	private FilePollingConsumer fileScanner;
     private String name;
@@ -37,6 +41,7 @@ public class VFSProcessor implements PollingProcessor {
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
     private static final Log log = LogFactory.getLog(VFSProcessor.class);
+    private StartUpController startUpController;
     
     public VFSProcessor(String name, Properties vfsProperties, long scanInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
@@ -53,90 +58,41 @@ public class VFSProcessor implements PollingProcessor {
     	log.info("Inbound file listener started " + name);
     	fileScanner = new FilePollingConsumer(vfsProperties, name, synapseEnvironment, interval);
     	fileScanner.registerHandler(new FileInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, vfsProperties));
-    	scheduledExecutorService.scheduleAtFixedRate(fileScanner, 0, this.interval, TimeUnit.SECONDS);
+    	//scheduledExecutorService.scheduleAtFixedRate(fileScanner, 0, this.interval, TimeUnit.SECONDS);
+    	start();
     }
     
     public void destroy() {
         log.info("Inbound file listener ended " + name);
-        scheduledExecutorService.shutdown();
+        //scheduledExecutorService.shutdown();
+        startUpController.destroy();
     }
+      
     
-    /*public void run() {        
+    public void start() {    
+    	log.info("Inbound file listener " + name + " starting ...");
         try {
-        	Thread.sleep(10000);
-        	System.out.println("####################################################");
-        	start();
-        } catch (Exception e) {
-            System.err.println("error in executing: It will no longer be run!");
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    } */   
-    
-    /*public void start() {    	
-        try {
-            scheduledExecutorService.scheduleAtFixedRate(fileScanner, 0, this.interval, TimeUnit.SECONDS);
-        	/*TaskDescription taskDescription = new TaskDescription();
+        	Task task = new FileTask(fileScanner);
+        	TaskDescription taskDescription = new TaskDescription();
         	taskDescription.setName("testVFS");
         	taskDescription.setTaskGroup("VFS");
-        	taskDescription.setTaskClass(getClass().getClassLoader().loadClass("org.wso2.carbon.mediation.task.VFSTask"));
         	taskDescription.setInterval(5000);
-        	String taskManagerClassName = "org.wso2.carbon.ntaskint.core.NTaskTaskManager";
-            SynapseTaskManager synapseTaskManager = synapseEnvironment.getTaskManager();
-            if (!synapseTaskManager.isInitialized()) {
-                //log.warn("SynapseTaskManager is not properly initialized. Initializing now with " + "default parameters.");
-                synapseTaskManager.init(null, null);
-            }       
-            
-            TaskDescriptionRepository repository = synapseTaskManager.getTaskDescriptionRepository();
-            if (repository == null) {
-                //handleException("Task Description Repository cannot be found");
-                return;
-            }
-            repository.addTaskDescription(taskDescription);
-            /*if (!processPinnedServers(taskDescription, synapseEnvironment)) {
-                return;
-            }*/
-            //resolveTaskImpl(taskDescription, synapseEnvironment);
-            /*Set properties = taskDescription.getXmlProperties();
-            for (Object property : properties) {
-                OMElement prop = (OMElement) property;
-                log.debug("Found Property : " + prop.toString());
-                PropertyHelper.setStaticProperty(prop, task);
-            }
-            if (task instanceof ManagedLifecycle) {
-                ((ManagedLifecycle) task).init(synapseEnvironment);
-            }*/
-            //taskDescription.addResource(TaskDescription.INSTANCE, task);
-            /*taskDescription.addResource(TaskDescription.CLASSNAME, "org.wso2.carbon.mediation.task.VFSTask");
-            //addTaskResources(taskDescription, synapseEnvironment);
+        	taskDescription.setIntervalInMs(true);
+        	taskDescription.setAllowConcurrentExecutions(false);
+        	taskDescription.setTaskStartupObserver(this);
+        	taskDescription.addResource(TaskDescription.INSTANCE, task);
+        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        	startUpController = new StartUpController();
+        	startUpController.setTaskDescription(taskDescription);
+        	startUpController.init(synapseEnvironment);
 
-            Map<String, Object> properties = new HashMap<String, Object>();
-            //map.put(TaskConstants.SYNAPSE_ENV, synapseEnvironment);
-            TaskManager taskManagerImpl = null;
-            try {
-                Object obj = getClass().getClassLoader().loadClass("org.wso2.carbon.ntaskint.core.NTaskTaskManager").newInstance();
-                taskManagerImpl = (TaskManager) obj;
-                taskManagerImpl.setProperties(properties);
-            } catch (Exception e) {
-                //handleException("Cannot instantiate task : ", e);
-            	e.printStackTrace();
-            }                        
-            
-            //addXmlProperties(taskDescription.getXmlProperties(), taskManagerImpl);
-            TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
-            taskScheduler.init(synapseEnvironment.getSynapseConfiguration().getProperties(), taskManagerImpl);
-            taskScheduler.scheduleTask(taskDescription);
-            /*if (!submitTask(taskScheduler, taskDescription)) {
-                //log.error("Could not submit task [" + taskDescription.getName() + "] to the Scheduler.");
-            }*/
-        /*} catch (Exception e) {
+        } catch (Exception e) {
             String msg = "Error starting up Scheduler : " + e.getMessage();
             e.printStackTrace();
             //log.fatal(msg, e);
             //throw new SynapseException(msg, e);
         }   	
-    }*/
+    }
 
     public String getName() {
         return name;
@@ -145,6 +101,10 @@ public class VFSProcessor implements PollingProcessor {
     public void setName(String name) {
         this.name = name;
     }
+
+	public void update() {
+		start();
+	}
 }
 
 

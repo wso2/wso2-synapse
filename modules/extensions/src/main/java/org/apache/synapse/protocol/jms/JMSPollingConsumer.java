@@ -36,6 +36,7 @@ import org.apache.synapse.inbound.InjectHandler;
 import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import javax.jms.*;
+
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -44,22 +45,15 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
     private static final Log logger = LogFactory.getLog(JMSPollingConsumer.class.getName());
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
-    private Connection connection;
-    private Session session;
-    private Destination destination;
-    private MessageConsumer messageConsumer;
     private InjectHandler injectHandler;
     private Properties jmsProperties;
-
+    private String strUserName;
+    private String strPassword;
+    
     public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, Properties jmsProperties) {
         this.jmsConnectionFactory = jmsConnectionFactory;
-        String strUserName = jmsProperties.getProperty(JMSConstants.PARAM_JMS_USERNAME);
-        String strPassword = jmsProperties.getProperty(JMSConstants.PARAM_JMS_PASSWORD);
-        this.connection = jmsConnectionFactory.getConnection(strUserName, strPassword);
-        this.jmsConnectionFactory.start(connection);
-        this.session = jmsConnectionFactory.getSession(connection);
-        this.destination = jmsConnectionFactory.getDestination(connection);
-        this.messageConsumer = createMessageConsumer();
+        strUserName = jmsProperties.getProperty(JMSConstants.PARAM_JMS_USERNAME);
+        strPassword = jmsProperties.getProperty(JMSConstants.PARAM_JMS_PASSWORD);        
         this.jmsProperties = jmsProperties;
     }
     
@@ -79,7 +73,13 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
         if(logger.isDebugEnabled()) {
             logger.debug("run() - polling messages");
         }
-
+        Connection connection = jmsConnectionFactory.getConnection(strUserName, strPassword);
+        if(connection == null){
+        	return null;
+        }
+        Session session = jmsConnectionFactory.getSession(connection);
+        Destination destination = jmsConnectionFactory.getDestination(connection);
+        MessageConsumer messageConsumer = createMessageConsumer(session, destination);
         try {
             Message msg = messageConsumer.receive(1);
             if(null == msg) {
@@ -88,89 +88,74 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
                 }
                 return null;
             }
-
-            if(!JMSUtils.inferJMSMessageType(msg).equals(TextMessage.class.getName())) {
-                logger.error("JMS Inbound transport support JMS TextMessage type only.");
-                return null;
-            }           
-
-            if(injectHandler != null){
-            	injectHandler.invoke(msg);
-            }else{
-            	return msg;            	
+            while(msg != null){
+	            if(!JMSUtils.inferJMSMessageType(msg).equals(TextMessage.class.getName())) {
+	                logger.error("JMS Inbound transport support JMS TextMessage type only.");
+	                return null;
+	            }           
+	
+	            if(injectHandler != null){
+	            	injectHandler.invoke(msg);
+	            }else{
+	            	return msg;            	
+	            }
+	            msg = messageConsumer.receive(1);
             }
         } catch (JMSException e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
+        }finally{
+        	try{
+        		messageConsumer.close();
+        	}catch(JMSException e){}
         }
         return null;
     }
 
-    public MessageConsumer getMessageConsumer(String messageSelector) {
-        if(messageConsumer != null) {
-            return messageConsumer;
-        }
-
-        return createMessageConsumer(messageSelector);
-    }
-
-    public MessageConsumer getMessageConsumer() {
-        if(messageConsumer != null) {
-            return messageConsumer;
-        }
-
-        return createMessageConsumer();
-    }
-
-    private MessageConsumer createMessageConsumer() {
+    private MessageConsumer createMessageConsumer(Session session, Destination destination) {
         try {
-            messageConsumer = this.session.createConsumer(destination);
+        	MessageConsumer messageConsumer = session.createConsumer(destination);
             return messageConsumer;
         } catch (JMSException e) {
             logger.error("JMS Exception while creating consumer. " + e.getMessage());
         }
-
         return null;
     }
 
-    private MessageConsumer createMessageConsumer(String messageSelector) {
-        try {
-            messageConsumer = this.session.createConsumer(destination, messageSelector);
-            return messageConsumer;
-        } catch (JMSException e) {
-            logger.error("JMS Exception while creating consumer. " + e.getMessage());
-        }
+	public void close() throws JMSException {
+		// TODO Auto-generated method stub
+		
+	}
 
-        return null;
-    }
+	public MessageListener getMessageListener() throws JMSException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
+	public String getMessageSelector() throws JMSException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    public String getMessageSelector() throws JMSException {
-        return messageConsumer.getMessageSelector();
-    }
+	public Message receive() throws JMSException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    public MessageListener getMessageListener() throws JMSException {
-        return messageConsumer.getMessageListener();
-    }
+	public Message receive(long arg0) throws JMSException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    public void setMessageListener(MessageListener messageListener) throws JMSException {
-        messageConsumer.setMessageListener(messageListener);
-    }
+	public Message receiveNoWait() throws JMSException {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    public Message receive() throws JMSException {
-        return messageConsumer.receive();
-    }
+	public void setMessageListener(MessageListener arg0) throws JMSException {
+		// TODO Auto-generated method stub
+		
+	}
 
-    public Message receive(long l) throws JMSException {
-        return messageConsumer.receive(l);
-    }
-
-    public Message receiveNoWait() throws JMSException {
-        return messageConsumer.receiveNoWait();
-    }
-
-    public void close() throws JMSException {
-        messageConsumer.close();
-    }
 }
