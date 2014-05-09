@@ -95,7 +95,11 @@ public class MultiXMLConfigurationBuilder {
 
     public static final String REGISTRY_FILE       = "registry.xml";
 
+    public static final String TASK_MANAGER_FILE       = "task-manager.xml";
+
     public static final String SEPARATE_REGISTRY_DEFINITION = "__separateRegDef";
+
+    public static final String SEPARATE_TASK_MANAGER_DEFINITION = "__separateTaskManagerDef";
 
     private static final String[] extensions = { "xml" };
 
@@ -124,6 +128,16 @@ public class MultiXMLConfigurationBuilder {
                     + " as the registry, any definitions in the "+ REGISTRY_FILE +
                     " will be neglected");
         }
+
+        if (synapseConfig.getTaskManager() == null) {
+            // If the synapse.xml does not define a taskManager look for a task-manager.xml
+            createTaskManager(synapseConfig, root, properties);
+        } else if (log.isDebugEnabled()) {
+            log.debug("Using the task manager defined in the " + SynapseConstants.SYNAPSE_XML
+                    + " as the task manager, any definitions in the "+ TASK_MANAGER_FILE +
+                    " will be neglected");
+        }
+
 
         createSynapseImports(synapseConfig, root, properties);
         createLocalEntries(synapseConfig, root, properties);
@@ -189,6 +203,27 @@ public class MultiXMLConfigurationBuilder {
         } catch (Exception e) {
             String msg = "Registry configuration cannot be built from : " + registryDef.getName();
             handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_REGISTRY, msg, e);
+        }
+    }
+
+    private static void createTaskManager(SynapseConfiguration synapseConfig, String rootDirPath,
+                                       Properties properties) {
+
+        File taskManagerDef = new File(rootDirPath, TASK_MANAGER_FILE);
+        try {
+            if (taskManagerDef.exists() && taskManagerDef.isFile()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Initializing Synapse taskManager from the configuration at : " +
+                            taskManagerDef.getPath());
+                }
+                OMElement document = getOMElement(taskManagerDef);
+                SynapseXMLConfigurationFactory.defineTaskManager(synapseConfig, document, properties);
+                synapseConfig.setProperty(SEPARATE_TASK_MANAGER_DEFINITION,
+                        String.valueOf(Boolean.TRUE));
+            }
+        } catch (Exception e) {
+            String msg = "Task Manager configuration cannot be built from : " + taskManagerDef.getName();
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_TASK_MANAGER, msg, e);
         }
     }
 

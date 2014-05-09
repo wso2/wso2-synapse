@@ -58,6 +58,7 @@ import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
@@ -94,6 +95,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * is supported
      */
     private Registry registry = null;
+
+
+
+    private TaskManager taskManager = null;
 
     /**
      * This holds the default QName of the configuration.
@@ -1862,6 +1867,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public Map<String, Object> getDecryptedCacheMap() {
 		return decryptedCacheMap;
 	}
+
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
+
+    public void setTaskManager(TaskManager taskManager) {
+        this.taskManager = taskManager;
+    }
     
 
 	private void assertAlreadyExists(String key, String type) {

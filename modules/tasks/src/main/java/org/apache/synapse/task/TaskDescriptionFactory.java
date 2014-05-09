@@ -64,7 +64,7 @@ public class TaskDescriptionFactory {
             String group = el.getAttributeValue(
                     new QName(NULL_NAMESPACE, "group"));
             if (group != null) {
-                taskDescription.setGroup(group);
+                taskDescription.setTaskGroup(group);
             }
 
             // set the task class
@@ -76,7 +76,7 @@ public class TaskDescriptionFactory {
                 } catch (Exception e) {
                     handleException("Failed to load task class " + classname, e);
                 }
-                taskDescription.setTaskClass(classname);
+                taskDescription.setTaskImplClassName(classname);
             } else {
                 log.warn("TaskClass cannot be found." +
                         "Task implementation may need a task class if there is no default one");
@@ -84,7 +84,7 @@ public class TaskDescriptionFactory {
             
             OMElement descElem = el.getFirstChildWithName(createQName(DESCRIPTION, tagetNamespace));
             if (descElem != null) {
-                taskDescription.setDescription(descElem.getText());
+                taskDescription.setTaskDescription(descElem.getText());
             }
 
             // set pinned server list
@@ -112,7 +112,7 @@ public class TaskDescriptionFactory {
             while (it.hasNext()) {
                 OMElement prop = (OMElement) it.next();
                 if (PropertyHelper.isStaticProperty(prop)) {
-                    taskDescription.addProperty(prop);
+                    taskDescription.setXmlProperty(prop);
                 } else {
                     handleException("Tasks does not support dynamic properties");
                 }
@@ -135,6 +135,7 @@ public class TaskDescriptionFactory {
                 if (once != null && Boolean.TRUE.toString().equals(once.getAttributeValue())) {
                     taskDescription.setCount(1);
                     taskDescription.setInterval(1);
+                    taskDescription.setIntervalInMs(false);
                 }
 
                 OMAttribute repeatInterval = trigger.getAttribute(new QName("interval"));
@@ -147,6 +148,7 @@ public class TaskDescriptionFactory {
                                 repeatInterval.getAttributeValue());
                         long repeatIntervalInMillis = repeatIntervalInSeconds * 1000;
                         taskDescription.setInterval(repeatIntervalInMillis);
+                        taskDescription.setIntervalInMs(true);
                     } catch (Exception e) {
                         handleException("Failed to parse trigger interval as a long value", e);
                     }
@@ -156,16 +158,18 @@ public class TaskDescriptionFactory {
                 if (expr == null && taskDescription.getInterval() == 0) {
                     taskDescription.setCount(1);
                     taskDescription.setInterval(1);
+                    taskDescription.setIntervalInMs(false);
                 } else if (expr != null && taskDescription.getInterval() > 0) {
                     handleException("Trigger syntax error : " +
                             "both cron and simple trigger attributes are present");
                 } else if (expr != null && expr.getAttributeValue() != null) {
-                    taskDescription.setCron(expr.getAttributeValue());
+                    taskDescription.setCronExpression(expr.getAttributeValue());
                 }
 
             } else {
                 taskDescription.setCount(1);
                 taskDescription.setInterval(1);
+                taskDescription.setIntervalInMs(false);
             }
 
             return taskDescription;

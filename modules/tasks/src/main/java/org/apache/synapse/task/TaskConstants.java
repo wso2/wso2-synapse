@@ -26,4 +26,6 @@ public final class TaskConstants {
     public static final String TASK_SCHEDULER = "task_scheduler";
     /* Key to refer Task Description Repository*/
     public static final String TASK_DESCRIPTION_REPOSITORY = "task_description_repository";
+
+    public static final String SYNAPSE_ENV = "SynapseEnvironment";
 }

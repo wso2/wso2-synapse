@@ -50,6 +50,7 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.registry.Registry;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.task.TaskManager;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -100,6 +101,8 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineExecutor(config, elt, properties);
                 } else if(XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
                     defineMessageStore(config, elt, properties);
+                } else if(XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
+                    defineTaskManager(config, elt, properties);
                 } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())){
                     defineMessageProcessor(config, elt, properties);
                 } else if (StartupFinder.getInstance().isStartup(elt.getQName())) {
@@ -134,6 +137,16 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         Startup startup = StartupFinder.getInstance().getStartup(elem, properties);
         config.addStartup(startup);
         return startup;
+    }
+
+    public static TaskManager defineTaskManager(SynapseConfiguration config, OMElement elem,
+                                                Properties properties) {
+        if (config.getTaskManager() != null) {
+            handleException("Only one remote taskManager can be defined within a configuration");
+        }
+        TaskManager taskManager = TaskManagerFactory.createTaskManager(elem, properties);
+        config.setTaskManager(taskManager);
+        return taskManager;
     }
 
     public static ProxyService defineProxy(SynapseConfiguration config, OMElement elem,
