@@ -59,7 +59,7 @@ public class InboundEndpoint implements ManagedLifecycle {
         pollingProcessor = getPollingProcessor();
         if(pollingProcessor != null){
         	pollingProcessor.init();
-        }else{
+        }else{ 
         	log.error("Polling processor not found for Inbound EP : " + name + " Protocol: " + protocol);
         }
     }

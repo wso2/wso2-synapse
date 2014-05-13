@@ -136,6 +136,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Undeployment of the Inbound Endpoint named : "
                             + artifactName + " : Completed");
                 }
+                inboundEndpoint.destroy();
                 log.info("Inbound Endpoint named '" + inboundEndpoint.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint " + artifactName + " has already been undeployed");

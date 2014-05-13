@@ -1383,11 +1383,16 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             seqTemplate.destroy();
         }
 
+        //destroy inbound endpoint
+		for (InboundEndpoint endpoint : getInboundEndpoints()) {
+			endpoint.destroy();
+		}         
+        
         // destroy the managed endpoints
         for (Endpoint endpoint : getDefinedEndpoints().values()) {
             endpoint.destroy();
         }
-
+        
         // destroy the startups
         for (ManagedLifecycle stp : startups.values()) {
             stp.destroy();
