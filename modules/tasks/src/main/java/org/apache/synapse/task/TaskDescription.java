@@ -1,137 +1,415 @@
-/*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *   * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- */
 package org.apache.synapse.task;
 
-
 import org.apache.axiom.om.OMElement;
-import org.quartz.SimpleTrigger;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
+import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
-/**
- * Encapsulates details about a task
- * Properties are self descriptive and related with quartz
- */
-@SuppressWarnings({"UnusedDeclaration"})
-public class TaskDescription {
+import static java.util.Collections.unmodifiableMap;
 
+public final class TaskDescription {
+    public static final String TASK_MGR_ClASS_NAME = "org.apache.synapse.task.taskMgrImpl";
+    public static final String DEF_TASKMGR_CLASS_NAME = "org.apache.synapse.startup.quartz.QuartzTaskManager";
     public static final String CLASSNAME = "ClassName";
     public static final String PROPERTIES = "Properties";
     public static final String INSTANCE = "Instance";
     public static final String DEFAULT_GROUP = "synapse.simple.quartz";
-    private String cron;
-    private int repeatCount = SimpleTrigger.REPEAT_INDEFINITELY;
-    private long repeatInterval; // in milliseconds
-    private String className;
-    private final List<String> pinnedServers = new ArrayList<String>();
+    private static final Log logger = LogFactory.getLog(TaskDescription.class.getName());
+    public static final int SEQUENCE = 0;
+    public static final int MAIN = 1;
+    public static final int PROXY = 2;
+    public static final int RECIPE = 3;
+    public static final int URL = 4;
+    public static final int OTHER = 5;
+    public static final int NOT_SET = 6;
+
+    private String taskName;
+
+    private String taskGroup;
+    /** Name of the task manager class */
+    private String taskMgrClassName;
+    /** Where to receive the message */
+    private String sequenceName;
+    private TaskStartupObserver taskStartupObserver;
+    private String proxyName;
+    private String recipeName;
+    private String receiver;
+    private int receiverType = NOT_SET;
+    /** Message data */
+    private String message;
+    private InputStream messageIs;
+    private String format;
+    private String mediaType;
+    /** Trigger parameters */
+    private boolean isSimpleTrigger = true;
+    private int triggerCount = -1;
+    private long triggerInterval = 0;
+    private boolean isIntervalInMs = false;
+    private String cronExpression;
+    private Calendar startTime;
+    private Calendar endTime;
+
+    private String status = "new";
+
+    private String pinnedServers;
+
+    private List<String> pinnedServersList;
+
+    private String targetURI;
+
+    private boolean allowConcurrentExecutions;
+    /** Other properties */
+    private Map<String, String> properties;
+
+    private Map<String, Object> resources;
+
+    private Class taskClass;
+
+    private Task synapseTask;
+
     private final Set<OMElement> xmlProperties = new HashSet<OMElement>();
-    private String name;
-    private String description;
-    private String group = DEFAULT_GROUP;
-    private Date startTime;
-    private Date endTime;
+    private String taskDescription;
     private boolean volatility = true;
 
-
-    public String getTaskClass() {
-        return className;
+    public Object getTaskObject() {
+        return taskObject;
     }
 
-    public void setTaskClass(String attributeValue) {
-        className = attributeValue;
-
+    public void setTaskObject(Object taskObject) {
+        this.taskObject = taskObject;
     }
 
-    public void setInterval(long l) {
-        repeatInterval = l;
+    private Object taskObject;
 
+    public TaskManager getTaskManager() {
+        return taskManager;
     }
 
-    public long getInterval() {
-        return repeatInterval;
+    public void setTaskManager(TaskManager taskManager) {
+        this.taskManager = taskManager;
     }
 
-    public void setCount(int i) {
-        repeatCount = i;
-    }
-
-    public int getCount() {
-        return repeatCount;
-    }
-
-    public void addProperty(OMElement prop) {
-        xmlProperties.add(prop);
-    }
-
-    public Set<OMElement> getProperties() {
-        return xmlProperties;
-    }
-
-    public void setCron(String attributeValue) {
-        cron = attributeValue;
-
-    }
-
-    public String getCron() {
-        return cron;
-    }
-
-    public List<String> getPinnedServers() {
-        return pinnedServers;
-    }
-
-    public void setPinnedServers(List<String> pinnedServers) {
-        if (pinnedServers != null) {
-            this.pinnedServers.addAll(pinnedServers);
-        }
-    }
+    private TaskManager taskManager;
 
     public String getName() {
-        return name;
+        return taskName;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.taskName = name;
     }
 
-    public String getGroup() {
-        return group;
+    public String getTargetURI() {
+        return targetURI;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
+    public void setTargetURI(String targetURI) {
+        this.targetURI = targetURI;
     }
 
-    public Date getEndTime() {
-        return endTime;
+    public boolean isAllowConcurrentExecutions() {
+        return allowConcurrentExecutions;
     }
 
-    public void setEndTime(Date endTime) {
-        this.endTime = endTime;
+    public void setAllowConcurrentExecutions(boolean allowConcurrentExecutions) {
+        this.allowConcurrentExecutions = allowConcurrentExecutions;
     }
 
-    public Date getStartTime() {
+    public void setProperties(Map<String, String> properties) {
+        if (properties == null) {
+            return;
+        }
+        if (this.properties == null) {
+            this.properties = properties;
+            return;
+        } else {
+            this.properties = new HashMap<String, String>();
+        }
+        Iterator i = properties.keySet().iterator();
+        while (i.hasNext()) {
+            Object o = i.next();
+            this.properties.put((String) o, properties.get((String) o));
+        }
+    }
+
+    public void addProperty(String name, String value) {
+        if (properties == null) {
+            properties = new HashMap<String, String>();
+        }
+        if (name == null) {
+            return;
+        }
+        properties.put(name, value);
+    }
+
+    public Object getProperty(String name) {
+        return properties == null || name == null ? null : properties.get(name);
+    }
+
+    public Map<String, String> getProperties() {
+        if (properties == null) {
+            return Collections.emptyMap();
+        }
+        return unmodifiableMap(properties);
+    }
+
+    public String getTaskGroup() {
+        return taskGroup;
+    }
+
+    public void setTaskGroup(String taskGroup) {
+        this.taskGroup = taskGroup;
+    }
+
+    public String getTaskImplClassName() {
+        if (getProperty(CLASSNAME) != null) {
+            return (String) getProperty(CLASSNAME);
+        }
+        return taskMgrClassName;
+    }
+
+    public void setTaskImplClassName(String taskMgrClassName) {
+        this.taskMgrClassName = taskMgrClassName;
+    }
+
+    public String getProxyName() {
+        return proxyName;
+    }
+
+    public void setProxyName(String proxyName) {
+        this.proxyName = proxyName;
+    }
+
+    public String getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(String receiver) {
+        if (receiver == null || receiver.isEmpty()) {
+            return;
+        }
+        if ("sequence".equals(receiver)) {
+            receiverType = SEQUENCE;
+        } else if ("main".equals(receiver)) {
+            receiverType = MAIN;
+        } else if ("proxy".equals(receiver)) {
+            receiverType = PROXY;
+        } else if ("recipe".equals(receiver)) {
+            receiverType = RECIPE;
+        } else if ("url".equals(receiver)) {
+            receiverType = URL;
+        } else {
+            receiverType = OTHER;
+        }
+        this.receiver = receiver;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public String getSequenceName() {
+        return sequenceName;
+    }
+
+    public void setSequenceName(String sequenceName) {
+        this.sequenceName = sequenceName;
+    }
+
+    public boolean isSimpleTrigger() {
+        return isSimpleTrigger;
+    }
+
+    public void setSimpleTrigger(boolean isSimpleTrigger) {
+        this.isSimpleTrigger = isSimpleTrigger;
+    }
+
+    public int getCount() {
+        return triggerCount;
+    }
+
+    public void setCount(int count) {
+        this.triggerCount = count;
+    }
+
+    public long getInterval() {
+        return triggerInterval;
+    }
+
+    public boolean getIntervalInMs() {
+        return isIntervalInMs;
+    }
+
+    public void setInterval(long interval) {
+        this.triggerInterval = interval;
+    }
+
+    public void setPinnedServersS(String pinnedServers) {
+        this.pinnedServers = pinnedServers;
+    }
+
+    public String getPinnedServersS() {
+        return this.pinnedServers;
+    }
+
+    public List<String> getPinnedServers() {
+        return pinnedServersList;
+    }
+
+    public void setPinnedServers(List<String> pinnedServersList) {
+        this.pinnedServersList = pinnedServersList;
+    }
+
+    public String getCronExpression() {
+        return cronExpression;
+    }
+
+    public void setCronExpression(String cronExpression) {
+        this.cronExpression = cronExpression;
+    }
+
+    public Calendar getStartTime() {
         return startTime;
     }
 
-    public void setStartTime(Date startTime) {
+    public void setStartTime(Calendar startTime) {
         this.startTime = startTime;
+    }
+
+    public void setStartTime(String timeString) { setStartTime(getTime(timeString)); }
+
+    public Calendar getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(Calendar endTime) {
+        this.endTime = endTime;
+    }
+
+    public void setEndTime(String timeString) { setEndTime(getTime(timeString)); }
+
+    public void setIntervalInMs(boolean isIntervalInMs) {
+        this.isIntervalInMs = isIntervalInMs;
+    }
+
+    public InputStream getMessageIs() { return messageIs; }
+
+    public void setMessageIs(InputStream messageIs) { this.messageIs = messageIs; }
+
+    public String getMediaType() { return mediaType; }
+
+    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+
+    public String getRecipeName() {
+        return recipeName;
+    }
+
+    public void setRecipeName(String recipeName) {
+        this.recipeName = recipeName;
+    }
+
+    public int getReceiverType() {
+        return receiverType;
+    }
+
+    private static Calendar getTime(String startTimeAsString) {
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date startTime;
+        try {
+            startTime = df.parse(startTimeAsString);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(startTime);
+            return cal;
+        } catch (ParseException e) {
+            logger.error("Invalid time format ["
+                    + startTimeAsString + "] for date format [yyyy/MM/dd HH:mm:ss].");
+        }
+        return null;
+    }
+
+    public void setStatus(String status) {
+        if (status == null || status.isEmpty()) {
+            return;
+        }
+        this.status = status;
+    }
+
+    public String getStatus() { return status; }
+
+    public Map<String, Object> getResources() {
+        return resources;
+    }
+
+    public void setResources(Map<String, Object> resources) {
+        this.resources = resources;
+    }
+
+    public void addResource(String key, Object value) {
+        if (resources == null) {
+            resources = new HashMap<String, Object>();
+        }
+        if (resources != null && key != null) {
+            resources.put(key, value);
+        }
+    }
+
+    public Object getResource(String key) {
+        if (resources != null && key != null) {
+            return resources.get(key);
+        }
+        return null;
+    }
+
+    public Class getTaskClass() {
+        return taskClass;
+    }
+
+    public void setTaskClass(Class taskClass) {
+        this.taskClass = taskClass;
+    }
+
+    public Task getSynapseTask() {
+        return synapseTask;
+    }
+
+    public void setSynapseTask(Task task) {
+        this.synapseTask = task;
+    }
+
+    public Set<OMElement> getXmlProperties() {
+        return xmlProperties;
+    }
+
+    public void setXmlProperty(OMElement property) {
+        if (property == null) {
+            return;
+        }
+        xmlProperties.add(property);
+    }
+
+    public String getTaskDescription() {
+        return taskDescription;
+    }
+
+    public void setTaskDescription(String taskDescription) {
+        this.taskDescription = taskDescription;
     }
 
     public boolean isVolatility() {
@@ -142,19 +420,12 @@ public class TaskDescription {
         this.volatility = volatility;
     }
 
-    public String getDescription() {
-        return description;
-    }
+	public TaskStartupObserver getTaskStartupObserver() {
+		return taskStartupObserver;
+	}
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    @Override
-    public String toString() {
-        StringBuffer stringBuffer = new StringBuffer();
-        stringBuffer.append("[Task Description [ Name : ").append(name).
-                append(" ][ClassName : ").append(className).append(" ] ]");
-        return stringBuffer.toString();
-    }
+	public void setTaskStartupObserver(TaskStartupObserver taskStartupObserver) {
+		this.taskStartupObserver = taskStartupObserver;
+	}
+    
 }

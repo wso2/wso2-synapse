@@ -38,6 +38,9 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.synapse.commons.vfs.VFSConstants; 
+import org.apache.synapse.commons.vfs.VFSUtils;
+import org.apache.synapse.commons.vfs.VFSOutTransportInfo ;
 
 import java.io.IOException;
 

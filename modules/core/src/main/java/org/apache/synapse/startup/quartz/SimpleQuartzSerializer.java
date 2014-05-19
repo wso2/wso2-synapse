@@ -31,12 +31,12 @@ public class SimpleQuartzSerializer implements StartupSerializer {
 
     public OMElement serializeStartup(OMElement parent, Startup s) {
 
-        if (!(s instanceof SimpleQuartz)) {
+        if (!(s instanceof StartUpController)) {
             throw new SynapseException("called TaskSerializer on some other " +
                     "kind of startup" + s.getClass().getName());
         }
 
-        SimpleQuartz sq = (SimpleQuartz) s;
+        StartUpController sq = (StartUpController) s;
         
         TaskDescription taskDescription = sq.getTaskDescription();
 

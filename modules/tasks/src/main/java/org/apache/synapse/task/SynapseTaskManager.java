@@ -33,6 +33,7 @@ public class SynapseTaskManager {
 
     private TaskDescriptionRepository taskDescriptionRepository;
     private TaskScheduler taskScheduler;
+    private TaskManager taskManagerImpl;
     private boolean initialized = false;
 
     public SynapseTaskManager() {
@@ -51,13 +52,17 @@ public class SynapseTaskManager {
      * @param taskScheduler             TaskScheduler instance
      */
     public void init(TaskDescriptionRepository taskDescriptionRepository,
-                     TaskScheduler taskScheduler) {
+                     TaskScheduler taskScheduler, TaskManager taskManagerImpl) {
 
         if (initialized) {
             if (log.isDebugEnabled()) {
                 log.debug("Task manager already initialized. Skipping re-initialization.");
             }
             return;
+        }
+        
+        if(taskManagerImpl != null) {
+            this.taskManagerImpl = taskManagerImpl;
         }
 
         if (taskDescriptionRepository != null) {
@@ -81,6 +86,10 @@ public class SynapseTaskManager {
 
         }
         initialized = true;
+    }
+
+    public TaskManager getTaskManagerImpl() {
+        return taskManagerImpl;
     }
 
     public TaskDescriptionRepository getTaskDescriptionRepository() {

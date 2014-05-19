@@ -134,6 +134,10 @@
 
     <dependencies>
         <dependency>
+			<groupId>org.apache.synapse</groupId>
+			<artifactId>synapse-commons</artifactId>
+		</dependency>   
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
             <version>${commons.vfs.version}</version>
@@ -179,6 +183,6 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons_io.version}</version>
-        </dependency>
+        </dependency>     
     </dependencies>
 </project>
