@@ -18,26 +18,14 @@
 
 package org.apache.synapse.protocol.jms;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axis2.builder.Builder;
-import org.apache.axis2.builder.BuilderUtil;
-import org.apache.axis2.builder.SOAPBuilder;
-import org.apache.axis2.format.DataSourceMessageBuilder;
-import org.apache.axis2.format.ManagedDataSource;
-import org.apache.axis2.transport.TransportUtils;
-import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.inbound.InboundEndpointUtils;
 import org.apache.synapse.inbound.PollingConsumer;
 import org.apache.synapse.inbound.InjectHandler;
 import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import javax.jms.*;
 
-import java.io.InputStream;
 import java.util.Properties;
 
 public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingConsumer {
@@ -79,7 +67,7 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
         }
         Session session = jmsConnectionFactory.getSession(connection);
         Destination destination = jmsConnectionFactory.getDestination(connection);
-        MessageConsumer messageConsumer = createMessageConsumer(session, destination);
+        MessageConsumer messageConsumer = jmsConnectionFactory.getMessageConsumer(session, destination);
         try {
             Message msg = messageConsumer.receive(1);
             if(null == msg) {
@@ -104,24 +92,12 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
         } catch (JMSException e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Error while receiving JMS message. " + e.getMessage());
-        }finally{
-        	try{
-        		messageConsumer.close();
-        	}catch(JMSException e){}
+            logger.error("Error while receiving JMS message. " + e.getMessage());      
         }
         return null;
     }
 
-    private MessageConsumer createMessageConsumer(Session session, Destination destination) {
-        try {
-        	MessageConsumer messageConsumer = session.createConsumer(destination);
-            return messageConsumer;
-        } catch (JMSException e) {
-            logger.error("JMS Exception while creating consumer. " + e.getMessage());
-        }
-        return null;
-    }
+
 
 	public void close() throws JMSException {
 		// TODO Auto-generated method stub

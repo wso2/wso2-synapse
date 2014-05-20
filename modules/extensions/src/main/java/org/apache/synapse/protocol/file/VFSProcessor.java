@@ -74,9 +74,9 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
         try {
         	Task task = new FileTask(fileScanner);
         	TaskDescription taskDescription = new TaskDescription();
-        	taskDescription.setName("testVFS");
-        	taskDescription.setTaskGroup("VFS");
-        	taskDescription.setInterval(5000);
+        	taskDescription.setName(name + "-FILE-EP");
+        	taskDescription.setTaskGroup("FILE-EP");
+        	taskDescription.setInterval(interval);
         	taskDescription.setIntervalInMs(true);
         	taskDescription.setAllowConcurrentExecutions(false);
         	taskDescription.setTaskStartupObserver(this);

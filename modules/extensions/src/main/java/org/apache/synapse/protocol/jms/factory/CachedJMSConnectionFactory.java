@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.protocol.jms.JMSConstants;
 
 import javax.jms.*;
+
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +35,7 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
 
     private Connection cachedConnection = null;
     private Session cachedSession = null;
+    private MessageConsumer cachedMessageConsumer = null;
     
     public CachedJMSConnectionFactory(Properties properties) {
         super(properties);
@@ -101,6 +103,24 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
         return session;
     }
 
+    public MessageConsumer getMessageConsumer(Session session, Destination destination) { 
+    	MessageConsumer  messageConsumer = null;
+        if (cachedMessageConsumer == null) {
+        	messageConsumer = createMessageConsumer(session, destination);
+        }else{
+        	messageConsumer = cachedMessageConsumer;
+        }    
+        return messageConsumer;
+    }    
+
+    public MessageConsumer createMessageConsumer(Session session, Destination destination) { 
+    	MessageConsumer  messageConsumer = super.createMessageConsumer(session, destination);
+        if(this.cacheLevel >= JMSConstants.CACHE_CONSUMER){
+        	cachedMessageConsumer = messageConsumer;
+        }
+        return messageConsumer;
+    } 
+    
     public boolean closeConnection() {
         try {
         	if(cachedConnection != null){
@@ -125,7 +145,13 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
     			cachedSession.close();
     		}catch(JMSException e){}
     		cachedSession = null;
-    	}    	
+    	}    
+    	if(cachedMessageConsumer != null){
+    		try{
+    			cachedMessageConsumer.close();
+    		}catch(JMSException e){}
+    		cachedMessageConsumer = null;
+    	}      	
     }
     
     public JMSConstants.JMSDestinationType getDestinationType() {
