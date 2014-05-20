@@ -597,6 +597,11 @@ public class Axis2FlexibleMEPClient {
                         && HTTPTransportUtils.isRESTRequest(
                         String.valueOf(originalInMsgCtx.getProperty(
                                 Constants.Configuration.MESSAGE_TYPE)));
+
+                if(!isRestRequest) {
+                    isRestRequest = (String.valueOf(originalInMsgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE))
+                            .equals(HTTPConstants.MEDIA_TYPE_TEXT_XML) && originalInMsgCtx.getSoapAction() == null);
+                }
             }
         }
         return isRestRequest;
