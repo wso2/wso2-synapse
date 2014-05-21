@@ -388,4 +388,14 @@ public class JMSConnectionFactory implements ConnectionFactory, QueueConnectionF
     public String getConnectionFactoryString() {
         return connectionFactoryString;
     }
+
+	public boolean isTransactedSession() {
+		return transactedSession;
+	}
+
+	public int getSessionAckMode() {
+		return sessionAckMode;
+	}
+    
+    
 }
