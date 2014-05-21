@@ -83,16 +83,52 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
 	            }           
 	
 	            if(injectHandler != null){
-	            	injectHandler.invoke(msg);
+	            	boolean commitOrAck = true;
+	            	commitOrAck = injectHandler.invoke(msg);
+	                // if client acknowledgement is selected, and processing requested ACK
+	                if (commitOrAck && jmsConnectionFactory.getSessionAckMode() == Session.CLIENT_ACKNOWLEDGE) {
+	                    try {
+	                    	msg.acknowledge();
+	                        if (logger.isDebugEnabled()) {
+	                        	logger.debug("Message : " + msg.getJMSMessageID() + " acknowledged");
+	                        }
+	                    } catch (JMSException e) {
+	                    	logger.error("Error acknowledging message : " + msg.getJMSMessageID(), e);
+	                    }
+	                }	 
+	                // if session was transacted, commit it or rollback
+	                try {
+	                    if (session.getTransacted()) {
+	                        if (commitOrAck) {
+	                            session.commit();
+	                            if (logger.isDebugEnabled()) {
+	                            	logger.debug("Session for message : " + msg.getJMSMessageID() + " committed");
+	                            }
+	                        } else {
+	                            session.rollback();
+	                            if (logger.isDebugEnabled()) {
+	                            	logger.debug("Session for message : " + msg.getJMSMessageID() + " rolled back");
+	                            }
+	                        }
+	                    }
+	                } catch (JMSException e) {
+	                	logger.error("Error " + (commitOrAck ? "committing" : "rolling back") +
+	                        " local session txn for message : " + msg.getJMSMessageID(), e);
+	                }	             
 	            }else{
 	            	return msg;            	
 	            }
 	            msg = messageConsumer.receive(1);
             }
+
         } catch (JMSException e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());
         } catch (Exception e) {
             logger.error("Error while receiving JMS message. " + e.getMessage());      
+        }finally{
+            jmsConnectionFactory.closeConsumer(messageConsumer);
+            jmsConnectionFactory.closeSession(session);
+            jmsConnectionFactory.closeConnection(connection);
         }
         return null;
     }

@@ -20,6 +20,6 @@ package org.apache.synapse.inbound;
 
 public interface InjectHandler {
 
-	public void invoke(Object object);
+	public boolean invoke(Object object);
 	
 }

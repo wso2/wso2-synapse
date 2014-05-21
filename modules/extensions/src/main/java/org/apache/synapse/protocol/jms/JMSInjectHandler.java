@@ -39,6 +39,7 @@ import org.apache.axis2.builder.SOAPBuilder;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.format.DataSourceMessageBuilder;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,7 +63,7 @@ public class JMSInjectHandler implements InjectHandler {
 		this.synapseEnvironment = synapseEnvironment;
 	}	 
 	
-	public void invoke(Object object){
+	public boolean invoke(Object object){
 		
 		Message msg = (Message)object;
         try {
@@ -111,6 +112,7 @@ public class JMSInjectHandler implements InjectHandler {
             msgCtx.setEnvelope(TransportUtils.createSOAPEnvelope(documentElement));                               
             if (injectingSeq == null || injectingSeq.equals("")) {
                 log.error("Sequence name not specified. Sequence : " + injectingSeq);
+                return false;
             }
             SequenceMediator seq = (SequenceMediator) synapseEnvironment.getSynapseConfiguration().getSequence(injectingSeq);
             seq.setErrorHandler(onErrorSeq);
@@ -121,10 +123,19 @@ public class JMSInjectHandler implements InjectHandler {
                 synapseEnvironment.injectAsync(msgCtx, seq);
             } else {
                 log.error("Sequence: " + injectingSeq + " not found");
-            }     
+            }  
+                        
+            Object o = msgCtx.getProperty(JMSConstants.SET_ROLLBACK_ONLY);
+            if (o != null) {
+                if ((o instanceof Boolean && ((Boolean) o)) ||
+                        (o instanceof String && Boolean.valueOf((String) o))) {
+                    return false;
+                }
+            }
         } catch (Exception e) {
             log.error("Error while processing the JMS Message");                
-        }		
+        }
+        return true;
 	}
     /**
     *

@@ -64,7 +64,7 @@ public class FileInjectHandler implements InjectHandler {
 		this.vfsProperties = vfsProperties;
 	}	 
 	
-	public void invoke(Object object){
+	public boolean invoke(Object object){
 		
 		ManagedDataSource dataSource = null;;
 		FileObject file = (FileObject)object;
@@ -149,12 +149,14 @@ public class FileInjectHandler implements InjectHandler {
                 log.error("Sequence: " + injectingSeq + " not found");
             }     
         } catch (Exception e) {
-            log.error("Error while processing the file/folder");                
+            log.error("Error while processing the file/folder");
+            return false;
         } finally {
          if(dataSource != null) {
 				dataSource.destroy();
 			}
-        }		
+        }
+        return true;
 	}
     /**
      * Create the initial message context for the file

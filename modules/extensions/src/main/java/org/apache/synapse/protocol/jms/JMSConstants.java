@@ -41,7 +41,7 @@ public class JMSConstants {
     public static final String JMS_MAP_NS = "http://axis.apache.org/axis2/java/transports/jms/map-payload";    
     /**Root element name of JMS Map message payload representation */
     public static final String JMS_MAP_ELEMENT_NAME = "JMSMap";
-
+    public static final String SET_ROLLBACK_ONLY = "SET_ROLLBACK_ONLY";
     public static final QName JMS_MAP_QNAME = new QName(JMS_MAP_NS, JMS_MAP_ELEMENT_NAME,"");
 
     public static final String PARAM_CACHE_LEVEL = "transport.jms.CacheLevel";

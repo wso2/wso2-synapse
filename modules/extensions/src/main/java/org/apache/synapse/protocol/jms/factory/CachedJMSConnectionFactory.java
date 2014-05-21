@@ -133,6 +133,39 @@ public class CachedJMSConnectionFactory extends JMSConnectionFactory {
         return false;
     }
 
+    public boolean closeConnection(Connection connection) {
+        try {
+            if(this.cacheLevel < JMSConstants.CACHE_CONNECTION){
+            	connection.close();
+            }
+        } catch (JMSException e) {
+            logger.error("JMS Exception while closing the connection.");
+        }
+        return false;
+    }    
+
+    public boolean closeConsumer(MessageConsumer messageConsumer) {
+        try {
+            if(this.cacheLevel < JMSConstants.CACHE_CONSUMER){
+            	messageConsumer.close();
+            }
+        } catch (JMSException e) {
+            logger.error("JMS Exception while closing the consumer.");
+        }
+        return false;
+    }     
+
+    public boolean closeSession(Session session) {
+        try {
+            if(this.cacheLevel < JMSConstants.CACHE_SESSION){
+            	session.close();
+            }
+        } catch (JMSException e) {
+            logger.error("JMS Exception while closing the consumer.");
+        }
+        return false;
+    }     
+    
     private void resetCache(){
     	if(cachedConnection != null){
     		try{
