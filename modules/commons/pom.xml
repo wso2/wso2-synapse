@@ -108,7 +108,16 @@
                     <artifactId>spring-core</artifactId>
                     <version>${spring.version}</version>
                 </dependency>
-
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>${commons-lang.version}</version>
+        </dependency>                
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-vfs2</artifactId>
+            <version>${commons.vfs.version}</version>
+        </dependency>  
     </dependencies>
 
     <properties>

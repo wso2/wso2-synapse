@@ -49,12 +49,23 @@ public class DefaultTaskTriggerFactory implements TaskTriggerFactory {
             throw new SynapseTaskException("Name of the Task cannot be null", log);
         }
 
-        String cron = taskDescription.getCron();
+        String cron = taskDescription.getCronExpression();
         int repeatCount = taskDescription.getCount();
         long repeatInterval = taskDescription.getInterval();
-        Date startTime = taskDescription.getStartTime();
-        Date endTime = taskDescription.getEndTime();
-        String group = taskDescription.getGroup();
+        if (!taskDescription.getIntervalInMs()) {
+            repeatInterval = repeatInterval * 1000;
+        }
+
+
+        Date startTime = null;
+        if (taskDescription.getStartTime() != null) {
+            startTime = taskDescription.getStartTime().getTime();
+        }
+        Date endTime = null;
+        if (taskDescription.getEndTime() != null) {
+            endTime = taskDescription.getEndTime().getTime();
+        }
+        String group = taskDescription.getTaskGroup();
 
         if (group == null || "".equals(group)) {
             group = TaskDescription.DEFAULT_GROUP;

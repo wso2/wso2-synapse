@@ -20,6 +20,7 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
+import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentStore;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -27,6 +28,7 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.xml.eventing.EventSourceSerializer;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
@@ -50,6 +52,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.axis2.util.XMLPrettyPrinter;
+import org.apache.synapse.task.TaskManager;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -97,6 +100,11 @@ public class MultiXMLConfigurationSerializer {
                 serializeSynapseRegistry(synapseConfig.getRegistry(), synapseConfig, definitions);
             }
 
+            if (synapseConfig.getTaskManager() != null) {
+                serializeTaskManager(synapseConfig.getTaskManager(), synapseConfig, definitions);
+            }
+
+
             serializeProxyServices(synapseConfig.getProxyServices(), synapseConfig, definitions);
             serializeEventSources(synapseConfig.getEventSources(), synapseConfig, definitions);
             serializeTasks(synapseConfig.getStartups(), synapseConfig, definitions);
@@ -109,6 +117,7 @@ public class MultiXMLConfigurationSerializer {
             serializeMessageProcessors(synapseConfig.getMessageProcessors().values(), synapseConfig,
                                        definitions);
             serializeAPIs(synapseConfig.getAPIs(), synapseConfig, definitions);
+            serializeInboundEndpoints(synapseConfig.getInboundEndpoints(), synapseConfig, definitions);
             serializeImports(synapseConfig.getSynapseImports().values(), synapseConfig, definitions);
             serializeSynapseXML(definitions);
 
@@ -235,6 +244,11 @@ public class MultiXMLConfigurationSerializer {
             RegistrySerializer.serializeRegistry(definitions, synapseConfig.getRegistry());
         }
 
+        if (synapseConfig.getTaskManager() != null && !Boolean.valueOf(synapseConfig.getProperty(
+                MultiXMLConfigurationBuilder.SEPARATE_TASK_MANAGER_DEFINITION))) {
+            TaskManagerSerializer.serializetaskManager(definitions, synapseConfig.getTaskManager());
+        }
+
         Collection<ProxyService> proxyServices = synapseConfig.getProxyServices();
         Collection<SynapseEventSource> eventSources = synapseConfig.getEventSources();
         Collection<Startup> tasks = synapseConfig.getStartups();
@@ -352,6 +366,25 @@ public class MultiXMLConfigurationSerializer {
         return registryElem;
     }
 
+    public OMElement serializeTaskManager(TaskManager taskManager, SynapseConfiguration synapseConfig,
+                                              OMElement parent) throws Exception {
+        OMElement taskManagerElem = TaskManagerSerializer.serializetaskManager(null, taskManager);
+        if (!Boolean.valueOf(synapseConfig.getProperty(
+                MultiXMLConfigurationBuilder.SEPARATE_TASK_MANAGER_DEFINITION)) && parent != null) {
+            parent.addChild(taskManagerElem);
+            return taskManagerElem;
+        }
+
+        File taskManagerConf = new File(currentDirectory, MultiXMLConfigurationBuilder.TASK_MANAGER_FILE);
+        if (log.isDebugEnabled()) {
+            log.debug("Serializing Task Manager definition to : " + taskManagerConf.getPath());
+        }
+
+        writeToFile(taskManagerElem, taskManagerConf);
+        return taskManagerElem;
+    }
+
+
     public OMElement serializeProxy(ProxyService service, SynapseConfiguration synapseConfig,
                                     OMElement parent) throws Exception {
 
@@ -400,6 +433,10 @@ public class MultiXMLConfigurationSerializer {
                                    OMElement parent) throws Exception {
 
         File tasksDir = createDirectory(currentDirectory, MultiXMLConfigurationBuilder.TASKS_DIR);
+
+
+
+
         OMElement taskElem = StartupFinder.getInstance().serializeStartup(null, task);
 
         if (task.getFileName() != null) {
@@ -640,6 +677,33 @@ public class MultiXMLConfigurationSerializer {
         return apiElement;
     }
 
+
+    public OMElement serializeInboundEndpoint(InboundEndpoint inboundEndpoint, SynapseConfiguration synapseConfig,
+                                  OMElement parent) throws Exception {
+        File inboundEndpointDir = createDirectory(currentDirectory, MultiXMLConfigurationBuilder.INBOUND_ENDPOINT_DIR);
+        OMElement inboundEndpointElt = InboundEndpointSerializer.serializeInboundEndpoint(inboundEndpoint);
+
+        String fileName = inboundEndpoint.getFileName();
+        if (fileName != null) {
+            if (currentDirectory == rootDirectory) {
+                handleDeployment(inboundEndpointDir, fileName, inboundEndpoint.getName(),
+                        synapseConfig.getArtifactDeploymentStore());
+            }
+
+            File apiFile = new File(inboundEndpointDir, fileName);
+            writeToFile(inboundEndpointElt, apiFile);
+        } else if (parent != null) {
+            parent.addChild(inboundEndpointElt);
+        }
+
+        return inboundEndpointElt;
+    }
+
+
+
+
+
+
     public OMElement serializeImport(SynapseImport synapseImport, SynapseConfiguration synapseConfig,
                                   OMElement parent) throws Exception {
         File importDir = createDirectory(currentDirectory, MultiXMLConfigurationBuilder.SYNAPSE_IMPORTS_DIR);
@@ -745,6 +809,13 @@ public class MultiXMLConfigurationSerializer {
         }
     }
 
+    private void serializeInboundEndpoints(Collection<InboundEndpoint> inboundEndpointCollection, SynapseConfiguration synapseConfig,
+                               OMElement parent) throws Exception {
+        for (InboundEndpoint inboundEndpoint : inboundEndpointCollection) {
+            serializeInboundEndpoint(inboundEndpoint, synapseConfig, parent);
+        }
+    }
+
     private void serializeImports(Collection<SynapseImport> importCollection, SynapseConfiguration synapseConfig,
                                OMElement parent) throws Exception {
         for (SynapseImport synapseImport : importCollection) {
@@ -780,6 +851,7 @@ public class MultiXMLConfigurationSerializer {
         createDirectory(tempDirectory, MultiXMLConfigurationBuilder.MESSAGE_STORE_DIR);
         createDirectory(tempDirectory, MultiXMLConfigurationBuilder.MESSAGE_PROCESSOR_DIR);
         createDirectory(tempDirectory, MultiXMLConfigurationBuilder.REST_API_DIR);
+        createDirectory(tempDirectory, MultiXMLConfigurationBuilder.INBOUND_ENDPOINT_DIR);
         createDirectory(tempDirectory, MultiXMLConfigurationBuilder.SYNAPSE_IMPORTS_DIR);
 
         return tempDirectory;
@@ -894,6 +966,13 @@ public class MultiXMLConfigurationSerializer {
             if (api.getFileName() != null) {
                 handleDeployment(new File(rootDirectory, MultiXMLConfigurationBuilder.
                         REST_API_DIR), api.getFileName(), api.getName(), deploymentStore);
+            }
+        }
+
+        for (InboundEndpoint inboundEndpoint : synapseConfig.getInboundEndpoints()) {
+            if (inboundEndpoint.getFileName() != null) {
+                handleDeployment(new File(rootDirectory, MultiXMLConfigurationBuilder.
+                        INBOUND_ENDPOINT_DIR), inboundEndpoint.getFileName(), inboundEndpoint.getName(), deploymentStore);
             }
         }
 

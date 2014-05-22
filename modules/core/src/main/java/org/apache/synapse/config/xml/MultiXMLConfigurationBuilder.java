@@ -28,6 +28,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.SynapseException;
@@ -89,11 +90,16 @@ public class MultiXMLConfigurationBuilder {
     public static final String MESSAGE_STORE_DIR        = "message-stores";
     public static final String MESSAGE_PROCESSOR_DIR    = "message-processors";
     public static final String REST_API_DIR             = "api";
+    public static final String INBOUND_ENDPOINT_DIR     = "inbound-endpoints";
     public static final String SYNAPSE_IMPORTS_DIR   = "imports";
 
     public static final String REGISTRY_FILE       = "registry.xml";
 
+    public static final String TASK_MANAGER_FILE       = "task-manager.xml";
+
     public static final String SEPARATE_REGISTRY_DEFINITION = "__separateRegDef";
+
+    public static final String SEPARATE_TASK_MANAGER_DEFINITION = "__separateTaskManagerDef";
 
     private static final String[] extensions = { "xml" };
 
@@ -123,8 +129,17 @@ public class MultiXMLConfigurationBuilder {
                     " will be neglected");
         }
 
-        createSynapseImports(synapseConfig, root, properties);
+        if (synapseConfig.getTaskManager() == null) {
+            // If the synapse.xml does not define a taskManager look for a task-manager.xml
+            createTaskManager(synapseConfig, root, properties);
+        } else if (log.isDebugEnabled()) {
+            log.debug("Using the task manager defined in the " + SynapseConstants.SYNAPSE_XML
+                    + " as the task manager, any definitions in the "+ TASK_MANAGER_FILE +
+                    " will be neglected");
+        }
 
+
+        createSynapseImports(synapseConfig, root, properties);
         createLocalEntries(synapseConfig, root, properties);
         createEndpoints(synapseConfig, root, properties);
         createSequences(synapseConfig, root, properties);
@@ -135,9 +150,8 @@ public class MultiXMLConfigurationBuilder {
         createExecutors(synapseConfig, root, properties);
         createMessageStores(synapseConfig, root, properties);
         createMessageProcessors(synapseConfig, root, properties);
-
         createAPIs(synapseConfig, root, properties);
-
+        createInboundEndpoint(synapseConfig, root, properties);
         return synapseConfig;
     }
 
@@ -189,6 +203,27 @@ public class MultiXMLConfigurationBuilder {
         } catch (Exception e) {
             String msg = "Registry configuration cannot be built from : " + registryDef.getName();
             handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_REGISTRY, msg, e);
+        }
+    }
+
+    private static void createTaskManager(SynapseConfiguration synapseConfig, String rootDirPath,
+                                       Properties properties) {
+
+        File taskManagerDef = new File(rootDirPath, TASK_MANAGER_FILE);
+        try {
+            if (taskManagerDef.exists() && taskManagerDef.isFile()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Initializing Synapse taskManager from the configuration at : " +
+                            taskManagerDef.getPath());
+                }
+                OMElement document = getOMElement(taskManagerDef);
+                SynapseXMLConfigurationFactory.defineTaskManager(synapseConfig, document, properties);
+                synapseConfig.setProperty(SEPARATE_TASK_MANAGER_DEFINITION,
+                        String.valueOf(Boolean.TRUE));
+            }
+        } catch (Exception e) {
+            String msg = "Task Manager configuration cannot be built from : " + taskManagerDef.getName();
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_TASK_MANAGER, msg, e);
         }
     }
 
@@ -556,6 +591,36 @@ public class MultiXMLConfigurationBuilder {
             }
         }
     }
+
+
+    private static void createInboundEndpoint(SynapseConfiguration synapseConfig,
+                                              String rootDirPath, Properties properties) {
+        File inboundEndpointDir = new File(rootDirPath, INBOUND_ENDPOINT_DIR);
+        if (inboundEndpointDir.exists()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Loading APIs from :" + inboundEndpointDir.getPath());
+            }
+
+            Iterator inboundEndpointIterator = FileUtils.iterateFiles(inboundEndpointDir, extensions, false);
+            while (inboundEndpointIterator.hasNext()) {
+                File file = (File) inboundEndpointIterator.next();
+                try {
+                    OMElement document = getOMElement(file);
+                    InboundEndpoint inboundEndpoint = SynapseXMLConfigurationFactory.defineInboundEndpoint(synapseConfig, document, properties);
+                    if (inboundEndpoint != null) {
+                        inboundEndpoint.setFileName(file.getName());
+                        synapseConfig.getArtifactDeploymentStore().addArtifact(file.getAbsolutePath(),
+                                inboundEndpoint.getName());
+                    }
+                } catch (Exception e) {
+                    String msg = "Inbound Endpoint configuration cannot be built from : " + file.getName();
+                    handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT, msg, e);
+                }
+            }
+        }
+    }
+
+
 
     private static OMElement getOMElement(File file) {
         FileInputStream is;

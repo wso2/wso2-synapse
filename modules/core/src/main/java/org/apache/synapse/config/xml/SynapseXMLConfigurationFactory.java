@@ -27,8 +27,10 @@ import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
+import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -48,6 +50,7 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.registry.Registry;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.task.TaskManager;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -98,6 +101,8 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineExecutor(config, elt, properties);
                 } else if(XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
                     defineMessageStore(config, elt, properties);
+                } else if(XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
+                    defineTaskManager(config, elt, properties);
                 } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())){
                     defineMessageProcessor(config, elt, properties);
                 } else if (StartupFinder.getInstance().isStartup(elt.getQName())) {
@@ -132,6 +137,16 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         Startup startup = StartupFinder.getInstance().getStartup(elem, properties);
         config.addStartup(startup);
         return startup;
+    }
+
+    public static TaskManager defineTaskManager(SynapseConfiguration config, OMElement elem,
+                                                Properties properties) {
+        if (config.getTaskManager() != null) {
+            handleException("Only one remote taskManager can be defined within a configuration");
+        }
+        TaskManager taskManager = TaskManagerFactory.createTaskManager(elem, properties);
+        config.setTaskManager(taskManager);
+        return taskManager;
     }
 
     public static ProxyService defineProxy(SynapseConfiguration config, OMElement elem,
@@ -388,6 +403,20 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
         }
         return api;
+    }
+
+
+    public static InboundEndpoint defineInboundEndpoint(SynapseConfiguration config, OMElement elem, Properties properties) {
+        InboundEndpoint inboundEndpoint = null;
+        try {
+            inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(elem);
+            config.addInboundEndpoint(inboundEndpoint.getName(), inboundEndpoint);
+        } catch (Exception e) {
+            String msg = "Inbound Endpoint configuration cannot be built";
+            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_INBOUND_ENDPOINT, msg, e);
+        }
+        return inboundEndpoint;
+
     }
 
     private static void handleException(String msg) {
