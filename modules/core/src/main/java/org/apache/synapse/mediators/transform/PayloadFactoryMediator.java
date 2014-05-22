@@ -40,6 +40,8 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.AXIOMUtils;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.*;
@@ -436,5 +438,22 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     private boolean isDoingXml(MessageContext messageContext) {
         return !isDoingJson(messageContext);
+    }
+
+	public String getInputType() {
+        if(pathArgumentList.size()>0) {
+            Object argument = pathArgumentList.get(0);
+            if (argument != null && argument instanceof SynapseXPath) {
+                return XML_TYPE;
+            }
+            else if (argument != null && argument instanceof SynapseJsonPath) {
+                return JSON_TYPE;
+            }
+        }
+        return null;
+    }
+
+    public String getOutputType() {
+        return mediaType;
     }
 }
