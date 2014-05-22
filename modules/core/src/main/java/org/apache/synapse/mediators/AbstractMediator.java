@@ -359,4 +359,12 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public void setMediatorPosition(int position) {
        mediatorPosition = position;
     }
+
+    public String getInputType() {
+        return null;
+    }
+
+    public String getOutputType() {
+        return null;
+    }
 }
