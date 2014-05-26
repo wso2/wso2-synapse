@@ -87,7 +87,7 @@ public class Template implements SynapseArtifact {
             String replace = replace(attribute.getAttributeValue(), templateEndpoint);
             if (replace != null && replace.contains("{system.prop")) {
                 String newReplace = new String(replace);
-                Pattern pattern = Pattern.compile("\\{(.*?)\\}");
+                Pattern pattern = Pattern.compile("\\{system(.*?)\\}");
                 Matcher matcher = pattern.matcher(replace);
                 while (matcher.find()){
                     String propStr = matcher.group(0);
@@ -99,7 +99,7 @@ public class Template implements SynapseArtifact {
                         log.warn("System property " + propName + " not defined in JVM");
                     }
                 }
-                log.info("Calculated replacement with system property "+ replace);
+                log.info("Calculated replacement with system properties: "+ newReplace);
                 replace = newReplace;
             }
 
