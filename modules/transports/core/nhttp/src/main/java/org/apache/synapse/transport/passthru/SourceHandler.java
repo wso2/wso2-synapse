@@ -16,9 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,6 +41,9 @@ import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This is the class where transport interacts with the client. This class
@@ -193,6 +193,10 @@ public class SourceHandler implements NHttpServerEventHandler {
                 response.start(conn);
 
                 metrics.incrementMessagesSent();
+                if (!response.hasEntity()) {
+                   // Update stats as outputReady will not be triggered for no entity responses
+                   updateStatistics(conn);
+                }
             }
         } catch (IOException e) {
             logIOException(conn, e);
@@ -253,27 +257,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             int bytesSent = response.write(conn, encoder);
             
 			if (encoder.isCompleted()) {
-				HttpContext context = conn.getContext();
-				if (context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null &&
-				    context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME) != null &&
-				    context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME) != null) {
-
-					if (latencyView != null) {
-						latencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-						                        (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-						                        (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-						                        System.currentTimeMillis());
-					} else if (s2sLatencyView != null) {
-						s2sLatencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-						                           (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-						                           (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-						                           System.currentTimeMillis());
-					}
-				}
-
-				context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-				context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
-				context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
+                updateStatistics(conn);
 			}
             
             metrics.incrementBytesSent(bytesSent);
@@ -284,7 +268,31 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn);
-        } 
+        }
+    }
+
+    private void updateStatistics(NHttpServerConnection conn) {
+        HttpContext context = conn.getContext();
+        if (context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null &&
+            context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME) != null &&
+            context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME) != null) {
+
+            if (latencyView != null) {
+                latencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
+                                        (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
+                                        (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
+                                        System.currentTimeMillis());
+            } else if (s2sLatencyView != null) {
+                s2sLatencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
+                                           (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
+                                           (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
+                                           System.currentTimeMillis());
+            }
+        }
+
+        context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
+        context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
+        context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
     }
 
     private void logIOException(NHttpServerConnection conn, IOException e) {
