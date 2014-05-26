@@ -57,6 +57,8 @@ public class BlockingMsgSender {
     private ConfigurationContext configurationContext = null;
     boolean initClientOptions = true;
 
+    private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
+
     public void init() {
         try {
             if (configurationContext == null) {
@@ -99,9 +101,23 @@ public class BlockingMsgSender {
         }
         axisOutMsgCtx.setTo(new EndpointReference(endpointReferenceValue));
 
+        AxisService anonymousService;
         if (endpointReferenceValue != null &&
             endpointReferenceValue.startsWith(Constants.TRANSPORT_LOCAL)) {
             configurationContext = axisInMsgCtx.getConfigurationContext();
+            anonymousService =
+                    AnonymousServiceFactory.getAnonymousService(
+                            configurationContext.getAxisConfiguration(),
+                            LOCAL_ANON_SERVICE);
+        } else {
+            anonymousService =
+                    AnonymousServiceFactory.getAnonymousService(
+                            null,
+                            configurationContext.getAxisConfiguration(),
+                            endpointDefinition.isAddressingOn() | endpointDefinition.isReliableMessagingOn(),
+                            endpointDefinition.isReliableMessagingOn(),
+                            endpointDefinition.isSecurityOn(),
+                            false);
         }
 
         axisOutMsgCtx.setConfigurationContext(configurationContext);
@@ -122,14 +138,6 @@ public class BlockingMsgSender {
         // Fill Client options
         BlockingMsgSenderUtils.fillClientOptions(endpointDefinition, clientOptions, synapseInMsgCtx);
 
-        AxisService anonymousService =
-                AnonymousServiceFactory.getAnonymousService(
-                        null,
-                        configurationContext.getAxisConfiguration(),
-                        endpointDefinition.isAddressingOn() | endpointDefinition.isReliableMessagingOn(),
-                        endpointDefinition.isReliableMessagingOn(),
-                        endpointDefinition.isSecurityOn(),
-                        false);
         anonymousService.getParent().addParameter(SynapseConstants.HIDDEN_SERVICE_PARAM, "true");
         ServiceGroupContext serviceGroupContext =
                 new ServiceGroupContext(configurationContext,
