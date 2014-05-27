@@ -16,13 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
@@ -42,6 +35,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class ClientWorker implements Runnable {
     private Log log = LogFactory.getLog(ClientWorker.class);
@@ -63,13 +63,15 @@ public class ClientWorker implements Runnable {
 
         Map<String,String> headers = response.getHeaders();
         Map excessHeaders = response.getExcessHeaders();
-      
-		String oriURL = headers.get(PassThroughConstants.LOCATION);
-		
-		// Special casing 302 & 301 scenario in following section. Not sure whether it's the correct fix,
-		// but this fix makes it possible to do http --> https redirection.
+
+        String oriURL = headers.get(PassThroughConstants.LOCATION);
+
+        // Special casing 302, 301,303 and 307 scenarios (respectively) in following section. Not sure whether it's the correct fix,
+        // but this fix makes it possible to do http --> https redirection.
         if (oriURL != null && ((response.getStatus() != HttpStatus.SC_MOVED_TEMPORARILY) &&
-                response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY)) {
+                (response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY) &&
+                (response.getStatus() != HttpStatus.SC_SEE_OTHER) &&
+                (response.getStatus() != HttpStatus.SC_TEMPORARY_REDIRECT) )) {
             URL url;
             try {
                 url = new URL(oriURL);
