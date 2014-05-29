@@ -69,7 +69,8 @@ public class ClientWorker implements Runnable {
 		// Special casing 302 & 301 scenario in following section. Not sure whether it's the correct fix,
 		// but this fix makes it possible to do http --> https redirection.
         if (oriURL != null && ((response.getStatus() != HttpStatus.SC_MOVED_TEMPORARILY) &&
-                response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY)) {
+                response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY &&
+                response.getStatus() != HttpStatus.SC_CREATED)) {
             URL url;
             try {
                 url = new URL(oriURL);
