@@ -94,9 +94,11 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
             if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint: " + inboundEndpoint.getName() + " has been built from the file: " + fileName);
             }
-
-            inboundEndpoint.init(getSynapseEnvironment());
+            
             InboundEndpoint existingInboundEndpoint = getSynapseConfiguration().getInboundEndpoint(existingArtifactName);
+            existingInboundEndpoint.destroy();
+            inboundEndpoint.init(getSynapseEnvironment());
+            
 
             if (existingArtifactName.equals(inboundEndpoint.getName())) {
                 getSynapseConfiguration().updateInboundEndpoint(existingArtifactName, inboundEndpoint);
@@ -111,7 +113,6 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
             log.info("Inbound Endpoint: " + inboundEndpoint.getName() + " has been updated from the file: " + fileName);
 
             waitForCompletion();
-            existingInboundEndpoint.destroy();
             return inboundEndpoint.getName();
 
         } catch (DeploymentException e) {
@@ -131,11 +132,12 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
             if (inboundEndpoint != null) {
+            	inboundEndpoint.destroy();
                 getSynapseConfiguration().removeInboundEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Undeployment of the Inbound Endpoint named : "
                             + artifactName + " : Completed");
-                }
+                }                
                 log.info("Inbound Endpoint named '" + inboundEndpoint.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint " + artifactName + " has already been undeployed");

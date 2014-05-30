@@ -20,10 +20,8 @@
 */
 package org.apache.synapse.commons.vfs;
 
-import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
-import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileContent;
@@ -42,7 +40,7 @@ import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-public class VFSUtils extends BaseUtils {
+public class VFSUtils {
 
     private static final Log log = LogFactory.getLog(VFSUtils.class);
 

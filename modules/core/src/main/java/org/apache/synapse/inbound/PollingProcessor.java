@@ -23,6 +23,8 @@ public interface PollingProcessor {
 	
     public void init();
 
+    public void start();
+    
     public void destroy();
 
 }

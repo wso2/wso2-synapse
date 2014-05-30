@@ -16,21 +16,28 @@
 * under the License.
 */
 
-package org.apache.synapse.inbound.jms;
+package org.apache.synapse.protocol.jms;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.PollingProcessor;
-import org.apache.synapse.inbound.jms.factory.CachedJMSConnectionFactory;
+import org.apache.synapse.protocol.file.FileTask;
+import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
+
+import org.apache.synapse.startup.quartz.StartUpController;
+import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskDescription;
+import org.apache.synapse.task.TaskStartupObserver;
+
 
 import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class InboundJMSListener implements PollingProcessor {
-    private static final Log log = LogFactory.getLog(InboundJMSListener.class.getName());
+public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
+    private static final Log log = LogFactory.getLog(JMSProcessor.class.getName());
 
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
@@ -41,31 +48,53 @@ public class InboundJMSListener implements PollingProcessor {
     private String injectingSeq;
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
-
-
-    public InboundJMSListener(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
+    private StartUpController startUpController;
+    
+    public JMSProcessor(String name, Properties jmsProperties, long pollInterval, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment) {
         this.name = name;
         this.jmsProperties = jmsProperties;
         this.interval = pollInterval;
         this.injectingSeq = injectingSeq;
         this.onErrorSeq = onErrorSeq;
         this.synapseEnvironment = synapseEnvironment;
-    }
-
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    }    
 
     public void init() {
         log.info("Initializing inbound JMS listener for destination " + name);
         jmsConnectionFactory = new CachedJMSConnectionFactory(this.jmsProperties);
-        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, injectingSeq, onErrorSeq, synapseEnvironment);        
+        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties);        
         pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));
-        scheduledExecutorService.scheduleAtFixedRate(pollingConsumer, 0, this.interval, TimeUnit.SECONDS);
+        start();
     }
 
+    public void start() {    
+    	log.info("Inbound JMS listener Started for destination " + name);
+        try {
+        	Task task = new JMSTask(pollingConsumer);
+        	TaskDescription taskDescription = new TaskDescription();
+        	taskDescription.setName(name + "-JMS-EP");
+        	taskDescription.setTaskGroup("JMS-EP");
+        	taskDescription.setInterval(interval);
+        	taskDescription.setIntervalInMs(true);
+        	taskDescription.setAllowConcurrentExecutions(false);
+        	taskDescription.setTaskStartupObserver(this);
+        	taskDescription.addResource(TaskDescription.INSTANCE, task);
+        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        	startUpController = new StartUpController();
+        	startUpController.setTaskDescription(taskDescription);
+        	startUpController.init(synapseEnvironment);
+
+        } catch (Exception e) {
+            String msg = "Error starting up Scheduler : " + e.getMessage();
+            e.printStackTrace();
+            //log.fatal(msg, e);
+            //throw new SynapseException(msg, e);
+        }   	
+    }    
     
     public void destroy() {
         log.info("Inbound JMS listener ended for destination " + name);
-        scheduledExecutorService.shutdown();
+        startUpController.destroy();
     }    
     public String getName() {
         return name;
@@ -74,4 +103,8 @@ public class InboundJMSListener implements PollingProcessor {
     public void setName(String name) {
         this.name = name;
     }
+
+	public void update() {
+		start();	
+	}
 }

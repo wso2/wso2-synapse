@@ -269,6 +269,8 @@ public class MessageHelper {
                           "PASS_THROUGH_SOURCE_CONFIGURATION");
         		  Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source", sourceConfiguration);
         		  newMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE,pipe);
+        	 } else {
+        		   newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         	 }
         }
 

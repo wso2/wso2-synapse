@@ -80,41 +80,41 @@ public class TaskScheduler {
         taskManager.resumeAll();
     }
 
-    public void scheduleTask(TaskDescription taskDescription, Map<String,
+    public boolean scheduleTask(TaskDescription taskDescription, Map<String,
             Object> resources, Class taskClass) {
         if (!initialized) {
             logger.error("Could not schedule task ["+ taskDescription.getName() + "]. Task scheduler not properly initialized.");
-            return;
+            return false;
         }
-        taskManager.schedule(taskDescription);
+        return taskManager.schedule(taskDescription);
     }
 
-    public void scheduleTask(TaskDescription taskDescription, Map<String,
+    public boolean scheduleTask(TaskDescription taskDescription, Map<String,
             Object> resources, Class jobClass, Task task) {
         if (taskDescription == null) {
-            return;
+            return false;
         }
         if (!initialized) {
             logger.error("Could not schedule task [" + taskDescription.getName() + "]. Task scheduler not properly initialized.");
-            return;
+            return false;
         }
-        taskManager.schedule(taskDescription);
+        return taskManager.schedule(taskDescription);
     }
 
-    public void scheduleTask(TaskDescription taskDescription) {
+    public boolean scheduleTask(TaskDescription taskDescription) {
         if (taskDescription == null) {
-            return;
+            return false;
         }
         if (!initialized) {
             logger.error("Could not schedule task [" + taskDescription.getName() + "]. Task scheduler not properly initialized.");
-            return;
+            return false;
         }
-        taskManager.schedule(taskDescription);
+        return taskManager.schedule(taskDescription);
     }
 
     public void shutDown() {
         if (!initialized) {
-            logger.error("Could not shut down task scheduler. Task scheduler not properly initialized.");
+            logger.error("Couldvoid not shut down task scheduler. Task scheduler not properly initialized.");
             return;
         }
         taskManager.stop();
