@@ -267,12 +267,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-<<<<<<< HEAD
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } 
-=======
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
-        }
     }
 
     private void updateStatistics(NHttpServerConnection conn) {
@@ -297,7 +293,6 @@ public class SourceHandler implements NHttpServerEventHandler {
         context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
         context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
         context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
->>>>>>> wso2_dev_synapse/master
     }
 
     private void logIOException(NHttpServerConnection conn, IOException e) {
