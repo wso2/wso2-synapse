@@ -521,7 +521,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             }
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 

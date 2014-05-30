@@ -108,10 +108,20 @@ public class TargetConnections {
      * @param conn connection to shutdownConnection
      */
     public void shutdownConnection(NHttpClientConnection conn) {
+        shutdownConnection(conn, true);
+    }
+
+    /**
+     * This connection is no longer valid. So we need to shutdownConnection connection.
+     *
+     * @param conn connection to shutdownConnection
+     * @param releaseBuffer whether to release the buffer to buffer factory while shutting down
+     */
+    public void shutdownConnection(NHttpClientConnection conn, boolean releaseBuffer) {
         HostConnections pool = (HostConnections) conn.getContext().getAttribute(
                 PassThroughConstants.CONNECTION_POOL);
 
-        TargetContext.get(conn).reset();
+        TargetContext.get(conn).reset(releaseBuffer);
 
         if (pool != null) {
             pool.forget(conn);

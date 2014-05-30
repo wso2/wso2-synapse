@@ -96,14 +96,20 @@ public class TargetContext {
     }
 
     public void reset() {
+       reset(true);
+    }
+
+    public void reset(boolean releaseBuffer) {
         request = null;
         response = null;
         state = ProtocolState.REQUEST_READY;
 
         if (writer != null) {
             ByteBuffer buffer = writer.getBuffer();
-            buffer.clear();
-            targetConfiguration.getBufferFactory().release(buffer);
+            //buffer.clear();
+            if (releaseBuffer) {
+                targetConfiguration.getBufferFactory().release(buffer);
+            }
         }
 
         reader = null;

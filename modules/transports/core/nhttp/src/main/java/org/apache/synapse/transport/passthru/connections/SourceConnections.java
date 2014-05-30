@@ -104,18 +104,28 @@ public class SourceConnections {
         }
     }
 
+	/**
+	 * Shutdown a connection
+	 * 
+	 * @param conn the connection that needs to be shut down
+	 */
+	public void shutDownConnection(NHttpServerConnection conn) {
+		shutDownConnection(conn, true);
+	}
+    
     /**
      * Shutdown a connection
      *
      * @param conn the connection that needs to be shut down
+     * @param releaseBuffer whether to release the buffer to pool on connection shutdown
      */
-    public void shutDownConnection(NHttpServerConnection conn) {
+    public void shutDownConnection(NHttpServerConnection conn, boolean releaseBuffer) {
         if (log.isDebugEnabled()) {
             log.debug("Shutting down connection forcefully " + conn);
         }
         lock.lock();
         try {
-            SourceContext.get(conn).reset();
+            SourceContext.get(conn).reset(releaseBuffer);
 
             if (!busyConnections.remove(conn)) {
                 freeConnections.remove(conn);

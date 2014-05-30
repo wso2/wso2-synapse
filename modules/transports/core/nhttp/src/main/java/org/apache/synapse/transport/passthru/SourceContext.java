@@ -74,21 +74,27 @@ public class SourceContext {
     public void setResponse(SourceResponse response) {
         this.response = response;
     }
+    
+	public void reset() {
+		reset(true);
+	}
 
-    public void reset() {
-        this.request = null;
-        this.response = null;
-        this.state = ProtocolState.REQUEST_READY;
+	public void reset(boolean releaseBuffer) {
+		this.request = null;
+		this.response = null;
+		this.state = ProtocolState.REQUEST_READY;
 
-        if (writer != null) {
-            ByteBuffer buffer = writer.getBuffer();
-            buffer.clear();
-            sourceConfiguration.getBufferFactory().release(buffer);
-        }
+		if (writer != null) {
+			ByteBuffer buffer = writer.getBuffer();
+			buffer.clear();
+			if (releaseBuffer) {
+				sourceConfiguration.getBufferFactory().release(buffer);
+			}
+		}
 
-        this.reader = null;
-        this.writer = null;
-    }
+		this.reader = null;
+		this.writer = null;
+	}
 
     public Lock getLock() {
         return lock;
