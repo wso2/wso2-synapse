@@ -131,14 +131,14 @@ public class SourceHandler implements NHttpServerEventHandler {
             informReaderError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } catch (IOException e) {
             logIOException(conn, e);
 
             informReaderError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -167,7 +167,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             informReaderError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -200,14 +200,14 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } catch (HttpException e) {
             log.error(e.getMessage(), e);
 
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -283,7 +283,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } 
     }
 
@@ -339,32 +339,41 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+       
+        sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
     }
 
     public void closed(NHttpServerConnection conn) {
         ProtocolState state = SourceContext.getState(conn);
-
+        boolean fault = false;
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
+        	//fault = true;
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was closed: " + conn);
             }
         } else if (state == ProtocolState.REQUEST_BODY ||
                 state == ProtocolState.REQUEST_HEAD) {
+        	fault = true;
             informReaderError(conn);
             log.warn("Connection closed while reading the request: " + conn);
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
+        	fault = true;
             informWriterError(conn);
             log.warn("Connection closed while writing the response: " + conn);
         } else if (state == ProtocolState.REQUEST_DONE) {
+        	fault = true;
             log.warn("Connection closed by the client after request is read: " + conn);
         }
 
         metrics.disconnected();
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+        if (fault) {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
+        } else {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+        }
     }
 
     public void endOfInput(NHttpServerConnection conn) throws IOException {
@@ -391,11 +400,11 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
             
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } else if (ex instanceof HttpException) {
             try {
                 if (conn.isResponseSubmitted()) {
-                    sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+                    sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
                     return;
                 }
                 HttpContext httpContext = conn.getContext();
@@ -420,12 +429,12 @@ public class SourceHandler implements NHttpServerEventHandler {
             } catch (Exception ex1) {
                 log.error(ex.getMessage(), ex);
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
-                sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+                sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
             }
         } else {
             log.error("Unexpected error: " + ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -433,7 +442,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         log.warn(action + " while the handler is in an inconsistent state " +
                 SourceContext.getState(conn));
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+        sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
     }
 
     private void informReaderError(NHttpServerConnection conn) {
