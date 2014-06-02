@@ -107,7 +107,7 @@ public class EntryFactory implements XMLToObjectMapper {
                     entry.setValue(elemValue);
                 } else if (nodeValue != null && nodeValue instanceof OMText) {
                     entry.setType(Entry.INLINE_TEXT);
-                	entry.setValue(elem.getText());
+                    entry.setValue(elem.getText().trim());
 				}
             }
 
