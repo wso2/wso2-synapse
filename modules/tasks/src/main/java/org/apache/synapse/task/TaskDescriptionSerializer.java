@@ -49,12 +49,12 @@ public class TaskDescriptionSerializer {
         OMElement task = omFactory.createOMElement("task", targetNamespace);
         task.addAttribute("name", taskDescription.getName(), NULL_OMNS);
 
-        String taskClass = taskDescription.getTaskClass();
+        String taskClass = taskDescription.getTaskImplClassName();
         if (taskClass != null && !"".equals(taskClass)) {
-            task.addAttribute("class", taskDescription.getTaskClass(), NULL_OMNS);
+            task.addAttribute("class", taskDescription.getTaskImplClassName(), NULL_OMNS);
         }
 
-        String group = taskDescription.getGroup();
+        String group = taskDescription.getTaskGroup();
         if (group != null && !"".equals(group)) {
             task.addAttribute("group", group, NULL_OMNS);
         }
@@ -69,28 +69,32 @@ public class TaskDescriptionSerializer {
                     NULL_OMNS, pinnedServersStr.toString()));
         }
 
-        if (taskDescription.getDescription() != null) {
+        if (taskDescription.getTaskDescription() != null) {
             OMElement descElem = omFactory.createOMElement("description", targetNamespace, task);
-            descElem.setText(taskDescription.getDescription());
+            descElem.setText(taskDescription.getTaskDescription());
         }
 
         OMElement el = omFactory.createOMElement("trigger", targetNamespace, task);
         if (taskDescription.getInterval() == 1 && taskDescription.getCount() == 1) {
             el.addAttribute("once", "true", NULL_OMNS);
-        } else if (taskDescription.getCron() != null) {
-            el.addAttribute("cron", taskDescription.getCron(), NULL_OMNS);
+        } else if (taskDescription.getCronExpression() != null) {
+            el.addAttribute("cron", taskDescription.getCronExpression(), NULL_OMNS);
         } else {
             if (taskDescription.getCount() != -1) {
                 el.addAttribute("count", Integer.toString(taskDescription.getCount()), NULL_OMNS);
             }
 
             if (taskDescription.getInterval() != 0) {
-                long interval = taskDescription.getInterval() / 1000;
+
+                long interval = taskDescription.getInterval();
+                if (taskDescription.getIntervalInMs()) {
+                    interval = interval / 1000;
+                }
                 el.addAttribute("interval", Long.toString(interval), NULL_OMNS);
             }
         }
 
-        for (Object o : taskDescription.getProperties()) {
+        for (Object o : taskDescription.getXmlProperties()) {
             OMElement prop = (OMElement) o;
             if (prop != null) {
                 prop.setNamespace(targetNamespace);

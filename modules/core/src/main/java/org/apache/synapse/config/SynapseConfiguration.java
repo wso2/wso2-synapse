@@ -48,6 +48,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.eventing.SynapseEventSource;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -57,6 +58,7 @@ import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
@@ -93,6 +95,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * is supported
      */
     private Registry registry = null;
+
+
+
+    private TaskManager taskManager = null;
 
     /**
      * This holds the default QName of the configuration.
@@ -177,6 +183,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     private Map<String, API> apiTable = new ConcurrentHashMap<String, API>();
 
+    private Map<String, InboundEndpoint> inboundEndpointMap = new ConcurrentHashMap<String, InboundEndpoint>();
+    
     /**
      * Description/documentation of the configuration
      */
@@ -338,6 +346,39 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return definedTemplates;
     }
 
+	public void addInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
+		if (!inboundEndpointMap.containsKey(name)) {
+			inboundEndpointMap.put(name, inboundEndpoint);
+		} else {
+			handleException("Duplicate inbound  endpoint definition by the name: " + name);
+		}
+	}
+
+	public InboundEndpoint getInboundEndpoint(String name) {
+		return inboundEndpointMap.get(name);
+	}
+
+	public Collection<InboundEndpoint> getInboundEndpoints() {
+		return Collections.unmodifiableCollection(inboundEndpointMap.values());
+	}
+
+	public void updateInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
+		if (!inboundEndpointMap.containsKey(name)) {
+			handleException("No Inbound Endpoint exists by the name: " + name);
+		} else {
+			inboundEndpointMap.put(name, inboundEndpoint);
+		}
+	}
+
+	public void removeInboundEndpoint(String name) {
+		InboundEndpoint inboundEndpoint = inboundEndpointMap.get(name);
+		if (inboundEndpoint != null) {
+			inboundEndpointMap.remove(name);
+		} else {
+			handleException("No Inbound Endpoint exists by the name: " + name);
+		}
+	}   
+    
     public void addAPI(String name, API api) {
         if (!apiTable.containsKey(name)) {
             for (API existingAPI : apiTable.values()) {
@@ -1342,11 +1383,16 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             seqTemplate.destroy();
         }
 
+        //destroy inbound endpoint
+		for (InboundEndpoint endpoint : getInboundEndpoints()) {
+			endpoint.destroy();
+		}         
+        
         // destroy the managed endpoints
         for (Endpoint endpoint : getDefinedEndpoints().values()) {
             endpoint.destroy();
         }
-
+        
         // destroy the startups
         for (ManagedLifecycle stp : startups.values()) {
             stp.destroy();
@@ -1421,6 +1467,16 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			}
         }
 
+
+		for (InboundEndpoint endpoint : getInboundEndpoints()) {
+			try {
+				endpoint.init(se);
+			} catch (Exception e) {
+				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
+				          e.getMessage());
+			}
+		}      
+        
         // initialize managed mediators
         for (ManagedLifecycle seq : getDefinedSequences().values()) {
             if (seq != null) {
@@ -1816,6 +1872,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public Map<String, Object> getDecryptedCacheMap() {
 		return decryptedCacheMap;
 	}
+
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
+
+    public void setTaskManager(TaskManager taskManager) {
+        this.taskManager = taskManager;
+    }
     
 
 	private void assertAlreadyExists(String key, String type) {

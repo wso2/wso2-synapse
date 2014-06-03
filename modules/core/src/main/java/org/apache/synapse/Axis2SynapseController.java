@@ -100,6 +100,8 @@ public class Axis2SynapseController implements SynapseController {
 
     private TaskScheduler taskScheduler;
 
+    private TaskManager taskManagerImpl;
+
     /**
      * {@inheritDoc}
      *
@@ -407,7 +409,7 @@ public class Axis2SynapseController implements SynapseController {
 
         }
 
-        synapseEnvironment.getTaskManager().init(taskDescriptionRepository, taskScheduler);
+        synapseEnvironment.getTaskManager().init(taskDescriptionRepository, taskScheduler, synapseConfiguration.getTaskManager());
         synapseConfiguration.init(synapseEnvironment);
         synapseEnvironment.setInitialized(true);
 

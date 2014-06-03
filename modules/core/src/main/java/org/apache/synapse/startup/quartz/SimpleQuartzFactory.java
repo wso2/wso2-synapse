@@ -51,12 +51,12 @@ public class SimpleQuartzFactory implements StartupFactory {
     public Startup createStartup(OMElement el) {
         
         if (log.isDebugEnabled()) {
-            log.debug("Creating SimpleQuartz Task");
+            log.debug("Creating StartUpController Task");
         }
         
         if (el.getQName().equals(TASK)) {
             
-            SimpleQuartz simpleQuartz = new SimpleQuartz();
+            StartUpController startUpController = new StartUpController();
             TaskDescription taskDescription =
                     TaskDescriptionFactory.createTaskDescription(el,
                             XMLConfigConstants.SYNAPSE_OMNAMESPACE);
@@ -64,10 +64,10 @@ public class SimpleQuartzFactory implements StartupFactory {
                 handleException("Invalid task - Task description can not be created  from :" + el);
                 return null;
             }          
-            simpleQuartz.setName(taskDescription.getName());
-            simpleQuartz.setTaskDescription(taskDescription);
-            simpleQuartz.setDescription(taskDescription.getDescription());
-            return simpleQuartz;
+            startUpController.setName(taskDescription.getName());
+            startUpController.setTaskDescription(taskDescription);
+            startUpController.setDescription(taskDescription.getTaskDescription());
+            return startUpController;
         } else {
             handleException("Syntax error in the task : wrong QName for the task");
             return null;

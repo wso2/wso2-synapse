@@ -16,7 +16,18 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.apache.http.*;
+import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.transport.MessageFormatter;
+import org.apache.axis2.util.MessageProcessorSelector;
+import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
+import org.apache.http.ProtocolVersion;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentEncoder;
@@ -30,24 +41,11 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.axiom.om.OMOutputFormat;
-import org.apache.axis2.AxisFault;
-import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.transport.MessageFormatter;
-import org.apache.axis2.util.MessageProcessorSelector;
-import org.apache.commons.collections.map.MultiValueMap;
-import org.apache.commons.io.IOUtils;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.TreeSet;
-
-import javax.xml.stream.XMLStreamException;
 
 
 public class SourceResponse {
@@ -68,6 +66,8 @@ public class SourceResponse {
     private ConnectionReuseStrategy connStrategy = new DefaultConnectionReuseStrategy();
     /** Chunk response or not */
     // private boolean chunk = true;
+    /** response has an entity or not**/
+    private boolean hasEntity = true;
     
     private SourceRequest request = null;
 
@@ -109,25 +109,29 @@ public class SourceResponse {
             response.setStatusCode(status);
         }
 
-        BasicHttpEntity entity = new BasicHttpEntity();
+        BasicHttpEntity entity = null;
 
-        int contentLength = -1;
-    	String contentLengthHeader = null; 
-        if(headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).size() > 0) {
-        	contentLengthHeader = headers.get(HTTP.CONTENT_LEN).first();
-        } 
+        if (canResponseHaveBody(request.getRequest(), response)) {
+            entity = new BasicHttpEntity();
 
-        if (contentLengthHeader != null) {
-            contentLength = Integer.parseInt(contentLengthHeader);
+            int contentLength = -1;
+            String contentLengthHeader = null;
+            if (headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).size() > 0) {
+                contentLengthHeader = headers.get(HTTP.CONTENT_LEN).first();
+            }
 
-            headers.remove(HTTP.CONTENT_LEN);
-        }
+            if (contentLengthHeader != null) {
+                contentLength = Integer.parseInt(contentLengthHeader);
+                headers.remove(HTTP.CONTENT_LEN);
+            }
 
-        if (contentLength != -1) {
-            entity.setChunked(false);
-            entity.setContentLength(contentLength);
-        } else {
-            entity.setChunked(true);
+            if (contentLength != -1) {
+                entity.setChunked(false);
+                entity.setContentLength(contentLength);
+            } else {
+                entity.setChunked(true);
+            }
+
         }
         
         response.setEntity(entity);
@@ -143,9 +147,8 @@ public class SourceResponse {
                 }   
             }
         }
-
         response.setParams(new DefaultedHttpParams(response.getParams(),
-                sourceConfiguration.getHttpParams()));
+                                                   sourceConfiguration.getHttpParams()));
 
         SourceContext.updateState(conn, ProtocolState.RESPONSE_HEAD);
 
@@ -156,11 +159,18 @@ public class SourceResponse {
                 SourceContext.getRequest(conn).getRequest());
         
         sourceConfiguration.getHttpProcessor().process(response, conn.getContext());
-        conn.submitResponse(response);        
+        conn.submitResponse(response);
+
+        // Handle non entity body responses
+        if (entity == null) {
+            hasEntity = false;
+            // Reset connection state
+            sourceConfiguration.getSourceConnections().releaseConnection(conn);
+            // Make ready to deal with a new request
+            conn.requestInput();
+        }
     }
-    
-    
-    
+
     public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
 
     	if (responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
@@ -241,6 +251,22 @@ public class SourceResponse {
             headers.remove(name);
         }
     }
+
+    private boolean canResponseHaveBody(final HttpRequest request, final HttpResponse response) {
+        if (request != null && "HEAD".equalsIgnoreCase(request.getRequestLine().getMethod())) {
+            return false;
+        }
+        int status = response.getStatusLine().getStatusCode();
+        return status >= HttpStatus.SC_OK
+               && status != HttpStatus.SC_NO_CONTENT
+               && status != HttpStatus.SC_NOT_MODIFIED
+               && status != HttpStatus.SC_RESET_CONTENT;
+    }
+
+    public boolean hasEntity() {
+       return this.hasEntity;
+    }
+
 
     
 }

@@ -269,6 +269,8 @@ public class MessageHelper {
                           "PASS_THROUGH_SOURCE_CONFIGURATION");
         		  Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source", sourceConfiguration);
         		  newMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE,pipe);
+        	 } else {
+        		   newMC.removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         	 }
         }
 
@@ -352,7 +354,7 @@ public class MessageHelper {
             }
         }
 
-        newMC.setServerSide(false);
+        newMC.setServerSide(ori.isServerSide());
 
         return newMC;
     }
@@ -386,7 +388,7 @@ public class MessageHelper {
         if (envelope.getBody() != null) {
             // treat the SOAPFault cloning as a special case otherwise a cloning OMElement as the
             // fault would lead to class cast exceptions if accessed through the getFault method
-            if (envelope.getBody().hasFault()) {
+        	if (envelope.getBody().getFirstElement() instanceof SOAPFault && envelope.getBody().hasFault()) {
                 SOAPFault fault = envelope.getBody().getFault();
                 newEnvelope.getBody().addFault(cloneSOAPFault(fault));
             } else {

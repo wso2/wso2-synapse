@@ -18,16 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.channels.ClosedChannelException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.apache.axiom.om.OMOutputFormat;
 import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.axis2.AxisFault;
@@ -52,6 +42,16 @@ import org.apache.http.nio.util.ContentOutputBuffer;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.channels.ClosedChannelException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Represents an outgoing Axis2 HTTP/s request. It holds the EPR of the destination, the
@@ -326,10 +326,20 @@ public class Axis2HttpRequest {
             }
         }
 
+        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
+        int senderTimeout = cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, 60000);
+        long startTime = System.currentTimeMillis();
+
         synchronized (this) {
             while (!readyToStream && !completed) {
                 try {
-                    this.wait();
+                    this.wait(senderTimeout + 10000);
+                    if ((startTime + senderTimeout + 5000) < System.currentTimeMillis()) {
+                        handleException("Thread " + Thread.currentThread().getName() +
+                                " is blocked longer than the send timeout when trying to send the message :" +
+                                msgContext.getMessageID() + ". Releasing thread",
+                                new AxisFault("Sender thread was not notified within send timeout"));
+                    }
                 } catch (InterruptedException ignore) {
                 }
             }

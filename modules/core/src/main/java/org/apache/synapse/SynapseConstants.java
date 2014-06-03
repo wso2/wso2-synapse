@@ -451,9 +451,11 @@ public final class SynapseConstants {
     public static final String FAIL_SAFE_MODE_MESSAGE_PROCESSORS = "messageprocessors";
     public static final String FAIL_SAFE_MODE_MESSAGE_STORES = "messagestores";
     public static final String FAIL_SAFE_MODE_API = "api";
+    public static final String FAIL_SAFE_MODE_INBOUND_ENDPOINT = "inboundendpoint";
     public static final String FAIL_SAFE_MODE_IMPORTS = "import";
     public static final String FAIL_SAFE_MODE_TASKS = "task";
     public static final String FAIL_SAFE_MODE_REGISTRY = "registry";
+    public static final String FAIL_SAFE_MODE_TASK_MANAGER = "taskManager";
 
     //fall back XPATH support (default javax.xml style xpath processing which can support XPATH 2.0)
     public static final String FAIL_OVER_DOM_XPATH_PROCESSING = "synapse.xpath.dom.failover.enabled";

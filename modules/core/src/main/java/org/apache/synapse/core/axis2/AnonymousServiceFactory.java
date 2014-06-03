@@ -290,4 +290,21 @@ public class AnonymousServiceFactory {
         }
         return synapseCallbackReceiver;
     }
+
+    public static AxisService getAnonymousService(AxisConfiguration axisCfg, String serviceKey)
+            throws AxisFault {
+
+        AxisService service = axisCfg.getService(serviceKey);
+        if (service == null) {
+            synchronized (AnonymousServiceFactory.class) {
+
+                // double locking, issue found on performance test
+                service = axisCfg.getService(serviceKey);
+                if (service == null) {
+                    service = getAxisServiceWithoutCallback(null, axisCfg, serviceKey);
+                }
+            }
+        }
+        return service;
+    }
 }

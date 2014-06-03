@@ -1,3 +1,5 @@
+
+
 /*
 *  Licensed to the Apache Software Foundation (ASF) under one
 *  or more contributor license agreements.  See the NOTICE file
@@ -16,12 +18,10 @@
 *  specific language governing permissions and limitations
 *  under the License.
 */
-package org.apache.synapse.transport.vfs;
+package org.apache.synapse.commons.vfs;
 
-import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
-import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileContent;
@@ -40,7 +40,7 @@ import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-public class VFSUtils extends BaseUtils {
+public class VFSUtils {
 
     private static final Log log = LogFactory.getLog(VFSUtils.class);
 
@@ -230,4 +230,74 @@ public class VFSUtils extends BaseUtils {
         }
         return false;
     }
+    
+    public synchronized static void markFailRecord(FileSystemManager fsManager, FileObject fo) {
+        
+        // generate a random fail value to ensure that there are no two parties
+        // processing the same file
+        Random random = new Random();
+        byte[] failValue = (Long.toString((new Date()).getTime())).getBytes();
+        
+        try {
+	        String fullPath = fo.getName().getURI();	
+            int pos = fullPath.indexOf("?");
+            if (pos != -1) {
+                fullPath = fullPath.substring(0, pos);
+            }
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail");
+            if (!failObject.exists()) {
+            	failObject.createFile();
+            }
+
+             // write a lock file before starting of the processing, to ensure that the
+             // item is not processed by any other parties
+                
+             OutputStream stream = failObject.getContent().getOutputStream();
+             try {
+                 stream.write(failValue);
+                 stream.flush();
+                 stream.close();
+             } catch (IOException e) {
+              	 failObject.delete();
+                 log.error("Couldn't create the fail file before processing the file " + fullPath, e);                 
+             } finally {
+             	failObject.close();
+             }
+        } catch (FileSystemException fse) {
+            log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI()) + " before processing");
+        }       
+    }
+    public static boolean isFailRecord(FileSystemManager fsManager, FileObject fo) {
+        try {
+	    String fullPath = fo.getName().getURI();	
+            int pos = fullPath.indexOf("?");
+            if (pos > -1) {
+                fullPath = fullPath.substring(0, pos);
+            }
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail");
+            if (failObject.exists()) {
+            	return true;
+            }
+        } catch (FileSystemException e) {
+            log.error("Couldn't release the fail for the file : " + fo.getName());
+        }
+        return false;
+    }
+
+    public static void releaseFail(FileSystemManager fsManager, FileObject fo) {
+        try {
+	    String fullPath = fo.getName().getURI();	
+            int pos = fullPath.indexOf("?");
+            if (pos > -1) {
+                fullPath = fullPath.substring(0, pos);
+            }
+            FileObject failObject = fsManager.resolveFile(fullPath + ".fail");
+            if (failObject.exists()) {
+            	failObject.delete();
+            }
+        } catch (FileSystemException e) {
+            log.error("Couldn't release the fail for the file : " + fo.getName());
+        }
+    }    
+    
 }

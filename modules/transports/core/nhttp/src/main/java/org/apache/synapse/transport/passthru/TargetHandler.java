@@ -145,7 +145,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (IOException e) {
             logIOException(conn, e);
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
 
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
@@ -158,7 +158,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (HttpException e) {
             log.error(e.getMessage(), e);
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
 
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
@@ -189,7 +189,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (IOException ex) {
             logIOException(conn, ex);
             TargetContext.updateState(conn, ProtocolState.CLOSING);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
 
             informWriterError(conn);
 
@@ -204,7 +204,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (Exception e) {
             log.error("Error occurred while writing data to the target", e);
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
 
             informWriterError(conn);
 
@@ -248,7 +248,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 // Ignore 1xx response
                 return;
             }
-            
+
         	context.setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME, System.currentTimeMillis());
             connState = TargetContext.getState(conn);
             if (connState != ProtocolState.REQUEST_DONE) {
@@ -293,13 +293,13 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (statusCode == HttpStatus.SC_ACCEPTED && handle202(requestMsgContext)) {
                 return;
             }
-                       
+
             targetConfiguration.getWorkerPool().execute(
                     new ClientWorker(targetConfiguration.getConfigurationContext(),
                             requestMsgContext, targetResponse));
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
-            
+
 			NHttpServerConnection sourceConn =
 			                                   (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
 			if (sourceConn != null) {
@@ -311,14 +311,14 @@ public class TargetHandler implements NHttpClientEventHandler {
 				                                         .getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME));
 
 			}
-                                                                                      
+
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
 
             informReaderError(conn);
 
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
         }
     }
 
@@ -365,24 +365,23 @@ public class TargetHandler implements NHttpClientEventHandler {
 			}
         } catch (IOException e) {
             logIOException(conn, e);
-
             informReaderError(conn);
 
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn,false);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
 
             informReaderError(conn);
 
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn);
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
         }
     }
 
     public void closed(NHttpClientConnection conn) {
         ProtocolState state = TargetContext.getState(conn);
-        
+
         boolean sendFault = false;
 
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
@@ -396,7 +395,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
             log.warn("Connection closed by target host while receiving the response");
-            sendFault = false;
+            sendFault = true;
         } else if (state == ProtocolState.REQUEST_DONE) {
             informWriterError(conn);
             log.warn("Connection closed by target host before receiving the request");
@@ -417,7 +416,12 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn);
+        if (sendFault) {
+            targetConfiguration.getConnections().shutdownConnection(conn, false);
+        } else {
+            targetConfiguration.getConnections().shutdownConnection(conn);
+        }
+
     }
 
     private void logIOException(NHttpClientConnection conn, IOException e) {
@@ -482,7 +486,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn);
+        targetConfiguration.getConnections().shutdownConnection(conn, false);
     }
 
     private boolean isResponseHaveBodyExpected(
@@ -527,7 +531,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn);
+        targetConfiguration.getConnections().shutdownConnection(conn, false);
         if (requestMsgCtx != null) {
             targetErrorHandler.handleError(requestMsgCtx,
                     ErrorCodes.SND_INVALID_STATE,
@@ -560,7 +564,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void endOfInput(NHttpClientConnection conn) throws IOException {
         conn.close();
     }
-    
+
     public void exception(NHttpClientConnection conn, Exception ex) {
         ProtocolState state = TargetContext.getState(conn);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
@@ -598,7 +602,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
             TargetContext.updateState(conn, ProtocolState.CLOSED);
         }
-        targetConfiguration.getConnections().shutdownConnection(conn);
+        targetConfiguration.getConnections().shutdownConnection(conn, false);
     }
 
 }

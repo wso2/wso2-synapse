@@ -16,9 +16,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import java.io.IOException;
-import java.io.OutputStream;
-
 import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,6 +41,9 @@ import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * This is the class where transport interacts with the client. This class
@@ -131,14 +131,14 @@ public class SourceHandler implements NHttpServerEventHandler {
             informReaderError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } catch (IOException e) {
             logIOException(conn, e);
 
             informReaderError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -167,7 +167,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             informReaderError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -193,6 +193,10 @@ public class SourceHandler implements NHttpServerEventHandler {
                 response.start(conn);
 
                 metrics.incrementMessagesSent();
+                if (!response.hasEntity()) {
+                   // Update stats as outputReady will not be triggered for no entity responses
+                   updateStatistics(conn);
+                }
             }
         } catch (IOException e) {
             logIOException(conn, e);
@@ -200,14 +204,14 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } catch (HttpException e) {
             log.error(e.getMessage(), e);
 
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -253,27 +257,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             int bytesSent = response.write(conn, encoder);
             
 			if (encoder.isCompleted()) {
-				HttpContext context = conn.getContext();
-				if (context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null &&
-				    context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME) != null &&
-				    context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME) != null) {
-
-					if (latencyView != null) {
-						latencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-						                        (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-						                        (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-						                        System.currentTimeMillis());
-					} else if (s2sLatencyView != null) {
-						s2sLatencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-						                           (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-						                           (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-						                           System.currentTimeMillis());
-					}
-				}
-
-				context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-				context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
-				context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
+                updateStatistics(conn);
 			}
             
             metrics.incrementBytesSent(bytesSent);
@@ -283,8 +267,32 @@ public class SourceHandler implements NHttpServerEventHandler {
             informWriterError(conn);
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } 
+    }
+
+    private void updateStatistics(NHttpServerConnection conn) {
+        HttpContext context = conn.getContext();
+        if (context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null &&
+            context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME) != null &&
+            context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME) != null) {
+
+            if (latencyView != null) {
+                latencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
+                                        (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
+                                        (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
+                                        System.currentTimeMillis());
+            } else if (s2sLatencyView != null) {
+                s2sLatencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
+                                           (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
+                                           (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
+                                           System.currentTimeMillis());
+            }
+        }
+
+        context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
+        context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
+        context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
     }
 
     private void logIOException(NHttpServerConnection conn, IOException e) {
@@ -339,32 +347,41 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+       
+        sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
     }
 
     public void closed(NHttpServerConnection conn) {
         ProtocolState state = SourceContext.getState(conn);
-
+        boolean fault = false;
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
+        	//fault = true;
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was closed: " + conn);
             }
         } else if (state == ProtocolState.REQUEST_BODY ||
                 state == ProtocolState.REQUEST_HEAD) {
+        	fault = true;
             informReaderError(conn);
             log.warn("Connection closed while reading the request: " + conn);
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
+        	fault = true;
             informWriterError(conn);
             log.warn("Connection closed while writing the response: " + conn);
         } else if (state == ProtocolState.REQUEST_DONE) {
+        	fault = true;
             log.warn("Connection closed by the client after request is read: " + conn);
         }
 
         metrics.disconnected();
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+        if (fault) {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
+        } else {
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+        }
     }
 
     public void endOfInput(NHttpServerConnection conn) throws IOException {
@@ -391,11 +408,11 @@ public class SourceHandler implements NHttpServerEventHandler {
             }
             
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         } else if (ex instanceof HttpException) {
             try {
                 if (conn.isResponseSubmitted()) {
-                    sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+                    sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
                     return;
                 }
                 HttpContext httpContext = conn.getContext();
@@ -420,12 +437,12 @@ public class SourceHandler implements NHttpServerEventHandler {
             } catch (Exception ex1) {
                 log.error(ex.getMessage(), ex);
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
-                sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+                sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
             }
         } else {
             log.error("Unexpected error: " + ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
-            sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
         }
     }
 
@@ -433,7 +450,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         log.warn(action + " while the handler is in an inconsistent state " +
                 SourceContext.getState(conn));
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-        sourceConfiguration.getSourceConnections().shutDownConnection(conn);
+        sourceConfiguration.getSourceConnections().shutDownConnection(conn, false);
     }
 
     private void informReaderError(NHttpServerConnection conn) {
