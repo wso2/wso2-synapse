@@ -171,26 +171,37 @@ public class SourceResponse {
         }
     }
 
-    public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
+	public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
 
-    	if (responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
-           if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED, false)) {
-               try {
-                   RelayUtils.buildMessage(responseMsgContext,false);
-                   responseMsgContext.getEnvelope().buildWithAttachments();
-               } catch (Exception e) {
-            	  throw new AxisFault(e.getMessage());
-               }
-           }
-            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(responseMsgContext);
-            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-        	formatter.writeTo(responseMsgContext, format, out, false);
-		    TreeSet<String> header = new TreeSet<String>();
-            header.add(String.valueOf(out.toByteArray().length));
-            headers.put(HTTP.CONTENT_LEN,header);
-        } 
-    }
+		if (responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
+			if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
+			                                       false)) {
+				try {
+					RelayUtils.buildMessage(responseMsgContext, false);
+					responseMsgContext.getEnvelope().buildWithAttachments();
+				} catch (Exception e) {
+					throw new AxisFault(e.getMessage());
+				}
+			}
+
+			Boolean noEntityBody =
+			                       (Boolean) responseMsgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
+
+			if (noEntityBody != null && Boolean.TRUE == noEntityBody) {
+				headers.remove(HTTP.CONTENT_TYPE);
+				return;
+			}
+
+			MessageFormatter formatter =
+			                             MessageProcessorSelector.getMessageFormatter(responseMsgContext);
+			OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			formatter.writeTo(responseMsgContext, format, out, false);
+			TreeSet<String> header = new TreeSet<String>();
+			header.add(String.valueOf(out.toByteArray().length));
+			headers.put(HTTP.CONTENT_LEN, header);
+		}
+	}
 
     /**
      * Consume the content through the Pipe and write them to the wire

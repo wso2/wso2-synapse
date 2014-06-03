@@ -148,4 +148,6 @@ public class PassThroughConstants {
     public static final String REQUEST_ACCEPTS_GZIP ="REQUEST_ACCEPTS_GZIP" ;
     
     public static final String HTTP_SC_DESC = "HTTP_SC_DESC";
+    
+    public static final String RELAY_EARLY_BUILD  ="relay_early_build";
 }
