@@ -117,6 +117,9 @@ public class RelayUtils {
 	        messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
 	                Boolean.TRUE);
 
+			earlyBuild = messageContext.getProperty(PassThroughConstants.RELAY_EARLY_BUILD) != null ? (Boolean) messageContext
+					.getProperty(PassThroughConstants.RELAY_EARLY_BUILD) : earlyBuild;
+
 	        if (!earlyBuild) {
 	            processAddressing(messageContext);
 	        }
