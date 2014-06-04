@@ -32,6 +32,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.TargetRequest;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
@@ -93,10 +94,40 @@ public class TargetRequestFactory {
                 }
             }
 
-            String cType = getContentType(msgContext);
-            if (cType != null && (!httpMethod.equals("GET") && !httpMethod.equals("DELETE"))) {
-                request.addHeader(HTTP.CONTENT_TYPE, cType);
-            }
+			String cType = getContentType(msgContext);
+			if (cType != null && (!httpMethod.equals("GET") && !httpMethod.equals("DELETE"))) {
+				String messageType = (String) msgContext.getProperty("messageType");
+				if (messageType != null) {
+					boolean builderInvoked = false;
+					final Pipe pipe = (Pipe) msgContext
+							.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+					if (pipe != null) {
+						builderInvoked = Boolean.TRUE.equals(msgContext
+								.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED));
+					}
+
+					// if multipart related message type and unless if message
+					// not get build we should
+					// skip of setting formatter specific content Type
+					if (messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED) == -1
+							&& messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA) == -1) {
+						request.addHeader(HTTP.CONTENT_TYPE, cType);
+					}
+
+					// if messageType is related to multipart and if message
+					// already built we need to set new
+					// boundary related content type at Content-Type header
+					if (builderInvoked
+							&& (((messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED) != -1) 
+									|| (messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA) != -1)))) {
+						request.addHeader(HTTP.CONTENT_TYPE, cType);
+					}
+
+				} else {
+					request.addHeader(HTTP.CONTENT_TYPE, cType);
+				}
+
+			}
 
             // version
             String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
