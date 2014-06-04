@@ -70,6 +70,9 @@ public class SourceResponse {
     private boolean hasEntity = true;
     
     private SourceRequest request = null;
+    
+    /** If version change required default HTTP 1.1 will be overridden*/
+    private boolean versionChangeRequired =false;
 
     public SourceResponse(SourceConfiguration config, int status, SourceRequest request) {
         this(config, status, null, request);
@@ -105,6 +108,8 @@ public class SourceResponse {
 
         if (statusLine != null) {
             response.setStatusLine(version, status, statusLine);
+        } if(versionChangeRequired){
+        	response.setStatusLine(version, status);
         } else {
             response.setStatusCode(status);
         }
@@ -172,8 +177,9 @@ public class SourceResponse {
     }
 
 	public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
-
-		if (responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
+		String forceHttp10 = (String) responseMsgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+		
+		if ("true".equals(forceHttp10) || responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
 			if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
 			                                       false)) {
 				try {
@@ -182,6 +188,11 @@ public class SourceResponse {
 				} catch (Exception e) {
 					throw new AxisFault(e.getMessage());
 				}
+			}
+			
+			if("true".equals(forceHttp10)){
+				version = HttpVersion.HTTP_1_0;
+				versionChangeRequired=true;
 			}
 
 			Boolean noEntityBody =
