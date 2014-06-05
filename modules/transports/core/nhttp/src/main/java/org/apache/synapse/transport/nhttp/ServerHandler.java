@@ -549,8 +549,8 @@ public class ServerHandler implements NHttpServerEventHandler {
                 commitResponseHideExceptions(conn, response);
             } catch (Exception ignore) {}
         } else if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                e.getMessage().contains("Connection reset by peer") ||
-                e.getMessage().contains("forcibly closed"))) {
+                (e.getMessage().contains("Connection reset by peer") ||
+                e.getMessage().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": I/O error (Probably the keepalive connection " +
                         "was closed):" + e.getMessage());
