@@ -399,7 +399,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             sendFault = false;
         } else if (state == ProtocolState.REQUEST_DONE) {
             informWriterError(conn);
-            log.warn("Connection closed by target host before receiving the request");
+            log.warn("Connection closed by target host after sending the request");
             sendFault = true;
         }
 
