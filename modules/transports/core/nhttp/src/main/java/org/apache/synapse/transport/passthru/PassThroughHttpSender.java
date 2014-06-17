@@ -463,7 +463,18 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         ProtocolState state = SourceContext.getState(conn);
         if (state != null && state.compareTo(ProtocolState.REQUEST_DONE) <= 0) {
             // start sending the response if we
-            if (msgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED) && pipe != null) {
+        	
+			boolean noEntityBodyResponse = false;
+			if (noEntityBody != null && Boolean.TRUE == noEntityBody
+					&& pipe != null) {
+				OutputStream out = pipe.getOutputStream();
+				out.write(new byte[0]);
+				pipe.setRawSerializationComplete(true);
+				out.close();
+				noEntityBodyResponse = true;
+			}
+			
+            if (!noEntityBodyResponse && msgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED) && pipe != null) {
                 OutputStream out = pipe.getOutputStream();
                 /*if (msgContext.isPropertyTrue(NhttpConstants.SC_ACCEPTED)) {
                     out.write(new byte[0]);
@@ -500,13 +511,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 out.close();
             }
             
-            if(noEntityBody != null && Boolean.TRUE == noEntityBody && pipe != null){
-                OutputStream out = pipe.getOutputStream();
-            	out.write(new byte[0]);
-            	pipe.setRawSerializationComplete(true);
-                out.close();
-            }
-            conn.requestOutput();
+             conn.requestOutput();
         } else {
             // nothing much to do as we have started the response already
             if (errorCode != null) {

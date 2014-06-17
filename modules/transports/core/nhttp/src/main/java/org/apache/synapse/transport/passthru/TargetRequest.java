@@ -173,12 +173,14 @@ public class TargetRequest {
 		}        
         
         
-        Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+		Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
 		if (o != null && o instanceof TreeMap) {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
 			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)
+						&& !trpContentType
+								.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
 

@@ -70,6 +70,9 @@ public class SourceResponse {
     private boolean hasEntity = true;
     
     private SourceRequest request = null;
+    
+    /** If version change required default HTTP 1.1 will be overridden*/
+    private boolean versionChangeRequired =false;
 
     public SourceResponse(SourceConfiguration config, int status, SourceRequest request) {
         this(config, status, null, request);
@@ -105,6 +108,8 @@ public class SourceResponse {
 
         if (statusLine != null) {
             response.setStatusLine(version, status, statusLine);
+        } if(versionChangeRequired){
+        	response.setStatusLine(version, status);
         } else {
             response.setStatusCode(status);
         }
@@ -171,26 +176,43 @@ public class SourceResponse {
         }
     }
 
-    public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
+	public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
+		String forceHttp10 = (String) responseMsgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+		
+		if ("true".equals(forceHttp10) || responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
+			if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
+			                                       false)) {
+				try {
+					RelayUtils.buildMessage(responseMsgContext, false);
+					responseMsgContext.getEnvelope().buildWithAttachments();
+				} catch (Exception e) {
+					throw new AxisFault(e.getMessage());
+				}
+			}
+			
+			if("true".equals(forceHttp10)){
+				version = HttpVersion.HTTP_1_0;
+				versionChangeRequired=true;
+			}
 
-    	if (responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
-           if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED, false)) {
-               try {
-                   RelayUtils.buildMessage(responseMsgContext,false);
-                   responseMsgContext.getEnvelope().buildWithAttachments();
-               } catch (Exception e) {
-            	  throw new AxisFault(e.getMessage());
-               }
-           }
-            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(responseMsgContext);
-            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-        	formatter.writeTo(responseMsgContext, format, out, false);
-		    TreeSet<String> header = new TreeSet<String>();
-            header.add(String.valueOf(out.toByteArray().length));
-            headers.put(HTTP.CONTENT_LEN,header);
-        } 
-    }
+			Boolean noEntityBody =
+			                       (Boolean) responseMsgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
+
+			if (noEntityBody != null && Boolean.TRUE == noEntityBody) {
+				headers.remove(HTTP.CONTENT_TYPE);
+				return;
+			}
+
+			MessageFormatter formatter =
+			                             MessageProcessorSelector.getMessageFormatter(responseMsgContext);
+			OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			formatter.writeTo(responseMsgContext, format, out, false);
+			TreeSet<String> header = new TreeSet<String>();
+			header.add(String.valueOf(out.toByteArray().length));
+			headers.put(HTTP.CONTENT_LEN, header);
+		}
+	}
 
     /**
      * Consume the content through the Pipe and write them to the wire

@@ -131,6 +131,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
         } else {
             JsonUtil.newJsonPayload(axis2MessageContext, out, true, true);
         }
+        //need to honour a content-type of the payload media-type as output from the payload 
+        //{re-merging patch https://wso2.org/jira/browse/ESBJAVA-3014}
+        setContentType(synCtx);
         return true;
     }
 

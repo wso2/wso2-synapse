@@ -18,6 +18,7 @@ package org.apache.synapse.transport.passthru.util;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.impl.dom.soap11.SOAP11Factory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.builder.*;
@@ -30,6 +31,7 @@ import org.apache.axis2.util.JavaUtils;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import javax.xml.stream.XMLStreamException;
@@ -88,20 +90,38 @@ public class DeferredMessageBuilder {
             XMLStreamException, IOException {
    	  
     	
-    	String contentType = (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
-    	String _contentType = getContentType(contentType, msgCtx);
- 	    in = HTTPTransportUtils.handleGZip(msgCtx, in);
+		String contentType = (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
+		String _contentType = getContentType(contentType, msgCtx);
+		in = HTTPTransportUtils.handleGZip(msgCtx, in);
 
-    	AxisConfiguration configuration =
-    		  msgCtx.getConfigurationContext().getAxisConfiguration();
-      Parameter useFallbackParameter = configuration.getParameter(Constants.Configuration.USE_DEFAULT_FALLBACK_BUILDER);
-     
-      boolean useFallbackBuilder = false;
+		AxisConfiguration configuration = msgCtx.getConfigurationContext().getAxisConfiguration();
+		Parameter useFallbackParameter =
+		                                 configuration.getParameter(Constants.Configuration.USE_DEFAULT_FALLBACK_BUILDER);
+
+		boolean useFallbackBuilder = false;
+
+		if (useFallbackParameter != null) {
+			useFallbackBuilder =
+			                     JavaUtils.isTrueExplicitly(useFallbackParameter.getValue(),
+			                                                useFallbackBuilder);
+		}
       
-      if (useFallbackParameter !=null){
-      	useFallbackBuilder = JavaUtils.isTrueExplicitly(useFallbackParameter.getValue(),useFallbackBuilder);
-      }
-    	
+		Map transportHeaders = (Map) msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+
+		if (transportHeaders != null) {
+			String contentLength = (String) transportHeaders.get(HTTP.CONTENT_LEN);
+			String trasferEncoded = (String) transportHeaders.get(HTTP.TRANSFER_ENCODING);
+
+			if (contentType.equals(PassThroughConstants.DEFAULT_CONTENT_TYPE)
+					&& (contentLength == null || Integer.valueOf(contentLength) == 0)
+					&& trasferEncoded == null) {
+				msgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, true);
+				msgCtx.setProperty(Constants.Configuration.CONTENT_TYPE, "");
+				msgCtx.setProperty(PassThroughConstants.RELAY_EARLY_BUILD, true);
+				return new SOAP11Factory().getDefaultEnvelope();
+			}
+		}
+
     	OMElement element = null;
         Builder builder;
         if (contentType != null) {

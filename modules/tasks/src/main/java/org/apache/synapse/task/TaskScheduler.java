@@ -37,56 +37,76 @@ public class TaskScheduler {
     public TaskScheduler(String name) {
         this.name = name;
     }
+    /** This same task scheduler instance can be used by many startup controllers */
+    private static final Object lock = new Object();
 
     public void init(Properties properties, TaskManager taskManager) {
-        initialized = false;
+        synchronized (lock) {
+            initialized = false;
+        }
         setTaskManager(taskManager, properties);
         start();
     }
 
     private boolean setTaskManager(TaskManager taskManager, Properties properties) {
-        if (taskManager == null) {
-            logger.error("Task scheduler initialization failed. Task manager is invalid.");
-            return false;
+        synchronized (lock) {
+            if (taskManager == null) {
+                logger.error("Task scheduler initialization failed. Task manager is invalid.");
+                return false;
+            }
+            this.taskManager = taskManager;
+            this.taskManager.setName(name);
+            if (!this.taskManager.isInitialized()) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Synapse Task Scheduler initializing task manager["
+                            + taskManager.getClass().getName() +"]: Properties" + properties);
+                }
+                this.taskManager.init(properties);
+            }
+            initialized = true;
+            return true;
         }
-        this.taskManager = taskManager;
-        this.taskManager.setName(name);
-        this.taskManager.init(properties);
-        initialized = true;
-        return true;
     }
 
     public void start() {
-        if (!initialized) {
-            logger.error("Could not start task scheduler. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not start task scheduler. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.start();
         }
-        taskManager.start();
     }
 
     public void pauseAll() {
-        if (!initialized) {
-            logger.error("Could not pause tasks. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not pause tasks. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.pauseAll();
         }
-        taskManager.pauseAll();
     }
     
     public void resumeAll() {
-        if (!initialized) {
-            logger.error("Could not resume tasks. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not resume tasks. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.resumeAll();
         }
-        taskManager.resumeAll();
     }
 
     public boolean scheduleTask(TaskDescription taskDescription, Map<String,
             Object> resources, Class taskClass) {
-        if (!initialized) {
-            logger.error("Could not schedule task ["+ taskDescription.getName() + "]. Task scheduler not properly initialized.");
-            return false;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not schedule task ["+ taskDescription.getName() + "]. Task scheduler not properly initialized.");
+                return false;
+            }
+            return taskManager.schedule(taskDescription);
         }
-        return taskManager.schedule(taskDescription);
     }
 
     public boolean scheduleTask(TaskDescription taskDescription, Map<String,
@@ -94,77 +114,94 @@ public class TaskScheduler {
         if (taskDescription == null) {
             return false;
         }
-        if (!initialized) {
-            logger.error("Could not schedule task [" + taskDescription.getName() + "]. Task scheduler not properly initialized.");
-            return false;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not schedule task [" + taskDescription.getName() + "]. Task scheduler not properly initialized.");
+                return false;
+            }
+            return taskManager.schedule(taskDescription);
         }
-        return taskManager.schedule(taskDescription);
     }
 
     public boolean scheduleTask(TaskDescription taskDescription) {
         if (taskDescription == null) {
             return false;
         }
-        if (!initialized) {
-            logger.error("Could not schedule task [" + taskDescription.getName() + "]. Task scheduler not properly initialized.");
-            return false;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not schedule task [" + taskDescription.getName() + "]. Task scheduler not properly initialized.");
+                return false;
+            }
+            return taskManager.schedule(taskDescription);
         }
-        return taskManager.schedule(taskDescription);
     }
 
     public void shutDown() {
-        if (!initialized) {
-            logger.error("Couldvoid not shut down task scheduler. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Couldvoid not shut down task scheduler. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.stop();
         }
-        taskManager.stop();
     }
 
     public boolean isInitialized() {
-        if (!initialized) {
-            return false;
+        synchronized (lock) {
+            if (!initialized) {
+                return false;
+            }
+            return taskManager.isInitialized();
         }
-        return taskManager.isInitialized();
     }
 
     public void deleteTask(String name, String group) {
-        if (!initialized) {
-            logger.error("Could not delete task[" + name + "," + group + "]. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not delete task[" + name + "," + group + "]. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.delete(name + "::" + group);
         }
-        taskManager.delete(name + "::" + group);
     }
     
     public int getRunningTaskCount() {
-        if (!initialized) {
-            logger.error("Could not determine running task count. Task scheduler not properly initialized.");
-            return -1;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not determine running task count. Task scheduler not properly initialized.");
+                return -1;
+            }
+            return taskManager.getRunningTaskCount();
         }
-        return taskManager.getRunningTaskCount();
     }
 
     public boolean isTaskAlreadyRunning(Object taskKey) {
-        if (!initialized) {
-            logger.error("Could not determine task status. Task scheduler not properly initialized.");
-            return false;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not determine task status. Task scheduler not properly initialized.");
+                return false;
+            }
+            return taskManager.isTaskRunning(taskKey);
         }
-        return taskManager.isTaskRunning(taskKey);
     }
 
     public void setTriggerFactory(Object triggerFactory) {
-        if (!initialized) {
-            logger.error("Could not modify task manager. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not modify task manager. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.setProperty("Q_TASK_TRIGGER_FACTORY", triggerFactory);
         }
-        taskManager.setProperty("Q_TASK_TRIGGER_FACTORY", triggerFactory);
     }
 
     public void setJobDetailFactory(Object jobDetailFactory) {
-        if (!initialized) {
-            logger.error("Could not modify task manager. Task scheduler not properly initialized.");
-            return;
+        synchronized (lock) {
+            if (!initialized) {
+                logger.error("Could not modify task manager. Task scheduler not properly initialized.");
+                return;
+            }
+            taskManager.setProperty("Q_TASK_JOB_DETAIL_FACTORY", jobDetailFactory);
         }
-        taskManager.setProperty("Q_TASK_JOB_DETAIL_FACTORY", jobDetailFactory);
     }
-
 }
