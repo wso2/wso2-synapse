@@ -80,7 +80,8 @@ public class StartUpController extends AbstractStartup {
         resolveTaskImpl(taskDescription, synapseEnvironment);
         loadTaskProperties();
         initializeTask(synapseEnvironment);
-        if(taskDescription.getResource(TaskDescription.INSTANCE) == null || taskDescription.getResource(TaskDescription.CLASSNAME) == null){
+        if(taskDescription.getResource(TaskDescription.INSTANCE) == null
+                || taskDescription.getResource(TaskDescription.CLASSNAME) == null) {
         	taskDescription.addResource(TaskDescription.INSTANCE, task);
         	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         }
@@ -97,8 +98,9 @@ public class StartUpController extends AbstractStartup {
             taskScheduler.init(synapseEnvironment.getSynapseConfiguration().getProperties(),
                     taskManager);
             if (!submitTask(taskScheduler, taskDescription)) {
-            	repository.removeTaskDescription(taskDescription.getName());
-                logger.error("Could not submit task [" + taskDescription.getName() + "] to the Scheduler.");
+                // XXX: TODO: this is wrong! This will make the ui to not to show currently deployed tasks on the ESB.
+                //repository.removeTaskDescription(taskDescription.getName());
+                //logger.error("Could not submit task [" + taskDescription.getName() + "] to the Scheduler. Task Service might be unavailable.");
             }
         } catch (Exception e) {
             String msg = "Error starting up Scheduler : " + e.getMessage();
@@ -116,7 +118,7 @@ public class StartUpController extends AbstractStartup {
     private boolean destroyTask() {
         if (taskDescription == null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("There is no Task to be deleted");
+                logger.debug("No task to delete.");
             }
             return false;
         }
