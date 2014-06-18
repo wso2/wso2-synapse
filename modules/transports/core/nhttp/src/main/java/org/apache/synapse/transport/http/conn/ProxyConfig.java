@@ -75,7 +75,9 @@ public class ProxyConfig {
                 return null;
             } else {
                 // we are encountering this host for the first time
-                if (!isBypass(target.getHostName().toLowerCase(Locale.US))) {
+                if (isBypass(target.getHostName().toLowerCase(Locale.US))) {
+                    return null;
+                }else{
                     return this.proxy;
                 }
             }
