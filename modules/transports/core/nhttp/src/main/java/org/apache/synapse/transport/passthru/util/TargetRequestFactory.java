@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.Map;
 //import org.apache.axis2.util.MessageProcessorSelector;
 
+
 public class TargetRequestFactory {
     
 	private static Log log = LogFactory.getLog(TargetRequestFactory.class);
@@ -111,6 +112,10 @@ public class TargetRequestFactory {
 					// skip of setting formatter specific content Type
 					if (messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED) == -1
 							&& messageType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA) == -1) {
+						Map msgCtxheaders = (Map) o;
+						if (msgCtxheaders != null && !cType.isEmpty()) {
+							msgCtxheaders.put(HTTP.CONTENT_TYPE, cType);
+						}
 						request.addHeader(HTTP.CONTENT_TYPE, cType);
 					}
 
