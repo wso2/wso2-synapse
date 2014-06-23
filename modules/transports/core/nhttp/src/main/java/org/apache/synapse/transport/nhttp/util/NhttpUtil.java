@@ -136,23 +136,8 @@ public class NhttpUtil {
      */
     public static String getRestUrlPostfix(String uri, String servicePath){
 
-        servicePath = "/" + servicePath;
-        if (uri.startsWith(servicePath)) {
-            // discard upto servicePath
-            uri = uri.substring(uri.indexOf(servicePath) +
-                    servicePath.length());
-            // discard [proxy] service name if any
-            int pos = uri.indexOf("/", 1);
-            if (pos > 0) {
-                uri = uri.substring(pos);
-            } else {
-                pos = uri.indexOf("?");
-                if (pos != -1) {
-                    uri = uri.substring(pos);
-                } else {
-                    uri = "";
-                }
-            }
+        if (uri.startsWith("/" + servicePath)) {
+        	uri = removeServicePrefix(uri, "/" + servicePath);
         } else {
             // remove any absolute prefix if any
             int pos = uri.indexOf("://");
@@ -168,8 +153,28 @@ public class NhttpUtil {
             if (pos != -1) {
                 uri = uri.substring(pos + 1);
             }
+            uri = removeServicePrefix(uri, servicePath);
         }
 
+        return uri;
+    }
+    
+    private static String removeServicePrefix(String uri, String servicePath){
+        // discard upto servicePath
+        uri = uri.substring(uri.indexOf(servicePath) +
+                servicePath.length());
+        // discard [proxy] service name if any
+        int pos = uri.indexOf("/", 1);
+        if (pos > 0) {
+            uri = uri.substring(pos);
+        } else {
+            pos = uri.indexOf("?");
+            if (pos != -1) {
+                uri = uri.substring(pos);
+            } else {
+                uri = "";
+            }
+        }
         return uri;
     }
 }
