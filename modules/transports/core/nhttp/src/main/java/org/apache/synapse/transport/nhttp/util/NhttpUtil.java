@@ -136,11 +136,11 @@ public class NhttpUtil {
      */
     public static String getRestUrlPostfix(String uri, String servicePath){
 
-        servicePath = "/" + servicePath;
-        if (uri.startsWith(servicePath)) {
+        String contextServicePath = "/" + servicePath;
+        if (uri.startsWith(contextServicePath)) {
             // discard upto servicePath
-            uri = uri.substring(uri.indexOf(servicePath) +
-                    servicePath.length());
+            uri = uri.substring(uri.indexOf(contextServicePath) +
+            		contextServicePath.length());
             // discard [proxy] service name if any
             int pos = uri.indexOf("/", 1);
             if (pos > 0) {
@@ -168,6 +168,24 @@ public class NhttpUtil {
             if (pos != -1) {
                 uri = uri.substring(pos + 1);
             }
+			// Remove the service prefix
+			if (uri.startsWith(servicePath)) {
+				// discard upto servicePath
+				uri = uri.substring(uri.indexOf(contextServicePath)
+						+ contextServicePath.length());
+				// discard [proxy] service name if any
+				pos = uri.indexOf("/", 1);
+				if (pos > 0) {
+					uri = uri.substring(pos);
+				} else {
+					pos = uri.indexOf("?");
+					if (pos != -1) {
+						uri = uri.substring(pos);
+					} else {
+						uri = "";
+					}
+				}
+			}           
         }
 
         return uri;
