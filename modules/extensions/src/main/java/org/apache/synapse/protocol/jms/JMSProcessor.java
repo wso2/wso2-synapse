@@ -85,17 +85,15 @@ public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
         	startUpController.init(synapseEnvironment);
 
         } catch (Exception e) {
-            String msg = "Error starting up Scheduler : " + e.getMessage();
-            e.printStackTrace();
-            //log.fatal(msg, e);
-            //throw new SynapseException(msg, e);
+            log.error("Could not start JMS Processor. Error starting up scheduler. Error: " + e.getLocalizedMessage());
         }   	
     }    
     
     public void destroy() {
-        log.info("Inbound JMS listener ended for destination " + name);
+        log.info("Inbound JMS listener ending operation on destination " + name);
         startUpController.destroy();
-    }    
+    }
+
     public String getName() {
         return name;
     }
@@ -105,6 +103,6 @@ public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
     }
 
 	public void update() {
-		start();	
+		start();
 	}
 }

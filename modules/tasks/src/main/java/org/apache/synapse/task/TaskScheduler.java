@@ -42,6 +42,10 @@ public class TaskScheduler {
 
     public void init(Properties properties, TaskManager taskManager) {
         synchronized (lock) {
+            if (initialized) {
+                logger.debug("TaskScheduler already initialized.");
+                return;
+            }
             initialized = false;
         }
         setTaskManager(taskManager, properties);
@@ -139,7 +143,6 @@ public class TaskScheduler {
     public void shutDown() {
         synchronized (lock) {
             if (!initialized) {
-                logger.error("Couldvoid not shut down task scheduler. Task scheduler not properly initialized.");
                 return;
             }
             taskManager.stop();
