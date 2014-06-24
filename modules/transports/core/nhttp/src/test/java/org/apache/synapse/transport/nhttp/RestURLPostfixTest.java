@@ -43,7 +43,7 @@ public class RestURLPostfixTest extends TestCase {
     	String uri = "/test/admin?a=http://test.com";
         String servicePath = "services";
     
-        String REST_URL_POSTFIX = NttpUtil.getRestUrlPostfix(uri, servicePath);
+        String REST_URL_POSTFIX = NhttpUtil.getRestUrlPostfix(uri, servicePath);
         assertTrue(REST_URL_POSTFIX != null && REST_URL_POSTFIX.equals("test/admin?a=http://test.com"));
     }
         
