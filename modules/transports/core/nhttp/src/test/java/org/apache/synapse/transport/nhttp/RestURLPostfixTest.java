@@ -43,7 +43,27 @@ public class RestURLPostfixTest extends TestCase {
     	String uri = "/test/admin?a=http://test.com";
         String servicePath = "services";
     
-        String REST_URL_POSTFIX = NhttpUtil.getRestUrlPostfix(uri, servicePath);
+        String REST_URL_POSTFIX = NttpUtil.getRestUrlPostfix(uri, servicePath);
         assertTrue(REST_URL_POSTFIX != null && REST_URL_POSTFIX.equals("test/admin?a=http://test.com"));
     }
+        
+    /**
+      * Include the service patch (services) keyword in the complete uri and check whether the REST_URL_POSTFIX is generated properly.
+      */
+    public void testServicePathInclusionCompleteUrl(){
+        //When the servicePath is somewhere in the middle of the uri
+        String uri = "http://localhost:8080/epdata/services/?size=10";
+        String servicePath = "services";
+    
+        String REST_URL_POSTFIX = NhttpUtil.getRestUrlPostfix(uri, servicePath);
+        //REST_URL_POSTFIX should not be null and should contain the servicePath.
+        assertTrue(REST_URL_POSTFIX != null && REST_URL_POSTFIX.contains(servicePath));
+    
+        //When the servicePatch is in the beginning of the uri
+        uri = "http://localhost:8080/services/epdata?size=10";
+        REST_URL_POSTFIX = NhttpUtil.getRestUrlPostfix(uri, servicePath);
+        System.out.println(REST_URL_POSTFIX);
+        //REST_URL_POSTFIX should not be null and should not contain the servicePath.
+        assertTrue(REST_URL_POSTFIX != null && !"".equals(REST_URL_POSTFIX) && !REST_URL_POSTFIX.contains(servicePath));
+    }    
 }
