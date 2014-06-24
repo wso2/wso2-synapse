@@ -281,7 +281,7 @@ public class Axis2FlexibleMEPClient {
             if (endpoint.getAddress() != null) {
                 if (isRest && restSuffix != null && !"".equals(restSuffix)) {
                     String address = endpoint.getAddress(synapseOutMessageContext);
-                    String url;
+                    String url="";
                     if (!address.endsWith("/") && !restSuffix.startsWith("/") &&
                             !restSuffix.startsWith("?")) {
                         url = address + "/" + restSuffix;
@@ -290,7 +290,11 @@ public class Axis2FlexibleMEPClient {
                     } else if (address.endsWith("/") && restSuffix.startsWith("?")) {
                         url = address.substring(0, address.length() - 1) + restSuffix;
                     } else {
-                        url = address + restSuffix;
+                    	if(!address.startsWith("jms")){
+                 		   url = address + restSuffix;
+                    	}else{
+                    	   url = address;
+                    	}
                     }
                     axisOutMsgCtx.setTo(new EndpointReference(url));
 
