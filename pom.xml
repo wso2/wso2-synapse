@@ -746,7 +746,7 @@
       <commons.logging.version>1.1.1</commons.logging.version>
       <!-- addressing, rampart, neethi -->
       <addressing.version>${axis2.version}</addressing.version>
-      <rampart.version>1.6.1-wso2v7</rampart.version>
+      <rampart.version>1.6.1-wso2v12</rampart.version>
       <sandesha2.version>1.6.1-wso2v1</sandesha2.version>
       <neethi.version>2.0.4-wso2v2</neethi.version>
       <wss4j.version>1.5.11-wso2v7-SNAPSHOT</wss4j.version>
