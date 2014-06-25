@@ -61,7 +61,13 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
         jdm.put(BLOCKING_SENDER, sender);
         jdm.put(MessageProcessorConstants.PROCESSOR_INSTANCE, this);
         jdm.put(ForwardingProcessorConstants.TARGET_ENDPOINT, getTargetEndpoint());
-        jdm.put(ForwardingProcessorConstants.THROTTLE, isThrottling(this.interval));
+        jdm.put(ForwardingProcessorConstants.THROTTLE, isThrottling(this.interval) || isThrottling(this.cronExpression));
+
+        // we only this interval when it is running under a cron-expression
+        if (isThrottling(this.cronExpression)) {
+            jdm.put(ForwardingProcessorConstants.THROTTLE_INTERVAL, this.interval);
+        }
+
         jdm.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, this.nonRetryStatusCodes);
 
         return jdm;

@@ -438,4 +438,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     protected boolean isThrottling(long interval) {
         return interval == 0;
     }
+
+    protected boolean isThrottling(String cronExpression) {
+        return cronExpression != null;
+    }
 }

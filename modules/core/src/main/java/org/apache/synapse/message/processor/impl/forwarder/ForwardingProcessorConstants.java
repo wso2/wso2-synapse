@@ -59,4 +59,9 @@ public final class ForwardingProcessorConstants {
      * Indicates if the message processor need not retry for certain http status codes
      */
     public static final String NON_RETRY_STATUS_CODES = "non.retry.status.codes";
+
+    /**
+     * Used th throttle forwarding-processor when it is used with cron expressions
+     */
+    public static final String THROTTLE_INTERVAL = "throttle.interval";
 }
