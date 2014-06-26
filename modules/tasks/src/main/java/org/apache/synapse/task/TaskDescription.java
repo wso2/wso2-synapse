@@ -82,10 +82,7 @@ public final class TaskDescription {
     }
 
     public Map<String, String> getProperties() {
-        if (properties == null) {
-            return Collections.emptyMap();
-        }
-        return unmodifiableMap(properties);
+        return properties == null ? Collections.<String, String>emptyMap() : unmodifiableMap(properties);
     }
 
     public String getTaskGroup() {
@@ -128,7 +125,7 @@ public final class TaskDescription {
     }
 
     public List<String> getPinnedServers() {
-        return unmodifiableList(pinnedServersList);
+        return pinnedServersList == null ? Collections.<String>emptyList() : unmodifiableList(pinnedServersList);
     }
 
     public void setPinnedServers(List<String> pinnedServersList) {
@@ -194,7 +191,7 @@ public final class TaskDescription {
     }
 
     public Set<OMElement> getXmlProperties() {
-        return unmodifiableSet(xmlProperties);
+        return xmlProperties == null ? Collections.<OMElement>emptySet() : unmodifiableSet(xmlProperties);
     }
 
     public void setXmlProperty(OMElement property) {
