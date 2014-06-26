@@ -28,6 +28,9 @@ import java.util.Properties;
 public class TaskScheduler {
     private static final Log logger = LogFactory.getLog(TaskScheduler.class.getName());
 
+    /** This same task scheduler instance can be used by many startup controllers */
+    private static final Object lock = new Object();
+
     private String name;
 
     private TaskManager taskManager;
@@ -37,8 +40,6 @@ public class TaskScheduler {
     public TaskScheduler(String name) {
         this.name = name;
     }
-    /** This same task scheduler instance can be used by many startup controllers */
-    private static final Object lock = new Object();
 
     public void init(Properties properties, TaskManager taskManager) {
         synchronized (lock) {

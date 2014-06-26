@@ -12,21 +12,21 @@ public class FileTask implements org.apache.synapse.task.Task, ManagedLifecycle{
     private FilePollingConsumer fileScanner;
     
     public FileTask(FilePollingConsumer fileScanner) {
-    	logger.info("File Task initalize.");
+    	logger.debug("File Task initalize.");
     	this.fileScanner = fileScanner;
     }
 
     public void execute() {
-    	logger.info("File Task executing.");
+    	logger.debug("File Task executing.");
     	fileScanner.execute();
     }
 
 
     public void init(SynapseEnvironment synapseEnvironment) {
-        logger.info("Initializing Task.");
+        logger.debug("Initializing Task.");
     }
 
     public void destroy() {
-        logger.info("Destroying Task. ");
+        logger.debug("Destroying Task. ");
     }
 }
