@@ -58,13 +58,11 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
     	log.info("Inbound file listener started " + name);
     	fileScanner = new FilePollingConsumer(vfsProperties, name, synapseEnvironment, interval);
     	fileScanner.registerHandler(new FileInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, vfsProperties));
-    	//scheduledExecutorService.scheduleAtFixedRate(fileScanner, 0, this.interval, TimeUnit.SECONDS);
     	start();
     }
     
     public void destroy() {
         log.info("Inbound file listener ended " + name);
-        //scheduledExecutorService.shutdown();
         startUpController.destroy();
     }
       
@@ -78,8 +76,6 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
         	taskDescription.setTaskGroup("FILE-EP");
         	taskDescription.setInterval(interval);
         	taskDescription.setIntervalInMs(true);
-        	//taskDescription.setAllowConcurrentExecutions(false);
-        	//taskDescription.setTaskStartupObserver(this);
         	taskDescription.addResource(TaskDescription.INSTANCE, task);
         	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         	startUpController = new StartUpController();
@@ -87,11 +83,8 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
         	startUpController.init(synapseEnvironment);
 
         } catch (Exception e) {
-            String msg = "Error starting up Scheduler : " + e.getMessage();
-            e.printStackTrace();
-            //log.fatal(msg, e);
-            //throw new SynapseException(msg, e);
-        }   	
+            log.error("Could not start VFS Processor. Error starting up scheduler. Error: " + e.getLocalizedMessage());
+        }
     }
 
     public String getName() {

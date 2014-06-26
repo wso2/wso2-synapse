@@ -97,13 +97,10 @@ public class StartUpController extends AbstractStartup {
             taskManager.setProperties(map);
             taskScheduler.init(synapseEnvironment.getSynapseConfiguration().getProperties(),
                     taskManager);
-            if (!submitTask(taskScheduler, taskDescription)) {
-                // XXX: TODO: this is wrong! This will make the ui to not to show currently deployed tasks on the ESB.
-                //repository.removeTaskDescription(taskDescription.getName());
-                //logger.error("Could not submit task [" + taskDescription.getName() + "] to the Scheduler. Task Service might be unavailable.");
-            }
+            submitTask(taskScheduler, taskDescription);
+            logger.debug("Submitted task [" + taskDescription.getName() + "] to Synapse task scheduler.");
         } catch (Exception e) {
-            String msg = "Error starting up Scheduler : " + e.getMessage();
+            String msg = "Error starting up Scheduler : " + e.getLocalizedMessage();
             logger.fatal(msg, e);
             throw new SynapseException(msg, e);
         }
@@ -117,9 +114,7 @@ public class StartUpController extends AbstractStartup {
 
     private boolean destroyTask() {
         if (taskDescription == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("No task to delete.");
-            }
+            logger.debug("No task found to delete.");
             return false;
         }
         if (task instanceof ManagedLifecycle) {
@@ -132,7 +127,7 @@ public class StartUpController extends AbstractStartup {
         Set properties = taskDescription.getXmlProperties();
         for (Object property : properties) {
             OMElement prop = (OMElement) property;
-            logger.debug("Found Property : " + prop.toString());
+            logger.debug("loaded task property : " + prop.toString());
             PropertyHelper.setStaticProperty(prop, task);
         }
     }
