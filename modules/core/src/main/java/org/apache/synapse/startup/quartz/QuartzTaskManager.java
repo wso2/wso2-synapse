@@ -34,6 +34,8 @@ import java.util.*;
 public class QuartzTaskManager implements TaskManager {
     private static final Log logger = LogFactory.getLog(QuartzTaskManager.class.getName());
 
+    private static final Object lock = new Object();
+
     /**
      * scheduler instance
      */
@@ -68,25 +70,28 @@ public class QuartzTaskManager implements TaskManager {
         if (taskDescription == null) {
             throw new SynapseTaskException("Task Description cannot be found", logger);
         }
-        if (triggerFactory == null) {
-            throw new SynapseTaskException("TriggerFactory cannot be found", logger);
-        }
-        if (jobDetailFactory == null) {
-            throw new SynapseTaskException("JobDetailFactory cannot be found", logger);
-        }
-        Trigger trigger = triggerFactory.createTrigger(taskDescription);
-        if (trigger == null) {
-            throw new SynapseTaskException("Trigger cannot be created from : "
-                    + taskDescription, logger);
-        }
-        JobDetail jobDetail = jobDetailFactory.createJobDetail(taskDescription,
-                taskDescription.getResources(), SimpleQuartzJob.class);
-        if (jobDetail == null) {
-            throw new SynapseTaskException("JobDetail cannot be created from : " + taskDescription +
-                    " and job class " + taskDescription.getTaskImplClassName(), logger);
+        Trigger trigger;
+        JobDetail jobDetail;
+        synchronized (lock) {
+            if (triggerFactory == null) {
+                throw new SynapseTaskException("TriggerFactory cannot be found", logger);
+            }
+            if (jobDetailFactory == null) {
+                throw new SynapseTaskException("JobDetailFactory cannot be found", logger);
+            }
+            trigger = triggerFactory.createTrigger(taskDescription);
+            if (trigger == null) {
+                throw new SynapseTaskException("Trigger cannot be created from : "
+                        + taskDescription, logger);
+            }
+            jobDetail = jobDetailFactory.createJobDetail(taskDescription,
+                    taskDescription.getResources(), SimpleQuartzJob.class);
+            if (jobDetail == null) {
+                throw new SynapseTaskException("JobDetail cannot be created from : " + taskDescription +
+                        " and job class " + taskDescription.getTaskImplClassName(), logger);
+            }
         }
         Object clsInstance = taskDescription.getResource(TaskDescription.INSTANCE);
-
         if (clsInstance == null) {
             String className = (String) taskDescription.getProperty(TaskDescription.CLASSNAME);
             try {
@@ -127,7 +132,9 @@ public class QuartzTaskManager implements TaskManager {
             }
             if (taskDescription.getCount() != 0 && !isTaskRunning(jobDetail.getKey())) {
                 try {
-                    scheduler.scheduleJob(jobDetail, trigger);
+                    synchronized (lock) {
+                        scheduler.scheduleJob(jobDetail, trigger);
+                    }
                 } catch (ObjectAlreadyExistsException e) {
                     logger.warn("did not schedule the job : " + jobDetail + ". the job is already running.");
                 }
@@ -171,7 +178,9 @@ public class QuartzTaskManager implements TaskManager {
         }
         boolean deleteResult;
         try {
-            deleteResult = scheduler.deleteJob(new JobKey(name, group));
+            synchronized (lock) {
+                deleteResult = scheduler.deleteJob(new JobKey(name, group));
+            }
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Cannot delete task [" + name + "::" + group + "]");
         }
@@ -188,7 +197,9 @@ public class QuartzTaskManager implements TaskManager {
         try {
             assertInitialized();
             assertStarted();
-            scheduler.pauseAll();
+            synchronized (lock) {
+                scheduler.pauseAll();
+            }
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Error pausing tasks ", e, logger);
         }
@@ -203,7 +214,9 @@ public class QuartzTaskManager implements TaskManager {
         try {
             assertInitialized();
             assertStarted();
-            scheduler.resumeAll();
+            synchronized (lock) {
+                scheduler.resumeAll();
+            }
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Error resuming tasks ", e, logger);
         }
@@ -236,17 +249,20 @@ public class QuartzTaskManager implements TaskManager {
             }
         }
         try {
-            if (name != null) {
-                scheduler = sf.getScheduler(name);
-            }
-            if (scheduler == null) {
-                scheduler = sf.getScheduler();
+            synchronized (lock) {
+                if (name != null) {
+                    scheduler = sf.getScheduler(name);
+                }
+                if (scheduler == null) {
+                    scheduler = sf.getScheduler();
+                }
+                initialized = true;
+                logger.info("initialized");
             }
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Error getting a  scheduler instance form scheduler" +
                     " factory " + sf, e, logger);
         }
-        initialized = true;
         return true;
     }
 
@@ -257,11 +273,13 @@ public class QuartzTaskManager implements TaskManager {
     public boolean start() {
         assertInitialized();
         try {
-            if (!scheduler.isStarted()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Starting a Scheduler : [ " + scheduler.getMetaData() + " ]");
+            synchronized (lock) {
+                if (!scheduler.isStarted()) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Starting a Scheduler : [ " + scheduler.getMetaData() + " ]");
+                    }
+                    scheduler.start();
                 }
-                scheduler.start();
             }
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Error starting scheduler ", e, logger);
@@ -272,13 +290,15 @@ public class QuartzTaskManager implements TaskManager {
     public boolean stop() {
         if (isInitialized()) {
             try {
-                if (scheduler != null && scheduler.isStarted()) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("ShuttingDown Task Scheduler : " + scheduler.getMetaData());
+                synchronized (lock) {
+                    if (scheduler != null && scheduler.isStarted()) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("ShuttingDown Task Scheduler : " + scheduler.getMetaData());
+                        }
+                        scheduler.shutdown();
                     }
-                    scheduler.shutdown();
+                    initialized = false;
                 }
-                initialized = false;
             } catch (SchedulerException e) {
                 throw new SynapseTaskException("Error ShuttingDown task scheduler ", e, logger);
             }
@@ -289,8 +309,10 @@ public class QuartzTaskManager implements TaskManager {
     public int getRunningTaskCount() {
         int runningTasks = 0;
         try {
-            if (scheduler != null) {
-                runningTasks = scheduler.getCurrentlyExecutingJobs().size();
+            synchronized (lock) {
+                if (scheduler != null) {
+                    runningTasks = scheduler.getCurrentlyExecutingJobs().size();
+                }
             }
         } catch (SchedulerException e) {
             logger.error("Error querying currently executing jobs", e);
@@ -303,7 +325,10 @@ public class QuartzTaskManager implements TaskManager {
             return false;
         }
         try {
-            List<JobExecutionContext> currentJobs = this.scheduler.getCurrentlyExecutingJobs();
+            List<JobExecutionContext> currentJobs;
+            synchronized (lock) {
+                currentJobs = this.scheduler.getCurrentlyExecutingJobs();
+            }
             JobKey currentJobKey;
             for (JobExecutionContext jobCtx : currentJobs) {
                 currentJobKey = jobCtx.getJobDetail().getKey();
@@ -321,23 +346,24 @@ public class QuartzTaskManager implements TaskManager {
     private Map<String, Object> properties = new HashMap<String, Object>(5);
 
     public boolean setProperties(Map<String, Object> properties) {
-        Iterator i = properties.keySet().iterator();
-        while (i.hasNext()) {
-            String k = (String) i.next();
-            Object v = properties.get(k);
-            this.properties.put(k, v);
+        for (String key : properties.keySet()) {
+            synchronized (lock) {
+                this.properties.put(key, properties.get(key));
+            }
         }
         return true;
     }
 
     public boolean setProperty(String name, Object property) {
-        if ("Q_TASK_TRIGGER_FACTORY".equals(name) && (property instanceof TaskTriggerFactory)) {
-            triggerFactory = (TaskTriggerFactory) property;
+        synchronized (lock) {
+            if ("Q_TASK_TRIGGER_FACTORY".equals(name) && (property instanceof TaskTriggerFactory)) {
+                triggerFactory = (TaskTriggerFactory) property;
+            }
+            if ("Q_TASK_JOB_DETAIL_FACTORY".equals(name) && (property instanceof TaskJobDetailFactory)) {
+                jobDetailFactory = (TaskJobDetailFactory) property;
+            }
+            properties.put(name, property);
         }
-        if ("Q_TASK_JOB_DETAIL_FACTORY".equals(name) && (property instanceof TaskJobDetailFactory)) {
-            jobDetailFactory = (TaskJobDetailFactory) property;
-        }
-        properties.put(name, property);
         return true;
     }
 
@@ -345,7 +371,9 @@ public class QuartzTaskManager implements TaskManager {
         if (name == null) {
             return null;
         }
-        return properties.get(name);
+        synchronized (lock) {
+            return properties.get(name);
+        }
     }
 
     public void setName(String name) {
@@ -361,23 +389,31 @@ public class QuartzTaskManager implements TaskManager {
     }
 
     public Properties getConfigurationProperties() {
-        return configProperties;
+        synchronized (lock) {
+            return configProperties;
+        }
     }
 
     public void setConfigurationProperties(Properties properties) {
-        this.configProperties.putAll(properties);
+        synchronized (lock) {
+            this.configProperties.putAll(properties);
+        }
     }
 
     private void assertInitialized() {
-        if (!initialized) {
-            throw new SynapseTaskException("Scheduler has not been initialled yet", logger);
+        synchronized (lock) {
+            if (!initialized) {
+                throw new SynapseTaskException("Scheduler has not been initialled yet", logger);
+            }
         }
     }
 
     private void assertStarted() {
         try {
-            if (!scheduler.isStarted()) {
-                throw new SynapseTaskException("Scheduler has not been started yet", logger);
+            synchronized (lock) {
+                if (!scheduler.isStarted()) {
+                    throw new SynapseTaskException("Scheduler has not been started yet", logger);
+                }
             }
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Error determine start state of the scheduler ", e, logger);
