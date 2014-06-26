@@ -76,8 +76,8 @@ public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
         	taskDescription.setTaskGroup("JMS-EP");
         	taskDescription.setInterval(interval);
         	taskDescription.setIntervalInMs(true);
-        	taskDescription.setAllowConcurrentExecutions(false);
-        	taskDescription.setTaskStartupObserver(this);
+        	//taskDescription.setAllowConcurrentExecutions(false);
+        	//taskDescription.setTaskStartupObserver(this);
         	taskDescription.addResource(TaskDescription.INSTANCE, task);
         	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         	startUpController = new StartUpController();

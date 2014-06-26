@@ -17,7 +17,7 @@ public class JMSTask implements org.apache.synapse.task.Task, ManagedLifecycle {
     }
 
     public void execute() {
-    	logger.debug("Executing.");
+    	logger.info("Executing.");
     	jmsPollingConsumer.execute();
     }
 

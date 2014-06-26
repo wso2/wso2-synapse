@@ -205,7 +205,7 @@ public class StartUpController extends AbstractStartup {
                 logger.warn("Task implementation is not a Synapse Task.");
             }
         } catch (Exception e) {
-            handleException("Cannot instantiate task : " + taskDescription.getTaskClass(), e);
+            handleException("Cannot instantiate task : " + taskDescription.getTaskImplClassName(), e);
         }
         return true;
     }

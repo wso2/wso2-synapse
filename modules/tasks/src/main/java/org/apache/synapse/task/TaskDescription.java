@@ -76,25 +76,25 @@ public final class TaskDescription {
     private String taskDescription;
     private boolean volatility = true;
 
-    public Object getTaskObject() {
-        return taskObject;
-    }
+//    public Object getTaskObject() {
+//        return taskObject;
+//    }
+//
+//    public void setTaskObject(Object taskObject) {
+//        this.taskObject = taskObject;
+//    }
 
-    public void setTaskObject(Object taskObject) {
-        this.taskObject = taskObject;
-    }
+//    private Object taskObject;
 
-    private Object taskObject;
-
-    public TaskManager getTaskManager() {
-        return taskManager;
-    }
-
-    public void setTaskManager(TaskManager taskManager) {
-        this.taskManager = taskManager;
-    }
-
-    private TaskManager taskManager;
+//    public TaskManager getTaskManager() {
+//        return taskManager;
+//    }
+//
+//    public void setTaskManager(TaskManager taskManager) {
+//        this.taskManager = taskManager;
+//    }
+//
+//    private TaskManager taskManager;
 
     public String getName() {
         return taskName;
@@ -103,22 +103,22 @@ public final class TaskDescription {
     public void setName(String name) {
         this.taskName = name;
     }
+//
+//    public String getTargetURI() {
+//        return targetURI;
+//    }
+//
+//    public void setTargetURI(String targetURI) {
+//        this.targetURI = targetURI;
+//    }
+//
+//    public boolean isAllowConcurrentExecutions() {
+//        return allowConcurrentExecutions;
+//    }
 
-    public String getTargetURI() {
-        return targetURI;
-    }
-
-    public void setTargetURI(String targetURI) {
-        this.targetURI = targetURI;
-    }
-
-    public boolean isAllowConcurrentExecutions() {
-        return allowConcurrentExecutions;
-    }
-
-    public void setAllowConcurrentExecutions(boolean allowConcurrentExecutions) {
-        this.allowConcurrentExecutions = allowConcurrentExecutions;
-    }
+//    public void setAllowConcurrentExecutions(boolean allowConcurrentExecutions) {
+//        this.allowConcurrentExecutions = allowConcurrentExecutions;
+//    }
 
     public void setProperties(Map<String, String> properties) {
         if (properties == null) {
@@ -177,69 +177,69 @@ public final class TaskDescription {
         this.taskMgrClassName = taskMgrClassName;
     }
 
-    public String getProxyName() {
-        return proxyName;
-    }
+//    public String getProxyName() {
+//        return proxyName;
+//    }
+//
+//    public void setProxyName(String proxyName) {
+//        this.proxyName = proxyName;
+//    }
 
-    public void setProxyName(String proxyName) {
-        this.proxyName = proxyName;
-    }
+//    public String getReceiver() {
+//        return receiver;
+//    }
 
-    public String getReceiver() {
-        return receiver;
-    }
+//    public void setReceiver(String receiver) {
+//        if (receiver == null || receiver.isEmpty()) {
+//            return;
+//        }
+//        if ("sequence".equals(receiver)) {
+//            receiverType = SEQUENCE;
+//        } else if ("main".equals(receiver)) {
+//            receiverType = MAIN;
+//        } else if ("proxy".equals(receiver)) {
+//            receiverType = PROXY;
+//        } else if ("recipe".equals(receiver)) {
+//            receiverType = RECIPE;
+//        } else if ("url".equals(receiver)) {
+//            receiverType = URL;
+//        } else {
+//            receiverType = OTHER;
+//        }
+//        this.receiver = receiver;
+//    }
 
-    public void setReceiver(String receiver) {
-        if (receiver == null || receiver.isEmpty()) {
-            return;
-        }
-        if ("sequence".equals(receiver)) {
-            receiverType = SEQUENCE;
-        } else if ("main".equals(receiver)) {
-            receiverType = MAIN;
-        } else if ("proxy".equals(receiver)) {
-            receiverType = PROXY;
-        } else if ("recipe".equals(receiver)) {
-            receiverType = RECIPE;
-        } else if ("url".equals(receiver)) {
-            receiverType = URL;
-        } else {
-            receiverType = OTHER;
-        }
-        this.receiver = receiver;
-    }
+//    public String getMessage() {
+//        return message;
+//    }
+//
+//    public void setMessage(String message) {
+//        this.message = message;
+//    }
+//
+//    public String getFormat() {
+//        return format;
+//    }
+//
+//    public void setFormat(String format) {
+//        this.format = format;
+//    }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
-    public String getSequenceName() {
-        return sequenceName;
-    }
-
-    public void setSequenceName(String sequenceName) {
-        this.sequenceName = sequenceName;
-    }
-
-    public boolean isSimpleTrigger() {
-        return isSimpleTrigger;
-    }
-
-    public void setSimpleTrigger(boolean isSimpleTrigger) {
-        this.isSimpleTrigger = isSimpleTrigger;
-    }
+//    public String getSequenceName() {
+//        return sequenceName;
+//    }
+//
+//    public void setSequenceName(String sequenceName) {
+//        this.sequenceName = sequenceName;
+//    }
+//
+//    public boolean isSimpleTrigger() {
+//        return isSimpleTrigger;
+//    }
+//
+//    public void setSimpleTrigger(boolean isSimpleTrigger) {
+//        this.isSimpleTrigger = isSimpleTrigger;
+//    }
 
     public int getCount() {
         return triggerCount;
@@ -261,13 +261,13 @@ public final class TaskDescription {
         this.triggerInterval = interval;
     }
 
-    public void setPinnedServersS(String pinnedServers) {
-        this.pinnedServers = pinnedServers;
-    }
-
-    public String getPinnedServersS() {
-        return this.pinnedServers;
-    }
+//    public void setPinnedServersS(String pinnedServers) {
+//        this.pinnedServers = pinnedServers;
+//    }
+//
+//    public String getPinnedServersS() {
+//        return this.pinnedServers;
+//    }
 
     public List<String> getPinnedServers() {
         return pinnedServersList;
@@ -293,7 +293,7 @@ public final class TaskDescription {
         this.startTime = startTime;
     }
 
-    public void setStartTime(String timeString) { setStartTime(getTime(timeString)); }
+//    public void setStartTime(String timeString) { setStartTime(getTime(timeString)); }
 
     public Calendar getEndTime() {
         return endTime;
@@ -303,55 +303,55 @@ public final class TaskDescription {
         this.endTime = endTime;
     }
 
-    public void setEndTime(String timeString) { setEndTime(getTime(timeString)); }
+//    public void setEndTime(String timeString) { setEndTime(getTime(timeString)); }
 
     public void setIntervalInMs(boolean isIntervalInMs) {
         this.isIntervalInMs = isIntervalInMs;
     }
 
-    public InputStream getMessageIs() { return messageIs; }
+//    public InputStream getMessageIs() { return messageIs; }
+//
+//    public void setMessageIs(InputStream messageIs) { this.messageIs = messageIs; }
+//
+//    public String getMediaType() { return mediaType; }
+//
+//    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
+//
+//    public String getRecipeName() {
+//        return recipeName;
+//    }
+//
+//    public void setRecipeName(String recipeName) {
+//        this.recipeName = recipeName;
+//    }
+//
+//    public int getReceiverType() {
+//        return receiverType;
+//    }
 
-    public void setMessageIs(InputStream messageIs) { this.messageIs = messageIs; }
+//    private static Calendar getTime(String startTimeAsString) {
+//        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+//        Date startTime;
+//        try {
+//            startTime = df.parse(startTimeAsString);
+//            Calendar cal = Calendar.getInstance();
+//            cal.setTime(startTime);
+//            return cal;
+//        } catch (ParseException e) {
+//            logger.error("Invalid time format ["
+//                    + startTimeAsString + "] for date format [yyyy/MM/dd HH:mm:ss].");
+//        }
+//        return null;
+//    }
 
-    public String getMediaType() { return mediaType; }
-
-    public void setMediaType(String mediaType) { this.mediaType = mediaType; }
-
-    public String getRecipeName() {
-        return recipeName;
-    }
-
-    public void setRecipeName(String recipeName) {
-        this.recipeName = recipeName;
-    }
-
-    public int getReceiverType() {
-        return receiverType;
-    }
-
-    private static Calendar getTime(String startTimeAsString) {
-        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-        Date startTime;
-        try {
-            startTime = df.parse(startTimeAsString);
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(startTime);
-            return cal;
-        } catch (ParseException e) {
-            logger.error("Invalid time format ["
-                    + startTimeAsString + "] for date format [yyyy/MM/dd HH:mm:ss].");
-        }
-        return null;
-    }
-
-    public void setStatus(String status) {
-        if (status == null || status.isEmpty()) {
-            return;
-        }
-        this.status = status;
-    }
-
-    public String getStatus() { return status; }
+//    public void setStatus(String status) {
+//        if (status == null || status.isEmpty()) {
+//            return;
+//        }
+//        this.status = status;
+//    }
+//
+//    public String getStatus() { return status; }
 
     public Map<String, Object> getResources() {
         return resources;
@@ -377,21 +377,21 @@ public final class TaskDescription {
         return null;
     }
 
-    public Class getTaskClass() {
-        return taskClass;
-    }
-
-    public void setTaskClass(Class taskClass) {
-        this.taskClass = taskClass;
-    }
-
-    public Task getSynapseTask() {
-        return synapseTask;
-    }
-
-    public void setSynapseTask(Task task) {
-        this.synapseTask = task;
-    }
+//    public Class getTaskClass() {
+//        return taskClass;
+//    }
+//
+//    public void setTaskClass(Class taskClass) {
+//        this.taskClass = taskClass;
+//    }
+//
+//    public Task getSynapseTask() {
+//        return synapseTask;
+//    }
+//
+//    public void setSynapseTask(Task task) {
+//        this.synapseTask = task;
+//    }
 
     public Set<OMElement> getXmlProperties() {
         return xmlProperties;
@@ -412,20 +412,20 @@ public final class TaskDescription {
         this.taskDescription = taskDescription;
     }
 
-    public boolean isVolatility() {
-        return volatility;
-    }
+//    public boolean isVolatility() {
+//        return volatility;
+//    }
+//
+//    public void setVolatility(boolean volatility) {
+//        this.volatility = volatility;
+//    }
+//
+//	public TaskStartupObserver getTaskStartupObserver() {
+//		return taskStartupObserver;
+//	}
+//
+//	public void setTaskStartupObserver(TaskStartupObserver taskStartupObserver) {
+//		this.taskStartupObserver = taskStartupObserver;
+//	}
 
-    public void setVolatility(boolean volatility) {
-        this.volatility = volatility;
-    }
-
-	public TaskStartupObserver getTaskStartupObserver() {
-		return taskStartupObserver;
-	}
-
-	public void setTaskStartupObserver(TaskStartupObserver taskStartupObserver) {
-		this.taskStartupObserver = taskStartupObserver;
-	}
-    
 }
