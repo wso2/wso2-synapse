@@ -141,6 +141,7 @@ public class QuartzTaskManager implements TaskManager {
             throw new SynapseTaskException("Error scheduling job : " + jobDetail
                     + " with trigger " + trigger);
         }
+        logger.info("Scheduled task [" + taskDescription.getName() + "::" + taskDescription.getTaskGroup() + "]");
         return true;
     }
 
@@ -159,7 +160,7 @@ public class QuartzTaskManager implements TaskManager {
         String name = list[0];
         String group = list[1];
         if (name == null || "".equals(name)) {
-            throw new SynapseTaskException("Task Name can not be null", logger);
+            throw new SynapseTaskException("Task name is null", logger);
         }
         if (group == null || "".equals(group)) {
             group = TaskDescription.DEFAULT_GROUP;
@@ -168,16 +169,13 @@ public class QuartzTaskManager implements TaskManager {
                         + TaskDescription.DEFAULT_GROUP);
             }
         }
+        boolean deleteResult;
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Deleting a Job with [ Name :" + name + " ]" +
-                        " [ Group :" + group + " ]");
-            }
-            scheduler.deleteJob(new JobKey(name, group));
+            deleteResult = scheduler.deleteJob(new JobKey(name, group));
         } catch (SchedulerException e) {
-            throw new SynapseTaskException("Error deleting a job with  [ Name :" + name + " ]" +
-                    " [ Group :" + group + " ]");
+            throw new SynapseTaskException("Cannot delete task [" + name + "::" + group + "]");
         }
+        logger.debug("Deleted task [" + name + "::" + group + "] [" + deleteResult + "]");
         return true;
     }
 
