@@ -87,6 +87,11 @@ public class ForwardingService implements InterruptableJob, Service {
 
     private boolean isThrottling = true;
 
+    /**
+     * Throttling-interval is the forwarding interval when cron scheduling is enabled.
+     */
+    private long throttlingInterval = -1;
+
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
         init(jobExecutionContext);
@@ -103,7 +108,7 @@ public class ForwardingService implements InterruptableJob, Service {
                         String serverName = (String)
                                 messageContext.getProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
 
-                        if(serverName != null && messageContext instanceof Axis2MessageContext) {
+                        if (serverName != null && messageContext instanceof Axis2MessageContext) {
 
                             AxisConfiguration configuration = ((Axis2MessageContext)messageContext).
                                     getAxis2MessageContext().
@@ -112,7 +117,7 @@ public class ForwardingService implements InterruptableJob, Service {
                             String myServerName = getAxis2ParameterValue(configuration,
                                     SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
 
-                            if(!serverName.equals(myServerName)) {
+                            if (!serverName.equals(myServerName)) {
                                 return;
                             }
                         }
@@ -131,6 +136,11 @@ public class ForwardingService implements InterruptableJob, Service {
                         // either the connection is broken or there are no new massages.
                         if (log.isDebugEnabled()) {
                             log.debug("No messages were received for message processor ["+ messageProcessor.getName() + "]");
+                        }
+
+                        // this means we have consumed all the messages
+                        if (isRunningUnderCronExpression()) {
+                            break;
                         }
                     }
                 } else {
@@ -153,6 +163,16 @@ public class ForwardingService implements InterruptableJob, Service {
 
             if (log.isDebugEnabled()) {
                 log.debug("Exiting the iteration of message processor [" + this.messageProcessor.getName() + "]");
+            }
+
+            // This code wrote handle scenarios in which cron expressions are used
+            // for scheduling task
+            if (isRunningUnderCronExpression()) {
+                try {
+                    Thread.sleep(throttlingInterval);
+                } catch (InterruptedException e) {
+                    // no need to worry. it does have any serious consequences
+                }
             }
 
         } while (isThrottling && !isTerminated);
@@ -238,6 +258,12 @@ public class ForwardingService implements InterruptableJob, Service {
 
         if (jdm.get(ForwardingProcessorConstants.THROTTLE) != null) {
             isThrottling = (Boolean) jdm.get(ForwardingProcessorConstants.THROTTLE);
+        }
+
+        if (isThrottling) {
+            if (jdm.get(ForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
+                throttlingInterval = (Long)jdm.get(ForwardingProcessorConstants.THROTTLE_INTERVAL);
+            }
         }
 
         return true;
@@ -493,5 +519,9 @@ public class ForwardingService implements InterruptableJob, Service {
         }
 
         return isSuccess;
+    }
+
+    private boolean isRunningUnderCronExpression() {
+        return this.isThrottling && (throttlingInterval > -1);
     }
 }
