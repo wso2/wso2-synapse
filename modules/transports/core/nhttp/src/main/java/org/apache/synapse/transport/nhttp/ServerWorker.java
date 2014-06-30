@@ -287,6 +287,8 @@ public class ServerWorker implements Runnable {
             processGetAndDelete("DELETE");
         } else if ("TRACE".equals(method)) {
             processNonEntityEnclosingMethod();
+        } else if ("PATCH".equals(method)) {
+            processEntityEnclosingMethod();            
         } else {
             handleException("Unsupported method : " + method, null);
         }
