@@ -40,12 +40,50 @@ import java.util.Properties;
 
 public final class JsonUtil {
     private static Log logger = LogFactory.getLog(JsonUtil.class.getName());
+
     private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
 
     private static final QName JSON_OBJECT = new QName("jsonObject");
+
     private static final QName JSON_ARRAY = new QName("jsonArray");
 
+    public static final String PRESERVE_JSON_STREAM = "preserve.json.stream";
+
     private static final boolean processNCNames;
+
+    private static final JsonXMLConfig xmlConfig = new JsonXMLConfigBuilder()
+            .multiplePI(true)
+            .autoArray(true)
+            .autoPrimitive(true)
+            .namespaceDeclarations(false)
+            .namespaceSeparator( '\u0D89')
+            .build();
+
+    private static final JsonXMLInputFactory jsonXmlInputFactory = new JsonXMLInputFactory(xmlConfig);
+
+    /** Configuration used to produce XML that has no processing instructions in it. */
+    private static final JsonXMLConfig xmlConfigNoPIs = new JsonXMLConfigBuilder()
+            .multiplePI(false)
+            .autoArray(true)
+            .autoPrimitive(true)
+            .namespaceDeclarations(false)
+            .namespaceSeparator('\u0D89')
+            .build();
+
+    private static final JsonXMLInputFactory xmlInputFactoryNoPIs = new JsonXMLInputFactory(xmlConfigNoPIs);
+
+    /** This configuration is used to format the JSON output produced by the JSON writer. */
+    private static final JsonXMLConfig jsonConfig = new JsonXMLConfigBuilder()
+            .multiplePI(true)
+            .autoArray(true)
+            .autoPrimitive(true)
+            .namespaceDeclarations(false)
+            .namespaceSeparator('_')
+            .build();
+
+    private static final JsonXMLOutputFactory jsonOutputFactory = new JsonXMLOutputFactory(jsonConfig);
+
+    private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
@@ -80,29 +118,14 @@ public final class JsonUtil {
         if (json != null) { // there is a JSON stream
             if (element instanceof OMSourcedElementImpl) {
                 if (isAJsonPayloadElement(element)) {
-                    try {
-                        if (json.markSupported()) {
-                            json.reset();
-                        }
-                        IOUtils.copy(json, out); // Write the JSON stream
-                    } catch (IOException e) {
-                        logger.error("#writeAsJson. Could not write JSON stream. MessageID: "
-                                + messageContext.getMessageID() + ". Error>> " + e.getLocalizedMessage());
-                        throw new AxisFault("Could not write JSON stream.", e);
-                    }
+                    writeJsonStream(json, messageContext, out);
                 } else { // Ignore the JSON stream
                     writeAsJson(element, out);
                 }
             } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
                 writeAsJson(element, out);
             } else { // element == null.
-                try {
-                    IOUtils.copy(json, out); // Write the JSON stream
-                } catch (IOException e) {
-                    logger.error("#writeAsJson. Could not write JSON stream. MessageID: "
-                            + messageContext.getMessageID() + ". Error>> " + e.getLocalizedMessage());
-                    throw new AxisFault("Could not write JSON stream.", e);
-                }
+                writeJsonStream(json, messageContext, out);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
             writeAsJson(element, out);
@@ -119,30 +142,6 @@ public final class JsonUtil {
             throw new AxisFault("Payload could not be written as JSON.");
         }
     }
-
-    //
-    // To XML conversion...
-    //
-    private static final JsonXMLConfig xmlConfig = new JsonXMLConfigBuilder()
-            .multiplePI(true)
-            .autoArray(true)
-            .autoPrimitive(true)
-            .namespaceDeclarations(false)
-            .namespaceSeparator( '\u0D89')
-            .build();
-
-    private static final JsonXMLInputFactory jsonXmlInputFactory = new JsonXMLInputFactory(xmlConfig);
-
-    /** Configuration used to produce XML that has no processing instructions in it. */
-    private static final JsonXMLConfig xmlConfigNoPIs = new JsonXMLConfigBuilder()
-            .multiplePI(false)
-            .autoArray(true)
-            .autoPrimitive(true)
-            .namespaceDeclarations(false)
-            .namespaceSeparator('\u0D89')
-            .build();
-
-    private static final JsonXMLInputFactory xmlInputFactoryNoPIs = new JsonXMLInputFactory(xmlConfigNoPIs);
 
     /**
      * Converts a JSON input stream to its XML representation.
@@ -178,7 +177,8 @@ public final class JsonUtil {
             return null;
         }
         return pIs ? getReader(jsonStream)
-                : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(jsonStream, de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
+                : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(jsonStream,
+                de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
 
     /**
@@ -193,27 +193,9 @@ public final class JsonUtil {
             logger.error("#getReader. Could not create XMLStreamReader from [null] input stream.");
             return null;
         }
-        return new JsonReaderDelegate(jsonXmlInputFactory.createXMLStreamReader(jsonStream, de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
+        return new JsonReaderDelegate(jsonXmlInputFactory.createXMLStreamReader(jsonStream,
+                de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
-    // End of to XML conversion...
-    //
-    ////////////////////////////////////////////////////////
-
-    //
-    // To JSON conversion...
-    //
-    /** This configuration is used to format the JSON output produced by the JSON writer. */
-    private static final JsonXMLConfig jsonConfig = new JsonXMLConfigBuilder()
-            .multiplePI(true)
-            .autoArray(true)
-            .autoPrimitive(true)
-            .namespaceDeclarations(false)
-            .namespaceSeparator('_')
-            .build();
-
-    private static final JsonXMLOutputFactory jsonOutputFactory = new JsonXMLOutputFactory(jsonConfig);
-
-    private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
     /**
      * Converts an XML element to its JSON representation and writes it to an output stream.<br/>
@@ -233,7 +215,8 @@ public final class JsonUtil {
         }
         transformElement(element, true);
         try {
-            org.apache.commons.io.output.ByteArrayOutputStream xmlStream = new org.apache.commons.io.output.ByteArrayOutputStream();
+            org.apache.commons.io.output.ByteArrayOutputStream xmlStream =
+                    new org.apache.commons.io.output.ByteArrayOutputStream();
             element.serialize(xmlStream);
             xmlStream.flush();
             XMLEventReader xmlEventReader = xmlInputFactory.createXMLEventReader(
@@ -264,7 +247,8 @@ public final class JsonUtil {
         if (element == null) {
             return new StringBuilder("{}");
         }
-        org.apache.commons.io.output.ByteArrayOutputStream byteStream = new org.apache.commons.io.output.ByteArrayOutputStream();
+        org.apache.commons.io.output.ByteArrayOutputStream byteStream =
+                new org.apache.commons.io.output.ByteArrayOutputStream();
         writeAsJson(element.cloneOMElement(), byteStream);
         return new StringBuilder(new String(byteStream.toByteArray()));
     }
@@ -326,9 +310,6 @@ public final class JsonUtil {
             //element.removeAttribute(attrb);
         }
     }
-    // End of to JSON conversion...
-    //
-    //////////////////////////////////////////
 
     /**
      * Builds and returns a new JSON payload for a message context with a stream of JSON content. <br/>
@@ -342,7 +323,8 @@ public final class JsonUtil {
      * Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that can build the XML tree for contained JSON payload on demand.
      */
-    public static OMElement newJsonPayload(MessageContext messageContext, InputStream inputStream, boolean removeChildren, boolean addAsNewFirstChild) {
+    public static OMElement newJsonPayload(MessageContext messageContext, InputStream inputStream,
+                                           boolean removeChildren, boolean addAsNewFirstChild) {
         if (messageContext == null) {
             logger.error("#newJsonPayload. Could not save JSON stream. Message context is null.");
             return null;
@@ -439,11 +421,13 @@ public final class JsonUtil {
      * Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
      */
-    public static OMElement newJsonPayload(MessageContext messageContext, String jsonString, boolean removeChildren, boolean addAsNewFirstChild) {
+    public static OMElement newJsonPayload(MessageContext messageContext, String jsonString,
+                                           boolean removeChildren, boolean addAsNewFirstChild) {
         if (jsonString == null || jsonString.isEmpty()) {
             jsonString = "{}";
         }
-        return newJsonPayload(messageContext, new ByteArrayInputStream(jsonString.getBytes()), removeChildren, addAsNewFirstChild);
+        return newJsonPayload(messageContext, new ByteArrayInputStream(jsonString.getBytes()),
+                removeChildren, addAsNewFirstChild);
     }
 
     /**
@@ -458,7 +442,8 @@ public final class JsonUtil {
      * Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
      */
-    public static OMElement newJsonPayload(MessageContext messageContext, byte[] json, int offset, int length, boolean removeChildren, boolean addAsNewFirstChild) {
+    public static OMElement newJsonPayload(MessageContext messageContext, byte[] json, int offset,
+                                           int length, boolean removeChildren, boolean addAsNewFirstChild) {
         InputStream is;
         if (json == null || json.length < 2) {
             json = new byte[]{'{', '}'};
@@ -571,6 +556,25 @@ public final class JsonUtil {
             logger.error("#copyOfJsonPayload. Could not copy the JSON stream from message context. Error>>> " + e.getLocalizedMessage());
         }
         return null;
+    }
+
+    private static void writeJsonStream(InputStream json, MessageContext messageContext, OutputStream out) throws AxisFault {
+        try {
+            if (json.markSupported()) {
+                json.reset();
+            }
+            IOUtils.copy(json, out); // Write the JSON stream
+            if (messageContext.getProperty(PRESERVE_JSON_STREAM) != null) {
+                if (json.markSupported()) {
+                    json.reset();
+                }
+                messageContext.removeProperty(PRESERVE_JSON_STREAM);
+            }
+        } catch (IOException e) {
+            logger.error("#writeJsonStream. Could not write JSON stream. MessageID: "
+                    + messageContext.getMessageID() + ". Error>> " + e.getLocalizedMessage());
+            throw new AxisFault("Could not write JSON stream.", e);
+        }
     }
 
     /**
@@ -692,7 +696,8 @@ public final class JsonUtil {
      */
     public static boolean isAJsonPayloadElement(OMElement element) {
         return element != null
-                && (JSON_OBJECT.getLocalPart().equals(element.getLocalName()) || JSON_ARRAY.getLocalPart().equals(element.getLocalName()));
+                && (JSON_OBJECT.getLocalPart().equals(element.getLocalName())
+                || JSON_ARRAY.getLocalPart().equals(element.getLocalName()));
     }
 
     /**
