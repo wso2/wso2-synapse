@@ -184,7 +184,7 @@ public class Axis2HttpRequest {
         HttpRequest httpRequest;
 
         try {
-            if ("POST".equals(httpMethod) || "PUT".equals(httpMethod)) {
+            if ("POST".equals(httpMethod) || "PUT".equals(httpMethod) || "PATCH".equals(httpMethod)) {
 
                 URI uri = rewriteRequestURI(new URI(epr.getAddress()));
                 BasicHttpEntityEnclosingRequest requestWithEntity = new BasicHttpEntityEnclosingRequest(
