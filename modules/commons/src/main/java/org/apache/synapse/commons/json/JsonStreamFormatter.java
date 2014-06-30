@@ -57,6 +57,9 @@ public final class JsonStreamFormatter implements MessageFormatter {
 
     public void writeTo(MessageContext messageContext, OMOutputFormat format,
                         OutputStream out, boolean preserve) throws AxisFault {
+        if (preserve) {
+            messageContext.setProperty(JsonUtil.PRESERVE_JSON_STREAM, true);
+        }
         JsonUtil.writeAsJson(messageContext, out);
         if (logger.isDebugEnabled()) {
             logger.debug("#writeTo. Wrote JSON payload to output stream. MessageID: " + messageContext.getMessageID());
