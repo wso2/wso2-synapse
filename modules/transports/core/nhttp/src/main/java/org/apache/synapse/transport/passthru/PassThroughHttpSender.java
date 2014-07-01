@@ -397,7 +397,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 	/**
      * Write the stream to a temporary storage and calculate the content length
      *
-     * @param entity HTTPEntity
      * @throws IOException if an exception occurred while writing data
      */
     private long setStreamAsTempData(MessageFormatter messageFormatter,MessageContext msgContext,OMOutputFormat format) throws IOException {
@@ -492,6 +491,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                    // Skip multipart/related as it should be taken from formatter.
                    if (!contentTypeValueInMsgCtx.contains(
                            PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                	   
+						if (format != null) {
+							String encoding = format.getCharSetEncoding();
+							if (encoding != null) {
+								sourceResponse.removeHeader(HTTP.CONTENT_TYPE);
+								contentTypeValueInMsgCtx += "; charset=" + encoding;
+							}
+						}
+                	   
                        sourceResponse.addHeader(HTTP.CONTENT_TYPE, contentTypeValueInMsgCtx);
                        isContentTypeSetFromMsgCtx = true;
                    }
