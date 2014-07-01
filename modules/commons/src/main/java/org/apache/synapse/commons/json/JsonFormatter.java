@@ -53,9 +53,12 @@ public final class JsonFormatter implements MessageFormatter {
     }
 
     public void writeTo(MessageContext messageContext, OMOutputFormat omOutputFormat,
-                        OutputStream outputStream, boolean b) throws AxisFault {
+                        OutputStream outputStream, boolean preserve) throws AxisFault {
         OMElement element = messageContext.getEnvelope().getBody().getFirstElement();
         if (element == null) {
+            if (preserve) {
+                messageContext.setProperty(JsonUtil.PRESERVE_JSON_STREAM, true);
+            }
             JsonUtil.writeAsJson(messageContext, outputStream);
             if (logger.isDebugEnabled()) {
                 logger.debug("#writeTo. Wrote JSON stream to output stream. MessageID: " + messageContext.getMessageID());

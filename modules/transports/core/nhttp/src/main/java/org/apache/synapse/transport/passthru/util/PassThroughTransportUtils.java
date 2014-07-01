@@ -319,7 +319,7 @@ public class PassThroughTransportUtils {
                * text/xml content type into application/xml if the request was not a SOAP
                * request.
                */
-        if(msgContext.getSoapAction() == null) {
+        if(msgContext.isDoingREST()) {
             msgContext.setProperty(PassThroughConstants.INVOKED_REST, true);
         }
         format.setSOAP11(msgContext.isSOAP11());
