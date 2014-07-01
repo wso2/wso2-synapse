@@ -122,7 +122,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                             || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
                 if (synCtx.getProperty(propertyKey.toString()) != null) {
                     variables.put(propertyKey.toString(), synCtx.getProperty(propertyKey.toString()));
-                }
+                }                              
             }
         }
 
@@ -180,7 +180,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
         if (evaluatedUri != null) {
             synCtx.setTo(new EndpointReference(evaluatedUri));
             if (super.getDefinition() != null) {
-                super.getDefinition().setAddress(evaluatedUri);
+            	synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
             }
         }
     }
