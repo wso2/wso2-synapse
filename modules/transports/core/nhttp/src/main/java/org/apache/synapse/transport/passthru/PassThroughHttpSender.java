@@ -479,6 +479,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 /*if (msgContext.isPropertyTrue(NhttpConstants.SC_ACCEPTED)) {
                     out.write(new byte[0]);
                 }else {*/
+
+                //This is to support MTOM in response path for requests sent without a SOAPAction. The reason is
+                //axis2 selects application/xml formatter as the formatter for formatting the ESB to client response
+                //when there is no SOAPAction.
+                if (Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_MTOM))) {
+                    msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
+                    msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
+                }
+
                 MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
                 OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
 
