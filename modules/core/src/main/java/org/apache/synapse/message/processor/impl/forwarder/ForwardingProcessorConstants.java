@@ -64,4 +64,9 @@ public final class ForwardingProcessorConstants {
      * Used th throttle forwarding-processor when it is used with cron expressions
      */
     public static final String THROTTLE_INTERVAL = "throttle.interval";
+
+    /**
+     * Message will be dropped after maximum delivery
+     */
+    public static final String MAX_DELIVERY_DROP = "max.delivery.drop";
 }

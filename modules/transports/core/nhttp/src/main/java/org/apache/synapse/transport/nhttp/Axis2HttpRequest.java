@@ -213,9 +213,9 @@ public class Axis2HttpRequest {
 
                 URI uri = rewriteRequestURI(url.toURI());
                 httpRequest = new BasicHttpRequest(httpMethod, uri.toASCIIString(), httpver);
-
-                httpRequest.setHeader(HTTP.CONTENT_TYPE, messageFormatter.getContentType(
-                        msgContext, format, msgContext.getSoapAction()));
+                /*GETs and DELETEs do not need Content-Type headers because they do not have payloads*/
+                //httpRequest.setHeader(HTTP.CONTENT_TYPE, messageFormatter.getContentType(
+                //        msgContext, format, msgContext.getSoapAction()));
 
             } else {
                 URI uri = rewriteRequestURI(new URI(epr.getAddress()));
