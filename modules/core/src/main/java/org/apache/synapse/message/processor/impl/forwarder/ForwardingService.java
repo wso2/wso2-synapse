@@ -298,12 +298,12 @@ public class ForwardingService implements InterruptableJob, Service {
                     try {
                         // For each retry we need to have a fresh copy of the actual message. otherwise retry may not
                         // work as expected.
+                        messageContext.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
                         OMElement firstChild = null; //
                         org.apache.axis2.context.MessageContext origAxis2Ctx = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
                         if (JsonUtil.hasAJsonPayload(origAxis2Ctx)) {
                             firstChild = origAxis2Ctx.getEnvelope().getBody().getFirstElement();
                         } // Had to do this because MessageHelper#cloneSOAPEnvelope does not clone OMSourcedElemImpl correctly.
-                        messageContext.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
                         if (JsonUtil.hasAJsonPayload(firstChild)) { //
                             OMElement clonedFirstElement = messageContext.getEnvelope().getBody().getFirstElement();
                             if (clonedFirstElement != null) {
