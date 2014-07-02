@@ -111,6 +111,10 @@ public class PropertyMediator extends AbstractMediator {
 
             if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
                 //Setting property into the  Synapse Context
+				if (resultValue != null && resultValue instanceof OMElement) {
+					((OMElement) resultValue).build();
+				}
+				
                 synCtx.setProperty(name, resultValue);
 
             } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)
