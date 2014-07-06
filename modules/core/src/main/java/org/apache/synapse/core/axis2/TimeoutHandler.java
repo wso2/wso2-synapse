@@ -25,14 +25,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.ServerContextInformation;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCleaner;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.TimerTask;
 
 /**
  * An object of this class is registered to be invoked in some predefined time intervals. This
@@ -134,6 +139,15 @@ public class TimeoutHandler extends TimerTask {
 
                                 // actiavte the fault sequence of the current sequence mediator
                                 MessageContext msgContext = callback.getSynapseOutMsgCtx();
+
+                                /* Clear the pipe to prevent release of the associated writer buffer
+                                 to the buffer factory.
+                                This is to prevent same buffer is getting released to both source
+                                and target buffer factories. Otherwise when a late response arrives,
+                                buffer is released to both factories and makes system unstable
+                                */
+                                ((Axis2MessageContext) msgContext).getAxis2MessageContext().
+                                                removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
 
                                 // add an error code to the message context, so that error sequences
                                 // can identify the cause of error
