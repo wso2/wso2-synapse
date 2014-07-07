@@ -102,6 +102,16 @@ public class TargetConnections {
         return connection;
     }
 
+    public NHttpClientConnection getExistingConnection(HttpRoute route) {
+        if (log.isDebugEnabled()) {
+            log.debug("Trying to get a existing connection connection " + route);
+        }
+
+        HostConnections pool = getConnectionPool(route);
+        return pool.getConnection();
+
+    }
+
     /**
      * This connection is no longer valid. So we need to shutdownConnection connection.
      *
@@ -178,16 +188,16 @@ public class TargetConnections {
 
     private HostConnections getConnectionPool(HttpRoute route) {
         // see weather a pool already exists for this host:port
-        HostConnections pool = poolMap.get(route);
         synchronized (poolMap) {
+            HostConnections pool = poolMap.get(route);
+
             if (pool == null) {
                 pool = new HostConnections(route, maxConnections);
                 poolMap.put(route, pool);
             }
+            return pool;
+
         }
-
-        return pool;
     }
-
 
 }
