@@ -78,7 +78,6 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void connected(NHttpClientConnection conn, Object o) {
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
-
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
         HttpRoute route = pool.getRoute();
@@ -90,7 +89,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().addConnection(conn);
 
         // notify about the new connection
-        deliveryAgent.connected(pool.getRoute());
+        deliveryAgent.connected(pool.getRoute(), conn);
         
         HttpContext context = conn.getContext();
         context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
