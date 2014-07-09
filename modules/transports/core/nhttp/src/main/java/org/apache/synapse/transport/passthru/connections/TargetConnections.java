@@ -102,26 +102,41 @@ public class TargetConnections {
         return connection;
     }
 
-    /**
-     * This connection is no longer valid. So we need to shutdownConnection connection.
-     *
-     * @param conn connection to shutdownConnection
-     */
-    public void shutdownConnection(NHttpClientConnection conn) {
-        shutdownConnection(conn, true);
+    public NHttpClientConnection getExistingConnection(HttpRoute route) {
+        if (log.isDebugEnabled()) {
+            log.debug("Trying to get a existing connection connection " + route);
+        }
+
+        HostConnections pool = getConnectionPool(route);
+        return pool.getConnection();
+
     }
 
     /**
      * This connection is no longer valid. So we need to shutdownConnection connection.
      *
      * @param conn connection to shutdownConnection
-     * @param releaseBuffer whether to release the buffer to buffer factory while shutting down
      */
-    public void shutdownConnection(NHttpClientConnection conn, boolean releaseBuffer) {
+    public void shutdownConnection(NHttpClientConnection conn) {
+        shutdownConnection(conn, false);
+    }
+
+    /**
+     * This connection is no longer valid. So we need to shutdownConnection connection.
+     *
+     * @param conn    connection to shutdownConnection
+     * @param isError whether an error is causing this shutdown of the connection.
+     *                It is very important to set this flag correctly.
+     *                When an error causing the shutdown of the connections we should not
+     *                release associated writer buffer to the pool as it might lead into
+     *                situations like same buffer is getting released to both source and target
+     *                buffer factories
+     */
+    public void shutdownConnection(NHttpClientConnection conn, boolean isError) {
         HostConnections pool = (HostConnections) conn.getContext().getAttribute(
                 PassThroughConstants.CONNECTION_POOL);
 
-        TargetContext.get(conn).reset(releaseBuffer);
+        TargetContext.get(conn).reset(isError);
 
         if (pool != null) {
             pool.forget(conn);
@@ -173,16 +188,16 @@ public class TargetConnections {
 
     private HostConnections getConnectionPool(HttpRoute route) {
         // see weather a pool already exists for this host:port
-        HostConnections pool = poolMap.get(route);
         synchronized (poolMap) {
+            HostConnections pool = poolMap.get(route);
+
             if (pool == null) {
                 pool = new HostConnections(route, maxConnections);
                 poolMap.put(route, pool);
             }
+            return pool;
+
         }
-
-        return pool;
     }
-
 
 }

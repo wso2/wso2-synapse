@@ -95,19 +95,31 @@ public class TargetContext {
         this.writer = writer;
     }
 
+    /**
+     * Reset the resources associated with this context
+     */
     public void reset() {
-       reset(true);
+       reset(false);
     }
 
-    public void reset(boolean releaseBuffer) {
+    /**
+     * Reset the resources associated with this context
+     *
+     * @param isError whether an error is causing this shutdown of the connection.
+     *                It is very important to set this flag correctly.
+     *                When an error causing the shutdown of the connections we should not
+     *                release associated writer buffer to the pool as it might lead into
+     *                situations like same buffer is getting released to both source and target
+     *                buffer factories
+     */
+    public void reset(boolean isError) {
         request = null;
         response = null;
         state = ProtocolState.REQUEST_READY;
 
         if (writer != null) {
-            ByteBuffer buffer = writer.getBuffer();
-            //buffer.clear();
-            if (releaseBuffer) {
+            if (!isError) {      // If there is an error we do not release the buffer to the factory
+                ByteBuffer buffer = writer.getBuffer();
                 targetConfiguration.getBufferFactory().release(buffer);
             }
         }
