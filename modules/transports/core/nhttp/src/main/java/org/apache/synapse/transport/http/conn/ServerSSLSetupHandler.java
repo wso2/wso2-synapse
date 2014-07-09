@@ -24,16 +24,24 @@ import javax.net.ssl.SSLSession;
 
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.ssl.SSLSetupHandler;
+import org.apache.synapse.transport.certificatevalidation.CertificateVerificationException;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
+
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class ServerSSLSetupHandler implements SSLSetupHandler {
     
     private final SSLClientAuth clientAuth;
     /** Enabled SSL handshake protocols (e.g. SSLv3, TLSv1) */
     private final String[] httpsProtocols;
+    private RevocationVerificationManager verificationManager;
 
-    public ServerSSLSetupHandler(final SSLClientAuth clientAuth, final String[] httpsProtocols) {
+    public ServerSSLSetupHandler(final SSLClientAuth clientAuth, final String[] httpsProtocols,
+                                 final RevocationVerificationManager verificationManager) {
         this.clientAuth = clientAuth;
         this.httpsProtocols = httpsProtocols;
+        this.verificationManager = verificationManager;
     }
 
     public void initalize(
@@ -56,8 +64,24 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
     }
 
     public void verify(
-        final IOSession iosession, 
-        final SSLSession sslsession) throws SSLException {
+            final IOSession iosession,
+            final SSLSession sslsession) throws SSLException {
+        SocketAddress remoteAddress = iosession.getRemoteAddress();
+        String address;
+        if (remoteAddress instanceof InetSocketAddress) {
+            address = ((InetSocketAddress) remoteAddress).getHostName();
+        } else {
+            address = remoteAddress.toString();
+        }
+
+        if (verificationManager != null) {
+            try {
+                verificationManager.verifyRevocationStatus(sslsession.getPeerCertificateChain());
+            } catch (CertificateVerificationException e) {
+                throw new SSLException("Certificate Chain Validation failed for host : " + address, e);
+            }
+        }
+
     }
 
 }
