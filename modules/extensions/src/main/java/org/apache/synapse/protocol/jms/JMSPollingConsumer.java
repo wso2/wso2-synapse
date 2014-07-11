@@ -58,7 +58,7 @@ public class JMSPollingConsumer implements MessageConsumer,PollingConsumer {
             }
             //Check if the cycles are running in correct interval and start scan
             long currentTime = (new Date()).getTime();
-            if(lastRanTime == null || ((lastRanTime + (scanInterval * 1000)) <= currentTime)){
+            if(lastRanTime == null || ((lastRanTime + (scanInterval)) <= currentTime)){
             	lastRanTime = currentTime;
             	poll();
             }else if (logger.isDebugEnabled()) {
