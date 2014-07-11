@@ -38,6 +38,7 @@ public class InboundEndpointFactory {
         InboundEndpoint inboundEndpoint = new InboundEndpoint();
         inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)));
         inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)));
+        inboundEndpoint.setClassImpl(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS)));
         inboundEndpoint.setInterval(Long.parseLong(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_INTERVAL))));
         inboundEndpoint.setSuspend(Boolean.parseBoolean(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND))));
         inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)));

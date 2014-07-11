@@ -23,6 +23,7 @@ public class InboundEndpointConstants {
     public static final String INBOUND_ENDPOINT = "inboundEndpoint";
     public static final String INBOUND_ENDPOINT_NAME = "name";
     public static final String INBOUND_ENDPOINT_PROTOCOL = "protocol";
+    public static final String INBOUND_ENDPOINT_CLASS = "class";
     public static final String INBOUND_ENDPOINT_INTERVAL = "interval";
     public static final String INBOUND_ENDPOINT_SUSPEND = "suspend";
     public static final String INBOUND_ENDPOINT_SEQUENCE = "sequence";

@@ -50,6 +50,8 @@ public class InboundEndpointSerializer {
 		                                inboundEndpoint.getOnErrorSeq(), null);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
 		                                inboundEndpoint.getProtocol(), null);
+		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS,
+                inboundEndpoint.getClassImpl(), null);		
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND,
 		                                Boolean.toString(inboundEndpoint.isSuspend()), null);
 

@@ -63,7 +63,9 @@ public class FileInjectHandler implements InjectHandler {
 		this.synapseEnvironment = synapseEnvironment;
 		this.vfsProperties = vfsProperties;
 	}	 
-	
+	/**
+	 * Inject the message to the sequence
+	 * */
 	public boolean invoke(Object object){
 		
 		ManagedDataSource dataSource = null;;
