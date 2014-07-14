@@ -62,11 +62,13 @@ public class JMSProcessor implements PollingProcessor,TaskStartupObserver {
     public void init() {
         log.info("Initializing inbound JMS listener for destination " + name);
         jmsConnectionFactory = new CachedJMSConnectionFactory(this.jmsProperties);
-        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties);        
+        pollingConsumer = new JMSPollingConsumer(jmsConnectionFactory, jmsProperties, interval);        
         pollingConsumer.registerHandler(new JMSInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, jmsProperties));
         start();
     }
-
+    /**
+     * Register/start the schedule service
+     * */
     public void start() {    
     	log.info("Inbound JMS listener Started for destination " + name);
         try {

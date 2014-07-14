@@ -59,7 +59,7 @@ import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 
 
-public class FilePollingConsumer implements Runnable, PollingConsumer {
+public class FilePollingConsumer implements PollingConsumer {
 
     private static final Log log = LogFactory.getLog(FilePollingConsumer.class);
     private Properties vfsProperties;
@@ -99,21 +99,21 @@ public class FilePollingConsumer implements Runnable, PollingConsumer {
 		this.injectHandler = injectHandler;
 	}
     
-    public void run() {        
+    public void execute() {        
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Start : VFS Inbound EP : " + name);
+                log.debug("Start : File Inbound EP : " + name);
             }
             //Check if the cycles are running in correct interval and start scan
             long currentTime = (new Date()).getTime();
-            if(lastRanTime == null || ((lastRanTime + (scanInterval * 1000)) <= currentTime)){
+            if(lastRanTime == null || ((lastRanTime + (scanInterval)) <= currentTime)){
             	lastRanTime = currentTime;
             	poll();
             }else if (log.isDebugEnabled()) {
             	log.debug("Skip cycle since cuncurrent rate is higher than the scan interval : VFS Inbound EP : " + name);
             }
             if (log.isDebugEnabled()) {
-            	log.debug("End : VFS Inbound EP : " + name);
+            	log.debug("End : File Inbound EP : " + name);
             }        	
         } catch (Exception e) {
             System.err.println("error in executing: It will no longer be run!");
@@ -121,24 +121,7 @@ public class FilePollingConsumer implements Runnable, PollingConsumer {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
-    }
-
-    public void execute() {        
-        try {
-            if (log.isDebugEnabled()) {
-                log.debug("Start : VFS Inbound EP : " + name);
-            }
-            poll();
-            if (log.isDebugEnabled()) {
-            	log.debug("End : VFS Inbound EP : " + name);
-            }        	
-        } catch (Exception e) {
-            System.err.println("error in executing: It will no longer be run!");
-            log.error("Error while reading file. " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }    
+    }   
     
     /**
      * 

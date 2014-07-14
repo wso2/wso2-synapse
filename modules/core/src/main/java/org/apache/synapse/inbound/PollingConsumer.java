@@ -18,8 +18,8 @@
 
 package org.apache.synapse.inbound;
 
-
 public interface PollingConsumer {
+	
 	public void registerHandler(InjectHandler processingHandler);
 	public Object poll();
 	
