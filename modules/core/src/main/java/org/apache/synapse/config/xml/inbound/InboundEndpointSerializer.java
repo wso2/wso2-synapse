@@ -48,7 +48,7 @@ public class InboundEndpointSerializer {
 		                                inboundEndpoint.getInjectingSeq(), null);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
 		                                inboundEndpoint.getOnErrorSeq(), null);
-		if(inboundEndpoint.getProtocol() == null){
+		if(inboundEndpoint.getProtocol() != null){
 			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
                     inboundEndpoint.getProtocol(), null);			
 		}else{
