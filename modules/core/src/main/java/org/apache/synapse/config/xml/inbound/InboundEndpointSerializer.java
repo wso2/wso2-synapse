@@ -48,10 +48,14 @@ public class InboundEndpointSerializer {
 		                                inboundEndpoint.getInjectingSeq(), null);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
 		                                inboundEndpoint.getOnErrorSeq(), null);
-		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
-		                                inboundEndpoint.getProtocol(), null);
-		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS,
-                inboundEndpoint.getClassImpl(), null);		
+		if(inboundEndpoint.getProtocol() == null){
+			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
+                    inboundEndpoint.getProtocol(), null);			
+		}else{
+			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS,
+	                inboundEndpoint.getClassImpl(), null);
+		}
+		
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND,
 		                                Boolean.toString(inboundEndpoint.isSuspend()), null);
 
