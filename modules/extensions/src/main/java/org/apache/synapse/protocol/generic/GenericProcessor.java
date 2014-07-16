@@ -42,7 +42,7 @@ public class GenericProcessor implements PollingProcessor, TaskStartupObserver {
     	log.info("Inbound listener " + name + " for class " + classImpl + " starting ...");
 		try{
 			Class c = Class.forName(classImpl);
-			Constructor cons = c.getConstructor(Properties.class, String.class, SynapseEnvironment.class, long.class);
+			Constructor cons = c.getConstructor(Properties.class, String.class, SynapseEnvironment.class, long.class, String.class, String.class);
 			pollingConsumer = (GenericPollingConsumer)cons.newInstance(properties, name, synapseEnvironment, interval, injectingSeq, onErrorSeq);
 		}catch(ClassNotFoundException e){
 			log.error("Class " + classImpl + " not found. Please check the required class is added to the classpath.");

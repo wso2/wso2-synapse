@@ -79,7 +79,7 @@ public class InboundEndpoint implements ManagedLifecycle {
         while (it.hasNext()) {
         	PollingProcessorFactory factory =  it.next();
         	Properties properties = Utils.paramsToProperties(parametersMap);
-        	return factory.creatPollingProcessor(protocol, classImpl, fileName, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
+        	return factory.creatPollingProcessor(protocol, classImpl, name, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
         }
         return null;
     }
