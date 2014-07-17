@@ -52,23 +52,22 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
         this.synapseEnvironment = synapseEnvironment;
     }
 
-    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
     public void init() {
-    	log.info("Inbound file listener started " + name);
+    	log.info("Inbound file listener " + name + " starting ...");
     	fileScanner = new FilePollingConsumer(vfsProperties, name, synapseEnvironment, interval);
     	fileScanner.registerHandler(new FileInjectHandler(injectingSeq, onErrorSeq, synapseEnvironment, vfsProperties));
     	start();
     }
     
     public void destroy() {
-        log.info("Inbound file listener ended " + name);
+        log.info("Inbound file listener " + name + " stoped.");
         startUpController.destroy();
     }
       
-    
-    public void start() {    
-    	log.info("Inbound file listener " + name + " starting ...");
+    /**
+     * Register/start the schedule service
+     * */
+    public void start() {        	
         try {
         	Task task = new FileTask(fileScanner);
         	TaskDescription taskDescription = new TaskDescription();
@@ -83,7 +82,7 @@ public class VFSProcessor implements PollingProcessor, TaskStartupObserver {
         	startUpController.init(synapseEnvironment);
 
         } catch (Exception e) {
-            log.error("Could not start VFS Processor. Error starting up scheduler. Error: " + e.getLocalizedMessage());
+            log.error("Could not start File Processor. Error starting up scheduler. Error: " + e.getLocalizedMessage());
         }
     }
 

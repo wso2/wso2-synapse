@@ -26,37 +26,54 @@ import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import javax.jms.*;
 
+import java.util.Date;
 import java.util.Properties;
 
-public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingConsumer {
+public class JMSPollingConsumer implements MessageConsumer,PollingConsumer {
 
     private static final Log logger = LogFactory.getLog(JMSPollingConsumer.class.getName());
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
     private InjectHandler injectHandler;
-    private Properties jmsProperties;
+    private long scanInterval;
+    private Long lastRanTime;
     private String strUserName;
     private String strPassword;
     
-    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, Properties jmsProperties) {
+    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, Properties jmsProperties, long scanInterval) {
         this.jmsConnectionFactory = jmsConnectionFactory;
         strUserName = jmsProperties.getProperty(JMSConstants.PARAM_JMS_USERNAME);
         strPassword = jmsProperties.getProperty(JMSConstants.PARAM_JMS_PASSWORD);        
-        this.jmsProperties = jmsProperties;
-    }
-    
-    public void run() {
-    	poll();
-    }
-
-    public void execute() {
-    	poll();
+        this.scanInterval = scanInterval;
+        this.lastRanTime = null;
     }    
     
 	public void registerHandler(InjectHandler injectHandler){
 		this.injectHandler = injectHandler;
 	}    
-    
+    public void execute() {        
+        try {
+            if (logger.isDebugEnabled()) {
+            	logger.debug("Start : JMS Inbound EP : ");
+            }
+            //Check if the cycles are running in correct interval and start scan
+            long currentTime = (new Date()).getTime();
+            if(lastRanTime == null || ((lastRanTime + (scanInterval)) <= currentTime)){
+            	lastRanTime = currentTime;
+            	poll();
+            }else if (logger.isDebugEnabled()) {
+            	logger.debug("Skip cycle since cuncurrent rate is higher than the scan interval : JMS Inbound EP ");
+            }
+            if (logger.isDebugEnabled()) {
+            	logger.debug("End : JMS Inbound EP : ");
+            }        	
+        } catch (Exception e) {
+            System.err.println("error in executing: It will no longer be run!");
+            logger.error("Error while reading file. " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }     
     public Message poll() {
         if(logger.isDebugEnabled()) {
             logger.debug("run() - polling messages");

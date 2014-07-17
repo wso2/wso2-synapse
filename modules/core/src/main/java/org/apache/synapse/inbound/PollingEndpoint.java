@@ -23,7 +23,7 @@ import org.apache.synapse.MessageContext;
 
 public interface PollingEndpoint {
 
-    public MessageContext getMessageContext(); /*ToDo Exception handling*/
+    public MessageContext getMessageContext();
 
 
 }
