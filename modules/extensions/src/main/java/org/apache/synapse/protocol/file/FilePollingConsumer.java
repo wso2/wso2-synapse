@@ -377,7 +377,13 @@ public class FilePollingConsumer implements PollingConsumer {
             log.error("Error while processing the file/folder in URL : " + VFSUtils.maskURLPassword(fileURI), e);
             return null;               
         }finally{
-        	
+        	try{
+        		fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
+        		fileObject.close();
+        	}catch(Exception e){
+        		log.error("Unable to close the file system. " + e.getMessage());
+        		log.error(e);
+        	}
         }
         if (log.isDebugEnabled()) {
             log.debug("End : Scanning directory or file : " + VFSUtils.maskURLPassword(fileURI));
@@ -416,14 +422,6 @@ public class FilePollingConsumer implements PollingConsumer {
                        
         } catch (FileSystemException e) {
             log.error("Error reading file content or attributes : " + file, e);            
-        } finally {
-            try {
-            	fsManager.closeFileSystem(file.getParent().getFileSystem());
-                file.close();
-            } catch (FileSystemException warn) {
-                 //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
-               // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
-            }
         }
         return null; 
     }

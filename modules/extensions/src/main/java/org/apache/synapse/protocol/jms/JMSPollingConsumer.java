@@ -145,9 +145,10 @@ public class JMSPollingConsumer implements MessageConsumer,PollingConsumer {
             }
 
         } catch (JMSException e) {
-            logger.error("Error while receiving JMS message. " + e.getMessage());
+            logger.error("Error while receiving JMS message. " + e.getMessage(), e);
+            e.printStackTrace();
         } catch (Exception e) {
-            logger.error("Error while receiving JMS message. " + e.getMessage());      
+            logger.error("Error while receiving JMS message. " + e.getMessage(), e);
         }finally{
         	if(messageConsumer != null){
         		jmsConnectionFactory.closeConsumer(messageConsumer);
