@@ -405,6 +405,7 @@ public class PassThroughHttpListener implements TransportListener {
             } else {
                 ioReactor.shutdown();
             }
+            serviceTracker.stop();
         } catch (IOException e) {
             handleException("Error shutting down " + namePrefix + " listening IO reactor", e);
         } catch (InterruptedException e) {
@@ -493,6 +494,7 @@ public class PassThroughHttpListener implements TransportListener {
             ioReactor.pause();
             ioReactor.shutdown(milliSecs);
             state = BaseConstants.STOPPED;
+            serviceTracker.stop();
             log.info("Listener shutdown in : " + (System.currentTimeMillis() - start) / 1000 + "s");
         } catch (IOException e) {
             handleException("Error shutting down the IOReactor for maintenance", e);
