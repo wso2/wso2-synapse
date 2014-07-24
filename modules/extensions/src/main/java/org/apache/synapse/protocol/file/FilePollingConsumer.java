@@ -19,29 +19,16 @@
 package org.apache.synapse.protocol.file;
 
 
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.UUIDGenerator;
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.Constants;
-import org.apache.axis2.builder.Builder;
-import org.apache.axis2.builder.BuilderUtil;
-import org.apache.axis2.builder.SOAPBuilder;
-import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.format.DataSourceMessageBuilder;
-import org.apache.axis2.format.ManagedDataSource;
-import org.apache.axis2.format.ManagedDataSourceFactory;
-import org.apache.axis2.transport.TransportUtils;
-import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.FileContent;
@@ -54,7 +41,7 @@ import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.inbound.InjectHandler;
 import org.apache.synapse.inbound.PollingConsumer;
-import org.apache.synapse.mediators.base.SequenceMediator;
+
 import org.apache.synapse.commons.vfs.VFSConstants; 
 import org.apache.synapse.commons.vfs.VFSUtils;
 
@@ -390,7 +377,13 @@ public class FilePollingConsumer implements PollingConsumer {
             log.error("Error while processing the file/folder in URL : " + VFSUtils.maskURLPassword(fileURI), e);
             return null;               
         }finally{
-        	
+        	try{
+        		fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
+        		fileObject.close();
+        	}catch(Exception e){
+        		log.error("Unable to close the file system. " + e.getMessage());
+        		log.error(e);
+        	}
         }
         if (log.isDebugEnabled()) {
             log.debug("End : Scanning directory or file : " + VFSUtils.maskURLPassword(fileURI));
@@ -429,14 +422,6 @@ public class FilePollingConsumer implements PollingConsumer {
                        
         } catch (FileSystemException e) {
             log.error("Error reading file content or attributes : " + file, e);            
-        } finally {
-            try {
-            	fsManager.closeFileSystem(file.getParent().getFileSystem());
-                file.close();
-            } catch (FileSystemException warn) {
-                 //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
-               // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
-            }
         }
         return null; 
     }

@@ -121,14 +121,20 @@ public class MessageHelper {
 						// No need to do anything since Strings are immutable
 					} else if (obj instanceof ArrayList) {
 				        if (log.isDebugEnabled()) {
-				            log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
+				            log.debug("Deep clone Started for  ArrayList property: " + strkey + ".");
 				        } 						
 						// Call this method to deep clone ArrayList
 						obj = cloneArrayList((ArrayList) obj);
 				        if (log.isDebugEnabled()) {
-				            log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
-				        } 						
-					} else {
+				            log.debug("Deep clone Ended for  ArrayList property: " + strkey + ".");
+				        }
+					} else if (obj instanceof Stack
+                               && strkey.equals(SynapseConstants.SYNAPSE__FUNCTION__STACK)) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("Deep clone for Template function stack");
+                        }
+                        obj = getClonedTemplateStack((Stack<TemplateContext>) obj);
+                    } else {
 						/**
 						 * Need to add conditions according to type if found in
 						 * future
@@ -275,6 +281,39 @@ public class MessageHelper {
         
       
         return newCtx;
+    }
+
+    /**
+     * Get a clone of a Template Function stack
+     *
+     * @param oriTemplateStack original template function stack to be cloned
+     * @return clone of a Template Function stack
+     */
+    public static Stack<TemplateContext> getClonedTemplateStack(
+            Stack<TemplateContext> oriTemplateStack) {
+
+        Stack<TemplateContext> clonedTemplateStack = new Stack<TemplateContext>();
+
+        for (TemplateContext oriTemplateCtx : oriTemplateStack) {
+            TemplateContext clonedTemplateCtx =
+                    new TemplateContext(oriTemplateCtx.getName(), oriTemplateCtx.getParameters());
+            Map oriValueMap = oriTemplateCtx.getMappedValues();
+            Map clonedValueMap = new HashMap();
+
+            for (Object key : oriValueMap.keySet()) {
+                Object value = oriValueMap.get(key);
+
+                if (value instanceof ArrayList) {
+                    value = cloneArrayList((ArrayList<Object>) value);
+                }
+
+                clonedValueMap.put(key, value);
+            }
+            clonedTemplateCtx.setMappedValues(clonedValueMap);
+            clonedTemplateStack.push(clonedTemplateCtx);
+        }
+
+        return clonedTemplateStack;
     }
 
     /**

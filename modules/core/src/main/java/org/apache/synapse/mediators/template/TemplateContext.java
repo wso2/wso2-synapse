@@ -21,9 +21,12 @@ package org.apache.synapse.mediators.template;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
-import org.jaxen.JaxenException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class will store runtime context of a synapse function template. For each invoked Template
@@ -105,6 +108,14 @@ public class TemplateContext {
 
     public Object getParameterValue(String paramName) {
         return mappedValues.get(paramName);
+    }
+
+    public Map getMappedValues() {
+        return mappedValues;
+    }
+
+    public void setMappedValues(Map map) {
+        this.mappedValues = map;
     }
 
     public String getName() {
