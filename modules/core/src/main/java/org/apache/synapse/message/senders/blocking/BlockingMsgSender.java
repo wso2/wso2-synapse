@@ -158,6 +158,33 @@ public class BlockingMsgSender {
             } else {
                 org.apache.axis2.context.MessageContext result =
                         sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
+				// FIX ESBJAVA-3211
+				// Check and retry for given error codes
+				Integer iStatusCode = (Integer) result
+						.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+				if (iStatusCode != null) {
+					String strRetryErrorCodes = (String) axisInMsgCtx
+							.getProperty(SynapseConstants.SYNAPSE_RETRY_ERROR_CODES);
+					if (strRetryErrorCodes != null
+							&& !strRetryErrorCodes.trim().equals("")) {
+						for (String strRetryErrorCode : strRetryErrorCodes
+								.split(",")) {
+							try {
+								if ((Integer.valueOf(strRetryErrorCode))
+										.equals(iStatusCode)) {
+									synapseInMsgCtx
+											.setProperty(
+													SynapseConstants.BLOCKING_SENDER_ERROR,
+													"true");
+									return synapseInMsgCtx;
+								}
+							} catch (NumberFormatException e) {
+								log.warn(strRetryErrorCode
+										+ " is not a valid status code");
+							}
+						}
+					}
+				}                
                 synapseInMsgCtx.setEnvelope(result.getEnvelope());
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());

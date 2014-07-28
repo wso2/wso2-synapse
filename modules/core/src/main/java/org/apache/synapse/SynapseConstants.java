@@ -465,7 +465,8 @@ public final class SynapseConstants {
 
     //Streaming Json Path
     public static final String STREAMING_JSONPATH_PROCESSING = "synapse.streaming.jsonpath.enabled";
-
+    //Message processor retry status codes
+    public static final String SYNAPSE_RETRY_ERROR_CODES = "retry.error.codes";
     /**
      * Message content property of incoming transport-in name
      */
