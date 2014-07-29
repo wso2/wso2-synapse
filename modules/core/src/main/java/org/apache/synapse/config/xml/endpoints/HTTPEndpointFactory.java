@@ -21,12 +21,15 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
 import com.damnhandy.uri.template.UriTemplate;
+import org.apache.synapse.rest.RESTConstants;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
@@ -86,9 +89,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             processAuditStatus(definition, httpEndpoint.getName(), httpElement);
 
             OMAttribute methodAttr = httpElement.getAttribute(new QName("method"));
-            if (methodAttr != null) {
-                httpEndpoint.setHttpMethod(methodAttr.getAttributeValue());
-            }
+            setHttpMethod(httpEndpoint, methodAttr.getAttributeValue());
 
         }
 
@@ -96,4 +97,29 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
 
         return httpEndpoint;
     }
+
+    private void setHttpMethod(HTTPEndpoint httpEndpoint, String httpMethod) {
+        if (httpMethod != null) {
+            if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_POST)) {
+                httpEndpoint.setHttpMethod(Constants.Configuration.HTTP_METHOD_POST);
+            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_GET)) {
+                httpEndpoint.setHttpMethod(Constants.Configuration.HTTP_METHOD_GET);
+            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PUT)) {
+                httpEndpoint.setHttpMethod(Constants.Configuration.HTTP_METHOD_PUT);
+            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_DELETE)) {
+                httpEndpoint.setHttpMethod(Constants.Configuration.HTTP_METHOD_DELETE);
+            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_HEAD)) {
+                httpEndpoint.setHttpMethod(Constants.Configuration.HTTP_METHOD_HEAD);
+            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PATCH)) {
+                httpEndpoint.setHttpMethod(Constants.Configuration.HTTP_METHOD_PATCH);
+            } else if (httpMethod.equalsIgnoreCase(RESTConstants.METHOD_OPTIONS)) {
+                httpEndpoint.setHttpMethod(RESTConstants.METHOD_OPTIONS);
+            } else {
+                throw new SynapseException("Invalid http method specified");
+            }
+        } else {
+            throw new SynapseException("Http method not specified");
+        }
+    }
+
 }
