@@ -19,16 +19,15 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
+import com.damnhandy.uri.template.UriTemplate;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.HTTPEndpoint;
-import com.damnhandy.uri.template.UriTemplate;
 import org.apache.synapse.rest.RESTConstants;
 
 import javax.xml.namespace.QName;
@@ -89,7 +88,15 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             processAuditStatus(definition, httpEndpoint.getName(), httpElement);
 
             OMAttribute methodAttr = httpElement.getAttribute(new QName("method"));
-            setHttpMethod(httpEndpoint, methodAttr.getAttributeValue());
+            if (methodAttr != null) {
+                setHttpMethod(httpEndpoint, methodAttr.getAttributeValue());
+            } else {
+                // Method is not a mandatory parameter for HttpEndpoint. So methodAttr Can be null
+                if (log.isDebugEnabled()) {
+                    log.debug("Method is not specified for HttpEndpoint. " +
+                              "Hence using the http method from incoming message");
+                }
+            }
 
         }
 
@@ -115,10 +122,11 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             } else if (httpMethod.equalsIgnoreCase(RESTConstants.METHOD_OPTIONS)) {
                 httpEndpoint.setHttpMethod(RESTConstants.METHOD_OPTIONS);
             } else {
-                throw new SynapseException("Invalid http method specified");
+                if (log.isDebugEnabled()) {
+                    log.debug("Invalid http method specified." +
+                              "Hence using the http method from incoming message");
+                }
             }
-        } else {
-            throw new SynapseException("Http method not specified");
         }
     }
 
