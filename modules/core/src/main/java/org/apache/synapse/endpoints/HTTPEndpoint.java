@@ -86,28 +86,8 @@ public class HTTPEndpoint extends AbstractEndpoint {
     }
 
     private void processHttpMethod(MessageContext synCtx) {
-        if (httpMethod != null) {
-            super.getDefinition().setHTTPEndpoint(true);
-            if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_POST)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_POST);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_GET)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_GET);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PUT)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_PUT);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_DELETE)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_DELETE);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_HEAD)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_HEAD);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PATCH)) {
-                 synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                         Constants.Configuration.HTTP_METHOD_PATCH); 
-            }
-        }
+        super.getDefinition().setHTTPEndpoint(true);
+        synCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethod);
     }
 
     private void processUrlTemplate(MessageContext synCtx) throws ExpressionParseException {
