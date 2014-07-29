@@ -87,7 +87,11 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
     private void processHttpMethod(MessageContext synCtx) {
         super.getDefinition().setHTTPEndpoint(true);
-        synCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethod);
+        if (httpMethod != null) {
+            synCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethod);
+        }
+        // Method is not a mandatory parameter for HttpEndpoint. So httpMethod can be null.
+        // http method from incoming message is used as the http method
     }
 
     private void processUrlTemplate(MessageContext synCtx) throws ExpressionParseException {
