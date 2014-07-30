@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.endpoints;
 
+import com.damnhandy.uri.template.UriTemplate;
 import com.damnhandy.uri.template.impl.ExpressionParseException;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.EndpointReference;
@@ -26,7 +27,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
-import com.damnhandy.uri.template.UriTemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -86,8 +86,8 @@ public class HTTPEndpoint extends AbstractEndpoint {
     }
 
     private void processHttpMethod(MessageContext synCtx) {
-        super.getDefinition().setHTTPEndpoint(true);
         if (httpMethod != null) {
+            super.getDefinition().setHTTPEndpoint(true);
             synCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethod);
         }
         // Method is not a mandatory parameter for HttpEndpoint. So httpMethod can be null.
