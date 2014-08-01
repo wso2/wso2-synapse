@@ -116,7 +116,7 @@ public class ResourceFactory {
             resource.setOutSequenceKey(outSequenceKeyAtt.getAttributeValue());
         } else if (outSequenceElt != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
-            SequenceMediator sequence = fac.createAnonymousSequence(outSequenceElt, new Properties());
+            SequenceMediator sequence = fac.createAnonymousSequence(outSequenceElt, properties);
             sequence.setSequenceType(SequenceType.API_OUTSEQ);
             resource.setOutSequence(sequence);
         }
@@ -128,7 +128,7 @@ public class ResourceFactory {
             resource.setFaultSequenceKey(faultSequenceKeyAtt.getAttributeValue());
         } else if (faultSequenceElt != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
-            SequenceMediator sequence = fac.createAnonymousSequence(faultSequenceElt, new Properties());
+            SequenceMediator sequence = fac.createAnonymousSequence(faultSequenceElt, properties);
             sequence.setSequenceType(SequenceType.API_FAULTSEQ);
             resource.setFaultSequence(sequence);
         }
