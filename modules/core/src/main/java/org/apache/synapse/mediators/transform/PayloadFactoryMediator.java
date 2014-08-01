@@ -148,6 +148,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
+            if(entry == null){
+            	handleException("Key " + key + " not found ", synCtx);
+            }            
             String text = "";
             if (entry instanceof OMElement) {
                 OMElement e = (OMElement) entry;
