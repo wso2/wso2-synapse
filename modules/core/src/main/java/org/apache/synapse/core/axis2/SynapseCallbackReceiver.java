@@ -45,6 +45,7 @@ import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
@@ -229,6 +230,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
                     response.getProperty(SynapseConstants.ERROR_DETAIL));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
+
+                if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
+                    synapseOutMsgCtx.setContinuationEnabled(true);
+                    ContinuationStackManager.clearStack(synapseOutMsgCtx);
+                }
 
                 if (log.isDebugEnabled()) {
                     log.debug("[Failed Request Message ID : " + messageID + "]" +

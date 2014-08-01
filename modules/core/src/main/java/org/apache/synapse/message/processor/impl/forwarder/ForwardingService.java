@@ -22,7 +22,6 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
@@ -44,7 +43,6 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.UnableToInterruptJobException;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -283,18 +281,7 @@ public class ForwardingService implements InterruptableJob, Service {
 
         return true;
     }
-    
-    private Set<Integer> getNonRetryStatusCodes() {
-        Set<Integer>nonRetryCodes = new HashSet<Integer>();
-        for (String code : nonRetryStatusCodes) {
-            try {
-                int codeI = Integer.parseInt(code);
-                nonRetryCodes.add(codeI);
-            } catch (NumberFormatException e) {} // ignore the invalid status code
-         }
-         return nonRetryCodes;
-    }
-    
+
     public MessageContext fetch(MessageConsumer msgConsumer) {
         return messageConsumer.receive();
     }
@@ -337,7 +324,6 @@ public class ForwardingService implements InterruptableJob, Service {
                                 messageContext.getEnvelope().getBody().addChild(firstChild);
                             }
                         }// Had to do this because MessageHelper#cloneSOAPEnvelope does not clone OMSourcedElemImpl correctly.
-                        origAxis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES, getNonRetryStatusCodes());
                         outCtx = sender.send(ep, messageContext);
                         isSuccessful = true;
 
