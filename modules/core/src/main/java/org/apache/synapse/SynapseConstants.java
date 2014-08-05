@@ -181,7 +181,9 @@ public final class SynapseConstants {
          * invoked by an endpoint
         */
         public static final String ENDPOINT_OPERATION = "endpoint.operation";
-    
+        /** Synapse MC property that holds the url of the named endpoint which message is sent out **/
+        public static final String ENDPOINT_PREFIX = "ENDPOINT_PREFIX";
+
         //-- error handling --
         /** An Axis2 message context property indicating a transport send failure */
         public static final String SENDING_FAULT = "SENDING_FAULT";
