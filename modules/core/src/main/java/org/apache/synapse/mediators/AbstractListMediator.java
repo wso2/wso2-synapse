@@ -65,6 +65,9 @@ public abstract class AbstractListMediator extends AbstractMediator
 
             if (contentAware) {
                 try {
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
+                    }
                     RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
                 } catch (Exception e) {
                     handleException("Error while building message", e, synCtx);
@@ -128,6 +131,9 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
 
             if (mediator.isContentAware()) {
+                if (log.isDebugEnabled()) {
+                    log.debug(mediator.getClass() + " is content aware, setting sequence <" + getType() + "> as content aware");
+                }
                 contentAware = true;
             }
         }
