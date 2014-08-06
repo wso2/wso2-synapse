@@ -132,7 +132,7 @@ public abstract class AbstractListMediator extends AbstractMediator
 
             if (mediator.isContentAware()) {
                 if (log.isDebugEnabled()) {
-                    log.debug(mediator.getClass() + " is content aware, setting sequence <" + getType() + "> as content aware");
+                    log.debug(mediator.getType() + " is content aware, setting sequence <" + getType() + "> as content aware");
                 }
                 contentAware = true;
             }
