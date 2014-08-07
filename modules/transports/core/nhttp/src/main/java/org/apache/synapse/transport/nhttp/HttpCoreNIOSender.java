@@ -456,7 +456,9 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 							String key = (String) iterator.next();
 							
 							for (String excessVal : (Collection<String>)map.get(key)) {
-								response.addHeader((String)header, (String) excessVal);
+							    if (header.equals(key)) {
+								    response.addHeader((String)header, (String) excessVal);
+								}
 							}
 							
 						}
