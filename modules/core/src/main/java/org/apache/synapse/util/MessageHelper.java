@@ -610,9 +610,16 @@ public class MessageHelper {
         if (envelope.getHeader() != null) {
             Iterator itr = envelope.getHeader().cloneOMElement().getChildren();
             while (itr.hasNext()) {
-                OMNode node = (OMNode) itr.next();
-                itr.remove();
-                newEnvelope.getHeader().addChild(node);
+                try {
+                    OMElement element = (OMElement) itr.next();
+                    itr.remove();
+                    newEnvelope.getHeader().addChild(
+                            ElementHelper.toSOAPHeaderBlock(element, fac));
+                } catch (OMException e) {
+                    log.error("Unable to convert to SoapHeader Block", e);
+                } catch (Exception e) {
+                    log.error("Unable to convert to SoapHeader Block", e);
+                }
             }
         }
 
