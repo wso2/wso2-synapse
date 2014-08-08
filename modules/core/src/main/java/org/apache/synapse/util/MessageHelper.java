@@ -4,7 +4,6 @@ import org.apache.axiom.attachments.Attachments;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.util.ElementHelper;
@@ -610,18 +609,9 @@ public class MessageHelper {
 
         if (envelope.getHeader() != null) {
             Iterator itr = envelope.getHeader().cloneOMElement().getChildren();
-            while (itr.hasNext()) {
-                try {
-                    OMElement element = (OMElement) itr.next();
-                    itr.remove();
-                    newEnvelope.getHeader().addChild(
-                            ElementHelper.toSOAPHeaderBlock(element, fac));
-                } catch (OMException e) {
-                    log.error("Unable to convert to SoapHeader Block", e);
-                } catch (Exception e) {
-                    log.error("Unable to convert to SoapHeader Block", e);
-                }
-            }
+            OMNode node = (OMNode) itr.next();
+            itr.remove();
+            newEnvelope.getHeader().addChild(node);
         }
 
         if (envelope.getBody() != null) {
