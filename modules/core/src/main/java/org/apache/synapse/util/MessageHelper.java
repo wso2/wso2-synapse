@@ -608,10 +608,12 @@ public class MessageHelper {
         SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
 
         if (envelope.getHeader() != null) {
-            Iterator itr = envelope.getHeader().cloneOMElement().getChildren();
-            OMNode node = (OMNode) itr.next();
-            itr.remove();
-            newEnvelope.getHeader().addChild(node);
+            Iterator itr     = envelope.getHeader().cloneOMElement().getChildren();
+            while (itr.hasNext()) {
+                OMNode node = (OMNode) itr.next();
+                itr.remove();
+                newEnvelope.getHeader().addChild(node);
+            }
         }
 
         if (envelope.getBody() != null) {
