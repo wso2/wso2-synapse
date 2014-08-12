@@ -286,12 +286,15 @@ public class ForwardingService implements InterruptableJob, Service {
     
     private Set<Integer> getNonRetryStatusCodes() {
         Set<Integer>nonRetryCodes = new HashSet<Integer>();
-        for (String code : nonRetryStatusCodes) {
-            try {
-                int codeI = Integer.parseInt(code);
-                nonRetryCodes.add(codeI);
-            } catch (NumberFormatException e) {} // ignore the invalid status code
-         }
+        if (nonRetryStatusCodes != null) {
+            for (String code : nonRetryStatusCodes) {
+                try {
+                    int codeI = Integer.parseInt(code);
+                    nonRetryCodes.add(codeI);
+                } catch (NumberFormatException e) {
+                } // ignore the invalid status code
+            }
+        }
          return nonRetryCodes;
     }
     
