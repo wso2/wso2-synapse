@@ -608,7 +608,7 @@ public class MessageHelper {
         SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
 
         if (envelope.getHeader() != null) {
-            Iterator itr     = envelope.getHeader().cloneOMElement().getChildren();
+            Iterator itr = envelope.getHeader().cloneOMElement().getChildren();
             while (itr.hasNext()) {
                 OMNode node = (OMNode) itr.next();
                 itr.remove();
