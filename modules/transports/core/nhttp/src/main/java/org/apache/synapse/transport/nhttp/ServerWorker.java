@@ -454,7 +454,7 @@ public class ServerWorker implements Runnable {
 
             if (HTTPTransportUtils.isRESTRequest(contentTypeStr) || isRest(contentTypeStr)) {
                 RESTUtil.processPOSTRequest(msgContext, is, os,
-                        request.getRequestLine().getUri(), contentType, isRestDispatching);
+                        request.getRequestLine().getUri(), contentTypeStr, isRestDispatching);
             } else {
 
                 Header soapAction  = request.getFirstHeader(SOAPACTION);

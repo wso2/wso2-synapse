@@ -38,7 +38,6 @@ import org.apache.axis2.engine.AxisEngine;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.util.URIEncoderDecoder;
 import org.apache.http.Header;
-import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
@@ -190,10 +189,29 @@ public class RESTUtil {
                                           boolean dispatching) throws AxisFault {
 
         String contentType = contentTypeHeader != null ? contentTypeHeader.getValue() : null;
+        processPOSTRequest(msgContext, is, os, requestURI, contentType, dispatching);
+    }
+
+    /**
+     * Processes the HTTP POST request and builds the SOAP info-set of the REST message
+     *
+     * @param msgContext  MessageContext of the Request Message
+     * @param is          Input stream of the request
+     * @param os          Output stream of the response
+     * @param requestURI  URL that the request came to
+     * @param contentType ContentType header of the request
+     * @param dispatching Whether we should do dispatching
+     * @throws AxisFault - Thrown in case a fault occurs
+     */
+    public static void processPOSTRequest(MessageContext msgContext, InputStream is,
+                                          OutputStream os, String requestURI,
+                                          String contentType,
+                                          boolean dispatching) throws AxisFault {
+
         prepareMessageContext(msgContext, requestURI, HTTPConstants.HTTP_METHOD_POST,
-                os, contentType, dispatching);
+                              os, contentType, dispatching);
         org.apache.axis2.transport.http.util.RESTUtil.processXMLRequest(msgContext, is, os,
-                contentType);
+                                                                        contentType);
     }
 
     /**
