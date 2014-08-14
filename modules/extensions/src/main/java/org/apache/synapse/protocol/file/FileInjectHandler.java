@@ -63,7 +63,9 @@ public class FileInjectHandler implements InjectHandler {
 		this.synapseEnvironment = synapseEnvironment;
 		this.vfsProperties = vfsProperties;
 	}	 
-	
+	/**
+	 * Inject the message to the sequence
+	 * */
 	public boolean invoke(Object object){
 		
 		ManagedDataSource dataSource = null;;
@@ -72,9 +74,9 @@ public class FileInjectHandler implements InjectHandler {
             org.apache.synapse.MessageContext msgCtx = createMessageContext();
             String contentType = vfsProperties.getProperty(VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);          
             if (contentType == null || contentType.trim().equals("")) {
-                if (file.getName().getExtension().toLowerCase().endsWith(".xml")) {
+                if (file.getName().getExtension().toLowerCase().endsWith("xml")) {
                     contentType = "text/xml";
-                } else if (file.getName().getExtension().toLowerCase().endsWith(".txt")) {
+                } else if (file.getName().getExtension().toLowerCase().endsWith("txt")) {
                     contentType = "text/plain";
                 }
             } else {
@@ -150,6 +152,7 @@ public class FileInjectHandler implements InjectHandler {
             }     
         } catch (Exception e) {
             log.error("Error while processing the file/folder");
+            log.error(e);
             return false;
         } finally {
          if(dataSource != null) {

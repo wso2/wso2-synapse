@@ -26,49 +26,70 @@ import org.apache.synapse.protocol.jms.factory.CachedJMSConnectionFactory;
 
 import javax.jms.*;
 
+import java.util.Date;
 import java.util.Properties;
 
-public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingConsumer {
+public class JMSPollingConsumer implements MessageConsumer,PollingConsumer {
 
     private static final Log logger = LogFactory.getLog(JMSPollingConsumer.class.getName());
 
     private CachedJMSConnectionFactory jmsConnectionFactory;
     private InjectHandler injectHandler;
-    private Properties jmsProperties;
+    private long scanInterval;
+    private Long lastRanTime;
     private String strUserName;
     private String strPassword;
     
-    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, Properties jmsProperties) {
+    public JMSPollingConsumer(CachedJMSConnectionFactory jmsConnectionFactory, Properties jmsProperties, long scanInterval) {
         this.jmsConnectionFactory = jmsConnectionFactory;
         strUserName = jmsProperties.getProperty(JMSConstants.PARAM_JMS_USERNAME);
         strPassword = jmsProperties.getProperty(JMSConstants.PARAM_JMS_PASSWORD);        
-        this.jmsProperties = jmsProperties;
-    }
-    
-    public void run() {
-    	poll();
-    }
-
-    public void execute() {
-    	poll();
+        this.scanInterval = scanInterval;
+        this.lastRanTime = null;
     }    
     
 	public void registerHandler(InjectHandler injectHandler){
 		this.injectHandler = injectHandler;
 	}    
-    
+    public void execute() {        
+        try {
+            if (logger.isDebugEnabled()) {
+            	logger.debug("Start : JMS Inbound EP : ");
+            }
+            //Check if the cycles are running in correct interval and start scan
+            long currentTime = (new Date()).getTime();
+            if(lastRanTime == null || ((lastRanTime + (scanInterval)) <= currentTime)){
+            	lastRanTime = currentTime;
+            	poll();
+            }else if (logger.isDebugEnabled()) {
+            	logger.debug("Skip cycle since cuncurrent rate is higher than the scan interval : JMS Inbound EP ");
+            }
+            if (logger.isDebugEnabled()) {
+            	logger.debug("End : JMS Inbound EP : ");
+            }        	
+        } catch (Exception e) {
+            System.err.println("error in executing: It will no longer be run!");
+            logger.error("Error while reading file. " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }     
     public Message poll() {
         if(logger.isDebugEnabled()) {
             logger.debug("run() - polling messages");
         }
-        Connection connection = jmsConnectionFactory.getConnection(strUserName, strPassword);
-        if(connection == null){
-        	return null;
-        }
-        Session session = jmsConnectionFactory.getSession(connection);
-        Destination destination = jmsConnectionFactory.getDestination(connection);
-        MessageConsumer messageConsumer = jmsConnectionFactory.getMessageConsumer(session, destination);
+        Connection connection = null;
+        Session session = null;
+        Destination destination = null;
+        MessageConsumer messageConsumer = null;
         try {
+            connection = jmsConnectionFactory.getConnection(strUserName, strPassword);
+            if(connection == null){
+            	return null;
+            }        	
+            session = jmsConnectionFactory.getSession(connection);
+            destination = jmsConnectionFactory.getDestination(connection);
+            messageConsumer = jmsConnectionFactory.getMessageConsumer(session, destination);        	
             Message msg = messageConsumer.receive(1);
             if(null == msg) {
                 if(logger.isDebugEnabled()) {
@@ -97,23 +118,25 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
 	                    }
 	                }	 
 	                // if session was transacted, commit it or rollback
-	                try {
-	                    if (session.getTransacted()) {
-	                        if (commitOrAck) {
-	                            session.commit();
-	                            if (logger.isDebugEnabled()) {
-	                            	logger.debug("Session for message : " + msg.getJMSMessageID() + " committed");
-	                            }
-	                        } else {
-	                            session.rollback();
-	                            if (logger.isDebugEnabled()) {
-	                            	logger.debug("Session for message : " + msg.getJMSMessageID() + " rolled back");
-	                            }
-	                        }
-	                    }
-	                } catch (JMSException e) {
-	                	logger.error("Error " + (commitOrAck ? "committing" : "rolling back") +
-	                        " local session txn for message : " + msg.getJMSMessageID(), e);
+	                if(jmsConnectionFactory.isTransactedSession()){
+		                try {
+		                    if (session.getTransacted()) {
+		                        if (commitOrAck) {
+		                            session.commit();
+		                            if (logger.isDebugEnabled()) {
+		                            	logger.debug("Session for message : " + msg.getJMSMessageID() + " committed");
+		                            }
+		                        } else {
+		                            session.rollback();
+		                            if (logger.isDebugEnabled()) {
+		                            	logger.debug("Session for message : " + msg.getJMSMessageID() + " rolled back");
+		                            }
+		                        }
+		                    }
+		                } catch (JMSException e) {
+		                	logger.error("Error " + (commitOrAck ? "committing" : "rolling back") +
+		                        " local session txn for message : " + msg.getJMSMessageID(), e);
+		                }
 	                }	             
 	            }else{
 	            	return msg;            	
@@ -122,13 +145,20 @@ public class JMSPollingConsumer implements Runnable, MessageConsumer,PollingCons
             }
 
         } catch (JMSException e) {
-            logger.error("Error while receiving JMS message. " + e.getMessage());
+            logger.error("Error while receiving JMS message. " + e.getMessage(), e);
+            e.printStackTrace();
         } catch (Exception e) {
-            logger.error("Error while receiving JMS message. " + e.getMessage());      
+            logger.error("Error while receiving JMS message. " + e.getMessage(), e);
         }finally{
-            jmsConnectionFactory.closeConsumer(messageConsumer);
-            jmsConnectionFactory.closeSession(session);
-            jmsConnectionFactory.closeConnection(connection);
+        	if(messageConsumer != null){
+        		jmsConnectionFactory.closeConsumer(messageConsumer);
+        	}
+        	if(session != null){
+        		jmsConnectionFactory.closeSession(session);
+        	}
+        	if(connection != null){
+        		jmsConnectionFactory.closeConnection(connection);
+        	}        	
         }
         return null;
     }

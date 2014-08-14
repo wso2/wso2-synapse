@@ -92,6 +92,10 @@ public class ForwardingService implements InterruptableJob, Service {
      */
     private long throttlingInterval = -1;
 
+    /** Configuration to continue the message processor even without stopping
+     * the message processor after maximum number of delivery */
+    private boolean isMaxDeliveryAttemptDropEnabled = false;
+
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 
         init(jobExecutionContext);
@@ -263,6 +267,15 @@ public class ForwardingService implements InterruptableJob, Service {
         if (isThrottling) {
             if (jdm.get(ForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
                 throttlingInterval = (Long)jdm.get(ForwardingProcessorConstants.THROTTLE_INTERVAL);
+            }
+        }
+
+        //Configure property for the drop message after maximum delivery
+        if (parameters.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP) != null) {
+            if ((parameters.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP)).toString().equals("Enabled")) {
+                if (this.maxDeliverAttempts > 0) {
+                    isMaxDeliveryAttemptDropEnabled = true;
+                }
             }
         }
 
@@ -459,9 +472,20 @@ public class ForwardingService implements InterruptableJob, Service {
                 terminate();
                 this.messageProcessor.deactivate();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Message processor [" + messageProcessor.getName() +
-                            "] stopped due to reach of max attempts");
+                if (this.isMaxDeliveryAttemptDropEnabled) {
+                    dropMessageAndContinueMessageProcessor();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Message processor [" + messageProcessor.getName() +
+                                "] Dropped the failed message and continue due to reach of max attempts");
+                    }
+                } else {
+                    terminate();
+                    this.messageProcessor.deactivate();
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Message processor [" + messageProcessor.getName() +
+                                "] stopped due to reach of max attempts");
+                    }
                 }
             }
         }
@@ -523,5 +547,18 @@ public class ForwardingService implements InterruptableJob, Service {
 
     private boolean isRunningUnderCronExpression() {
         return this.isThrottling && (throttlingInterval > -1);
+    }
+
+    /**
+     * This method is enable to the
+     */
+    private void dropMessageAndContinueMessageProcessor() {
+        messageConsumer.ack();
+        attemptCount = 0;
+        isSuccessful = true;
+        if (this.messageProcessor.isPaused()) {
+            this.messageProcessor.resumeService();
+        }
+        log.info("Removed failed message and continue the message processor [" + this.messageProcessor.getName() + "]");
     }
 }

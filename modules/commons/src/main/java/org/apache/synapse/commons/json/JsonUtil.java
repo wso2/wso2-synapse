@@ -46,7 +46,8 @@ public final class JsonUtil {
     private static final QName JSON_OBJECT = new QName("jsonObject");
 
     private static final QName JSON_ARRAY = new QName("jsonArray");
-
+    /** If this property is set to <tt>true</tt> the input stream of the JSON payload will be reset
+     *  after writing to the output stream within the #writeAsJson method. */
     public static final String PRESERVE_JSON_STREAM = "preserve.json.stream";
 
     private static final boolean processNCNames;

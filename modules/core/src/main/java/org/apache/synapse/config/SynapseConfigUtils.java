@@ -746,7 +746,7 @@ public class SynapseConfigUtils {
      * @return StatisticsCollector instance if there is any
      */
     public static StatisticsCollector getStatisticsCollector(ServerContextInformation contextInfo) {
-        if (contextInfo != null && contextInfo.getServerState() == ServerState.INITIALIZED) {
+        if (contextInfo != null && (contextInfo.getServerState() == ServerState.INITIALIZED || contextInfo.getServerState() == ServerState.STARTED )) {
             Object o = contextInfo.getServerContext();
             if (o instanceof ConfigurationContext) {
                 ConfigurationContext context = (ConfigurationContext) o;

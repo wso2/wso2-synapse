@@ -50,6 +50,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
 import org.apache.synapse.transport.http.conn.SSLClientAuth;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
@@ -76,7 +77,8 @@ public class ServerConnFactoryBuilder {
         final OMElement keyStoreEl, 
         final OMElement trustStoreEl,
         final OMElement cientAuthEl,
-        final OMElement httpsProtocolsEl) throws AxisFault {
+            final OMElement httpsProtocolsEl,
+            final RevocationVerificationManager verificationManager) throws AxisFault {
 
         KeyManager[] keymanagers  = null;
         TrustManager[] trustManagers = null;
@@ -201,7 +203,7 @@ public class ServerConnFactoryBuilder {
             
             ServerSSLSetupHandler sslSetupHandler =
                                (clientAuth != null || httpsProtocols != null) ?
-                                         new ServerSSLSetupHandler(clientAuth,httpsProtocols) : null;
+                                         new ServerSSLSetupHandler(clientAuth,httpsProtocols,verificationManager) : null;
             
             return new SSLContextDetails(sslContext, sslSetupHandler);
         } catch (GeneralSecurityException gse) {
@@ -220,7 +222,25 @@ public class ServerConnFactoryBuilder {
         OMElement clientAuthEl = clientAuthParam != null ? clientAuthParam.getParameterElement() : null;
         OMElement httpsProtocolsEl = httpsProtocolsParam != null ? httpsProtocolsParam.getParameterElement() : null;
         
-        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl);
+        final Parameter cvp = transportIn.getParameter("CertificateRevocationVerifier");
+        final String cvEnable = cvp != null ?
+                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
+        RevocationVerificationManager revocationVerifier = null;
+
+        if ("true".equalsIgnoreCase(cvEnable)) {
+            String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
+            String cacheDelayString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheDelay")).getText();
+            Integer cacheSize = null;
+            Integer cacheDelay = null;
+            try {
+                cacheSize = new Integer(cacheSizeString);
+                cacheDelay = new Integer(cacheDelayString);
+            }
+            catch (NumberFormatException e) {}
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
+        }
+        
+        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, revocationVerifier);
         return this;
     }
     
@@ -247,7 +267,7 @@ public class ServerConnFactoryBuilder {
             OMElement trustStoreEl = profileEl.getFirstChildWithName(new QName("TrustStore"));
             OMElement clientAuthEl = profileEl.getFirstChildWithName(new QName("SSLVerifyClient"));
             OMElement httpsProtocolsEl = profileEl.getFirstChildWithName(new QName("HttpsProtocols"));
-            SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl,httpsProtocolsEl);
+            SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl,httpsProtocolsEl,null);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }

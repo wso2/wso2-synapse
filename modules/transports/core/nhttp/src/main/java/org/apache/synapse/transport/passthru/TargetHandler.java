@@ -78,7 +78,6 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void connected(NHttpClientConnection conn, Object o) {
         assert o instanceof HostConnections : "Attachment should be a HostConnections";
-
         HostConnections pool = (HostConnections) o;
         conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
         HttpRoute route = pool.getRoute();
@@ -90,7 +89,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().addConnection(conn);
 
         // notify about the new connection
-        deliveryAgent.connected(pool.getRoute());
+        deliveryAgent.connected(pool.getRoute(), conn);
         
         HttpContext context = conn.getContext();
         context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
@@ -145,7 +144,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (IOException e) {
             logIOException(conn, e);
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
 
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
@@ -158,7 +157,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (HttpException e) {
             log.error(e.getMessage(), e);
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
 
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
@@ -189,7 +188,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (IOException ex) {
             logIOException(conn, ex);
             TargetContext.updateState(conn, ProtocolState.CLOSING);
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
 
             informWriterError(conn);
 
@@ -204,7 +203,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         } catch (Exception e) {
             log.error("Error occurred while writing data to the target", e);
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
 
             informWriterError(conn);
 
@@ -318,7 +317,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             informReaderError(conn);
 
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
         }
     }
 
@@ -368,21 +367,21 @@ public class TargetHandler implements NHttpClientEventHandler {
             informReaderError(conn);
 
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn,false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);
 
             informReaderError(conn);
 
             TargetContext.updateState(conn, ProtocolState.CLOSED);
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
         }
     }
 
     public void closed(NHttpClientConnection conn) {
         ProtocolState state = TargetContext.getState(conn);
 
-        boolean sendFault = false;
+        boolean isFault = false;
 
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
@@ -391,18 +390,18 @@ public class TargetHandler implements NHttpClientEventHandler {
         } else if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
             informWriterError(conn);
             log.warn("Connection closed by target host while sending the request");
-            sendFault = true;
+            isFault = true;
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
             log.warn("Connection closed by target host while receiving the response");
-            sendFault = true;
+            isFault = true;
         } else if (state == ProtocolState.REQUEST_DONE) {
             informWriterError(conn);
-            log.warn("Connection closed by target host after sending the request");
-            sendFault = true;
+            log.warn("Connection closed by target host before receiving the response");
+            isFault = true;
         }
 
-        if (sendFault) {
+        if (isFault) {
             MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
             if (requestMsgCtx != null) {
                 targetErrorHandler.handleError(requestMsgCtx,
@@ -416,11 +415,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         metrics.disconnected();
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        if (sendFault) {
-            targetConfiguration.getConnections().shutdownConnection(conn, false);
-        } else {
-            targetConfiguration.getConnections().shutdownConnection(conn);
-        }
+        targetConfiguration.getConnections().shutdownConnection(conn, isFault);
 
     }
 
@@ -486,7 +481,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
 
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, false);
+        targetConfiguration.getConnections().shutdownConnection(conn, true);
     }
 
     private boolean isResponseHaveBodyExpected(
@@ -531,7 +526,7 @@ public class TargetHandler implements NHttpClientEventHandler {
         }
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         TargetContext.updateState(conn, ProtocolState.CLOSED);
-        targetConfiguration.getConnections().shutdownConnection(conn, false);
+        targetConfiguration.getConnections().shutdownConnection(conn, true);
         if (requestMsgCtx != null) {
             targetErrorHandler.handleError(requestMsgCtx,
                     ErrorCodes.SND_INVALID_STATE,
@@ -602,7 +597,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
             TargetContext.updateState(conn, ProtocolState.CLOSED);
         }
-        targetConfiguration.getConnections().shutdownConnection(conn, false);
+        targetConfiguration.getConnections().shutdownConnection(conn, true);
     }
 
 }

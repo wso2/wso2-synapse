@@ -249,12 +249,11 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API, getName());
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
-        
-        // Remove the API context part from the REST_URL_POSTFIX
-        String restURLPostfix = (String) ((Axis2MessageContext) synCtx).getAxis2MessageContext().
-                getProperty(NhttpConstants.REST_URL_POSTFIX);
-		if (restURLPostfix != null) {
-			if (!restURLPostfix.startsWith("/")) {
+
+        // Calculate REST_URL_POSTFIX from full request path
+        String restURLPostfix = (String) synCtx.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
+        if (!synCtx.isResponse() && restURLPostfix != null) {  // Skip for response path
+            if (!restURLPostfix.startsWith("/")) {
 				restURLPostfix = "/" + restURLPostfix;
 			} 
 			if (restURLPostfix.startsWith(context)) {

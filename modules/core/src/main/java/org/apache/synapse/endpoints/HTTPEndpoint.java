@@ -18,6 +18,7 @@
  */
 package org.apache.synapse.endpoints;
 
+import com.damnhandy.uri.template.UriTemplate;
 import com.damnhandy.uri.template.impl.ExpressionParseException;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.EndpointReference;
@@ -26,7 +27,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
-import com.damnhandy.uri.template.UriTemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -88,26 +88,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
     private void processHttpMethod(MessageContext synCtx) {
         if (httpMethod != null) {
             super.getDefinition().setHTTPEndpoint(true);
-            if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_POST)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_POST);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_GET)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_GET);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PUT)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_PUT);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_DELETE)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_DELETE);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_HEAD)) {
-                synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_HEAD);
-            } else if (httpMethod.equalsIgnoreCase(Constants.Configuration.HTTP_METHOD_PATCH)) {
-                 synCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                         Constants.Configuration.HTTP_METHOD_PATCH); 
-            }
+            synCtx.setProperty(Constants.Configuration.HTTP_METHOD, httpMethod);
         }
+        // Method is not a mandatory parameter for HttpEndpoint. So httpMethod can be null.
+        // http method from incoming message is used as the http method
     }
 
     private void processUrlTemplate(MessageContext synCtx) throws ExpressionParseException {
