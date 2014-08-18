@@ -19,9 +19,14 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.util.ElementHelper;
+import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPBody;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
@@ -45,6 +50,7 @@ import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -142,6 +148,8 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             }
 
             MessageContext synapseOutMsgCtx = MessageHelper.cloneMessageContext(synCtx);
+            // Send the SOAP Header Blocks to support WS-Addressing
+            setSoapHeaderBlock(synapseOutMsgCtx);            
             if (!useEnvelopeAsSource
             		// if the payload is JSON, we do not consider the request (ie. source) path. Instead, we use the complete payload.
             		&& !JsonUtil.hasAJsonPayload(((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext())) {
@@ -225,7 +233,36 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         synLog.traceOrDebug("End : Callout mediator");
         return true;
     }
-
+    
+    private void setSoapHeaderBlock(MessageContext synCtx) {
+        // Send the SOAP Header Blocks to support WS-Addressing
+        if (synCtx.getEnvelope().getHeader() != null) {
+            Iterator iHeader = synCtx.getEnvelope().getHeader().getChildren();
+            SOAPFactory fac;
+            if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(synCtx.getEnvelope().getBody()
+                    .getNamespace().getNamespaceURI())) {
+                fac = OMAbstractFactory.getSOAP11Factory();
+            } else {
+                fac = OMAbstractFactory.getSOAP12Factory();
+            }
+            List<OMNode> newHeaderNodes = new ArrayList<OMNode>();
+            while (iHeader.hasNext()) {
+                try {
+                    OMElement element = (OMElement) iHeader.next();
+                    iHeader.remove();
+                    newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock(element, fac));
+                } catch (OMException e) {
+                    log.error("Unable to convert to SoapHeader Block", e);
+                } catch (Exception e) {
+                    log.error("Unable to convert to SoapHeader Block", e);
+                }
+            }
+            for (OMNode newHeaderNode : newHeaderNodes) {
+                synCtx.getEnvelope().getHeader().addChild(newHeaderNode);
+            }
+        }
+    }
+        
     private void handleFault(MessageContext synCtx, Exception ex) {
         synCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
 

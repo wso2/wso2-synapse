@@ -74,11 +74,7 @@ public abstract class AbstractRegistry implements Registry {
                 // Collection
                 re = getRegistryEntry(entry.getKey());
                 if (re != null) {
-                    if (re.getCachableDuration() > 0) {
-                        entry.setExpiryTime(System.currentTimeMillis() + re.getCachableDuration());
-                    } else {
-                        entry.setExpiryTime(-1);
-                    }
+                    setExpiryTime(entry, re);
                     entry.setVersion(re.getVersion());
                 }
             }
@@ -105,12 +101,8 @@ public abstract class AbstractRegistry implements Registry {
 
                 // renew cache lease for another cachable duration (as returned by the
                 // new getRegistryEntry() call
-                if (re.getCachableDuration() > 0) {
-                    entry.setExpiryTime(
-                            System.currentTimeMillis() + re.getCachableDuration());
-                } else {
-                    entry.setExpiryTime(-1);
-                }
+                setExpiryTime(entry, re);
+
                 if (log.isDebugEnabled()) {
                     log.debug("Renew cache lease for another " + re.getCachableDuration() / 1000 +
                             "s");
@@ -128,12 +120,7 @@ public abstract class AbstractRegistry implements Registry {
                     // Collection
                     re = getRegistryEntry(entry.getKey());
                     if (re != null) {
-                        if (re.getCachableDuration() > 0) {
-                            entry.setExpiryTime(System.currentTimeMillis() +
-                                    re.getCachableDuration());
-                        } else {
-                            entry.setExpiryTime(-1);
-                        }
+                        setExpiryTime(entry, re);
                         entry.setVersion(re.getVersion());
                     }
                 }
@@ -191,15 +178,24 @@ public abstract class AbstractRegistry implements Registry {
 
         // increment cache expiry time as specified by the last getRegistryEntry() call
         if (re != null) {
-            if (re.getCachableDuration() > 0) {
-                entry.setExpiryTime(System.currentTimeMillis() + re.getCachableDuration());
-            } else {
-                entry.setExpiryTime(-1);
-            }
+            setExpiryTime(entry, re);
             entry.setVersion(re.getVersion());
         }
 
         return entry.getValue();
+    }
+
+    /**
+     * Sets the expiry time according to the cachableDuration property
+     */
+    private void setExpiryTime(Entry entry, RegistryEntry re) {
+
+        if (re.getCachableDuration() >= 0) {
+            entry.setExpiryTime(
+                    System.currentTimeMillis() + re.getCachableDuration());
+        } else {
+            entry.setExpiryTime(-1);
+        }
     }
 
     private XMLToObjectMapper getMapper(String type) {

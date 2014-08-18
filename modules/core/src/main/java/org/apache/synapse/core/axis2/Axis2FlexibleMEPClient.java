@@ -33,9 +33,13 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.context.ServiceGroupContext;
-import org.apache.axis2.description.*;
+import org.apache.axis2.description.AxisOperation;
+import org.apache.axis2.description.AxisService;
+import org.apache.axis2.description.AxisServiceGroup;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportOutDescription;
+import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.wsdl.WSDLConstants;
@@ -55,7 +59,6 @@ import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
 import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -278,8 +281,9 @@ public class Axis2FlexibleMEPClient {
             }
 
             if (endpoint.getAddress() != null) {
+                String address = endpoint.getAddress(synapseOutMessageContext);
                 if (isRest && restSuffix != null && !"".equals(restSuffix)) {
-                    String address = endpoint.getAddress(synapseOutMessageContext);
+
                     String url="";
                     if (!address.endsWith("/") && !restSuffix.startsWith("/") &&
                             !restSuffix.startsWith("?")) {
@@ -298,12 +302,10 @@ public class Axis2FlexibleMEPClient {
                     axisOutMsgCtx.setTo(new EndpointReference(url));
 
                 } else {
-                    axisOutMsgCtx.setTo(
-                            new EndpointReference(endpoint.getAddress(synapseOutMessageContext)));
+                    axisOutMsgCtx.setTo(new EndpointReference(address));
                 }
-
-                axisOutMsgCtx.setProperty(NhttpConstants.ENDPOINT_PREFIX,
-                        endpoint.getAddress(synapseOutMessageContext));
+                axisOutMsgCtx.setProperty(NhttpConstants.ENDPOINT_PREFIX, address);
+                synapseOutMessageContext.setProperty(SynapseConstants.ENDPOINT_PREFIX, address);
             } else {
                 // Supporting RESTful invocation
                 if (isRest && restSuffix != null && !"".equals(restSuffix)) {
