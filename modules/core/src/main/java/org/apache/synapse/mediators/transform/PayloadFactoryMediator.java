@@ -56,6 +56,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private String mediaType = XML_TYPE;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
+    private final static String SOAP11_CONTENT_TYPE  = "text/xml";
+    private final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
     private final static String JSON_TYPE = "json";
     private final static String XML_TYPE = "xml";
     private final static String STRING_TYPE = "str";
@@ -84,9 +86,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private void setContentType(MessageContext synCtx) {
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         if(mediaType.equals(XML_TYPE)) {
+            if(!XML_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
+                    !SOAP11_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
+                    !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) ){
                 a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, XML_CONTENT_TYPE);
                 a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, XML_CONTENT_TYPE);
                 handleSpecialProperties(XML_CONTENT_TYPE, a2mc);
+            }
         } else if(mediaType.equals(JSON_TYPE)) {
             a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, JSON_CONTENT_TYPE);
             a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, JSON_CONTENT_TYPE);
