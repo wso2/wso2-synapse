@@ -15,10 +15,14 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-
 package org.apache.synapse.inbound;
 
+import org.apache.synapse.core.SynapseEnvironment;
 
-public interface PollingProcessor extends InboundRequestProcessor {
+import java.util.Properties;
 
+public interface InboundRequestProcessorFactory {
+
+    public InboundRequestProcessor createInboundProcessor(String protocol, String classImpl, String name,
+                                                          Properties vfsProperties, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment);
 }

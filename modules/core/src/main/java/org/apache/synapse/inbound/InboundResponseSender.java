@@ -15,10 +15,15 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-
 package org.apache.synapse.inbound;
 
 
-public interface PollingProcessor extends InboundRequestProcessor {
+import org.apache.synapse.MessageContext;
 
+/**
+ * Interface for receive Synapse Message Context from Axis2Sender
+ */
+public interface InboundResponseSender {
+    public void sendBack(MessageContext messageContext);
+    public String getType();
 }

@@ -42,9 +42,7 @@ public class InboundEndpointSerializer {
 		                                                   SynapseConstants.SYNAPSE_OMNAMESPACE);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_NAME,
 		                                inboundEndpoint.getName(), null);
-		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_INTERVAL,
-		                                Long.toString(inboundEndpoint.getInterval()), null);
-		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
+				inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
 		                                inboundEndpoint.getInjectingSeq(), null);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
 		                                inboundEndpoint.getOnErrorSeq(), null);

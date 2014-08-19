@@ -36,23 +36,51 @@ public class InboundEndpointFactory {
 
     public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem) {
         InboundEndpoint inboundEndpoint = new InboundEndpoint();
-        inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)));
-        inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)));
-        inboundEndpoint.setClassImpl(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS)));
-        inboundEndpoint.setInterval(Long.parseLong(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_INTERVAL))));
-        inboundEndpoint.setSuspend(Boolean.parseBoolean(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND))));
-        inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)));
-        inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE)));
-        
-        OMElement parametersElt = inboundEndpointElem.getFirstChildWithName(new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
-                InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETERS));
+        if (inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)) != null) {
+            inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(
+                    new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)));
+        } else {
+            log.error("Inbound Endpoint name cannot be null");
+        }
+        inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(
+                new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)) != null ? inboundEndpointElem.getAttributeValue
+                (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)) : null);
+        inboundEndpoint.setClassImpl(inboundEndpointElem.getAttributeValue(
+                new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS)) != null ?
+                inboundEndpointElem.getAttributeValue(
+                        new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS)) : null);
+        if (inboundEndpointElem.getAttributeValue(new QName
+                (InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND)) != null) {
+            inboundEndpoint.setSuspend(Boolean.parseBoolean(inboundEndpointElem.getAttributeValue(
+                    new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND))));
+        } else {
+            inboundEndpoint.setSuspend(false);
+        }
+        if (inboundEndpointElem.getAttributeValue(new QName
+                (InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)) != null) {
+            inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue
+                    (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)));
+        } else {
+            log.error("Injecting sequence cannot be null");
+        }
+        if (inboundEndpointElem.getAttributeValue(new QName
+                (InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE)) != null) {
+            inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue
+                    (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE)));
+        } else {
+            log.error("On Error sequence cannot be null");
+        }
+        OMElement parametersElt = inboundEndpointElem.getFirstChildWithName
+                (new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                        InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETERS));
 
         Iterator parameters = parametersElt.getChildrenWithName(new QName(
                 XMLConfigConstants.SYNAPSE_NAMESPACE, InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER));
 
         while (parameters.hasNext()) {
             OMElement parameter = (OMElement) parameters.next();
-            String paramName = parameter.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
+            String paramName = parameter.getAttributeValue
+                    (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
             inboundEndpoint.addParameter(paramName, parameter.getText());
         }
 
