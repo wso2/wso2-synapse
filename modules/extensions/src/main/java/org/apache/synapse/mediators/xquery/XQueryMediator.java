@@ -615,6 +615,19 @@ public class XQueryMediator extends AbstractMediator {
                         break;
                     }
                 }
+            }else{
+                /*
+                The following block will invariably result in  "javax.xml.xquery.XQException: Argument value is null",
+                    which is the proper behaviour for this case.
+                This block was added to fix the issue where if a variable with non-null value is passed for evaluation
+                    and if the subsequent request has a null value for the same variable (i.e. with the same name), the
+                    previous non-null value is given out instead of considering the null-case.
+                */
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Null variable value encountered for variable name: " + name);
+                }
+
+                xqDynamicContext.bindObject(name, null, null);
             }
         }
 
