@@ -18,7 +18,11 @@
 
 package org.apache.synapse.inbound;
 
+public interface InboundRequestProcessor {
 
-public interface PollingProcessor extends InboundRequestProcessor {
+    public void init();
 
+    public void start();
+
+    public void destroy();
 }

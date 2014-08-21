@@ -34,6 +34,9 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.inbound.InboundEndpointConstants;
+import org.apache.synapse.inbound.InboundEndpointUtils;
+import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
@@ -49,18 +52,19 @@ public class Axis2Sender {
 
     /**
      * Send a message out from the Synapse engine to an external service
-     * @param endpoint the endpoint definition where the message should be sent
+     *
+     * @param endpoint                the endpoint definition where the message should be sent
      * @param synapseInMessageContext the Synapse message context
      */
     public static void sendOn(EndpointDefinition endpoint,
-        org.apache.synapse.MessageContext synapseInMessageContext) {
+                              org.apache.synapse.MessageContext synapseInMessageContext) {
 
         try {
             Axis2FlexibleMEPClient.send(
-                // The endpoint where we are sending to
-                endpoint,
-                // The Axis2 Message context of the Synapse MC
-                synapseInMessageContext);
+                    // The endpoint where we are sending to
+                    endpoint,
+                    // The Axis2 Message context of the Synapse MC
+                    synapseInMessageContext);
 
             if (synapseInMessageContext.isResponse()) {
                 // report stats for any component at response sending check point
@@ -74,6 +78,7 @@ public class Axis2Sender {
 
     /**
      * Send a response back to a client of Synapse
+     *
      * @param smc the Synapse message context sent as the response
      */
     public static void sendBack(org.apache.synapse.MessageContext smc) {
@@ -83,9 +88,9 @@ public class Axis2Sender {
         // if this is a dummy 202 Accepted message meant only for the http/s transports
         // prevent it from going into any other transport sender
         if (messageContext.isPropertyTrue(NhttpConstants.SC_ACCEPTED) &&
-            messageContext.getTransportOut() != null &&
-            !messageContext.getTransportOut().getName().startsWith(Constants.TRANSPORT_HTTP)) {
-                return;
+                messageContext.getTransportOut() != null &&
+                !messageContext.getTransportOut().getName().startsWith(Constants.TRANSPORT_HTTP)) {
+            return;
         }
 
         // fault processing code
@@ -111,10 +116,10 @@ public class Axis2Sender {
                         AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.FALSE);
             }
 
-			if (messageContext.getEnvelope().hasFault() &&
-				    AddressingHelper.isFaultRedirected(messageContext) &&
-				    (messageContext.getFaultTo() == null || !messageContext.getFaultTo()
-				                                                           .hasNoneAddress())) {
+            if (messageContext.getEnvelope().hasFault() &&
+                    AddressingHelper.isFaultRedirected(messageContext) &&
+                    (messageContext.getFaultTo() == null || !messageContext.getFaultTo()
+                            .hasNoneAddress())) {
 
                 messageContext.setTo(messageContext.getFaultTo());
                 messageContext.setFaultTo(null);
@@ -145,24 +150,37 @@ public class Axis2Sender {
                 // remove the processed headers
                 MessageHelper.removeProcessedHeaders(messageContext,
                         (preserveAddressingProperty != null &&
-                                Boolean.parseBoolean(preserveAddressingProperty)));
+                                Boolean.parseBoolean(preserveAddressingProperty))
+                );
             }
 
             // temporary workaround for https://issues.apache.org/jira/browse/WSCOMMONS-197
             if (messageContext.isEngaged(SynapseConstants.SECURITY_MODULE_NAME) &&
                     messageContext.getEnvelope().getHeader() == null) {
                 SOAPFactory fac = messageContext.isSOAP11() ?
-                    OMAbstractFactory.getSOAP11Factory() : OMAbstractFactory.getSOAP12Factory();
+                        OMAbstractFactory.getSOAP11Factory() : OMAbstractFactory.getSOAP12Factory();
                 fac.createSOAPHeader(messageContext.getEnvelope());
             }
 
             Axis2FlexibleMEPClient.clearSecurtityProperties(messageContext.getOptions());
 
-           // report stats for any component at response sending check point
+            // report stats for any component at response sending check point
             StatisticsReporter.reportForAllOnResponseSent(smc);
+            if (smc.getProperty(SynapseConstants.IS_INBOUND) != null && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
+                if (smc.getProperty(SynapseConstants.IS_CXF_WS_RM) != null && Boolean.parseBoolean((String) smc.getProperty
+                        (SynapseConstants.IS_CXF_WS_RM))) {
+                    InboundResponseSender inboundResponseSender = InboundEndpointUtils.getResponseSender
+                            (InboundEndpointConstants.INBOUND_ENDPOINT_CXF_WS_RM);
+                    inboundResponseSender.sendBack(smc);
+                } else {
+                    InboundResponseSender inboundResponseSender = InboundEndpointUtils.getResponseSender
+                            (InboundEndpointConstants.INBOUND_ENDPOINT_HTTP);
+                    inboundResponseSender.sendBack(smc);
+                }
 
-            AxisEngine.send(messageContext);
-
+            } else {
+                AxisEngine.send(messageContext);
+            }
         } catch (AxisFault e) {
             handleException(getResponseMessage(messageContext), e);
         }
@@ -173,26 +191,27 @@ public class Axis2Sender {
         throw new SynapseException(msg, e);
     }
 
-    private static String getResponseMessage(MessageContext msgContext){
-    	StringBuilder sb = new StringBuilder();
-    	try{
-        	
-            String strEndpoint = (String)msgContext.getProperty(NhttpConstants.ENDPOINT_PREFIX);
-            if(strEndpoint != null){
-            	sb.append(strEndpoint + ", ");
-            }    	
-            Map<String, Object> mHeader = (Map<String, Object>)msgContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-            if(mHeader != null){
-                for(String strKey:mHeader.keySet()){
-                	sb.append(strKey + ":"+mHeader.get(strKey).toString()+",");
-                }    
+    private static String getResponseMessage(MessageContext msgContext) {
+        StringBuilder sb = new StringBuilder();
+        try {
+
+            String strEndpoint = (String) msgContext.getProperty(NhttpConstants.ENDPOINT_PREFIX);
+            if (strEndpoint != null) {
+                sb.append(strEndpoint + ", ");
             }
-             sb.append(msgContext.getEnvelope().toString());
-    		sb.append(" Unexpected error sending message back");
-    	}catch(Exception e){
-    		sb.append(" Unexpected error sending message back");
-    	}
-    	return sb.toString();
+            Map<String, Object> mHeader = (Map<String, Object>) msgContext.getProperty
+                    (org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            if (mHeader != null) {
+                for (String strKey : mHeader.keySet()) {
+                    sb.append(strKey + ":" + mHeader.get(strKey).toString() + ",");
+                }
+            }
+            sb.append(msgContext.getEnvelope().toString());
+            sb.append(" Unexpected error sending message back");
+        } catch (Exception e) {
+            sb.append(" Unexpected error sending message back");
+        }
+        return sb.toString();
     }
 
 }

@@ -34,12 +34,13 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
 public class InboundEndpointUtils {
     private static final Log log = LogFactory.getLog(InboundEndpointUtils.class.getName());
-
+    private static Map<String, InboundResponseSender> registeredResponseHandlers = new HashMap<String, InboundResponseSender>();
 
     public static Properties paramsToProperties(Map<String, String> params) {
         Properties props = new Properties();
@@ -62,7 +63,7 @@ public class InboundEndpointUtils {
     }
 
     public static org.apache.axis2.context.MessageContext attachMessage(SOAPEnvelope envelope,
-                                                  org.apache.axis2.context.MessageContext axis2Ctx) {
+                                                                        org.apache.axis2.context.MessageContext axis2Ctx) {
         if (envelope == null) {
             log.error("Cannot attach null SOAP Envelope.");
             return null;
@@ -83,7 +84,8 @@ public class InboundEndpointUtils {
         }
     }
 
-    public static org.apache.axis2.context.MessageContext attachMessage(String jsonMessage, org.apache.axis2.context.MessageContext axis2Ctx) {
+    public static org.apache.axis2.context.MessageContext attachMessage(String jsonMessage, org.apache.axis2.context.
+            MessageContext axis2Ctx) {
         if (jsonMessage == null) {
             log.error("Cannot attach null JSON string.");
             return null;
@@ -122,6 +124,18 @@ public class InboundEndpointUtils {
             log.error("Sequence: " + injectingSeq + " not found");
             return false;
         }
+    }
+
+    public static void addResponseSender(String key, InboundResponseSender inboundResponseSender) {
+        InboundResponseSender inboundResponseSenderexisit = getResponseSender(key);
+        if (inboundResponseSenderexisit != null) {
+            return;
+        }
+        registeredResponseHandlers.put(key, inboundResponseSender);
+    }
+
+    public static InboundResponseSender getResponseSender(String key) {
+        return registeredResponseHandlers.get(key);
     }
 
 }

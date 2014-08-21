@@ -24,11 +24,12 @@ public class InboundEndpointConstants {
     public static final String INBOUND_ENDPOINT_NAME = "name";
     public static final String INBOUND_ENDPOINT_PROTOCOL = "protocol";
     public static final String INBOUND_ENDPOINT_CLASS = "class";
-    public static final String INBOUND_ENDPOINT_INTERVAL = "interval";
     public static final String INBOUND_ENDPOINT_SUSPEND = "suspend";
     public static final String INBOUND_ENDPOINT_SEQUENCE = "sequence";
     public static final String INBOUND_ENDPOINT_ERROR_SEQUENCE = "onError";
     public static final String INBOUND_ENDPOINT_PARAMETERS = "parameters";
     public static final String INBOUND_ENDPOINT_PARAMETER = "parameter";
     public static final String INBOUND_ENDPOINT_PARAMETER_NAME = "name";
+    public static final String INBOUND_ENDPOINT_CXF_WS_RM = "cxf";
+    public static final String INBOUND_ENDPOINT_HTTP= "http";
 }
