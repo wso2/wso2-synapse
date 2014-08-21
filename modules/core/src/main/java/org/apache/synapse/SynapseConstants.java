@@ -478,4 +478,8 @@ public final class SynapseConstants {
     public static final String DEFAULT_DIR = "default";
     public static final String SEQUENCES_FOLDER = "sequences";
 
+    //Inbound endpoint
+    public static final String IS_INBOUND = "isInbound";
+    public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
+
 }

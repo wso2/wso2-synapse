@@ -39,16 +39,15 @@ public class InboundEndpoint implements ManagedLifecycle {
     private String name;
     private String protocol;
     private String classImpl;
-    private long interval;
     private boolean isSuspend;
-
     private String injectingSeq;
     private String onErrorSeq;
-    private Map<String,String> parametersMap = new LinkedHashMap<String,String>();
-
+    private String outSequence;
+    private Map<String, String> parametersMap = new LinkedHashMap<String, String>();
     private String fileName;
-    PollingProcessor pollingProcessor;
     private SynapseEnvironment synapseEnvironment;
+    private InboundRequestProcessor inboundRequestProcessor;
+
 
     public InboundEndpoint() {
 
@@ -57,37 +56,68 @@ public class InboundEndpoint implements ManagedLifecycle {
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
         synapseEnvironment = se;
-        pollingProcessor = getPollingProcessor();
-        if(pollingProcessor != null){
-        	pollingProcessor.init();
-        }else{ 
-        	log.error("Polling processor not found for Inbound EP : " + name + " Protocol: " + protocol + " Class" + classImpl);
+        inboundRequestProcessor = getInboundRequestProcessor();
+        if (inboundRequestProcessor != null) {
+            inboundRequestProcessor.init();
+        } else {
+            log.error("Inbound Request processor not found for Inbound EP : " + name + " Protocol: " + protocol
+                    + " Class" + classImpl);
         }
+        InboundResponseSender inboundResponseSender = getInboundResponseSender();
+        registerResponseSenders(inboundResponseSender, inboundResponseSender.getType());
+
     }
+
     /**
-     * Register pluggable mediator serializers from the classpath
-     *
+     * Register pluggables from the classpath
+     * <p/>
      * This looks for JAR files containing a META-INF/services that adheres to the following
      * http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html
      */
-    private PollingProcessor getPollingProcessor(){
+    private InboundRequestProcessor getInboundRequestProcessor() {
         if (log.isDebugEnabled()) {
-            log.debug("Registering mediator extensions found in the classpath.. ");
+            log.debug("Registering InboundRequestProcessor found in the classpath.. ");
         }
-        // Get polling processors
-        Iterator<PollingProcessorFactory>it = Service.providers(PollingProcessorFactory.class);
+        Iterator<InboundRequestProcessorFactory> it = Service.providers(InboundRequestProcessorFactory.class);
         while (it.hasNext()) {
-        	PollingProcessorFactory factory =  it.next();
-        	Properties properties = Utils.paramsToProperties(parametersMap);
-        	return factory.creatPollingProcessor(protocol, classImpl, name, properties, interval, injectingSeq, onErrorSeq, synapseEnvironment);
+            InboundRequestProcessorFactory factory = it.next();
+            Properties properties = Utils.paramsToProperties(parametersMap);
+
+            InboundRequestProcessor inboundRequestProcessor = factory.createInboundProcessor(protocol, classImpl, name,
+                    properties, injectingSeq, onErrorSeq,
+                    synapseEnvironment);
+            if (inboundRequestProcessor != null) {
+                return inboundRequestProcessor;
+            }
         }
         return null;
     }
-    
+
+    private InboundResponseSender getInboundResponseSender() {
+        if (log.isDebugEnabled()) {
+            log.debug("Registering InboundResponseProcessor found in the classpath.. ");
+        }
+        Iterator<InboundResponseSenderFactory> it = Service.providers(InboundResponseSenderFactory.class);
+        while (it.hasNext()) {
+            InboundResponseSenderFactory factory = it.next();
+            if (protocol != null) {
+                InboundResponseSender inboundResponseSender = factory.getInboundResponseSender(protocol);
+                if (inboundResponseSender != null) {
+                    return inboundResponseSender;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void registerResponseSenders(InboundResponseSender inboundResponseSender, String type) {
+        InboundEndpointUtils.addResponseSender(type, inboundResponseSender);
+    }
+
     public void destroy() {
         log.info("Destroying Inbound Endpoint: " + getName());
-        if(pollingProcessor != null){
-        	pollingProcessor.destroy();
+        if (inboundRequestProcessor != null) {
+            inboundRequestProcessor.destroy();
         }
     }
 
@@ -105,14 +135,6 @@ public class InboundEndpoint implements ManagedLifecycle {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-    }
-
-    public long getInterval() {
-        return interval;
-    }
-
-    public void setInterval(long interval) {
-        this.interval = interval;
     }
 
     public boolean isSuspend() {
@@ -151,10 +173,6 @@ public class InboundEndpoint implements ManagedLifecycle {
         return parametersMap;
     }
 
-    public void setParametersMap(Map<String, String> parametersMap) {
-        this.parametersMap = parametersMap;
-    }
-
     public void addParameter(String name, String value) {
         parametersMap.put(name, value);
     }
@@ -163,12 +181,19 @@ public class InboundEndpoint implements ManagedLifecycle {
         return parametersMap.get(name);
     }
 
-	public String getClassImpl() {
-		return classImpl;
-	}
+    public String getOutSequence() {
+        return outSequence;
+    }
 
-	public void setClassImpl(String classImpl) {
-		this.classImpl = classImpl;
-	}
+    public void setOutSequence(String outSequence) {
+        this.outSequence = outSequence;
+    }
 
+    public String getClassImpl() {
+        return classImpl;
+    }
+
+    public void setClassImpl(String classImpl) {
+        this.classImpl = classImpl;
+    }
 }

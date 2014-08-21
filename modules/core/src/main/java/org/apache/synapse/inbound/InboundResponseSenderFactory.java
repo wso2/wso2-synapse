@@ -15,10 +15,9 @@
 * specific language governing permissions and limitations
 * under the License.
 */
-
 package org.apache.synapse.inbound;
 
 
-public interface PollingProcessor extends InboundRequestProcessor {
-
+public interface InboundResponseSenderFactory {
+    public InboundResponseSender getInboundResponseSender(String protocol);
 }
