@@ -196,4 +196,11 @@ public class InboundEndpoint implements ManagedLifecycle {
     public void setClassImpl(String classImpl) {
         this.classImpl = classImpl;
     }
+
+    public long getInterval(){
+        return 0;
+    }
+
+    public void setInterval(long value){
+     }
 }
