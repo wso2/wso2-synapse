@@ -33,13 +33,10 @@ public final class JsonStreamFormatter implements MessageFormatter {
     private static final Log logger = LogFactory.getLog(JsonStreamFormatter.class.getName());
 
     public byte[] getBytes(MessageContext messageContext, OMOutputFormat format) throws AxisFault {
-        if (messageContext.getProperty(org.apache.synapse.commons.json.Constants.JSON_STRING) != null) {
-            String jsonResponse = (String) messageContext.getProperty(org.apache.synapse.commons.json.Constants.JSON_STRING);
-            return jsonResponse.getBytes();
-        } else if (JsonUtil.hasAJsonPayload(messageContext)) {
-            return JsonUtil.jsonPayloadToByteArray(messageContext);
-        }
-        throw new AxisFault("Could not find the JSON payload.");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        writeTo(messageContext, format, baos ,true);
+        return baos.toByteArray();
     }
 
     public String getContentType(MessageContext messageContext, OMOutputFormat format,
