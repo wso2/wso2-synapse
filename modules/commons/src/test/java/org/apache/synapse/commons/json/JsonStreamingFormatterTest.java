@@ -19,6 +19,8 @@
 package org.apache.synapse.commons.json;
 
 import junit.framework.TestCase;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.MessageFormatter;
@@ -45,6 +47,23 @@ public class JsonStreamingFormatterTest extends TestCase {
             assertTrue(obj_1.equals(out.toString()));
         } catch (AxisFault axisFault) {
             axisFault.printStackTrace();
+            assertTrue(false);
+        }
+    }
+
+    public void testGetBytes() {
+        String inputXML = "<test>123</test>";
+        String outputJSON = "{\"test\":123}";
+        try {
+            OMElement omElement = AXIOMUtil.stringToOM(inputXML);
+            MessageFormatter formatter = Util.newJsonStreamFormatter();
+            MessageContext messageContext = Util.newMessageContext();
+            messageContext.getEnvelope().getBody().addChild(omElement);
+            byte[] bytes = formatter.getBytes(messageContext, null);
+            String result = new String(bytes);
+            assertEquals(outputJSON, result);
+        } catch (Exception ex) {
+            ex.printStackTrace();
             assertTrue(false);
         }
     }

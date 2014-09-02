@@ -569,10 +569,10 @@ public class JmsStore extends AbstractMessageStore {
             }
         } catch (NamingException e) {
             logger.error(nameString() + ". Could not initialize JMS Message Store. Error:"
-                    + e.getLocalizedMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL) + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac + "].");
+                    + e.getLocalizedMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL) + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac + "].", e);
         } catch (Throwable t) {
             logger.error(nameString() + ". Could not initialize JMS Message Store. Error:"
-                         + t.getMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL) + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac + "].");
+                         + t.getMessage() + ". Initial Context Factory:[" + parameters.get(NAMING_FACTORY_INITIAL) + "]; Provider URL:[" + parameters.get(PROVIDER_URL) + "]; Connection Factory:[" + connectionFac + "].",t);
         }
         if (!newWriteConnection()) {
             logger.warn(nameString() + ". Starting with a faulty connection to the broker.");
