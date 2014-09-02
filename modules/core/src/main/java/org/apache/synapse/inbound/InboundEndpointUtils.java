@@ -38,8 +38,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+// TODO: Refactor this class. Remove unneccessary util methods
 public class InboundEndpointUtils {
     private static final Log log = LogFactory.getLog(InboundEndpointUtils.class.getName());
+    // TODO: Store in somewhere else or refactor implementation
     private static Map<String, InboundResponseSender> registeredResponseHandlers = new HashMap<String, InboundResponseSender>();
 
     public static Properties paramsToProperties(Map<String, String> params) {
@@ -109,9 +111,11 @@ public class InboundEndpointUtils {
         }
     }
 
+    // TODO: Refactor this. need to be moved to somewhere else. This is not an util
     public static boolean injectMessage(MessageContext synCtx, SynapseEnvironment synapseEnvironment, String injectingSeq) {
         if (injectingSeq == null || injectingSeq.equals("")) {
             log.error("Sequence name not specified. Sequence : " + injectingSeq);
+            return false;
         }
         SequenceMediator seq = (SequenceMediator) synapseEnvironment.getSynapseConfiguration().getSequence(injectingSeq);
         if (seq != null) {
@@ -127,8 +131,7 @@ public class InboundEndpointUtils {
     }
 
     public static void addResponseSender(String key, InboundResponseSender inboundResponseSender) {
-        InboundResponseSender inboundResponseSenderexisit = getResponseSender(key);
-        if (inboundResponseSenderexisit != null) {
+        if (getResponseSender(key) != null) {
             return;
         }
         registeredResponseHandlers.put(key, inboundResponseSender);

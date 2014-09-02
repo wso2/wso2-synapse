@@ -22,6 +22,7 @@ package org.apache.synapse.config.xml.inbound;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
@@ -32,56 +33,72 @@ import java.util.Iterator;
 public class InboundEndpointFactory {
 
     private static final Log log = LogFactory.getLog(InboundEndpointFactory.class);
-
+    private static final QName ATT_NAME
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME);
+    private static final QName ATT_PROTOCOL
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL);
+    private static final QName ATT_ENDPOINT_CLASS
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS);
+    private static final QName ATT_ENDPOINT_SUSPEND
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND);
+    private static final QName ATT_SEQUENCE
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE);
+    private static final QName ATT_ERROR_SEQUENCE
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE);
 
     public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem) {
         InboundEndpoint inboundEndpoint = new InboundEndpoint();
-        if (inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)) != null) {
-            inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(
-                    new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)));
+        if (inboundEndpointElem.getAttributeValue(ATT_NAME) != null) {
+            inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(ATT_NAME));
         } else {
-            log.error("Inbound Endpoint name cannot be null");
+            String msg = "Inbound Endpoint name cannot be null";
+            log.error(msg);
+            throw new SynapseException(msg);
         }
-        inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(
-                new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)) != null ? inboundEndpointElem.getAttributeValue
-                (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL)) : null);
-        inboundEndpoint.setClassImpl(inboundEndpointElem.getAttributeValue(
-                new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS)) != null ?
-                inboundEndpointElem.getAttributeValue(
-                        new QName(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS)) : null);
-        if (inboundEndpointElem.getAttributeValue(new QName
-                (InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND)) != null) {
-            inboundEndpoint.setSuspend(Boolean.parseBoolean(inboundEndpointElem.getAttributeValue(
-                    new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND))));
+        if (inboundEndpointElem.getAttributeValue(ATT_PROTOCOL) != null) {
+            inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(ATT_PROTOCOL));
+        }
+        if (inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_CLASS) != null ) {
+            inboundEndpoint.setClassImpl(inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_CLASS));
+        }
+        if (inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_SUSPEND) != null) {
+            inboundEndpoint.setSuspend
+                    (Boolean.parseBoolean(inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_SUSPEND)));
         } else {
             inboundEndpoint.setSuspend(false);
         }
-        if (inboundEndpointElem.getAttributeValue(new QName
-                (InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)) != null) {
-            inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue
-                    (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE)));
+        if (inboundEndpointElem.getAttributeValue(ATT_SEQUENCE) != null) {
+            inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(ATT_SEQUENCE));
         } else {
-            log.error("Injecting sequence cannot be null");
+            String msg = "Injecting sequence cannot be null";
+            log.error(msg);
+            throw new SynapseException(msg);
         }
-        if (inboundEndpointElem.getAttributeValue(new QName
-                (InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE)) != null) {
-            inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue
-                    (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE)));
+        if (inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE) != null) {
+            inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE));
         } else {
-            log.error("On Error sequence cannot be null");
+            String msg = "On Error sequence cannot be null";
+            log.error(msg);
+            throw new SynapseException(msg);
         }
-        OMElement parametersElt = inboundEndpointElem.getFirstChildWithName
-                (new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+
+        // Set parameters
+        OMElement parametersElt = inboundEndpointElem.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
                         InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETERS));
 
-        Iterator parameters = parametersElt.getChildrenWithName(new QName(
-                XMLConfigConstants.SYNAPSE_NAMESPACE, InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER));
+        if (parametersElt != null) {
+            Iterator parameters =
+                    parametersElt.getChildrenWithName(
+                            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
+                                      InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER));
 
-        while (parameters.hasNext()) {
-            OMElement parameter = (OMElement) parameters.next();
-            String paramName = parameter.getAttributeValue
-                    (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
-            inboundEndpoint.addParameter(paramName, parameter.getText());
+            while (parameters.hasNext()) {
+                OMElement parameter = (OMElement) parameters.next();
+                String paramName = parameter.getAttributeValue
+                        (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
+                inboundEndpoint.addParameter(paramName, parameter.getText());
+            }
         }
 
         return inboundEndpoint;
