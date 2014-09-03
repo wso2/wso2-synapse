@@ -18,16 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
-
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.util.UIDGenerator;
@@ -45,18 +35,18 @@ import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.Header;
-import org.apache.http.HttpException;
-import org.apache.http.HttpInetConnection;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import org.apache.http.*;
+import org.apache.http.impl.nio.reactor.SSLIOSession;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
-import org.apache.http.impl.nio.reactor.SSLIOSession;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.util.*;
 
 /**
  * Processes an incoming request through Axis2. An instance of this class would be created to
@@ -142,6 +132,8 @@ public class ServerWorker implements Runnable {
         this.isRestDispatching = isRestDispatching;
         this.httpGetRequestProcessor = httpGetRequestProcessor;
         this.msgContext = createMessageContext(request);
+        conn.getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
+            System.currentTimeMillis());
     }
 
     /**
@@ -248,6 +240,8 @@ public class ServerWorker implements Runnable {
      */
     @SuppressWarnings({"unchecked"})
     public void run() {
+
+        conn.getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
 
         String method = request.getRequestLine().getMethod().toUpperCase();
         msgContext.setProperty(Constants.Configuration.HTTP_METHOD,

@@ -88,7 +88,7 @@ public class ThreadingView implements ThreadingViewMBean {
         this.threadNamePrefix = threadNamePrefix;
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             public Thread newThread(Runnable r) {
-                return new Thread(r, threadNamePrefix + "-thread-view");
+                return new Thread(r, "Thread-view-" + threadNamePrefix);
             }
         });
         initMBean();

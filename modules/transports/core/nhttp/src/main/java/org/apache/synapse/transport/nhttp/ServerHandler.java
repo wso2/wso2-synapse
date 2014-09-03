@@ -18,14 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.transport.base.MetricsCollector;
 import org.apache.axis2.transport.base.threads.WorkerPool;
@@ -33,17 +25,7 @@ import org.apache.axis2.transport.base.threads.WorkerPoolFactory;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.ConnectionReuseStrategy;
-import org.apache.http.Header;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseFactory;
-import org.apache.http.HttpStatus;
-import org.apache.http.HttpVersion;
-import org.apache.http.ProtocolVersion;
+import org.apache.http.*;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -55,21 +37,8 @@ import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.http.nio.entity.ContentInputStream;
 import org.apache.http.nio.entity.ContentOutputStream;
-import org.apache.http.nio.util.ByteBufferAllocator;
-import org.apache.http.nio.util.ContentInputBuffer;
-import org.apache.http.nio.util.ContentOutputBuffer;
-import org.apache.http.nio.util.HeapByteBufferAllocator;
-import org.apache.http.nio.util.SharedInputBuffer;
-import org.apache.http.nio.util.SharedOutputBuffer;
-import org.apache.http.protocol.BasicHttpProcessor;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpProcessor;
-import org.apache.http.protocol.ResponseConnControl;
-import org.apache.http.protocol.ResponseContent;
-import org.apache.http.protocol.ResponseDate;
-import org.apache.http.protocol.ResponseServer;
+import org.apache.http.nio.util.*;
+import org.apache.http.protocol.*;
 import org.apache.http.util.EncodingUtils;
 import org.apache.synapse.commons.evaluators.EvaluatorContext;
 import org.apache.synapse.commons.evaluators.Parser;
@@ -77,8 +46,17 @@ import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.debug.ServerConnectionDebug;
+import org.apache.synapse.transport.nhttp.util.LatencyCollector;
 import org.apache.synapse.transport.nhttp.util.LatencyView;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The server connection handler. An instance of this class is used by each IOReactor, to
@@ -149,12 +127,14 @@ public class ServerHandler implements NHttpServerEventHandler {
 		if (listenerContext.getTransportIn() != null &&
 		    listenerContext.getTransportIn().getName() != null) {
 			strNamePostfix = "-" + listenerContext.getTransportIn().getName();
-		}      
-        this.latencyView = new LatencyView("NHTTPLatencyView", scheme.isSSL(), strNamePostfix);
-        this.s2sLatencyView = new LatencyView("NHTTPS2SLatencyView", scheme.isSSL(), strNamePostfix);
+		}
+        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
+        boolean enableAdvancedForLatencyView = cfg.getBooleanValue("synapse.nhttp.latency_view.enable_advanced_view", false);
+        boolean enableAdvancedForS2SView = cfg.getBooleanValue("synapse.nhttp.s2slatency_view.enable_advanced_view", false);
+        this.latencyView = new LatencyView("NHTTPLatencyView", scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
+        this.s2sLatencyView = new LatencyView("NHTTPS2SLatencyView", scheme.isSSL(), strNamePostfix, enableAdvancedForS2SView);
         this.threadingView = new ThreadingView("HttpServerWorker", true, 50);
 
-        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
         if (listenerContext.getExecutor() == null)  {
             this.workerPool = WorkerPoolFactory.getWorkerPool(
                 cfg.getServerCoreThreads(),
@@ -179,6 +159,8 @@ public class ServerHandler implements NHttpServerEventHandler {
 
         HttpContext context = conn.getContext();
         context.setAttribute(NhttpConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+        context.setAttribute(NhttpConstants.REQ_FROM_CLIENT_READ_START_TIME,
+                             System.currentTimeMillis());
         HttpRequest request = conn.getHttpRequest();
         context.setAttribute(ExecutionContext.HTTP_REQUEST, request);
         context.setAttribute(NhttpConstants.MESSAGE_IN_FLIGHT, "true");
@@ -290,6 +272,8 @@ public class ServerHandler implements NHttpServerEventHandler {
                 // remove the request we have fully read, to detect harmless keepalive timeouts from
                 // real timeouts while reading requests
                 context.setAttribute(NhttpConstants.REQUEST_READ, Boolean.TRUE);
+                context.setAttribute(NhttpConstants.REQ_FROM_CLIENT_READ_END_TIME,
+                                     System.currentTimeMillis());
             }
 
         } catch (IOException e) {
@@ -299,6 +283,17 @@ public class ServerHandler implements NHttpServerEventHandler {
             handleException("I/O Error at inputReady : " + e.getMessage(), e, conn);
         }
     }
+
+    private void updateLatencyView(HttpContext context) {
+        if (context == null) {
+            return;
+        }
+        latencyView.notifyTimes(new LatencyCollector(context, false));
+        s2sLatencyView.notifyTimes(new LatencyCollector(context, true));
+        LatencyCollector.clearTimestamps(context);
+    }
+
+
 
     /**
      * Process ready output by writing into the channel
@@ -325,17 +320,10 @@ public class ServerHandler implements NHttpServerEventHandler {
             }
 
             if (encoder.isCompleted()) {
-
-                if (context.getAttribute(NhttpConstants.REQ_ARRIVAL_TIME) != null &&
-                    context.getAttribute(NhttpConstants.REQ_DEPARTURE_TIME) != null &&
-                    context.getAttribute(NhttpConstants.RES_ARRIVAL_TIME) != null) {
-
-                    latencyView.notifyTimes(
-                        (Long) context.getAttribute(NhttpConstants.REQ_ARRIVAL_TIME),
-                        (Long) context.getAttribute(NhttpConstants.REQ_DEPARTURE_TIME),
-                        (Long) context.getAttribute(NhttpConstants.RES_ARRIVAL_TIME),
-                        System.currentTimeMillis());
-                }
+                long currentTime = System.currentTimeMillis();
+                context.setAttribute(NhttpConstants.RES_TO_CLIENT_WRITE_END_TIME, currentTime);
+                context.setAttribute(NhttpConstants.RES_DEPARTURE_TIME, currentTime);
+                updateLatencyView(context);
 
                 context.removeAttribute(NhttpConstants.REQ_ARRIVAL_TIME);
                 context.removeAttribute(NhttpConstants.REQ_DEPARTURE_TIME);
@@ -404,18 +392,8 @@ public class ServerHandler implements NHttpServerEventHandler {
             conn.suspendInput();
             HttpContext context = conn.getContext();
             httpProcessor.process(response, context);
-
-            if (context.getAttribute(NhttpConstants.REQ_ARRIVAL_TIME) != null &&
-                context.getAttribute(NhttpConstants.REQ_DEPARTURE_TIME) != null &&
-                context.getAttribute(NhttpConstants.RES_HEADER_ARRIVAL_TIME) != null) {
-
-                s2sLatencyView.notifyTimes(
-                    (Long) context.getAttribute(NhttpConstants.REQ_ARRIVAL_TIME),
-                    (Long) context.getAttribute(NhttpConstants.REQ_DEPARTURE_TIME),
-                    (Long) context.getAttribute(NhttpConstants.RES_HEADER_ARRIVAL_TIME),
+            conn.getContext().setAttribute(NhttpConstants.RES_TO_CLIENT_WRITE_START_TIME,
                     System.currentTimeMillis());
-            }
-
             conn.submitResponse(response);
         } catch (HttpException e) {
             shutdownConnection(conn);
