@@ -191,9 +191,12 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             }
 
             if (resultMsgCtx != null) {
-                org.apache.axis2.context.MessageContext mc = ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
-                if (JsonUtil.hasAJsonPayload(mc)) {
-                    JsonUtil.cloneJsonPayload(mc, ((Axis2MessageContext) synCtx).getAxis2MessageContext());
+                org.apache.axis2.context.MessageContext resultAxisMsgCtx =
+                        ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
+                org.apache.axis2.context.MessageContext inAxisMsgCtx =
+                                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                if (JsonUtil.hasAJsonPayload(resultAxisMsgCtx)) {
+                    JsonUtil.cloneJsonPayload(resultAxisMsgCtx, inAxisMsgCtx);
                 } else {
                     if (targetXPath != null) {
                         Object o = targetXPath.evaluate(synCtx);
@@ -217,6 +220,16 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                     } else {
                     	synCtx.setEnvelope(resultMsgCtx.getEnvelope());
                     }
+                }
+                // Set HTTP Status code
+                inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC,
+                                         resultAxisMsgCtx.getProperty(SynapseConstants.HTTP_SC));
+                if ("false".equals(synCtx.getProperty(
+                        SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
+                    inAxisMsgCtx.setProperty(
+                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                            resultAxisMsgCtx.getProperty(
+                                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                 }
             } else {
                 synLog.traceOrDebug("Service returned a null response");

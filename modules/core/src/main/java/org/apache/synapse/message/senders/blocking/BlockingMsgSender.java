@@ -42,7 +42,6 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
@@ -156,9 +155,17 @@ public class BlockingMsgSender {
                 synapseInMsgCtx.setEnvelope(result.getEnvelope());
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
-                }                
-                synapseInMsgCtx.setProperty(NhttpConstants.HTTP_SC,
-                                            result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
+                }
+                Object statusCode = result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+                synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                if ("false".equals(synapseInMsgCtx.getProperty(
+                        SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
+                    axisInMsgCtx.setProperty(
+                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                            result.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                }
+
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
                 return synapseInMsgCtx;
             }
@@ -178,9 +185,9 @@ public class BlockingMsgSender {
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
                     org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
                     if (faultMC != null) {
-                        synapseInMsgCtx.setProperty(NhttpConstants.HTTP_SC,
-                                                    faultMC.getProperty(
-                                                            SynapseConstants.HTTP_SENDER_STATUSCODE));
+                        Object statusCode = faultMC.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+                        synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                        axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
                         synapseInMsgCtx.setEnvelope(faultMC.getEnvelope());
                     }
                 }
@@ -237,6 +244,9 @@ public class BlockingMsgSender {
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
                                  resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
         axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
+        returnMsgCtx.setProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                resultMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
 
         return returnMsgCtx;
     }
