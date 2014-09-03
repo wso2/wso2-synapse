@@ -18,17 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -50,15 +39,7 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.ConnectionReuseStrategy;
-import org.apache.http.Header;
-import org.apache.http.HttpException;
-import org.apache.http.HttpInetConnection;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.HttpVersion;
+import org.apache.http.*;
 import org.apache.http.auth.Credentials;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.BasicHttpEntity;
@@ -69,30 +50,27 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.entity.ContentInputStream;
-import org.apache.http.nio.util.ByteBufferAllocator;
-import org.apache.http.nio.util.ContentInputBuffer;
-import org.apache.http.nio.util.ContentOutputBuffer;
-import org.apache.http.nio.util.HeapByteBufferAllocator;
-import org.apache.http.nio.util.SharedInputBuffer;
-import org.apache.http.nio.util.SharedOutputBuffer;
+import org.apache.http.nio.util.*;
 import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.BasicHttpProcessor;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpProcessor;
-import org.apache.http.protocol.RequestConnControl;
-import org.apache.http.protocol.RequestContent;
-import org.apache.http.protocol.RequestExpectContinue;
-import org.apache.http.protocol.RequestTargetHost;
-import org.apache.http.protocol.RequestUserAgent;
+import org.apache.http.protocol.*;
 import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The client connection handler. An instance of this class is used by each IOReactor, to
@@ -337,6 +315,9 @@ public class ClientHandler implements NHttpClientEventHandler {
             context.setAttribute(ExecutionContext.HTTP_REQUEST, request);
             setServerContextAttribute(NhttpConstants.REQ_DEPARTURE_TIME,
                         System.currentTimeMillis(), conn);
+            setServerContextAttribute(NhttpConstants.REQ_TO_BACKEND_WRITE_START_TIME,
+                                      System.currentTimeMillis(), conn);
+
             conn.submitRequest(request);
         } catch (ConnectionClosedException e) {
             throw e;
@@ -633,6 +614,8 @@ public class ClientHandler implements NHttpClientEventHandler {
             if (decoder.isCompleted()) {
                 setServerContextAttribute(NhttpConstants.RES_ARRIVAL_TIME,
                         System.currentTimeMillis(), conn);
+                setServerContextAttribute(NhttpConstants.RES_FROM_BACKEND_READ_END_TIME,
+                                                              System.currentTimeMillis(), conn);
                 ClientConnectionDebug ccd = (ClientConnectionDebug)
                         conn.getContext().getAttribute(CLIENT_CONNECTION_DEBUG);
                 if (ccd != null) {
@@ -725,6 +708,9 @@ public class ClientHandler implements NHttpClientEventHandler {
                 if (ccd != null) {
                     ccd.recordRequestCompletionTime();
                 }
+
+                setServerContextAttribute(NhttpConstants.REQ_TO_BACKEND_WRITE_END_TIME,
+                                                      System.currentTimeMillis(), conn);
             }
 
         } catch (IOException e) {
@@ -746,6 +732,9 @@ public class ClientHandler implements NHttpClientEventHandler {
      * @param conn the connection being processed
      */
     public void responseReceived(final NHttpClientConnection conn) {
+
+        setServerContextAttribute(NhttpConstants.RES_FROM_BACKEND_READ_START_TIME,
+                                              System.currentTimeMillis(), conn);
 
         HttpContext context = conn.getContext();
         HttpResponse response = conn.getHttpResponse();

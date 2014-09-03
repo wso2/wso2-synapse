@@ -18,22 +18,8 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.xml.stream.XMLStreamException;
-
 import org.apache.axiom.om.OMException;
-import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axiom.soap.SOAPFactory;
-import org.apache.axiom.soap.SOAPFaultCode;
-import org.apache.axiom.soap.SOAPFaultDetail;
-import org.apache.axiom.soap.SOAPFaultReason;
+import org.apache.axiom.soap.*;
 import org.apache.axiom.soap.impl.llom.soap11.SOAP11Factory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -53,7 +39,17 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
+
+import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Performs processing of the HTTP response received for our outgoing request. An instance of this
@@ -67,6 +63,8 @@ public class ClientWorker implements Runnable {
     private ConfigurationContext cfgCtx = null;
     /** the response message context that would be created */
     private MessageContext responseMsgCtx = null;
+    /** Request Message context */
+    private MessageContext outMsgCtx = null;
     /** the InputStream out of which the response body should be read */
     private InputStream in = null;
     /** the HttpResponse received */
@@ -90,6 +88,7 @@ public class ClientWorker implements Runnable {
         this.in = in;
         this.response = response;
         this.endpointURLPrefix = endpointURLPrefix;
+        this.outMsgCtx = outMsgCtx;
 
         try {
             responseMsgCtx = outMsgCtx.getOperationContext().
@@ -211,12 +210,18 @@ public class ClientWorker implements Runnable {
                 responseMsgCtx.setProperty(ClientHandler.CLIENT_CONNECTION_DEBUG, cd);
             }
         }
+        setServerContextAttribute(NhttpConstants.CLIENT_WORKER_INIT_TIME,
+                System.currentTimeMillis(), outMsgCtx);
     }
 
     /**
      * Process the received response through Axis2
      */
     public void run() {
+
+        setServerContextAttribute(NhttpConstants.CLIENT_WORKER_START_TIME,
+                System.currentTimeMillis(), outMsgCtx);
+
         // to support Sandesha.. if there isn't a response message context, we cannot read any
         // response and populate it with the soap envelope
         if (responseMsgCtx == null) {
@@ -364,4 +369,15 @@ public class ClientWorker implements Runnable {
         // Unable to determine the content type - Return default value
         return NhttpConstants.DEFAULT_CONTENT_TYPE;
     }
+
+    private void setServerContextAttribute(String key, Object value, MessageContext msgCtx) {
+        if (msgCtx != null) {
+            Object outTransport = msgCtx.getProperty(Constants.OUT_TRANSPORT_INFO);
+            if (outTransport != null && outTransport instanceof org.apache.synapse.transport.nhttp.ServerWorker) {
+                HttpContext context = ((org.apache.synapse.transport.nhttp.ServerWorker) outTransport).getConn().getContext();
+                context.setAttribute(key, value);
+            }
+        }
+    }
+
 }

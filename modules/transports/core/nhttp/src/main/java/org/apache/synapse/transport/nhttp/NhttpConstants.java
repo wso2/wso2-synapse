@@ -124,6 +124,24 @@ public class NhttpConstants {
     public static final String RES_HEADER_ARRIVAL_TIME = "RES_HEADER_ARRIVAL_TIME";
     public static final String RES_DEPARTURE_TIME = "RES_DEPARTURE_TIME";
 
+    public static final String REQ_FROM_CLIENT_READ_START_TIME = "REQ_FROM_CLIENT_READ_START_TIME";
+    public static final String REQ_FROM_CLIENT_READ_END_TIME = "REQ_FROM_CLIENT_READ_END_TIME";
+
+    public static final String REQ_TO_BACKEND_WRITE_START_TIME = "REQ_TO_BACKEND_WRITE_START_TIME";
+    public static final String REQ_TO_BACKEND_WRITE_END_TIME = "REQ_TO_BACKEND_WRITE_END_TIME";
+
+    public static final String RES_FROM_BACKEND_READ_START_TIME = "RES_FROM_BACKEND_READ_START_TIME";
+    public static final String RES_FROM_BACKEND_READ_END_TIME = "RES_FROM_BACKEND_READ_END_TIME";
+
+    public static final String RES_TO_CLIENT_WRITE_START_TIME = "RES_TO_CLIENT_WRITE_START_TIME";
+    public static final String RES_TO_CLIENT_WRITE_END_TIME = "RES_TO_CLIENT_WRITE_END_TIME";
+
+    public static final String SERVER_WORKER_INIT_TIME = "SERVER_WORKER_INIT_TIME";
+    public static final String SERVER_WORKER_START_TIME = "SERVER_WORKER_START_TIME";
+
+    public static final String CLIENT_WORKER_INIT_TIME = "CLIENT_WORKER_INIT_TIME";
+    public static final String CLIENT_WORKER_START_TIME = "CLIENT_WORKER_START_TIME";
+
     /**
      * This is a name of a parameter in transportReceiver. If set it will disable service
      * dispatching inside the transport for rest messages
