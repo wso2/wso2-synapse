@@ -22,8 +22,6 @@ import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
-import org.apache.commons.httpclient.Header;
-import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -32,10 +30,6 @@ import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class BlockingMsgSenderUtils {
 
@@ -122,7 +116,9 @@ public class BlockingMsgSenderUtils {
         setProperties(axisInMsgCtx, axisOutMsgCtx);
 
         // Copy Transport headers
-        setTransportHeaders(axisInMsgCtx, axisOutMsgCtx);
+        axisOutMsgCtx.setProperty(
+                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                axisInMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
 
         // Endpoint format
         if (endpoint.getFormat() != null) {
@@ -332,47 +328,5 @@ public class BlockingMsgSenderUtils {
                                                  Constants.Configuration.MESSAGE_TYPE,
                                                  Constants.Configuration.CONTENT_TYPE,
                                                  NhttpConstants.REST_URL_POSTFIX};
-
-    /**
-     * Set transport header extracting headers from the original message context
-     *
-     * @param axisInMsgCtx original message context
-     * @param axisOutMsgCtx target message context
-     */
-    private static void setTransportHeaders(org.apache.axis2.context.MessageContext axisInMsgCtx,
-                                            org.apache.axis2.context.MessageContext axisOutMsgCtx) {
-
-        Object headers = axisInMsgCtx.getProperty(
-                org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-
-        List<Header> list = new ArrayList<Header>();
-        if (headers != null && headers instanceof Map) {
-            Map headersMap = (Map) headers;
-            for (Object next : headersMap.keySet()) {
-                if (isSkipTransportHeader(next.toString())) {
-                    continue;
-                }
-                Object value = headersMap.get(next);
-                if (next instanceof String && value instanceof String) {
-                    Header header = new Header(next.toString(), value.toString());
-                    list.add(header);
-                }
-            }
-        }
-        axisOutMsgCtx.setProperty(org.apache.axis2.transport.http.HTTPConstants.HTTP_HEADERS, list);
-    }
-
-    private static boolean isSkipTransportHeader(String headerName) {
-
-        return HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName) ||
-               HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName) ||
-               HTTP.DATE_HEADER.equalsIgnoreCase(headerName) ||
-               HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName) ||
-               HTTP.CONTENT_LEN.equalsIgnoreCase(headerName) ||
-               HTTP.SERVER_HEADER.equalsIgnoreCase(headerName) ||
-               HTTP.USER_AGENT.equalsIgnoreCase(headerName) ||
-               "SOAPAction".equalsIgnoreCase(headerName);
-
-    }
 
 }

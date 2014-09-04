@@ -33,8 +33,8 @@ public class InboundEndpointSerializer {
 
 	private static final OMFactory fac = OMAbstractFactory.getOMFactory();
 
-	protected static final OMNamespace nullNS = fac.createOMNamespace(XMLConfigConstants.NULL_NAMESPACE,
-	                                                                  "");
+	protected static final OMNamespace nullNS =
+            fac.createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
 
 	public static OMElement serializeInboundEndpoint(InboundEndpoint inboundEndpoint) {
 
@@ -42,14 +42,14 @@ public class InboundEndpointSerializer {
 		                                                   SynapseConstants.SYNAPSE_OMNAMESPACE);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_NAME,
 		                                inboundEndpoint.getName(), null);
-				inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
-		                                inboundEndpoint.getInjectingSeq(), null);
-		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
+        inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
+                                        inboundEndpoint.getInjectingSeq(), null);
+        inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
 		                                inboundEndpoint.getOnErrorSeq(), null);
-		if(inboundEndpoint.getProtocol() != null){
+		if (inboundEndpoint.getProtocol() != null) {
 			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
                     inboundEndpoint.getProtocol(), null);			
-		}else{
+		} else {
 			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS,
 	                inboundEndpoint.getClassImpl(), null);
 		}

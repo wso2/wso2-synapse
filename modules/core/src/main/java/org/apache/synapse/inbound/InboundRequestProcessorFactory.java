@@ -23,6 +23,7 @@ import java.util.Properties;
 
 public interface InboundRequestProcessorFactory {
 
+    // TODO: Refactor parameters with a wrapper class - too many parameters
     public InboundRequestProcessor createInboundProcessor(String protocol, String classImpl, String name,
                                                           Properties vfsProperties, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment);
 }
