@@ -77,9 +77,10 @@ public class ClassMediatorDeployer extends AbstractDeployer {
      * @throws DeploymentException - in case of an error in undeployment
      */
     public void undeploy(String fileName) throws DeploymentException {
+        String mediatorPath = FilenameUtils.normalize(fileName);
         log.info("Undeploying Class mediator : " +
-                 fileName.substring(fileName.lastIndexOf(File.separator)+1));
-        getDeploymentStore().removeClassMediatorClassLoader(fileName);
+                 mediatorPath.substring(mediatorPath.lastIndexOf(File.separator)+1));
+        getDeploymentStore().removeClassMediatorClassLoader(mediatorPath);
     }
 
     private SynapseArtifactDeploymentStore getDeploymentStore() throws DeploymentException {
