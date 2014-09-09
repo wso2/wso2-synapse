@@ -338,19 +338,16 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 				Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
 				
 				if("true".equals(disableChunking) || "true".equals(forceHttp10) ){
-					ByteArrayOutputStream _out = new ByteArrayOutputStream();
+
 					MessageFormatter formatter =  MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
 					OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-                    if(null == msgContext.getProperty(PassThroughConstants.FORMATTER_PRESERVE) || msgContext.isPropertyTrue(PassThroughConstants.FORMATTER_PRESERVE)) {
-                        formatter.writeTo(msgContext, format, _out, true);
-                    } else {
-                        formatter.writeTo(msgContext, format, _out, false);
-                    }
+                    long messageSize=0;
 
 					try {
-	                    long messageSize =setStreamAsTempData(formatter,msgContext,format);
+	                    OverflowBlob overflowBlob =setStreamAsTempData(formatter,msgContext,format);
+                        messageSize = overflowBlob.getLength();
 	                    msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH,messageSize);
-	                    formatter.writeTo(msgContext, format, out, false);
+	                    overflowBlob.writeTo(out);
                     } catch (IOException e) {
 	                    // TODO Auto-generated catch block
                     	 handleException("IO while building message", e);
@@ -399,16 +396,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      *
      * @throws IOException if an exception occurred while writing data
      */
-    private long setStreamAsTempData(MessageFormatter messageFormatter,MessageContext msgContext,OMOutputFormat format) throws IOException {
+    private OverflowBlob setStreamAsTempData(MessageFormatter messageFormatter,MessageContext msgContext,OMOutputFormat format) throws IOException {
         OverflowBlob serialized = new OverflowBlob(256, 4096, "http-nio_", ".dat");
         OutputStream out = serialized.getOutputStream();
         try {
-            messageFormatter.writeTo(msgContext, format, out, true);
+            messageFormatter.writeTo(msgContext, format, out, false);
         } finally {
             out.close();
         }
-       // msgContext.setProperty(NhttpConstants.SERIALIZED_BYTES, serialized);
-       return serialized.getLength();
+       return serialized;
     }
 
     public void submitResponse(MessageContext msgContext)
