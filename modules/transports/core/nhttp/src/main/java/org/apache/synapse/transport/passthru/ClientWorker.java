@@ -188,11 +188,12 @@ public class ClientWorker implements Runnable {
                 if (charSetEnc == null) {
                     charSetEnc = MessageContext.DEFAULT_CHAR_SET_ENCODING;
                 }
-
-                responseMsgCtx.setProperty(
-                        Constants.Configuration.CHARACTER_SET_ENCODING,
-                        contentType.indexOf("charset") > 0 ?
-                                charSetEnc : MessageContext.DEFAULT_CHAR_SET_ENCODING);
+                if (contentType != null) {
+                    responseMsgCtx.setProperty(
+                            Constants.Configuration.CHARACTER_SET_ENCODING,
+                            contentType.indexOf("charset") > 0 ?
+                            charSetEnc : MessageContext.DEFAULT_CHAR_SET_ENCODING);
+                }
                 
                 responseMsgCtx.setServerSide(false);
                 SOAPFactory fac = OMAbstractFactory.getSOAP11Factory();
@@ -264,6 +265,18 @@ public class ClientWorker implements Runnable {
         if (cTypeParam != null) {
             return cTypeParam.getValue().toString();
         }
+
+        // When the response from backend does not have the body(Content-Length is 0 )
+        // and Content-Type is not set; ESB should not do any modification to the response and pass-through as it is.
+
+        if (headers != null && headers.get(PassThroughConstants.HTTP_CONTENT_LENGTH).toString().equals("0") &&
+            response.getHeader(PassThroughConstants.HTTP_CONTENT_TYPE) == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Content-Length is Zero and Content-type is not available in the response ");
+            }
+            return null;
+        }
+
         // Unable to determine the content type - Return default value
         return PassThroughConstants.DEFAULT_CONTENT_TYPE;
     }

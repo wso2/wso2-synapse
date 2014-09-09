@@ -150,4 +150,7 @@ public class PassThroughConstants {
     public static final String HTTP_SC_DESC = "HTTP_SC_DESC";
     
     public static final String RELAY_EARLY_BUILD  ="relay_early_build";
+
+    public static final String HTTP_CONTENT_TYPE = "Content-type";
+    public static final String HTTP_CONTENT_LENGTH = "Content-Length";
 }
