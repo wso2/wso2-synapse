@@ -182,7 +182,6 @@ public class Axis2Sender {
                 } else {
                     inboundResponseSender = InboundEndpointUtils.getResponseSender
                             (InboundEndpointConstants.INBOUND_ENDPOINT_HTTP);
-                    inboundResponseSender.sendBack(smc);
                 }
                 if (inboundResponseSender != null) {
                     inboundResponseSender.sendBack(smc);
