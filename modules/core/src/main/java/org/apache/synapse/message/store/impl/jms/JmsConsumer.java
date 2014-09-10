@@ -263,6 +263,18 @@ public class JmsConsumer implements MessageConsumer {
                 if (message != null) {
                     message.acknowledge();
                 }
+            } catch (javax.jms.IllegalStateException e) {
+                logger.warn("JMS Session is in an illegal state. Recovering session.");
+
+                try {
+                    getSession().recover();
+                    logger.warn("JMS Session recovered.");
+                } catch (JMSException e1) {
+                    logger.error("Error occurred while recovering session: "
+                            + e.getLocalizedMessage(), e);
+                    return false;
+                }
+                return false;
             } catch (JMSException e) {
                 logger.error(getId() + " cannot ack last read message. Error:"
                              + e.getLocalizedMessage(), e);
