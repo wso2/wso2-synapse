@@ -345,6 +345,10 @@ public class ServerWorker implements Runnable {
         } catch (AxisFault axisFault) {
             handleException("Error processing " + request.getMethod() +
                 " request for : " + request.getUri(), axisFault);
+        } catch (Exception e) {
+            handleException(
+                    "Error processing " + request.getMethod() + " reguest for : "
+                            + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);          
         }
     }
 
@@ -412,7 +416,11 @@ public class ServerWorker implements Runnable {
         } catch (AxisFault axisFault) {
             handleException("Error processing " + request.getMethod() +
                 " request for : " + request.getUri(), axisFault);
-        } 
+        } catch (Exception e) {
+            handleException(
+                    "Error processing " + request.getMethod() + " reguest for : "
+                            + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);
+        }
     }
     
     
