@@ -354,7 +354,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if ("true".equals(forceHttp10) && ("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else {
                         pipe.setSerializationComplete(true);
@@ -363,7 +363,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 				}else {
 					//if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
 					//to ignore any entity enclosed methods available.
-					if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
 						pipe.setSerializationCompleteWithoutData(true);
 						return;
 					}

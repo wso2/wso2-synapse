@@ -265,7 +265,8 @@ public class TargetRequest {
                 targetConfiguration.getHttpParams()));
 
         //Chucking is not performed for request has "http 1.0" and "GET" http method
-        if (!(request.getProtocolVersion().equals(HttpVersion.HTTP_1_0) && ("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))) {
+       if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
+                              (("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
