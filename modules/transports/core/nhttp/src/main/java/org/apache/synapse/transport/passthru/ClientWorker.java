@@ -165,12 +165,12 @@ public class ClientWorker implements Runnable {
     }
 
     public void run() {
-        ((NHttpServerConnection)responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
-                getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME,System.currentTimeMillis());
+
         if (responseMsgCtx == null) {
             return;
         }
-
+        ((NHttpServerConnection)responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME,System.currentTimeMillis());
         try {
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);
