@@ -157,8 +157,7 @@ public class AccessTimeUtil {
     }
 
     public static String getAccessDate(Date date) {
-         AccessDateStruct struct = getAccessDateStruct(date);
-        return struct.currentDateString;
+        return getAccessDateFormatted(date);
     }
 
     /**
@@ -175,5 +174,28 @@ public class AccessTimeUtil {
             throw (VirtualMachineError) t;
         }
         // All other instances of Throwable will be silently swallowed
+    }
+
+    /**
+     * Format the time
+     * @param date
+     * @return
+     */
+    private static String getAccessDateFormatted(Date date) {
+        AccessDateStruct struct = currentDateStruct.get();
+        StringBuilder current = new StringBuilder(32);
+        current.append('[');
+        current.append(struct.dayFormatter.format(date));
+        current.append('/');
+        current.append(lookup(struct.monthFormatter.format(date)));
+        current.append('/');
+        current.append(struct.yearFormatter.format(date));
+        current.append(':');
+        current.append(struct.timeFormatter.format(date));
+        current.append(' ');
+        current.append(AccessTimeUtil.getTimeZone());
+        current.append(']');
+
+        return current.toString();
     }
 }
