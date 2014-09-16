@@ -149,9 +149,6 @@ public class PassThroughConstants {
     public static final String PASSTHROUGH_S2SLATENCY_VIEW = "PassthroughS2SLatencyView";
     public  static  final String PASSTHOUGH_HTTP_SERVER_WORKER= "PassthroughHttpServerWorker";
 
-
-
-
     public static final String MESSAGE_OUTPUT_FORMAT = "MESSAGE_OUTPUT_FORMAT";
 	
 	public static final String FORCE_SOAP_FAULT = "FORCE_SOAP_FAULT";
