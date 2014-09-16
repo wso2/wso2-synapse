@@ -19,17 +19,16 @@
 
 package org.apache.synapse.transport.passthru.jmx;
 
-import org.apache.axis2.AxisFault;
+import org.apache.synapse.commons.jmx.MBeanRegistrar;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * <p>LatencyView provides statistical information related to the latency (overhead) incurred by
@@ -45,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <ul>
  *  <li>t1 - Receiving a new request (ServerHandler#requestReceived)</li>
- *  <li>t2 - Obtaining a connection to forward the request (Clienthandler#processConnection)</li>
+ *  <li>t2 - Obtaining a connection to forward the request (ClientHandler#processConnection)</li>
  *  <li>t3 - Reading the complete response from the backend server (ClientHandler#inputReady)</li>
  *  <li>t4 - Writing the complete response to the client (ServerHandler#outputReady)</li>
  * <ul>
@@ -57,62 +56,77 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class LatencyView implements LatencyViewMBean {
 
-    private static final String PT_NHTTP_LATENCY_VIEW ="PasstroughtHTTPLatencyView";
-    private static final String PT_NHTTPS_LATENCY_VIEW ="PasstroughtHTTPSLatencyView";
-    	
-
     private static final int SMALL_DATA_COLLECTION_PERIOD = 5;
     private static final int LARGE_DATA_COLLECTION_PERIOD = 5 * 60;
-    private static final int SAMPLES_PER_MINUTE = 60/ SMALL_DATA_COLLECTION_PERIOD;
-    private static final int SAMPLES_PER_HOUR = (60 * 60)/LARGE_DATA_COLLECTION_PERIOD;
 
     /** Keeps track of th last reported latency value */
-    private AtomicLong lastLatency = new AtomicLong(0);
+    private LatencyParameter lastLatency = new LatencyParameter(true);
 
-    /**
-     * Queue of all latency values reported. The short term data collector clears this queue up
-     * time to time thus ensuring it doesn't grow indefinitely.
-     */
-    private Queue<Long> latencyDataQueue = new ConcurrentLinkedQueue<Long>();
+    /** -Following are used to calculate BackEnd(Be) latency - */
+    /** Keeps track of th last reported BE latency value */
+    private LatencyParameter lastLatencyBe = new LatencyParameter(true);
 
-    /**
-     * Queue of samples collected by the short term data collector. This is maintained
-     * as a fixed length queue
-     */
-    private Queue<Long> shortTermLatencyDataQueue = new LinkedList<Long>();
+    private LatencyParameter serverDecodeLatency;
 
-    /**
-     * Queue of samples collected by the long term data collector. This is maintained
-     * as a fixed length queue
-     */
-    private Queue<Long> longTermLatencyDataQueue = new LinkedList<Long>();
+    private LatencyParameter serverEncodeLatency;
+
+    private LatencyParameter clientEncodeLatency;
+
+    private LatencyParameter clientDecodeLatency;
+
+    private LatencyParameter serverWorkerWaitTime;
+
+    private LatencyParameter clientWorkerWaitTime;
+
+    private LatencyParameter requestMediationLatency;
+
+    private LatencyParameter responseMediationLatency;
+
+    private List<LatencyParameter> latencies = new ArrayList<LatencyParameter>(10);
 
     /** Scheduled executor on which data collectors are executed */
-    private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledExecutorService scheduler;
 
-    private double allTimeAvgLatency = 0.0;
-    private int count = 0;
     private Date resetTime = Calendar.getInstance().getTime();
 
+    private String latencyMode;
     private String name;
-    
-    private boolean isHTTPs = false;
 
-    public LatencyView(boolean isHttps) throws AxisFault {
-        name = "passthru-http" + (isHttps ? "s" : "");
+
+    public LatencyView(final String latencyMode, boolean isHttps) {
+        this(latencyMode, isHttps, "", false);
+    }
+
+    public LatencyView(final String latencyMode, boolean isHttps, final String namePostfix, final boolean showAdvancedParameters) {
+        this.latencyMode = latencyMode;
+        name = "nio-http" + (isHttps ? "s" : "") + namePostfix;
+
+        scheduler =  Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                return new Thread(r, latencyMode + "-" + name + "-latency-view");
+            }
+        });
+
         scheduler.scheduleAtFixedRate(new ShortTermDataCollector(), SMALL_DATA_COLLECTION_PERIOD,
                 SMALL_DATA_COLLECTION_PERIOD, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(new LongTermDataCollector(), LARGE_DATA_COLLECTION_PERIOD,
                 LARGE_DATA_COLLECTION_PERIOD, TimeUnit.SECONDS);
-
-        this.isHTTPs =  isHttps;
-        MBeanRegistrar.getInstance().registerMBean(this, this.isHTTPs?PT_NHTTPS_LATENCY_VIEW:PT_NHTTP_LATENCY_VIEW, name);
-
+        boolean registered = false;
+        try {
+            registered = MBeanRegistrar.getInstance().registerMBean(this, this.latencyMode, name);
+        } finally {
+            if (!registered) {
+                scheduler.shutdownNow();
+            }
+        }
+        registerAllLatencies(showAdvancedParameters);
     }
 
     public void destroy() {
-        MBeanRegistrar.getInstance().unRegisterMBean(this.isHTTPs?PT_NHTTPS_LATENCY_VIEW:PT_NHTTP_LATENCY_VIEW, name);
-        scheduler.shutdownNow();
+        MBeanRegistrar.getInstance().unRegisterMBean(latencyMode, name);
+        if (!scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
     }
 
     /**
@@ -123,49 +137,332 @@ public class LatencyView implements LatencyViewMBean {
      * @param resArrival The resoponse arrival time
      * @param resDeparture The response departure time
      */
-    public void notifyTimes(long reqArrival, long reqDeparture,
-                            long resArrival, long resDeparture) {
-
-        long latency = (resDeparture - reqArrival) - (resArrival - reqDeparture);
-        lastLatency.set(latency);
-        latencyDataQueue.offer(latency);
+    private void notifyTimes(long reqArrival, long reqDeparture,
+                             long resArrival, long resDeparture) {
+        long latencyBe = (resArrival - reqDeparture);
+        long latency = (resDeparture - reqArrival) - latencyBe;
+        lastLatency.update(latency);
+        lastLatencyBe.update(latencyBe);
     }
 
-    public double getAllTimeAvgLatency() {
-        return allTimeAvgLatency;
+    public void notifyTimes(LatencyCollector collector) {
+        lastLatency.update(collector.getLatency());
+        lastLatencyBe.update(collector.getBackendLatency());
+        serverDecodeLatency.update(collector.getServerDecodeLatency());
+        clientEncodeLatency.update(collector.getClientEncodeLatency());
+        clientDecodeLatency.update(collector.getClientDecodeLatency());
+        serverEncodeLatency.update(collector.getServerEncodeLatency());
+        serverWorkerWaitTime.update(collector.getServerWorkerQueuedTime());
+        clientWorkerWaitTime.update(collector.getClientWorkerQueuedTime());
+        requestMediationLatency.update(collector.getServerWorkerLatency());
+        responseMediationLatency.update(collector.getClientWorkerLatency());
     }
 
-    public double getLastMinuteAvgLatency() {
-        return getAverageLatencyByMinute(1);
+    private void registerAllLatencies(boolean recordAdditionalLatencies) {
+        latencies.add(lastLatency);
+        latencies.add(lastLatencyBe);
+        serverDecodeLatency = new LatencyParameter(recordAdditionalLatencies);
+        serverEncodeLatency = new LatencyParameter(recordAdditionalLatencies);
+        clientEncodeLatency = new LatencyParameter(recordAdditionalLatencies);
+        clientDecodeLatency = new LatencyParameter(recordAdditionalLatencies);
+        serverWorkerWaitTime = new LatencyParameter(recordAdditionalLatencies);
+        clientWorkerWaitTime = new LatencyParameter(recordAdditionalLatencies);
+        requestMediationLatency = new LatencyParameter(recordAdditionalLatencies);
+        responseMediationLatency = new LatencyParameter(recordAdditionalLatencies);
+        latencies.add(serverDecodeLatency);
+        latencies.add(clientEncodeLatency);
+        latencies.add(clientDecodeLatency);
+        latencies.add(serverEncodeLatency);
+        latencies.add(serverWorkerWaitTime);
+        latencies.add(clientWorkerWaitTime);
+        latencies.add(requestMediationLatency);
+        latencies.add(responseMediationLatency);
     }
 
-    public double getLast5MinuteAvgLatency() {
-        return getAverageLatencyByMinute(5);
+    public double getAvg_Latency() {
+        return lastLatency.getAllTimeAverage();
     }
 
-    public double getLast15MinuteAvgLatency() {
-        return getAverageLatencyByMinute(15);
+    public double getAvg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAllTimeAverage();
     }
 
-    public double getLastHourAvgLatency() {
-        return getAverageLatencyByHour(1);
+    public double getAvg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAllTimeAverage();
     }
 
-    public double getLast8HourAvgLatency() {
-        return getAverageLatencyByHour(8);
+    public double getAvg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAllTimeAverage();
     }
 
-    public double getLast24HourAvgLatency() {
-        return getAverageLatencyByHour(24);
+    public double getAvg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAllTimeAverage();
+    }
+
+    public double get1m_Avg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAverageLatency1m();
+    }
+
+    public double get1m_Avg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAverageLatency1m();
+    }
+
+    public double get1m_Avg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAverageLatency1m();
+    }
+
+    public double get1m_Avg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAverageLatency1m();
+    }
+
+    public double get5m_Avg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAverageLatency5m();
+    }
+
+    public double get5m_Avg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAverageLatency5m();
+    }
+
+    public double get5m_Avg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAverageLatency5m();
+    }
+
+    public double get5m_Avg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAverageLatency5m();
+    }
+
+    public double get15m_Avg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAverageLatency15m();
+    }
+
+    public double get15m_Avg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAverageLatency15m();
+    }
+
+    public double get15m_Avg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAverageLatency15m();
+    }
+
+    public double get15m_Avg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAverageLatency15m();
+    }
+
+    public double getAvg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAllTimeAverage();
+    }
+
+    public double get1m_Avg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAverageLatency1m();
+    }
+
+    public double get5m_Avg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAverageLatency5m();
+    }
+
+    public double get15m_Avg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAverageLatency15m();
+    }
+
+    public double getAvg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAllTimeAverage();
+    }
+
+    public double get1m_Avg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAverageLatency1m();
+    }
+
+    public double get5m_Avg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAverageLatency5m();
+    }
+
+    public double get15m_Avg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAverageLatency15m();
+    }
+
+    public double get1m_Avg_Latency() {
+        return lastLatency.getAverageLatency1m();
+    }
+
+    public double get5m_Avg_Latency() {
+        return lastLatency.getAverageLatency5m();
+    }
+
+    public double get15m_Avg_Latency() {
+        return lastLatency.getAverageLatency15m();
+    }
+
+    public double get1h_Avg_Latency() {
+        return lastLatency.getAverageLatency1h();
+    }
+
+    public double get8h_Avg_Latency() {
+        return lastLatency.getAverageLatency8h();
+    }
+
+    public double get24h_Avg_Latency() {
+        return lastLatency.getAverageLatency24h();
+    }
+
+    public double getAvg_Latency_BackEnd() {
+        return lastLatencyBe.getAllTimeAverage();
+    }
+
+    public double get1m_Avg_Latency_BackEnd() {
+        return lastLatencyBe.getAverageLatency1m();
+    }
+
+    public double get5m_Avg_Latency_BackEnd() {
+        return lastLatencyBe.getAverageLatency5m();
+    }
+
+    public double get15m_Avg_Latency_BackEnd() {
+        return lastLatencyBe.getAverageLatency15m();
+    }
+
+    public double get1h_Avg_Latency_BackEnd() {
+        return lastLatencyBe.getAverageLatency1h();
+    }
+
+    public double get8h_Avg_Latency_BackEnd() {
+        return lastLatencyBe.getAverageLatency8h();
+    }
+
+    public double get24h_Avg_Latency_BackEnd() {
+        return lastLatencyBe.getAverageLatency24h();
+    }
+
+    public double get1h_Avg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAverageLatency1h();
+    }
+
+    public double get1h_Avg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAverageLatency1h();
+    }
+
+    public double get1h_Avg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAverageLatency1h();
+    }
+
+    public double get1h_Avg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAverageLatency1h();
+    }
+
+    public double get1h_Avg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAverageLatency1h();
+    }
+
+    public double get1h_Avg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAverageLatency1h();
+    }
+
+    public double get8h_Avg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAverageLatency8h();
+    }
+
+    public double get8h_Avg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAverageLatency8h();
+    }
+
+    public double get8h_Avg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAverageLatency8h();
+    }
+
+    public double get8h_Avg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAverageLatency8h();
+    }
+
+    public double get8h_Avg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAverageLatency8h();
+    }
+
+    public double get8h_Avg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAverageLatency8h();
+    }
+
+    public double get24h_Avg_Client_To_Esb_RequestReadTime() {
+        return serverDecodeLatency.getAverageLatency24h();
+    }
+
+    public double get24h_Avg_Esb_To_BackEnd_RequestWriteTime() {
+        return clientEncodeLatency.getAverageLatency24h();
+    }
+
+    public double get24h_Avg_BackEnd_To_Esb_ResponseReadTime() {
+        return clientDecodeLatency.getAverageLatency24h();
+    }
+
+    public double get24h_Avg_Esb_To_Client_ResponseWriteTime() {
+        return serverEncodeLatency.getAverageLatency24h();
+    }
+
+    public double get24h_Avg_ServerWorker_QueuedTime() {
+        return serverWorkerWaitTime.getAverageLatency24h();
+    }
+
+    public double get24h_Avg_ClientWorker_QueuedTime() {
+        return clientWorkerWaitTime.getAverageLatency24h();
+    }
+
+    public double getAvg_request_Mediation_Latency() {
+        return requestMediationLatency.getAllTimeAverage();
+    }
+
+    public double getAvg_response_Mediation_Latency() {
+        return responseMediationLatency.getAllTimeAverage();
+    }
+
+    public double get1m_Avg_request_Mediation_Latency() {
+        return requestMediationLatency.getAverageLatency1m();
+    }
+
+    public double get1m_Avg_response_Mediation_Latency() {
+        return responseMediationLatency.getAverageLatency1m();
+    }
+
+    public double get5m_Avg_request_Mediation_Latency() {
+        return requestMediationLatency.getAverageLatency5m();
+    }
+
+    public double get5m_Avg_response_Mediation_Latency() {
+        return responseMediationLatency.getAverageLatency5m();
+    }
+
+    public double get15m_Avg_request_Mediation_Latency() {
+        return requestMediationLatency.getAverageLatency15m();
+    }
+
+    public double get15m_Avg_response_Mediation_Latency() {
+        return responseMediationLatency.getAverageLatency15m();
+    }
+
+    public double get1h_Avg_request_Mediation_Latency() {
+        return requestMediationLatency.getAverageLatency1h();
+    }
+
+    public double get1h_Avg_response_Mediation_Latency() {
+        return responseMediationLatency.getAverageLatency1h();
+    }
+
+    public double get8h_Avg_request_Mediation_Latency() {
+        return requestMediationLatency.getAverageLatency8h();
+    }
+
+    public double get8h_Avg_response_Mediation_Latency() {
+        return responseMediationLatency.getAverageLatency8h();
+    }
+
+    public double get24h_Avg_request_Mediation_Latency() {
+        return requestMediationLatency.getAverageLatency24h();
+    }
+
+    public double get24h_Avg_response_Mediation_Latency() {
+        return responseMediationLatency.getAverageLatency24h();
     }
 
     public void reset() {
-        lastLatency.set(0);
-        allTimeAvgLatency = 0.0;
-        latencyDataQueue.clear();
-        shortTermLatencyDataQueue.clear();
-        longTermLatencyDataQueue.clear();
-        count = 0;
+        for (LatencyParameter latency : latencies) {
+            latency.reset();
+        }
         resetTime = Calendar.getInstance().getTime();
     }
 
@@ -173,103 +470,19 @@ public class LatencyView implements LatencyViewMBean {
         return resetTime;
     }
 
-    private double getAverageLatencyByMinute(int n) {
-        int samples = n * SAMPLES_PER_MINUTE;
-        double sum = 0.0;
-        Long[] array = shortTermLatencyDataQueue.toArray(new Long[shortTermLatencyDataQueue.size()]);
-
-        if (samples > array.length) {
-            // If we don't have enough samples collected yet
-            // add up everything we have
-            samples = array.length;
-            for (Long anArray : array) {
-                sum += anArray;
-            }
-        } else {
-            // We have enough samples to make the right calculation
-            // Add up starting from the end of the queue (to give the most recent values)
-            for (int i = 0; i < samples; i++) {
-                sum += array[array.length - 1 - i];
-            }
-        }
-
-        if (samples == 0) {
-            return 0.0;
-        }
-        return sum/samples;
-    }
-
-    private double getAverageLatencyByHour(int n) {
-        int samples = n * SAMPLES_PER_HOUR;
-        double sum = 0.0;
-        Long[] array = longTermLatencyDataQueue.toArray(new Long[longTermLatencyDataQueue.size()]);
-
-        if (samples > array.length) {
-            samples = array.length;
-            for (Long anArray : array) {
-                sum += anArray;
-            }
-        } else {
-            for (int i = 0; i < samples; i++) {
-                sum += array[array.length - 1 - i];
-            }
-        }
-
-        if (samples == 0) {
-            return 0.0;
-        }
-        return sum/samples;
-    }
-
     private class ShortTermDataCollector implements Runnable {
         public void run() {
-            long latency = lastLatency.get();
-
-            // calculate all time average latency
-            int size = latencyDataQueue.size();
-            if (size > 0) {
-                long sum = 0;
-                for (int i = 0; i < size; i++) {
-                    sum += latencyDataQueue.poll();
-                }
-                allTimeAvgLatency = (allTimeAvgLatency * count + sum)/(count + size);
-                count = count + size;
+            for (LatencyParameter latency : latencies) {
+                latency.updateCache();
             }
-
-            if (shortTermLatencyDataQueue.size() == 0 && latency == 0) {
-                // we haven't started collecting data yet - skip ahead...
-                return;
-            }
-
-            // take a sample for the short term latency calculation
-            if (shortTermLatencyDataQueue.size() == SAMPLES_PER_MINUTE * 15) {
-                shortTermLatencyDataQueue.remove();
-            }
-            
-			if (size == 0) {
-				// there's no latency data available -> no new requests received
-				shortTermLatencyDataQueue.offer(new Long(0));
-			} else {
-				shortTermLatencyDataQueue.offer(latency);
-			}
-
         }
     }
 
     private class LongTermDataCollector implements Runnable {
         public void run() {
-            long latency = lastLatency.get();
-            if (longTermLatencyDataQueue.size() == 0 && latency == 0) {
-                return;
+            for (LatencyParameter latency : latencies) {
+                latency.updateLongTermCache();
             }
-
-            if (longTermLatencyDataQueue.size() == SAMPLES_PER_HOUR * 24) {
-                longTermLatencyDataQueue.remove();
-            }
-            
-			// adds the average latency value in last five minutes
-			longTermLatencyDataQueue
-					.offer((long) getAverageLatencyByMinute(LARGE_DATA_COLLECTION_PERIOD / 60));
         }
     }
 }

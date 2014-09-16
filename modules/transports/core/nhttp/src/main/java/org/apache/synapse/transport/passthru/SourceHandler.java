@@ -37,8 +37,10 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
@@ -60,21 +62,24 @@ public class SourceHandler implements NHttpServerEventHandler {
     private LatencyView latencyView = null;
     
     private LatencyView s2sLatencyView = null;
+    private  ThreadingView threadingView;
 
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
-        
-		try {
-		    Scheme scheme = sourceConfiguration.getScheme();
-			if (!scheme.isSSL()) {
-				this.latencyView = new LatencyView(scheme.isSSL());
-			} else {
-				this.s2sLatencyView = new LatencyView(scheme.isSSL());
-			}
-		} catch (AxisFault e) {
-			log.error(e.getMessage(), e);
-		}
+
+        String strNamePostfix = "";
+        if (sourceConfiguration.getInDescription() != null &&
+                sourceConfiguration.getInDescription().getName() != null) {
+            strNamePostfix = "-" + sourceConfiguration.getInDescription().getName();
+            Scheme scheme = sourceConfiguration.getScheme();
+            boolean enableAdvancedForLatencyView = sourceConfiguration.getBooleanValue(PassThroughConstants.SYNAPSE_PASSTHROUGH_LATENCY_ADVANCE_VIEW, false);
+            boolean enableAdvancedForS2SView = sourceConfiguration.getBooleanValue(PassThroughConstants.SYNAPSE_PASSTHROUGH_S2SLATENCY_ADVANCE_VIEW, false);
+            this.latencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_LATENCY_VIEW, scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
+            this.s2sLatencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_S2SLATENCY_VIEW, scheme.isSSL(), strNamePostfix, enableAdvancedForS2SView);
+            this.threadingView = new ThreadingView(PassThroughConstants.PASSTHOUGH_HTTP_SERVER_WORKER, true, 50);
+        }
+
     }
 
     public void connected(NHttpServerConnection conn) {
@@ -90,6 +95,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         	
         	HttpContext _context = conn.getContext();
         	_context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+            _context.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME,System.currentTimeMillis());
         	 
             if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
                 handleInvalidState(conn, "Request received");
@@ -125,6 +131,11 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             sourceConfiguration.getWorkerPool().execute(
                     new ServerWorker(request, sourceConfiguration,os));
+             if(!request.isEntityEnclosing()){
+          conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,System.currentTimeMillis());
+             }
+
+
         } catch (HttpException e) {
             log.error(e.getMessage(), e);
 
@@ -191,11 +202,13 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceResponse response = SourceContext.getResponse(conn);
             if (response != null) {
                 response.start(conn);
-
+                conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
+                        System.currentTimeMillis());
                 metrics.incrementMessagesSent();
                 if (!response.hasEntity()) {
                    // Update stats as outputReady will not be triggered for no entity responses
-                   updateStatistics(conn);
+                    HttpContext context = conn.getContext();
+                    updateLatencyView(context);
                 }
             }
         } catch (IOException e) {
@@ -257,7 +270,12 @@ public class SourceHandler implements NHttpServerEventHandler {
             int bytesSent = response.write(conn, encoder);
             
 			if (encoder.isCompleted()) {
-                updateStatistics(conn);
+                HttpContext context = conn.getContext();
+                long departure = System.currentTimeMillis();
+                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
+                context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
+                updateLatencyView(context);
+
 			}
             
             metrics.incrementBytesSent(bytesSent);
@@ -271,29 +289,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         } 
     }
 
-    private void updateStatistics(NHttpServerConnection conn) {
-        HttpContext context = conn.getContext();
-        if (context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null &&
-            context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME) != null &&
-            context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME) != null) {
 
-            if (latencyView != null) {
-                latencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-                                        (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-                                        (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-                                        System.currentTimeMillis());
-            } else if (s2sLatencyView != null) {
-                s2sLatencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-                                           (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-                                           (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-                                           System.currentTimeMillis());
-            }
-        }
-
-        context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-        context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
-        context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
-    }
 
     private void logIOException(NHttpServerConnection conn, IOException e) {
         // this check feels like crazy! But weird things happened, when load testing.
@@ -497,7 +493,14 @@ public class SourceHandler implements NHttpServerEventHandler {
             //shutdownConnection(conn);
         }
     }
-    
-    
+
+    private void updateLatencyView(HttpContext context) {
+        if (context == null) {
+            return;
+        }
+        latencyView.notifyTimes(new LatencyCollector(context, false));
+        s2sLatencyView.notifyTimes(new LatencyCollector(context, true));
+        LatencyCollector.clearTimestamps(context);
+    }
     
 }

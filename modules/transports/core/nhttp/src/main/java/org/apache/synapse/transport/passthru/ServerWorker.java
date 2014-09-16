@@ -109,9 +109,13 @@ public class ServerWorker implements Runnable {
                 PassThroughConstants.PASS_THROUGH_SOURCE_CONFIGURATION, sourceConfiguration);
         msgContext.setProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION,
                 request.getConnection());
+        request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
+                System.currentTimeMillis());
     }
 
     public void run() {
+        request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
+                System.currentTimeMillis());
         if (log.isDebugEnabled()) {
             log.debug("Starting a new Server Worker instance");
         }

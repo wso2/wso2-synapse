@@ -243,4 +243,22 @@ public class SourceConfiguration extends BaseConfiguration {
         log.error(msg);
         throw new AxisFault(msg);
     }
+    public boolean getBooleanValue(String name, boolean def) {
+        String val = System.getProperty(name);
+        if (val == null) {
+            val =PassThroughConfiguration.getInstance().getStringProperty(name,String.valueOf(def));
+        }
+        if (val != null && Boolean.parseBoolean(val)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Using Passthru http tuning parameter : " + name);
+            }
+            return true;
+        } else if (val != null && !Boolean.parseBoolean(val)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Using Passthru http tuning parameter : " + name);
+            }
+            return false;
+        }
+        return def;
+    }
 }
