@@ -35,7 +35,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
-import org.apache.synapse.inbound.InboundEndpointUtils;
 import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
@@ -167,31 +166,21 @@ public class Axis2Sender {
             // report stats for any component at response sending check point
             StatisticsReporter.reportForAllOnResponseSent(smc);
 
-            // TODO: Refactor this logic in a way that synapse core doesn't know about existence of http/cxf inbound
             // If the request arrives through an inbound endpoint
             if (smc.getProperty(SynapseConstants.IS_INBOUND) != null
                 && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
 
-                InboundResponseSender inboundResponseSender;
-                if (smc.getProperty(SynapseConstants.IS_CXF_WS_RM) != null
-                    && Boolean.parseBoolean((String) smc.getProperty
-                        (SynapseConstants.IS_CXF_WS_RM))) {
-                    inboundResponseSender = InboundEndpointUtils.getResponseSender
-                            (InboundEndpointConstants.INBOUND_ENDPOINT_CXF_WS_RM);
-
-                } else {
-                    inboundResponseSender = InboundEndpointUtils.getResponseSender
-                            (InboundEndpointConstants.INBOUND_ENDPOINT_HTTP);
-                    inboundResponseSender.sendBack(smc);
-                }
-                if (inboundResponseSender != null) {
+                if (smc.getProperty(InboundEndpointConstants.INBOUND_ENDPOINT_RESPONSE_WORKER) != null) {
+                    InboundResponseSender inboundResponseSender =
+                            (InboundResponseSender) smc.getProperty(
+                                    InboundEndpointConstants.INBOUND_ENDPOINT_RESPONSE_WORKER);
                     inboundResponseSender.sendBack(smc);
                 } else {
-                    String msg = "InboundSender not found";
+                    String msg = "Inbound Response Sender not found -" +
+                                 " Inbound Endpoint may not support sending a response back";
                     log.error(msg);
                     throw new SynapseException(msg);
                 }
-
             } else { // If the request arrives through a conventional transport listener
                 AxisEngine.send(messageContext);
             }
