@@ -267,13 +267,16 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (connState != ProtocolState.REQUEST_DONE) {
                 StatusLine errorStatus = response.getStatusLine();
                 /* We might receive a 404 or a similar type, even before we write the request body. */
-                if (errorStatus != null &&
-                        errorStatus.getStatusCode() >= HttpStatus.SC_NOT_FOUND) {
-                    TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                    conn.resetOutput();
-                    if (log.isDebugEnabled()) {
-                        log.debug(conn + ": Received response with status code : " +
-                                response.getStatusLine().getStatusCode() + " in invalid state : " + connState.name());
+                if (errorStatus != null) {
+                    if (errorStatus.getStatusCode() >= HttpStatus.SC_NOT_FOUND
+                        || errorStatus.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+                        log.info("Received response with status 401.");
+                        TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
+                        conn.resetOutput();
+                        if (log.isDebugEnabled()) {
+                            log.debug(conn + ": Received response with status code : " +
+                                    response.getStatusLine().getStatusCode() + " in invalid state : " + connState.name());
+                        }
                     }
                 } else {
                     handleInvalidState(conn, "Receiving response");
