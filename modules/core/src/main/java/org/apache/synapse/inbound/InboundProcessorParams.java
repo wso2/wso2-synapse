@@ -20,6 +20,9 @@ import org.apache.synapse.core.SynapseEnvironment;
 
 import java.util.Properties;
 
+/**
+ * This is the entity which holds parameters which is related to an InboundEndpoint
+ */
 public class InboundProcessorParams {
 
     private String name;
@@ -30,58 +33,130 @@ public class InboundProcessorParams {
     private String onErrorSeq;
     private SynapseEnvironment synapseEnvironment;
 
+    /**
+     * Get the name of the inbound endpoint
+     *
+     * @return name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Set the name of the inbound endpoint
+     *
+     * @param name name of the endpoint
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Protocol of inbound endpoint.
+     * <p/>
+     * This may become null if classImpl is used
+     *
+     * @return protocol of InboundEndpoint
+     */
     public String getProtocol() {
         return protocol;
     }
 
+    /**
+     * Set the protocol of the Inbound Endpoint
+     *
+     * @param protocol protocol name
+     */
     public void setProtocol(String protocol) {
         this.protocol = protocol;
     }
 
+    /**
+     * Get the custom class implementation of InboundEndpoint
+     * This will return the FQN of the InboundEndpoint custom class implementation.
+     *
+     * @return FQN of class implementation
+     */
     public String getClassImpl() {
         return classImpl;
     }
 
+    /**
+     * Set the custom class implementation of InboundEndpoint
+     * @param classImpl FQN of custom class implementation
+     */
     public void setClassImpl(String classImpl) {
         this.classImpl = classImpl;
     }
 
+    /**
+     * Get the properties associated with the InboundEndpoint
+     *
+     * @return associated properties
+     */
     public Properties getProperties() {
         return properties;
     }
 
+    /**
+     * Set properties for InboundEndpoint
+     *
+     * @param properties properties
+     */
     public void setProperties(Properties properties) {
         this.properties = properties;
     }
 
+    /**
+     * Get the sequence which message should be dispatched to
+     *
+     * @return sequence name
+     */
     public String getInjectingSeq() {
         return injectingSeq;
     }
 
+    /**
+     * Set the sequence which message should be dispatched to
+     *
+     * @param injectingSeq name of the sequence
+     */
     public void setInjectingSeq(String injectingSeq) {
         this.injectingSeq = injectingSeq;
     }
 
+    /**
+     * Get the sequence which get invoked when something goes wrong in InboundEndpoint
+     *
+     * @return onError sequence for InboundEndpoint
+     */
     public String getOnErrorSeq() {
         return onErrorSeq;
     }
 
+    /**
+     * Set the sequence which get invoked when something goes wrong in InboundEndpoint
+     *
+     * @param onErrorSeq onError sequence name
+     */
     public void setOnErrorSeq(String onErrorSeq) {
         this.onErrorSeq = onErrorSeq;
     }
 
+    /**
+     * Get the synapse environment
+     *
+     * @return synapse environment
+     */
     public SynapseEnvironment getSynapseEnvironment() {
         return synapseEnvironment;
     }
 
+    /**
+     * Set the synapse environment
+     *
+     * @param synapseEnvironment synapse environment
+     */
     public void setSynapseEnvironment(SynapseEnvironment synapseEnvironment) {
         this.synapseEnvironment = synapseEnvironment;
     }

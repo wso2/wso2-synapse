@@ -30,6 +30,5 @@ public class InboundEndpointConstants {
     public static final String INBOUND_ENDPOINT_PARAMETERS = "parameters";
     public static final String INBOUND_ENDPOINT_PARAMETER = "parameter";
     public static final String INBOUND_ENDPOINT_PARAMETER_NAME = "name";
-    public static final String INBOUND_ENDPOINT_CXF_WS_RM = "cxf";
-    public static final String INBOUND_ENDPOINT_HTTP= "http";
+    public static final String INBOUND_ENDPOINT_RESPONSE_WORKER= "inbound-response-worker";
 }
