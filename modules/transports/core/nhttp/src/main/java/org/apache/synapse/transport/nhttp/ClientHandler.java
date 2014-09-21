@@ -817,6 +817,14 @@ public class ClientHandler implements NHttpClientEventHandler {
                     log.debug(conn + ": Received a 202 Accepted response");
                 }
 
+                // Process response body if Content-Type header is present in the response
+                // If Content-Type header is null, We will ignore entity body
+                Header contentType = response.getFirstHeader(HTTP.CONTENT_TYPE);
+                if (contentType != null) {
+                    processResponse(conn, context, response);
+                    return;
+                }
+
                 // sometimes, some http clients sends an "\r\n" as the content body with a
                 // HTTP 202 OK.. we will just get it into this temp buffer and ignore it..
                 ContentInputBuffer inputBuffer = new SharedInputBuffer(8, conn, allocator);
