@@ -49,6 +49,13 @@ public final class JsonUtil {
     /** If this property is set to <tt>true</tt> the input stream of the JSON payload will be reset
      *  after writing to the output stream within the #writeAsJson method. */
     public static final String PRESERVE_JSON_STREAM = "preserve.json.stream";
+    private static boolean PRESERVE_NAMESPACE_FOR_JSON = false;
+
+    static {
+        Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
+        String process = properties.getProperty("synapse.commons.json.preserve.namespace", "false");
+        PRESERVE_NAMESPACE_FOR_JSON = Boolean.parseBoolean(process.toLowerCase());
+    }
 
     private static final boolean processNCNames;
 
@@ -264,7 +271,9 @@ public final class JsonUtil {
             return;
         }
         removeIndentations(element);
-        removeNamespaces(element, processAttrbs);
+        if (!PRESERVE_NAMESPACE_FOR_JSON) {
+            removeNamespaces(element, processAttrbs);
+        }
         if (logger.isDebugEnabled()) {
             logger.debug("#transformElement. Transformed OMElement. Result: " + element.toString());
         }
