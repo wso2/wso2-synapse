@@ -79,7 +79,7 @@ public class RelayUtils {
         final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
 
         if (messageContext.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
-            if (log.isDebugEnabled() == true) {
+            if (log.isDebugEnabled()) {
                 log.debug("Content Type is " + messageContext.getProperty(Constants.Configuration.CONTENT_TYPE));
             }
 
