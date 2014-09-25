@@ -77,19 +77,31 @@ public class RelayUtils {
             throws IOException, XMLStreamException {
 
         final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-        if (pipe != null
-                && !Boolean.TRUE.equals(messageContext
-                .getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) && forcePTBuild) {
-            InputStream in = pipe.getInputStream();
 
-            Object http_sc = messageContext.getProperty(NhttpConstants.HTTP_SC);
-            if (http_sc != null && http_sc instanceof Integer && http_sc.equals(202)) {
-                messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
-                        Boolean.TRUE);
-                return;
+        if (messageContext.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
+            if (log.isDebugEnabled() == true) {
+                log.debug("Content Type is " + messageContext.getProperty(Constants.Configuration.CONTENT_TYPE));
             }
 
-            builldMessage(messageContext, earlyBuild, in);
+            if (pipe != null
+                && !Boolean.TRUE.equals(messageContext
+                                                .getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) && forcePTBuild) {
+                InputStream in = pipe.getInputStream();
+
+                Object http_sc = messageContext.getProperty(NhttpConstants.HTTP_SC);
+                if (http_sc != null && http_sc instanceof Integer && http_sc.equals(202)) {
+                    messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
+                                               Boolean.TRUE);
+                    return;
+                }
+
+                builldMessage(messageContext, earlyBuild, in);
+                return;
+            }
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Content Type is null and the message is not build");
+            }
             return;
         }
     }
