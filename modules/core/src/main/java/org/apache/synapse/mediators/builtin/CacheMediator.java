@@ -93,6 +93,7 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
     private String cacheKey = "synapse.cache_key";
 
     final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private boolean isResponseSOAP11 =false;
 
     public void init(SynapseEnvironment se) {
         if (onCacheHitSequence != null) {
@@ -226,6 +227,10 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
 
         org.apache.axis2.context.MessageContext msgCtx =
                 ((Axis2MessageContext)synCtx).getAxis2MessageContext();
+        // Setting the response Content-Type
+        synchronized (this) {
+            this.isResponseSOAP11 = msgCtx.isSOAP11();
+        }
         OperationContext operationContext = msgCtx.getOperationContext();
 
         CachableResponse response =
@@ -384,7 +389,7 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                                     headerProperties.get(Constants.Configuration.MESSAGE_TYPE));
                         } else {
                             omSOAPEnv = SOAPMessageHelper.buildSOAPEnvelopeFromBytes(
-                                    cachedResponse.getResponseEnvelope(),msgCtx.isSOAP11());
+                                    cachedResponse.getResponseEnvelope(),this.isResponseSOAP11);
                         }
                         if (omSOAPEnv != null) {
                             synCtx.setEnvelope(omSOAPEnv);
