@@ -484,9 +484,7 @@ public class ForwardingService implements InterruptableJob, Service {
             this.attemptCount++;
 
             if (attemptCount >= maxAttempts) {
-                terminate();
-                this.messageProcessor.deactivate();
-
+                
                 if (this.isMaxDeliveryAttemptDropEnabled) {
                     dropMessageAndContinueMessageProcessor();
                     if (log.isDebugEnabled()) {
