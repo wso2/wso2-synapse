@@ -53,6 +53,7 @@ import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -309,7 +310,7 @@ public class ServerHandler implements NHttpServerEventHandler {
 
         if (outBuf == null) {
             // fix for SYNAPSE 584. This is a temporaly fix becuase of HTTPCORE-208
-            shutdownConnection(conn);
+            shutdownConnection(conn, false);
             return;
         }
 
@@ -396,10 +397,10 @@ public class ServerHandler implements NHttpServerEventHandler {
                     System.currentTimeMillis());
             conn.submitResponse(response);
         } catch (HttpException e) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true);
             throw e;
         } catch (IOException e) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true);
             throw e;
         }
     }
@@ -422,7 +423,7 @@ public class ServerHandler implements NHttpServerEventHandler {
                 metrics.incrementTimeoutsReceiving();
             }
         }
-        shutdownConnection(conn);
+        shutdownConnection(conn, false);
     }
 
     public void endOfInput(final NHttpServerConnection conn) throws IOException {
@@ -476,7 +477,7 @@ public class ServerHandler implements NHttpServerEventHandler {
     public void closed(final NHttpServerConnection conn) {
 
         HttpContext context = conn.getContext();
-        shutdownConnection(conn);
+        shutdownConnection(conn, false);
         context.removeAttribute(REQUEST_SINK_BUFFER);
         context.removeAttribute(RESPONSE_SOURCE_BUFFER);
         context.removeAttribute(CONNECTION_CREATION_TIME);
@@ -585,7 +586,7 @@ public class ServerHandler implements NHttpServerEventHandler {
                 metrics.incrementFaultsReceiving();
             }
         }
-        shutdownConnection(conn);
+        shutdownConnection(conn, true);
     }
 
     // ----------- utility methods -----------
@@ -593,15 +594,16 @@ public class ServerHandler implements NHttpServerEventHandler {
     private void handleException(String msg, Exception e, NHttpServerConnection conn) {
         log.error(msg, e);
         if (conn != null) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true);
         }
     }
 
     /**
      * Shutdown the connection ignoring any IO errors during the process
      * @param conn the connection to be shutdown
+     * @param isError whether shutdown is due to an error
      */
-    private void shutdownConnection(final NHttpServerConnection conn) {
+    private void shutdownConnection(final NHttpServerConnection conn, boolean isError) {
         SharedOutputBuffer outputBuffer = (SharedOutputBuffer)
             conn.getContext().getAttribute(RESPONSE_SOURCE_BUFFER);
         if (outputBuffer != null) {
@@ -611,6 +613,33 @@ public class ServerHandler implements NHttpServerEventHandler {
             conn.getContext().getAttribute(REQUEST_SINK_BUFFER);
         if (inputBuffer != null) {
             inputBuffer.close();
+        }
+
+        if (log.isWarnEnabled() && isError && conn instanceof HttpInetConnection) {
+
+            HttpInetConnection inetConnection = (HttpInetConnection) conn;
+            InetAddress remoteAddress = inetConnection.getRemoteAddress();
+            int remotePort = inetConnection.getRemotePort();
+
+            String msg;
+            if (remotePort != -1 && remoteAddress != null) {  // If connection is still alive
+                msg = "Connection from remote address : "
+                      + remoteAddress + ":" + remotePort
+                      + " to local address : "
+                      + inetConnection.getLocalAddress() + ":" + inetConnection.getLocalPort() +
+                      " is closed!";
+
+            } else {  // if connection is already closed. obtain params from http context
+                HttpContext httpContext = conn.getContext();
+                msg = "Connection from remote address : "
+                      + httpContext.getAttribute(NhttpConstants.CLIENT_REMOTE_ADDR)
+                      + ":" + httpContext.getAttribute(NhttpConstants.CLIENT_REMOTE_PORT)
+                      + " to local address : "
+                      + inetConnection.getLocalAddress() + ":" + inetConnection.getLocalPort() +
+                      " is already closed!";
+            }
+
+            log.warn(msg);
         }
 
         synchronized (this) {
