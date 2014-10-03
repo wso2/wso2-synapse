@@ -534,7 +534,7 @@ public class ServerHandler implements NHttpServerEventHandler {
                 log.debug(conn + ": I/O error (Probably the keepalive connection " +
                         "was closed):" + e.getMessage());
             }
-            shutdownConnection(conn);
+            shutdownConnection(conn, true);
         } else if (e instanceof IOException && e.getMessage() != null) {
             String msg = e.getMessage().toLowerCase();
             if (msg.indexOf("broken") != -1) {
@@ -546,13 +546,13 @@ public class ServerHandler implements NHttpServerEventHandler {
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
             }
-            shutdownConnection(conn);
+            shutdownConnection(conn, true);
         } else {
             log.error("Unexpected I/O error: " + e.getClass().getName(), e);
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
             }
-            shutdownConnection(conn);
+            shutdownConnection(conn, true);
         }
     }
 
