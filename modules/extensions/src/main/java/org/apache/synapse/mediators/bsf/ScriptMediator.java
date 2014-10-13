@@ -319,17 +319,18 @@ public class ScriptMediator extends AbstractMediator {
             jsonObject = this.jsEngine.eval('(' + jsonPayload + ')');
         }
         if (jsonObject != null) {
-        	if(language.equalsIgnoreCase("js")){
-        		if(jsEngine instanceof Invocable){
-        			 try {
-	                    Object returnObj =((Invocable)jsEngine).invokeMethod(this.jsEngine.eval("JSON"), "stringify", jsonObject);
-	                    jsonObject = returnObj;
+            scriptMC.setJsonObject(synCtx, jsonObject);
+            if (language.equalsIgnoreCase("js")) {
+                if (jsEngine instanceof Invocable) {
+                    try {
+                        Object returnObj = ((Invocable) jsEngine).invokeMethod(this.jsEngine.eval("JSON"), "stringify", jsonObject);
+                        scriptMC.setJsonText(synCtx, returnObj);
                     } catch (NoSuchMethodException e) {
-	                    //escaping the exception,since we do not block this if the given method is not executable
+                        //escaping the exception,since we do not block this if the given method is not executable
+                        logger.debug("Could not Stringify the JSON Payload.");
                     }
         		}
         	}
-            scriptMC.setJsonObject(synCtx, jsonObject);
         }
     }
 
