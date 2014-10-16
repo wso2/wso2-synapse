@@ -94,7 +94,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private final Log serviceLog;
 
     public static final String ABSOLUTE_SCHEMA_URL_PARAM = "showAbsoluteSchemaURL";
-    
+    public static final String ABSOLUTE_PROXY_SCHEMA_URL_PARAM = "showProxySchemaURL";
     /**
      * The name of the proxy service
      */
@@ -565,6 +565,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
         if (JavaUtils.isTrueExplicitly(proxyService.getParameterValue(ABSOLUTE_SCHEMA_URL_PARAM))) {
             proxyService.setCustomSchemaNamePrefix("");
+        }
+        if (JavaUtils.isTrueExplicitly(proxyService.getParameterValue(ABSOLUTE_PROXY_SCHEMA_URL_PARAM))) {
+            proxyService.setCustomSchemaNamePrefix("fullschemaurl");
         }
 
         if (JavaUtils.isTrueExplicitly(proxyService.getParameterValue("disableOperationValidation"))){
