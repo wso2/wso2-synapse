@@ -82,12 +82,14 @@ public class TimeoutHandler extends TimerTask {
     public void run() {
         if (alreadyExecuting) return;
 
-        synchronized(lock) {
+        synchronized (lock) {
             alreadyExecuting = true;
             try {
                 processCallbacks();
-            } catch (Exception ignore) {}
-            alreadyExecuting = false;
+            } catch (Exception ignore) {
+            } finally {
+                alreadyExecuting = false;
+            }
         }
     }
 
