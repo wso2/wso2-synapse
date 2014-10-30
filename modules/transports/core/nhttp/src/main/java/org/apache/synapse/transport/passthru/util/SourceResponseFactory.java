@@ -100,7 +100,12 @@ public class SourceResponseFactory {
 			}
 		}
 	}
-
+		// keep alive
+		String noKeepAlie = (String) msgContext
+				.getProperty(PassThroughConstants.NO_KEEPALIVE);
+		if ("true".equals(noKeepAlie)) {
+			sourceResponse.setKeepAlive(false);
+		}
         return sourceResponse;
     }
 
