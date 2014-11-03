@@ -614,34 +614,6 @@ public class ServerHandler implements NHttpServerEventHandler {
     /**
      * Shutdown the connection ignoring any IO errors during the process
      * @param conn the connection to be shutdown
-     */
-    private void shutdownConnection(final NHttpServerConnection conn) {
-        SharedOutputBuffer outputBuffer = (SharedOutputBuffer)
-            conn.getContext().getAttribute(RESPONSE_SOURCE_BUFFER);
-        if (outputBuffer != null) {
-            outputBuffer.close();
-        }
-        SharedInputBuffer inputBuffer = (SharedInputBuffer)
-            conn.getContext().getAttribute(REQUEST_SINK_BUFFER);
-        if (inputBuffer != null) {
-            inputBuffer.close();
-        }
-
-        synchronized (this) {
-            if (!activeConnections.isEmpty() && activeConnections.remove(conn) && log.isDebugEnabled()) {
-                log.debug(conn + ": Removing the connection : " + conn
-                        + " from pool of size : " + activeConnections.size());
-            }
-        }
-
-        try {
-            conn.shutdown();
-        } catch (IOException ignore) {}
-    }
-
-    /**
-     * Shutdown the connection ignoring any IO errors during the process
-     * @param conn the connection to be shutdown
      * @param isError whether shutdown is due to an error
      * @param errorMsg error message if shutdown happens on error
      */
