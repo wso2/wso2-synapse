@@ -457,6 +457,7 @@ public class MultiXMLConfigurationSerializer {
     public OMElement serializeSequence(SequenceMediator seq, SynapseConfiguration synapseConfig,
                                        OMElement parent) throws Exception {
 
+        if(!seq.getName().startsWith("_Recipe_Sequence_")) {
         File seqDir = createDirectory(currentDirectory, MultiXMLConfigurationBuilder.SEQUENCES_DIR);
 
         OMElement seqElem = MediatorSerializerFinder.getInstance().getSerializer(seq).
@@ -474,6 +475,9 @@ public class MultiXMLConfigurationSerializer {
         }
 
         return seqElem;
+        } else {
+            return null;
+        }
     }
 
     public OMElement serializeTemplate(TemplateMediator template, SynapseConfiguration synapseConfig,

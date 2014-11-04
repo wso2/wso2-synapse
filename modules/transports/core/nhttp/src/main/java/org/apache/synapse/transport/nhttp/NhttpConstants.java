@@ -142,6 +142,9 @@ public class NhttpConstants {
     public static final String CLIENT_WORKER_INIT_TIME = "CLIENT_WORKER_INIT_TIME";
     public static final String CLIENT_WORKER_START_TIME = "CLIENT_WORKER_START_TIME";
 
+    public static final String CLIENT_REMOTE_ADDR = "CLIENT_REMOTE_ADDR";
+    public static final String CLIENT_REMOTE_PORT = "CLIENT_REMOTE_PORT";
+
     /**
      * This is a name of a parameter in transportReceiver. If set it will disable service
      * dispatching inside the transport for rest messages
