@@ -23,12 +23,17 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
 
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.ObjectMessage;
-import javax.jms.Session;
+import javax.jms.*;
+import java.util.Set;
 
 public class JmsProducer implements MessageProducer {
+    private static final String JMS_PROD_TIME_TO_LIVE = "JMS_PROD_TIME_TO_LIVE";
+    private static final String JMS_PROD_DISABLE_MSG_TIMESTAMP = "JMS_PROD_DISABLE_MSG_TIMESTAMP";
+    private static final String JMS_PROD_DELIVERY_MODE = "JMS_PROD_DELIVERY_MODE";
+    private static final String JMS_PROD_DISABLE_MSG_ID = "JMS_PROD_DISABLE_MSG_ID";
+    private static final String JMS_PROD_PRIORITY = "JMS_PROD_PRIORITY";
+    // prefix used to set JMS Message level properties. ex: JMS_MSG_P_brokerSpecificProperty
+    private static final String JMS_MSG_P = "JMS_MSG_P_";
     private static final Log logger = LogFactory.getLog(JmsProducer.class.getName());
 
     private static final String OriginalMessageID = "OrigMessageID";
@@ -71,6 +76,8 @@ public class JmsProducer implements MessageProducer {
             ObjectMessage objectMessage = session.createObjectMessage(message);
             objectMessage.setStringProperty(OriginalMessageID, synCtx.getMessageID());
             setPriority(producer, objectMessage, message);
+            setJmsProducerProperties(producer, synCtx);
+            setJmsMessageProperties(objectMessage, synCtx);
             producer.send(objectMessage);
         } catch (JMSException e) {
             throwable = e;
@@ -163,7 +170,7 @@ public class JmsProducer implements MessageProducer {
 
     private void setPriority(javax.jms.MessageProducer producer, ObjectMessage objectMessage,
                              StorableMessage message) {
-        if (message.getPriority() != 4) {
+        if (message.getPriority() != Message.DEFAULT_PRIORITY) {
             try {
                 producer.setPriority(message.getPriority());
             } catch (JMSException e) {
@@ -172,8 +179,89 @@ public class JmsProducer implements MessageProducer {
             }
         }  else {
             try {
-                producer.setPriority(4);
+                producer.setPriority(Message.DEFAULT_PRIORITY);
             } catch (JMSException e) {}
         }
+    }
+
+    private void setJmsProducerProperties(javax.jms.MessageProducer producer, MessageContext synCtx) {
+        Object prop = synCtx.getProperty(JMS_PROD_TIME_TO_LIVE);
+        long ttl = Message.DEFAULT_TIME_TO_LIVE;
+        if (prop instanceof String) {
+            ttl = Long.parseLong((String) prop);
+        } else if (prop instanceof Long || prop instanceof Integer) {
+            ttl = Long.parseLong(prop.toString());
+        }
+        prop = synCtx.getProperty(JMS_PROD_DISABLE_MSG_TIMESTAMP);
+        boolean disableMessageTimestamp = false;
+        if (prop instanceof String) {
+            disableMessageTimestamp = Boolean.parseBoolean((String) prop);
+        } else if (prop instanceof Boolean) {
+            disableMessageTimestamp = (Boolean) prop;
+        }
+        prop = synCtx.getProperty(JMS_PROD_DELIVERY_MODE);
+        int deliveryMode = Message.DEFAULT_DELIVERY_MODE;
+        if (prop instanceof Integer) {
+            deliveryMode = (Integer) prop;
+        } else if (prop instanceof String) {
+            deliveryMode = Integer.parseInt((String) prop);
+        }
+        prop = synCtx.getProperty(JMS_PROD_DISABLE_MSG_ID);
+        boolean disableMessageId = false;
+        if (prop instanceof String) {
+            disableMessageId = Boolean.parseBoolean((String) prop);
+        } else if (prop instanceof Boolean) {
+            disableMessageId = (Boolean) prop;
+        }
+        prop = synCtx.getProperty(JMS_PROD_PRIORITY);
+        int priority = Message.DEFAULT_PRIORITY;
+        if (prop instanceof Integer) {
+            priority = (Integer) prop;
+        } else if (prop instanceof String) {
+            priority = Integer.parseInt((String) prop);
+        }
+        try {
+            producer.setTimeToLive(ttl);
+            producer.setDisableMessageTimestamp(disableMessageTimestamp);
+            producer.setDeliveryMode(deliveryMode);
+            producer.setDisableMessageID(disableMessageId);
+            producer.setPriority(priority);
+        } catch (JMSException e) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Could not save Producer property: " + e.getLocalizedMessage());
+            }
+        }
+    }
+
+    private void setJmsMessageProperties(Message message, MessageContext synCtx) {
+        Set<String> properties = synCtx.getPropertyKeySet();
+        for (String prop : properties) {
+            if (prop.startsWith(JMS_MSG_P)) {
+                Object value = synCtx.getProperty(prop);
+                String key = prop.substring(JMS_MSG_P.length());
+                try {
+                    if (value instanceof String) {
+                        message.setStringProperty(key, (String) value);
+                    } else if (value instanceof Long) {
+                        message.setLongProperty(key, (Long) value);
+                    } else if (value instanceof Integer) {
+                        message.setIntProperty(key, (Integer) value);
+                    } else if (value instanceof Boolean) {
+                        message.setBooleanProperty(key, (Boolean) value);
+                    } else if (value instanceof Double) {
+                        message.setDoubleProperty(key, (Double) value);
+                    } else if (value instanceof Float) {
+                        message.setFloatProperty(key, (Float) value);
+                    } else if (value instanceof Short) {
+                        message.setShortProperty(key, (Short) value);
+                    }
+                } catch (JMSException e) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Could not save Message property: " + e.getLocalizedMessage());
+                    }
+                }
+            }
+        }
+
     }
 }

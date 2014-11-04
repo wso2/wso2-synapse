@@ -76,22 +76,22 @@ public final class JsonUtil {
             jsonOutNamespaceSepChar = '_';
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
-            String process = properties.getProperty("synapse.commons.json.preserve.namespace", "false");
+            String process = properties.getProperty("synapse.commons.json.preserve.namespace", "false").trim();
             preserverNamespacesForJson = Boolean.parseBoolean(process.toLowerCase());
             // Build valid XML NCNames when building XML element names in the JSON -> XML transformation.
-            process = properties.getProperty("synapse.commons.json.buildValidNCNames", "false");
+            process = properties.getProperty("synapse.commons.json.buildValidNCNames", "false").trim();
             processNCNames = Boolean.parseBoolean(process.toLowerCase());
             // Enable primitive types in json out put in the XML -> JSON transformation.
-            process = properties.getProperty("synapse.commons.json.json.output.autoPrimitive", "true");
+            process = properties.getProperty("synapse.commons.json.json.output.autoPrimitive", "true").trim();
             jsonOutAutoPrimitive = Boolean.parseBoolean(process.toLowerCase());
             // The namespace prefix separate character in the JSON output of the XML -> JSON transformation
-            process = properties.getProperty("synapse.commons.json.json.output.namespaceSepChar", "_");
+            process = properties.getProperty("synapse.commons.json.json.output.namespaceSepChar", "_").trim();
             jsonOutNamespaceSepChar = process.charAt(0);
             // Add XML namespace declarations in the JSON output in the XML -> JSON transformation.
-            process = properties.getProperty("synapse.commons.json.json.output.enableNSDeclarations", "false");
+            process = properties.getProperty("synapse.commons.json.json.output.enableNSDeclarations", "false").trim();
             jsonOutEnableNsDeclarations = Boolean.parseBoolean(process.toLowerCase());
 
-            process = properties.getProperty("synapse.commons.json.json.output.emptyXmlElemToEmptyStr", "true");
+            process = properties.getProperty("synapse.commons.json.json.output.emptyXmlElemToEmptyStr", "true").trim();
         }
     }
 
