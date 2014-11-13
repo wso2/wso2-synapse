@@ -61,6 +61,8 @@ public class SourceHandler implements NHttpServerEventHandler {
     
     private LatencyView s2sLatencyView = null;
 
+    private final Runnable runnable=null;
+
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
