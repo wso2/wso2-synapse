@@ -66,6 +66,7 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public boolean ack() {
+        store.poll();
         return true;
     }
 
