@@ -37,6 +37,7 @@ import java.io.ObjectOutputStream;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,8 +48,6 @@ import java.util.Properties;
  * Class <code>JDBCUtil</code> provides the Utility functions to create JDBC resources
  */
 public class JDBCUtil {
-    private Map<String, PreparedStatement> psCache = new HashMap<String, PreparedStatement>();
-
     private static final Log log = LogFactory.getLog(JDBCUtil.class);
 
     /**
@@ -239,35 +238,6 @@ public class JDBCUtil {
         PreparedStatement ps;
         ps = con.prepareStatement(stmnt.getRawStatement());
 
-        //if parameter list.size of stmnt is >0     add them checking object type - Persistent need to convert to blob before adding
-//        if (stmnt.getParameters().size() > 0) {
-//
-//            for (Object o : stmnt.getParameters()) {
-//                if (o instanceof String) {
-//                    ps.setString(1, (String) o);
-//                } else if (o instanceof JDBCPersistentMessage) {
-//                    try {
-////                    ps.setObject(2, o);
-//                        byte[] b;
-//                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//                        ObjectOutputStream oout = new ObjectOutputStream(baos);
-//                        oout.writeObject(o);
-//                        oout.close();
-//
-//                        b = baos.toByteArray();
-//
-//                        ps.setBytes(2, b);
-//                        baos.close();
-//
-//
-//                    } catch (Exception e) {
-//                        log.error(e.getMessage());
-//                    }
-//
-//                }
-//
-//            }
-//        }
         return ps;
     }
 

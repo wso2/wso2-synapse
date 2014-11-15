@@ -22,31 +22,36 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
 
+/**
+ * JDBC Store Consumer
+ */
 public class JDBCConsumer implements MessageConsumer {
+    /**
+     * Logger for the class
+     */
     private static final Log logger = LogFactory.getLog(JDBCConsumer.class.getName());
 
+    /**
+     * Store for the consumer
+     */
     private JDBCMessageStore store;
 
+    /**
+     * Id of the consumer
+     */
     private String idString;
 
-    private boolean isInitialized;
-    /** Holds the last message read from the message store. */
-//    private CachedMessage cachedMessage;
     /**
-     * Did last receive() call cause an error?
+     * Initialize consumer
+     *
+     * @param store - JDBC message store
      */
-    private boolean isReceiveError;
-
     public JDBCConsumer(JDBCMessageStore store) {
         if (store == null) {
             logger.error("Cannot initialize.");
             return;
         }
         this.store = store;
-//        cachedMessage = new CachedMessage();
-        isReceiveError = false;
-        isInitialized = true;
-
     }
 
     /**
@@ -56,30 +61,47 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public MessageContext receive() {
-        return store.peek();
+        // Message is completely removed from the table
+        return store.poll();
     }
 
     /**
-     * Don't know or irrelevant here
+     * Ack on success message sending by processor
      *
      * @return
      */
     @Override
     public boolean ack() {
-        store.poll();
+        // Message is already removed at this point
         return true;
     }
 
+    /**
+     * Cleanup the consumer
+     *
+     * @return
+     */
     @Override
     public boolean cleanup() {
+        // Nothing to cleanup from consumer side
         return true;
     }
 
+    /**
+     * Set consumer id
+     *
+     * @param i ID
+     */
     @Override
     public void setId(int i) {
         idString = "[" + store.getName() + "-C-" + i + "]";
     }
 
+    /**
+     * Get consumer id
+     *
+     * @return
+     */
     @Override
     public String getId() {
         if (idString == null) {
@@ -87,6 +109,4 @@ public class JDBCConsumer implements MessageConsumer {
         }
         return idString;
     }
-
-
 }

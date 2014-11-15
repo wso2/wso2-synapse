@@ -42,7 +42,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * JDBC Store class
+ */
 public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Message Helper use to convert messages to serializable form and backward
@@ -54,16 +58,27 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     private JDBCUtil jdbcUtil;
 
+    /**
+     * Logger for the class
+     */
     private static final Log logger = LogFactory.getLog(JDBCMessageStore.class.getName());
 
+    /**
+     * Locks for clearing the store
+     */
     private Semaphore removeLock = new Semaphore(1);
     private Semaphore cleanUpOfferLock = new Semaphore(1);
     private AtomicBoolean cleaning = new AtomicBoolean(false);
 
     /**
+     * Store minimum index referring
+     */
+    private AtomicLong minIndex;
+
+    /**
      * Initializes the JDBC Message Store
      *
-     * @param synapseEnvironment SynapseEnvironment
+     * @param synapseEnvironment SynapseEnvironment for the store
      */
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
@@ -79,24 +94,30 @@ public class JDBCMessageStore extends AbstractMessageStore {
 
         jdbcStorableMessageHelper = new JDBCStorableMessageHelper(synapseEnvironment);
 
+        // Initialize the minimum index
+        minIndex = new AtomicLong(getMinTableIndex());
     }
 
+    /**
+     * @see org.apache.synapse.message.store.MessageStore#getProducer()
+     */
     @Override
     public MessageProducer getProducer() {
         JDBCProducer producer = new JDBCProducer(this);
         producer.setId(nextProducerId());
-//        producer.setDestination(queue);
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " created a new In Memory Message Producer.");
         }
         return producer;
     }
 
+    /**
+     * @see org.apache.synapse.message.store.MessageStore#getConsumer()
+     */
     @Override
     public MessageConsumer getConsumer() {
         JDBCConsumer consumer = new JDBCConsumer(this);
         consumer.setId(nextConsumerId());
-//        consumer.setDestination(queue);
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " created a new In Memory Message Consumer.");
         }
@@ -116,7 +137,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (jdbcUtil != null) {
             jdbcUtil.buildDataSource(parameters);
         }
-
     }
 
     /**
@@ -126,13 +146,12 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @return - Results as a List of MessageContexts
      */
     public List<MessageContext> processStatementWithResult(Statement stmt) {
-
         List<MessageContext> list = new ArrayList<MessageContext>();
 
-        // execute the prepared statement, and return list of messages as an ArrayList
+        // Execute the prepared statement, and return list of messages as an ArrayList
         Connection con = null;
         ResultSet rs = null;
-        PreparedStatement ps;
+        PreparedStatement ps = null;
 
         try {
             ps = jdbcUtil.getPreparedStatement(stmt);
@@ -163,8 +182,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 if (msgObj != null) {
 
                     try {
-
-                        // convert back to MessageContext and add to list
+                        // Convert back to MessageContext and add to list
                         ObjectInputStream ios =
                                 new ObjectInputStream(new ByteArrayInputStream((byte[]) msgObj));
                         Object msg = ios.readObject();
@@ -175,31 +193,17 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     } catch (Exception e) {
                         logger.error("Error reading object input stream: " + e.getMessage());
                     }
-
                 } else {
                     logger.error("Retrieved Object is null");
                 }
 
             }
-
         } catch (SQLException e) {
             logger.error("Processing Statement failed : " + stmt.getRawStatement() +
                          " against DataSource : " + jdbcUtil.getDSName(), e);
         } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException ignore) {
-                }
-            }
+            close(con, ps, rs);
         }
-
         return list;
     }
 
@@ -210,11 +214,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @return - Success or Failure of the process
      */
     public boolean processStatementWithoutResult(Statement stmnt) {
-
         Connection con = null;
         boolean result = false;
         PreparedStatement ps = null;
-
 
         try {
             ps = jdbcUtil.getPreparedStatement(stmnt);
@@ -236,17 +238,18 @@ public class JDBCMessageStore extends AbstractMessageStore {
                          " against DataSource : " + jdbcUtil.getDSName(), e);
             result = false;
         } finally {
-
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException ignore) {
-                }
-            }
             if (ps != null) {
                 try {
                     ps.close();
-                } catch (SQLException ignore) {
+                } catch (SQLException e) {
+                    logger.error("Error while closing prepared statement", e);
+                }
+            }
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (SQLException e) {
+                    logger.error("Error while closing connection", e);
                 }
             }
         }
@@ -265,16 +268,14 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
-     * Add a message to the end of the table    . If fetching success return true else false
+     * Add a message to the end of the table. If fetching success return true else false
      *
      * @param messageContext message to insert
      * @return -  success/failure of fetching
      */
-//    @Override
     public synchronized boolean offer(MessageContext messageContext) {
-
         if (messageContext == null) {
-            logger.error("Message is null, cant offer into database");
+            logger.error("Message is null, can't offer into database");
             return false;
         }
         if (cleaning.get()) {
@@ -293,8 +294,25 @@ public class JDBCMessageStore extends AbstractMessageStore {
 
         stmt.addParameter(msg_id);
         stmt.addParameter(persistentMessage);
-        return processStatementWithoutResult(stmt);
 
+        return processStatementWithoutResult(stmt);
+    }
+
+    /**
+     * Select and return the first element in current table
+     *
+     * @return - Select and return the first element from the table
+     */
+    public MessageContext peek() {
+        Statement stmt =
+                new Statement("SELECT message FROM " + jdbcUtil.getTableName() + " WHERE indexId=(SELECT min(indexId) from " + jdbcUtil.getTableName() + ")");
+        List<MessageContext> result = processStatementWithResult(stmt);
+        if (result.size() > 0) {
+            return result.get(0);
+        } else {
+            logger.debug("No first element found !");
+            return null;
+        }
     }
 
     /**
@@ -302,14 +320,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
      *
      * @return - mc - MessageContext of the first element
      */
-//    @Override
     public MessageContext poll() {
         MessageContext mc = null;
         try {
             removeLock.acquire();
             mc = peek();
             if (mc != null) {
-                long minIdx = getMinTableIndex();
+                long minIdx = minIndex.getAndIncrement();
                 if (minIdx != 0) {
                     Statement stmt =
                             new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
@@ -324,27 +341,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         } finally {
             removeLock.release();
         }
-
-
         return mc;
-    }
-
-    /**
-     * Select and return the first element in current table
-     *
-     * @return - Select and return the first element from the table
-     */
-//    @Override
-    public MessageContext peek() {
-
-        Statement stmt = new Statement("SELECT message FROM " + jdbcUtil.getTableName() + " WHERE indexId=(SELECT min(indexId) from " + jdbcUtil.getTableName() + ")");
-        List<MessageContext> result = processStatementWithResult(stmt);
-        if (result.size() > 0) {
-            return result.get(0);
-        } else {
-            logger.debug("No first element found !");
-            return null;
-        }
     }
 
     /**
@@ -364,11 +361,12 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
-     * Delete all entries from table !
+     * Delete all entries from table
      */
     @Override
     public void clear() {
         try {
+            logger.warn(nameString() + "deleting all entries");
             removeLock.acquire();
             cleaning.set(true);
             cleanUpOfferLock.acquire();
@@ -415,7 +413,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public MessageContext get(int i) {
-
         if (i < 0) {
             throw new IllegalArgumentException("Index:" + i + " out of table bound");
         }
@@ -443,6 +440,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public List<MessageContext> getAll() {
+        if (logger.isDebugEnabled()) {
+            logger.debug(nameString() + " retrieving all messages from the store.");
+        }
         Statement stmt = new Statement("SELECT message FROM " + jdbcUtil.getTableName());
         return processStatementWithResult(stmt);
     }
@@ -474,49 +474,33 @@ public class JDBCMessageStore extends AbstractMessageStore {
 
         Connection con = null;
         ResultSet rs = null;
+        PreparedStatement ps = null;
         int size = 0;
 
         Statement stmt = new Statement("SELECT COUNT(*) FROM " + jdbcUtil.getTableName());
 
         try {
-            PreparedStatement ps = jdbcUtil.getPreparedStatement(stmt);
+            ps = jdbcUtil.getPreparedStatement(stmt);
             con = ps.getConnection();
             rs = ps.executeQuery();
 
             while (rs.next()) {
-
                 try {
-                    //size = rs.getInt("count(*)");
                     size = rs.getInt(1);
                 } catch (Exception e) {
-                    System.out.println("Error executing statement : " + stmt.getRawStatement() +
-                                       " against DataSource : " + jdbcUtil.getDSName());
-                    logger.error("Failed to read result from Result Set");
+                    logger.error("Error executing statement : " + stmt.getRawStatement() +
+                                 " against DataSource : " + jdbcUtil.getDSName(), e);
                     break;
                 }
-
             }
-
         } catch (SQLException e) {
-            System.out.println("Processing Statement failed : " + stmt.getRawStatement() +
-                               " against DataSource : " + jdbcUtil.getDSName());
+            logger.error("Error executing statement : " + stmt.getRawStatement() +
+                         " against DataSource : " + jdbcUtil.getDSName(), e);
         } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException ignore) {
-                }
-            }
+            close(con, ps, rs);
         }
         return size;
     }
-
 
     /**
      * Get the maximum indexId value in the current table
@@ -527,7 +511,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
-        long size = 0;
+        long index = 0;
 
         Statement stmt = new Statement("SELECT min(indexId) FROM " + jdbcUtil.getTableName());
 
@@ -537,64 +521,60 @@ public class JDBCMessageStore extends AbstractMessageStore {
             rs = ps.executeQuery();
 
             while (rs.next()) {
-
                 try {
-                    //size = rs.getInt("count(*)");
-                    size = rs.getLong(1);
+                    index = rs.getLong(1);
                 } catch (Exception e) {
                     System.out.println("No Max indexId found in : " + jdbcUtil.getDSName());
                     return 0;
                 }
-
             }
-
         } catch (SQLException e) {
             logger.error("Processing Statement failed : " + stmt.getRawStatement() +
                          " against DataSource : " + jdbcUtil.getDSName(), e);
         } finally {
-            if (ps != null) {
-                try {
-                    ps.close();
-                } catch (SQLException ignore) {
-                }
-            }
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException ignored) {
-                }
-            }
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (SQLException ignore) {
-                }
-            }
+            close(con, ps, rs);
         }
-        return size;
+        return index;
 
     }
 
     /**
-     * Get the datasource
+     * Get the store's name
      *
-     * @return current Datasource
+     * @return - name of the store
      */
-    private DataSource getDataSource() {
-        return jdbcUtil.getDataSource();
-    }
-
-    private String getDriverClassName() {
-
-        try {
-            return getDataSource().getConnection().getMetaData().getDriverName();
-        } catch (SQLException e) {
-            logger.error("Error getting database driver", e);
-            return null;
-        }
-    }
-
     private String nameString() {
         return "Store [" + getName() + "]";
+    }
+
+    /**
+     * Close all ResultSet related things
+     *
+     * @param con - Connection to close
+     * @param ps  - PreparedStatement to close
+     * @param rs  - ResultSet to close
+     */
+    public void close(Connection con, PreparedStatement ps, ResultSet rs) {
+        if (ps != null) {
+            try {
+                ps.close();
+            } catch (SQLException e) {
+                logger.error("Error while closing prepared statement", e);
+            }
+        }
+        if (rs != null) {
+            try {
+                rs.close();
+            } catch (SQLException e) {
+                logger.error("Error while closing result set", e);
+            }
+        }
+        if (con != null) {
+            try {
+                con.close();
+            } catch (SQLException e) {
+                logger.error("Error while closing connection", e);
+            }
+        }
     }
 }

@@ -22,26 +22,44 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
 
+/**
+ * JDBC Store Producer
+ */
 public class JDBCProducer implements MessageProducer {
-
+    /**
+     * Logger for the class
+     */
     private static final Log logger = LogFactory.getLog(JDBCProducer.class.getName());
 
+    /**
+     * Store for the producer
+     */
     private JDBCMessageStore store;
 
+    /**
+     * Id of the producer
+     */
     private String idString;
 
-    private boolean isInitialized = false;
-
+    /**
+     * Initialize producer
+     *
+     * @param store - JDBC message store
+     */
     public JDBCProducer(JDBCMessageStore store) {
         if (store == null) {
             logger.error("Cannot initialize.");
             return;
         }
         this.store = store;
-        isInitialized = true;
     }
 
-
+    /**
+     * Add a message to the end of the table. If fetching success return true else false
+     *
+     * @param synCtx message to insert
+     * @return -  success/failure of fetching
+     */
     @Override
     public boolean storeMessage(MessageContext synCtx) {
         boolean success;
@@ -56,19 +74,31 @@ public class JDBCProducer implements MessageProducer {
         return success;
     }
 
+    /**
+     * Cleanup the producer
+     *
+     * @return
+     */
     @Override
     public boolean cleanup() {
-
-//        close connections here
         return true;
-//        return false;
     }
 
+    /**
+     * Set producer id
+     *
+     * @param id ID
+     */
     @Override
     public void setId(int id) {
         idString = "[" + store.getName() + "-P-" + id + "]";
     }
 
+    /**
+     * Get producer id
+     *
+     * @return
+     */
     @Override
     public String getId() {
         if (idString == null) {

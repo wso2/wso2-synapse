@@ -57,14 +57,31 @@ import java.util.Iterator;
  */
 public class JDBCStorableMessageHelper {
 
+    /**
+     * Synapse environment of the store
+     */
     private SynapseEnvironment synapseEnvironment;
 
+    /**
+     * Logger for the class
+     */
     private Log log = LogFactory.getLog(JDBCStorableMessageHelper.class);
 
+    /**
+     * Initialize the helper
+     *
+     * @param se SynapseEnvronment
+     */
     public JDBCStorableMessageHelper(SynapseEnvironment se) {
         this.synapseEnvironment = se;
     }
 
+    /**
+     * Create SynapseMessage out of StorableMessage
+     *
+     * @param message StorableMessage
+     * @return synCtx SynapseMessage
+     */
     public MessageContext createMessageContext(StorableMessage message) {
 
         SynapseConfiguration configuration = synapseEnvironment.getSynapseConfiguration();
@@ -80,7 +97,7 @@ public class JDBCStorableMessageHelper {
         try {
 
             msgCtx.setEnvelope(envelope);
-            // set the  properties
+            // Set the  properties
             msgCtx.getOptions().setAction(jdbcAxis2MessageContext.getAction());
             if (jdbcAxis2MessageContext.getRelatesToMessageId() != null) {
                 msgCtx.addRelatesTo(new RelatesTo(jdbcAxis2MessageContext.getRelatesToMessageId()));
@@ -168,11 +185,16 @@ public class JDBCStorableMessageHelper {
 
         } catch (Exception e) {
             log.error("Error while deserializing the JDBC Persistent Message " + e);
-//            return null;
         }
         return synCtx;
     }
 
+    /**
+     * Create StorableMessage out of MessageContext
+     *
+     * @param  synCtx   MessageContext
+     * @return jdbcMsg  StorableMessage
+     */
     public StorableMessage createStorableMessage(MessageContext synCtx) {
 
         StorableMessage jdbcMsg = new StorableMessage();
@@ -190,7 +212,6 @@ public class JDBCStorableMessageHelper {
                 org.apache.axis2.context.MessageContext msgCtx =
                         axis2MessageContext.getAxis2MessageContext();
 
-//            jdbcAxis2MessageContext.setMessageID(UUIDGenerator.getUUID());
                 jdbcAxis2MessageContext.setMessageID(msgCtx.getMessageID());
                 jdbcAxis2MessageContext.setOperationAction(msgCtx.getAxisOperation().getSoapAction());
                 jdbcAxis2MessageContext.setOperationName(msgCtx.getAxisOperation().getName());
@@ -268,11 +289,15 @@ public class JDBCStorableMessageHelper {
         } else {
             throw new SynapseException("Only Axis2 Messages are supported with JDBCMessage store");
         }
-
-
         return jdbcMsg;
     }
 
+    /**
+     * Get SOAPEnvelope from String
+     *
+     * @param  soapEnvelpe  String to convert
+     * @return Successfully built SOAPEnvelope or null
+     */
     private SOAPEnvelope getSoapEnvelope(String soapEnvelpe) {
         try {
             XMLStreamReader xmlReader =
@@ -297,6 +322,12 @@ public class JDBCStorableMessageHelper {
         }
     }
 
+    /**
+     * Get UTF8Bytes out of String
+     *
+     * @param  soapEnvelpe String of soapEnvelope
+     * @return bytes       An array of bytes
+     */
     private byte[] getUTF8Bytes(String soapEnvelpe) {
         byte[] bytes = null;
         try {
@@ -309,6 +340,4 @@ public class JDBCStorableMessageHelper {
         }
         return bytes;
     }
-
-
 }
