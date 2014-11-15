@@ -65,6 +65,9 @@ import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.core.IOReactorSharingMode;
+import org.apache.synapse.transport.passthru.core.PassThroughIOReactorConfig;
+import org.apache.synapse.transport.passthru.core.PassThroughIOReactorManager;
 import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.jmx.TransportView;
@@ -84,8 +87,10 @@ public class PassThroughHttpListener implements TransportListener {
 
     /** The reactor being used */
     private DefaultListeningIOReactor ioReactor;
-    /** The I/O dispatch */
-    private ServerIODispatch ioEventDispatch;
+    /**
+     * IOReactor Manager
+     */
+    private PassThroughIOReactorManager passThroughIOReactorManager;
     /** The protocol handler */
     private SourceHandler handler;
     /** The connection factory */
@@ -119,7 +124,7 @@ public class PassThroughHttpListener implements TransportListener {
 
     private TransportInDescription pttInDescription;
 
-
+    private  int operatingPort;
     protected Scheme initScheme() {
         return new Scheme("http", 80, false);
     }
@@ -141,6 +146,7 @@ public class PassThroughHttpListener implements TransportListener {
         Parameter portParam = transportInDescription.getParameter("port");
         int port = Integer.parseInt(portParam.getValue().toString());
         port = port + portOffset;
+        operatingPort =port;
         portParam.setValue(String.valueOf(port));
         portParam.getParameterElement().setText(String.valueOf(port));
 
@@ -171,7 +177,9 @@ public class PassThroughHttpListener implements TransportListener {
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
 
         handler = new SourceHandler(sourceConfiguration);
-        ioEventDispatch = new ServerIODispatch(handler, connFactory);
+        boolean isShared = PassThroughConfiguration.getInstance().isListeningIOReactorShared();
+        passThroughIOReactorManager =
+                PassThroughIOReactorManager.getInstance(isShared ? IOReactorSharingMode.SHARED: IOReactorSharingMode.UNSHARED);
 
         // register to receive updates on services for lifetime management
         //cfgCtx.getAxisConfiguration().addObservers(axisObserver);
@@ -216,9 +224,9 @@ public class PassThroughHttpListener implements TransportListener {
         try {
             String prefix = namePrefix + "-Listener I/O dispatcher";
 
-            ioReactor = new DefaultListeningIOReactor(
-                    sourceConfiguration.getIOReactorConfig(),
-                    new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix));
+            ioReactor = passThroughIOReactorManager.startAndGetListeningIOReactor
+                    (operatingPort, handler, new PassThroughIOReactorConfig(sourceConfiguration.getIOReactorConfig(),
+                            new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix), namePrefix, connFactory));
 
             ioReactor.setExceptionHandler(new IOReactorExceptionHandler() {
 
@@ -245,18 +253,6 @@ public class PassThroughHttpListener implements TransportListener {
             sourceConfiguration.getHttpGetRequestProcessor().init(sourceConfiguration.getConfigurationContext(), handler);
         }
 
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    ioReactor.execute(ioEventDispatch);
-                } catch (Exception e) {
-                    log.fatal("Exception encountered in the " + namePrefix + " Listener. " +
-                            "No more connections will be accepted by this transport", e);
-                }
-                log.info(namePrefix + " Listener shutdown.");
-            }
-        }, "PassThrough" + namePrefix + "Listener");
-        t.start();
 
         startEndpoints();
 
@@ -264,7 +260,7 @@ public class PassThroughHttpListener implements TransportListener {
     }
 
     private void startEndpoints() throws AxisFault {
-        Queue<ListenerEndpoint> endpoints = new LinkedList<ListenerEndpoint>();
+
 
         Set<InetSocketAddress> addressSet = new HashSet<InetSocketAddress>();
         addressSet.addAll(connFactory.getBindAddresses());
@@ -289,29 +285,10 @@ public class PassThroughHttpListener implements TransportListener {
 
         });
         for (InetSocketAddress address: addressList) {
-            endpoints.add(ioReactor.listen(address));
+            passThroughIOReactorManager.startAxis2PTTEndpoint(address,ioReactor);
         }
 
-        // Wait for the endpoint to become ready, i.e. for the listener to start accepting
-        // requests.
-        while (!endpoints.isEmpty()) {
-            ListenerEndpoint endpoint = endpoints.remove();
-            try {
-                endpoint.waitFor();
-                if (log.isInfoEnabled()) {
-                    InetSocketAddress address = (InetSocketAddress) endpoint.getAddress();
-                    if (!address.isUnresolved()) {
-                        log.info("Pass-through " + namePrefix + " Listener " + "started on " +
-                                address.getHostName() + ":" + address.getPort());
-                    } else {
-                        log.info("Pass-through " + namePrefix + " Listener " + "started on " + address);
-                    }
-                }
-            } catch (InterruptedException e) {
-                log.warn("Listener startup was interrupted");
-                break;
-            }
-        }
+
     }
 
     private void handleException(String s, Exception e) throws AxisFault {
@@ -461,10 +438,7 @@ public class PassThroughHttpListener implements TransportListener {
         if (state != BaseConstants.STARTED) return;
 
         // Close all listener endpoints and stop accepting new connections
-        Set<ListenerEndpoint> endpoints = ioReactor.getEndpoints();
-        for (ListenerEndpoint endpoint: endpoints) {
-            endpoint.close();
-        }
+       passThroughIOReactorManager.closeAllAxi2PTTRelatedEndpoints(operatingPort);
 
         // Rebuild connection factory
         HttpHost host = new HttpHost(
@@ -473,7 +447,7 @@ public class PassThroughHttpListener implements TransportListener {
                 sourceConfiguration.getScheme().getName());
         ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
-        ioEventDispatch.update(connFactory);
+        passThroughIOReactorManager.getServerIODispatch(operatingPort).update(connFactory);
 
         startEndpoints();
 

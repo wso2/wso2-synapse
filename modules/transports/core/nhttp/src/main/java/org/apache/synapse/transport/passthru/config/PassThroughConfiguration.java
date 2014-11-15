@@ -281,4 +281,8 @@ public class PassThroughConfiguration {
         return getStringProperty(REST_URI_PROXY_REGEX, "");
     }
 
+    public boolean isListeningIOReactorShared(){
+        return getBooleanProperty(PassThroughConfigPNames.LISTENING_IO_REACTOR_SHARE, false);
+    }
+
 }
