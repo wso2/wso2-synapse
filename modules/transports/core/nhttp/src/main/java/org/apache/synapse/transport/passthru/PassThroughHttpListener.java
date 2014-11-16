@@ -23,11 +23,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 
 import org.apache.axiom.om.OMElement;
@@ -59,7 +57,6 @@ import org.apache.http.HttpHost;
 import org.apache.http.impl.nio.reactor.DefaultListeningIOReactor;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
-import org.apache.http.nio.reactor.ListenerEndpoint;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
@@ -226,7 +223,7 @@ public class PassThroughHttpListener implements TransportListener {
 
             ioReactor = passThroughIOReactorManager.startAndGetListeningIOReactor
                     (operatingPort, handler, new PassThroughIOReactorConfig(sourceConfiguration.getIOReactorConfig(),
-                            new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix), namePrefix, connFactory));
+                            new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix), prefix, connFactory,sourceConfiguration));
 
             ioReactor.setExceptionHandler(new IOReactorExceptionHandler() {
 
@@ -270,7 +267,7 @@ public class PassThroughHttpListener implements TransportListener {
         }
 
         if (addressSet.isEmpty()) {
-            addressSet.add(new InetSocketAddress(Integer.parseInt((String)pttInDescription.getParameter("port").getValue())));
+            addressSet.add(new InetSocketAddress(Integer.parseInt((String) pttInDescription.getParameter("port").getValue())));
         }
 
         // Ensure simple but stable order
@@ -285,7 +282,7 @@ public class PassThroughHttpListener implements TransportListener {
 
         });
         for (InetSocketAddress address: addressList) {
-            passThroughIOReactorManager.startAxis2PTTEndpoint(address,ioReactor);
+            passThroughIOReactorManager.startAxis2PTTEndpoint(address,ioReactor,namePrefix);
         }
 
 

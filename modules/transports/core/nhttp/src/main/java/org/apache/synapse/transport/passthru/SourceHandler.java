@@ -61,7 +61,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     
     private LatencyView s2sLatencyView = null;
 
-    private final Runnable runnable=null;
+    private Runnable runnable=null;
 
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
@@ -78,6 +78,11 @@ public class SourceHandler implements NHttpServerEventHandler {
 			log.error(e.getMessage(), e);
 		}
     }
+
+   public SourceHandler(SourceConfiguration sourceConfiguration,Runnable runnable){
+       this(sourceConfiguration);
+       this.runnable=runnable;
+   }
 
     public void connected(NHttpServerConnection conn) {
         // we have to have these two operations in order
@@ -125,7 +130,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 				os = new ContentOutputStream(outputBuffer);
 			} 
 
-            sourceConfiguration.getWorkerPool().execute(
+            sourceConfiguration.getWorkerPool().execute(runnable !=null ? runnable:
                     new ServerWorker(request, sourceConfiguration,os));
         } catch (HttpException e) {
             log.error(e.getMessage(), e);

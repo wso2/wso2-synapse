@@ -282,7 +282,7 @@ public class PassThroughConfiguration {
     }
 
     public boolean isListeningIOReactorShared(){
-        return getBooleanProperty(PassThroughConfigPNames.LISTENING_IO_REACTOR_SHARE, false);
+        return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARE, false);
     }
 
 }

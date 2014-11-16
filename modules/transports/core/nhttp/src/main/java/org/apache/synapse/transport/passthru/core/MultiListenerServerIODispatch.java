@@ -31,9 +31,10 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
     private volatile Map<Integer, NHttpServerEventHandler> handlers;
 
 
-    public MultiListenerServerIODispatch
-            (final Map<Integer, NHttpServerEventHandler> handlers, final ServerConnFactory connFactory){
-        super(null,connFactory);
+    public MultiListenerServerIODispatch(final Map<Integer, NHttpServerEventHandler> handlers,
+                                         final NHttpServerEventHandler nHttpServerEventHandler,
+                                         final ServerConnFactory connFactory) {
+        super(nHttpServerEventHandler, connFactory);
         this.handlers = handlers;
 
     }
