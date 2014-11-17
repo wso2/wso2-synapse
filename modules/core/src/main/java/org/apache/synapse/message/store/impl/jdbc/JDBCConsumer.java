@@ -61,8 +61,8 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public MessageContext receive() {
-        // Message is completely removed from the table
-        return store.poll();
+        // Message will get peeked from the table
+        return store.peek();
     }
 
     /**
@@ -72,7 +72,8 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public boolean ack() {
-        // Message is already removed at this point
+        // Message will be removed at this point
+        store.poll();
         return true;
     }
 

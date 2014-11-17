@@ -71,11 +71,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
     private AtomicBoolean cleaning = new AtomicBoolean(false);
 
     /**
-     * Store minimum index referring
-     */
-    private AtomicLong minIndex;
-
-    /**
      * Initializes the JDBC Message Store
      *
      * @param synapseEnvironment SynapseEnvironment for the store
@@ -93,9 +88,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
         jdbcUtil.buildDataSource(parameters);
 
         jdbcStorableMessageHelper = new JDBCStorableMessageHelper(synapseEnvironment);
-
-        // Initialize the minimum index
-        minIndex = new AtomicLong(getMinTableIndex());
     }
 
     /**
@@ -326,7 +318,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             removeLock.acquire();
             mc = peek();
             if (mc != null) {
-                long minIdx = minIndex.getAndIncrement();
+                long minIdx = getMinTableIndex();
                 if (minIdx != 0) {
                     Statement stmt =
                             new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
