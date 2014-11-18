@@ -27,33 +27,34 @@ import org.apache.log4j.Logger;
 import org.apache.synapse.transport.passthru.ServerIODispatch;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class PassThroughIOReactorManager {
+public class PassThroughListeningIOReactorManager {
 
-    private static final Logger logger = Logger.getLogger(PassThroughIOReactorManager.class);
+    private static final Logger logger = Logger.getLogger(PassThroughListeningIOReactorManager.class);
 
-    private static PassThroughIOReactorManager passThroughIOReactorManager;
+    private static PassThroughListeningIOReactorManager passThroughListeningIOReactorManager;
 
-    private DefaultListeningIOReactor sharedListeningIOReactor;
-    private PassThroughIOReactorConfig sharedIOReactorConfig;
+    private ListeningIOReactor sharedListeningIOReactor;
+    private PassThroughSharedListenerConfiguration sharedIOReactorConfig;
 
     private final Map<Integer, NHttpServerEventHandler> portServerHandlerMapper;
     private final Map<Integer, ListenerEndpoint> nonAxis2PTTPortListeningEndpointMapper;
-    private final Map<Integer, DefaultListeningIOReactor> axis2ListenerIOReactorMapper;
+    private final Map<Integer, ListeningIOReactor> axis2ListenerIOReactorMapper;
     private final Map<Integer, ServerIODispatch> axis2ListenerServerIODispatchMapper;
 
     private AtomicBoolean isSharedIOReactorInitiated;
     private final IOReactorSharingMode ioReactorSharingMode;
 
-    private PassThroughIOReactorManager(IOReactorSharingMode ioReactorSharingMode) {
+    private PassThroughListeningIOReactorManager(IOReactorSharingMode ioReactorSharingMode) {
         portServerHandlerMapper = new ConcurrentHashMap<Integer, NHttpServerEventHandler>();
         nonAxis2PTTPortListeningEndpointMapper = new ConcurrentHashMap<Integer, ListenerEndpoint>();
-        axis2ListenerIOReactorMapper = new ConcurrentHashMap<Integer, DefaultListeningIOReactor>();
+        axis2ListenerIOReactorMapper = new ConcurrentHashMap<Integer, ListeningIOReactor>();
         axis2ListenerServerIODispatchMapper = new ConcurrentHashMap<Integer, ServerIODispatch>();
 
         isSharedIOReactorInitiated = new AtomicBoolean(false);
@@ -80,16 +81,27 @@ public class PassThroughIOReactorManager {
             }
         } else if (sharedIOReactorConfig != null) {
             //create separate IO Reactor for non axis2 transports and share among them
-            synchronized (this) {
+
                 try {
-                    sharedListeningIOReactor = initiateIOReactor
-                            (sharedIOReactorConfig, new MultiListenerServerIODispatch
-                                    (portServerHandlerMapper, nHttpServerEventHandler, sharedIOReactorConfig.getServerConnFactory()));
+
+                    synchronized (this) {
+                        sharedListeningIOReactor = initiateIOReactor(sharedIOReactorConfig);
+                        isSharedIOReactorInitiated.compareAndSet(false, true);
+                    }
+                    ServerIODispatch serverIODispatch = new MultiListenerServerIODispatch
+                            (portServerHandlerMapper, nHttpServerEventHandler, sharedIOReactorConfig.getServerConnFactory());
+                    startIOReactor(sharedListeningIOReactor, serverIODispatch, "HTTP");
+                    ListenerEndpoint endpoint = startEndpoint(inetSocketAddress, sharedListeningIOReactor, endpointName);
+                    if (endpoint != null) {
+                        portServerHandlerMapper.put(inetSocketAddress.getPort(), nHttpServerEventHandler);
+                        nonAxis2PTTPortListeningEndpointMapper.put(inetSocketAddress.getPort(), endpoint);
+                        return true;
+                    } else {
+                        return false;
+                    }
                 } catch (IOReactorException e) {
                     logger.error("Error occurred when creating shared IO Reactor for non axis2 Listener " + endpointName, e);
                 }
-            }
-            isSharedIOReactorInitiated.compareAndSet(false, true);
         } else {
             logger.error("Cannot start Endpoint for" + endpointName + "Axis2 Transport Listeners for PassThrough transport" +
                     " not started correctly ");
@@ -134,48 +146,49 @@ public class PassThroughIOReactorManager {
      * @param ioReactorSharingMode <>Mode of IO Reactor Sharing can be SHARED or UNSHARED</>
      * @return <>PassThroughIOReactorManager</>
      */
-    public static PassThroughIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
-        if (passThroughIOReactorManager == null) {
-            synchronized (PassThroughIOReactorManager.class) {
-                passThroughIOReactorManager = new PassThroughIOReactorManager(ioReactorSharingMode);
-                return passThroughIOReactorManager;
+    public static PassThroughListeningIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
+        if (passThroughListeningIOReactorManager == null) {
+            synchronized (PassThroughListeningIOReactorManager.class) {
+                passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(ioReactorSharingMode);
+                return passThroughListeningIOReactorManager;
             }
         }
-        return passThroughIOReactorManager;
+        return passThroughListeningIOReactorManager;
     }
 
     /**
      * @return <>PassThroughIOReactorManager</>
      */
-    public static PassThroughIOReactorManager getInstance() {
-        if (passThroughIOReactorManager != null) {
-            return passThroughIOReactorManager;
+    public static PassThroughListeningIOReactorManager getInstance(){
+        if (passThroughListeningIOReactorManager != null) {
+            return passThroughListeningIOReactorManager;
         } else {
             logger.error("PassThroughIOReactorManager is not initiated");
-            return null;
+            throw new NullPointerException("PassThroughIOReactorManager is not initiated Properly When PassThrough " +
+                    "Axis2 Listeners are Starting or Axis2Listeners are not Started");
         }
     }
 
     /**
      * @param port                       <>Port of the Endpoint for axis2 Listener</>
      * @param nHttpServerEventHandler    <>Server Handler responsible for handle events of port</>
-     * @param passThroughIOReactorConfig <>configuration related to create and start IOReactor</>
+     * @param passThroughSharedListenerConfiguration <>configuration related to create and start IOReactor</>
      * @return <>IOReactor</>
      */
-    public DefaultListeningIOReactor startAndGetListeningIOReactor
-    (int port, NHttpServerEventHandler nHttpServerEventHandler, PassThroughIOReactorConfig passThroughIOReactorConfig)
+    public ListeningIOReactor initiateIOReactor
+    (int port, NHttpServerEventHandler nHttpServerEventHandler, PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
             throws IOReactorException {
-        DefaultListeningIOReactor defaultListeningIOReactor;
+        ListeningIOReactor defaultListeningIOReactor;
         ServerIODispatch serverIODispatch;
         try {
             if (ioReactorSharingMode == IOReactorSharingMode.SHARED && !isSharedIOReactorInitiated.get()
-                    && !passThroughIOReactorConfig.getSourceConfiguration().getScheme().isSSL()) {
+                    && !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
                 // Create IOReactor for Listener make it shareable with Inbounds
                 portServerHandlerMapper.put(port, nHttpServerEventHandler);
                 serverIODispatch = new MultiListenerServerIODispatch
-                        (portServerHandlerMapper, nHttpServerEventHandler, passThroughIOReactorConfig.getServerConnFactory());
-                defaultListeningIOReactor = initiateIOReactor(passThroughIOReactorConfig, serverIODispatch);
-                logger.info("IO Reactor for port " + port + " started on shared mode which will be used by non axis2 Transport " +
+                        (portServerHandlerMapper, nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());
+                defaultListeningIOReactor = initiateIOReactor(passThroughSharedListenerConfiguration);
+                logger.info("IO Reactor for port " + port + " initiated on shared mode which will be used by non axis2 Transport " +
                         " Listeners ");
                 synchronized (this) {
                     sharedListeningIOReactor = defaultListeningIOReactor;
@@ -183,12 +196,12 @@ public class PassThroughIOReactorManager {
                 isSharedIOReactorInitiated.compareAndSet(false, true);
             } else {
                 // Create un shareable IOReactors for axis2 Listeners and assign IOReactor Config for later create IOReactor for Inbounds
-                serverIODispatch = new ServerIODispatch(nHttpServerEventHandler, passThroughIOReactorConfig.getServerConnFactory());
-                defaultListeningIOReactor = initiateIOReactor(passThroughIOReactorConfig, serverIODispatch);
+                serverIODispatch = new ServerIODispatch(nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());
+                defaultListeningIOReactor = initiateIOReactor(passThroughSharedListenerConfiguration);
 
                 synchronized (this) {
-                    if (sharedIOReactorConfig == null && !passThroughIOReactorConfig.getSourceConfiguration().getScheme().isSSL()) {
-                        sharedIOReactorConfig = passThroughIOReactorConfig;
+                    if (sharedIOReactorConfig == null && !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
+                        sharedIOReactorConfig = passThroughSharedListenerConfiguration;
                     }
                 }
             }
@@ -246,35 +259,97 @@ public class PassThroughIOReactorManager {
     /**
      * @return <>source configuration used by shared IO Reactor</>
      */
-    public SourceConfiguration getSharedPassThroughSourceConfiguration(){
-        if(sharedIOReactorConfig!=null){
+    public SourceConfiguration getSharedPassThroughSourceConfiguration() {
+        if (sharedIOReactorConfig != null) {
             return sharedIOReactorConfig.getSourceConfiguration();
-        }else{
-            return null;
+        }
+        return null;
+    }
+
+    /**
+     * @param port <>Port of  axis2 PTT Listener</>
+     * @throws IOException <>Exception throwing when Shutdown</>
+     */
+    public void ioReactorShutdown(int port) throws IOException {
+        ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
+        ServerIODispatch serverIODispatch = axis2ListenerServerIODispatchMapper.get(port);
+        if (listeningIOReactor != null) {
+            if (serverIODispatch instanceof MultiListenerServerIODispatch) {
+                logger.warn("Shutting down shared IO Reactor bind for port " + port + " will be caused for shutdown non " +
+                        "axis2 Listeners ");
+            } else {
+                logger.info("Shutting down IO Reactor bind for port " + port);
+            }
+            listeningIOReactor.shutdown();
+            axis2ListenerIOReactorMapper.remove(port);
+            axis2ListenerServerIODispatchMapper.remove(port);
+        } else {
+            logger.error("Cannot found Pass Through Listener for port " + port);
         }
     }
 
-    private DefaultListeningIOReactor initiateIOReactor
-            (final PassThroughIOReactorConfig passThroughIOReactorConfig, final ServerIODispatch serverIODispatch)
+    /**
+     * @param port        <>Port of  axis2 PTT Listener</>
+     * @param miliSeconds <>Waiting Time before close IO Reactor</>
+     * @throws IOException <>Exception throwing when Shutdown</>
+     */
+    public void ioReactorShutdown(int port, long miliSeconds) throws IOException {
+        ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
+        ServerIODispatch serverIODispatch = axis2ListenerServerIODispatchMapper.get(port);
+        if (listeningIOReactor != null) {
+            if (serverIODispatch instanceof MultiListenerServerIODispatch) {
+                logger.warn("Shutting down shared IO Reactor bind for port " + port + " will be caused for shutdown non " +
+                        "axis2 Listeners ");
+            } else {
+                logger.info("Shutting down IO Reactor bind for port " + port);
+            }
+            listeningIOReactor.shutdown(miliSeconds);
+            axis2ListenerIOReactorMapper.remove(port);
+            axis2ListenerServerIODispatchMapper.remove(port);
+        } else {
+            logger.error("Cannot found Pass Through Listener for port " + port);
+        }
+    }
+
+    /**
+     * @param port <>Port of  axis2 PTT Listener</>
+     * @throws IOException <>Exception throwing when pausing</>
+     */
+    public void ioReactorPause(int port) throws IOException {
+        ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
+        ServerIODispatch serverIODispatch = axis2ListenerServerIODispatchMapper.get(port);
+        if (listeningIOReactor != null) {
+            if (serverIODispatch instanceof MultiListenerServerIODispatch) {
+                logger.warn("Pausing shared IO Reactor bind for port " + port + " will be caused for pausing non " +
+                        "axis2 Listeners ");
+            } else {
+                logger.info("Shutting down IO Reactor bind for port " + port);
+            }
+            listeningIOReactor.pause();
+        } else {
+            logger.error("Cannot found Pass Through Listener for port " + port);
+        }
+    }
+
+    /**
+     * @param port <>Port of  axis2 PTT Listener</>
+     * @throws IOException <>Exception throwing when pausing</>
+     */
+    public void resume(int port) throws IOException {
+        ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
+        if (listeningIOReactor != null) {
+            listeningIOReactor.resume();
+        } else {
+            logger.error("Cannot found Pass Through Listener for port " + port);
+        }
+    }
+
+
+    private ListeningIOReactor initiateIOReactor(final PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
             throws IOReactorException {
         try {
-            final DefaultListeningIOReactor defaultListeningIOReactor =
-                    new DefaultListeningIOReactor
-                            (passThroughIOReactorConfig.getIoReactorConfig(), passThroughIOReactorConfig.getThreadFactory());
-            Thread reactorThread = new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        defaultListeningIOReactor.execute(serverIODispatch);
-                    } catch (Exception e) {
-                        logger.fatal("Exception encountered in the " + passThroughIOReactorConfig.getNamePrefix() + " Listener. " +
-                                "No more connections will be accepted by this transport", e);
-                        return;
-                    }
-                    logger.info(passThroughIOReactorConfig.getNamePrefix() + " Listener shutdown.");
-                }
-            }, "PassThrough " + passThroughIOReactorConfig.getNamePrefix() + " Listener");
-            reactorThread.start();
-            return defaultListeningIOReactor;
+            return new DefaultListeningIOReactor
+                    (passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(), passThroughSharedListenerConfiguration.getThreadFactory());
         } catch (IOReactorException e) {
             logger.error
                     ("Error creating DefaultListingIOReactor, ioReactorConfig or thread factory may have problems", e);
@@ -282,9 +357,34 @@ public class PassThroughIOReactorManager {
         }
     }
 
+    /**
+     * @param listeningIOReactor <>Listening IO Reactor to be start</>
+     * @param serverIODispatch   <>underlying Event Dispatcher for Reactor</>
+     * @param prefix             <>String</>
+     */
+    public void startIOReactor(final ListeningIOReactor listeningIOReactor, final ServerIODispatch serverIODispatch, final String prefix) {
+        Thread reactorThread = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    listeningIOReactor.execute(serverIODispatch);
+                } catch (Exception e) {
+                    logger.fatal("Exception encountered in the " + prefix + " Listener. " +
+                            "No more connections will be accepted by this transport", e);
+                } finally {
+                    logger.info(prefix + " Listener shutdown.");
+                    if (serverIODispatch instanceof MultiListenerServerIODispatch) {
+                        logger.warn("Shutting down shared IO Reactor");
+                    }
+                }
+
+            }
+        }, "PassThrough " + prefix + " Listener");
+        reactorThread.start();
+    }
+
 
     private ListenerEndpoint startEndpoint
-            (InetSocketAddress inetSocketAddress, DefaultListeningIOReactor defaultListeningIOReactor, String endPointName) {
+            (InetSocketAddress inetSocketAddress, ListeningIOReactor defaultListeningIOReactor, String endPointName) {
         ListenerEndpoint endpoint = defaultListeningIOReactor.listen(inetSocketAddress);
         try {
             endpoint.waitFor();
@@ -300,9 +400,7 @@ public class PassThroughIOReactorManager {
         } catch (InterruptedException e) {
             logger.error("Endpoint does not start for port " + inetSocketAddress.getPort() +
                     "May be IO Reactor not started or endpoint binding exception ", e);
-            return null;
         }
         return endpoint;
-
     }
 }

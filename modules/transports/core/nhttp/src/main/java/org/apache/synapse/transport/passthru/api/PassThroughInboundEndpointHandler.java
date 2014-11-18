@@ -16,20 +16,23 @@
  * under the License.
  */
 
-package org.apache.synapse.transport.api;
+package org.apache.synapse.transport.passthru.api;
 
 import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
-import org.apache.synapse.transport.passthru.core.PassThroughIOReactorManager;
+import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
 
 import java.net.InetSocketAddress;
 
-public class PassThroughTransportUtil {
+/**
+ * API class for access PassThrough Core Inbound Endpoint management classes
+ */
+public class PassThroughInboundEndpointHandler {
 
-    private static final PassThroughIOReactorManager PASS_THROUGH_IO_REACTOR_MANAGER;
+    private static final PassThroughListeningIOReactorManager PASS_THROUGH_IO_REACTOR_MANAGER;
 
     static {
-        PASS_THROUGH_IO_REACTOR_MANAGER = PassThroughIOReactorManager.getInstance();
+        PASS_THROUGH_IO_REACTOR_MANAGER = PassThroughListeningIOReactorManager.getInstance();
     }
 
     /**
@@ -54,7 +57,7 @@ public class PassThroughTransportUtil {
     /**
      * @return <>Pass Through SourceConfiguration registered by shared IO Reactor axis2 PTT Listener</>
      */
-    public static SourceConfiguration getPassThroughSourceConfiguration(){
+    public static SourceConfiguration getPassThroughSourceConfiguration() {
         return PASS_THROUGH_IO_REACTOR_MANAGER.getSharedPassThroughSourceConfiguration();
     }
 

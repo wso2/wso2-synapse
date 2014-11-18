@@ -18,38 +18,26 @@
 
 package org.apache.synapse.transport.passthru.core;
 
-import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
 import java.util.concurrent.ThreadFactory;
 
-public class PassThroughIOReactorConfig {
-
-    private IOReactorConfig ioReactorConfig;
+public class PassThroughSharedListenerConfiguration {
 
     private ThreadFactory threadFactory;
 
     private ServerConnFactory serverConnFactory;
 
-    private String namePrefix;
-
     private SourceConfiguration  sourceConfiguration;
 
-    public PassThroughIOReactorConfig
-            (IOReactorConfig ioReactorConfig, ThreadFactory threadFactory,
-             String namePrefix, ServerConnFactory serverConnFactory, SourceConfiguration sourceConfiguration) {
-        this.ioReactorConfig = ioReactorConfig;
+    public PassThroughSharedListenerConfiguration
+            (ThreadFactory threadFactory, ServerConnFactory serverConnFactory, SourceConfiguration sourceConfiguration) {
         this.threadFactory = threadFactory;
-        this.namePrefix = namePrefix;
         this.serverConnFactory = serverConnFactory;
         this.sourceConfiguration = sourceConfiguration;
     }
 
-
-    public IOReactorConfig getIoReactorConfig() {
-        return ioReactorConfig;
-    }
 
     public ThreadFactory getThreadFactory() {
         return threadFactory;
@@ -57,10 +45,6 @@ public class PassThroughIOReactorConfig {
 
     public ServerConnFactory getServerConnFactory() {
         return serverConnFactory;
-    }
-
-    public String getNamePrefix() {
-        return namePrefix;
     }
 
     public SourceConfiguration getSourceConfiguration() {
