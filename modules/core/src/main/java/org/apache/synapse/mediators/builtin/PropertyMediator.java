@@ -392,11 +392,12 @@ public class PropertyMediator extends AbstractMediator {
         }
         
     	if (XMLConfigConstants.SCOPE_AXIS2.equals(scope) ) {
-            //the logic will be determine the contentaware true
-            if(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(name)){
-            	contentAware =true;
+            // the logic will be determine the contentaware true
+            if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(name)
+                    || PassThroughConstants.DISABLE_CHUNKING.equals(name)
+                    || PassThroughConstants.FORCE_HTTP_1_0.equals(name)) {
+                contentAware = true;
             }
-
         } else if(XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)){
         	 //the logic will be determine the contentaware true
             if(HTTP.CONTENT_ENCODING.equals(name)){
