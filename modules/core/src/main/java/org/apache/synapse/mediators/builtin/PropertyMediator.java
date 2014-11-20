@@ -28,6 +28,7 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.http.protocol.HTTP;
@@ -214,7 +215,7 @@ public class PropertyMediator extends AbstractMediator {
         return true;
     }
 
-    public String getName() {
+    public String getName() {+import org.apache.synapse.transport.passthru.PassThroughConstants;
         return name;
     }
 
