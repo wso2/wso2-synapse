@@ -215,7 +215,7 @@ public class PropertyMediator extends AbstractMediator {
         return true;
     }
 
-    public String getName() {+import org.apache.synapse.transport.passthru.PassThroughConstants;
+    public String getName() {
         return name;
     }
 
