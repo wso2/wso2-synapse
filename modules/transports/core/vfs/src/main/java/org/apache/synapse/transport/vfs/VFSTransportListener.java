@@ -625,8 +625,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             
         } finally {
             try {
-                fsManager.closeFileSystem(file.getParent().getFileSystem());
-                file.close();
+                if (file != null) {
+                    if (fsManager != null && file.getParent() != null  && file.getParent().getFileSystem() != null) {
+                        fsManager.closeFileSystem(file.getParent().getFileSystem());
+                    }
+                    file.close();
+                }
+
             } catch (FileSystemException warn) {
                  //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
                // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
