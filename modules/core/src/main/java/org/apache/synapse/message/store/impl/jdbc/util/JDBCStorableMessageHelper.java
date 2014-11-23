@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -160,6 +161,10 @@ public class JDBCStorableMessageHelper {
             msgCtx.setTransportOut(axisConfiguration.
                     getTransportOut(jdbcAxis2MessageContext.getTransportOutName()));
 
+            if (jdbcAxis2MessageContext.getJsonStream() != null) {
+                JsonUtil.newJsonPayload(msgCtx,
+                                        new ByteArrayInputStream(jdbcAxis2MessageContext.getJsonStream()), true, true);
+            }
             SynapseMessage jdbcSynpaseMessageContext
                     = message.getSynapseMessage();
 
@@ -216,6 +221,9 @@ public class JDBCStorableMessageHelper {
                 jdbcAxis2MessageContext.setAction(msgCtx.getOptions().getAction());
                 jdbcAxis2MessageContext.setService(msgCtx.getAxisService().getName());
 
+                if (JsonUtil.hasAJsonPayload(msgCtx)) {
+                    jdbcAxis2MessageContext.setJsonStream(JsonUtil.jsonPayloadToByteArray(msgCtx));
+                }
                 if (msgCtx.getRelatesTo() != null) {
                     jdbcAxis2MessageContext.setRelatesToMessageId(msgCtx.getRelatesTo().getValue());
                 }
