@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-
 /**
  * Class <code>JDBCUtil</code> provides the Utility functions to create JDBC resources
  */
@@ -81,19 +80,14 @@ public class JDBCUtil {
      * @param parameters - parameters given in configuration
      */
     public void buildDataSource(Map<String, Object> parameters) {
-
         try {
-
             // Get datasource information
             if ((parameters.get(JDBCMessageStoreConstants.JDBC_DSNAME)) != null) {
-
                 readLookupConfig(parameters);
                 dataSource = lookupDataSource();
-
             } else if ((parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER)) != null) {
                 readCustomDataSourceConfig(parameters);
                 dataSource = createCustomDataSource();
-
             } else {
                 handleException("The DataSource connection information must be specified for " +
                                 "using a custom DataSource connection pool or for a JNDI lookup");
@@ -106,9 +100,8 @@ public class JDBCUtil {
             } else {
                 tableName = "synapse_jdbc_store";
             }
-
         } catch (Exception e) {
-            handleException("Error looking up DataSource connection information: " + e.getMessage());
+            log.error("Error looking up DataSource connection information: ", e);
         }
     }
 
@@ -129,7 +122,6 @@ public class JDBCUtil {
             props.put(Context.SECURITY_CREDENTIALS, parameters.get(JDBCMessageStoreConstants.JDBC_PASSWORD));
 
             this.setJndiProperties(props);
-
         }
     }
 
@@ -153,40 +145,34 @@ public class JDBCUtil {
         this.setDataSourceInformation(dataSourceInformation);
     }
 
-
     /**
      * Lookup the DataSource on JNDI using the specified name and optional properties
      *
      * @return a DataSource looked up using the specified JNDI properties
      */
     private DataSource lookupDataSource() {
-
         DataSource dataSource = null;
         RepositoryBasedDataSourceFinder finder = DataSourceRepositoryHolder.getInstance()
                 .getRepositoryBasedDataSourceFinder();
 
         if (finder.isInitialized()) {
-            // first try a lookup based on the data source name only
+            // First try a lookup based on the data source name only
             dataSource = finder.find(dataSourceName);
         }
-
         if (dataSource == null) {
-            // decrypt the password if needed
+            // Decrypt the password if needed
             String password = jndiProperties.getProperty(Context.SECURITY_CREDENTIALS);
             if (password != null && !"".equals(password)) {
                 jndiProperties.put(Context.SECURITY_CREDENTIALS, getActualPassword(password));
             }
-
-            // lookup the data source using the specified jndi properties
+            // Lookup the data source using the specified jndi properties
             dataSource = DataSourceFinder.find(dataSourceName, jndiProperties);
             if (dataSource == null) {
                 handleException("Cannot find a DataSource " + dataSourceName + " for given JNDI" +
                                 " properties :" + jndiProperties);
             }
         }
-
         log.info("Successfully looked up datasource " + dataSourceName + ".");
-
         return dataSource;
     }
 
@@ -196,12 +182,10 @@ public class JDBCUtil {
      * @return a DataSource created using specified properties
      */
     protected DataSource createCustomDataSource() {
-
         DataSource dataSource = DataSourceFactory.createDataSource(dataSourceInformation);
         if (dataSource != null) {
-            log.info("Successfully created data source for " + dataSourceInformation.getUrl() + ".");
+            log.info("Successfully created data source for " + dataSourceInformation.getUrl());
         }
-
         return dataSource;
     }
 
@@ -228,7 +212,6 @@ public class JDBCUtil {
      * @throws java.sql.SQLException - Failure in creating datasource connection
      */
     public PreparedStatement getPreparedStatement(Statement stmnt) throws SQLException {
-
         Connection con = getDataSource().getConnection();
         if (con == null) {
             String msg = "Connection from DataSource " + getDSName() + " is null.";
@@ -237,7 +220,6 @@ public class JDBCUtil {
         }
         PreparedStatement ps;
         ps = con.prepareStatement(stmnt.getRawStatement());
-
         return ps;
     }
 

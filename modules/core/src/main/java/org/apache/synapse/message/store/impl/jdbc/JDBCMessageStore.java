@@ -29,7 +29,6 @@ import org.apache.synapse.message.store.impl.jdbc.util.JDBCStorableMessageHelper
 import org.apache.synapse.message.store.impl.jdbc.util.JDBCUtil;
 import org.apache.synapse.message.store.impl.jdbc.util.Statement;
 
-import javax.sql.DataSource;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInputStream;
 import java.sql.Connection;
@@ -42,7 +41,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * JDBC Store class
@@ -80,11 +78,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
         logger.debug("Initializing JDBC Message Store");
         super.init(synapseEnvironment);
 
-        jdbcUtil = new JDBCUtil();
-
         logger.debug("Initializing Datasource and Properties");
-
-        // Building the datasource using util class
+        jdbcUtil = new JDBCUtil();
         jdbcUtil.buildDataSource(parameters);
 
         jdbcStorableMessageHelper = new JDBCStorableMessageHelper(synapseEnvironment);
@@ -147,7 +142,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
 
         try {
             ps = jdbcUtil.getPreparedStatement(stmt);
-
             for (int i = 1; i <= stmt.getParameters().size(); ++i) {
                 Object param = stmt.getParameters().get(i - 1);
                 if (param instanceof String) {
@@ -156,12 +150,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     ps.setInt(i, (Integer) stmt.getParameters().get(i - 1));
                 }
             }
-
             con = ps.getConnection();
             rs = ps.executeQuery();
-
             while (rs.next()) {
-
                 Object msgObj;
                 try {
                     msgObj = rs.getObject("message");
@@ -170,9 +161,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                                  " against DataSource : " + jdbcUtil.getDSName(), e);
                     break;
                 }
-
                 if (msgObj != null) {
-
                     try {
                         // Convert back to MessageContext and add to list
                         ObjectInputStream ios =
@@ -183,12 +172,11 @@ public class JDBCMessageStore extends AbstractMessageStore {
                             list.add(jdbcStorableMessageHelper.createMessageContext(jdbcMsg));
                         }
                     } catch (Exception e) {
-                        logger.error("Error reading object input stream: " + e.getMessage());
+                        logger.error("Error reading object input stream", e);
                     }
                 } else {
                     logger.error("Retrieved Object is null");
                 }
-
             }
         } catch (SQLException e) {
             logger.error("Processing Statement failed : " + stmt.getRawStatement() +
@@ -220,11 +208,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     ps.setObject(i, param);
                 }
             }
-
             con = ps.getConnection();
             ps.execute();
             result = true;
-
         } catch (SQLException e) {
             logger.error("Processing Statement failed : " + stmnt.getRawStatement() +
                          " against DataSource : " + jdbcUtil.getDSName(), e);
@@ -245,7 +231,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 }
             }
         }
-
         return result;
     }
 
@@ -277,16 +262,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 logger.error("Message Cleanup lock released unexpectedly", ie);
             }
         }
-
         StorableMessage persistentMessage =
                 jdbcStorableMessageHelper.createStorableMessage(messageContext);
         String msg_id = persistentMessage.getAxis2Message().getMessageID();
         Statement stmt =
                 new Statement("INSERT INTO " + jdbcUtil.getTableName() + " (msg_id,message) VALUES (?,?)");
-
         stmt.addParameter(msg_id);
         stmt.addParameter(persistentMessage);
-
         return processStatementWithoutResult(stmt);
     }
 
@@ -365,7 +347,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             Statement stmt = new Statement("DELETE FROM " + jdbcUtil.getTableName());
             processStatementWithoutResult(stmt);
         } catch (InterruptedException ie) {
-            logger.error("Acquiring lock failed !: " + ie.getMessage());
+            logger.error("Acquiring lock failed !: " + ie.getMessage(), ie);
         } finally {
             removeLock.release();
             cleaning.set(false);
@@ -388,9 +370,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
             Statement stmt = new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE msg_id=?");
             stmt.addParameter(msg_id);
             processStatementWithoutResult(stmt);
-
         } catch (InterruptedException ie) {
-            logger.error("Acquiring lock failed !: " + ie.getMessage());
+            logger.error("Acquiring lock failed !: " + ie.getMessage(), ie);
         } finally {
             removeLock.release();
         }
@@ -408,7 +389,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (i < 0) {
             throw new IllegalArgumentException("Index:" + i + " out of table bound");
         }
-
         if (!this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER).
                 equals("com.mysql.jdbc.Driver")) {
             throw new UnsupportedOperationException("Only support in MYSQL");
@@ -417,7 +397,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
         Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcUtil.getTableName() + " ORDER BY indexId ASC LIMIT ?,1 ");
         stmt.addParameter(i);
         List<MessageContext> result = processStatementWithResult(stmt);
-
         if (result.size() > 0) {
             return result.get(0);
         } else {
@@ -463,19 +442,15 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @return size - Number of messages
      */
     public int size() {
-
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
         int size = 0;
-
         Statement stmt = new Statement("SELECT COUNT(*) FROM " + jdbcUtil.getTableName());
-
         try {
             ps = jdbcUtil.getPreparedStatement(stmt);
             con = ps.getConnection();
             rs = ps.executeQuery();
-
             while (rs.next()) {
                 try {
                     size = rs.getInt(1);
@@ -504,19 +479,16 @@ public class JDBCMessageStore extends AbstractMessageStore {
         ResultSet rs = null;
         PreparedStatement ps = null;
         long index = 0;
-
         Statement stmt = new Statement("SELECT min(indexId) FROM " + jdbcUtil.getTableName());
-
         try {
             ps = jdbcUtil.getPreparedStatement(stmt);
             con = ps.getConnection();
             rs = ps.executeQuery();
-
             while (rs.next()) {
                 try {
                     index = rs.getLong(1);
                 } catch (Exception e) {
-                    System.out.println("No Max indexId found in : " + jdbcUtil.getDSName());
+                    logger.error("No Max indexId found in : " + jdbcUtil.getDSName(), e);
                     return 0;
                 }
             }
@@ -527,7 +499,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
             close(con, ps, rs);
         }
         return index;
-
     }
 
     /**

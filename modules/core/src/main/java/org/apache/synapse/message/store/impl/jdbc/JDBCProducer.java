@@ -63,9 +63,7 @@ public class JDBCProducer implements MessageProducer {
     @Override
     public boolean storeMessage(MessageContext synCtx) {
         boolean success;
-
         success = store.offer(synCtx);
-
         if (success) {
             store.enqueued();
         } else {

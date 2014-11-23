@@ -70,7 +70,7 @@ public class JDBCStorableMessageHelper {
     /**
      * Initialize the helper
      *
-     * @param se SynapseEnvronment
+     * @param se SynapseEnvironment
      */
     public JDBCStorableMessageHelper(SynapseEnvironment se) {
         this.synapseEnvironment = se;
@@ -88,14 +88,11 @@ public class JDBCStorableMessageHelper {
         MessageContext synCtx = null;
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2SynapseEnvironment)
                                                                   synapseEnvironment).getAxis2ConfigurationContext().createMessageContext();
-
-
         AxisConfiguration axisConfiguration = msgCtx.getConfigurationContext().getAxisConfiguration();
         Axis2Message jdbcAxis2MessageContext = message.getAxis2Message();
         SOAPEnvelope envelope = getSoapEnvelope(jdbcAxis2MessageContext.getSoapEnvelope());
 
         try {
-
             msgCtx.setEnvelope(envelope);
             // Set the  properties
             msgCtx.getOptions().setAction(jdbcAxis2MessageContext.getAction());
@@ -184,7 +181,7 @@ public class JDBCStorableMessageHelper {
 
 
         } catch (Exception e) {
-            log.error("Error while deserializing the JDBC Persistent Message " + e);
+            log.error("Error while deserializing the JDBC Persistent Message ", e);
         }
         return synCtx;
     }
@@ -192,7 +189,7 @@ public class JDBCStorableMessageHelper {
     /**
      * Create StorableMessage out of MessageContext
      *
-     * @param  synCtx   MessageContext
+     * @param synCtx MessageContext
      * @return jdbcMsg  StorableMessage
      */
     public StorableMessage createStorableMessage(MessageContext synCtx) {
@@ -240,7 +237,6 @@ public class JDBCStorableMessageHelper {
                 jdbcAxis2MessageContext.setSoapEnvelope(soapEnvelope);
                 jdbcAxis2MessageContext.setFLOW(msgCtx.getFLOW());
 
-
                 jdbcAxis2MessageContext.setTransportInName(msgCtx.getTransportIn().getName());
                 jdbcAxis2MessageContext.setTransportOutName(msgCtx.getTransportOut().getName());
                 Iterator<String> it = msgCtx.getProperties().keySet().iterator();
@@ -259,33 +255,25 @@ public class JDBCStorableMessageHelper {
                 }
 
             } catch (Exception e) {
-                log.warn("Incomplete Serialized Message !");
+                log.warn("Incomplete Serialized Message !", e);
             }
             jdbcMsg.setAxis2Message(jdbcAxis2MessageContext);
-
 
             jdbcSynpaseMessageContext.setFaultResponse(synCtx.isFaultResponse());
             jdbcSynpaseMessageContext.setTracingState(synCtx.getTracingState());
             jdbcSynpaseMessageContext.setResponse(synCtx.isResponse());
 
-
             Iterator<String> its = synCtx.getPropertyKeySet().iterator();
             while (its.hasNext()) {
-
                 String key = its.next();
                 Object v = synCtx.getProperty(key);
-
                 String value = null;
-
                 if (v != null) {
                     value = v.toString();
                 }
                 jdbcSynpaseMessageContext.addProperty(key, value);
-
             }
-
             jdbcMsg.setSynapseMessage(jdbcSynpaseMessageContext);
-
         } else {
             throw new SynapseException("Only Axis2 Messages are supported with JDBCMessage store");
         }
@@ -295,7 +283,7 @@ public class JDBCStorableMessageHelper {
     /**
      * Get SOAPEnvelope from String
      *
-     * @param  soapEnvelpe  String to convert
+     * @param soapEnvelpe String to convert
      * @return Successfully built SOAPEnvelope or null
      */
     private SOAPEnvelope getSoapEnvelope(String soapEnvelpe) {
@@ -317,7 +305,7 @@ public class JDBCStorableMessageHelper {
             }
             return soapEnvelope;
         } catch (XMLStreamException e) {
-            log.error("Error while deserializing the SOAP " + e);
+            log.error("Error while deserializing the SOAP ", e);
             return null;
         }
     }
@@ -325,7 +313,7 @@ public class JDBCStorableMessageHelper {
     /**
      * Get UTF8Bytes out of String
      *
-     * @param  soapEnvelpe String of soapEnvelope
+     * @param soapEnvelpe String of soapEnvelope
      * @return bytes       An array of bytes
      */
     private byte[] getUTF8Bytes(String soapEnvelpe) {
@@ -334,8 +322,7 @@ public class JDBCStorableMessageHelper {
             bytes = soapEnvelpe.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             log.error("Unable to extract bytes in UTF-8 encoding. "
-                      + "Extracting bytes in the system default encoding"
-                      + e.getMessage());
+                      + "Extracting bytes in the system default encoding", e);
             bytes = soapEnvelpe.getBytes();
         }
         return bytes;
