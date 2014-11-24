@@ -152,7 +152,9 @@ public class HTTPEndpoint extends AbstractEndpoint {
                     log.debug("Expanded URL : " + evaluatedUri);
                 }
             } catch (URISyntaxException e) {
-                log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName());
+                if (log.isDebugEnabled()) {
+                    log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
+                }
                 evaluatedUri = template.getTemplate();
             } catch(MalformedURLException e) {
                 log.debug("Invalid URL for HTTP Endpoint: " + this.getName());
