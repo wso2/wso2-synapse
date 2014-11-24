@@ -38,7 +38,6 @@ public class PassThroughSharedListenerConfiguration {
         this.sourceConfiguration = sourceConfiguration;
     }
 
-
     public ThreadFactory getThreadFactory() {
         return threadFactory;
     }
@@ -50,6 +49,5 @@ public class PassThroughSharedListenerConfiguration {
     public SourceConfiguration getSourceConfiguration() {
         return sourceConfiguration;
     }
-
-
+    
 }
