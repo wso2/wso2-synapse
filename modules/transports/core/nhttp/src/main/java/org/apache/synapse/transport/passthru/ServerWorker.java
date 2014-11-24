@@ -23,7 +23,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
+
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAP11Constants;
@@ -597,6 +599,7 @@ public class ServerWorker implements Runnable {
     }
 
     public void httpPreProcessing(MessageContext msgContext, String method){
+        String servicePrefixIndex="://";
         ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
         msgContext.setProperty(Constants.Configuration.HTTP_METHOD, request.getMethod());
 
@@ -606,11 +609,11 @@ public class ServerWorker implements Runnable {
         String restUrlPostfix = NhttpUtil.getRestUrlPostfix(oriUri, cfgCtx.getServicePath());
 
         String servicePrefix = oriUri.substring(0, oriUri.indexOf(restUrlPostfix));
-        if (servicePrefix.indexOf("://") == -1) {
+        if (servicePrefix.indexOf(servicePrefixIndex) == -1) {
             HttpInetConnection inetConn = (HttpInetConnection) request.getConnection();
             InetAddress localAddr = inetConn.getLocalAddress();
             if (localAddr != null) {
-                servicePrefix = sourceConfiguration.getScheme().getName() + "://" +
+                servicePrefix = sourceConfiguration.getScheme().getName() + servicePrefixIndex +
                         localAddr.getHostAddress() + ":" + inetConn.getLocalPort() + servicePrefix;
             }
         }
@@ -619,8 +622,8 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(restUrlPostfix));
         msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
 
-        if ("GET".equals(method) || "DELETE".equals(method) || "OPTIONS".equals(method) || "HEAD".equals(method)) {
-
+        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
+                                                                                             "OPTIONS".equals(method)) {
             HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
                     request.getVersion(), HttpStatus.SC_OK,
                     request.getConnection().getContext());
@@ -636,7 +639,8 @@ public class ServerWorker implements Runnable {
                     request.getConnection(), os, isRestDispatching);
         }
         //if WSDL done then moved out rather than hand over to entity handle methods.
-        SourceContext info = (SourceContext) request.getConnection().getContext().getAttribute(SourceContext.CONNECTION_INFORMATION);
+        SourceContext info = (SourceContext) request.getConnection().getContext().getAttribute
+                                                                                  (SourceContext.CONNECTION_INFORMATION);
         if (info != null &&
                 info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
                 (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null && Boolean.TRUE.equals

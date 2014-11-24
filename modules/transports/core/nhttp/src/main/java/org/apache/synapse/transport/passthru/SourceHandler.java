@@ -42,6 +42,7 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
+import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -61,8 +62,6 @@ public class SourceHandler implements NHttpServerEventHandler {
     
     private LatencyView s2sLatencyView = null;
 
-
-
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
@@ -78,7 +77,6 @@ public class SourceHandler implements NHttpServerEventHandler {
 			log.error(e.getMessage(), e);
 		}
     }
-
 
     public void connected(NHttpServerConnection conn) {
         // we have to have these two operations in order
@@ -98,7 +96,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             OutputStream os= getOutputStream(method,request);
             sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration,os));
         } catch (HttpException e) {
-            log.error(e.getMessage(), e);
+            log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
             informReaderError(conn);
 
@@ -477,7 +475,7 @@ public class SourceHandler implements NHttpServerEventHandler {
      */
     public OutputStream getOutputStream(String method,SourceRequest request){
         OutputStream os=null;
-        if ("GET".equals(method) || "HEAD".equals(method)) {
+        if (HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)) {
             HttpContext context = request.getConnection().getContext();
             ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(8192,	new HeapByteBufferAllocator());
             context.setAttribute("synapse.response-source-buffer",outputBuffer);

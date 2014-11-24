@@ -83,7 +83,6 @@ public class PassThroughListeningIOReactorManager {
             //create separate IO Reactor for non axis2 transports and share among them
 
                 try {
-
                     synchronized (this) {
                         sharedListeningIOReactor = initiateIOReactor(sharedIOReactorConfig);
                         isSharedIOReactorInitiated.compareAndSet(false, true);
@@ -101,12 +100,13 @@ public class PassThroughListeningIOReactorManager {
                     }
                 } catch (IOReactorException e) {
                     logger.error("Error occurred when creating shared IO Reactor for non axis2 Listener " + endpointName, e);
+                    return false;
                 }
         } else {
             logger.error("Cannot start Endpoint for" + endpointName + "Axis2 Transport Listeners for PassThrough transport" +
                     " not started correctly ");
+            return false;
         }
-        return true;
     }
 
 
@@ -175,7 +175,7 @@ public class PassThroughListeningIOReactorManager {
      * @param passThroughSharedListenerConfiguration <>configuration related to create and start IOReactor</>
      * @return <>IOReactor</>
      */
-    public ListeningIOReactor initiateIOReactor
+    public ListeningIOReactor initIOReactor
     (int port, NHttpServerEventHandler nHttpServerEventHandler, PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
             throws IOReactorException {
         ListeningIOReactor defaultListeningIOReactor;

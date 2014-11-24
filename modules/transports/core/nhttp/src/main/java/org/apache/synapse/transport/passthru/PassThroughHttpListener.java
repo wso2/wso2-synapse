@@ -182,7 +182,7 @@ public class PassThroughHttpListener implements TransportListener {
         //cfgCtx.getAxisConfiguration().addObservers(axisObserver);
         String prefix = namePrefix + "-Listener I/O dispatcher";
         try {
-            ioReactor = (DefaultListeningIOReactor) passThroughListeningIOReactorManager.initiateIOReactor
+            ioReactor = (DefaultListeningIOReactor) passThroughListeningIOReactorManager.initIOReactor
                     (operatingPort, handler, new PassThroughSharedListenerConfiguration(new NativeThreadFactory
                             (new ThreadGroup(prefix + " thread group"), prefix), connFactory, sourceConfiguration));
         } catch (IOReactorException e) {
@@ -257,7 +257,6 @@ public class PassThroughHttpListener implements TransportListener {
 
     private void startEndpoints() throws AxisFault {
 
-
         Set<InetSocketAddress> addressSet = new HashSet<InetSocketAddress>();
         addressSet.addAll(connFactory.getBindAddresses());
 
@@ -283,7 +282,6 @@ public class PassThroughHttpListener implements TransportListener {
         for (InetSocketAddress address: addressList) {
             passThroughListeningIOReactorManager.startAxis2PTTEndpoint(address,ioReactor,namePrefix);
         }
-
 
     }
 

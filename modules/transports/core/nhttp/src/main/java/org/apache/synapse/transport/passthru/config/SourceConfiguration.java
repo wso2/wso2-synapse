@@ -101,7 +101,6 @@ public class SourceConfiguration extends BaseConfiguration {
 
     public SourceConfiguration(WorkerPool pool,PassThroughTransportMetricsCollector metrics) {
         super(null, null, pool, metrics);
-
     }
 
     public void build() throws AxisFault {

@@ -211,6 +211,4 @@ public interface SynapseEnvironment {
      */
     public boolean injectMessage(MessageContext smc,SequenceMediator seq);
 
-
-
 }
