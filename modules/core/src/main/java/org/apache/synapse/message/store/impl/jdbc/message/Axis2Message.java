@@ -28,45 +28,25 @@ import java.util.HashMap;
  */
 public class Axis2Message implements Serializable {
     private String messageID;
-
     private String operationAction;
-
     private QName operationName;
-
     private String action;
-
     private String service;
-
     private String relatesToMessageId;
-
     private String replyToAddress;
-
     private String faultToAddress;
-
     private String fromAddress;
-
     private String toAddress;
-
     private String transportInName;
-
     private String transportOutName;
-
     private boolean isDoingMTOM;
-
     private boolean isDoingSWA;
-
     private boolean isDoingPOX;
-
     private boolean isDoingGET;
-
     private String soapEnvelope;
-
     private byte[] jsonStream;
-
     private int FLOW;
-
     private HashMap<String, Object> properties = new HashMap<String, Object>();
-
 
     public String getMessageID() {
         return messageID;

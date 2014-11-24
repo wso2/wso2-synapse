@@ -96,7 +96,6 @@ public class JDBCUtil {
             // Get table information
             if (parameters.get(JDBCMessageStoreConstants.JDBC_TABLE) != null) {
                 tableName = (String) parameters.get(JDBCMessageStoreConstants.JDBC_TABLE);
-
             } else {
                 tableName = "synapse_jdbc_store";
             }
@@ -131,9 +130,7 @@ public class JDBCUtil {
      * @param parameters - parameters given in configuration
      */
     private void readCustomDataSourceConfig(Map<String, Object> parameters) {
-
         DataSourceInformation dataSourceInformation = new DataSourceInformation();
-
         dataSourceInformation.setDriver((String) parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER));
         dataSourceInformation.setUrl((String) parameters.get(JDBCMessageStoreConstants.JDBC_CONNECTION_URL));
 
@@ -172,7 +169,7 @@ public class JDBCUtil {
                                 " properties :" + jndiProperties);
             }
         }
-        log.info("Successfully looked up datasource " + dataSourceName + ".");
+        log.info("Successfully looked up datasource " + dataSourceName);
         return dataSource;
     }
 

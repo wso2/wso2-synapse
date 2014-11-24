@@ -31,15 +31,10 @@ import java.util.List;
  */
 public class SynapseMessage implements Serializable {
     private ArrayList<String> localEntries = new ArrayList<String>();
-
     private HashMap<String, String> properties = new HashMap<String, String>();
-
     private HashMap<String, byte[]> propertyObjects = new HashMap<String, byte[]>();
-
     private boolean response = false;
-
     private boolean faultResponse = false;
-
     private int tracingState = SynapseConstants.TRACING_UNSET;
 
     public boolean isResponse() {

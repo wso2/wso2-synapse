@@ -21,10 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
+ * Statement class for raw SQL statement
  */
 public class Statement {
-
     private String rawStatement = null;
     private final List<Object> parameters = new ArrayList<Object>();
 

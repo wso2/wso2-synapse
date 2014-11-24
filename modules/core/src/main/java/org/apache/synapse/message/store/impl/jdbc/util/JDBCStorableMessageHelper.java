@@ -84,7 +84,6 @@ public class JDBCStorableMessageHelper {
      * @return synCtx SynapseMessage
      */
     public MessageContext createMessageContext(StorableMessage message) {
-
         SynapseConfiguration configuration = synapseEnvironment.getSynapseConfiguration();
         MessageContext synCtx = null;
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2SynapseEnvironment)
@@ -121,10 +120,7 @@ public class JDBCStorableMessageHelper {
                 executionChain.addAll(axisOperation.getPhasesOutFaultFlow());
                 executionChain.addAll(axisConfiguration.getOutFlowPhases());
             }
-
             msgCtx.setExecutionChain(executionChain);
-
-
             ConfigurationContext configurationContext = msgCtx.getConfigurationContext();
 
             msgCtx.setAxisService(axisService);
@@ -136,7 +132,6 @@ public class JDBCStorableMessageHelper {
                     jdbcAxis2MessageContext.getOperationName());
             msgCtx.setServiceContext(serviceContext);
             msgCtx.setOperationContext(operationContext);
-
             msgCtx.setAxisService(axisService);
             msgCtx.setAxisOperation(axisOperation);
             if (jdbcAxis2MessageContext.getReplyToAddress() != null) {
@@ -165,11 +160,9 @@ public class JDBCStorableMessageHelper {
                 JsonUtil.newJsonPayload(msgCtx,
                                         new ByteArrayInputStream(jdbcAxis2MessageContext.getJsonStream()), true, true);
             }
-            SynapseMessage jdbcSynpaseMessageContext
-                    = message.getSynapseMessage();
+            SynapseMessage jdbcSynpaseMessageContext = message.getSynapseMessage();
 
-            synCtx =
-                    new Axis2MessageContext(msgCtx, configuration, synapseEnvironment);
+            synCtx = new Axis2MessageContext(msgCtx, configuration, synapseEnvironment);
             synCtx.setTracingState(jdbcSynpaseMessageContext.getTracingState());
 
             Iterator<String> it = jdbcSynpaseMessageContext.getProperties().keySet().iterator();
@@ -177,14 +170,10 @@ public class JDBCStorableMessageHelper {
             while (it.hasNext()) {
                 String key = it.next();
                 Object value = jdbcSynpaseMessageContext.getProperties().get(key);
-
                 synCtx.setProperty(key, value);
             }
-
             synCtx.setFaultResponse(jdbcSynpaseMessageContext.isFaultResponse());
             synCtx.setResponse(jdbcSynpaseMessageContext.isResponse());
-
-
         } catch (Exception e) {
             log.error("Error while deserializing the JDBC Persistent Message ", e);
         }
@@ -198,11 +187,9 @@ public class JDBCStorableMessageHelper {
      * @return jdbcMsg  StorableMessage
      */
     public StorableMessage createStorableMessage(MessageContext synCtx) {
-
         StorableMessage jdbcMsg = new StorableMessage();
         Axis2Message jdbcAxis2MessageContext = new Axis2Message();
         SynapseMessage jdbcSynpaseMessageContext = new SynapseMessage();
-
         Axis2MessageContext axis2MessageContext = null;
         if (synCtx instanceof Axis2MessageContext) {
 
@@ -217,7 +204,6 @@ public class JDBCStorableMessageHelper {
                 jdbcAxis2MessageContext.setMessageID(msgCtx.getMessageID());
                 jdbcAxis2MessageContext.setOperationAction(msgCtx.getAxisOperation().getSoapAction());
                 jdbcAxis2MessageContext.setOperationName(msgCtx.getAxisOperation().getName());
-
                 jdbcAxis2MessageContext.setAction(msgCtx.getOptions().getAction());
                 jdbcAxis2MessageContext.setService(msgCtx.getAxisService().getName());
 
@@ -244,24 +230,19 @@ public class JDBCStorableMessageHelper {
                 String soapEnvelope = msgCtx.getEnvelope().toString();
                 jdbcAxis2MessageContext.setSoapEnvelope(soapEnvelope);
                 jdbcAxis2MessageContext.setFLOW(msgCtx.getFLOW());
-
                 jdbcAxis2MessageContext.setTransportInName(msgCtx.getTransportIn().getName());
                 jdbcAxis2MessageContext.setTransportOutName(msgCtx.getTransportOut().getName());
-                Iterator<String> it = msgCtx.getProperties().keySet().iterator();
 
+                Iterator<String> it = msgCtx.getProperties().keySet().iterator();
                 while (it.hasNext()) {
                     String key = it.next();
                     Object v = msgCtx.getProperty(key);
-
                     String value = null;
-
                     if (v != null) {
                         value = v.toString();
                     }
-
                     jdbcAxis2MessageContext.addProperty(key, value);
                 }
-
             } catch (Exception e) {
                 log.warn("Incomplete Serialized Message !", e);
             }

@@ -25,9 +25,7 @@ import java.io.Serializable;
  */
 public class StorableMessage implements Serializable {
     private Axis2Message axis2Message;
-
     private SynapseMessage synapseMessage;
-
     private int priority = 4;
 
     public Axis2Message getAxis2Message() {
