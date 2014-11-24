@@ -208,8 +208,7 @@ public class PassThroughListeningIOReactorManager {
             axis2ListenerServerIODispatchMapper.put(port, serverIODispatch);
             axis2ListenerIOReactorMapper.put(port, defaultListeningIOReactor);
         } catch (IOReactorException e) {
-            logger.error("Error occurred when trying to initiate IO Reactor", e);
-            throw new IOReactorException("Error occurred when trying to initiate IO Reactor", e);
+            throw new IOReactorException("Error occurred when trying to init IO Reactor", e);
         }
         return defaultListeningIOReactor;
     }
@@ -349,11 +348,11 @@ public class PassThroughListeningIOReactorManager {
             throws IOReactorException {
         try {
             return new DefaultListeningIOReactor
-                    (passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(), passThroughSharedListenerConfiguration.getThreadFactory());
+                    (passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(),
+                                                            passThroughSharedListenerConfiguration.getThreadFactory());
         } catch (IOReactorException e) {
-            logger.error
+            throw new IOReactorException
                     ("Error creating DefaultListingIOReactor, ioReactorConfig or thread factory may have problems", e);
-            throw new IOReactorException("IO Reactor initiate encountered an Exception", e);
         }
     }
 

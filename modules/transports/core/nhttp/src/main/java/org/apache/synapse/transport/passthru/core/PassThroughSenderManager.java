@@ -18,7 +18,6 @@
 
 package org.apache.synapse.transport.passthru.core;
 
-import org.apache.log4j.Logger;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 
 
@@ -26,8 +25,6 @@ import org.apache.synapse.transport.passthru.PassThroughHttpSender;
  * Class responsible for handle outBound side shared PassThroughHttpSender
  */
 public class PassThroughSenderManager {
-
-    private static final Logger logger = Logger.getLogger(PassThroughSenderManager.class);
 
     private static PassThroughSenderManager passThroughSenderManager;
 
@@ -59,9 +56,8 @@ public class PassThroughSenderManager {
         if (passThroughSenderManager != null) {
             return passThroughSenderManager;
         } else {
-            logger.error("PassThrough Sender Manager not initialized Properly May be PassThroughHttpSender might not have" +
-                    " Started Properly");
-            throw new NullPointerException("PassThrough Sender Manager is null ");
+            throw new NullPointerException("PassThroughSenderManager not initialized Properly May be " +
+                    "PassThroughHttpSender might not have  started properly so passThroughSenderManager is null");
         }
     }
 }
