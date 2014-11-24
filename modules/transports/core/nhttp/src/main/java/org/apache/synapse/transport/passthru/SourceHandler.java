@@ -132,12 +132,10 @@ public class SourceHandler implements NHttpServerEventHandler {
             sourceConfiguration.getWorkerPool().execute(
                     new ServerWorker(request, sourceConfiguration,os));
              if(!request.isEntityEnclosing()){
-          conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,System.currentTimeMillis());
              }
-
-
         } catch (HttpException e) {
-            log.error(e.getMessage(), e);
+            log.error("HttpException occurred during request processing", e);
 
             informReaderError(conn);
 
