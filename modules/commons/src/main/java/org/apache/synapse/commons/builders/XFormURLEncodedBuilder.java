@@ -48,6 +48,8 @@ public class XFormURLEncodedBuilder implements Builder {
             OMElement bodyFirstChild = soapFactory
                     .createOMElement(XFORM_FIRST_ELEMENT, body);
             BuilderUtil.createSOAPMessageWithoutSchema(soapFactory, bodyFirstChild, map);
+        } else if (body.getFirstElement() != null && "mediate".equals(body.getFirstElement().getLocalName())) {
+            body.getFirstElement().setLocalName(XFORM_FIRST_ELEMENT.getLocalPart());
         }
         return soapEnv;
     }

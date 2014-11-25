@@ -49,10 +49,12 @@ import org.apache.synapse.transport.nhttp.debug.ServerConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.LatencyCollector;
 import org.apache.synapse.transport.nhttp.util.LatencyView;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
+import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -309,7 +311,7 @@ public class ServerHandler implements NHttpServerEventHandler {
 
         if (outBuf == null) {
             // fix for SYNAPSE 584. This is a temporaly fix becuase of HTTPCORE-208
-            shutdownConnection(conn);
+            shutdownConnection(conn, false, null);
             return;
         }
 
@@ -396,10 +398,10 @@ public class ServerHandler implements NHttpServerEventHandler {
                     System.currentTimeMillis());
             conn.submitResponse(response);
         } catch (HttpException e) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, e.getMessage());
             throw e;
         } catch (IOException e) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, e.getMessage());
             throw e;
         }
     }
@@ -416,13 +418,15 @@ public class ServerHandler implements NHttpServerEventHandler {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keepalive connection was closed");
             }
+            shutdownConnection(conn, false, null);
         } else {
-            log.error("Connection Timeout - before message body was fully read : " + conn);
+            String msg = "Connection Timeout - before message body was fully read : " + conn;
+            log.error(msg);
             if (metrics != null) {
                 metrics.incrementTimeoutsReceiving();
             }
+            shutdownConnection(conn, true, msg);
         }
-        shutdownConnection(conn);
     }
 
     public void endOfInput(final NHttpServerConnection conn) throws IOException {
@@ -476,7 +480,7 @@ public class ServerHandler implements NHttpServerEventHandler {
     public void closed(final NHttpServerConnection conn) {
 
         HttpContext context = conn.getContext();
-        shutdownConnection(conn);
+        shutdownConnection(conn, false, null);
         context.removeAttribute(REQUEST_SINK_BUFFER);
         context.removeAttribute(RESPONSE_SOURCE_BUFFER);
         context.removeAttribute(CONNECTION_CREATION_TIME);
@@ -505,6 +509,7 @@ public class ServerHandler implements NHttpServerEventHandler {
      * @param e the exception encountered
      */
     public void exception(NHttpServerConnection conn, Exception e) {
+        String errMsg = "I/O error : " + e.getMessage();
         if (e instanceof HttpException) {
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
@@ -530,13 +535,14 @@ public class ServerHandler implements NHttpServerEventHandler {
                 (e.getMessage().contains("Connection reset by peer") ||
                 e.getMessage().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": I/O error (Probably the keepalive connection " +
-                        "was closed):" + e.getMessage());
+                errMsg = "I/O error (Probably the keepalive connection " +
+                        "was closed):" + e.getMessage();
+                log.debug(errMsg);
             }
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, errMsg);
         } else if (e instanceof IOException && e.getMessage() != null) {
-            String msg = e.getMessage().toLowerCase();
-            if (msg.indexOf("broken") != -1) {
+            errMsg = e.getMessage().toLowerCase();
+            if (errMsg.indexOf("broken") != -1) {
                 log.warn("I/O error (Probably the connection " +
                         "was closed by the remote party):" + e.getMessage());
             } else {
@@ -545,13 +551,14 @@ public class ServerHandler implements NHttpServerEventHandler {
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
             }
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, errMsg);
         } else {
-            log.error("Unexpected I/O error: " + e.getClass().getName(), e);
+            errMsg =  "Unexpected I/O error: " + e.getClass().getName();
+            log.error(errMsg, e);
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
             }
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, errMsg);
         }
     }
 
@@ -561,20 +568,25 @@ public class ServerHandler implements NHttpServerEventHandler {
      * @param e the exception encountered
      */
     public void exception(NHttpServerConnection conn, IOException e) {
+        String errMsg = "I/O error : " + e.getMessage();
+
         if (e instanceof ConnectionClosedException || (e.getMessage() != null &&
-                e.getMessage().contains("Connection reset by peer") ||
-                e.getMessage().contains("forcibly closed"))) {
+                (e.getMessage().contains("Connection reset by peer") ||
+                        e.getMessage().contains("forcibly closed")))) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": I/O error (Probably the keepalive connection " +
-                        "was closed):" + e.getMessage());
+                errMsg = "I/O error (Probably the keepalive connection " +
+                        "was closed):" + e.getMessage();
+                log.debug(errMsg);
             }
         } else if (e.getMessage() != null) {
-            String msg = e.getMessage().toLowerCase();
-            if (msg.indexOf("broken") != -1) {
-                log.warn("I/O error (Probably the connection " +
-                        "was closed by the remote party):" + e.getMessage());
+            errMsg = e.getMessage().toLowerCase();
+            if (errMsg.indexOf("broken") != -1) {
+                errMsg = "I/O error (Probably the connection " +
+                        "was closed by the remote party):" + e.getMessage();
+                log.warn(errMsg);
             } else {
-                log.error("I/O error: " + e.getMessage(), e);
+                errMsg = "I/O error: " + e.getMessage();
+                log.error(errMsg, e);
             }
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
@@ -584,8 +596,10 @@ public class ServerHandler implements NHttpServerEventHandler {
             if (metrics != null) {
                 metrics.incrementFaultsReceiving();
             }
+            errMsg = "Unexpected I/O error: " + e.getMessage();
         }
-        shutdownConnection(conn);
+
+        shutdownConnection(conn, true, errMsg);
     }
 
     // ----------- utility methods -----------
@@ -593,29 +607,64 @@ public class ServerHandler implements NHttpServerEventHandler {
     private void handleException(String msg, Exception e, NHttpServerConnection conn) {
         log.error(msg, e);
         if (conn != null) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, e.getMessage());
         }
     }
 
     /**
      * Shutdown the connection ignoring any IO errors during the process
      * @param conn the connection to be shutdown
+     * @param isError whether shutdown is due to an error
+     * @param errorMsg error message if shutdown happens on error
      */
-    private void shutdownConnection(final NHttpServerConnection conn) {
+    private void shutdownConnection(final NHttpServerConnection conn, boolean isError, String errorMsg) {
         SharedOutputBuffer outputBuffer = (SharedOutputBuffer)
-            conn.getContext().getAttribute(RESPONSE_SOURCE_BUFFER);
+                conn.getContext().getAttribute(RESPONSE_SOURCE_BUFFER);
         if (outputBuffer != null) {
             outputBuffer.close();
         }
         SharedInputBuffer inputBuffer = (SharedInputBuffer)
-            conn.getContext().getAttribute(REQUEST_SINK_BUFFER);
+                conn.getContext().getAttribute(REQUEST_SINK_BUFFER);
         if (inputBuffer != null) {
             inputBuffer.close();
         }
 
+        if (log.isWarnEnabled() && (isError || log.isDebugEnabled()) && conn instanceof HttpInetConnection) {
+
+            HttpInetConnection inetConnection = (HttpInetConnection) conn;
+            InetAddress remoteAddress = inetConnection.getRemoteAddress();
+            int remotePort = inetConnection.getRemotePort();
+
+            String msg;
+            if (remotePort != -1 && remoteAddress != null) {  // If connection is still alive
+                msg = "Connection from remote address : "
+                        + remoteAddress + ":" + remotePort
+                        + " to local address : "
+                        + inetConnection.getLocalAddress() + ":" + inetConnection.getLocalPort() +
+                        " is closed!"
+                        + (errorMsg != null ? " - On error : " + errorMsg : "");
+
+            } else {  // if connection is already closed. obtain params from http context
+                HttpContext httpContext = conn.getContext();
+                msg = "Connection from remote address : "
+                        + httpContext.getAttribute(NhttpConstants.CLIENT_REMOTE_ADDR)
+                        + ":" + httpContext.getAttribute(NhttpConstants.CLIENT_REMOTE_PORT)
+                        + " to local address : "
+                        + inetConnection.getLocalAddress() + ":" + inetConnection.getLocalPort() +
+                        " is closed!"
+                        + (errorMsg != null ? " - On error : " + errorMsg : "");
+            }
+
+            if (isError) {
+                log.warn(msg);
+            } else {
+                log.debug(msg);
+            }
+        }
+
         synchronized (this) {
             if (!activeConnections.isEmpty() && activeConnections.remove(conn) && log.isDebugEnabled()) {
-                log.debug(conn + ": Removing the connection : " + conn
+                log.debug("Removing the connection : " + conn
                         + " from pool of size : " + activeConnections.size());
             }
         }

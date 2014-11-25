@@ -156,6 +156,12 @@ public class Axis2FlexibleMEPClient {
         // so that we can use the original message context for resending through different endpoints
         if (endpoint != null) {
 
+            //get the endpoint encoding attribute
+            String strCharSetEncoding = "";
+            if (endpoint.getCharSetEncoding() != null) {
+                strCharSetEncoding = ";" + endpoint.getCharSetEncoding();
+            }            
+            
             if (SynapseConstants.FORMAT_POX.equals(endpoint.getFormat())) {
                 axisOutMsgCtx.setDoingREST(true);
                 axisOutMsgCtx.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
@@ -167,7 +173,7 @@ public class Axis2FlexibleMEPClient {
     			Map _headers = (Map) o;
     			if (_headers != null) {
     				_headers.remove(HTTP.CONTENT_TYPE);
-    				_headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_XML);
+    				_headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_XML + strCharSetEncoding);
     			}
 
             } else if (SynapseConstants.FORMAT_GET.equals(endpoint.getFormat())) {
@@ -193,7 +199,7 @@ public class Axis2FlexibleMEPClient {
     			Map _headers = (Map) o;
     			if (_headers != null) {
     				_headers.remove(HTTP.CONTENT_TYPE);
-    				_headers.put(HTTP.CONTENT_TYPE,  org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML);
+    				_headers.put(HTTP.CONTENT_TYPE,  org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML + strCharSetEncoding);
     			}
 
             } else if (SynapseConstants.FORMAT_SOAP12.equals(endpoint.getFormat())) {
@@ -223,9 +229,9 @@ public class Axis2FlexibleMEPClient {
                                               .append(axisOutMsgCtx.getSoapAction())
                                               .append('\"')
                                               .toString();
-                         _headers.put(HTTP.CONTENT_TYPE, contentTypeWithAction);
+                         _headers.put(HTTP.CONTENT_TYPE, contentTypeWithAction + strCharSetEncoding);
                      }else{
-                         _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML);
+                         _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML + strCharSetEncoding);
                      }
                }
             } else if (SynapseConstants.FORMAT_REST.equals(endpoint.getFormat())) {

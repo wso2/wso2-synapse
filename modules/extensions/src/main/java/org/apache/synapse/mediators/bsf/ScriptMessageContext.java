@@ -69,6 +69,7 @@ public class ScriptMessageContext implements MessageContext {
     private static final Log logger = LogFactory.getLog(ScriptMessageContext.class.getName());
 
     private static final String JSON_OBJECT = "JSON_OBJECT";
+    private static final String JSON_TEXT = "JSON_TEXT";
 
     /** The actual Synapse message context reference */
     private final MessageContext mc;
@@ -124,13 +125,25 @@ public class ScriptMessageContext implements MessageContext {
         return jsonObject(mc);
     }
 
+    public Object getJsonText() {
+        if (mc == null) {
+            return "";
+        }
+        Object text = mc.getProperty(JSON_TEXT);
+        return text == null ? "{}" : text;
+    }
+
     /**
      * Get the Message Payload as a text
      *
      * @return Payload as text
      */
     public String getPayloadText() {
-        return JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
+        if (JsonUtil.hasAJsonPayload(((Axis2MessageContext) mc).getAxis2MessageContext())) {
+            return JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
+        } else {
+            return mc.getEnvelope().toString();
+        }
     }
 
     /**
@@ -169,6 +182,23 @@ public class ScriptMessageContext implements MessageContext {
             logger.error("Setting null JSON object.");
         }
         messageContext.setProperty(JSON_OBJECT, jsonObject);
+        return true;
+    }
+
+    /**
+     * Saves the JSON String to the message context.
+     * @param messageContext
+     * @param jsonObject
+     * @return
+     */
+    public boolean setJsonText(MessageContext messageContext, Object jsonObject) {
+        if (messageContext == null) {
+            return false;
+        }
+        if (jsonObject == null) {
+            logger.error("Setting null JSON text.");
+        }
+        messageContext.setProperty(JSON_TEXT, jsonObject);
         return true;
     }
 

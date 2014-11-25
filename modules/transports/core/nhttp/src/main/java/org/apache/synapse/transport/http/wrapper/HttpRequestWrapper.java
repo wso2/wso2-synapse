@@ -16,9 +16,35 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
-package org.apache.synapse.inbound;
+
+package org.apache.synapse.transport.http.wrapper;
 
 
-public interface InboundListner extends InboundRequestProcessor {
+import org.apache.http.HttpRequest;
 
+import java.util.Date;
+
+/**
+ * Wrapper to hold the time stamp and the request
+ */
+public class HttpRequestWrapper {
+    private HttpRequest httpRequest;
+    private Date date;
+
+
+    public HttpRequest getHttpRequest() {
+        return httpRequest;
+    }
+
+    public void setHttpRequest(HttpRequest httpRequest) {
+        this.httpRequest = httpRequest;
+    }
+
+    public Date getDate() {
+        return date;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
 }

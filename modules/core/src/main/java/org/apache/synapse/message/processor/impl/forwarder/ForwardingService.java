@@ -434,13 +434,13 @@ public class ForwardingService implements InterruptableJob, Service {
 
     public void sendThroughFaultSeq(MessageContext msgCtx) {
         if (faultSeq == null) {
-            log.warn("Failed to send the message through the fault sequence, Sequence name " + faultSeq + " does not Exist.");
+            log.warn("Failed to send the message through the fault sequence. Sequence name does not Exist.");
             return;
         }
         Mediator mediator = msgCtx.getSequence(faultSeq);
 
         if (mediator == null) {
-            log.warn("Failed to send the message through the fault sequence, Sequence object" + faultSeq + " does not Exist.");
+            log.warn("Failed to send the message through the fault sequence. Sequence [" + faultSeq + "] does not Exist.");
             return;
         }
 
@@ -450,16 +450,14 @@ public class ForwardingService implements InterruptableJob, Service {
     public void sendThroughReplySeq(MessageContext outCtx) {
         if (replySeq == null) {
             this.messageProcessor.deactivate();
-            log.error("Can't Send the Out Message , Sequence name " + replySeq + " does not Exist. Deactivated the" +
-                    " message processor");
+            log.error("Failed to send the out message. Reply sequence does not Exist. Deactivated the message processor");
             return;
         }
         Mediator mediator = outCtx.getSequence(replySeq);
 
         if (mediator == null) {
             this.messageProcessor.deactivate();
-            log.error("Can't Send the Out Message , Sequence object " + replySeq + " does not Exist. Deactivated the" +
-                    " message processor");
+            log.error("Failed to send the out message. Reply sequence [" + replySeq + "] does not exist. Deactivated the message processor");
             return;
         }
 
@@ -486,9 +484,7 @@ public class ForwardingService implements InterruptableJob, Service {
             this.attemptCount++;
 
             if (attemptCount >= maxAttempts) {
-                terminate();
-                this.messageProcessor.deactivate();
-
+                
                 if (this.isMaxDeliveryAttemptDropEnabled) {
                     dropMessageAndContinueMessageProcessor();
                     if (log.isDebugEnabled()) {

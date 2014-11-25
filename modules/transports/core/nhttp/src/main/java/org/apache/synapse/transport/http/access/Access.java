@@ -25,6 +25,8 @@ import org.apache.http.HttpMessage;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.transport.http.wrapper.HttpRequestWrapper;
+import org.apache.synapse.transport.http.wrapper.HttpResponseWrapper;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -51,8 +53,8 @@ public class Access {
 
     private static AccessLogger accessLogger;
 
-    private static ConcurrentLinkedQueue<HttpRequest> requestQueue;
-    private static ConcurrentLinkedQueue<HttpResponse> responseQueue;
+    private static ConcurrentLinkedQueue<HttpRequestWrapper> requestQueue;
+    private static ConcurrentLinkedQueue<HttpResponseWrapper> responseQueue;
 
     private static final int LOG_FREQUENCY_IN_SECONDS = 30;
 
@@ -68,8 +70,8 @@ public class Access {
         super();
         Access.log = log;
         Access.accessLogger = accessLogger;
-        requestQueue = new ConcurrentLinkedQueue<HttpRequest>();
-        responseQueue = new ConcurrentLinkedQueue<HttpResponse>();
+        requestQueue = new ConcurrentLinkedQueue<HttpRequestWrapper>();
+        responseQueue = new ConcurrentLinkedQueue<HttpResponseWrapper>();
         logElements = createLogElements();
         logAccesses();
     }
@@ -80,7 +82,10 @@ public class Access {
      * @param request - HttpRequest
      */
     public void addAccessToQueue(HttpRequest request) {
-        requestQueue.add(request);
+        HttpRequestWrapper requestWrapper = new HttpRequestWrapper();
+        requestWrapper.setHttpRequest(request);
+        requestWrapper.setDate(AccessTimeUtil.getDate());
+        requestQueue.add(requestWrapper);
     }
 
     /**
@@ -89,7 +94,10 @@ public class Access {
      * @param response - HttpResponse
      */
     public void addAccessToQueue(HttpResponse response) {
-        responseQueue.add(response);
+        HttpResponseWrapper responseWrapper = new HttpResponseWrapper();
+        responseWrapper.setHttpResponse(response);
+        responseWrapper.setDate(AccessTimeUtil.getDate());
+        responseQueue.add(responseWrapper);
     }
 
     /**
@@ -109,7 +117,7 @@ public class Access {
     private class LogRequests extends TimerTask {
         public void run() {
             while (!requestQueue.isEmpty()) {
-                HttpRequest req = requestQueue.poll();
+                HttpRequestWrapper req = requestQueue.poll();
                 log(req, null);
             }
         }
@@ -118,7 +126,7 @@ public class Access {
     private class LogResponses extends TimerTask {
         public void run() {
             while (!responseQueue.isEmpty()) {
-                HttpResponse res = responseQueue.poll();
+                HttpResponseWrapper res = responseQueue.poll();
                 log(null, res);
             }
         }
@@ -355,7 +363,7 @@ public class Access {
         public void addElement(StringBuilder buf, Date date, HttpRequest request,
                                HttpResponse response) {
 
-            String currentDate = AccessTimeUtil.getAccessDate(AccessTimeUtil.getDate());
+            String currentDate = AccessTimeUtil.getAccessDate(date);
             buf.append(currentDate);
         }
     }
@@ -834,5 +842,36 @@ public class Access {
             default:
                 return new StringElement("???" + pattern + "???");
         }
+    }
+
+    /**
+     * The log method that is called from the NHttpClient and Server connection classes.
+     * This method is used to log the request/response with the actual date of operation.
+     *
+     * @param request  - HttpRequestWrapper
+     * @param response - HttpResponseWrapper
+     */
+    public void log(HttpRequestWrapper request, HttpResponseWrapper response) {
+
+        Date actualDateOfOperation = null;
+
+        if(request != null) {
+            actualDateOfOperation = request.getDate();
+        } else if (response != null){
+            actualDateOfOperation = response.getDate();
+        }
+
+        StringBuilder result = new StringBuilder(128);
+
+        for (AccessLogElement logElement : logElements) {
+            if (request != null)    {
+                logElement.addElement(result, actualDateOfOperation, request.getHttpRequest(), null);
+            } else if (response != null)    {
+                logElement.addElement(result, actualDateOfOperation, null, response.getHttpResponse());
+            }
+        }
+        String logString = result.toString();
+        log.debug(logString);      //log to the console
+        accessLogger.log(logString);      //log to the file
     }
 }

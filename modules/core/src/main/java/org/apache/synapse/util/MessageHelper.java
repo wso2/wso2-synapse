@@ -270,13 +270,30 @@ public class MessageHelper {
                 }
             }
         }
+        
+        Stack<TemplateContext> functionStack = (Stack) synCtx
+                .getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
+        if (functionStack != null) {
+            newCtx.setProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK, functionStack.clone());
+        }
 
         if (log.isDebugEnabled()) {
-            log.info("Parent's Fault Stack : " + faultStack
-                    + " : Child's Fault Stack :" + newCtx.getFaultStack());
+            log.info("Parent's Fault Stack : " + faultStack + " : Child's Fault Stack :"
+                    + newCtx.getFaultStack());
         }
-        
-      
+
+        // Copy ContinuationStateStack from original MC to the new MC
+        if (synCtx.isContinuationEnabled()) {
+            Stack<ContinuationState> continuationStates = synCtx.getContinuationStateStack();
+            newCtx.setContinuationEnabled(true);
+
+            for (ContinuationState continuationState : continuationStates) {
+                if (continuationState != null) {
+                    newCtx.pushContinuationState(ContinuationStackManager
+                            .getClonedSeqContinuationState((SeqContinuationState) continuationState));
+                }
+            }
+        }
         return newCtx;
     }
 
