@@ -114,6 +114,21 @@ public final class VFSConstants {
      * */    
     public static final String TRANSPORT_FILE_COUNT = "transport.vfs.FileProcessCount";
     
+    /**
+     * Lock release true/false
+     * */
+    public static final String TRANSPORT_AUTO_LOCK_RELEASE = "transport.vfs.AutoLockRelease";
+
+    /**
+     * Lock release interval
+     * */
+    public static final String TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL = "transport.vfs.AutoLockReleaseInterval";
+
+    /**
+     * Lock release same node
+     * */
+    public static final String TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE = "transport.vfs.LockReleaseSameNode";  
+    
     public static final String FAILED_RECORD_DELIMITER = " ";
 
     public static final int DEFAULT_MAX_RETRY_COUNT = 3;

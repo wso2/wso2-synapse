@@ -243,7 +243,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     if (fileObject.getType() == FileType.FILE &&
                             !isFailedRecord) {
                         if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
-                                VFSUtils.acquireLock(fsManager, fileObject))) {
+                                acquireLock(fsManager, fileObject, entry))) {
                             try {
                                 processFile(entry, fileObject);
                                 entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
@@ -321,7 +321,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             }
                             
                             if((!entry.isFileLockingEnabled() 
-                                    || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child))) 
+                                    || (entry.isFileLockingEnabled() && acquireLock(fsManager, child, entry))) 
                                     && !isFailedRecord){
                                 //process the file
                                 try {
@@ -423,6 +423,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         }
     }
 
+    private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry){        
+        return VFSUtils.acquireLock(fsManager, fileObject, true, entry.getAutoLockRelease(),
+                entry.getAutoLockReleaseSameNode(), entry.getAutoLockReleaseInterval());
+    }
+    
     /**
      * Take specified action to either move or delete the processed file, depending on the outcome
      * @param entry the PollTableEntry for the file that has been processed
