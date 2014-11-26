@@ -32,6 +32,8 @@ import org.apache.commons.vfs2.FileSystemManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -44,6 +46,8 @@ public class VFSUtils {
 
     private static final Log log = LogFactory.getLog(VFSUtils.class);
 
+    private static final String STR_SPLITER = ":";
+    
     /**
      * URL pattern
      */
@@ -109,26 +113,67 @@ public class VFSUtils {
      * @return boolean true if the lock has been acquired or false if not
      */
     public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo) {
-        
+        return acquireLock(fsManager, fo, false, false, false, null);
+    }
+
+    /**
+     * Acquires a file item lock before processing the item, guaranteing that
+     * the file is not processed while it is being uploaded and/or the item is
+     * not processed by two listeners
+     * 
+     * @param fsManager
+     *            used to resolve the processing file
+     * @param fo
+     *            representing the processing file item
+     * @return boolean true if the lock has been acquired or false if not
+     */
+    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo,
+            boolean checkSource, boolean autoLockRelease, boolean autoLockReleaseSameNode,
+            Long autoLockReleaseInterval) {
+
         // generate a random lock value to ensure that there are no two parties
         // processing the same file
         Random random = new Random();
-        byte[] lockValue = String.valueOf(random.nextLong()).getBytes();
+        // Lock format random:hostname:hostip:time
+        String strLockValue = String.valueOf(random.nextLong());
+        try {
+            strLockValue += STR_SPLITER + InetAddress.getLocalHost().getHostName();
+            strLockValue += STR_SPLITER + InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException ue) {
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to get the Hostname or IP.");
+            }
+        }
+        strLockValue += STR_SPLITER + (new Date()).getTime();
+        byte[] lockValue = strLockValue.getBytes();
         
         try {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
             // lock file is derived by attaching the ".lock" second extension to the file name
-	    String fullPath = fo.getName().getURI();	
+	        String fullPath = fo.getName().getURI();	
             int pos = fullPath.indexOf("?");
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
             }
+            //Check if the file exists before applying the lock.
+            //This is to support concurancy
+            if(checkSource){
+                fo.refresh();
+                if(!fo.exists()){
+                    return false;
+                }
+            }            
             FileObject lockObject = fsManager.resolveFile(fullPath + ".lock");
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
-                        + fo.getName() + ". This could possibly be due to some other party already "
+                        + fo.getName()
+                        + ". This could possibly be due to some other party already "
                         + "processing this file or the file is still being uploaded");
+                if(autoLockRelease){
+                    releaseLock(lockValue, strLockValue, lockObject, autoLockReleaseSameNode,
+                        autoLockReleaseInterval);
+                }
             } else {
 
                 // write a lock file before starting of the processing, to ensure that the
@@ -156,7 +201,14 @@ public class VFSUtils {
                 FileObject verifyingLockObject = fsManager.resolveFile(
                         fullPath + ".lock");
                 if (verifyingLockObject.exists() && verifyLock(lockValue, verifyingLockObject)) {
-                    return true;
+                    if(checkSource){
+                        fo.refresh();
+                        if(fo.exists()){
+                            return true;
+                        }
+                    } else{
+                        return true;
+                    }
                 }
             }
         } catch (FileSystemException fse) {
@@ -298,6 +350,44 @@ public class VFSUtils {
         } catch (FileSystemException e) {
             log.error("Couldn't release the fail for the file : " + fo.getName());
         }
+    }    
+    
+    private static boolean releaseLock(byte[] bLockValue, String sLockValue, FileObject lockObject,
+            Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
+        try {
+            InputStream is = lockObject.getContent().getInputStream();
+            byte[] val = new byte[bLockValue.length];
+            // noinspection ResultOfMethodCallIgnored
+            is.read(val);
+            String strVal = new String(val);
+            // Lock format random:hostname:hostip:time
+            String[] arrVal = strVal.split(":");
+            String[] arrValNew = sLockValue.split(STR_SPLITER);
+            if (arrVal.length == 4 && arrValNew.length == 4) {
+                if (!autoLockReleaseSameNode
+                        || (arrVal[1].equals(arrValNew[1]) && arrVal[2].equals(arrValNew[2]))) {
+                    long lInterval = Long.parseLong(arrValNew[2]) - Long.parseLong(arrVal[2]);
+                    if (autoLockReleaseInterval == null
+                            || autoLockReleaseInterval <= lInterval) {
+                        try {
+                            lockObject.delete();
+                        } catch (Exception e) {
+                            log.warn("Unable to delete the lock file during auto release cycle.", e);
+                        } finally {
+                            lockObject.close();
+                        }
+                        return true;
+                    }
+                }
+            }
+        } catch (FileSystemException e) {
+            log.error("Couldn't verify the lock", e);
+            return false;
+        } catch (IOException e) {
+            log.error("Couldn't verify the lock", e);
+            return false;
+        }
+        return false;
     }    
     
 }
