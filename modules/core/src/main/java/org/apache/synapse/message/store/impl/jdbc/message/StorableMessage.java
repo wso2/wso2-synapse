@@ -24,23 +24,23 @@ import java.io.Serializable;
  * This represents the final JDBC message that will be saved in the JDBC database.
  */
 public class StorableMessage implements Serializable {
-    private Axis2Message axis2Message;
-    private SynapseMessage synapseMessage;
+    private JDBCAxis2Message axis2Message;
+    private JDBCSynapseMessage synapseMessage;
     private int priority = 4;
 
-    public Axis2Message getAxis2Message() {
+    public JDBCAxis2Message getAxis2Message() {
         return axis2Message;
     }
 
-    public void setAxis2Message(Axis2Message axis2Message) {
+    public void setAxis2Message(JDBCAxis2Message axis2Message) {
         this.axis2Message = axis2Message;
     }
 
-    public SynapseMessage getSynapseMessage() {
+    public JDBCSynapseMessage getSynapseMessage() {
         return synapseMessage;
     }
 
-    public void setSynapseMessage(SynapseMessage synapseMessage) {
+    public void setSynapseMessage(JDBCSynapseMessage synapseMessage) {
         this.synapseMessage = synapseMessage;
     }
 

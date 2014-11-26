@@ -42,9 +42,9 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-import org.apache.synapse.message.store.impl.jdbc.message.Axis2Message;
+import org.apache.synapse.message.store.impl.jdbc.message.JDBCAxis2Message;
+import org.apache.synapse.message.store.impl.jdbc.message.JDBCSynapseMessage;
 import org.apache.synapse.message.store.impl.jdbc.message.StorableMessage;
-import org.apache.synapse.message.store.impl.jdbc.message.SynapseMessage;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -89,7 +89,7 @@ public class JDBCStorableMessageHelper {
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2SynapseEnvironment)
                                                                   synapseEnvironment).getAxis2ConfigurationContext().createMessageContext();
         AxisConfiguration axisConfiguration = msgCtx.getConfigurationContext().getAxisConfiguration();
-        Axis2Message jdbcAxis2MessageContext = message.getAxis2Message();
+        JDBCAxis2Message jdbcAxis2MessageContext = message.getAxis2Message();
         SOAPEnvelope envelope = getSoapEnvelope(jdbcAxis2MessageContext.getSoapEnvelope());
 
         try {
@@ -108,14 +108,14 @@ public class JDBCStorableMessageHelper {
             AxisOperation axisOperation =
                     axisService.getOperation(jdbcAxis2MessageContext.getOperationName());
 
-            msgCtx.setFLOW(jdbcAxis2MessageContext.getFLOW());
+            msgCtx.setFLOW(jdbcAxis2MessageContext.getFlow());
             ArrayList executionChain = new ArrayList();
-            if (jdbcAxis2MessageContext.getFLOW() ==
+            if (jdbcAxis2MessageContext.getFlow() ==
                 org.apache.axis2.context.MessageContext.OUT_FLOW) {
                 executionChain.addAll(axisOperation.getPhasesOutFlow());
                 executionChain.addAll(axisConfiguration.getOutFlowPhases());
 
-            } else if (jdbcAxis2MessageContext.getFLOW() ==
+            } else if (jdbcAxis2MessageContext.getFlow() ==
                        org.apache.axis2.context.MessageContext.OUT_FAULT_FLOW) {
                 executionChain.addAll(axisOperation.getPhasesOutFaultFlow());
                 executionChain.addAll(axisConfiguration.getOutFlowPhases());
@@ -160,7 +160,7 @@ public class JDBCStorableMessageHelper {
                 JsonUtil.newJsonPayload(msgCtx,
                                         new ByteArrayInputStream(jdbcAxis2MessageContext.getJsonStream()), true, true);
             }
-            SynapseMessage jdbcSynpaseMessageContext = message.getSynapseMessage();
+            JDBCSynapseMessage jdbcSynpaseMessageContext = message.getSynapseMessage();
 
             synCtx = new Axis2MessageContext(msgCtx, configuration, synapseEnvironment);
             synCtx.setTracingState(jdbcSynpaseMessageContext.getTracingState());
@@ -188,8 +188,8 @@ public class JDBCStorableMessageHelper {
      */
     public StorableMessage createStorableMessage(MessageContext synCtx) {
         StorableMessage jdbcMsg = new StorableMessage();
-        Axis2Message jdbcAxis2MessageContext = new Axis2Message();
-        SynapseMessage jdbcSynpaseMessageContext = new SynapseMessage();
+        JDBCAxis2Message jdbcAxis2MessageContext = new JDBCAxis2Message();
+        JDBCSynapseMessage jdbcSynpaseMessageContext = new JDBCSynapseMessage();
         Axis2MessageContext axis2MessageContext = null;
         if (synCtx instanceof Axis2MessageContext) {
 
@@ -229,7 +229,7 @@ public class JDBCStorableMessageHelper {
 
                 String soapEnvelope = msgCtx.getEnvelope().toString();
                 jdbcAxis2MessageContext.setSoapEnvelope(soapEnvelope);
-                jdbcAxis2MessageContext.setFLOW(msgCtx.getFLOW());
+                jdbcAxis2MessageContext.setFlow(msgCtx.getFLOW());
                 jdbcAxis2MessageContext.setTransportInName(msgCtx.getTransportIn().getName());
                 jdbcAxis2MessageContext.setTransportOutName(msgCtx.getTransportOut().getName());
 

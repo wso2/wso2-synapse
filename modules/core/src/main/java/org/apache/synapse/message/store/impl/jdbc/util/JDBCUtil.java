@@ -26,20 +26,14 @@ import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
 import org.apache.synapse.commons.datasource.RepositoryBasedDataSourceFinder;
 import org.apache.synapse.commons.datasource.factory.DataSourceFactory;
 import org.apache.synapse.message.store.impl.jdbc.JDBCMessageStoreConstants;
-import org.apache.synapse.message.store.impl.jdbc.message.StorableMessage;
 import org.wso2.securevault.secret.SecretInformation;
 import org.wso2.securevault.secret.SecretManager;
 
 import javax.naming.Context;
 import javax.sql.DataSource;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectOutputStream;
-import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -97,7 +91,7 @@ public class JDBCUtil {
             if (parameters.get(JDBCMessageStoreConstants.JDBC_TABLE) != null) {
                 tableName = (String) parameters.get(JDBCMessageStoreConstants.JDBC_TABLE);
             } else {
-                tableName = "synapse_jdbc_store";
+                tableName = JDBCMessageStoreConstants.JDBC_DEFAULT_TABLE_NAME;
             }
         } catch (Exception e) {
             log.error("Error looking up DataSource connection information: ", e);

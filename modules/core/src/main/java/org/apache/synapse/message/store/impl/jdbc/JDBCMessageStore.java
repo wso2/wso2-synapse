@@ -66,7 +66,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     private Semaphore removeLock = new Semaphore(1);
     private Semaphore cleanUpOfferLock = new Semaphore(1);
-    private AtomicBoolean cleaning = new AtomicBoolean(false);
+    private AtomicBoolean cleaningLock = new AtomicBoolean(false);
 
     /**
      * Initializes the JDBC Message Store
@@ -153,10 +153,10 @@ public class JDBCMessageStore extends AbstractMessageStore {
             con = ps.getConnection();
             rs = ps.executeQuery();
             while (rs.next()) {
-                Object msgObj;
+                final Object msgObj;
                 try {
                     msgObj = rs.getObject("message");
-                } catch (Exception e) {
+                } catch (SQLException e) {
                     logger.error("Error executing statement : " + stmt.getRawStatement() +
                                  " against DataSource : " + jdbcUtil.getDSName(), e);
                     break;
@@ -255,7 +255,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             logger.error("Message is null, can't offer into database");
             return false;
         }
-        if (cleaning.get()) {
+        if (cleaningLock.get()) {
             try {
                 cleanUpOfferLock.acquire();
             } catch (InterruptedException ie) {
@@ -264,10 +264,10 @@ public class JDBCMessageStore extends AbstractMessageStore {
         }
         StorableMessage persistentMessage =
                 jdbcStorableMessageHelper.createStorableMessage(messageContext);
-        String msg_id = persistentMessage.getAxis2Message().getMessageID();
-        Statement stmt =
+        String msgId = persistentMessage.getAxis2Message().getMessageID();
+        final Statement stmt =
                 new Statement("INSERT INTO " + jdbcUtil.getTableName() + " (msg_id,message) VALUES (?,?)");
-        stmt.addParameter(msg_id);
+        stmt.addParameter(msgId);
         stmt.addParameter(persistentMessage);
         return processStatementWithoutResult(stmt);
     }
@@ -278,7 +278,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @return - Select and return the first element from the table
      */
     public MessageContext peek() {
-        Statement stmt =
+        final Statement stmt =
                 new Statement("SELECT message FROM " + jdbcUtil.getTableName() + " WHERE indexId=(SELECT min(indexId) from " + jdbcUtil.getTableName() + ")");
         List<MessageContext> result = processStatementWithResult(stmt);
         if (result.size() > 0) {
@@ -302,7 +302,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             if (mc != null) {
                 long minIdx = getMinTableIndex();
                 if (minIdx != 0) {
-                    Statement stmt =
+                    final Statement stmt =
                             new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
                     stmt.addParameter(Long.toString(minIdx));
                     processStatementWithoutResult(stmt);
@@ -342,7 +342,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         try {
             logger.warn(nameString() + "deleting all entries");
             removeLock.acquire();
-            cleaning.set(true);
+            cleaningLock.set(true);
             cleanUpOfferLock.acquire();
             Statement stmt = new Statement("DELETE FROM " + jdbcUtil.getTableName());
             processStatementWithoutResult(stmt);
@@ -350,7 +350,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             logger.error("Acquiring lock failed !: " + ie.getMessage(), ie);
         } finally {
             removeLock.release();
-            cleaning.set(false);
+            cleaningLock.set(false);
             cleanUpOfferLock.release();
         }
     }
@@ -358,20 +358,20 @@ public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Remove the message with given msg_id
      *
-     * @param msg_id - message ID
+     * @param msgId - message ID
      * @return - removed message context
      */
     @Override
-    public MessageContext remove(String msg_id) {
+    public MessageContext remove(String msgId) {
         MessageContext result = null;
         try {
             removeLock.acquire();
-            result = get(msg_id);
+            result = get(msgId);
             Statement stmt = new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE msg_id=?");
-            stmt.addParameter(msg_id);
+            stmt.addParameter(msgId);
             processStatementWithoutResult(stmt);
         } catch (InterruptedException ie) {
-            logger.error("Acquiring lock failed !: " + ie.getMessage(), ie);
+            logger.error("Acquiring lock failed !", ie);
         } finally {
             removeLock.release();
         }
@@ -421,13 +421,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Return the first element with given msg_id
      *
-     * @param msg_id - Message ID
+     * @param msgId - Message ID
      * @return - returns the first result found else null
      */
     @Override
-    public MessageContext get(String msg_id) {
+    public MessageContext get(String msgId) {
         Statement stmt = new Statement("SELECT message FROM " + jdbcUtil.getTableName() + " WHERE msg_id=?");
-        stmt.addParameter(msg_id);
+        stmt.addParameter(msgId);
         List<MessageContext> result = processStatementWithResult(stmt);
         if (result.size() > 0) {
             return result.get(0);

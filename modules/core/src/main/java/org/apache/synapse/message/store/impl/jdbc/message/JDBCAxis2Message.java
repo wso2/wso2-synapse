@@ -26,7 +26,7 @@ import java.util.HashMap;
  * This class serves as a container for the Axis2 Message Context parameters/properties
  * , and it will be saved as a JDBC message in the JDBC Database.
  */
-public class Axis2Message implements Serializable {
+public class JDBCAxis2Message implements Serializable {
     private String messageID;
     private String operationAction;
     private QName operationName;
@@ -45,7 +45,7 @@ public class Axis2Message implements Serializable {
     private boolean isDoingGET;
     private String soapEnvelope;
     private byte[] jsonStream;
-    private int FLOW;
+    private int flow;
     private HashMap<String, Object> properties = new HashMap<String, Object>();
 
     public String getMessageID() {
@@ -120,12 +120,12 @@ public class Axis2Message implements Serializable {
         this.soapEnvelope = soapEnvelope;
     }
 
-    public int getFLOW() {
-        return FLOW;
+    public int getFlow() {
+        return flow;
     }
 
-    public void setFLOW(int FLOW) {
-        this.FLOW = FLOW;
+    public void setFlow(int flow) {
+        this.flow = flow;
     }
 
     public String getFaultToAddress() {

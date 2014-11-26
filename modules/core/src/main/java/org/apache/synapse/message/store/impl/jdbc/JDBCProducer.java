@@ -47,10 +47,6 @@ public class JDBCProducer implements MessageProducer {
      * @param store - JDBC message store
      */
     public JDBCProducer(JDBCMessageStore store) {
-        if (store == null) {
-            logger.error("Cannot initialize.");
-            return;
-        }
         this.store = store;
     }
 

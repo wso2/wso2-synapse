@@ -47,10 +47,6 @@ public class JDBCConsumer implements MessageConsumer {
      * @param store - JDBC message store
      */
     public JDBCConsumer(JDBCMessageStore store) {
-        if (store == null) {
-            logger.error("Cannot initialize.");
-            return;
-        }
         this.store = store;
     }
 
@@ -73,8 +69,11 @@ public class JDBCConsumer implements MessageConsumer {
     @Override
     public boolean ack() {
         // Message will be removed at this point
-        store.poll();
-        return true;
+        if (store.poll() != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -91,11 +90,11 @@ public class JDBCConsumer implements MessageConsumer {
     /**
      * Set consumer id
      *
-     * @param i ID
+     * @param id ID
      */
     @Override
-    public void setId(int i) {
-        idString = "[" + store.getName() + "-C-" + i + "]";
+    public void setId(int id) {
+        idString = "[" + store.getName() + "-C-" + id + "]";
     }
 
     /**
