@@ -41,6 +41,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -75,6 +76,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private boolean initialized = false;
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
+    private SynapseDebugManager synapseDebugManager;
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
@@ -100,6 +102,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
+
+    /** Debug mode is enabled/disabled*/
+    private boolean isDebugEnabled = false;
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
@@ -145,7 +150,22 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         SynapseConfiguration synapseConfig, ServerContextInformation contextInformation) {
         this(cfgCtx, synapseConfig);
         this.contextInformation = contextInformation;
+        setSeverDebugMode(contextInformation);
     }
+
+    /**
+     * this method is to set the debug mode is enabled and initializes the debug manager
+     * debug mode is enabled is set for each time Synapse configuration is changed and Synapse environment initializes
+     *
+     */
+    public void setSeverDebugMode(ServerContextInformation contextInformation){
+        if(contextInformation.isServerDebugModeEnabled()){
+            setDebugEnabled(true);
+            synapseDebugManager=contextInformation.getSynapseDebugManager();
+            contextInformation.getSynapseDebugManager().init(synapseConfig,contextInformation.getSynapseDebugInterface(),this);
+        }
+    }
+
 
     public boolean injectMessage(final MessageContext synCtx) {
         if (log.isDebugEnabled()) {
@@ -714,5 +734,44 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
         }
     }
+
+
+    /**
+     * method to get the reference to debug manager instance which manages debug capabilities in synapse
+     * kept in environment level, made available who ever has access to message context will be able to
+     * get access to the debug manager
+     * *
+     * @return debug manager instance
+     */
+    public SynapseDebugManager getSynapseDebugManager(){
+        return  synapseDebugManager;
+    }
+
+    /**
+     * sets debug manager when synapse environment initializes if the server instance is started in debug mode
+     *
+     */
+    public void setSynapseDebugManager(SynapseDebugManager synapseDebugManager){
+        this.synapseDebugManager=synapseDebugManager;
+    }
+
+    /**
+     * Whether debugging is enabled in the environment.
+     *
+     * @return whether debugging is enabled in the environment
+     */
+    public boolean isDebugEnabled() {
+        return isDebugEnabled;
+    }
+
+    /**
+     * set debugging enabled in the environment.     *
+     * when this is enabled mediation flow can be debugged through a external client
+     * when this is disabled mediation flow happens normally
+     */
+    public void setDebugEnabled(boolean isDebugEnabled) {
+        this.isDebugEnabled=isDebugEnabled;
+    }
+
 
 }

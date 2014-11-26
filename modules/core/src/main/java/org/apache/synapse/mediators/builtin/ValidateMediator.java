@@ -110,6 +110,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

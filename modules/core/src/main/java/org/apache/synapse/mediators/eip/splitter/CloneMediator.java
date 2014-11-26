@@ -75,6 +75,9 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
      * @return boolean true if this needs to be further mediated (continueParent=true)
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

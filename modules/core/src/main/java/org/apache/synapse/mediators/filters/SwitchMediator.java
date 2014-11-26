@@ -76,6 +76,9 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
      * @return as per standard semantics
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

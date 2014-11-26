@@ -46,6 +46,8 @@ import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.debug.SynapseDebugManagerConstants;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
@@ -498,6 +500,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             
             // send the response message through the synapse mediation flow
             try {
+                if(synapseOutMsgCtx.getEnvironment().isDebugEnabled()) {
+                    SynapseDebugManager debugManager = synapseOutMsgCtx.getEnvironment().getSynapseDebugManager();
+                    debugManager.acquireMediationFlowLock();
+                    debugManager.advertiseMediationFlowCallbackPoint(SynapseDebugManagerConstants.SYNAPSE_CALLBACK_RECEIVER, synapseInMessageContext);
+                }
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);
             } catch (SynapseException syne) {
                 Stack stack = synapseInMessageContext.getFaultStack();
@@ -507,6 +514,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 } else {
                     log.error("Synapse encountered an exception, " +
                             "No error handlers found - [Message Dropped]\n" + syne.getMessage());
+                }
+            }finally {
+                if(synapseOutMsgCtx.getEnvironment().isDebugEnabled()) {
+                    SynapseDebugManager debugManager = synapseOutMsgCtx.getEnvironment().getSynapseDebugManager();
+                    debugManager.advertiseMediationFlowTerminatePoint();
+                    debugManager.releaseMediationFlowLock();
                 }
             }
         }

@@ -31,6 +31,8 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.debug.SynapseDebugManagerConstants;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 
@@ -97,7 +99,14 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
         synCtx.setTracingState(proxy.getTraceState());
 
-        try {            
+        try {
+
+            if(synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(SynapseDebugManagerConstants.PROXY_SERVICE_MESSAGE_RECEIVER,synCtx);
+            }
+
 
             Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
             if (mandatorySeq != null) {
@@ -200,6 +209,11 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
+            if(synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.releaseMediationFlowLock();
+            }
+
         }
     }
 

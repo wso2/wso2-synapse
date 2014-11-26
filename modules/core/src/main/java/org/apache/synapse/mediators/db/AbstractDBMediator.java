@@ -126,6 +126,9 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
      * @return true, always
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         String name = (this instanceof DBLookupMediator ? "DBLookup" : "DBReport");
         SynapseLog synLog = getLog(synCtx);

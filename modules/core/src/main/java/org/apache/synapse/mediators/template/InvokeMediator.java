@@ -75,6 +75,9 @@ public class InvokeMediator extends AbstractMediator implements
 
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
         return mediate(synCtx, true);
     }
 

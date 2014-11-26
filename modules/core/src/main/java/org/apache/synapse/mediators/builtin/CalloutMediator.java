@@ -94,6 +94,9 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     BlockingMsgSender blockingMsgSender = null;
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

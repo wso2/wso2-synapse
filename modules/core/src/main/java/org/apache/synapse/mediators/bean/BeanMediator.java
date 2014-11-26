@@ -84,6 +84,9 @@ public class BeanMediator extends AbstractMediator {
      * @return true If mediation should continue
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

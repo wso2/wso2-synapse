@@ -101,6 +101,9 @@ public class SamplingThrottleMediator extends AbstractMediator implements Manage
     }
 
     public boolean mediate(MessageContext messageContext) {
+        if(!super.debugMediate(messageContext)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(messageContext);
 

@@ -9,6 +9,10 @@ import org.apache.synapse.mediators.AbstractMediator;
 public class RespondMediator extends AbstractMediator{
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
+
         SynapseLog synLog = getLog(synCtx);
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Respond Mediator");

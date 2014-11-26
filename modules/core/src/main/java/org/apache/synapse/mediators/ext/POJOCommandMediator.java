@@ -90,6 +90,9 @@ public class POJOCommandMediator extends AbstractMediator {
      * @return boolean true since this will not stop exection chain
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

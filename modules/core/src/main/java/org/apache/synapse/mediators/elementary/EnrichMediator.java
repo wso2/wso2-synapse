@@ -67,6 +67,10 @@ public class EnrichMediator extends AbstractMediator {
     private Target target = null;
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
+
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {

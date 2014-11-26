@@ -46,6 +46,9 @@ public class TransactionMediator extends AbstractMediator {
     private String action = "";
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         UserTransaction tx = null;
         final SynapseLog synLog = getLog(synCtx);

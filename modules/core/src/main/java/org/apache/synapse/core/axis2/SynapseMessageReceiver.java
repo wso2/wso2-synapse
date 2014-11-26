@@ -30,6 +30,8 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
+import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.debug.SynapseDebugManagerConstants;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 
 /**
@@ -80,6 +82,11 @@ public class SynapseMessageReceiver implements MessageReceiver {
 
         try {
             // invoke synapse message mediation through the main sequence
+            if(synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(SynapseDebugManagerConstants.SYNAPSE_MESSAGE_RECEIVER, synCtx);
+            }
             synCtx.getEnvironment().injectMessage(synCtx);
 
         } catch (SynapseException syne) {
@@ -94,6 +101,10 @@ public class SynapseMessageReceiver implements MessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
+            if(synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.releaseMediationFlowLock();
+            }
         }
     }
 

@@ -50,6 +50,9 @@ public class RMSequenceMediator extends AbstractMediator {
             Collections.synchronizedMap(new HashMap<String, Entry>());
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

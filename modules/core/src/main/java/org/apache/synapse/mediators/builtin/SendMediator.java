@@ -51,6 +51,9 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
      * @return false always as this is a leaf mediator
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

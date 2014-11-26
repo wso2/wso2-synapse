@@ -87,6 +87,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      * @return boolean false if need to stop processing of the parent message
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 

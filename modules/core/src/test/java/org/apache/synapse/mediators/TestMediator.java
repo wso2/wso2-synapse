@@ -32,6 +32,9 @@ public class TestMediator extends AbstractMediator {
     }
 
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
         if (handlerTest != null) {
             handlerTest.handle(synCtx);
         }

@@ -153,6 +153,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      * @return boolean true if the complete condition for the particular aggregate is validated
      */
     public boolean mediate(MessageContext synCtx) {
+        if(!super.debugMediate(synCtx)){
+            return true;
+        }
 
         SynapseLog synLog = getLog(synCtx);
 
