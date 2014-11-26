@@ -85,6 +85,12 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private Integer fileProcessingInterval;
     
     private Integer fileProcessingCount;
+
+    private Boolean autoLockRelease;
+
+    private Long autoLockReleaseInterval;
+
+    private Boolean autoLockReleaseSameNode;   
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -217,6 +223,48 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return moveTimestampFormat;
     }
 
+    /**
+     * @return the autoLockRelease
+     */
+    public Boolean getAutoLockRelease() {
+        return autoLockRelease;
+    }
+
+    /**
+     * @param autoLockRelease the autoLockRelease to set
+     */
+    public void setAutoLockRelease(Boolean autoLockRelease) {
+        this.autoLockRelease = autoLockRelease;
+    }
+
+    /**
+     * @return the autoLockReleaseInterval
+     */
+    public Long getAutoLockReleaseInterval() {
+        return autoLockReleaseInterval;
+    }
+
+    /**
+     * @param autoLockReleaseInterval the autoLockReleaseInterval to set
+     */
+    public void setAutoLockReleaseInterval(Long autoLockReleaseInterval) {
+        this.autoLockReleaseInterval = autoLockReleaseInterval;
+    }
+
+    /**
+     * @return the autoLockReleaseSameNode
+     */
+    public Boolean getAutoLockReleaseSameNode() {
+        return autoLockReleaseSameNode;
+    }
+
+    /**
+     * @param autoLockReleaseSameNode the autoLockReleaseSameNode to set
+     */
+    public void setAutoLockReleaseSameNode(Boolean autoLockReleaseSameNode) {
+        this.autoLockReleaseSameNode = autoLockReleaseSameNode;
+    }
+
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
         
@@ -340,6 +388,49 @@ public class PollTableEntry extends AbstractPollTableEntry {
             		log.warn("VFS File Processing Count not set correctly. Current value is : " + strFileProcessingCount , nfe);
             	}
             }                        
+            
+            String strAutoLock = ParamUtils.getOptionalParam(params,
+                    VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE);
+            autoLockRelease = false;
+            autoLockReleaseSameNode = true;
+            autoLockReleaseInterval = null;
+            if (strAutoLock != null) {
+                try {
+                    autoLockRelease = Boolean.parseBoolean(strAutoLock);
+                } catch (Exception e) {
+                    autoLockRelease = false;
+                    log.warn("VFS Auto lock removal not set properly. Current value is : "
+                            + strAutoLock, e);
+                }
+                if (autoLockRelease) {
+                    String strAutoLockInterval = ParamUtils.getOptionalParam(params,
+                            VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL);
+                    if (strAutoLockInterval != null) {
+                        try {
+                            autoLockReleaseInterval = Long.parseLong(strAutoLockInterval);
+                        } catch (Exception e) {
+                            autoLockReleaseInterval = null;
+                            log.warn(
+                                    "VFS Auto lock removal property not set properly. Current value is : "
+                                            + strAutoLockInterval, e);
+                        }
+                    }
+                    String strAutoLockReleaseSameNode = ParamUtils.getOptionalParam(params,
+                            VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE);
+                    if (strAutoLockReleaseSameNode != null) {
+                        try {
+                            autoLockReleaseSameNode = Boolean
+                                    .parseBoolean(strAutoLockReleaseSameNode);
+                        } catch (Exception e) {
+                            autoLockReleaseSameNode = true;
+                            log.warn(
+                                    "VFS Auto lock removal property not set properly. Current value is : "
+                                            + autoLockReleaseSameNode, e);
+                        }
+                    }
+                }
+
+            }            
             
             return super.loadConfiguration(params);
         }
