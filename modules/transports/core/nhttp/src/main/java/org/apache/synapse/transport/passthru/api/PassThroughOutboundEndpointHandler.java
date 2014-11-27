@@ -18,6 +18,7 @@
 
 package org.apache.synapse.transport.passthru.api;
 
+import org.apache.log4j.Logger;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 import org.apache.synapse.transport.passthru.core.PassThroughSenderManager;
 
@@ -26,6 +27,7 @@ import org.apache.synapse.transport.passthru.core.PassThroughSenderManager;
  */
 public class PassThroughOutboundEndpointHandler {
 
+    private static final  Logger logger = Logger.getLogger(PassThroughOutboundEndpointHandler.class);
     private static final PassThroughSenderManager PASS_THROUGH_SENDER_MANAGER;
 
     static {
@@ -35,8 +37,12 @@ public class PassThroughOutboundEndpointHandler {
     /**
      * @return Get Shared PassThroughHttpSender
      */
-    public static PassThroughHttpSender getPassThroughHttpSender() {
-        return PASS_THROUGH_SENDER_MANAGER.getSharedPassThroughHttpSender();
+    public static PassThroughHttpSender getPassThroughHttpSender() throws Exception {
+        if(PASS_THROUGH_SENDER_MANAGER != null) {
+            return PASS_THROUGH_SENDER_MANAGER.getSharedPassThroughHttpSender();
+        }else{
+            throw  new Exception("Shared PassThroughHTTPSender is not registered when Transport is initiating");
+        }
     }
 
 }

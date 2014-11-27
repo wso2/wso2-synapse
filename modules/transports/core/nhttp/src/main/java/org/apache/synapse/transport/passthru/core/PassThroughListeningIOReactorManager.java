@@ -166,9 +166,9 @@ public class PassThroughListeningIOReactorManager {
         if (passThroughListeningIOReactorManager != null) {
             return passThroughListeningIOReactorManager;
         } else {
-            logger.error("PassThroughIOReactorManager is not initiated");
-            throw new NullPointerException("PassThroughIOReactorManager is not initiated Properly When PassThrough " +
+            logger.error("PassThroughIOReactorManager is not initiated Properly When PassThrough " +
                     "Axis2 Listeners are Starting or Axis2Listeners are not Started");
+            return null;
         }
     }
 
@@ -189,15 +189,15 @@ public class PassThroughListeningIOReactorManager {
                     && !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
                 // Create IOReactor for Listener make it shareable with Inbounds
                 portServerHandlerMapper.put(port, nHttpServerEventHandler);
-                serverIODispatch = new MultiListenerServerIODispatch
-                        (portServerHandlerMapper, nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());
-                defaultListeningIOReactor = initiateIOReactor(passThroughSharedListenerConfiguration);
-                logger.info("IO Reactor for port " + port + " initiated on shared mode which will be used by non axis2 Transport " +
-                        " Listeners ");
-                synchronized (this) {
+                synchronized (this){
+                    serverIODispatch = new MultiListenerServerIODispatch
+                            (portServerHandlerMapper, nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());
+                    defaultListeningIOReactor = initiateIOReactor(passThroughSharedListenerConfiguration);
+                    logger.info("IO Reactor for port " + port + " initiated on shared mode which will be used by non axis2 Transport " +
+                            " Listeners ");
                     sharedListeningIOReactor = defaultListeningIOReactor;
+                    isSharedIOReactorInitiated.compareAndSet(false, true);
                 }
-                isSharedIOReactorInitiated.compareAndSet(false, true);
             } else {
                 // Create un shareable IOReactors for axis2 Listeners and assign IOReactor Config for later create IOReactor for Inbounds
                 serverIODispatch = new ServerIODispatch(nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());

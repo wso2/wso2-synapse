@@ -59,8 +59,13 @@ public class PassThroughInboundEndpointHandler {
     /**
      * @return  Pass Through SourceConfiguration registered by shared IO Reactor of  PTT Listener
      */
-    public static SourceConfiguration getPassThroughSourceConfiguration() {
-        return PASS_THROUGH_IO_REACTOR_MANAGER.getSharedPassThroughSourceConfiguration();
+    public static SourceConfiguration getPassThroughSourceConfiguration() throws Exception {
+        if (PASS_THROUGH_IO_REACTOR_MANAGER != null) {
+            return PASS_THROUGH_IO_REACTOR_MANAGER.getSharedPassThroughSourceConfiguration();
+        } else {
+            throw new Exception("PassThroughSharedListenerConfiguration  is not initiated correctly when  " +
+                                                                                  "PassThroughListeners  are starting");
+        }
     }
 
 }
