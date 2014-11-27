@@ -96,7 +96,7 @@ public class ServerWorker implements Runnable {
         this.request = request;
         this.sourceConfiguration = sourceConfiguration;
 
-        this.msgContext = createMessageContext(null,request);
+        this.msgContext = createMessageContext(null, request);
         
         this.httpGetRequestProcessor = sourceConfiguration.getHttpGetRequestProcessor();
         
@@ -119,17 +119,17 @@ public class ServerWorker implements Runnable {
         }
         String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
 
-        httpPreProcessing(msgContext,method);
+        processHttpRequestUri(msgContext, method);
 		
 		//need special case to handle REST
-		boolean restHandle = isRestHandle(msgContext,method);
+		boolean rest = isRESTRequest(msgContext, method);
 
 		//should be process normally
-		if (!restHandle) {
+		if (!rest) {
 			if (request.isEntityEnclosing()) {
-				processEntityEnclosingRequest(msgContext,true);
+				processEntityEnclosingRequest(msgContext, true);
 			} else {
-				processNonEntityEnclosingRESTHandler(null,msgContext,true);
+				processNonEntityEnclosingRESTHandler(null, msgContext, true);
 			}
 		}
 
@@ -263,7 +263,7 @@ public class ServerWorker implements Runnable {
         }
     }
 
-    public void processNonEntityEnclosingRESTHandler(SOAPEnvelope soapEnvelope,MessageContext msgContext,boolean injectToAxis2Engine) {
+    public void processNonEntityEnclosingRESTHandler(SOAPEnvelope soapEnvelope, MessageContext msgContext, boolean injectToAxis2Engine) {
         String soapAction = request.getHeaders().get(SOAP_ACTION_HEADER);
         if ((soapAction != null) && soapAction.startsWith("\"") && soapAction.endsWith("\"")) {
             soapAction = soapAction.substring(1, soapAction.length() - 1);
@@ -298,7 +298,7 @@ public class ServerWorker implements Runnable {
         }
     }
 
-    public  void processEntityEnclosingRequest(MessageContext msgContext,boolean injectToAxis2Engine) {
+    public  void processEntityEnclosingRequest(MessageContext msgContext, boolean injectToAxis2Engine) {
         try {
             String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
             contentTypeHeader = contentTypeHeader != null ? contentTypeHeader : inferContentType();
@@ -332,7 +332,7 @@ public class ServerWorker implements Runnable {
                 msgContext.setDoingREST(true);
                 SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
                 msgContext.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, request.getPipe());
-                processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,injectToAxis2Engine);
+                processNonEntityEnclosingRESTHandler(soapEnvelope, msgContext, injectToAxis2Engine);
     			return;
             } else {
                 String soapAction = request.getHeaders().get(SOAP_ACTION_HEADER);
@@ -392,8 +392,8 @@ public class ServerWorker implements Runnable {
     	Map excessHeaders = request.getExcessHeaders();
         ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
 
-        if (msgContext ==null) {
-            msgContext =new MessageContext();
+        if (msgContext == null) {
+            msgContext = new MessageContext();
         }
         msgContext.setMessageID(UIDGenerator.generateURNString());
 
@@ -569,21 +569,26 @@ public class ServerWorker implements Runnable {
     }
 
     /**
-     * @return <>SourceRequest</>
+     * @return Get SourceRequest Processed by ServerWorker
      */
-    public SourceRequest getRequest() {
+    public SourceRequest getSourceRequest() {
         return request;
     }
 
     /**
-     * @param request <>SourceRequest to set for Server Worker</>
+     * @param request Set SourceRequest to be processed by ServerWorker
      */
-    public void setRequest(SourceRequest request) {
+    public void setSourceRequest(SourceRequest request) {
         this.request = request;
     }
 
-
-    public boolean isRestHandle(MessageContext msgContext,String method){
+    /**
+     * Adding REST related properties to the message context if request is  REST
+     * @param msgContext Axis2MessageContext of the request
+     * @param method HTTP Method of the request
+     * @return whether request is REST or SOAP
+     */
+    public boolean isRESTRequest(MessageContext msgContext, String method){
         if(msgContext.getProperty
                 (PassThroughConstants.REST_GET_DELETE_INVOKE) != null && (Boolean)msgContext.getProperty
                                                                          (PassThroughConstants.REST_GET_DELETE_INVOKE)){
@@ -598,7 +603,13 @@ public class ServerWorker implements Runnable {
         return false;
     }
 
-    public void httpPreProcessing(MessageContext msgContext, String method){
+    /**
+     * Get Uri of underlying SourceRequest and  calculate service prefix and add to message context
+     * create response buffers for  HTTP GET, DELETE, OPTION and HEAD methods
+     * @param msgContext Axis2MessageContext of the request
+     * @param method HTTP Method of the request
+     */
+    public void processHttpRequestUri(MessageContext msgContext, String method){
         String servicePrefixIndex="://";
         ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
         msgContext.setProperty(Constants.Configuration.HTTP_METHOD, request.getMethod());

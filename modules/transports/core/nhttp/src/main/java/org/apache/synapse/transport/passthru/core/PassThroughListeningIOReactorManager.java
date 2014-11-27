@@ -62,12 +62,13 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param inetSocketAddress       <>Socket Address of starting endpoint</>
-     * @param nHttpServerEventHandler <>Server Handler responsible for handle events of port</>
-     * @param endpointName            <>Endpoint Name</>
-     * @return <>is Endpoint started</>
+     * Start Endpoint in IOReactor which is external to axis2 Listeners started at server startup
+     * @param inetSocketAddress Socket Address of starting endpoint
+     * @param nHttpServerEventHandler ServerHandler responsible for handle events of port
+     * @param endpointName Endpoint Name
+     * @return Is Endpoint started
      */
-    public boolean startNonAxis2PTTEndpoint
+    public boolean startDynamicPTTEndpoint
     (InetSocketAddress inetSocketAddress, NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
         if (isSharedIOReactorInitiated.get()) {
             // if already SharedIOReactor initiated then use it for start endpoints
@@ -111,21 +112,23 @@ public class PassThroughListeningIOReactorManager {
 
 
     /**
-     * @param inetSocketAddress         <>Socket Address of starting endpoint</>
-     * @param defaultListeningIOReactor <>IO Reactor which  starts Endpoint</>
-     * @param namePrefix                <>name specified for endpoint</>
-     * @return <>is started</>
+     * Start PTT Endpoint which is given by axis2.xml
+     * @param inetSocketAddress Socket Address of starting endpoint
+     * @param defaultListeningIOReactor IO Reactor which  starts Endpoint
+     * @param namePrefix name specified for endpoint
+     * @return  Is started
      */
-    public boolean startAxis2PTTEndpoint
+    public boolean startPTTEndpoint
     (InetSocketAddress inetSocketAddress, DefaultListeningIOReactor defaultListeningIOReactor, String namePrefix) {
         return startEndpoint(inetSocketAddress, defaultListeningIOReactor, namePrefix) != null;
     }
 
     /**
-     * @param port <>port of the Endpoint need to close</>
-     * @return <>is endpoint closed</>
+     * Close external endpoints listen in shared IO Reactor
+     * @param port port of the endpoint need to close
+     * @return is endpoint closed
      */
-    public boolean closeNonAxis2PTTEndpoint(int port) {
+    public boolean closeDynamicPTTEndpoint(int port) {
         try {
             nonAxis2PTTPortListeningEndpointMapper.get(port).close();
         } catch (Exception e) {
@@ -143,8 +146,8 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param ioReactorSharingMode <>Mode of IO Reactor Sharing can be SHARED or UNSHARED</>
-     * @return <>PassThroughIOReactorManager</>
+     * @param ioReactorSharingMode Mode of IO Reactor Sharing can be SHARED or UNSHARED
+     * @return PassThroughIOReactorManager
      */
     public static PassThroughListeningIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
         if (passThroughListeningIOReactorManager == null) {
@@ -157,7 +160,7 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @return <>PassThroughIOReactorManager</>
+     * @return PassThroughIOReactorManager
      */
     public static PassThroughListeningIOReactorManager getInstance(){
         if (passThroughListeningIOReactorManager != null) {
@@ -170,10 +173,11 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param port                       <>Port of the Endpoint for axis2 Listener</>
-     * @param nHttpServerEventHandler    <>Server Handler responsible for handle events of port</>
-     * @param passThroughSharedListenerConfiguration <>configuration related to create and start IOReactor</>
-     * @return <>IOReactor</>
+     * Create IOReactor with given configuration
+     * @param port Port of the Endpoint for axis2 Listener
+     * @param nHttpServerEventHandler Server Handler responsible for handle events of port
+     * @param passThroughSharedListenerConfiguration configuration related to create and start IOReactor
+     * @return IOReactor
      */
     public ListeningIOReactor initIOReactor
     (int port, NHttpServerEventHandler nHttpServerEventHandler, PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
@@ -215,10 +219,11 @@ public class PassThroughListeningIOReactorManager {
 
 
     /**
-     * @param port <>Port of the Endpoint for PTT axis2 Listener</>
-     * @return <>is all Endpoints closed</>
+     * Close all endpoints started by PTT Listeners.
+     * @param port Port of the Endpoint for PTT axis2 Listener
+     * @return  is all Endpoints closed
      */
-    public boolean closeAllAxi2PTTRelatedEndpoints(int port) {
+    public boolean closeAllStaticEndpoints(int port) {
         try {
             if (axis2ListenerIOReactorMapper.containsKey(port)) {
                 ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
@@ -245,8 +250,9 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param port <>Port of  axis2 PTT Listener</>
-     * @return <>ServerIODispatch</>
+     * Return ServerIODispatch registered under given port
+     * @param port Port of  axis2 PTT Listener
+     * @return ServerIODispatch
      */
     public ServerIODispatch getServerIODispatch(int port) {
         if (axis2ListenerServerIODispatchMapper.containsKey(port)) {
@@ -256,7 +262,7 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @return <>source configuration used by shared IO Reactor</>
+     * @return  source configuration used by shared IO Reactor
      */
     public SourceConfiguration getSharedPassThroughSourceConfiguration() {
         if (sharedIOReactorConfig != null) {
@@ -266,10 +272,11 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param port <>Port of  axis2 PTT Listener</>
-     * @throws IOException <>Exception throwing when Shutdown</>
+     * ShutdownIOReactor which is registered by HTTPListener running on given port
+     * @param port Port of  axis2 PTT Listener
+     * @throws IOException Exception throwing when Shutdown
      */
-    public void ioReactorShutdown(int port) throws IOException {
+    public void shutdownIOReactor(int port) throws IOException {
         ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
         ServerIODispatch serverIODispatch = axis2ListenerServerIODispatchMapper.get(port);
         if (listeningIOReactor != null) {
@@ -288,11 +295,12 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param port        <>Port of  axis2 PTT Listener</>
-     * @param miliSeconds <>Waiting Time before close IO Reactor</>
-     * @throws IOException <>Exception throwing when Shutdown</>
+     * ShutdownIOReactor which is registered by HTTPListener running on given port
+     * @param port Port of  axis2 PTT Listener
+     * @param miliSeconds Waiting Time before close IO Reactor
+     * @throws IOException Exception throwing when Shutdown
      */
-    public void ioReactorShutdown(int port, long miliSeconds) throws IOException {
+    public void shutdownIOReactor(int port, long miliSeconds) throws IOException {
         ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
         ServerIODispatch serverIODispatch = axis2ListenerServerIODispatchMapper.get(port);
         if (listeningIOReactor != null) {
@@ -311,10 +319,11 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param port <>Port of  axis2 PTT Listener</>
-     * @throws IOException <>Exception throwing when pausing</>
+     * Pause IO Reactor which is registered by HTTPListener running on given port
+     * @param port Port of  axis2 PTT Listener
+     * @throws IOException Exception throwing when pausing
      */
-    public void ioReactorPause(int port) throws IOException {
+    public void pauseIOReactor(int port) throws IOException {
         ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
         ServerIODispatch serverIODispatch = axis2ListenerServerIODispatchMapper.get(port);
         if (listeningIOReactor != null) {
@@ -331,8 +340,9 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param port <>Port of  axis2 PTT Listener</>
-     * @throws IOException <>Exception throwing when pausing</>
+     * Resume IO Reactor which is registered by HTTPListener running on given port
+     * @param port Port of  axis2 PTT Listener
+     * @throws IOException Exception throwing when pausing
      */
     public void resume(int port) throws IOException {
         ListeningIOReactor listeningIOReactor = axis2ListenerIOReactorMapper.get(port);
@@ -357,9 +367,10 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * @param listeningIOReactor <>Listening IO Reactor to be start</>
-     * @param serverIODispatch   <>underlying Event Dispatcher for Reactor</>
-     * @param prefix             <>String</>
+     * StartIOReactor with given ServerIODispatch
+     * @param listeningIOReactor Listening IO Reactor to be start
+     * @param serverIODispatch underlying Event Dispatcher for Reactor
+     * @param prefix HTTP/HTTPS
      */
     public void startIOReactor(final ListeningIOReactor listeningIOReactor, final ServerIODispatch serverIODispatch, final String prefix) {
         Thread reactorThread = new Thread(new Runnable() {

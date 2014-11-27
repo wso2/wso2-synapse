@@ -469,9 +469,10 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     /**
-     * @param method <>GET and HEAD methods have Output Stream which will be used for write response</>
-     * @param request <>Source Request</>
-     * @return <>OutputStream</>
+     * Create synapse.response-source-buffer for GET and HEAD Http methods
+     * @param method  Http Method
+     * @param request Source Request
+     * @return OutputStream
      */
     public OutputStream getOutputStream(String method,SourceRequest request){
         OutputStream os=null;
@@ -485,8 +486,9 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     /**
+     * Create SourceRequest from NHttpServerConnection conn
      * @param conn the connection being processed
-     * @return <>SourceRequest</>
+     * @return SourceRequest
      * @throws IOException
      * @throws HttpException
      */

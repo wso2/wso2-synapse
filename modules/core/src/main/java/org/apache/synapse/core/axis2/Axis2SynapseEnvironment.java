@@ -760,9 +760,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (traceOn) {
             trace.warn(msg);
         }
-        if (log.isDebugEnabled()) {
-            log.warn(msg);
-        }
+        log.warn(msg);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }

@@ -36,26 +36,28 @@ public class PassThroughInboundEndpointHandler {
     }
 
     /**
-     * @param inetSocketAddress       <>Socket Address of the Endpoint need to be start by underlying IOReactor</>
-     * @param nHttpServerEventHandler <>Event Handler for handle events for Endpoint</>
-     * @param endpointName            <>Name of the Endpoint</>
-     * @return <>Is Endpoint started successfully</>
+     * Start Endpoint Listen and events related to Endpoint handle by  given NHttpServerEventHandler
+     * @param inetSocketAddress Socket Address of the Endpoint need to be start by underlying IOReactor
+     * @param nHttpServerEventHandler Event Handler for handle events for Endpoint
+     * @param endpointName Name of the Endpoint
+     * @return  Is Endpoint started successfully
      */
     public static boolean startEndpoint
     (InetSocketAddress inetSocketAddress, NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
-        return PASS_THROUGH_IO_REACTOR_MANAGER.startNonAxis2PTTEndpoint(inetSocketAddress, nHttpServerEventHandler, endpointName);
+        return PASS_THROUGH_IO_REACTOR_MANAGER.startDynamicPTTEndpoint(inetSocketAddress, nHttpServerEventHandler, endpointName);
     }
 
     /**
-     * @param port <>Port bind to Endpoint to be closed</>
-     * @return <>IS successfully closed</>
+     * close ListeningEndpoint running on the given port
+     * @param port Port of  ListeningEndpoint to be closed
+     * @return  IS successfully closed
      */
     public static boolean closeEndpoint(int port) {
-        return PASS_THROUGH_IO_REACTOR_MANAGER.closeNonAxis2PTTEndpoint(port);
+        return PASS_THROUGH_IO_REACTOR_MANAGER.closeDynamicPTTEndpoint(port);
     }
 
     /**
-     * @return <>Pass Through SourceConfiguration registered by shared IO Reactor axis2 PTT Listener</>
+     * @return  Pass Through SourceConfiguration registered by shared IO Reactor of  PTT Listener
      */
     public static SourceConfiguration getPassThroughSourceConfiguration() {
         return PASS_THROUGH_IO_REACTOR_MANAGER.getSharedPassThroughSourceConfiguration();

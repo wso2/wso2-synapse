@@ -39,7 +39,7 @@ public class PassThroughSenderManager {
     }
 
     /**
-     * @param passThroughHttpSender <>Register shared PassThroughHttpSender</>
+     * @param passThroughHttpSender register shared PassThroughHttpSender
      */
     public static void registerPassThroughHttpSender(PassThroughHttpSender passThroughHttpSender) {
         if (passThroughSenderManager == null){
@@ -50,7 +50,7 @@ public class PassThroughSenderManager {
     }
 
     /**
-     * @return <>return passThroughSenderManager</>
+     * @return return passThroughSenderManager
      */
     public static PassThroughSenderManager getInstance() {
         if (passThroughSenderManager != null) {

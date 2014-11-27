@@ -23,12 +23,24 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * This class is a representation of configuration used when creating ListeningIOReactor
+ */
 public class PassThroughSharedListenerConfiguration {
 
+    /**
+     * ThreadFactory Used by IOReactor
+     */
     private ThreadFactory threadFactory;
 
+    /**
+     * ServerConnFactory used by EventDispatcher to create connections
+     */
     private ServerConnFactory serverConnFactory;
 
+    /**
+     * SourceConfiguration used by IOReactor to initiate
+     */
     private SourceConfiguration  sourceConfiguration;
 
     public PassThroughSharedListenerConfiguration

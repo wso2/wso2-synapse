@@ -33,7 +33,7 @@ public class PassThroughOutboundEndpointHandler {
     }
 
     /**
-     * @return <>Get Shared PassThroughHttpSender</>
+     * @return Get Shared PassThroughHttpSender
      */
     public static PassThroughHttpSender getPassThroughHttpSender() {
         return PASS_THROUGH_SENDER_MANAGER.getSharedPassThroughHttpSender();

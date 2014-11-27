@@ -120,7 +120,9 @@ public class PassThroughHttpListener implements TransportListener {
     private AxisServiceTracker serviceTracker;
 
     private TransportInDescription pttInDescription;
-
+    /**
+     * HttpListener Running port
+     */
     private  int operatingPort;
     protected Scheme initScheme() {
         return new Scheme("http", 80, false);
@@ -142,12 +144,11 @@ public class PassThroughHttpListener implements TransportListener {
         int portOffset = Integer.parseInt(System.getProperty("portOffset", "0"));
         Parameter portParam = transportInDescription.getParameter("port");
         int port = Integer.parseInt(portParam.getValue().toString());
-        port = port + portOffset;
-        operatingPort =port;
-        portParam.setValue(String.valueOf(port));
-        portParam.getParameterElement().setText(String.valueOf(port));
+        operatingPort = port + portOffset;
+        portParam.setValue(String.valueOf(operatingPort));
+        portParam.getParameterElement().setText(String.valueOf(operatingPort));
 
-        System.setProperty(transportInDescription.getName() + ".nio.port", String.valueOf(port));
+        System.setProperty(transportInDescription.getName() + ".nio.port", String.valueOf(operatingPort));
 
         Object obj = cfgCtx.getProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL);
         WorkerPool workerPool = null;
@@ -227,7 +228,7 @@ public class PassThroughHttpListener implements TransportListener {
 
             String prefix = namePrefix + "-Listener I/O dispatcher";
 
-            passThroughListeningIOReactorManager.startIOReactor(ioReactor, passThroughListeningIOReactorManager.getServerIODispatch(operatingPort),prefix);
+            passThroughListeningIOReactorManager.startIOReactor(ioReactor, passThroughListeningIOReactorManager.getServerIODispatch(operatingPort), prefix);
 
             ioReactor.setExceptionHandler(new IOReactorExceptionHandler() {
 
@@ -280,7 +281,7 @@ public class PassThroughHttpListener implements TransportListener {
 
         });
         for (InetSocketAddress address: addressList) {
-            passThroughListeningIOReactorManager.startAxis2PTTEndpoint(address,ioReactor,namePrefix);
+            passThroughListeningIOReactorManager.startPTTEndpoint(address, ioReactor, namePrefix);
         }
 
     }
@@ -369,12 +370,12 @@ public class PassThroughHttpListener implements TransportListener {
         try {
             int wait = PassThroughConfiguration.getInstance().getListenerShutdownWaitTime();
             if (wait > 0) {
-                passThroughListeningIOReactorManager.ioReactorPause(operatingPort);
+                passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
                 log.info("Waiting " + wait/1000 + " seconds to cleanup active connections...");
                 Thread.sleep(wait);
-                passThroughListeningIOReactorManager.ioReactorShutdown(operatingPort,wait);
+                passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort, wait);
             } else {
-                passThroughListeningIOReactorManager.ioReactorShutdown(operatingPort);
+                passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
             }
             serviceTracker.stop();
         } catch (IOException e) {
@@ -403,7 +404,7 @@ public class PassThroughHttpListener implements TransportListener {
     public void pause() throws AxisFault {
         if (state != BaseConstants.STARTED) return;
         try {
-           passThroughListeningIOReactorManager.ioReactorPause(operatingPort);
+           passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
 
             state = BaseConstants.PAUSED;
             log.info(namePrefix + " Listener Paused");
@@ -432,7 +433,7 @@ public class PassThroughHttpListener implements TransportListener {
         if (state != BaseConstants.STARTED) return;
 
         // Close all listener endpoints and stop accepting new connections
-       passThroughListeningIOReactorManager.closeAllAxi2PTTRelatedEndpoints(operatingPort);
+       passThroughListeningIOReactorManager.closeAllStaticEndpoints(operatingPort);
 
         // Rebuild connection factory
         HttpHost host = new HttpHost(
@@ -459,8 +460,8 @@ public class PassThroughHttpListener implements TransportListener {
         if (state != BaseConstants.STARTED) return;
         try {
             long start = System.currentTimeMillis();
-            passThroughListeningIOReactorManager.ioReactorPause(operatingPort);
-            passThroughListeningIOReactorManager.ioReactorShutdown(operatingPort,milliSecs);
+            passThroughListeningIOReactorManager.pauseIOReactor(operatingPort);
+            passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort, milliSecs);
             state = BaseConstants.STOPPED;
             serviceTracker.stop();
             log.info("Listener shutdown in : " + (System.currentTimeMillis() - start) / 1000 + "s");
