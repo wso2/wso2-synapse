@@ -30,6 +30,7 @@ import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
@@ -49,6 +50,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
@@ -72,6 +74,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private SynapseConfiguration synapseConfig;
     private ConfigurationContext configContext;
     private ExecutorService executorService;
+    private ExecutorService executorServiceInbound;
     private boolean initialized = false;
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
@@ -130,6 +133,23 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             synCfg.getProperty(SynapseThreadPool.SYN_THREAD_IDPREFIX,
                 SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX));
 
+        int ibCoreThreads = InboundThreadPool.INBOUND_CORE_THREADS;
+        int ibMaxThreads  = InboundThreadPool.INBOUND_MAX_THREADS;
+
+        try {
+        	ibCoreThreads = Integer.parseInt(synCfg.getProperty(InboundThreadPool.IB_THREAD_CORE));
+        } catch (Exception ignore) {}
+
+        try {
+        	ibMaxThreads = Integer.parseInt(synCfg.getProperty(InboundThreadPool.IB_THREAD_MAX));
+        } catch (Exception ignore) {}
+
+        this.executorServiceInbound = new InboundThreadPool(ibCoreThreads, ibMaxThreads, InboundThreadPool.INBOUND_KEEP_ALIVE, InboundThreadPool.INBOUND_THREAD_QLEN,
+            synCfg.getProperty(SynapseThreadPool.SYN_THREAD_GROUP,
+                               InboundThreadPool.INBOUND_THREAD_GROUP),
+            synCfg.getProperty(InboundThreadPool.INBOUND_THREAD_ID_PREFIX,
+                               InboundThreadPool.INBOUND_THREAD_ID_PREFIX));        
+        
         taskManager = new SynapseTaskManager();
         restHandler = new RESTRequestHandler();
     }
@@ -287,6 +307,50 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         executorService.execute(new MediatorWorker(seq, synCtx));
     }
 
+    public void injectInbound(final MessageContext synCtx, SequenceMediator seq, boolean sequential) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Injecting MessageContext for inbound mediation using the : "
+                + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
+        }
+        if(sequential){
+        	try{
+        		seq.mediate(synCtx);
+            } catch (SynapseException syne) {
+                if (!synCtx.getFaultStack().isEmpty()) {
+                    log.warn("Executing fault handler due to exception encountered");
+                    ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+
+                } else {
+                    log.warn("Exception encountered but no fault handler found - message dropped");
+                }
+
+            } catch (Exception e) {
+                String msg = "Unexpected error executing task/async inject";
+                log.error(msg, e);
+                if (synCtx.getServiceLog() != null) {
+                    synCtx.getServiceLog().error(msg, e);
+                }
+                if (!synCtx.getFaultStack().isEmpty()) {
+                    log.warn("Executing fault handler due to exception encountered");
+                    ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+
+                } else {
+                    log.warn("Exception encountered but no fault handler found - message dropped");
+                }
+            } catch (Throwable e) {
+                String msg = "Unexpected error executing inbound/async inject, message dropped";
+                log.error(msg, e);
+                if (synCtx.getServiceLog() != null) {
+                    synCtx.getServiceLog().error(msg, e);
+                }
+            }        	
+        }else{
+        	synCtx.setEnvironment(this);
+        	executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
+        }
+    }    
+    
     /**
      * This will be used for sending the message provided, to the endpoint specified by the
      * EndpointDefinition using the axis2 environment.
