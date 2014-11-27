@@ -155,14 +155,6 @@ public class VFSUtils {
             int pos = fullPath.indexOf("?");
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
-            }
-            //Check if the file exists before applying the lock.
-            //This is to support concurancy
-            if(checkSource){
-                fo.refresh();
-                if(!fo.exists()){
-                    return false;
-                }
             }            
             FileObject lockObject = fsManager.resolveFile(fullPath + ".lock");
             if (lockObject.exists()) {
@@ -175,7 +167,13 @@ public class VFSUtils {
                         autoLockReleaseInterval);
                 }
             } else {
-
+                //Check the original file existence before the lock file to handle concurrent access scenario
+                if(checkSource){                    
+                    FileObject originalFileObject = fsManager.resolveFile(fullPath);
+                    if (!originalFileObject.exists()) {
+                        return false;
+                    }               
+                }
                 // write a lock file before starting of the processing, to ensure that the
                 // item is not processed by any other parties
                 lockObject.createFile();
@@ -201,14 +199,7 @@ public class VFSUtils {
                 FileObject verifyingLockObject = fsManager.resolveFile(
                         fullPath + ".lock");
                 if (verifyingLockObject.exists() && verifyLock(lockValue, verifyingLockObject)) {
-                    if(checkSource){
-                        fo.refresh();
-                        if(fo.exists()){
-                            return true;
-                        }
-                    } else{
-                        return true;
-                    }
+                    return true;
                 }
             }
         } catch (FileSystemException fse) {
