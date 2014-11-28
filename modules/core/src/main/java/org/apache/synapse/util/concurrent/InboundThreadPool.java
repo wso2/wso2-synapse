@@ -29,8 +29,8 @@ public class InboundThreadPool extends ThreadPoolExecutor {
     // default values
     public static final int INBOUND_CORE_THREADS  = 20;
     public static final int INBOUND_MAX_THREADS   = 100;
-    public static final int INBOUND_KEEP_ALIVE    = 0;
-    public static final int INBOUND_THREAD_QLEN   = 0;
+    public static final int INBOUND_KEEP_ALIVE    = 1;
+    public static final int INBOUND_THREAD_QLEN   = 1;
     public static final String INBOUND_THREAD_GROUP     = "inbound-thread-group";
     public static final String INBOUND_THREAD_ID_PREFIX = "InboundWorker";
 
