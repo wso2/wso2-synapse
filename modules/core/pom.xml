@@ -202,7 +202,7 @@
             <version>1.1</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.axis2</groupId>
+            <groupId>org.apache.axis2.transport</groupId>
             <artifactId>axis2-transport-jms</artifactId>
             <!--<exclusions>-->
                 <!--<exclusion>-->
@@ -213,7 +213,7 @@
             <scope>test</scope>
         </dependency>
 		<dependency>
-			<groupId>org.apache.axis2</groupId>
+			<groupId>org.apache.axis2.transport</groupId>
 			<artifactId>axis2-transport-mail</artifactId>
 			<scope>test</scope>
 		</dependency>
