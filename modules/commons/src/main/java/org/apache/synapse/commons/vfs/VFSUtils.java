@@ -344,7 +344,7 @@ public class VFSUtils {
     }    
     
     private static boolean releaseLock(byte[] bLockValue, String sLockValue, FileObject lockObject,
-            Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
+        Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
         try {
             InputStream is = lockObject.getContent().getInputStream();
             byte[] val = new byte[bLockValue.length];
@@ -357,7 +357,10 @@ public class VFSUtils {
             if (arrVal.length == 4 && arrValNew.length == 4) {
                 if (!autoLockReleaseSameNode
                         || (arrVal[1].equals(arrValNew[1]) && arrVal[2].equals(arrValNew[2]))) {
-                    long lInterval = Long.parseLong(arrValNew[2]) - Long.parseLong(arrVal[2]);
+                    long lInterval = 0;
+                    try{
+                        lInterval = Long.parseLong(arrValNew[3]) - Long.parseLong(arrVal[3]);
+                    }catch(NumberFormatException nfe){}
                     if (autoLockReleaseInterval == null
                             || autoLockReleaseInterval <= lInterval) {
                         try {
