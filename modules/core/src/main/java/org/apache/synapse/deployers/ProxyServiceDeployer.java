@@ -69,7 +69,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 if (log.isDebugEnabled()) {
                     log.debug("Initialized the ProxyService : " + proxy.getName());
                 }
-
+	            getSynapseConfiguration().setProperty("proxyServiceFilePath",fileName);
                 proxy.buildAxisService(getSynapseConfiguration(),
                         getSynapseConfiguration().getAxisConfiguration());
                 if (log.isDebugEnabled()) {
