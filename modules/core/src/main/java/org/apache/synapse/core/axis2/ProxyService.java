@@ -55,6 +55,7 @@ import org.xml.sax.InputSource;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -532,7 +533,14 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         if (description != null) {
             proxyService.setDocumentation(description);
         }
-
+	    try {
+		    String proxyServiceFilePath = synCfg.getProperty("proxyServiceFilePath");
+		    if (proxyServiceFilePath != null) {
+			    proxyService.setFileName(new File(proxyServiceFilePath).toURI().toURL());
+		    }
+	    } catch (MalformedURLException e) {
+		    handleException("Error reading ProxyService file Path form synapse config", e);
+	    }
         // process transports and expose over requested transports. If none
         // is specified, default to all transports using service name as
         // destination
