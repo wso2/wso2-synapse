@@ -61,21 +61,12 @@ public class JDBCStorableMessageHelper {
     /**
      * Synapse environment of the store
      */
-    private SynapseEnvironment synapseEnvironment;
+    private static SynapseEnvironment synapseEnvironment;
 
     /**
      * Logger for the class
      */
-    private Log log = LogFactory.getLog(JDBCStorableMessageHelper.class);
-
-    /**
-     * Initialize the helper
-     *
-     * @param se SynapseEnvironment
-     */
-    public JDBCStorableMessageHelper(SynapseEnvironment se) {
-        this.synapseEnvironment = se;
-    }
+    private static Log log = LogFactory.getLog(JDBCStorableMessageHelper.class);
 
     /**
      * Create SynapseMessage out of StorableMessage
@@ -83,7 +74,7 @@ public class JDBCStorableMessageHelper {
      * @param message StorableMessage
      * @return synCtx SynapseMessage
      */
-    public MessageContext createMessageContext(StorableMessage message) {
+    public static MessageContext createMessageContext(StorableMessage message) {
         SynapseConfiguration configuration = synapseEnvironment.getSynapseConfiguration();
         MessageContext synCtx = null;
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2SynapseEnvironment)
@@ -186,7 +177,7 @@ public class JDBCStorableMessageHelper {
      * @param synCtx MessageContext
      * @return jdbcMsg  StorableMessage
      */
-    public StorableMessage createStorableMessage(MessageContext synCtx) {
+    public static StorableMessage createStorableMessage(MessageContext synCtx) {
         StorableMessage jdbcMsg = new StorableMessage();
         JDBCAxis2Message jdbcAxis2MessageContext = new JDBCAxis2Message();
         JDBCSynapseMessage jdbcSynpaseMessageContext = new JDBCSynapseMessage();
@@ -275,7 +266,7 @@ public class JDBCStorableMessageHelper {
      * @param soapEnvelpe String to convert
      * @return Successfully built SOAPEnvelope or null
      */
-    private SOAPEnvelope getSoapEnvelope(String soapEnvelpe) {
+    private static SOAPEnvelope getSoapEnvelope(String soapEnvelpe) {
         try {
             XMLStreamReader xmlReader =
                     StAXUtils.createXMLStreamReader(new ByteArrayInputStream(getUTF8Bytes(soapEnvelpe)));
@@ -300,12 +291,21 @@ public class JDBCStorableMessageHelper {
     }
 
     /**
+     * Set the synapseEnvironment
+     *
+     * @param synapseEnvironment SynapseEnvironment of the message
+     */
+    public static void setSynapseEnvironment(SynapseEnvironment synapseEnvironment) {
+        JDBCStorableMessageHelper.synapseEnvironment = synapseEnvironment;
+    }
+
+    /**
      * Get UTF8Bytes out of String
      *
      * @param soapEnvelpe String of soapEnvelope
      * @return bytes       An array of bytes
      */
-    private byte[] getUTF8Bytes(String soapEnvelpe) {
+    private static byte[] getUTF8Bytes(String soapEnvelpe) {
         byte[] bytes = null;
         try {
             bytes = soapEnvelpe.getBytes("UTF-8");
