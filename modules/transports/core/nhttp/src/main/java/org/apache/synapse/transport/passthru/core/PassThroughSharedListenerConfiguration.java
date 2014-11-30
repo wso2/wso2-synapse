@@ -41,25 +41,39 @@ public class PassThroughSharedListenerConfiguration {
     /**
      * SourceConfiguration used by IOReactor to initiate
      */
-    private SourceConfiguration  sourceConfiguration;
+    private SourceConfiguration sourceConfiguration;
 
+    /**
+     * @param threadFactory       ThreadFactory used by IO Reactor
+     * @param serverConnFactory   ServerConnectionFactory used by IODispatcher to create connections
+     * @param sourceConfiguration SourceConfiguration of the shared IOReactor initiated PTT Listener
+     */
     public PassThroughSharedListenerConfiguration
-            (ThreadFactory threadFactory, ServerConnFactory serverConnFactory, SourceConfiguration sourceConfiguration) {
+    (ThreadFactory threadFactory, ServerConnFactory serverConnFactory, SourceConfiguration sourceConfiguration) {
         this.threadFactory = threadFactory;
         this.serverConnFactory = serverConnFactory;
         this.sourceConfiguration = sourceConfiguration;
     }
 
+    /**
+     * @return ThreadFactory
+     */
     public ThreadFactory getThreadFactory() {
         return threadFactory;
     }
 
+    /**
+     * @return ServerConnFactory
+     */
     public ServerConnFactory getServerConnFactory() {
         return serverConnFactory;
     }
 
+    /**
+     * @return SourceConfiguration
+     */
     public SourceConfiguration getSourceConfiguration() {
         return sourceConfiguration;
     }
-    
+
 }

@@ -37,6 +37,9 @@ public class PassThroughSenderManager {
         this.SharedPassThroughHttpSender = passThroughHttpSender;
     }
 
+    /**
+     * @return Shared PassThroughHttpSender
+     */
     public PassThroughHttpSender getSharedPassThroughHttpSender() {
         return SharedPassThroughHttpSender;
     }
