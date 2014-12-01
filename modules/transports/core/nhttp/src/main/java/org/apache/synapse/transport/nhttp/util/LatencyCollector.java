@@ -8,54 +8,24 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
  */
 public class LatencyCollector {
 
-    /**
-     * Time between response header retrieve time and request written completion time
-     */
     private long backendLatency = 0;
 
-    /**
-     * complete latency
-     */
     private long latency = 0;
 
-    /**
-     * Time between req from client read end time and req from client read start time.
-     */
     private long serverDecodeLatency = 0;
 
-    /**
-     * Time between req to BE write end time and req to BE write start time.
-     */
     private long clientEncodeLatency = 0;
 
-    /**
-     * Time between res read end time from BE and res read start time form BE
-     */
     private long clientDecodeLatency = 0;
 
-    /**
-     * Time between res write end from BE and res write start time
-     */
     private long serverEncodeLatency = 0;
 
-    /**
-     * Time between SeverWorker initiated and run
-     */
     private long serverWorkerQueuedTime = 0;
 
-    /**
-     * Time between SeverWorker initiated and run
-     */
     private long clientWorkerQueuedTime = 0;
 
-    /**
-     * Time between SeverWorker run and  request to BE write start time
-     */
     private long serverWorkerLatency = 0;
 
-    /**
-     * Time between ClientWorker run and response to Client write start time.
-     */
     private long clientWorkerLatency = 0;
 
     public LatencyCollector(HttpContext context, boolean isS2S) {
@@ -181,10 +151,6 @@ public class LatencyCollector {
         return clientWorkerLatency;
     }
 
-    /**
-     * Clear all timestamps saved.
-     * @param context HttpContext
-     */
     public static void clearTimestamps(HttpContext context) {
         if (context == null) {
             return;
