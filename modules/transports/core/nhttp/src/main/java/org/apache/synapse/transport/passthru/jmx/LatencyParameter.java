@@ -20,7 +20,9 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-
+/**
+ * Class responsible for update LatencyParameters
+ */
 public class LatencyParameter {
     private static final int SMALL_DATA_COLLECTION_PERIOD = 5;
     private static final int LARGE_DATA_COLLECTION_PERIOD = 5 * 60;
@@ -70,6 +72,9 @@ public class LatencyParameter {
         longTermCache = new LinkedList<Long>();
     }
 
+    /**
+     * Resetting ShortTerm and LongTermCaches.
+     */
     public void reset() {
         if (!enabled) {
             return;
@@ -88,16 +93,26 @@ public class LatencyParameter {
         }
     }
 
+
+    /**
+     * @return Latency
+     */
     public long getLatency() {
         return enabled ? lastValue.get() : 0L;
     }
 
+    /**
+     * @return AllTimeAverage
+     */
     public double getAllTimeAverage() {
         synchronized (lock) {
             return enabled ? allTimeAverage : 0.0;
         }
     }
 
+    /**
+     * update cache
+     */
     public void updateCache() {
         if (!enabled) {
             return;
@@ -152,6 +167,9 @@ public class LatencyParameter {
         }
     }
 
+    /**
+     * Method for update LongTermCache
+     */
     public void updateLongTermCache() {
         if (!enabled) {
             return;

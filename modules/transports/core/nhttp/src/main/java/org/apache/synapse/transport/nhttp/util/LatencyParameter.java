@@ -5,9 +5,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Class responsible for calculate latency values
- */
+
 public class LatencyParameter {
     private static final int SMALL_DATA_COLLECTION_PERIOD = 5;
     private static final int LARGE_DATA_COLLECTION_PERIOD = 5 * 60;
@@ -57,9 +55,6 @@ public class LatencyParameter {
         longTermCache = new LinkedList<Long>();
     }
 
-    /**
-     * Resetting ShortTerm and LongTermCaches.
-     */
     public void reset() {
         if (!enabled) {
             return;
@@ -78,25 +73,16 @@ public class LatencyParameter {
         }
     }
 
-    /**
-     * @return Latency
-     */
     public long getLatency() {
         return enabled ? lastValue.get() : 0L;
     }
 
-    /**
-     * @return AllTimeAverage
-     */
     public double getAllTimeAverage() {
         synchronized (lock) {
             return enabled ? allTimeAverage : 0.0;
         }
     }
 
-    /**
-     * Update both short term and long term caches.
-     */
     public void updateCache() {
         if (!enabled) {
             return;
@@ -104,10 +90,6 @@ public class LatencyParameter {
         updateCacheQueue();
     }
 
-    /**
-     * update cache
-     * @param value
-     */
     public void update(long value) {
         if (!enabled) {
             return;
@@ -155,9 +137,6 @@ public class LatencyParameter {
         }
     }
 
-    /**
-     * Method for update LongTermCache
-     */
     public void updateLongTermCache() {
         if (!enabled) {
             return;
