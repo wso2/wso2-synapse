@@ -92,22 +92,11 @@ public class LatencyView implements LatencyViewMBean {
     private String latencyMode;
     private String name;
 
-    /**
-     * Implementation of LatencyMbean
-     * @param latencyMode S2S enabled or not
-     * @param isHttps Is Secured
-     */
+
     public LatencyView(final String latencyMode, boolean isHttps) {
         this(latencyMode, isHttps, "", false);
     }
 
-    /**
-     *  Implementation of LatencyMbean
-     * @param latencyMode S2S enabled or not
-     * @param isHttps Is Secured
-     * @param namePostfix NamePostfix
-     * @param showAdvancedParameters Enabling advanced latency capturing
-     */
     public LatencyView(final String latencyMode, boolean isHttps, final String namePostfix, final boolean showAdvancedParameters) {
         this.latencyMode = latencyMode;
         name = "nio-http" + (isHttps ? "s" : "") + namePostfix;
