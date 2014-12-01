@@ -3,7 +3,6 @@ package org.apache.synapse.transport.nhttp.util;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
-
 public class LatencyCollector {
 
     private long backendLatency = 0;
