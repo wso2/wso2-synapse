@@ -22,7 +22,7 @@ package org.apache.synapse.transport.nhttp.util;
 import java.util.Date;
 
 /**
- * Provides metrics related to the latency added by the PassThrough transport while mediating
+ * Provides metrics related to the latency added by the NHTTP transport while mediating
  * messages through.
  */
 public interface LatencyViewMBean {
@@ -50,9 +50,6 @@ public interface LatencyViewMBean {
     public double get1m_Avg_request_Mediation_Latency();
     public double get1m_Avg_response_Mediation_Latency();
 
-    /**
-     * 5m averages
-     */
     public double get5m_Avg_Latency();
     public double get5m_Avg_Latency_BackEnd();
     public double get5m_Avg_Client_To_Esb_RequestReadTime();
@@ -64,7 +61,6 @@ public interface LatencyViewMBean {
     public double get5m_Avg_request_Mediation_Latency();
     public double get5m_Avg_response_Mediation_Latency();
 
-    /** 15m averages **/
     public double get15m_Avg_Latency();
     public double get15m_Avg_Latency_BackEnd();
     public double get15m_Avg_Client_To_Esb_RequestReadTime();
@@ -76,7 +72,6 @@ public interface LatencyViewMBean {
     public double get15m_Avg_request_Mediation_Latency();
     public double get15m_Avg_response_Mediation_Latency();
 
-    /** 1h averages **/
     public double get1h_Avg_Latency();
     public double get1h_Avg_Latency_BackEnd();
     public double get1h_Avg_Client_To_Esb_RequestReadTime();
@@ -88,7 +83,6 @@ public interface LatencyViewMBean {
     public double get1h_Avg_request_Mediation_Latency();
     public double get1h_Avg_response_Mediation_Latency();
 
-    /** 8h averages **/
     public double get8h_Avg_Latency();
     public double get8h_Avg_Latency_BackEnd();
     public double get8h_Avg_Client_To_Esb_RequestReadTime();
@@ -100,7 +94,6 @@ public interface LatencyViewMBean {
     public double get8h_Avg_request_Mediation_Latency();
     public double get8h_Avg_response_Mediation_Latency();
 
-    /** 24h averages **/
     public double get24h_Avg_Latency();
     public double get24h_Avg_Latency_BackEnd();
     public double get24h_Avg_Client_To_Esb_RequestReadTime();
@@ -112,9 +105,7 @@ public interface LatencyViewMBean {
     public double get24h_Avg_request_Mediation_Latency();
     public double get24h_Avg_response_Mediation_Latency();
 
-    /** Reset all values **/
     public void reset();
 
-    /** Provide LastReset Time **/
     public Date getLastResetTime();
 }
