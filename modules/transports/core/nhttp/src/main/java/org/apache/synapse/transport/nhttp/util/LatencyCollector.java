@@ -3,13 +3,10 @@ package org.apache.synapse.transport.nhttp.util;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
-/**
- * Class responsible for collect Latency values per request
- */
+
 public class LatencyCollector {
 
     private long backendLatency = 0;
-
     private long latency = 0;
 
     private long serverDecodeLatency = 0;

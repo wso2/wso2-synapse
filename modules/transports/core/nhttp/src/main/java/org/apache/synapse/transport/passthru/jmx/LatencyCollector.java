@@ -20,6 +20,9 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
+/**
+ * Class responsible for collect Latency values per request
+ */
 public class LatencyCollector {
 
     /**
