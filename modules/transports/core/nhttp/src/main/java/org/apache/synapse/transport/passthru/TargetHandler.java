@@ -349,7 +349,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
 
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+            log.error("Exception occurred while processing response", ex);
 
             informReaderError(conn);
 
@@ -449,7 +449,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetContext.updateState(conn, ProtocolState.CLOSED);
             targetConfiguration.getConnections().shutdownConnection(conn, true);
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+            log.error("Exception occurred while reading request body", ex);
 
             informReaderError(conn);
 

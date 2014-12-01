@@ -243,6 +243,13 @@ public class SourceConfiguration extends BaseConfiguration {
         log.error(msg);
         throw new AxisFault(msg);
     }
+
+    /**
+     * return boolean value of the given property else return default value.
+     * @param name Name of the Property
+     * @param def Default value
+     * @return
+     */
     public boolean getBooleanValue(String name, boolean def) {
         String val = System.getProperty(name);
         if (val == null) {
