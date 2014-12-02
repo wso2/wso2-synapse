@@ -85,5 +85,5 @@ public interface PassThroughConfigPNames {
     /**
      * Defines whether Listening IOReactor is shared among non axis2 Listeners
      */
-    public String HTTP_LISTENING_IO_REACTOR_SHARE ="http_listening_io_reactor_share";
+    public String HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE ="http_listening_io_reactor_sharing_enable";
 }
