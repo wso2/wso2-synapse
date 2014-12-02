@@ -142,9 +142,9 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
                         cfg.getProperty(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000))
                 .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
                         cfg.getProperty(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024))
-                .setParameter(CoreProtocolPNames.USER_AGENT, "Synapse-HttpComponents-NIO")
-                .setParameter(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,
-                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
+                .setParameter(CoreProtocolPNames.USER_AGENT, "Synapse-HttpComponents-NIO");
+//                .setParameter(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,
+//                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
 
         name = transportOut.getName().toUpperCase(Locale.US) + " Sender";
         

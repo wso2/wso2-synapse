@@ -163,9 +163,9 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
                         cfg.getProperty(NhttpConstants.SO_TIMEOUT_RECEIVER, 60000))
                 .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
                         cfg.getProperty(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024))
-                .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "Synapse-HttpComponents-NIO")
-                .setParameter(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,
-                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET, HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
+                .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "Synapse-HttpComponents-NIO");
+//                .setParameter(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,
+//                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET, HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
 
         name = transportIn.getName().toUpperCase(Locale.US) + " Listener";
         scheme = initScheme();
