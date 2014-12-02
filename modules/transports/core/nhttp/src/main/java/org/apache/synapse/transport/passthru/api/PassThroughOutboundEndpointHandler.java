@@ -30,12 +30,12 @@ public class PassThroughOutboundEndpointHandler {
      * @return Get Shared PassThroughHttpSender
      */
     public static PassThroughHttpSender getPassThroughHttpSender() throws Exception {
-        PassThroughHttpSender passThroughHttpSender = PassThroughSenderManager.getInstance().
-                                                                                       getSharedPassThroughHttpSender();
-        if(passThroughHttpSender != null) {
+        PassThroughHttpSender passThroughHttpSender =
+                PassThroughSenderManager.getInstance().getSharedPassThroughHttpSender();
+        if (passThroughHttpSender != null) {
             return passThroughHttpSender;
-        }else{
-            throw  new Exception("Shared PassThroughHTTPSender is not registered when Transport is initiating");
+        } else {
+            throw new Exception("Shared PassThroughHTTPSender is not registered when Transport is initiating");
         }
     }
 }

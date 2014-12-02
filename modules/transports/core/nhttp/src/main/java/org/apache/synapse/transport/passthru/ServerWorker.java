@@ -327,7 +327,7 @@ public class ServerWorker implements Runnable {
             msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, contentTypeHeader);
             msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE, contentType);
 
-            if (contentTypeHeader ==null || HTTPTransportUtils.isRESTRequest(contentTypeHeader) || isRest(contentTypeHeader)) {
+            if (contentTypeHeader == null || HTTPTransportUtils.isRESTRequest(contentTypeHeader) || isRest(contentTypeHeader)) {
                 msgContext.setProperty(PassThroughConstants.REST_REQUEST_CONTENT_TYPE, contentType);
                 msgContext.setDoingREST(true);
                 SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);

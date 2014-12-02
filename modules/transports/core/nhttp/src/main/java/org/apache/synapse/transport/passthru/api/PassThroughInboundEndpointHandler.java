@@ -36,8 +36,8 @@ public class PassThroughInboundEndpointHandler {
      * @param endpointName Name of the Endpoint
      * @return  Is Endpoint started successfully
      */
-    public static boolean startEndpoint
-    (InetSocketAddress inetSocketAddress, NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
+    public static boolean startEndpoint(InetSocketAddress inetSocketAddress,
+                                         NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
         return PassThroughListeningIOReactorManager.getInstance().startDynamicPTTEndpoint(inetSocketAddress,
                                                                                  nHttpServerEventHandler, endpointName);
     }

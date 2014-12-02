@@ -183,9 +183,11 @@ public class PassThroughHttpListener implements TransportListener {
         //cfgCtx.getAxisConfiguration().addObservers(axisObserver);
         String prefix = namePrefix + "-Listener I/O dispatcher";
         try {
-            ioReactor = (DefaultListeningIOReactor) passThroughListeningIOReactorManager.initIOReactor
-                    (operatingPort, handler, new PassThroughSharedListenerConfiguration(new NativeThreadFactory
-                            (new ThreadGroup(prefix + " thread group"), prefix), connFactory, sourceConfiguration));
+            ioReactor = (DefaultListeningIOReactor) passThroughListeningIOReactorManager.
+                    initIOReactor(operatingPort,handler,
+                            new PassThroughSharedListenerConfiguration(
+                                    new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix),
+                                    connFactory, sourceConfiguration));
         } catch (IOReactorException e) {
             handleException("Error initiating " + namePrefix + " ListeningIOReactor", e);
         }
@@ -228,7 +230,8 @@ public class PassThroughHttpListener implements TransportListener {
 
             String prefix = namePrefix + "-Listener I/O dispatcher";
 
-            passThroughListeningIOReactorManager.startIOReactor(ioReactor, passThroughListeningIOReactorManager.getServerIODispatch(operatingPort), prefix);
+            passThroughListeningIOReactorManager.startIOReactor(ioReactor,
+                    passThroughListeningIOReactorManager.getServerIODispatch(operatingPort), prefix);
 
             ioReactor.setExceptionHandler(new IOReactorExceptionHandler() {
 

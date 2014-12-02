@@ -48,8 +48,8 @@ public class PassThroughSharedListenerConfiguration {
      * @param serverConnFactory   ServerConnectionFactory used by IODispatcher to create connections
      * @param sourceConfiguration SourceConfiguration of the shared IOReactor initiated PTT Listener
      */
-    public PassThroughSharedListenerConfiguration
-    (ThreadFactory threadFactory, ServerConnFactory serverConnFactory, SourceConfiguration sourceConfiguration) {
+    public PassThroughSharedListenerConfiguration(ThreadFactory threadFactory, ServerConnFactory serverConnFactory,
+                                                  SourceConfiguration sourceConfiguration) {
         this.threadFactory = threadFactory;
         this.serverConnFactory = serverConnFactory;
         this.sourceConfiguration = sourceConfiguration;

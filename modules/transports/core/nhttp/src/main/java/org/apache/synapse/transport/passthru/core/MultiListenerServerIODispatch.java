@@ -26,6 +26,9 @@ import org.apache.synapse.transport.passthru.ServerIODispatch;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Class Responsible for dispatch IOEvents to mapping  EventHandler according to InboundEndpoint port
+ */
 public class MultiListenerServerIODispatch extends ServerIODispatch {
 
     //Need Thread safe handler for get NHttpServerEventHandlers
