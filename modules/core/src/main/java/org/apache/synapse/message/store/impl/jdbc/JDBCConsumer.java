@@ -17,20 +17,15 @@
  */
 package org.apache.synapse.message.store.impl.jdbc;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
+
+import java.util.Map;
 
 /**
  * JDBC Store Consumer
  */
 public class JDBCConsumer implements MessageConsumer {
-    /**
-     * Logger for the class
-     */
-    private static final Log logger = LogFactory.getLog(JDBCConsumer.class.getName());
-
     /**
      * Store for the consumer
      */
@@ -40,6 +35,11 @@ public class JDBCConsumer implements MessageConsumer {
      * Id of the consumer
      */
     private String idString;
+
+    /**
+     * Store current message index processing
+     */
+    private Long currentMessageIndex;
 
     /**
      * Initialize consumer
@@ -58,7 +58,14 @@ public class JDBCConsumer implements MessageConsumer {
     @Override
     public MessageContext receive() {
         // Message will get peeked from the table
-        return store.peek();
+        Map<Long, MessageContext> msgs = store.peek();
+        if (msgs != null) {
+            Map.Entry<Long, MessageContext> firstEntry = msgs.entrySet().iterator().next();
+            currentMessageIndex = firstEntry.getKey();
+            return firstEntry.getValue();
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -69,7 +76,7 @@ public class JDBCConsumer implements MessageConsumer {
     @Override
     public boolean ack() {
         // Message will be removed at this point
-        if (store.poll() != null) {
+        if (store.poll(currentMessageIndex) != null) {
             return true;
         } else {
             return false;

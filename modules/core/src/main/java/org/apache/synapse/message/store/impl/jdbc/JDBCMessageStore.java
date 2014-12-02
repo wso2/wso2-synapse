@@ -36,11 +36,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -62,7 +61,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     private ReentrantLock removeLock = new ReentrantLock();
     private ReentrantLock cleanUpOfferLock = new ReentrantLock();
-    private AtomicBoolean cleaningFlag = new AtomicBoolean(false);
 
     /**
      * Initializes the JDBC Message Store
@@ -128,8 +126,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @param stmt - Statement to process
      * @return - Results as a List of MessageContexts
      */
-    public List<MessageContext> processStatementWithResult(Statement stmt) {
-        List<MessageContext> list = new ArrayList<MessageContext>();
+    public Map<Long, MessageContext> processStatementWithResult(Statement stmt) {
+        Map<Long, MessageContext> map = new HashMap<Long, MessageContext>();
 
         // Execute the prepared statement, and return list of messages as an ArrayList
         Connection con = null;
@@ -151,8 +149,10 @@ public class JDBCMessageStore extends AbstractMessageStore {
             rs = ps.executeQuery();
             while (rs.next()) {
                 final Object msgObj;
+                final Long msgIndex;
                 try {
                     msgObj = rs.getObject("message");
+                    msgIndex = rs.getLong("indexId");
                 } catch (SQLException e) {
                     logger.error("Error executing statement : " + stmt.getRawStatement() +
                                  " against DataSource : " + jdbcUtil.getDSName(), e);
@@ -166,7 +166,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                         Object msg = ios.readObject();
                         if (msg instanceof StorableMessage) {
                             StorableMessage jdbcMsg = (StorableMessage) msg;
-                            list.add(JDBCStorableMessageHelper.createMessageContext(jdbcMsg));
+                            map.put(msgIndex, JDBCStorableMessageHelper.createMessageContext(jdbcMsg));
                         }
                     } catch (Exception e) {
                         logger.error("Error reading object input stream", e);
@@ -181,7 +181,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         } finally {
             close(con, ps, rs);
         }
-        return list;
+        return map;
     }
 
     /**
@@ -248,20 +248,12 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @return -  success/failure of fetching
      */
     public synchronized boolean offer(MessageContext messageContext) {
-        boolean cleaningState = false;
         if (messageContext == null) {
             logger.error("Message is null, can't offer into database");
             return false;
         }
-        if (cleaningFlag.get()) {
-            try {
-                cleanUpOfferLock.lock();
-                cleaningState = true;
-            } catch (Exception ie) {
-                logger.error("Message Cleanup lock released unexpectedly", ie);
-            }
-        }
         try {
+            cleanUpOfferLock.lock();
             StorableMessage persistentMessage =
                     JDBCStorableMessageHelper.createStorableMessage(messageContext);
             String msgId = persistentMessage.getAxis2Message().getMessageID();
@@ -274,9 +266,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             logger.error("Error while creating StorableMessage", e);
             return false;
         } finally {
-            if (cleaningState) {
-                cleanUpOfferLock.unlock();
-            }
+            cleanUpOfferLock.unlock();
         }
     }
 
@@ -285,12 +275,12 @@ public class JDBCMessageStore extends AbstractMessageStore {
      *
      * @return - Select and return the first element from the table
      */
-    public MessageContext peek() {
+    public Map<Long, MessageContext> peek() {
         final Statement stmt =
-                new Statement("SELECT message FROM " + jdbcUtil.getTableName() + " WHERE indexId=(SELECT min(indexId) from " + jdbcUtil.getTableName() + ")");
-        List<MessageContext> result = processStatementWithResult(stmt);
+                new Statement("SELECT indexId,message FROM " + jdbcUtil.getTableName() + " WHERE indexId=(SELECT min(indexId) from " + jdbcUtil.getTableName() + ")");
+        Map<Long, MessageContext> result = processStatementWithResult(stmt);
         if (!result.isEmpty()) {
-            return result.get(0);
+            return result;
         } else {
             logger.debug("No first element found !");
             return null;
@@ -302,17 +292,15 @@ public class JDBCMessageStore extends AbstractMessageStore {
      *
      * @return - mc - MessageContext of the first element
      */
-    public MessageContext poll() {
+    public MessageContext poll(long index) {
         MessageContext mc = null;
         try {
             removeLock.lock();
-            mc = peek();
             if (mc != null) {
-                long minIdx = getMinTableIndex();
-                if (minIdx != 0) {
+                if (index != 0) {
                     final Statement stmt =
                             new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
-                    stmt.addParameter(Long.toString(minIdx));
+                    stmt.addParameter(Long.toString(index));
                     processStatementWithoutResult(stmt);
                 }
             }
@@ -334,7 +322,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public MessageContext remove() throws NoSuchElementException {
-        MessageContext messageContext = poll();
+        long minIdx = getMinTableIndex();
+        MessageContext messageContext = poll(minIdx);
         if (messageContext != null) {
             return messageContext;
         } else {
@@ -350,7 +339,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
         try {
             logger.warn(nameString() + "deleting all entries");
             removeLock.lock();
-            cleaningFlag.set(true);
             cleanUpOfferLock.lock();
             Statement stmt = new Statement("DELETE FROM " + jdbcUtil.getTableName());
             processStatementWithoutResult(stmt);
@@ -358,7 +346,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
             logger.error("Acquiring lock failed !: " + ie.getMessage(), ie);
         } finally {
             removeLock.unlock();
-            cleaningFlag.set(false);
             cleanUpOfferLock.unlock();
         }
     }
@@ -404,7 +391,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         // Gets the minimum value of the sub-table which contains indexId values greater than given i (i has minimum of 0 while indexId has minimum of 1)
         Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcUtil.getTableName() + " ORDER BY indexId ASC LIMIT ?,1 ");
         stmt.addParameter(i);
-        List<MessageContext> result = processStatementWithResult(stmt);
+        List<MessageContext> result = new ArrayList<MessageContext>(processStatementWithResult(stmt).values());
         if (result.size() > 0) {
             return result.get(0);
         } else {
@@ -422,8 +409,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " retrieving all messages from the store.");
         }
-        Statement stmt = new Statement("SELECT message FROM " + jdbcUtil.getTableName());
-        return processStatementWithResult(stmt);
+        Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcUtil.getTableName());
+        return new ArrayList<MessageContext>(processStatementWithResult(stmt).values());
     }
 
     /**
@@ -434,9 +421,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public MessageContext get(String msgId) {
-        Statement stmt = new Statement("SELECT message FROM " + jdbcUtil.getTableName() + " WHERE msg_id=?");
+        Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcUtil.getTableName() + " WHERE msg_id=?");
         stmt.addParameter(msgId);
-        List<MessageContext> result = processStatementWithResult(stmt);
+        List<MessageContext> result = new ArrayList<MessageContext>(processStatementWithResult(stmt).values());
         if (result.size() > 0) {
             return result.get(0);
         } else {

@@ -17,8 +17,6 @@
  */
 package org.apache.synapse.message.store.impl.jdbc;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
 
@@ -26,11 +24,6 @@ import org.apache.synapse.message.MessageProducer;
  * JDBC Store Producer
  */
 public class JDBCProducer implements MessageProducer {
-    /**
-     * Logger for the class
-     */
-    private static final Log logger = LogFactory.getLog(JDBCProducer.class.getName());
-
     /**
      * Store for the producer
      */
