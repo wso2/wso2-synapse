@@ -50,7 +50,9 @@ public class PassThroughSenderManager {
     public static void registerPassThroughHttpSender(PassThroughHttpSender passThroughHttpSender) {
         if (passThroughSenderManager == null){
             synchronized (PassThroughSenderManager.class) {
-                passThroughSenderManager = new PassThroughSenderManager(passThroughHttpSender);
+                if(passThroughSenderManager ==null) {
+                    passThroughSenderManager = new PassThroughSenderManager(passThroughHttpSender);
+                }
             }
         }
     }

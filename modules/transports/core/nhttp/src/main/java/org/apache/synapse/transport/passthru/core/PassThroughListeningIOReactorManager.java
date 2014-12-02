@@ -69,8 +69,8 @@ public class PassThroughListeningIOReactorManager {
      * @param endpointName            Endpoint Name
      * @return Is Endpoint started
      */
-    public boolean startDynamicPTTEndpoint
-    (InetSocketAddress inetSocketAddress, NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
+    public boolean startDynamicPTTEndpoint(InetSocketAddress inetSocketAddress,
+                                                 NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
         if (isSharedIOReactorInitiated.get()) {
             // if already SharedIOReactor initiated then use it for start endpoints
             ListenerEndpoint endpoint = startEndpoint(inetSocketAddress, sharedListeningIOReactor, endpointName);
@@ -89,8 +89,8 @@ public class PassThroughListeningIOReactorManager {
                     sharedListeningIOReactor = initiateIOReactor(sharedIOReactorConfig);
                     isSharedIOReactorInitiated.compareAndSet(false, true);
                 }
-                ServerIODispatch serverIODispatch = new MultiListenerServerIODispatch
-                        (portServerHandlerMapper, nHttpServerEventHandler, sharedIOReactorConfig.getServerConnFactory());
+                ServerIODispatch serverIODispatch = new MultiListenerServerIODispatch(portServerHandlerMapper,
+                                                  nHttpServerEventHandler, sharedIOReactorConfig.getServerConnFactory());
                 startIOReactor(sharedListeningIOReactor, serverIODispatch, "HTTP");
                 ListenerEndpoint endpoint = startEndpoint(inetSocketAddress, sharedListeningIOReactor, endpointName);
                 if (endpoint != null) {
@@ -155,8 +155,10 @@ public class PassThroughListeningIOReactorManager {
     public static PassThroughListeningIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
         if (passThroughListeningIOReactorManager == null) {
             synchronized (PassThroughListeningIOReactorManager.class) {
-                passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(ioReactorSharingMode);
-                return passThroughListeningIOReactorManager;
+                if(passThroughListeningIOReactorManager ==null) {
+                    passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(ioReactorSharingMode);
+                    return passThroughListeningIOReactorManager;
+                }
             }
         }
         return passThroughListeningIOReactorManager;
@@ -183,8 +185,8 @@ public class PassThroughListeningIOReactorManager {
      * @param passThroughSharedListenerConfiguration configuration related to create and start IOReactor
      * @return IOReactor
      */
-    public ListeningIOReactor initIOReactor
-    (int port, NHttpServerEventHandler nHttpServerEventHandler, PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
+    public ListeningIOReactor initIOReactor(int port, NHttpServerEventHandler nHttpServerEventHandler,
+                                            PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
             throws IOReactorException {
         ListeningIOReactor defaultListeningIOReactor;
         ServerIODispatch serverIODispatch;
@@ -196,20 +198,24 @@ public class PassThroughListeningIOReactorManager {
                 portServerHandlerMapper.put(port, nHttpServerEventHandler);
                 synchronized (this) {
                     serverIODispatch = new MultiListenerServerIODispatch
-                            (portServerHandlerMapper, nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());
+                            (portServerHandlerMapper, nHttpServerEventHandler,
+                                                         passThroughSharedListenerConfiguration.getServerConnFactory());
                     defaultListeningIOReactor = initiateIOReactor(passThroughSharedListenerConfiguration);
-                    log.info("IO Reactor for port " + port + " initiated on shared mode which will be used by non axis2 Transport " +
-                            " Listeners ");
+                    log.info("IO Reactor for port " + port + " initiated on shared mode which will be used by non axis2 " +
+                            "Transport Listeners ");
                     sharedListeningIOReactor = defaultListeningIOReactor;
                     isSharedIOReactorInitiated.compareAndSet(false, true);
                 }
             } else {
-                // Create un shareable IOReactors for axis2 Listeners and assign IOReactor Config for later create IOReactor for Inbounds
-                serverIODispatch = new ServerIODispatch(nHttpServerEventHandler, passThroughSharedListenerConfiguration.getServerConnFactory());
+                // Create un shareable IOReactors for axis2 Listeners and assign IOReactor Config for later
+                // create IOReactor for Inbounds
+                serverIODispatch = new ServerIODispatch(nHttpServerEventHandler,
+                                                         passThroughSharedListenerConfiguration.getServerConnFactory());
                 defaultListeningIOReactor = initiateIOReactor(passThroughSharedListenerConfiguration);
 
                 synchronized (this) {
-                    if (sharedIOReactorConfig == null && !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
+                    if (sharedIOReactorConfig == null &&
+                                 !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
                         sharedIOReactorConfig = passThroughSharedListenerConfiguration;
                     }
                 }
@@ -358,8 +364,8 @@ public class PassThroughListeningIOReactorManager {
     }
 
 
-    private ListeningIOReactor initiateIOReactor(final PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
-            throws IOReactorException {
+    private ListeningIOReactor initiateIOReactor(
+            PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)   throws IOReactorException {
         try {
             return new DefaultListeningIOReactor
                     (passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(),
@@ -377,7 +383,8 @@ public class PassThroughListeningIOReactorManager {
      * @param serverIODispatch   underlying Event Dispatcher for Reactor
      * @param prefix             HTTP/HTTPS
      */
-    public void startIOReactor(final ListeningIOReactor listeningIOReactor, final ServerIODispatch serverIODispatch, final String prefix) {
+    public void startIOReactor(final ListeningIOReactor listeningIOReactor, final ServerIODispatch serverIODispatch,
+                                                                                                  final String prefix) {
         Thread reactorThread = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -405,10 +412,11 @@ public class PassThroughListeningIOReactorManager {
             endpoint.waitFor();
                 InetSocketAddress address = (InetSocketAddress) endpoint.getAddress();
                 if (!address.isUnresolved()) {
-                    log.info((endPointName != null ? "Pass-through " + endPointName : " Pass-through Http ") + " Listener started on " +
-                            address.getHostName() + ":" + address.getPort());
+                    log.info((endPointName != null ? "Pass-through " + endPointName : " Pass-through Http ") +
+                                             " Listener started on " + address.getHostName() + ":" + address.getPort());
                 } else {
-                    log.info((endPointName != null ? "Pass-through " + endPointName : " Pass-through Http ") + " Listener started on " + address);
+                    log.info((endPointName != null ? "Pass-through " + endPointName : " Pass-through Http ") +
+                                                                                      " Listener started on " + address);
                 }
         } catch (InterruptedException e) {
             log.error("Endpoint does not start for port " + inetSocketAddress.getPort() +

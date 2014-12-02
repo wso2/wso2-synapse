@@ -29,12 +29,6 @@ import java.net.InetSocketAddress;
  */
 public class PassThroughInboundEndpointHandler {
 
-    private static final PassThroughListeningIOReactorManager PASS_THROUGH_IO_REACTOR_MANAGER;
-
-    static {
-        PASS_THROUGH_IO_REACTOR_MANAGER = PassThroughListeningIOReactorManager.getInstance();
-    }
-
     /**
      * Start Endpoint Listen and events related to Endpoint handle by  given NHttpServerEventHandler
      * @param inetSocketAddress Socket Address of the Endpoint need to be start by underlying IOReactor
@@ -44,28 +38,28 @@ public class PassThroughInboundEndpointHandler {
      */
     public static boolean startEndpoint
     (InetSocketAddress inetSocketAddress, NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
-        return PASS_THROUGH_IO_REACTOR_MANAGER.startDynamicPTTEndpoint(inetSocketAddress, nHttpServerEventHandler, endpointName);
+        return PassThroughListeningIOReactorManager.getInstance().startDynamicPTTEndpoint(inetSocketAddress,
+                                                                                 nHttpServerEventHandler, endpointName);
     }
-
     /**
      * close ListeningEndpoint running on the given port
      * @param port Port of  ListeningEndpoint to be closed
      * @return  IS successfully closed
      */
     public static boolean closeEndpoint(int port) {
-        return PASS_THROUGH_IO_REACTOR_MANAGER.closeDynamicPTTEndpoint(port);
+        return PassThroughListeningIOReactorManager.getInstance().closeDynamicPTTEndpoint(port);
     }
-
     /**
      * @return  Pass Through SourceConfiguration registered by shared IO Reactor of  PTT Listener
      */
     public static SourceConfiguration getPassThroughSourceConfiguration() throws Exception {
-        if (PASS_THROUGH_IO_REACTOR_MANAGER != null) {
-            return PASS_THROUGH_IO_REACTOR_MANAGER.getSharedPassThroughSourceConfiguration();
+        SourceConfiguration sourceConfiguration = PassThroughListeningIOReactorManager.getInstance().
+                                                                              getSharedPassThroughSourceConfiguration();
+        if ( sourceConfiguration != null) {
+            return sourceConfiguration;
         } else {
             throw new Exception("PassThroughSharedListenerConfiguration  is not initiated correctly when  " +
                                                                                   "PassThroughListeners  are starting");
         }
     }
-
 }

@@ -28,6 +28,7 @@ import java.util.Map;
 
 public class MultiListenerServerIODispatch extends ServerIODispatch {
 
+    //Need Thread safe handler for get NHttpServerEventHandlers
     private volatile Map<Integer, NHttpServerEventHandler> handlers;
 
 
@@ -36,7 +37,6 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
                                          final ServerConnFactory connFactory) {
         super(nHttpServerEventHandler, connFactory);
         this.handlers = handlers;
-
     }
 
     @Override
@@ -51,7 +51,7 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
     }
 
     @Override
-    protected void onClosed(DefaultNHttpServerConnection defaultNHttpServerConnection) {
+    protected void onClosed(final DefaultNHttpServerConnection defaultNHttpServerConnection) {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         try {
@@ -62,7 +62,7 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
     }
 
     @Override
-    protected void onException(DefaultNHttpServerConnection defaultNHttpServerConnection, IOException e) {
+    protected void onException(final DefaultNHttpServerConnection defaultNHttpServerConnection, IOException e) {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         try {
@@ -73,7 +73,7 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
     }
 
     @Override
-    protected void onInputReady(DefaultNHttpServerConnection defaultNHttpServerConnection) {
+    protected void onInputReady(final DefaultNHttpServerConnection defaultNHttpServerConnection) {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         try {
@@ -84,7 +84,7 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
     }
 
     @Override
-    protected void onOutputReady(DefaultNHttpServerConnection defaultNHttpServerConnection) {
+    protected void onOutputReady(final DefaultNHttpServerConnection defaultNHttpServerConnection) {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         try {
@@ -95,7 +95,7 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
     }
 
     @Override
-    protected void onTimeout(DefaultNHttpServerConnection defaultNHttpServerConnection) {
+    protected void onTimeout(final DefaultNHttpServerConnection defaultNHttpServerConnection) {
         int localPort = defaultNHttpServerConnection.getLocalPort();
         NHttpServerEventHandler handler = handlers.get(localPort);
         try {
