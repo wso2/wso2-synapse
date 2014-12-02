@@ -26,7 +26,6 @@ import java.io.Serializable;
 public class StorableMessage implements Serializable {
     private JDBCAxis2Message axis2Message;
     private JDBCSynapseMessage synapseMessage;
-    private int priority = 4;
 
     public JDBCAxis2Message getAxis2Message() {
         return axis2Message;
@@ -42,13 +41,5 @@ public class StorableMessage implements Serializable {
 
     public void setSynapseMessage(JDBCSynapseMessage synapseMessage) {
         this.synapseMessage = synapseMessage;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public void setPriority(int priority) {
-        this.priority = priority;
     }
 }

@@ -290,7 +290,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Remove & Return the given element from table
      *
-     * @param - index - Message Index
+     * @param index - Message Index
      * @return - success of removing the element
      */
     public boolean remove(long index) {
@@ -300,8 +300,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 final Statement stmt =
                         new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
                 stmt.addParameter(Long.toString(index));
-                processStatementWithoutResult(stmt);
-                return true;
+                return processStatementWithoutResult(stmt);
             }
         } catch (Exception ie) {
             logger.error("Message Cleanup lock released unexpectedly," +

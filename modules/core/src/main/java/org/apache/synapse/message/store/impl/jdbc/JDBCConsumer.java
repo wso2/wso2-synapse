@@ -71,7 +71,7 @@ public class JDBCConsumer implements MessageConsumer {
     /**
      * Ack on success message sending by processor
      *
-     * @return
+     * @return Success of removing
      */
     @Override
     public boolean ack() {
@@ -82,7 +82,7 @@ public class JDBCConsumer implements MessageConsumer {
     /**
      * Cleanup the consumer
      *
-     * @return
+     * @return Success of cleaning
      */
     @Override
     public boolean cleanup() {
@@ -103,7 +103,7 @@ public class JDBCConsumer implements MessageConsumer {
     /**
      * Get consumer id
      *
-     * @return
+     * @return idString - Consumer identifier
      */
     @Override
     public String getId() {

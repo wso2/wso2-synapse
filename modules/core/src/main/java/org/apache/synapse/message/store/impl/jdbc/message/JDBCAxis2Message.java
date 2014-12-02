@@ -42,7 +42,6 @@ public class JDBCAxis2Message implements Serializable {
     private boolean isDoingMTOM;
     private boolean isDoingSWA;
     private boolean isDoingPOX;
-    private boolean isDoingGET;
     private String soapEnvelope;
     private byte[] jsonStream;
     private int flow;
@@ -54,10 +53,6 @@ public class JDBCAxis2Message implements Serializable {
 
     public void setMessageID(String messageID) {
         this.messageID = messageID;
-    }
-
-    public String getOperationAction() {
-        return operationAction;
     }
 
     public void setOperationAction(String operationAction) {
@@ -174,14 +169,6 @@ public class JDBCAxis2Message implements Serializable {
 
     public void setDoingPOX(boolean doingPOX) {
         isDoingPOX = doingPOX;
-    }
-
-    public boolean isDoingGET() {
-        return isDoingGET;
-    }
-
-    public void setDoingGET(boolean doingGET) {
-        isDoingGET = doingGET;
     }
 
     public void addProperty(String name, Object obj) {

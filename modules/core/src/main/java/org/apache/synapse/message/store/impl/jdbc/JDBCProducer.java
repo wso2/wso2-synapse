@@ -64,7 +64,7 @@ public class JDBCProducer implements MessageProducer {
     /**
      * Cleanup the producer
      *
-     * @return
+     * @return true Since no producer specific things
      */
     @Override
     public boolean cleanup() {
@@ -84,7 +84,7 @@ public class JDBCProducer implements MessageProducer {
     /**
      * Get producer id
      *
-     * @return
+     * @return idString - Producer identifier
      */
     @Override
     public String getId() {

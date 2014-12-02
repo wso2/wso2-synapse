@@ -30,7 +30,6 @@ import java.util.List;
  * , and it will be saved as a JMS message in the JMS Store.
  */
 public class JDBCSynapseMessage implements Serializable {
-    private ArrayList<String> localEntries = new ArrayList<String>();
     private HashMap<String, String> properties = new HashMap<String, String>();
     private HashMap<String, byte[]> propertyObjects = new HashMap<String, byte[]>();
     private boolean response = false;
@@ -61,10 +60,6 @@ public class JDBCSynapseMessage implements Serializable {
         this.tracingState = tracingState;
     }
 
-    public List<String> getLocalEntries() {
-        return localEntries;
-    }
-
     public HashMap<String, String> getProperties() {
         return properties;
     }
@@ -79,9 +74,5 @@ public class JDBCSynapseMessage implements Serializable {
 
     public void addPropertyObject(String key, byte[] value) {
         propertyObjects.put(key, value);
-    }
-
-    public void addLocalEntry(String key) {
-        localEntries.add(key);
     }
 }

@@ -18,7 +18,9 @@
 package org.apache.synapse.message.store.impl.jdbc.util;
 
 import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -33,6 +35,7 @@ import org.apache.axis2.context.ServiceGroupContext;
 import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -69,6 +72,11 @@ public class JDBCStorableMessageHelper {
     private static Log log = LogFactory.getLog(JDBCStorableMessageHelper.class);
 
     /**
+     * Prefix to identify a OMElemet type property
+     */
+    private static final String OM_ELEMENT_PREFIX = "OM_ELEMENT_PREFIX_";
+
+    /**
      * Create SynapseMessage out of StorableMessage
      *
      * @param message StorableMessage
@@ -91,7 +99,9 @@ public class JDBCStorableMessageHelper {
                 msgCtx.addRelatesTo(new RelatesTo(jdbcAxis2MessageContext.getRelatesToMessageId()));
             }
             msgCtx.setMessageID(jdbcAxis2MessageContext.getMessageID());
-            msgCtx.getOptions().setAction(jdbcAxis2MessageContext.getAction());
+            msgCtx.setDoingREST(jdbcAxis2MessageContext.isDoingPOX());
+            msgCtx.setDoingMTOM(jdbcAxis2MessageContext.isDoingMTOM());
+            msgCtx.setDoingSwA(jdbcAxis2MessageContext.isDoingSWA());
 
             AxisService axisService =
                     axisConfiguration.getServiceForActivation(jdbcAxis2MessageContext.getService());
@@ -157,11 +167,23 @@ public class JDBCStorableMessageHelper {
             synCtx.setTracingState(jdbcSynpaseMessageContext.getTracingState());
 
             Iterator<String> it = jdbcSynpaseMessageContext.getProperties().keySet().iterator();
-
             while (it.hasNext()) {
                 String key = it.next();
                 Object value = jdbcSynpaseMessageContext.getProperties().get(key);
                 synCtx.setProperty(key, value);
+            }
+
+            Iterator<String> propertyObjects = jdbcSynpaseMessageContext.getPropertyObjects().keySet().iterator();
+            while (propertyObjects.hasNext()) {
+                String key = propertyObjects.next();
+                Object value = jdbcSynpaseMessageContext.getPropertyObjects().get(key);
+                if (key.startsWith(OM_ELEMENT_PREFIX)) {
+                    String originalKey = key.substring(OM_ELEMENT_PREFIX.length(), key.length());
+                    ByteArrayInputStream is = new ByteArrayInputStream((byte[]) value);
+                    StAXOMBuilder builder = new StAXOMBuilder(is);
+                    OMElement omElement = builder.getDocumentElement();
+                    synCtx.setProperty(originalKey, omElement);
+                }
             }
             synCtx.setFaultResponse(jdbcSynpaseMessageContext.isFaultResponse());
             synCtx.setResponse(jdbcSynpaseMessageContext.isResponse());
@@ -213,6 +235,9 @@ public class JDBCStorableMessageHelper {
                 if (msgCtx.getTo() != null) {
                     jdbcAxis2MessageContext.setToAddress(msgCtx.getTo().getAddress());
                 }
+                if (msgCtx.getFrom() != null) {
+                    jdbcAxis2MessageContext.setFromAddress(msgCtx.getFrom().getAddress());
+                }
 
                 jdbcAxis2MessageContext.setDoingPOX(msgCtx.isDoingREST());
                 jdbcAxis2MessageContext.setDoingMTOM(msgCtx.isDoingMTOM());
@@ -247,11 +272,19 @@ public class JDBCStorableMessageHelper {
             while (its.hasNext()) {
                 String key = its.next();
                 Object v = synCtx.getProperty(key);
-                String value = null;
-                if (v != null) {
-                    value = v.toString();
+                if (v instanceof String) {
+                    jdbcSynpaseMessageContext.addProperty(key, (String) v);
+                } else if (v instanceof ArrayList && ((ArrayList) v).get(0) instanceof OMElement) {
+                    OMElement elem = ((OMElement) ((ArrayList) v).get(0));
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    try {
+                        elem.serialize(bos);
+                        byte[] bytes = bos.toByteArray();
+                        jdbcSynpaseMessageContext.addPropertyObject(OM_ELEMENT_PREFIX + key, bytes);
+                    } catch (XMLStreamException e) {
+                        log.error("Error while converting OMElement to byte array", e);
+                    }
                 }
-                jdbcSynpaseMessageContext.addProperty(key, value);
             }
             jdbcMsg.setSynapseMessage(jdbcSynpaseMessageContext);
         } else {
