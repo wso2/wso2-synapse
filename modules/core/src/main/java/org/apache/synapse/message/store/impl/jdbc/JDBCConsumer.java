@@ -86,7 +86,7 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public boolean cleanup() {
-        // Nothing to cleanup from consumer side
+        currentMessageIndex = 0L;
         return true;
     }
 

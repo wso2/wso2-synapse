@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  * This class serves as a container for the Synapse Message Context parameters/properties
- * , and it will be saved as a JMS message in the JMS Store.
+ * , and it will be saved as a JDBC message in the JDBC Database.
  */
 public class JDBCSynapseMessage implements Serializable {
     private HashMap<String, String> properties = new HashMap<String, String>();

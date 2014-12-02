@@ -87,7 +87,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         JDBCProducer producer = new JDBCProducer(this);
         producer.setId(nextProducerId());
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " created a new In Memory Message Producer.");
+            logger.debug(nameString() + " created a new JDBC Message Producer.");
         }
         return producer;
     }
@@ -100,7 +100,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         JDBCConsumer consumer = new JDBCConsumer(this);
         consumer.setId(nextConsumerId());
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " created a new In Memory Message Consumer.");
+            logger.debug(nameString() + " created a new JDBC Message Consumer.");
         }
         return consumer;
     }
@@ -126,7 +126,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @param stmt - Statement to process
      * @return - Results as a List of MessageContexts
      */
-    public Map<Long, MessageContext> processStatementWithResult(Statement stmt) {
+    private Map<Long, MessageContext> processStatementWithResult(Statement stmt) {
         Map<Long, MessageContext> map = new HashMap<Long, MessageContext>();
 
         // Execute the prepared statement, and return list of messages as an ArrayList
@@ -190,7 +190,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @param stmnt - Statement to process
      * @return - Success or Failure of the process
      */
-    public boolean processStatementWithoutResult(Statement stmnt) {
+    private boolean processStatementWithoutResult(Statement stmnt) {
         Connection con = null;
         boolean result = false;
         PreparedStatement ps = null;
@@ -288,10 +288,10 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
-     * Remove & Return the given element from table
+     * Remove the given element from table
      *
      * @param index - Message Index
-     * @return - success of removing the element
+     * @return - success/failure of removing the element
      */
     public boolean remove(long index) {
         try {
@@ -313,7 +313,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
-     * Removes the first element from table, same as polling
+     * Removes the first element from table
      *
      * @return MessageContext - first message context
      * @throws java.util.NoSuchElementException
@@ -342,7 +342,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             Statement stmt = new Statement("DELETE FROM " + jdbcUtil.getTableName());
             processStatementWithoutResult(stmt);
         } catch (Exception ie) {
-            logger.error("Acquiring lock failed !: " + ie.getMessage(), ie);
+            logger.error("Acquiring lock failed !", ie);
         } finally {
             removeLock.unlock();
             cleanUpOfferLock.unlock();
@@ -375,21 +375,21 @@ public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Get the message at given position
      *
-     * @param i - position of the message , starting value is 0
-     * @return Message Context of i th row or if failed return null
+     * @param position - position of the message , starting value is 0
+     * @return Message Context of position th row or if failed return null
      */
     @Override
-    public MessageContext get(int i) {
-        if (i < 0) {
-            throw new IllegalArgumentException("Index:" + i + " out of table bound");
+    public MessageContext get(int position) {
+        if (position < 0) {
+            throw new IllegalArgumentException("Index:" + position + " out of table bound");
         }
         if (!this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER).
                 equals("com.mysql.jdbc.Driver")) {
             throw new UnsupportedOperationException("Only support in MYSQL");
         }
-        // Gets the minimum value of the sub-table which contains indexId values greater than given i (i has minimum of 0 while indexId has minimum of 1)
+        // Gets the minimum value of the sub-table which contains indexId values greater than given position ('position' has minimum of 0 while indexId has minimum of 1)
         Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcUtil.getTableName() + " ORDER BY indexId ASC LIMIT ?,1 ");
-        stmt.addParameter(i);
+        stmt.addParameter(position);
         List<MessageContext> result = new ArrayList<MessageContext>(processStatementWithResult(stmt).values());
         if (result.size() > 0) {
             return result.get(0);

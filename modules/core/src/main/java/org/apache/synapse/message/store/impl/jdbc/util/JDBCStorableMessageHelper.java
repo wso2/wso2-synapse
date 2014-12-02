@@ -57,7 +57,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- *
+ * JDBC helper for StorableMessage
  */
 public class JDBCStorableMessageHelper {
 
