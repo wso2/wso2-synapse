@@ -76,11 +76,7 @@ public class JDBCConsumer implements MessageConsumer {
     @Override
     public boolean ack() {
         // Message will be removed at this point
-        if (store.poll(currentMessageIndex) != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return store.remove(currentMessageIndex);
     }
 
     /**

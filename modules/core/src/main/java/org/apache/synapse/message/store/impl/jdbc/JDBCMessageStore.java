@@ -288,21 +288,20 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
-     * Poll the table. Remove & Return the first element from table
+     * Remove & Return the given element from table
      *
-     * @return - mc - MessageContext of the first element
+     * @param - index - Message Index
+     * @return - success of removing the element
      */
-    public MessageContext poll(long index) {
-        MessageContext mc = null;
+    public boolean remove(long index) {
         try {
             removeLock.lock();
-            if (mc != null) {
-                if (index != 0) {
-                    final Statement stmt =
-                            new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
-                    stmt.addParameter(Long.toString(index));
-                    processStatementWithoutResult(stmt);
-                }
+            if (index != 0) {
+                final Statement stmt =
+                        new Statement("DELETE FROM " + jdbcUtil.getTableName() + " WHERE indexId=?");
+                stmt.addParameter(Long.toString(index));
+                processStatementWithoutResult(stmt);
+                return true;
             }
         } catch (Exception ie) {
             logger.error("Message Cleanup lock released unexpectedly," +
@@ -311,7 +310,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         } finally {
             removeLock.unlock();
         }
-        return mc;
+        return false;
     }
 
     /**
@@ -323,8 +322,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
     @Override
     public MessageContext remove() throws NoSuchElementException {
         long minIdx = getMinTableIndex();
-        MessageContext messageContext = poll(minIdx);
-        if (messageContext != null) {
+        MessageContext messageContext = peek().entrySet().iterator().next().getValue();
+        boolean result = remove(minIdx);
+        if (result) {
             return messageContext;
         } else {
             throw new NoSuchElementException("First element not found and remove failed !");
