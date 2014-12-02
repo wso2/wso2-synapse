@@ -33,11 +33,11 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
             handleException("Missing expression of the ForEach which is required.");
         }
 
-//        if (forEachMed.getTarget() != null && !forEachMed.getTarget().isAsynchronous()) {
-//        	forEachElem.addAttribute("sequential", "true", nullNS);
-//        }
-//
-//        forEachElem.addChild(TargetSerializer.serializeTarget(itrMed.getTarget()));
+        if (forEachMed.getTarget() != null && !forEachMed.getTarget().isAsynchronous()) {
+        	forEachElem.addAttribute("sequential", "true", nullNS);
+        }
+
+        forEachElem.addChild(TargetSerializer.serializeTarget(forEachMed.getTarget()));
 
         return forEachElem;
 	}
