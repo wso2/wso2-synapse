@@ -175,9 +175,7 @@ public class PassThroughHttpListener implements TransportListener {
         connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
 
         handler = new SourceHandler(sourceConfiguration);
-        boolean isShared = PassThroughConfiguration.getInstance().isListeningIOReactorShared();
-        passThroughListeningIOReactorManager =
-                PassThroughListeningIOReactorManager.getInstance(isShared ? IOReactorSharingMode.SHARED : IOReactorSharingMode.UNSHARED);
+        passThroughListeningIOReactorManager = PassThroughListeningIOReactorManager.getInstance();
 
         // register to receive updates on services for lifetime management
         //cfgCtx.getAxisConfiguration().addObservers(axisObserver);

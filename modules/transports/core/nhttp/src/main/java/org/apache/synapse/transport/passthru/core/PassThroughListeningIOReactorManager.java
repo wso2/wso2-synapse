@@ -25,6 +25,7 @@ import org.apache.http.nio.reactor.ListenerEndpoint;
 import org.apache.http.nio.reactor.ListeningIOReactor;
 import org.apache.log4j.Logger;
 import org.apache.synapse.transport.passthru.ServerIODispatch;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 
 import java.io.IOException;
@@ -88,34 +89,20 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * Provide manager object for internal services.If it is not created already create else provide existing one.
-     * @param ioReactorSharingMode Mode of IO Reactor Sharing can be SHARED or UNSHARED
      * @return PassThroughIOReactorManager
      */
-    public static PassThroughListeningIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
+    public static PassThroughListeningIOReactorManager getInstance() {
         if (passThroughListeningIOReactorManager == null) {
             synchronized (PassThroughListeningIOReactorManager.class) {
                 if (passThroughListeningIOReactorManager == null) {
-                    passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(ioReactorSharingMode);
+                    boolean isShared = PassThroughConfiguration.getInstance().isListeningIOReactorShared();
+                    passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(
+                            isShared ? IOReactorSharingMode.SHARED : IOReactorSharingMode.UNSHARED);
                     return passThroughListeningIOReactorManager;
                 }
             }
         }
         return passThroughListeningIOReactorManager;
-    }
-
-
-    /**
-     * Provide manager object for external services via api
-     * @return PassThroughIOReactorManager
-     */
-    public static PassThroughListeningIOReactorManager getInstance() {
-        if (passThroughListeningIOReactorManager != null) {
-            return passThroughListeningIOReactorManager;
-        } else {
-            log.error("PassThroughIOReactorManager is not initiated Properly When PassThrough " +
-                    "Axis2 Listeners are Starting or Axis2Listeners are not Started");
-            return null;
-        }
     }
 
     /**
