@@ -87,8 +87,39 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
+     * Provide manager object for internal services.If it is not created already create else provide existing one.
+     * @param ioReactorSharingMode Mode of IO Reactor Sharing can be SHARED or UNSHARED
+     * @return PassThroughIOReactorManager
+     */
+    public static PassThroughListeningIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
+        if (passThroughListeningIOReactorManager == null) {
+            synchronized (PassThroughListeningIOReactorManager.class) {
+                if (passThroughListeningIOReactorManager == null) {
+                    passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(ioReactorSharingMode);
+                    return passThroughListeningIOReactorManager;
+                }
+            }
+        }
+        return passThroughListeningIOReactorManager;
+    }
+
+
+    /**
+     * Provide manager object for external services via api
+     * @return PassThroughIOReactorManager
+     */
+    public static PassThroughListeningIOReactorManager getInstance() {
+        if (passThroughListeningIOReactorManager != null) {
+            return passThroughListeningIOReactorManager;
+        } else {
+            log.error("PassThroughIOReactorManager is not initiated Properly When PassThrough " +
+                    "Axis2 Listeners are Starting or Axis2Listeners are not Started");
+            return null;
+        }
+    }
+
+    /**
      * Start Endpoint in IOReactor which is external to PTT Axis2 Listeners started at server startup
-     *
      * @param inetSocketAddress       Socket Address of starting endpoint
      * @param nHttpServerEventHandler ServerHandler responsible for handle events of port
      * @param endpointName            Endpoint Name
@@ -138,7 +169,6 @@ public class PassThroughListeningIOReactorManager {
         }
     }
 
-
     /**
      * Start PTT Endpoint which is given by axis2.xml
      *
@@ -173,35 +203,6 @@ public class PassThroughListeningIOReactorManager {
             }
         }
         return true;
-    }
-
-    /**
-     * @param ioReactorSharingMode Mode of IO Reactor Sharing can be SHARED or UNSHARED
-     * @return PassThroughIOReactorManager
-     */
-    public static PassThroughListeningIOReactorManager getInstance(IOReactorSharingMode ioReactorSharingMode) {
-        if (passThroughListeningIOReactorManager == null) {
-            synchronized (PassThroughListeningIOReactorManager.class) {
-                if (passThroughListeningIOReactorManager == null) {
-                    passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager(ioReactorSharingMode);
-                    return passThroughListeningIOReactorManager;
-                }
-            }
-        }
-        return passThroughListeningIOReactorManager;
-    }
-
-    /**
-     * @return PassThroughIOReactorManager
-     */
-    public static PassThroughListeningIOReactorManager getInstance() {
-        if (passThroughListeningIOReactorManager != null) {
-            return passThroughListeningIOReactorManager;
-        } else {
-            log.error("PassThroughIOReactorManager is not initiated Properly When PassThrough " +
-                    "Axis2 Listeners are Starting or Axis2Listeners are not Started");
-            return null;
-        }
     }
 
     /**
@@ -381,7 +382,7 @@ public class PassThroughListeningIOReactorManager {
      * @param port Port of  axis2 PTT Listener
      * @throws IOException Exception throwing when pausing
      */
-    public void resume(int port) throws IOException {
+    public void resumeIOReactor(int port) throws IOException {
         ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
         if (listeningIOReactor != null) {
             listeningIOReactor.resume();
@@ -390,18 +391,6 @@ public class PassThroughListeningIOReactorManager {
         }
     }
 
-
-    private ListeningIOReactor initiateIOReactor(
-            PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration) throws IOReactorException {
-        try {
-            return new DefaultListeningIOReactor
-                    (passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(),
-                            passThroughSharedListenerConfiguration.getThreadFactory());
-        } catch (IOReactorException e) {
-            throw new IOReactorException
-                    ("Error creating DefaultListingIOReactor, ioReactorConfig or thread factory may have problems", e);
-        }
-    }
 
     /**
      * StartIOReactor with given ServerIODispatch
@@ -429,6 +418,18 @@ public class PassThroughListeningIOReactorManager {
             }
         }, "PassThrough " + prefix + " Listener");
         reactorThread.start();
+    }
+
+    private ListeningIOReactor initiateIOReactor(
+            PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration) throws IOReactorException {
+        try {
+            return new DefaultListeningIOReactor
+                    (passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(),
+                            passThroughSharedListenerConfiguration.getThreadFactory());
+        } catch (IOReactorException e) {
+            throw new IOReactorException
+                    ("Error creating DefaultListingIOReactor, ioReactorConfig or thread factory may have problems", e);
+        }
     }
 
 

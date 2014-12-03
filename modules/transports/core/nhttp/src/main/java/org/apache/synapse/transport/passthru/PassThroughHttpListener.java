@@ -424,7 +424,7 @@ public class PassThroughHttpListener implements TransportListener {
     public void resume() throws AxisFault {
         if (state != BaseConstants.PAUSED) return;
         try {
-            passThroughListeningIOReactorManager.resume(operatingPort);
+            passThroughListeningIOReactorManager.resumeIOReactor(operatingPort);
             state = BaseConstants.STARTED;
             log.info(namePrefix + " Listener Resumed");
         } catch (IOException e) {
