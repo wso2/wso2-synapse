@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -45,6 +45,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * JDBC Store class
  */
+@SuppressWarnings("WeakerAccess")
 public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Message Utility class used to provide utilities to do processing
@@ -59,8 +60,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Locks for clearing the store
      */
-    private ReentrantLock removeLock = new ReentrantLock();
-    private ReentrantLock cleanUpOfferLock = new ReentrantLock();
+    private final ReentrantLock removeLock = new ReentrantLock();
+    private final ReentrantLock cleanUpOfferLock = new ReentrantLock();
 
     /**
      * Initializes the JDBC Message Store
@@ -435,6 +436,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      *
      * @return size - Number of messages
      */
+    @Override
     public int size() {
         Connection con = null;
         ResultSet rs = null;
@@ -468,7 +470,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      *
      * @return - maximum index value
      */
-    public long getMinTableIndex() {
+    private long getMinTableIndex() {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
@@ -511,7 +513,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @param ps  - PreparedStatement to close
      * @param rs  - ResultSet to close
      */
-    public void close(Connection con, PreparedStatement ps, ResultSet rs) {
+    private void close(Connection con, PreparedStatement ps, ResultSet rs) {
         if (ps != null) {
             try {
                 ps.close();
