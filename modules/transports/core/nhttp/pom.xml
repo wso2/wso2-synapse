@@ -176,8 +176,8 @@
     </dependencies>
 
     <properties>
-        <hc.httpcore.version>4.2.3</hc.httpcore.version>
-        <hc.httpclient.version>4.2.3</hc.httpclient.version>
+        <hc.httpcore.version>4.3.3</hc.httpcore.version>
+        <hc.httpclient.version>4.3.6</hc.httpclient.version>
 
     </properties>
 
