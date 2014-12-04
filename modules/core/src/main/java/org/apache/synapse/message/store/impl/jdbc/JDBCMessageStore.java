@@ -45,7 +45,6 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * JDBC Store class
  */
-@SuppressWarnings("WeakerAccess")
 public class JDBCMessageStore extends AbstractMessageStore {
     /**
      * Message Utility class used to provide utilities to do processing
