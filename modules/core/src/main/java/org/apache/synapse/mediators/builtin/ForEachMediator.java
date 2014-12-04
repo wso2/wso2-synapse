@@ -49,18 +49,20 @@ public class ForEachMediator extends AbstractMediator {
 			// continueParent is set to true
 			// this original message can go in further mediations and hence we
 			// should not change
-			// the original message context
+			// the original message context FIXME: Needed?
 			SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 			// get the iteration elements and iterate through the list,
 			// this call will also detach all the iteration elements
 			List<?> splitElements = EIPUtils.getDetachedMatchingElements(envelope, synCtx, expression);
-			//synLog.traceOrDebug("FE=The original message now is ENV = " + envelope);
+			// synLog.traceOrDebug("FE=The original message now is ENV = " +
+			// envelope);
 
 			int msgCount = splitElements.size();
 			int msgNumber = 0;
 
 			if (synLog.isTraceOrDebugEnabled()) {
-				synLog.traceOrDebug("FE*=Splitting with XPath : " + expression + " resulted in " + msgCount + " elements");
+				synLog.traceOrDebug("FE*=Splitting with XPath : " + expression + " resulted in " + msgCount +
+				                    " elements");
 			}
 
 			synLog.traceOrDebug("FE=Original envelop :\n" + envelope);
@@ -77,25 +79,30 @@ public class ForEachMediator extends AbstractMediator {
 				if (synLog.isTraceOrDebugEnabled()) {
 					synLog.traceOrDebug("FE*=Submitting " + (msgNumber + 1) + " of " + msgNumber +
 					                    " messages for processing in sequentially, in a general loop");
-					
+
 					synLog.traceOrDebug("FE=object : \n" + ((OMNode) o).toString());
 				}
 
-				MessageContext iteratedMsgCtx =
-				                                 getIteratedMessage(synCtx, envelope, (OMNode) o);
+				MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, envelope, (OMNode) o);
 				synLog.traceOrDebug("FE=IteratedMsgCtx = " + iteratedMsgCtx.toString());
 				// ContinuationStackManager.addReliantContinuationState(itereatedMsgCtx,
 				// 0,
 				// getMediatorPosition());
 				target.mediate(iteratedMsgCtx);
-				
-				synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW)= " + iteratedMsgCtx.toString());
-				//synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW) Env Body= " + iteratedMsgCtx.getEnvelope().getBody());
-				synLog.traceOrDebug("FE=[BeforeEnrich]envelope = " + envelope);
-				
-				EIPUtils.enrichEnvelope(iteratedMsgCtx.getEnvelope(), envelope, synCtx, expression);
-				synLog.traceOrDebug("FE=[AfterEnrich]envelope = " + envelope);
 
+				synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW)= " + iteratedMsgCtx.toString());
+				// synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW) Env Body= "
+				// + iteratedMsgCtx.getEnvelope().getBody());
+				synLog.traceOrDebug("FE=[BeforeEnrich]envelope = " + envelope);
+
+				// EIPUtils.enrichEnvelope(iteratedMsgCtx.getEnvelope(),
+				// envelope, synCtx, expression);
+				// EIPUtils.mergeEnvelope(synCtx, iteratedMsgCtx.getEnvelope(),
+				// expression);
+
+				EIPUtils.encloseWithElement(envelope, iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+				synLog.traceOrDebug("FE=[AfterEnrich]envelope = " + envelope);
+				synCtx.setEnvelope(envelope);
 			}
 
 		} catch (JaxenException e) {
@@ -106,8 +113,7 @@ public class ForEachMediator extends AbstractMediator {
 		synLog.traceOrDebug("FE*=End : For Each mediator");
 		return true;
 	}
-	
-	
+
 	/**
 	 * Create a new message context using the given original message context,
 	 * the envelope
@@ -125,18 +131,18 @@ public class ForEachMediator extends AbstractMediator {
 	 * @throws JaxenException
 	 *             if the expression evauation failure
 	 */
-	private MessageContext getIteratedMessage(MessageContext synCtx, 
-	                                          SOAPEnvelope envelope, OMNode o) throws AxisFault, JaxenException {
 
-		// clone the message for the mediation in iteration
+	private MessageContext getIteratedMessage(MessageContext synCtx, SOAPEnvelope envelope, OMNode o) throws AxisFault,
+	                                                                                                 JaxenException {
+
+		// clone the message for the mediation in iteration FIXME: is cloning
+		// needed?
 		MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
 
-		
 		SOAPEnvelope newEnvelope = MessageHelper.cloneSOAPEnvelope(envelope);
 
-		
 		if (newEnvelope.getBody() != null) {
-			
+
 			if (newEnvelope.getBody().getFirstElement() != null) {
 				newEnvelope.getBody().getFirstElement().detach();
 			}
