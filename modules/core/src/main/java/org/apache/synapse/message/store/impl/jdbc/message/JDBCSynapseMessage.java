@@ -21,9 +21,7 @@ package org.apache.synapse.message.store.impl.jdbc.message;
 import org.apache.synapse.SynapseConstants;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * This class serves as a container for the Synapse Message Context parameters/properties
