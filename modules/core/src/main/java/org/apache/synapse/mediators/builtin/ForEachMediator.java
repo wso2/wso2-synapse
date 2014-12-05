@@ -2,6 +2,7 @@ package org.apache.synapse.mediators.builtin;
 
 import java.util.List;
 
+import org.apache.axiom.om.OMContainer;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -94,13 +95,19 @@ public class ForEachMediator extends AbstractMediator {
 				// synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW) Env Body= "
 				// + iteratedMsgCtx.getEnvelope().getBody());
 				synLog.traceOrDebug("FE=[BeforeEnrich]envelope = " + envelope);
+				//expression.setExpression("\\ns:getOrderItemsResponse\ns:return");
+				EIPUtils.includeEnvelope(envelope, iteratedMsgCtx.getEnvelope(), synCtx, expression);
 
-				// EIPUtils.enrichEnvelope(iteratedMsgCtx.getEnvelope(),
-				// envelope, synCtx, expression);
+				// EIPUtils.mergeEnvelope(synCtx.getEnvelope(),iteratedMsgCtx.getEnvelope().getBody().getFirstElement(), synCtx, expression);
 				// EIPUtils.mergeEnvelope(synCtx, iteratedMsgCtx.getEnvelope(),
 				// expression);
-
-				EIPUtils.encloseWithElement(envelope, iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+				// EIPUtils.encloseWithElement(synCtx.getEnvelope(),iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+//				SOAPEnvelope envelope2 = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+//				EIPUtils.mergeEnvelope(envelope2, iteratedMsgCtx.getEnvelope(), synCtx, expression);
+				//EIPUtils.addElement(envelope, iteratedMsgCtx.getEnvelope().getBody().getFirstElement(),expression, synCtx);
+				//EIPUtils.encloseWithElement(envelope, iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+				//EIPUtils.addElement(, iteratedMsgCtx.getEnvelope().getBody().getFirstElement(), expression);
+				//EIPUtils.encloseWithElement(envelope.getBody().getFirstElement().getFirstElement(), iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
 				synLog.traceOrDebug("FE=[AfterEnrich]envelope = " + envelope);
 				synCtx.setEnvelope(envelope);
 			}
@@ -113,6 +120,8 @@ public class ForEachMediator extends AbstractMediator {
 		synLog.traceOrDebug("FE*=End : For Each mediator");
 		return true;
 	}
+
+	
 
 	/**
 	 * Create a new message context using the given original message context,
