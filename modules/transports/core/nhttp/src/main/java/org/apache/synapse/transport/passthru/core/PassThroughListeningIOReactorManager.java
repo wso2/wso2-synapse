@@ -158,20 +158,18 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * Start PTT Endpoint which is given by axis2.xml
-     *
      * @param inetSocketAddress         Socket Address of starting endpoint
      * @param defaultListeningIOReactor IO Reactor which  starts Endpoint
      * @param namePrefix                name specified for endpoint
      * @return Is started
      */
-    public boolean startPTTEndpoint
-    (InetSocketAddress inetSocketAddress, DefaultListeningIOReactor defaultListeningIOReactor, String namePrefix) {
+    public boolean startPTTEndpoint(InetSocketAddress inetSocketAddress,
+                                    DefaultListeningIOReactor defaultListeningIOReactor, String namePrefix) {
         return startEndpoint(inetSocketAddress, defaultListeningIOReactor, namePrefix) != null;
     }
 
     /**
      * Close external endpoints listen in shared IO Reactor
-     *
      * @param port Port of the endpoint need to close
      * @return Is endpoint closed
      */
@@ -250,11 +248,12 @@ public class PassThroughListeningIOReactorManager {
      * @param port Port of the Endpoint for PTT axis2 Listener
      * @return is all Endpoints closed
      */
-    public boolean closeAllStaticEndpoints(int port) {
+    public boolean closeAllPTTListenerEndpoints(int port) {
         try {
             if (passThroughListenerIOReactorMapper.containsKey(port)) {
                 ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
                 Set<ListenerEndpoint> endpoints = listeningIOReactor.getEndpoints();
+                // If it is shared IO Reactor then only close endpoints related to PTT Listener
                 if (passThroughListenerServerIODispatchMapper.get(port) instanceof MultiListenerServerIODispatch) {
                     for (ListenerEndpoint listenerEndpoint : endpoints) {
                         if (listenerEndpoint.getAddress() instanceof InetSocketAddress) {
@@ -398,7 +397,7 @@ public class PassThroughListeningIOReactorManager {
                 } finally {
                     log.info(prefix + " Listener shutdown.");
                     if (serverIODispatch instanceof MultiListenerServerIODispatch) {
-                        log.warn("Shutting down shared IO Reactor");
+                        log.info("Shutting down shared IO Reactor");
                     }
                 }
 

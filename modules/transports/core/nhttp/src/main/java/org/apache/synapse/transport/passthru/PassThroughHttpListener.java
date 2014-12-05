@@ -62,7 +62,6 @@ import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
-import org.apache.synapse.transport.passthru.core.IOReactorSharingMode;
 import org.apache.synapse.transport.passthru.core.PassThroughSharedListenerConfiguration;
 import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
 import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
@@ -434,7 +433,7 @@ public class PassThroughHttpListener implements TransportListener {
         if (state != BaseConstants.STARTED) return;
 
         // Close all listener endpoints and stop accepting new connections
-       passThroughListeningIOReactorManager.closeAllStaticEndpoints(operatingPort);
+       passThroughListeningIOReactorManager.closeAllPTTListenerEndpoints(operatingPort);
 
         // Rebuild connection factory
         HttpHost host = new HttpHost(
