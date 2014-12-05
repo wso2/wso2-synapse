@@ -83,9 +83,9 @@ public class SpringMediator extends AbstractMediator implements ManagedLifecycle
         }
 
         if (appContext != null) {
-
+			Object o = null;
         	try{
-            Object o = appContext.getBean(beanName);    
+				o = appContext.getBean(beanName);
             if (o != null && Mediator.class.isAssignableFrom(o.getClass())) {
                 Mediator m = (Mediator) o;
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -101,7 +101,13 @@ public class SpringMediator extends AbstractMediator implements ManagedLifecycle
                     " from the Spring configuration with key : " + configKey, synCtx);
             }
         	}catch (Exception e) {
-        		 handleException("No bean named '"+beanName+"' is defined", synCtx);
+				if (o == null) {
+					handleException("No bean named '" + beanName
+							+ "' is defined", synCtx);
+				} else {
+					handleException("Error in " + o.getClass().getName(),
+							synCtx);
+				}
 			}
         } else {
             handleException("Cannot reference application context with key : " + configKey, synCtx);
