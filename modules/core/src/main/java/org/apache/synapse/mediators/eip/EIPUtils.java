@@ -261,57 +261,22 @@ public class EIPUtils {
 	public static void includeEnvelope(SOAPEnvelope envelope, SOAPEnvelope enricher, MessageContext synCtxt,
 	                                   SynapseXPath expression) throws JaxenException {
 
-		OMElement enrichingElement;
-
-		// SynapseXPath mergeExpression =
-		// SynapseXPathFactory.getSynapseXPath(elem, expression)
 		String expStr = expression.getExpression();
 		String parentXpath = expStr.substring(0, expStr.lastIndexOf('/'));
 		SynapseXPath parentExpression = new SynapseXPath(parentXpath);
 		parentExpression.setNamespaceContext(expression.getNamespaceContext());
 
 		List elementList = getMatchingElements(envelope, synCtxt, parentExpression);
-		// Iterator itr = enricher.getBody().getChildElements();
-
-		enrichingElement = enricher.getBody().getFirstElement();
-		// List list = null;
-
-		// OMElement parentElement = (OMElement) elementList.get(0);
-		// Object o;
-
-		// OMElement body = envelope.getBody();
-		// if (!isBody(body, enrichingElement)) {
-		// OMElement nonBodyElem = enrichingElement;
-		// enrichingElement = envelope.getBody();
-		// addChildren(elementList, enrichingElement);
-		// while (!isBody(body, (OMElement) nonBodyElem.getParent())) {
-		// nonBodyElem = (OMElement) nonBodyElem.getParent();
-		// }
-		// nonBodyElem.detach();
-		// }
-		// while (itr.hasNext()) {
-		// o = itr.next();
-		// if (o != null && o instanceof OMElement) {
-		// parentElement.addChild((OMElement) o);
-		// }
-		// itr.remove();
-		// }
+		OMElement enrichingElement = enricher.getBody().getFirstElement();
 
 		Object o = elementList.get(0);
-		if (o instanceof OMElement && ((OMElement) o).getParent() != null &&
-		    ((OMElement) o).getParent() instanceof OMElement) {
-			// enrichingElement = (OMElement) ((OMElement) o).getParent();
-			OMElement body = envelope.getBody();
-			// if (!isBody(body, enrichingElement)) {
-			// OMElement nonBodyElem = enrichingElement;
-			// enrichingElement = envelope.getBody();
-			((OMElement) o).addChild(enrichingElement);
-			// addChildren(elementList, enrichingElement);
-			// while (!isBody(body, (OMElement) nonBodyElem.getParent())) {
-			// nonBodyElem = (OMElement) nonBodyElem.getParent();
-			// }
-			// nonBodyElem.detach();
-			// }
+		if (checkNotEmpty(elementList)) {
+			if (o instanceof OMElement && ((OMElement) o).getParent() != null &&
+			    ((OMElement) o).getParent() instanceof OMElement) {
+				((OMElement) o).addChild(enrichingElement);
+			}
+		} else {
+			throw new SynapseException("Could not find matching elements to aggregate.");
 		}
 
 	}
