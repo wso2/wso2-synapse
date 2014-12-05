@@ -81,34 +81,18 @@ public class ForEachMediator extends AbstractMediator {
 					synLog.traceOrDebug("FE*=Submitting " + (msgNumber + 1) + " of " + msgNumber +
 					                    " messages for processing in sequentially, in a general loop");
 
-					synLog.traceOrDebug("FE=object : \n" + ((OMNode) o).toString());
+					//synLog.traceOrDebug("FE=object : \n" + ((OMNode) o).toString());
 				}
 
 				MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, envelope, (OMNode) o);
-				synLog.traceOrDebug("FE=IteratedMsgCtx = " + iteratedMsgCtx.toString());
-				// ContinuationStackManager.addReliantContinuationState(itereatedMsgCtx,
-				// 0,
-				// getMediatorPosition());
+				//synLog.traceOrDebug("FE=IteratedMsgCtx = " + iteratedMsgCtx.toString());
+				
 				target.mediate(iteratedMsgCtx);
 
-				synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW)= " + iteratedMsgCtx.toString());
-				// synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW) Env Body= "
-				// + iteratedMsgCtx.getEnvelope().getBody());
-				synLog.traceOrDebug("FE=[BeforeEnrich]envelope = " + envelope);
-				//expression.setExpression("\\ns:getOrderItemsResponse\ns:return");
+				//synLog.traceOrDebug("FE=[After]IteratedMsgCtx (NEW)= " + iteratedMsgCtx.toString());
+				//synLog.traceOrDebug("FE=[BeforeEnrich]envelope = " + envelope);
 				EIPUtils.includeEnvelope(envelope, iteratedMsgCtx.getEnvelope(), synCtx, expression);
-
-				// EIPUtils.mergeEnvelope(synCtx.getEnvelope(),iteratedMsgCtx.getEnvelope().getBody().getFirstElement(), synCtx, expression);
-				// EIPUtils.mergeEnvelope(synCtx, iteratedMsgCtx.getEnvelope(),
-				// expression);
-				// EIPUtils.encloseWithElement(synCtx.getEnvelope(),iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
-//				SOAPEnvelope envelope2 = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
-//				EIPUtils.mergeEnvelope(envelope2, iteratedMsgCtx.getEnvelope(), synCtx, expression);
-				//EIPUtils.addElement(envelope, iteratedMsgCtx.getEnvelope().getBody().getFirstElement(),expression, synCtx);
-				//EIPUtils.encloseWithElement(envelope, iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
-				//EIPUtils.addElement(, iteratedMsgCtx.getEnvelope().getBody().getFirstElement(), expression);
-				//EIPUtils.encloseWithElement(envelope.getBody().getFirstElement().getFirstElement(), iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
-				synLog.traceOrDebug("FE=[AfterEnrich]envelope = " + envelope);
+				//synLog.traceOrDebug("FE=[AfterEnrich]envelope = " + envelope);
 				synCtx.setEnvelope(envelope);
 			}
 
@@ -120,8 +104,6 @@ public class ForEachMediator extends AbstractMediator {
 		synLog.traceOrDebug("FE*=End : For Each mediator");
 		return true;
 	}
-
-	
 
 	/**
 	 * Create a new message context using the given original message context,
