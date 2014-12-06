@@ -40,8 +40,12 @@ import java.util.Properties;
 /**
  * Class <code>JDBCUtil</code> provides the Utility functions to create JDBC resources
  */
-public class JDBCUtil {
-    private static final Log log = LogFactory.getLog(JDBCUtil.class);
+public class JDBCConfiguration {
+
+    /**
+     * Logger for the class
+     */
+    private static final Log log = LogFactory.getLog(JDBCConfiguration.class);
 
     /**
      * Information about datasource

@@ -55,8 +55,9 @@ public class JDBCMessageStoreConstants {
      * Name of the database table
      */
     public static final String JDBC_TABLE = "store.jdbc.table";
+
     /**
      * Default name of the database table
      */
-    public static final String JDBC_DEFAULT_TABLE_NAME = "synapse_jdbc_store";
+    public static final String JDBC_DEFAULT_TABLE_NAME = "jdbc_message_store";
 }

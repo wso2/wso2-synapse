@@ -59,7 +59,7 @@ import java.util.Iterator;
 /**
  * JDBC helper for StorableMessage
  */
-public class JDBCStorableMessageHelper {
+public class JDBCMessageConverter {
 
     /**
      * Synapse environment of the store
@@ -69,7 +69,7 @@ public class JDBCStorableMessageHelper {
     /**
      * Logger for the class
      */
-    private static Log log = LogFactory.getLog(JDBCStorableMessageHelper.class);
+    private static Log log = LogFactory.getLog(JDBCMessageConverter.class);
 
     /**
      * Prefix to identify a OMElemet type property
@@ -329,7 +329,7 @@ public class JDBCStorableMessageHelper {
      * @param synapseEnvironment SynapseEnvironment of the message
      */
     public static void setSynapseEnvironment(SynapseEnvironment synapseEnvironment) {
-        JDBCStorableMessageHelper.synapseEnvironment = synapseEnvironment;
+        JDBCMessageConverter.synapseEnvironment = synapseEnvironment;
     }
 
     /**

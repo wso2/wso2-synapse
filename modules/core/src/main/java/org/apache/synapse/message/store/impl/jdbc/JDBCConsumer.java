@@ -17,15 +17,22 @@
  */
 package org.apache.synapse.message.store.impl.jdbc;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.MessageConsumer;
-
-import java.util.Map;
 
 /**
  * JDBC Store Consumer
  */
 public class JDBCConsumer implements MessageConsumer {
+
+    /**
+     * Logger for the class
+     */
+    private static final Log logger = LogFactory.getLog(JDBCConsumer.class.getName());
+
     /**
      * Store for the consumer
      */
@@ -39,7 +46,7 @@ public class JDBCConsumer implements MessageConsumer {
     /**
      * Store current message index processing
      */
-    private Long currentMessageIndex;
+    private String currentMessageId;
 
     /**
      * Initialize consumer
@@ -58,14 +65,16 @@ public class JDBCConsumer implements MessageConsumer {
     @Override
     public MessageContext receive() {
         // Message will get peeked from the table
-        Map<Long, MessageContext> msgs = store.peek();
-        if (msgs != null) {
-            Map.Entry<Long, MessageContext> firstEntry = msgs.entrySet().iterator().next();
-            currentMessageIndex = firstEntry.getKey();
-            return firstEntry.getValue();
-        } else {
-            return null;
+        MessageContext msg = null;
+        try {
+            msg = store.peek();
+            if (msg != null) {
+                currentMessageId = msg.getMessageID();
+            }
+        } catch (SynapseException e) {
+            logger.error("Can't receive message ", e);
         }
+        return msg;
     }
 
     /**
@@ -76,7 +85,8 @@ public class JDBCConsumer implements MessageConsumer {
     @Override
     public boolean ack() {
         // Message will be removed at this point
-        if (store.remove(currentMessageIndex)) {
+        MessageContext msg = store.remove(currentMessageId);
+        if (msg != null) {
             store.dequeued();
             return true;
         } else {
@@ -91,7 +101,7 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public boolean cleanup() {
-        currentMessageIndex = 0L;
+        currentMessageId = null;
         return true;
     }
 
