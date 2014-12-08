@@ -28,7 +28,6 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 
 	private static final QName FOREACH_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "foreach");
 
-
 	// static final QName DEFAULT_PERCENTAGE_Q = new QName(
 	// XMLConfigConstants.SYNAPSE_NAMESPACE, "discount");
 
@@ -39,24 +38,23 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 	@Override
 	protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
 		ForEachMediator mediator = new ForEachMediator();
-        processAuditStatus(mediator, elem);
-        OMAttribute expression = elem.getAttribute(ATT_EXPRN);
-        if (expression != null) {
-            try {
-                mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem, ATT_EXPRN));
-            } catch (JaxenException e) {
-                handleException("Unable to build the ForEachMediator. " + "Invalid XPATH " +
-                    expression.getAttributeValue(), e);
-            }
-        } else {
-            handleException("XPATH expression is required " +
-                "for an ForEach under the \"expression\" attribute");
-        }
-        
-        OMElement targetElement = elem.getFirstChildWithName(TARGET_Q);
-        if (targetElement != null) {
-            Target target = TargetFactory.createTarget(targetElement, properties);   
-            if (target != null) {
+		processAuditStatus(mediator, elem);
+		OMAttribute expression = elem.getAttribute(ATT_EXPRN);
+		if (expression != null) {
+			try {
+				mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem, ATT_EXPRN));
+			} catch (JaxenException e) {
+				handleException("Unable to build the ForEachMediator. " + "Invalid XPATH " +
+				                        expression.getAttributeValue(), e);
+			}
+		} else {
+			handleException("XPATH expression is required " + "for an ForEach under the \"expression\" attribute");
+		}
+
+		OMElement targetElement = elem.getFirstChildWithName(TARGET_Q);
+		if (targetElement != null) {
+			Target target = TargetFactory.createTarget(targetElement, properties);
+			if (target != null) {
 				boolean valid = validateTarget(target);
 				if (!valid) {
 					handleException("Sequence for ForEach mediator invalid :: cannot contain Call, Send or Callout mediators");
@@ -67,15 +65,14 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 					mediator.setTarget(target);
 				}
 			}
-        } else {
-            handleException("Target for ForEach mediator is required :: missing target");
-        }
+		} else {
+			handleException("Target for ForEach mediator is required :: missing target");
+		}
 
-        
-        return mediator;
+		return mediator;
 
 	}
-	
+
 	private boolean validateTarget(Target target) {
 		SequenceMediator sequence = target.getSequence();
 		List<Mediator> mediators = sequence.getList();
