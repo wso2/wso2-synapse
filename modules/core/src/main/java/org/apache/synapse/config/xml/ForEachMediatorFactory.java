@@ -28,9 +28,6 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 
 	private static final QName FOREACH_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "foreach");
 
-	// static final QName DEFAULT_PERCENTAGE_Q = new QName(
-	// XMLConfigConstants.SYNAPSE_NAMESPACE, "discount");
-
 	public QName getTagQName() {
 		return FOREACH_Q;
 	}
