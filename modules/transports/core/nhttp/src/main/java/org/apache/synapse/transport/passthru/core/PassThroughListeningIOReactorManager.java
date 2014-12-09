@@ -84,12 +84,13 @@ public class PassThroughListeningIOReactorManager {
         passThroughListenerServerIODispatchMapper = new ConcurrentHashMap<Integer, ServerIODispatch>();
 
         isSharedIOReactorInitiated = new AtomicBoolean(false);
-        ioReactorSharingMode =  PassThroughConfiguration.getInstance().isListeningIOReactorShared() ?
-                                                     IOReactorSharingMode.SHARED : IOReactorSharingMode.UNSHARED;
+        ioReactorSharingMode = PassThroughConfiguration.getInstance().isListeningIOReactorShared() ?
+                IOReactorSharingMode.SHARED : IOReactorSharingMode.UNSHARED;
     }
 
     /**
      * Provide manager object for internal services.If it is not created already create else provide existing one.
+     *
      * @return PassThroughIOReactorManager
      */
     public static PassThroughListeningIOReactorManager getInstance() {
@@ -106,6 +107,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * Start PTT Endpoint which is given by axis2.xml
+     *
      * @param inetSocketAddress         Socket Address of starting endpoint
      * @param defaultListeningIOReactor IO Reactor which  starts Endpoint
      * @param namePrefix                name specified for endpoint
@@ -113,11 +115,17 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean startPTTEndpoint(InetSocketAddress inetSocketAddress,
                                     DefaultListeningIOReactor defaultListeningIOReactor, String namePrefix) {
-        return startEndpoint(inetSocketAddress, defaultListeningIOReactor, namePrefix) != null;
+        try {
+            return startEndpoint(inetSocketAddress, defaultListeningIOReactor, namePrefix) != null;
+        } catch (Exception e) {
+            log.error("Cannot Start PassThroughListeningEndpoint for port " + inetSocketAddress.getPort(), e);
+            return false;
+        }
     }
 
     /**
      * Start Endpoint in IOReactor which is external to PTT Axis2 Listeners started at server startup
+     *
      * @param inetSocketAddress       Socket Address of starting endpoint
      * @param nHttpServerEventHandler ServerHandler responsible for handle events of port
      * @param endpointName            Endpoint Name
@@ -125,10 +133,10 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean startDynamicPTTEndpoint(InetSocketAddress inetSocketAddress,
                                            NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
-        if (isSharedIOReactorInitiated.get()) {
-            // If already SharedIOReactor initiated then use it for start endpoints
-            ListenerEndpoint endpoint = startEndpoint(inetSocketAddress, sharedListeningIOReactor, endpointName);
-
+        try {
+            // get Shared IO Reactor and Start Endpoint
+            ListenerEndpoint endpoint = startEndpoint(inetSocketAddress,
+                    getSharedIOReactor(nHttpServerEventHandler, endpointName), endpointName);
             if (endpoint != null) {
                 portServerHandlerMapper.put(inetSocketAddress.getPort(), nHttpServerEventHandler);
                 dynamicPTTListeningEndpointMapper.put(inetSocketAddress.getPort(), endpoint);
@@ -136,38 +144,15 @@ public class PassThroughListeningIOReactorManager {
             } else {
                 return false;
             }
-        } else {
-
-            // Create separate IO Reactor using PassThroughListenerConfiguration and start endpoint.Make it sharable
-            //with other dynamic endpoints
-            return initIOReactorAndStartEndpoint(inetSocketAddress, nHttpServerEventHandler, endpointName);
-        }
-    }
-
-    /**
-     * Close external endpoints listen in shared IO Reactor
-     * @param port Port of the endpoint need to close
-     * @return Is endpoint closed
-     */
-    public boolean closeDynamicPTTEndpoint(int port) {
-        try {
-            dynamicPTTListeningEndpointMapper.get(port).close();
         } catch (Exception e) {
-            log.error("Cannot close  Endpoint relevant to port " + port, e);
+            log.error("Cannot Start Endpoint for " + endpointName, e);
             return false;
-        } finally {
-            if (dynamicPTTListeningEndpointMapper.containsKey(port)) {
-                dynamicPTTListeningEndpointMapper.remove(port);
-            }
-            if (portServerHandlerMapper.containsKey(port)) {
-                portServerHandlerMapper.remove(port);
-            }
         }
-        return true;
     }
 
     /**
      * Create IOReactor with given configuration
+     *
      * @param port                                   Port of the Endpoint for axis2 Listener
      * @param nHttpServerEventHandler                Server Handler responsible for handle events of port
      * @param passThroughSharedListenerConfiguration configuration related to create and start IOReactor
@@ -177,10 +162,10 @@ public class PassThroughListeningIOReactorManager {
                                             PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration)
             throws IOReactorException {
         ListeningIOReactor defaultListeningIOReactor;
-        ServerIODispatch serverIODispatch;
         try {
+            ServerIODispatch serverIODispatch;
 
-             // PassThroughListenerConfiguration to be used by Shared IO Reactor
+            // PassThroughListenerConfiguration to be used by Shared IO Reactor
             synchronized (this) {
                 if (this.passThroughListenerConfiguration == null &&
                         !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
@@ -221,7 +206,31 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
+     * Close external endpoints listen in shared IO Reactor
+     *
+     * @param port Port of the endpoint need to close
+     * @return Is endpoint closed
+     */
+    public boolean closeDynamicPTTEndpoint(int port) {
+        try {
+            dynamicPTTListeningEndpointMapper.get(port).close();
+        } catch (Exception e) {
+            log.error("Cannot close  Endpoint relevant to port " + port, e);
+            return false;
+        } finally {
+            if (dynamicPTTListeningEndpointMapper.containsKey(port)) {
+                dynamicPTTListeningEndpointMapper.remove(port);
+            }
+            if (portServerHandlerMapper.containsKey(port)) {
+                portServerHandlerMapper.remove(port);
+            }
+        }
+        return true;
+    }
+
+    /**
      * Close all endpoints started by PTT Listeners.
+     *
      * @param port Port of the Endpoint for PTT axis2 Listener
      * @return is all Endpoints closed
      */
@@ -255,6 +264,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * Return ServerIODispatch registered under given port
+     *
      * @param port Port of  axis2 PTT Listener
      * @return ServerIODispatch
      */
@@ -264,6 +274,7 @@ public class PassThroughListeningIOReactorManager {
         }
         return null;
     }
+
 
     /**
      * @return source configuration used by shared IO Reactor
@@ -277,6 +288,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * ShutdownIOReactor which is registered by HTTPListener running on given port
+     *
      * @param port Port of  axis2 PTT Listener
      * @throws IOException Exception throwing when Shutdown
      */
@@ -297,6 +309,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * ShutdownIOReactor which is registered by HTTPListener running on given port
+     *
      * @param port        Port of  axis2 PTT Listener
      * @param miliSeconds Waiting Time before close IO Reactor
      * @throws IOException Exception throwing when Shutdown
@@ -317,6 +330,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * Pause IO Reactor which is registered by HTTPListener running on given port
+     *
      * @param port Port of  axis2 PTT Listener
      * @throws IOException Exception throwing when pausing
      */
@@ -338,6 +352,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * Resume IO Reactor which is registered by HTTPListener running on given port
+     *
      * @param port Port of  axis2 PTT Listener
      * @throws IOException Exception throwing when pausing
      */
@@ -352,6 +367,7 @@ public class PassThroughListeningIOReactorManager {
 
     /**
      * StartIOReactor with given ServerIODispatch
+     *
      * @param listeningIOReactor Listening IO Reactor to be start
      * @param serverIODispatch   underlying Event Dispatcher for Reactor
      * @param prefix             HTTP/HTTPS
@@ -377,45 +393,43 @@ public class PassThroughListeningIOReactorManager {
         reactorThread.start();
     }
 
+    private ListeningIOReactor getSharedIOReactor(NHttpServerEventHandler nHttpServerEventHandler,
+                                                  String endpointName) throws Exception {
 
-    private boolean initIOReactorAndStartEndpoint(InetSocketAddress inetSocketAddress,
-                                                  NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
-        if (passThroughListenerConfiguration != null) {
-            //create separate IO Reactor for external non axis2 transports and share among them
+        if (!isSharedIOReactorInitiated.get()) {
 
-            try {
-                synchronized (this) {
-                    sharedListeningIOReactor = createListeningIOReactor(passThroughListenerConfiguration);
-                    ServerIODispatch serverIODispatch = new MultiListenerServerIODispatch(portServerHandlerMapper,
-                            nHttpServerEventHandler, passThroughListenerConfiguration.getServerConnFactory());
-                    startIOReactor(sharedListeningIOReactor, serverIODispatch, "HTTP");
-                    isSharedIOReactorInitiated.compareAndSet(false, true);
+            if (passThroughListenerConfiguration != null) {
+                //create separate IO Reactor for external non axis2 transports and share among them
+
+                try {
+                    synchronized (this) {
+                        sharedListeningIOReactor = createListeningIOReactor(passThroughListenerConfiguration);
+                        ServerIODispatch serverIODispatch = new MultiListenerServerIODispatch(portServerHandlerMapper,
+                                nHttpServerEventHandler, passThroughListenerConfiguration.getServerConnFactory());
+                        startIOReactor(sharedListeningIOReactor, serverIODispatch, "HTTP");
+                        isSharedIOReactorInitiated.compareAndSet(false, true);
+                    }
+
+                } catch (IOReactorException e) {
+                    throw new IOReactorException("Error occurred when creating shared IO Reactor for non axis2 Listener "
+                            + endpointName, e);
                 }
-                ListenerEndpoint endpoint = startEndpoint(inetSocketAddress, sharedListeningIOReactor, endpointName);
-                if (endpoint != null) {
-                    portServerHandlerMapper.put(inetSocketAddress.getPort(), nHttpServerEventHandler);
-                    dynamicPTTListeningEndpointMapper.put(inetSocketAddress.getPort(), endpoint);
-                    return true;
-                } else {
-                    return false;
-                }
-            } catch (IOReactorException e) {
-                log.error("Error occurred when creating shared IO Reactor for non axis2 Listener " + endpointName, e);
-                return false;
+            } else {
+                throw new Exception("Cannot start Endpoint for" + endpointName +
+                        "Axis2 Transport Listeners for PassThrough transport" + " not started correctly or not created the " +
+                        "IOReactor Configuration");
             }
-        } else {
-            log.error("Cannot start Endpoint for" + endpointName + "Axis2 Transport Listeners for PassThrough transport" +
-                    " not started correctly or not created the IOReactor Configuration");
-            return false;
         }
+        return sharedListeningIOReactor;
     }
+
 
     private ListeningIOReactor createListeningIOReactor(
             PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration) throws IOReactorException {
         try {
             return new DefaultListeningIOReactor(
                     passThroughSharedListenerConfiguration.getSourceConfiguration().getIOReactorConfig(),
-                            passThroughSharedListenerConfiguration.getThreadFactory());
+                    passThroughSharedListenerConfiguration.getThreadFactory());
         } catch (IOReactorException e) {
             throw new IOReactorException
                     ("Error creating DefaultListingIOReactor, ioReactorConfig or thread factory may have problems", e);
@@ -424,7 +438,7 @@ public class PassThroughListeningIOReactorManager {
 
 
     private ListenerEndpoint startEndpoint(InetSocketAddress inetSocketAddress,
-                                           ListeningIOReactor defaultListeningIOReactor, String endPointName) {
+                                           ListeningIOReactor defaultListeningIOReactor, String endPointName) throws Exception {
         ListenerEndpoint endpoint = defaultListeningIOReactor.listen(inetSocketAddress);
         try {
             endpoint.waitFor();
@@ -436,9 +450,10 @@ public class PassThroughListeningIOReactorManager {
                 log.info((endPointName != null ? "Pass-through " + endPointName : " Pass-through Http ") +
                         " Listener started on " + address);
             }
-        } catch (InterruptedException e) {
-            log.error("Endpoint does not start for port " + inetSocketAddress.getPort() +
+        } catch (Exception e) {
+            throw new Exception("Endpoint does not start for port " + inetSocketAddress.getPort() +
                     "May be IO Reactor not started or endpoint binding exception ", e);
+
         }
         return endpoint;
     }
