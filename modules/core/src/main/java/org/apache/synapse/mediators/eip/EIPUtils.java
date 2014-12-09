@@ -207,5 +207,49 @@ public class EIPUtils {
         return envelope;
     }
 
+	/**
+	 * Include an enriching element from one SOAP envelop within another
+	 * envelop.
+	 * 
+	 * @param envelope
+	 *            SOAPEnvelope to be included with the content
+	 * @param enricher
+	 *            SOAPEnvelope from which the enriching element will be
+	 *            extracted
+	 * @param synCtxt
+	 *            MessageContext for getting matching elements
+	 * @param expression
+	 *            SynapseXpath describing the matching element
+	 * @throws JaxenException
+	 *             on failing of processing the xpath
+	 */
+	public static void includeEnvelope(SOAPEnvelope envelope,
+	                                   SOAPEnvelope enricher,
+	                                   MessageContext synCtxt,
+	                                   SynapseXPath expression)
+	                                                           throws JaxenException {
+
+		String expStr = expression.getExpression();
+		String parentXpath = expStr.substring(0, expStr.lastIndexOf('/'));
+		SynapseXPath parentExpression = new SynapseXPath(parentXpath);
+		parentExpression.setNamespaceContext(expression.getNamespaceContext());
+		List elementList =
+		                   getMatchingElements(envelope, synCtxt,
+		                                       parentExpression);
+		OMElement enrichingElement = enricher.getBody().getFirstElement();
+		Object o = elementList.get(0);
+		if (checkNotEmpty(elementList)) {
+			if (o instanceof OMElement && ((OMElement) o).getParent() != null &&
+			    ((OMElement) o).getParent() instanceof OMElement) {
+				((OMElement) o).addChild(enrichingElement);
+			}
+		} else {
+			throw new SynapseException(
+			                           "Could not find matching elements to aggregate.");
+		}
+
+	}
+
+
 
 }
