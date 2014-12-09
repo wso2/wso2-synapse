@@ -86,11 +86,15 @@ public class PollTableEntry extends AbstractPollTableEntry {
     
     private Integer fileProcessingCount;
 
-    private Boolean autoLockRelease;
+    private boolean autoLockRelease;
 
     private Long autoLockReleaseInterval;
 
     private Boolean autoLockReleaseSameNode;   
+    
+    private boolean distributedLock;
+    
+    private Long distributedLockTimeout;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -265,6 +269,23 @@ public class PollTableEntry extends AbstractPollTableEntry {
         this.autoLockReleaseSameNode = autoLockReleaseSameNode;
     }
 
+    
+    
+    /**
+     * @return the distributedLock
+     */
+    public boolean isDistributedLock() {
+        return distributedLock;
+    }
+
+    /**
+     * @return the distributedLockTimeout
+     */
+    public Long getDistributedLockTimeout() {
+        return distributedLockTimeout;
+    }
+
+
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
         
@@ -432,6 +453,32 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             }            
             
+            distributedLock = false;
+            distributedLockTimeout = null;
+            String strDistributedLock = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_DISTRIBUTED_LOCK);
+            if(strDistributedLock != null){
+                try {
+                    distributedLock = Boolean.parseBoolean(strDistributedLock);
+                } catch (Exception e) {
+                    autoLockRelease = false;
+                    log.warn("VFS Distributed lock not set properly. Current value is : " + strDistributedLock, e);
+                }            
+                
+                if(distributedLock){                
+                    String strDistributedLockTimeout = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT);
+                    if (strDistributedLockTimeout != null) {
+                        try {
+                            distributedLockTimeout = Long.parseLong(strDistributedLockTimeout);
+                        } catch (Exception e) {
+                            distributedLockTimeout = null;
+                            log.warn(
+                                    "VFS Distributed lock timeout property not set properly. Current value is : "
+                                            + strDistributedLockTimeout, e);
+                        }
+                    }                
+                }
+                
+            }            
             return super.loadConfiguration(params);
         }
     }

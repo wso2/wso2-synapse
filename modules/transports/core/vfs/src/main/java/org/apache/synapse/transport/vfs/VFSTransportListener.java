@@ -43,6 +43,7 @@ import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo ;
+import org.apache.synapse.commons.vfs.VFSParamDTO;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
@@ -442,9 +443,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         }
     }
 
-    private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry){        
-        return VFSUtils.acquireLock(fsManager, fileObject, true, entry.getAutoLockRelease(),
-                entry.getAutoLockReleaseSameNode(), entry.getAutoLockReleaseInterval());
+    private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry){
+        VFSParamDTO vfsParamDTO = new VFSParamDTO();
+        vfsParamDTO.setAutoLockRelease(entry.getAutoLockRelease());
+        vfsParamDTO.setAutoLockReleaseSameNode(entry.getAutoLockReleaseSameNode());
+        vfsParamDTO.setAutoLockReleaseInterval(entry.getAutoLockReleaseInterval());
+        return VFSUtils.acquireLock(fsManager, fileObject, vfsParamDTO);
     }
     
     /**
