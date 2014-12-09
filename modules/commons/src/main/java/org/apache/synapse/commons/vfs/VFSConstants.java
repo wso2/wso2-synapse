@@ -128,6 +128,16 @@ public final class VFSConstants {
      * Lock release same node
      * */
     public static final String TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE = "transport.vfs.LockReleaseSameNode";  
+
+    /**
+     * Distributed Lock enable/disable
+     * */
+    public static final String TRANSPORT_DISTRIBUTED_LOCK = "transport.vfs.DistributedLock";
+
+    /**
+     * Distributed Lock timeout
+     * */
+    public static final String TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT = "transport.vfs.DistributedTimeout";     
     
     public static final String FAILED_RECORD_DELIMITER = " ";
 
