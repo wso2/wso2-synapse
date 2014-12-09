@@ -42,7 +42,7 @@ public class PassThroughInboundEndpointHandler {
                                                                                  nHttpServerEventHandler, endpointName);
     }
     /**
-     * close ListeningEndpoint running on the given port
+     * Close ListeningEndpoint running on the given port
      * @param port Port of  ListeningEndpoint to be closed
      * @return  IS successfully closed
      */
