@@ -25,6 +25,7 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
@@ -36,9 +37,7 @@ import org.jaxen.JaxenException;
 public class ForEachMediator extends AbstractMediator {
 
 	/** The XPath that will list the elements to be splitted */
-	private SynapseXPath expression = null;
-
-	private SynapseJsonPath expressionJson = null;
+	private SynapsePath expression = null;
 
 	/** The target for the newly splitted messages */
 	private Target target = null;
@@ -75,7 +74,7 @@ public class ForEachMediator extends AbstractMediator {
 			List<?> splitElements =
 			                        EIPUtils.getDetachedMatchingElements(envelope,
 			                                                             synCtx,
-			                                                             expression);
+			                                                             (SynapseXPath) expression);
 			// synLog.traceOrDebug("FE=The original message now is ENV = " +
 			// envelope);
 
@@ -124,7 +123,7 @@ public class ForEachMediator extends AbstractMediator {
 				// envelope);
 				EIPUtils.includeEnvelope(envelope,
 				                         iteratedMsgCtx.getEnvelope(), synCtx,
-				                         expression);
+				                         (SynapseXPath) expression);
 				// synLog.traceOrDebug("FE=[AfterEnrich]envelope = " +
 				// envelope);
 				synCtx.setEnvelope(envelope);
@@ -192,20 +191,13 @@ public class ForEachMediator extends AbstractMediator {
 		this.target = target;
 	}
 
-	public SynapseXPath getExpression() {
+	public SynapsePath getExpression() {
 		return expression;
 	}
 
-	public void setExpression(SynapseXPath expression) {
+	public void setExpression(SynapsePath expression) {
+
 		this.expression = expression;
-	}
-
-	public SynapseJsonPath getExpressionJson() {
-		return expressionJson;
-	}
-
-	public void setExpressionJson(SynapseJsonPath expressionJson) {
-		this.expressionJson = expressionJson;
 	}
 
 }

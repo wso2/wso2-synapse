@@ -35,6 +35,8 @@ import org.apache.synapse.mediators.builtin.CalloutMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.SendMediator;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
+import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 /**
@@ -61,16 +63,40 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 		processAuditStatus(mediator, elem);
 		OMAttribute expression = elem.getAttribute(ATT_EXPRN);
 		if (expression != null) {
-			try {
-				mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem,
-				                                                           ATT_EXPRN));
-			} catch (JaxenException e) {
-				handleException("Unable to build the ForEachMediator. " +
-				                        "Invalid XPATH " +
-				                        expression.getAttributeValue(), e);
+			if (expression.getAttributeValue().startsWith("json-eval(")) {
+				String value =
+				               expression.getAttributeValue()
+				                         .substring(10,
+				                                    expression.getAttributeValue()
+				                                              .length() - 1);
+				SynapseJsonPath exp;
+				try {
+					exp = SynapseJsonPathFactory.getSynapseJsonPath(value);
+					exp.setPathType(SynapsePath.JSON_PATH);
+					mediator.setExpression(exp);
+				} catch (JaxenException e) {
+					handleException("Unable to build the ForEachMediator. " +
+					                        "Invalid Xpath or JsonPath " +
+					                        expression.getAttributeValue(), e);
+				}
+
+			} else {
+				try {
+					SynapseXPath exp =
+					                   SynapseXPathFactory.getSynapseXPath(elem,
+					                                                       ATT_EXPRN);
+					exp.setPathType(SynapsePath.X_PATH);
+					exp.setForceDisableStreamXpath(Boolean.TRUE);
+					mediator.setExpression(exp);
+				} catch (JaxenException e) {
+					handleException("Unable to build the ForEachMediator. " +
+					                        "Invalid Xpath or JsonPath " +
+					                        expression.getAttributeValue(), e);
+				}
 			}
+
 		} else {
-			handleException("XPATH expression is required "
+			handleException("Xpath or JsonPath expression is required "
 			                + "for an ForEach under the \"expression\" attribute");
 		}
 

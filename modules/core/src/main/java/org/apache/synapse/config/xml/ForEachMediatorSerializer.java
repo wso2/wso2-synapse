@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
+import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
  * <foreach> </foreach>
@@ -44,8 +45,14 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 		ForEachMediator forEachMed = (ForEachMediator) m;
 
 		if (forEachMed.getExpression() != null) {
-			SynapseXPathSerializer.serializeXPath(forEachMed.getExpression(),
-			                                      forEachElem, "expression");
+			 SynapsePathSerializer.serializePath(forEachMed.getExpression(), forEachElem, "expression");
+//			SynapsePath path = forEachMed.getExpression();
+//			if (path instanceof SynapseXPath) {
+//				SynapseXPathSerializer.serializeXPath((SynapseXPath) forEachMed.getExpression(),
+//				                                      forEachElem, "expression");
+//			} else {
+//
+//			}
 		} else {
 			handleException("Missing expression of the ForEach which is required.");
 		}
