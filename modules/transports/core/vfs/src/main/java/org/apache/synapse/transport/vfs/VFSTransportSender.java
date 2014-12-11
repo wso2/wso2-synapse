@@ -198,7 +198,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
                     } else {
                         handleException("Unsupported reply file type : " + replyFile.getType() +
-                                " for file : " + vfsOutInfo.getOutFileURI());
+                                " for file : " + VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()));
                     }
                 } else {
                     // if file locking is not disabled acquire the lock before uploading the file
@@ -214,7 +214,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 }
             } catch (FileSystemException e) {
                 handleException("Error resolving reply file : " +
-                        vfsOutInfo.getOutFileURI(), e);
+                		VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()), e);
             } finally {
                 if (replyFile != null) {
                     try {
@@ -272,13 +272,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 VFSUtils.releaseLock(fsManager, responseFile);
             }
             metrics.incrementFaultsSending();
-            handleException("IO Error while creating response file : " + responseFile.getName(), e);
+            handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         } catch (IOException e) {
             if (lockingEnabled) {
                 VFSUtils.releaseLock(fsManager, responseFile);
             }
             metrics.incrementFaultsSending();
-            handleException("IO Error while creating response file : " + responseFile.getName(), e);
+            handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         }
     }
 
@@ -290,7 +290,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         while (!VFSUtils.acquireLock(fsManager, responseFile)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
                 handleException("Couldn't send the message to file : "
-                        + responseFile.getName() + ", unable to acquire the " +
+                        + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +
                         "lock even after " + tryNum + " retries");
             } else {
 
