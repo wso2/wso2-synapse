@@ -20,15 +20,6 @@
 */
 package org.apache.synapse.commons.vfs;
 
-import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.description.Parameter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.FileContent;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileSystemManager;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,8 +30,17 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Random;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.description.Parameter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.vfs2.FileContent;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemManager;
 
 public class VFSUtils {
 
@@ -113,7 +113,7 @@ public class VFSUtils {
      * @return boolean true if the lock has been acquired or false if not
      */
     public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo) {
-        return acquireLock(fsManager, fo, false, false, false, null);
+        return acquireLock(fsManager, fo, null);
     }
 
     /**
@@ -127,10 +127,8 @@ public class VFSUtils {
      *            representing the processing file item
      * @return boolean true if the lock has been acquired or false if not
      */
-    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo,
-            boolean checkSource, boolean autoLockRelease, boolean autoLockReleaseSameNode,
-            Long autoLockReleaseInterval) {
-
+    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO) {       
+        
         // generate a random lock value to ensure that there are no two parties
         // processing the same file
         Random random = new Random();
@@ -151,7 +149,7 @@ public class VFSUtils {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
             // lock file is derived by attaching the ".lock" second extension to the file name
-	        String fullPath = fo.getName().getURI();	
+            String fullPath = fo.getName().getURI();
             int pos = fullPath.indexOf("?");
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
@@ -162,18 +160,11 @@ public class VFSUtils {
                         + fo.getName()
                         + ". This could possibly be due to some other party already "
                         + "processing this file or the file is still being uploaded");
-                if(autoLockRelease){
-                    releaseLock(lockValue, strLockValue, lockObject, autoLockReleaseSameNode,
-                        autoLockReleaseInterval);
+                if(paramDTO != null && paramDTO.isAutoLockRelease()){
+                    releaseLock(lockValue, strLockValue, lockObject, paramDTO.isAutoLockReleaseSameNode(),
+                            paramDTO.getAutoLockReleaseInterval());
                 }
             } else {
-                //Check the original file existence before the lock file to handle concurrent access scenario
-                if(checkSource){                    
-                    FileObject originalFileObject = fsManager.resolveFile(fullPath);
-                    if (!originalFileObject.exists()) {
-                        return false;
-                    }               
-                }
                 // write a lock file before starting of the processing, to ensure that the
                 // item is not processed by any other parties
                 lockObject.createFile();
@@ -183,11 +174,11 @@ public class VFSUtils {
                     stream.flush();
                     stream.close();
                 } catch (IOException e) {
-                    lockObject.delete();
+                    lockObject.delete();                 
                     log.error("Couldn't create the lock file before processing the file "
                             + fullPath, e);
                     return false;
-                } finally {
+                } finally {                  
                     lockObject.close();
                 }
 
@@ -208,7 +199,7 @@ public class VFSUtils {
         }
         return false;
     }
-
+    
     /**
      * Release a file item lock acquired either by the VFS listener or a sender
      *
@@ -216,8 +207,9 @@ public class VFSUtils {
      * @param fo representing the processed file
      */
     public static void releaseLock(FileSystemManager fsManager, FileObject fo) {
-        try {
-	    String fullPath = fo.getName().getURI();	
+        String fullPath = fo.getName().getURI();    
+        
+        try {	    
             int pos = fullPath.indexOf("?");
             if (pos > -1) {
                 fullPath = fullPath.substring(0, pos);
@@ -344,7 +336,7 @@ public class VFSUtils {
     }    
     
     private static boolean releaseLock(byte[] bLockValue, String sLockValue, FileObject lockObject,
-            Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
+        Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
         try {
             InputStream is = lockObject.getContent().getInputStream();
             byte[] val = new byte[bLockValue.length];
@@ -357,7 +349,10 @@ public class VFSUtils {
             if (arrVal.length == 4 && arrValNew.length == 4) {
                 if (!autoLockReleaseSameNode
                         || (arrVal[1].equals(arrValNew[1]) && arrVal[2].equals(arrValNew[2]))) {
-                    long lInterval = Long.parseLong(arrValNew[2]) - Long.parseLong(arrVal[2]);
+                    long lInterval = 0;
+                    try{
+                        lInterval = Long.parseLong(arrValNew[3]) - Long.parseLong(arrVal[3]);
+                    }catch(NumberFormatException nfe){}
                     if (autoLockReleaseInterval == null
                             || autoLockReleaseInterval <= lInterval) {
                         try {
