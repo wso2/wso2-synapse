@@ -80,41 +80,50 @@ public class ForEachMediator extends AbstractMediator {
 			// synLog.traceOrDebug("FE*=axis2MessageContext=" +
 			// axis2MessageContext.toString());
 
-			OMElement jsonElement = synCtx.getEnvelope().getBody().getFirstElement();
+			OMElement jsonElement =
+			                        synCtx.getEnvelope().getBody()
+			                              .getFirstElement();
 
 			synLog.traceOrDebug("FE*=Splitting Json : " + jsonElement);
-			
-			InputStream jsonPayLoad = JsonUtil.getJsonPayload( ((Axis2MessageContext) synCtx).getAxis2MessageContext());
-			
+
+			InputStream jsonPayLoad =
+			                          JsonUtil.getJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+
 			synLog.traceOrDebug("FE*=json payload : " + jsonPayLoad);
-			
+
 			String jsonString;
-            try {
-	            jsonString = JsonUtil.toJsonString(jsonElement).toString();
-	            synLog.traceOrDebug("FE*=json string : " +jsonString );
-	            String jsonExp = expression.getExpression();
-	            if(jsonExp.startsWith("json-eval(")){
-	            	jsonExp = jsonExp.substring(10, jsonExp.length()-1);
-	            }
-	            
-	            List<?> splitElements = JsonPath.read(jsonString, jsonExp);
-	            
-	            int msgCount = splitElements.size();
-				//int msgNumber = 0;
+			try {
+				jsonString = JsonUtil.toJsonString(jsonElement).toString();
+				synLog.traceOrDebug("FE*=json string : " + jsonString);
+				String jsonExp = expression.getExpression();
+				if (jsonExp.startsWith("json-eval(")) {
+					jsonExp = jsonExp.substring(10, jsonExp.length() - 1);
+				}
+
+				// //Works fine
+				// List<?> genders0 = JsonPath.using(conf).read(json,
+				// "$[0]['gender']");
+				// //PathNotFoundException thrown
+				// List<String> genders1 = JsonPath.using(conf).read(json,
+				// "$[1]['gender']");
+				//
+
+				List<?> splitElements = JsonPath.read(jsonString, jsonExp);
+				// EIPUtils.getJsonElementsByExpression(jsonString,
+				// jsonExp);
+				int msgCount = splitElements.size();
+				// int msgNumber = 0;
 
 				if (synLog.isTraceOrDebugEnabled()) {
 					synLog.traceOrDebug("FE*=Splitting with Json : " +
 					                    expression + " resulted in " +
 					                    msgCount + " elements");
 				}
-            } catch (AxisFault e1) {
-	           
-	            e1.printStackTrace();
-            }
-			
-			
-			
-			
+			} catch (AxisFault e1) {
+
+				e1.printStackTrace();
+			}
+
 			// List<String> authors = JsonPath.read(json,
 			// "$.store.book[*].author");
 
