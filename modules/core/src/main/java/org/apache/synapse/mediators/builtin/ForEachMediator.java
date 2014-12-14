@@ -34,6 +34,7 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -125,7 +126,7 @@ public class ForEachMediator extends AbstractMediator {
 					                                     o.toString(), true, true);
 					synLog.traceOrDebug("FE*=" + i + "omE=" + o.toString() +
 					                    omE.toString());
-					i++;
+					
 
 					MessageContext iteratedMsgCtx =
 					                                getIteratedMessage(newCtx,
@@ -134,7 +135,14 @@ public class ForEachMediator extends AbstractMediator {
 					
 					target.mediate(iteratedMsgCtx);
 					synLog.traceOrDebug("FE*=" + i + "iteratedMsgCtxEnv=" + iteratedMsgCtx.getEnvelope());
-
+					synLog.traceOrDebug("FE*=" + i + "envelope=" + envelope);
+//					EIPUtils.includeEnvelope(envelope,
+//					                         iteratedMsgCtx.getEnvelope(),
+//					                         synCtx, (SynapseJsonPath) expression);
+//					synLog.traceOrDebug("FE*=" + i + "envelope=" + envelope);
+//					synCtx.setEnvelope(envelope);
+					
+					i++;
 				}
 				// int msgNumber = 0;
 
