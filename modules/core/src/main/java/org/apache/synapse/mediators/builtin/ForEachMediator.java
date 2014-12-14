@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
-import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
@@ -35,7 +34,6 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -100,28 +98,52 @@ public class ForEachMediator extends AbstractMediator {
 					jsonExp = jsonExp.substring(10, jsonExp.length() - 1);
 				}
 
-				// //Works fine
-				// List<?> genders0 = JsonPath.using(conf).read(json,
-				// "$[0]['gender']");
-				// //PathNotFoundException thrown
-				// List<String> genders1 = JsonPath.using(conf).read(json,
-				// "$[1]['gender']");
-				//
+				MessageContext newCtx =
+				                        MessageHelper.cloneMessageContext(synCtx);
+				SOAPEnvelope envelope =
+				                        MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 
-				List<?> splitElements = JsonPath.read(jsonString, jsonExp);
+				// SOAPEnvelope newEnvelope =
+				// MessageHelper.cloneSOAPEnvelope(envelope);
+
+				List<Object> splitElements = JsonPath.read(jsonString, jsonExp);
 				// EIPUtils.getJsonElementsByExpression(jsonString,
 				// jsonExp);
 				int msgCount = splitElements.size();
-				// int msgNumber = 0;
 
 				if (synLog.isTraceOrDebugEnabled()) {
 					synLog.traceOrDebug("FE*=Splitting with Json : " +
 					                    expression + " resulted in " +
 					                    msgCount + " elements");
 				}
+
+				int i = 0;
+				for (Object o : splitElements) {
+					synLog.traceOrDebug("FE*=" + i + "jsonString=" + o.toString());
+					Object omE =
+					             JsonUtil.newJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(),
+					                                     o.toString(), true, true);
+					synLog.traceOrDebug("FE*=" + i + "omE=" + o.toString() +
+					                    omE.toString());
+					i++;
+
+					MessageContext iteratedMsgCtx =
+					                                getIteratedMessage(newCtx,
+					                                                   envelope,
+					                                                   (OMNode) omE);
+					
+					target.mediate(iteratedMsgCtx);
+					synLog.traceOrDebug("FE*=" + i + "iteratedMsgCtxEnv=" + iteratedMsgCtx.getEnvelope());
+
+				}
+				// int msgNumber = 0;
+
 			} catch (AxisFault e1) {
 
 				e1.printStackTrace();
+			} catch (JaxenException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 
 			// List<String> authors = JsonPath.read(json,
