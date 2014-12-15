@@ -18,10 +18,12 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
@@ -104,9 +106,6 @@ public class ForEachMediator extends AbstractMediator {
 				SOAPEnvelope envelope =
 				                        MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 
-				// SOAPEnvelope newEnvelope =
-				// MessageHelper.cloneSOAPEnvelope(envelope);
-
 				List<Object> splitElements = JsonPath.read(jsonString, jsonExp);
 				// EIPUtils.getJsonElementsByExpression(jsonString,
 				// jsonExp);
@@ -120,28 +119,31 @@ public class ForEachMediator extends AbstractMediator {
 
 				int i = 0;
 				for (Object o : splitElements) {
-					synLog.traceOrDebug("FE*=" + i + "jsonString=" + o.toString());
+					synLog.traceOrDebug("FE*=" + i + "jsonString=" +
+					                    o.toString());
 					Object omE =
 					             JsonUtil.newJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(),
-					                                     o.toString(), true, true);
+					                                     o.toString(), true,
+					                                     true);
 					synLog.traceOrDebug("FE*=" + i + "omE=" + o.toString() +
 					                    omE.toString());
-					
 
 					MessageContext iteratedMsgCtx =
 					                                getIteratedMessage(newCtx,
 					                                                   envelope,
 					                                                   (OMNode) omE);
-					
+
 					target.mediate(iteratedMsgCtx);
-					synLog.traceOrDebug("FE*=" + i + "iteratedMsgCtxEnv=" + iteratedMsgCtx.getEnvelope());
+					synLog.traceOrDebug("FE*=" + i + "iteratedMsgCtxEnv=" +
+					                    iteratedMsgCtx.getEnvelope());
 					synLog.traceOrDebug("FE*=" + i + "envelope=" + envelope);
-//					EIPUtils.includeEnvelope(envelope,
-//					                         iteratedMsgCtx.getEnvelope(),
-//					                         synCtx, (SynapseJsonPath) expression);
-//					synLog.traceOrDebug("FE*=" + i + "envelope=" + envelope);
-//					synCtx.setEnvelope(envelope);
-					
+					EIPUtils.includeEnvelope(envelope,
+					                         iteratedMsgCtx.getEnvelope(),
+					                         synCtx,
+					                         (SynapseJsonPath) expression);
+					synLog.traceOrDebug("FE*=" + i + "envelope=" + envelope);
+					synCtx.setEnvelope(envelope);
+
 					i++;
 				}
 				// int msgNumber = 0;
@@ -150,6 +152,12 @@ public class ForEachMediator extends AbstractMediator {
 
 				e1.printStackTrace();
 			} catch (JaxenException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (OMException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}

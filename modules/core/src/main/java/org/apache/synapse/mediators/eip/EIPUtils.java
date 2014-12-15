@@ -20,18 +20,28 @@
 package org.apache.synapse.mediators.eip;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import com.jayway.jsonpath.JsonPath;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Utility methods for the EIP mediators
@@ -250,6 +260,66 @@ public class EIPUtils {
 
 	}
 
+	public static void includeEnvelope(SOAPEnvelope envelope,
+	                                   SOAPEnvelope enricher,
+	                                   MessageContext synCtx,
+	                                   SynapseJsonPath expression)
+	                                                              throws JaxenException,
+	                                                              OMException,
+	                                                              IOException {
+		String expStr = expression.getExpression();
+		String parentJsonpath = expStr.substring(0, expStr.lastIndexOf('.'));
+		SynapseJsonPath parentExpression = new SynapseJsonPath(parentJsonpath);
 
+		List elementList = getMatchingElements(envelope, parentExpression);
+		OMElement enrichingElement = enricher.getBody().getFirstElement();
+		Object op = elementList.get(0);
+		if (checkNotEmpty(elementList)) {
+			Object o =
+			           JsonUtil.newJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+			                                   op.toString(), true, true);
+			if (o instanceof OMElement && ((OMElement) o).getParent() != null &&
+			    ((OMElement) o).getParent() instanceof OMElement) {
+				if (isBody(envelope.getBody(),
+				           ((OMElement) ((OMElement) o).getParent()))) {
+					((OMElement) o).addChild(enrichingElement);
+				} else {
+					((OMElement) o).getParent().addChild(enrichingElement);
+				}
+			}
+		} else {
+			throw new SynapseException(
+			                           "Could not find matching elements to aggregate.");
+		}
+
+	}
+
+	public static List getMatchingElements(SOAPEnvelope envelope,
+	/* , MessageContext synCtx, */
+	SynapseJsonPath expression) throws OMException, IOException {
+		String jsonExp = expression.toString();
+		if (jsonExp.startsWith("json-eval(")) {
+			jsonExp = jsonExp.substring(10, jsonExp.length() - 1);
+		}
+		// InputStream is = JsonUtil.getJsonPayload(((Axis2MessageContext)
+		// synCtx).getAxis2MessageContext());
+		StringBuilder jsonStr =
+		                        JsonUtil.toJsonString(envelope.getBody()
+		                                                      .getFirstElement());
+		Object obj = JsonPath.read(jsonStr.toString(), jsonExp);
+		if (obj instanceof OMNode) {
+			List list = new ArrayList();
+			list.add(obj);
+			return list;
+		} else if (obj instanceof List) {
+			return (List) obj;
+		} else if (obj instanceof Map) {
+			List list = new ArrayList();
+			list.add(obj);
+			return list;
+		} else {
+			return new ArrayList();
+		}
+	}
 
 }
