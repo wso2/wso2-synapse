@@ -52,6 +52,7 @@ import org.apache.synapse.message.store.impl.jdbc.message.StorableMessage;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -180,9 +181,19 @@ public class JDBCMessageConverter {
                 if (key.startsWith(OM_ELEMENT_PREFIX)) {
                     String originalKey = key.substring(OM_ELEMENT_PREFIX.length(), key.length());
                     ByteArrayInputStream is = new ByteArrayInputStream((byte[]) value);
-                    StAXOMBuilder builder = new StAXOMBuilder(is);
-                    OMElement omElement = builder.getDocumentElement();
-                    synCtx.setProperty(originalKey, omElement);
+                    try {
+                        StAXOMBuilder builder = new StAXOMBuilder(is);
+                        OMElement omElement = builder.getDocumentElement();
+                        synCtx.setProperty(originalKey, omElement);
+                    } catch (XMLStreamException e) {
+                        log.error("Error while deserializing the OM element prefix ", e);
+                    } finally {
+                        try {
+                            is.close();
+                        } catch (IOException e) {
+                            log.error("Error while closing input stream ", e);
+                        }
+                    }
                 }
             }
             synCtx.setFaultResponse(jdbcSynpaseMessageContext.isFaultResponse());
@@ -283,6 +294,12 @@ public class JDBCMessageConverter {
                         jdbcSynpaseMessageContext.addPropertyObject(OM_ELEMENT_PREFIX + key, bytes);
                     } catch (XMLStreamException e) {
                         log.error("Error while converting OMElement to byte array", e);
+                    } finally {
+                        try {
+                            bos.close();
+                        } catch (IOException e) {
+                            log.error("Error while closing output stream ", e);
+                        }
                     }
                 }
             }
