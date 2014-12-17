@@ -71,10 +71,14 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
-        logger.debug("Initializing JDBC Message Store");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Initializing JDBC Message Store");
+        }
         super.init(synapseEnvironment);
 
-        logger.debug("Initializing Datasource and Properties");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Initializing Datasource and Properties");
+        }
         jdbcConfiguration = new JDBCConfiguration();
         jdbcConfiguration.buildDataSource(parameters);
 
@@ -89,7 +93,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         JDBCProducer producer = new JDBCProducer(this);
         producer.setId(nextProducerId());
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " created a new JDBC Message Producer.");
+            logger.debug(getNameString() + " created a new JDBC Message Producer.");
         }
         return producer;
     }
@@ -102,7 +106,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         JDBCConsumer consumer = new JDBCConsumer(this);
         consumer.setId(nextConsumerId());
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " created a new JDBC Message Consumer.");
+            logger.debug(getNameString() + " created a new JDBC Message Consumer.");
         }
         return consumer;
     }
@@ -256,14 +260,14 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 try {
                     cleanUpOfferLock.lock();
                     cleaningState = true;
-                } catch (Exception ie) {
-                    logger.error("Message Cleanup lock released unexpectedly", ie);
+                } catch (Exception e) {
+                    logger.error("Message Cleanup lock released unexpectedly", e);
                 }
             }
             StorableMessage persistentMessage =
                     JDBCMessageConverter.createStorableMessage(messageContext);
             String msgId = persistentMessage.getAxis2Message().getMessageID();
-            final Statement stmt =
+            Statement stmt =
                     new Statement("INSERT INTO " + jdbcConfiguration.getTableName() + " (msg_id,message) VALUES (?,?)");
             stmt.addParameter(msgId);
             stmt.addParameter(persistentMessage);
@@ -283,8 +287,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @return - Select and return the first element from the table
      */
     public MessageContext peek() throws SynapseException {
-        final Statement stmt =
-                new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() + " WHERE indexId=(SELECT min(indexId) from " + jdbcConfiguration.getTableName() + ")");
+        Statement stmt =
+                new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() +
+                              " WHERE indexId=(SELECT min(indexId) from " + jdbcConfiguration.getTableName() + ")");
         MessageContext msg = null;
 
         try {
@@ -335,8 +340,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
             Statement stmt = new Statement("DELETE FROM " + jdbcConfiguration.getTableName() + " WHERE msg_id=?");
             stmt.addParameter(msgId);
             processStatementWithoutResult(stmt);
-        } catch (Exception ie) {
-            throw new SynapseException("Acquiring lock failed !", ie);
+        } catch (Exception e) {
+            throw new SynapseException("Removing message with id = " + msgId + " failed !", e);
         } finally {
             if (cleaningState) {
                 removeLock.unlock();
@@ -351,14 +356,14 @@ public class JDBCMessageStore extends AbstractMessageStore {
     @Override
     public void clear() {
         try {
-            logger.warn(nameString() + "deleting all entries");
+            logger.warn(getNameString() + "deleting all entries");
             removeLock.lock();
             cleanUpOfferLock.lock();
             cleaningFlag.set(true);
             Statement stmt = new Statement("DELETE FROM " + jdbcConfiguration.getTableName());
             processStatementWithoutResult(stmt);
-        } catch (Exception ie) {
-            logger.error("Acquiring lock failed !", ie);
+        } catch (Exception e) {
+            logger.error("Clearing store failed !", e);
         } finally {
             cleaningFlag.set(false);
             removeLock.unlock();
@@ -368,6 +373,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
 
     /**
      * Get the message at given position
+     * Only can be done with MYSQL, and no use-case in current implementation
      *
      * @param position - position of the message , starting value is 0
      * @return Message Context of position th row or if failed return null
@@ -395,7 +401,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
     @Override
     public List<MessageContext> getAll() {
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " retrieving all messages from the store.");
+            logger.debug(getNameString() + " retrieving all messages from the store.");
         }
         Statement stmt = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName());
         MessageContext result = processStatementWithResult(stmt);
@@ -460,7 +466,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      *
      * @return - name of the store
      */
-    private String nameString() {
+    private String getNameString() {
         return "Store [" + getName() + "]";
     }
 

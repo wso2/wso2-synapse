@@ -41,7 +41,7 @@ public class JDBCConsumer implements MessageConsumer {
     /**
      * Id of the consumer
      */
-    private String idString;
+    private String consumerId;
 
     /**
      * Store current message index processing
@@ -112,19 +112,19 @@ public class JDBCConsumer implements MessageConsumer {
      */
     @Override
     public void setId(int id) {
-        idString = "[" + store.getName() + "-C-" + id + "]";
+        consumerId = "[" + store.getName() + "-C-" + id + "]";
     }
 
     /**
      * Get consumer id
      *
-     * @return idString - Consumer identifier
+     * @return consumerId - Consumer identifier
      */
     @Override
     public String getId() {
-        if (idString == null) {
+        if (consumerId == null) {
             return "[unknown-consumer]";
         }
-        return idString;
+        return consumerId;
     }
 }

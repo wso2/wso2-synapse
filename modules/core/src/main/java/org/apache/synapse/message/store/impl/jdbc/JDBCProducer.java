@@ -41,7 +41,7 @@ public class JDBCProducer implements MessageProducer {
     /**
      * Id of the producer
      */
-    private String idString;
+    private String producerId;
 
     /**
      * Initialize producer
@@ -87,19 +87,19 @@ public class JDBCProducer implements MessageProducer {
      */
     @Override
     public void setId(int id) {
-        idString = "[" + store.getName() + "-P-" + id + "]";
+        producerId = "[" + store.getName() + "-P-" + id + "]";
     }
 
     /**
      * Get producer id
      *
-     * @return idString - Producer identifier
+     * @return producerId - Producer identifier
      */
     @Override
     public String getId() {
-        if (idString == null) {
+        if (producerId == null) {
             return "[unknown-producer]";
         }
-        return idString;
+        return producerId;
     }
 }
