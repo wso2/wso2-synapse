@@ -98,6 +98,9 @@ public class HTTPEndpoint extends AbstractEndpoint {
         try {
             return URLDecoder.decode(value, "UTF-8");
         } catch (UnsupportedEncodingException e) {
+            if(log.isDebugEnabled()){
+                log.warn("Encoding is not supported", e);
+            }
             return value;
         }
     }
