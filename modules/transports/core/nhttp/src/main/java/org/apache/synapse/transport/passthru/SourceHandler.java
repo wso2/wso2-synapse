@@ -70,13 +70,17 @@ public class SourceHandler implements NHttpServerEventHandler {
 
         String strNamePostfix = "";
         if (sourceConfiguration.getInDescription() != null &&
-                sourceConfiguration.getInDescription().getName() != null) {
+            sourceConfiguration.getInDescription().getName() != null) {
             strNamePostfix = "-" + sourceConfiguration.getInDescription().getName();
             Scheme scheme = sourceConfiguration.getScheme();
-            boolean enableAdvancedForLatencyView = sourceConfiguration.getBooleanValue(PassThroughConstants.SYNAPSE_PASSTHROUGH_LATENCY_ADVANCE_VIEW, false);
-            boolean enableAdvancedForS2SView = sourceConfiguration.getBooleanValue(PassThroughConstants.SYNAPSE_PASSTHROUGH_S2SLATENCY_ADVANCE_VIEW, false);
-            this.latencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_LATENCY_VIEW, scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
-            this.s2sLatencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_S2SLATENCY_VIEW, scheme.isSSL(), strNamePostfix, enableAdvancedForS2SView);
+            boolean enableAdvancedForLatencyView = sourceConfiguration.getBooleanValue(
+                    PassThroughConstants.SYNAPSE_PASSTHROUGH_LATENCY_ADVANCE_VIEW, false);
+            boolean enableAdvancedForS2SView = sourceConfiguration.getBooleanValue(
+                    PassThroughConstants.SYNAPSE_PASSTHROUGH_S2SLATENCY_ADVANCE_VIEW, false);
+            this.latencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_LATENCY_VIEW,
+                                               scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
+            this.s2sLatencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_S2SLATENCY_VIEW, scheme.isSSL(),
+                                                  strNamePostfix, enableAdvancedForS2SView);
             this.threadingView = new ThreadingView(PassThroughConstants.PASSTHOUGH_HTTP_SERVER_WORKER, true, 50);
         }
 
@@ -93,9 +97,9 @@ public class SourceHandler implements NHttpServerEventHandler {
     public void requestReceived(NHttpServerConnection conn) {
         try {
         	
-        	HttpContext _context = conn.getContext();
-        	_context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
-            _context.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME,System.currentTimeMillis());
+        	HttpContext httpContext = conn.getContext();
+        	httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+            httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
         	 
             if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
                 handleInvalidState(conn, "Request received");
@@ -273,7 +277,6 @@ public class SourceHandler implements NHttpServerEventHandler {
                 context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
                 context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
                 updateLatencyView(context);
-
 			}
             
             metrics.incrementBytesSent(bytesSent);

@@ -147,7 +147,7 @@ public class PassThroughConstants {
     public static final String SYNAPSE_PASSTHROUGH_S2SLATENCY_ADVANCE_VIEW = "synapse.passthrough.s2slatency_view.enable_advanced_view";
     public static final String PASSTHROUGH_LATENCY_VIEW = "PassthroughLatencyView";
     public static final String PASSTHROUGH_S2SLATENCY_VIEW = "PassthroughS2SLatencyView";
-    public  static  final String PASSTHOUGH_HTTP_SERVER_WORKER= "PassthroughHttpServerWorker";
+    public static final String PASSTHOUGH_HTTP_SERVER_WORKER = "PassthroughHttpServerWorker";
 
     public static final String MESSAGE_OUTPUT_FORMAT = "MESSAGE_OUTPUT_FORMAT";
 	

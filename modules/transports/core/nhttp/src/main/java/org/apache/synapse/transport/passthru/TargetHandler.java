@@ -421,26 +421,20 @@ public class TargetHandler implements NHttpClientEventHandler {
                 NHttpServerConnection sourceConn =
                         (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
                 if (sourceConn != null) {
-                    if (conn.getContext()
-                            .getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME) != null) {
-                        sourceConn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
-                                conn.getContext()
-                                        .getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME)
+                    if (conn.getContext().getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME) != null) {
+                        sourceConn.getContext().setAttribute(
+                                PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
+                                conn.getContext().getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME)
                         );
-                        conn.getContext()
-                                .removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME);
+                        conn.getContext().removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME);
 
                     }
-                    sourceConn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,
-                            conn.getContext()
-                                    .getAttribute(PassThroughConstants.RES_ARRIVAL_TIME)
+                    sourceConn.getContext().setAttribute(
+                            PassThroughConstants.RES_ARRIVAL_TIME,
+                            conn.getContext().getAttribute(PassThroughConstants.RES_ARRIVAL_TIME)
                     );
-                    conn.getContext()
-                            .removeAttribute(PassThroughConstants.RES_ARRIVAL_TIME);
-
-
+                    conn.getContext().removeAttribute(PassThroughConstants.RES_ARRIVAL_TIME);
                 }
-
             }
         } catch (IOException e) {
             logIOException(conn, e);
