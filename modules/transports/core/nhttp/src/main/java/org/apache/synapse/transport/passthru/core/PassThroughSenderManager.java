@@ -48,9 +48,9 @@ public class PassThroughSenderManager {
      * @param passThroughHttpSender register shared PassThroughHttpSender
      */
     public static void registerPassThroughHttpSender(PassThroughHttpSender passThroughHttpSender) {
-        if (passThroughSenderManager == null){
+        if (passThroughSenderManager == null) {
             synchronized (PassThroughSenderManager.class) {
-                if(passThroughSenderManager ==null) {
+                if (passThroughSenderManager == null) {
                     passThroughSenderManager = new PassThroughSenderManager(passThroughHttpSender);
                 }
             }
@@ -65,7 +65,7 @@ public class PassThroughSenderManager {
             return passThroughSenderManager;
         } else {
             logger.error("PassThroughSenderManager not initialized properly may be " +
-                    "PassThroughHttpSender might not have  started properly so PassThroughSenderManager is null");
+                         "PassThroughHttpSender might not have  started properly so PassThroughSenderManager is null");
             return null;
         }
     }

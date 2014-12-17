@@ -31,35 +31,39 @@ public class PassThroughInboundEndpointHandler {
 
     /**
      * Start Endpoint Listen and events related to Endpoint handle by  given NHttpServerEventHandler
-     * @param inetSocketAddress Socket Address of the Endpoint need to be start by underlying IOReactor
+     *
+     * @param inetSocketAddress       Socket Address of the Endpoint need to be start by underlying IOReactor
      * @param nHttpServerEventHandler Event Handler for handle events for Endpoint
-     * @param endpointName Name of the Endpoint
-     * @return  Is Endpoint started successfully
+     * @param endpointName            Name of the Endpoint
+     * @return Is Endpoint started successfully
      */
     public static boolean startEndpoint(InetSocketAddress inetSocketAddress,
-                                         NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
+                                        NHttpServerEventHandler nHttpServerEventHandler, String endpointName) {
         return PassThroughListeningIOReactorManager.getInstance().startDynamicPTTEndpoint(inetSocketAddress,
-                                                                                 nHttpServerEventHandler, endpointName);
+                                                                                          nHttpServerEventHandler, endpointName);
     }
+
     /**
      * Close ListeningEndpoint running on the given port
+     *
      * @param port Port of  ListeningEndpoint to be closed
-     * @return  IS successfully closed
+     * @return IS successfully closed
      */
     public static boolean closeEndpoint(int port) {
         return PassThroughListeningIOReactorManager.getInstance().closeDynamicPTTEndpoint(port);
     }
+
     /**
-     * @return  Pass Through SourceConfiguration registered by shared IO Reactor of  PTT Listener
+     * @return Pass Through SourceConfiguration registered by shared IO Reactor of  PTT Listener
      */
     public static SourceConfiguration getPassThroughSourceConfiguration() throws Exception {
         SourceConfiguration sourceConfiguration = PassThroughListeningIOReactorManager.getInstance().
-                                                                              getSharedPassThroughSourceConfiguration();
-        if ( sourceConfiguration != null) {
+                getSharedPassThroughSourceConfiguration();
+        if (sourceConfiguration != null) {
             return sourceConfiguration;
         } else {
             throw new Exception("PassThroughSharedListenerConfiguration  is not initiated correctly when  " +
-                                                                                  "PassThroughListeners  are starting");
+                                "PassThroughListeners  are starting");
         }
     }
 }
