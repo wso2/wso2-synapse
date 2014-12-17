@@ -167,6 +167,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                         ObjectInputStream ios =
                                 new ObjectInputStream(new ByteArrayInputStream((byte[]) msgObj));
                         Object msg = ios.readObject();
+                        ios.close();
                         if (msg instanceof StorableMessage) {
                             StorableMessage jdbcMsg = (StorableMessage) msg;
                             resultMsg = JDBCMessageConverter.createMessageContext(jdbcMsg);
