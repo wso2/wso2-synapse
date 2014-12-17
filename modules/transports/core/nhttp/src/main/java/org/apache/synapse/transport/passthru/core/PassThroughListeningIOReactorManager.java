@@ -42,7 +42,7 @@ public class PassThroughListeningIOReactorManager {
     /**
      * Singleton Object of class PassThroughListeningIOReactorManager
      */
-    private static PassThroughListeningIOReactorManager passThroughListeningIOReactorManager;
+    private static PassThroughListeningIOReactorManager passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager();
 
     /**
      * Reference for shared ListeningIOReactor which can use by external endpoints
@@ -89,19 +89,11 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
-     * Provide manager object for internal services.If it is not created already create else provide existing one.
+     * Provide manager object for internal services
      *
      * @return PassThroughIOReactorManager
      */
     public static PassThroughListeningIOReactorManager getInstance() {
-        if (passThroughListeningIOReactorManager == null) {
-            synchronized (PassThroughListeningIOReactorManager.class) {
-                if (passThroughListeningIOReactorManager == null) {
-                    passThroughListeningIOReactorManager = new PassThroughListeningIOReactorManager();
-                    return passThroughListeningIOReactorManager;
-                }
-            }
-        }
         return passThroughListeningIOReactorManager;
     }
 
