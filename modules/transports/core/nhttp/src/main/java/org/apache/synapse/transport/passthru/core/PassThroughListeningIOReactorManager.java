@@ -236,8 +236,8 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean closeAllPTTListenerEndpoints(int port) {
         try {
-            if (passThroughListenerIOReactorMapper.containsKey(port)) {
-                ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
+            ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
+            if (listeningIOReactor != null) {
                 Set<ListenerEndpoint> endpoints = listeningIOReactor.getEndpoints();
                 // If it is shared IO Reactor then only close endpoints related to PTT Listener
                 if (passThroughListenerServerIODispatchMapper.get(port) instanceof MultiListenerServerIODispatch) {
