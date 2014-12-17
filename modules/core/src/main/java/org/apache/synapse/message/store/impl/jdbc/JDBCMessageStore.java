@@ -31,6 +31,7 @@ import org.apache.synapse.message.store.impl.jdbc.util.JDBCMessageConverter;
 import org.apache.synapse.message.store.impl.jdbc.util.Statement;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -162,18 +163,23 @@ public class JDBCMessageStore extends AbstractMessageStore {
                                                " against DataSource : " + jdbcConfiguration.getDSName(), e);
                 }
                 if (msgObj != null) {
+                    ObjectInputStream ios = null;
                     try {
                         // Convert back to MessageContext and add to list
-                        ObjectInputStream ios =
-                                new ObjectInputStream(new ByteArrayInputStream((byte[]) msgObj));
+                        ios = new ObjectInputStream(new ByteArrayInputStream((byte[]) msgObj));
                         Object msg = ios.readObject();
-                        ios.close();
                         if (msg instanceof StorableMessage) {
                             StorableMessage jdbcMsg = (StorableMessage) msg;
                             resultMsg = JDBCMessageConverter.createMessageContext(jdbcMsg);
                         }
                     } catch (Exception e) {
                         throw new SynapseException("Error reading object input stream", e);
+                    } finally {
+                        try {
+                            ios.close();
+                        } catch (IOException e) {
+                            logger.error("Error while closing object input stream", e);
+                        }
                     }
                 } else {
                     throw new SynapseException("Retrieved Object is null");
