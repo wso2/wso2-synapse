@@ -19,6 +19,11 @@
 
 package org.apache.synapse.mediators.eip.aggregator;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -30,8 +35,12 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.JSONProviderUtil;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
@@ -39,13 +48,9 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Aggregate a number of messages that are determined to be for a particular group, and combine
@@ -73,14 +78,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      * XPath that specifies a correlation expression that can be used to combine messages. An
      * example maybe //department@id="11"
      */
-    private SynapseXPath correlateExpression = null;
+    private SynapsePath correlateExpression = null;
     /**
      * An XPath expression that may specify a selected element to be aggregated from a group of
      * messages to create the aggregated message
      * e.g. //getQuote/return would pick up and aggregate the //getQuote/return elements from a
      * bunch of matching messages into one aggregated message
      */
-    private SynapseXPath aggregationExpression = null;
+    private SynapsePath aggregationExpression = null;
 
     /** This holds the reference sequence name of the */
     private String onCompleteSequenceRef = null;
@@ -295,7 +300,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             // if there is an aggregate continue on aggregation
             if (aggregate != null) {
             	//this is a temporary fix           	
-                synCtx.getEnvelope().build();
+                //synCtx.getEnvelope().build();
                 boolean collected = aggregate.addMessage(synCtx);
                 if (synLog.isTraceOrDebugEnabled()) {
                     if (collected) {
@@ -444,9 +449,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      * @return the aggregated message context
      */
     private MessageContext getAggregatedMessage(Aggregate aggregate) {
-
         MessageContext newCtx = null;
-
+        Object jsonPayload=null;
         for (MessageContext synCtx : aggregate.getMessages()) {
             
             if (newCtx == null) {
@@ -467,9 +471,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                 aggregationExpression);
                     }
 
-                    EIPUtils.enrichEnvelope(
-                            newCtx.getEnvelope(), synCtx.getEnvelope(), synCtx, aggregationExpression);
-
+                    if(aggregationExpression instanceof SynapseXPath){
+                    	EIPUtils.enrichEnvelope(newCtx.getEnvelope(), synCtx.getEnvelope(), synCtx, (SynapseXPath)aggregationExpression);
+                    }else if(aggregationExpression instanceof SynapseJsonPath){
+                    	if(jsonPayload == null)
+                    		jsonPayload=EIPUtils.getRootJSONObject(newCtx);
+                    	jsonPayload = EIPUtils.enrichJSONSStream(jsonPayload, synCtx, (SynapseJsonPath)aggregationExpression);
+                    }
+                    
                     if (log.isDebugEnabled()) {
                         log.debug("Merged result : " + newCtx.getEnvelope());
                     }
@@ -482,7 +491,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 }
             }
         }
-
+        if(aggregationExpression instanceof SynapseJsonPath && newCtx!=null && jsonPayload!=null){
+        	JsonUtil.newJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(), JSONProviderUtil.objectToString(jsonPayload), true, true);
+        }
         // Enclose with a parent element if EnclosingElement is defined
         if (enclosingElementPropertyName != null) {
 
@@ -510,15 +521,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                 enclosingElementPropertyName + " not found ", newCtx);
             }
         }
-
         return newCtx;
     }
 
-    public SynapseXPath getCorrelateExpression() {
+    public SynapsePath getCorrelateExpression() {
         return correlateExpression;
     }
 
-    public void setCorrelateExpression(SynapseXPath correlateExpression) {
+    public void setCorrelateExpression(SynapsePath correlateExpression) {
         this.correlateExpression = correlateExpression;
     }
 
@@ -530,11 +540,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.completionTimeoutMillis = completionTimeoutMillis;
     }
 
-    public SynapseXPath getAggregationExpression() {
+    public SynapsePath getAggregationExpression() {
         return aggregationExpression;
     }
 
-    public void setAggregationExpression(SynapseXPath aggregationExpression) {
+    public void setAggregationExpression(SynapsePath aggregationExpression) {
         this.aggregationExpression = aggregationExpression;
     }
 

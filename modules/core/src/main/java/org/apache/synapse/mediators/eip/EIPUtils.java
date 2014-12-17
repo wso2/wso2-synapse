@@ -19,11 +19,17 @@
 
 package org.apache.synapse.mediators.eip;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -49,7 +55,15 @@ import java.util.Map;
 public class EIPUtils {
 
     private static final Log log = LogFactory.getLog(EIPUtils.class);
-
+    
+    private static SynapseJsonPath rootJsonPath=null;
+    static{
+    	try{
+    		rootJsonPath=new SynapseJsonPath("$.");
+    	}catch(JaxenException e){
+    	}
+    }
+    
     /**
      * Return the set of elements specified by the XPath over the given envelope
      *
@@ -157,6 +171,47 @@ public class EIPUtils {
         } else {
             throw new SynapseException("Could not find matching elements to aggregate.");
         }
+    }
+    
+    /**
+     * This method will extract all the matching message parts from enricherContext and concatenate into rootJsonObject.
+     * @param rootJsonObject Root JSON Object
+     * @param enricherContext new message context
+     * @param expression expression to extract message parts
+     * @return Updated Root JSON Object
+     * @throws JaxenException
+     */
+	public static Object enrichJSONSStream(Object rootJsonObject, MessageContext enricherContext,
+	                                       SynapseJsonPath expression) throws JaxenException {
+		Object newItemsObj = expression.evaluate(enricherContext);
+		if (newItemsObj instanceof List && !((List) newItemsObj).isEmpty()) {
+			if (rootJsonObject != null) {
+				for (Object item : (List) newItemsObj) {
+					rootJsonObject = expression.appendToParent(rootJsonObject, item);
+				}
+			}
+		}
+		return rootJsonObject;
+	}
+    
+    public static Object getRootJSONObject(MessageContext messageContext) throws JaxenException{
+    	return getRootJSON(messageContext);
+    }
+    
+    public static Object getRootJSONObject(String json) throws JaxenException{
+    	return getRootJSON(json);
+    }
+    
+    private static Object getRootJSON(Object object) throws JaxenException{
+    	Object root=null;
+    	Object objectList=rootJsonPath.evaluate(object);
+    	if (objectList instanceof List) {
+			List list = (List) objectList;
+			if (list != null && !list.isEmpty()){
+				root = list.get(0);
+			}
+    	}
+        return root;
     }
 
     private static boolean isBody(OMElement body, OMElement enrichingElement) {
@@ -322,4 +377,9 @@ public class EIPUtils {
 		}
 	}
 
+    public static Object stringtoJSON(String str) throws JaxenException {
+        SynapseJsonPath root = new SynapseJsonPath("$");
+        HashMap<String, Object> result = root.getJsonElement(IOUtils.toInputStream(str));
+        return result.get("evaluatedJsonElement");
+    }
 }

@@ -19,19 +19,19 @@
 
 package org.apache.synapse.config.xml;
 
+import java.util.Properties;
+
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.jaxen.JaxenException;
-
-import javax.xml.namespace.QName;
-import java.util.Properties;
 
 /**
  * The &lt;iterate&gt; element is used to split messages in Synapse to smaller messages with only
@@ -100,7 +100,7 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
         OMAttribute expression = elem.getAttribute(ATT_EXPRN);
         if (expression != null) {
             try {
-                mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem, ATT_EXPRN));
+                mediator.setExpression(SynapsePathFactory.getSynapsePath(elem, ATT_EXPRN));
             } catch (JaxenException e) {
                 handleException("Unable to build the IterateMediator. " + "Invalid XPATH " +
                     expression.getAttributeValue(), e);
@@ -120,9 +120,11 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
         }
         
         try {
-            SynapseXPath xp = new SynapseXPath(attachPathValue);
-            OMElementUtils.addNameSpaces(xp, elem, log);
-            mediator.setAttachPath(xp);
+        	if(attachPath!=null){
+                SynapsePath xp = SynapsePathFactory.getSynapsePath(elem, ATT_ATTACHPATH);
+                OMElementUtils.addNameSpaces(xp, elem, log);
+                mediator.setAttachPath(xp);
+        	}
         } catch (JaxenException e) {
             handleException("Unable to build the IterateMediator. Invalid XPATH " +
                 attachPathValue, e);
