@@ -56,6 +56,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Set;
 
 /**
  * JDBC helper for StorableMessage
@@ -271,7 +272,7 @@ public class JDBCMessageConverter {
                     jdbcAxis2MessageContext.addProperty(key, value);
                 }
             } catch (Exception e) {
-                log.warn("Incomplete Serialized Message !", e);
+                log.error("Incomplete Serialized Message !", e);
             }
             jdbcMsg.setAxis2Message(jdbcAxis2MessageContext);
 
@@ -279,9 +280,8 @@ public class JDBCMessageConverter {
             jdbcSynpaseMessageContext.setTracingState(synCtx.getTracingState());
             jdbcSynpaseMessageContext.setResponse(synCtx.isResponse());
 
-            Iterator<String> its = synCtx.getPropertyKeySet().iterator();
-            while (its.hasNext()) {
-                String key = its.next();
+            Set<String> its = synCtx.getPropertyKeySet();
+            for (String key : its) {
                 Object v = synCtx.getProperty(key);
                 if (v instanceof String) {
                     jdbcSynpaseMessageContext.addProperty(key, (String) v);

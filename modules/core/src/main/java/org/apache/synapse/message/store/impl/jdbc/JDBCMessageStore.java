@@ -132,7 +132,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @param stmt - Statement to process
      * @return - Results as a List of MessageContexts
      */
-    private MessageContext processStatementWithResult(Statement stmt) throws SynapseException {
+    private MessageContext processResultingStatement(Statement stmt) throws SynapseException {
         MessageContext resultMsg = null;
 
         // Execute the prepared statement, and return list of messages as an ArrayList
@@ -193,7 +193,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * @param stmnt - Statement to process
      * @return - Success or Failure of the process
      */
-    private boolean processStatementWithoutResult(Statement stmnt) throws SynapseException {
+    private boolean processNonResultingStatement(Statement stmnt) throws SynapseException {
         Connection con = null;
         boolean result = false;
         PreparedStatement ps = null;
@@ -271,7 +271,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     new Statement("INSERT INTO " + jdbcConfiguration.getTableName() + " (msg_id,message) VALUES (?,?)");
             stmt.addParameter(msgId);
             stmt.addParameter(persistentMessage);
-            return processStatementWithoutResult(stmt);
+            return processNonResultingStatement(stmt);
         } catch (Exception e) {
             throw new SynapseException("Error while creating StorableMessage", e);
         } finally {
@@ -293,7 +293,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         MessageContext msg = null;
 
         try {
-            msg = processStatementWithResult(stmt);
+            msg = processResultingStatement(stmt);
         } catch (SynapseException se) {
             throw new SynapseException("Error while peek the message", se);
         }
@@ -339,7 +339,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             result = get(msgId);
             Statement stmt = new Statement("DELETE FROM " + jdbcConfiguration.getTableName() + " WHERE msg_id=?");
             stmt.addParameter(msgId);
-            processStatementWithoutResult(stmt);
+            processNonResultingStatement(stmt);
         } catch (Exception e) {
             throw new SynapseException("Removing message with id = " + msgId + " failed !", e);
         } finally {
@@ -361,7 +361,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             cleanUpOfferLock.lock();
             cleaningFlag.set(true);
             Statement stmt = new Statement("DELETE FROM " + jdbcConfiguration.getTableName());
-            processStatementWithoutResult(stmt);
+            processNonResultingStatement(stmt);
         } catch (Exception e) {
             logger.error("Clearing store failed !", e);
         } finally {
@@ -390,7 +390,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         // Gets the minimum value of the sub-table which contains indexId values greater than given position ('position' has minimum of 0 while indexId has minimum of 1)
         Statement stmt = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() + " ORDER BY indexId ASC LIMIT ?,1 ");
         stmt.addParameter(position);
-        return processStatementWithResult(stmt);
+        return processResultingStatement(stmt);
     }
 
     /**
@@ -404,7 +404,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             logger.debug(getNameString() + " retrieving all messages from the store.");
         }
         Statement stmt = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName());
-        MessageContext result = processStatementWithResult(stmt);
+        MessageContext result = processResultingStatement(stmt);
         if (result != null) {
             List<MessageContext> msgs = new ArrayList<MessageContext>();
             msgs.add(result);
@@ -424,7 +424,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
     public MessageContext get(String msgId) {
         Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcConfiguration.getTableName() + " WHERE msg_id=?");
         stmt.addParameter(msgId);
-        return processStatementWithResult(stmt);
+        return processResultingStatement(stmt);
     }
 
     /**

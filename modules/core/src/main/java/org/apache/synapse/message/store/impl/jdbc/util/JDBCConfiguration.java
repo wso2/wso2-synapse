@@ -187,16 +187,16 @@ public class JDBCConfiguration {
     /**
      * Get the password from SecretManager . here only use SecretManager
      *
-     * @param aliasPasword alias password
+     * @param aliasPassword alias password
      * @return if the SecretManager is initiated , then , get the corresponding secret
      * , else return alias itself
      */
-    private String getActualPassword(String aliasPasword) {
+    private String getActualPassword(String aliasPassword) {
         SecretManager secretManager = SecretManager.getInstance();
         if (secretManager.isInitialized()) {
-            return secretManager.getSecret(aliasPasword);
+            return secretManager.getSecret(aliasPassword);
         }
-        return aliasPasword;
+        return aliasPassword;
     }
 
     /**
@@ -213,9 +213,7 @@ public class JDBCConfiguration {
             log.error(msg);
             throw new SynapseException(msg);
         }
-        PreparedStatement ps;
-        ps = con.prepareStatement(stmnt.getRawStatement());
-        return ps;
+        return con.prepareStatement(stmnt.getRawStatement());
     }
 
     /**
