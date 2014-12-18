@@ -81,15 +81,20 @@ public class ForEachMediator extends AbstractMediator {
 			if (expression != null)
 				try {
 					Object splitElements = expression.evaluate(synCtx);
-					
-					Object jsonPayload = EIPUtils.getRootJSONObject((Axis2MessageContext) synCtx);
-					
-					
+					// ((SynapseJsonPath)expression).remove(synCtx);
+
+					Object jsonPayload = EIPUtils.getRootJSONObject(synCtx);
+
 					int msgNumber = 0;
 					int msgCount = 0;
 					if (splitElements != null && splitElements instanceof List) {
 						List splitElementList = (List) splitElements;
 						msgCount = splitElementList.size();
+
+						if (splitElementList.get(0) instanceof List) {
+							splitElementList = (List) splitElementList.get(0);
+							msgCount = splitElementList.size();
+						}
 
 						if (synLog.isTraceOrDebugEnabled()) {
 							synLog.traceOrDebug("FE*=Splitting with Json : " + expression +
@@ -97,10 +102,12 @@ public class ForEachMediator extends AbstractMediator {
 						}
 						synLog.traceOrDebug("FE*=Original Envelop =  " + synCtx.getEnvelope());
 
-						SOAPEnvelope envelope =
-						                        MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+//						SOAPEnvelope envelope =
+//						                        MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 
 						for (Object o : splitElementList) {
+							// ((SynapseJsonPath)expression).remove(jsonPayload,
+							// splitElementList, o);
 							if (synLog.isTraceOrDebugEnabled()) {
 								synLog.traceOrDebug("FE*=Submitting " + msgNumber + " of " +
 								                    msgCount +
@@ -112,14 +119,23 @@ public class ForEachMediator extends AbstractMediator {
 							synLog.traceOrDebug("FE*=" + msgNumber + "iteratedMsgCtxEnv=" +
 							                    iteratedMsgCtx.getEnvelope());
 
-							EIPUtils.includeEnvelope(envelope, iteratedMsgCtx,
-							                         synCtx, (SynapseJsonPath) expression,
-							                         jsonPayload);
+							//need to replace the first and append the remaining for the case where $.list or $.list[*] for all other cases replace works
+							//if (msgNumber == 0) {
+								((SynapseJsonPath) expression).replace(jsonPayload,
+								                                       EIPUtils.getRootJSONObject(iteratedMsgCtx));
+//							} else {
+//								((SynapseJsonPath) expression).appendToParent(jsonPayload,
+//								                                              EIPUtils.getRootJSONObject(iteratedMsgCtx));
+//							}
 
-							synLog.traceOrDebug("FE*=" + msgNumber + "envelope=" + envelope);
+							//synLog.traceOrDebug("FE*=" + msgNumber + "envelope=" + envelope);
 							synLog.traceOrDebug("FE*=" + msgNumber + "jsonPayload=" + jsonPayload);
 							msgNumber++;
 						}
+
+						JsonUtil.newJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
+						                        JSONProviderUtil.objectToString(jsonPayload), true,
+						                        true);
 
 					} else {
 						handleException("Json Expression doesn't match any elements", synCtx);
@@ -138,8 +154,6 @@ public class ForEachMediator extends AbstractMediator {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
-			
 
 			return true;
 		} else if (expression.getPathType().equals(SynapsePath.X_PATH)) {
