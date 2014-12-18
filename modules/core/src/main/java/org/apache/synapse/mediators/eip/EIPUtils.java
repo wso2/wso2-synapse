@@ -315,38 +315,13 @@ public class EIPUtils {
 
 	}
 
-	public static void includeEnvelope(SOAPEnvelope envelope,
-	                                   SOAPEnvelope enricher,
-	                                   MessageContext synCtx,
-	                                   SynapseJsonPath expression)
-	                                                              throws JaxenException,
-	                                                              OMException,
-	                                                              IOException {
-		String expStr = expression.getExpression();
-		String parentJsonpath = expStr.substring(0, expStr.lastIndexOf('.'));
-		SynapseJsonPath parentExpression = new SynapseJsonPath(parentJsonpath);
+	public static void includeEnvelope(SOAPEnvelope envelope, MessageContext enricher,
+	                                   MessageContext synCtx, SynapseJsonPath expression,
+	                                   Object jsonPayload) throws JaxenException, OMException,
+	                                                      IOException {
 
-		List elementList = getMatchingElements(envelope, parentExpression);
-		OMElement enrichingElement = enricher.getBody().getFirstElement();
-		Object op = elementList.get(0);
-		if (checkNotEmpty(elementList)) {
-			Object o =
-			           JsonUtil.newJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-			                                   op.toString(), true, true);
-			if (o instanceof OMElement && ((OMElement) o).getParent() != null &&
-			    ((OMElement) o).getParent() instanceof OMElement) {
-				if (isBody(envelope.getBody(),
-				           ((OMElement) ((OMElement) o).getParent()))) {
-					((OMElement) o).addChild(enrichingElement);
-				} else {
-					((OMElement) o).getParent().addChild(enrichingElement);
-				}
-			}
-		} else {
-			throw new SynapseException(
-			                           "Could not find matching elements to aggregate.");
-		}
-
+		Object enrichElement = getRootJSON(enricher);
+		expression.append(jsonPayload, enrichElement);
 	}
 
 	public static List getMatchingElements(SOAPEnvelope envelope,
