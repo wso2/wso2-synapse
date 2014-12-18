@@ -176,7 +176,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                                 responseFile.createFile();
                             }
                             populateResponseFile(responseFile, msgCtx,append, true);
-                            VFSUtils.releaseLock(fsManager, responseFile);
+                            VFSUtils.releaseLock(fsManager, responseFile, null);
                         } else {
                             if (!responseFile.exists()) {
                                 responseFile.createFile();
@@ -191,7 +191,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         if (vfsOutInfo.isFileLockingEnabled()) {
                             acquireLockForSending(replyFile, vfsOutInfo);
                             populateResponseFile(replyFile, msgCtx, append, true);
-                            VFSUtils.releaseLock(fsManager, replyFile);
+                            VFSUtils.releaseLock(fsManager, replyFile, null);
                         } else {
                             populateResponseFile(replyFile, msgCtx, append, false);
                         }
@@ -206,7 +206,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         acquireLockForSending(replyFile, vfsOutInfo);
                         replyFile.createFile();
                         populateResponseFile(replyFile, msgCtx, append, true);
-                        VFSUtils.releaseLock(fsManager, replyFile);
+                        VFSUtils.releaseLock(fsManager, replyFile, null);
                     } else {
                         replyFile.createFile();
                         populateResponseFile(replyFile, msgCtx, append, false);
@@ -269,13 +269,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             
         } catch (FileSystemException e) {
             if (lockingEnabled) {
-                VFSUtils.releaseLock(fsManager, responseFile);
+                VFSUtils.releaseLock(fsManager, responseFile, null);
             }
             metrics.incrementFaultsSending();
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         } catch (IOException e) {
             if (lockingEnabled) {
-                VFSUtils.releaseLock(fsManager, responseFile);
+                VFSUtils.releaseLock(fsManager, responseFile, null);
             }
             metrics.incrementFaultsSending();
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
@@ -287,7 +287,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         
         int tryNum = 0;
         // wait till we get the lock
-        while (!VFSUtils.acquireLock(fsManager, responseFile)) {
+        while (!VFSUtils.acquireLock(fsManager, responseFile, null)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
                 handleException("Couldn't send the message to file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +
