@@ -263,12 +263,8 @@ public class PassThroughListeningIOReactorManager {
      * @return ServerIODispatch
      */
     public ServerIODispatch getServerIODispatch(int port) {
-        if (passThroughListenerServerIODispatchMapper.containsKey(port)) {
             return passThroughListenerServerIODispatchMapper.get(port);
-        }
-        return null;
     }
-
 
     /**
      * @return source configuration used by shared IO Reactor
