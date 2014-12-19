@@ -108,6 +108,7 @@ public class VFSUtils {
      *
      * @param fsManager used to resolve the processing file
      * @param fo representing the processing file item
+     * @param fso represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
     public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
@@ -123,6 +124,8 @@ public class VFSUtils {
      *            used to resolve the processing file
      * @param fo
      *            representing the processing file item
+     * @param fso
+     *            represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
     public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO,
@@ -204,6 +207,7 @@ public class VFSUtils {
      *
      * @param fsManager which is used to resolve the processed file
      * @param fo representing the processed file
+     * @param fso represents file system options used when resolving file from file system manager.
      */
     public static void releaseLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
         String fullPath = fo.getName().getURI();    
