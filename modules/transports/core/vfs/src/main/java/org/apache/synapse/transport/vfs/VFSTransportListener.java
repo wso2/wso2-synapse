@@ -39,7 +39,6 @@ import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
-import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;

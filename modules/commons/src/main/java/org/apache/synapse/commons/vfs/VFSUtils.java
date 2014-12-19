@@ -32,16 +32,12 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.ParameterInclude;
-import org.apache.axis2.description.ParameterInclude;
-import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.provider.UriParser;
-import org.apache.commons.vfs2.provider.sftp.TrustEveryoneUserInfo;
-import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
 import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
 
 public class VFSUtils {
