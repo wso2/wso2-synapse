@@ -210,12 +210,7 @@ public class PassThroughListeningIOReactorManager {
             log.error("Cannot close  Endpoint relevant to port " + port, e);
             return false;
         } finally {
-            if (dynamicPTTListeningEndpointMapper.containsKey(port)) {
                 dynamicPTTListeningEndpointMapper.remove(port);
-            }
-            if (portServerHandlerMapper.containsKey(port)) {
-                portServerHandlerMapper.remove(port);
-            }
         }
         return true;
     }

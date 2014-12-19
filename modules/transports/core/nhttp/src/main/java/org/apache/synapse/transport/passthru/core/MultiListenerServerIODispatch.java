@@ -59,6 +59,7 @@ public class MultiListenerServerIODispatch extends ServerIODispatch {
         NHttpServerEventHandler handler = handlers.get(localPort);
         try {
             handler.closed(defaultNHttpServerConnection);
+            handlers.remove(localPort);
         } catch (final Exception ex) {
             handler.exception(defaultNHttpServerConnection, ex);
         }
