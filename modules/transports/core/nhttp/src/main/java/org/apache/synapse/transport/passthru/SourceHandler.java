@@ -478,7 +478,8 @@ public class SourceHandler implements NHttpServerEventHandler {
         OutputStream os=null;
         if (HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)) {
             HttpContext context = request.getConnection().getContext();
-            ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(8192,	new HeapByteBufferAllocator());
+            ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(
+                    sourceConfiguration.getIOBufferSize(), new HeapByteBufferAllocator());
             context.setAttribute("synapse.response-source-buffer",outputBuffer);
             os = new ContentOutputStream(outputBuffer);
         }
