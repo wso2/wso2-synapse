@@ -122,10 +122,10 @@ public class ServerWorker implements Runnable {
         processHttpRequestUri(msgContext, method);
 		
 		//need special case to handle REST
-		boolean rest = isRESTRequest(msgContext, method);
+		boolean isRest = isRESTRequest(msgContext, method);
 
 		//should be process normally
-		if (!rest) {
+		if (!isRest) {
 			if (request.isEntityEnclosing()) {
 				processEntityEnclosingRequest(msgContext, true);
 			} else {
