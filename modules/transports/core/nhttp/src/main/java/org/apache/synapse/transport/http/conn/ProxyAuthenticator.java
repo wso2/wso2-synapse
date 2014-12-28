@@ -32,7 +32,7 @@ public class ProxyAuthenticator {
     private final Credentials proxycreds;
     
     public ProxyAuthenticator(final Credentials proxycreds) {
-        super();
+        super(); // todo get clarified
         this.proxycreds = proxycreds;
     }
 

@@ -33,9 +33,13 @@ public class ProxyConfig {
     private final HttpHost proxy;
     private final UsernamePasswordCredentials creds;
     private final Set<String> proxyBypass;
-    /** The list of known hosts to bypass proxy */
+    /**
+     * The list of known hosts to bypass proxy
+     */
     private List<String> knownDirectHosts = new ArrayList<String>();
-    /** The list of known hosts to go via proxy */
+    /**
+     * The list of known hosts to go via proxy
+     */
     private List<String> knownProxyHosts = new ArrayList<String>();
 
     public ProxyConfig(
@@ -54,6 +58,14 @@ public class ProxyConfig {
             this.proxyBypass = Collections.<String>emptySet();
         }
     }
+
+    public ProxyConfig(final HttpHost proxy, final UsernamePasswordCredentials creds) {
+        super();
+        this.proxy = proxy;
+        this.creds = creds;
+        this.proxyBypass = null;
+    }
+
 
     public HttpHost getProxy() {
         return proxy;

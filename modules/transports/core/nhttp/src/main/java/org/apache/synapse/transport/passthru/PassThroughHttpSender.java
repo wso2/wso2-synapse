@@ -133,10 +133,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         
         proxyConfig = new ProxyConfigBuilder().parse(transportOutDescription).build();
         if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
-            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " + 
+            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " +
                 proxyConfig.getProxyBypass());
         }
-        
+
         targetConfiguration = new TargetConfiguration(configurationContext,
                 transportOutDescription, workerPool, metrics, 
                 proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);

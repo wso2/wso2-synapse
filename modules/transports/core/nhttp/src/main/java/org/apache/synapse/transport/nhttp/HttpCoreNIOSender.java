@@ -155,7 +155,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         proxyConfig = new ProxyConfigBuilder().parse(transportOut).build();
         if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
-            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " + 
+            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " +
                 proxyConfig.getProxyBypass());
         }
         

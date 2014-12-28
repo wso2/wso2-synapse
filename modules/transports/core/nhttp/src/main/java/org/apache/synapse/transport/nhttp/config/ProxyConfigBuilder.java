@@ -18,11 +18,17 @@
  */
 package org.apache.synapse.transport.nhttp.config;
 
+import org.apache.axiom.om.OMElement;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
+
+import javax.xml.namespace.QName;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class ProxyConfigBuilder {
 
@@ -74,9 +80,117 @@ public class ProxyConfigBuilder {
         }
         return this;
     }
-    
+
     public ProxyConfig build() {
         return new ProxyConfig(proxy, proxycreds, proxyBypass);
     }
-    
+
+    public Map<String, ProxyConfig> build(TransportOutDescription transportOut) {
+        Parameter proxyProfilesParam = transportOut.getParameter("proxyProfiles");
+        if (proxyProfilesParam == null) {
+            return null;
+        }
+
+        //todo add proper log
+
+        OMElement proxyProfilesElt = proxyProfilesParam.getParameterElement();
+        Iterator<?> profiles = proxyProfilesElt.getChildrenWithName(new QName("profile"));
+        Map<String, ProxyConfig> proxyMap = new HashMap<String, ProxyConfig>();
+        while (profiles.hasNext()) {
+            OMElement profile = (OMElement) profiles.next();
+            OMElement endPointsElt = profile.getFirstChildWithName(new QName("endPoints"));
+            if (endPointsElt == null || endPointsElt.getText() == null) {
+                //todo throw proper exception (axis2 fault ?) amd log a nice message
+                return null;
+            }
+
+            String[] endPoints = endPointsElt.getText().split(",");
+            String proxyHost = profile.getFirstChildWithName(new QName("proxyHost")).getText();
+            String proxyPortStr = profile.getFirstChildWithName(new QName("proxyPort")).getText();
+            String proxyUserName = profile.getFirstChildWithName(new QName("proxyUserName")).getText();
+            String proxyPassword = profile.getFirstChildWithName(new QName("proxyPassword")).getText();
+
+
+            int proxyPort = Integer.parseInt(proxyPortStr);
+            HttpHost proxy = new HttpHost(proxyHost, proxyPort >= 0 ? proxyPort : 80);
+
+            UsernamePasswordCredentials proxyCredentials = new UsernamePasswordCredentials(proxyUserName,
+                    proxyPassword != null ? proxyPassword : "");
+
+            ProxyConfig proxyConfig = new ProxyConfig(proxy, proxyCredentials);
+
+            for (String endPoint : endPoints) {
+                endPoint = endPoint.trim();
+                if (!proxyMap.containsKey(endPoint)) {
+                    proxyMap.put(endPoint, proxyConfig);
+                } else {
+                    System.out.println("same EP in different proxy");
+                    //todo log
+                }
+            }
+        }
+
+        if (proxyMap.size() > 0) {
+            //todo log
+            return proxyMap;
+        }
+        return null;
+    }
+
+
+
+    private Map<String, ProxyConfig> getProxyProfiles(TransportOutDescription transportOut) {
+        Parameter proxyProfilesParam = transportOut.getParameter("proxyProfiles");
+        if (proxyProfilesParam == null) {
+            return null;
+        }
+
+        //todo add proper log
+
+        OMElement proxyProfilesElt = proxyProfilesParam.getParameterElement();
+        Iterator<?> profiles = proxyProfilesElt.getChildrenWithName(new QName("profile"));
+        Map<String, ProxyConfig> proxyMap = new HashMap<String, ProxyConfig>();
+        while (profiles.hasNext()) {
+            OMElement profile = (OMElement) profiles.next();
+            OMElement endPointsElt = profile.getFirstChildWithName(new QName("endPoints"));
+            if (endPointsElt == null || endPointsElt.getText() == null) {
+                //todo throw proper exception (axis2 fault ?) amd log a nice message
+                return null;
+            }
+
+            String[] endPoints = endPointsElt.getText().split(",");
+            String proxyHost = profile.getFirstChildWithName(new QName("proxyHost")).getText();
+            String proxyPortStr = profile.getFirstChildWithName(new QName("proxyPort")).getText();
+            String proxyUserName = profile.getFirstChildWithName(new QName("proxyUserName")).getText();
+            String proxyPassword = profile.getFirstChildWithName(new QName("proxyPassword")).getText();
+
+
+            int proxyPort = Integer.parseInt(proxyPortStr);
+            HttpHost proxy = new HttpHost(proxyHost, proxyPort >= 0 ? proxyPort : 80);
+
+            UsernamePasswordCredentials proxyCredentials = new UsernamePasswordCredentials(proxyUserName,
+                    proxyPassword != null ? proxyPassword : "");
+
+            ProxyConfig proxyConfig = new ProxyConfig(proxy, proxyCredentials);
+
+            for (String endPoint : endPoints) {
+                endPoint = endPoint.trim();
+                if (!proxyMap.containsKey(endPoint)) {
+                    proxyMap.put(endPoint, proxyConfig);
+                } else {
+                    System.out.println("same EP in different proxy");
+                    //todo log
+                }
+            }
+        }
+
+        if (proxyMap.size() > 0) {
+            //todo log
+            return proxyMap;
+        }
+        return null;
+
+
+    }
+
 }
