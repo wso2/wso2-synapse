@@ -61,10 +61,10 @@ import org.apache.synapse.transport.passthru.jmx.TransportView;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
-import java.util.Map;
 
 /**
  * PassThroughHttpSender for Synapse based on HttpCore and NIO extensions
@@ -91,7 +91,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     private TargetConfiguration targetConfiguration;
 
     /** Proxy config */
-    private Map<String, ProxyConfig> proxyConfigMap;
+    private ProxyConfig proxyConfig;
     
     /** state of the sender */
     private volatile int state = BaseConstants.STOPPED;
@@ -131,15 +131,15 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         MBeanRegistrar.getInstance().registerMBean(view, "Transport",
                  "passthru-" + namePrefix.toLowerCase() + "-sender");
         
-        proxyConfigMap = new ProxyConfigBuilder().build(transportOutDescription);
-//        if (log.isInfoEnabled() && proxyConfigMap.getProxy() != null) {
-//            log.info("HTTP Sender using Proxy " + proxyConfigMap.getProxy() + " bypassing " +
-//                proxyConfigMap.getProxyBypass());
+        proxyConfig = new ProxyConfigBuilder().parse(transportOutDescription).build();
+//        if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
+//            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " +
+//                proxyConfig.getProxyBypass());
 //        }
-
+        
         targetConfiguration = new TargetConfiguration(configurationContext,
                 transportOutDescription, workerPool, metrics, 
-                proxyConfigMap != null ? new ProxyAuthenticator(proxyConfigMap) : null);
+                proxyConfig != null ? new ProxyAuthenticator(proxyConfig) : null);
         targetConfiguration.build();
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
@@ -181,7 +181,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         targetConfiguration.setConnections(targetConnections);
 
         // create the delivery agent to hand over messages
-        deliveryAgent = new DeliveryAgent(targetConfiguration, targetConnections, proxyConfigMap);
+        deliveryAgent = new DeliveryAgent(targetConfiguration, targetConnections, proxyConfig);
         // we need to set the delivery agent
         connectCallback.setDeliveryAgent(deliveryAgent);        
 

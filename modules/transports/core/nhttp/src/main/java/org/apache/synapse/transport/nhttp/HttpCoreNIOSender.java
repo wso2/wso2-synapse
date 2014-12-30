@@ -116,7 +116,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     /** Weather Server header coming from server should be preserved */
     private boolean preserveServerHeader = true;
     /** Proxy config */
-    private volatile Map<String, ProxyConfig> proxyConfigMap;
+    private volatile ProxyConfig proxyConfig;
 
     /** Socket timeout duration for HTTP connections */
     private int socketTimeout = 0;
@@ -153,11 +153,11 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         connpool = new ConnectionPool();
 
-        proxyConfigMap = new ProxyConfigBuilder().build(transportOut);
-//        if (log.isInfoEnabled() && proxyConfigMap.getProxy() != null) {
-//            log.info("HTTP Sender using Proxy " + proxyConfigMap.getProxy() + " bypassing " +
-//                proxyConfigMap.getProxyBypass());
-//        }
+        proxyConfig = new ProxyConfigBuilder().parse(transportOut).build();
+        if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
+            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " + 
+                proxyConfig.getProxyBypass());
+        }
         
         Parameter param = transportOut.getParameter("warnOnHTTP500");
         if (param != null) {
@@ -204,7 +204,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         }
 
         metrics = new NhttpMetricsCollector(false, transportOut.getName());
-        handler = new ClientHandler(connpool, connFactory, proxyConfigMap, cfgCtx, params, metrics);
+        handler = new ClientHandler(connpool, connFactory, proxyConfig, cfgCtx, params, metrics);
         iodispatch = new ClientIODispatch(handler, connFactory);
         final IOEventDispatch ioEventDispatch = iodispatch;
 
@@ -333,11 +333,17 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             HttpHost target = new HttpHost(hostname, port, scheme);
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
-            String endPoint = hostname+":"+port;
-            ProxyConfig proxyConfigForEP = proxyConfigMap.get(endPoint);
+            HttpHost proxy;
+            if(proxyConfig.isProxyProfileEmpty()) {
+                proxy = proxyConfig.selectProxy(target);
+            }else {
+                String endPoint = hostname+":"+port;
+                proxy = proxyConfig.getProxyForEndPoint(endPoint);
+            }
+
             HttpRoute route;
-            if (proxyConfigForEP != null) {
-                route = new HttpRoute(target, null, proxyConfigForEP.getProxy(), secure);
+            if (proxy != null) {
+                route = new HttpRoute(target, null, proxy, secure);
             } else {
                 route = new HttpRoute(target, null, secure);
             }

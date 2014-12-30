@@ -18,12 +18,7 @@
  */
 package org.apache.synapse.transport.http.conn;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 import org.apache.http.HttpHost;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -42,10 +37,17 @@ public class ProxyConfig {
      */
     private List<String> knownProxyHosts = new ArrayList<String>();
 
+
+    /**
+     * Map to hold the custom proxy profile details
+     */
+    private Map<String, ProxyProfileConfig> proxyProfileMap = new HashMap<String, ProxyProfileConfig>();
+
     public ProxyConfig(
             final HttpHost proxy,
             final UsernamePasswordCredentials creds,
-            final String[] proxyBypass) {
+            final String[] proxyBypass,
+            final Map<String, ProxyProfileConfig> proxyProfileMap) {
         super();
         this.proxy = proxy;
         this.creds = creds;
@@ -56,6 +58,12 @@ public class ProxyConfig {
             }
         } else {
             this.proxyBypass = Collections.<String>emptySet();
+        }
+
+        if(proxyProfileMap != null) {
+            this.proxyProfileMap = proxyProfileMap;
+        } else{
+            this.proxyProfileMap = Collections.emptyMap();
         }
     }
 
@@ -95,6 +103,26 @@ public class ProxyConfig {
             }
         }
         return this.proxy;
+    }
+
+    public boolean isProxyProfileEmpty() {
+        return this.proxyProfileMap.isEmpty();
+    }
+
+    public HttpHost getProxyForEndPoint(String endPoint){
+        ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
+        if (proxyProfileConfig == null) {
+            return null;
+        }
+        return proxyProfileConfig.getProxy();
+    };
+
+    public UsernamePasswordCredentials getCredentialsForEndPoint(String endPoint) {
+        ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
+        if (proxyProfileConfig == null) {
+            return null;
+        }
+        return proxyProfileConfig.getCreds();
     }
 
     @Override

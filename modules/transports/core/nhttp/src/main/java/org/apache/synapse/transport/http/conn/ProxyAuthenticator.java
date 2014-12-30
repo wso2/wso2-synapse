@@ -21,9 +21,7 @@ package org.apache.synapse.transport.http.conn;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
 import org.apache.http.ProtocolException;
-import org.apache.http.auth.AUTH;
-import org.apache.http.auth.Credentials;
-import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.auth.*;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
@@ -32,20 +30,28 @@ import java.util.Map;
 
 public class ProxyAuthenticator {
 
-    private final Map<String, ProxyConfig> proxyConfigMap;
-    
-    public ProxyAuthenticator(Map<String, ProxyConfig> proxyConfigMap) {
-        this.proxyConfigMap = proxyConfigMap;
+    private final ProxyConfig proxyConfig;
+
+    public ProxyAuthenticator(ProxyConfig proxyConfig) {
+        this.proxyConfig = proxyConfig;
     }
 
     public void authenticatePreemptively(
             final HttpRequest request, final HttpContext context) throws ProtocolException {
-        String ep = request.getRequestLine().getUri();
-        Credentials proxycreds = proxyConfigMap.get(ep).getCreds();
-        BasicScheme basicScheme = new BasicScheme();
-        basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=\"proxy\""));
-        Header authresp = basicScheme.authenticate(proxycreds, request, context);
-        request.addHeader(authresp);
+        Credentials proxycreds;
+        if (proxyConfig.isProxyProfileEmpty()) {
+            proxycreds = proxyConfig.getCreds();
+        } else {
+            String endPoint = request.getRequestLine().getUri();
+            proxycreds = proxyConfig.getCredentialsForEndPoint(endPoint);
+        }
+        if (proxycreds != null) { //initially this null check was inside a constructor, there is a performance drawback
+            BasicScheme basicScheme = new BasicScheme();
+            basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=\"proxy\""));
+            Header authresp = basicScheme.authenticate(proxycreds, request, context);
+            request.addHeader(authresp);
+        }
     }
-    
+
+
 }

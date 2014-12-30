@@ -146,14 +146,14 @@ public class ClientHandler implements NHttpClientEventHandler {
     public ClientHandler(
             final ConnectionPool connpool,
             final ClientConnFactory connFactory,
-            final Map<String, ProxyConfig> proxyConfigMap,
+            final ProxyConfig proxyConfig,
             final ConfigurationContext cfgCtx,
             final HttpParams params,
             final NhttpMetricsCollector metrics) {
         super();
         this.connpool = connpool;
         this.connFactory = connFactory;
-        this.proxyauthenticator = proxyConfigMap != null ? new ProxyAuthenticator(proxyConfigMap) : null;
+        this.proxyauthenticator = proxyConfig != null ? new ProxyAuthenticator(proxyConfig) : null;
         this.cfgCtx = cfgCtx;
         this.params = params;
         this.httpProcessor = getHttpProcessor();
