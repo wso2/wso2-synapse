@@ -67,7 +67,7 @@ public class DeliveryAgent {
     private TargetConfiguration targetConfiguration;
 
     /** Proxy config */
-    private ProxyConfig proxyConfig;
+    private Map<String, ProxyConfig> proxyConfigMap;
     
     /** The maximum number of messages that can wait for a connection */
     private int maxWaitingMessages = Integer.MAX_VALUE;
@@ -85,10 +85,10 @@ public class DeliveryAgent {
      */
     public DeliveryAgent(TargetConfiguration targetConfiguration,
                          TargetConnections targetConnections,
-                         ProxyConfig proxyConfig) {
+                         Map<String, ProxyConfig> proxyConfigMap) {
         this.targetConfiguration = targetConfiguration;
         this.targetConnections = targetConnections;
-        this.proxyConfig = proxyConfig;
+        this.proxyConfigMap = proxyConfigMap;
         this.targetErrorHandler = new TargetErrorHandler(targetConfiguration);
     }
 
@@ -121,10 +121,12 @@ public class DeliveryAgent {
             HttpHost target = new HttpHost(hostname, port, scheme);
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
-            HttpHost proxy = proxyConfig.selectProxy(target);
+            String endPoint = hostname+":"+port;
+
+            ProxyConfig proxyConfigForEP = proxyConfigMap.get(endPoint);
             HttpRoute route;
-            if (proxy != null) {
-                route = new HttpRoute(target, null, proxy, secure);
+            if (proxyConfigForEP != null) {
+                route = new HttpRoute(target, null, proxyConfigForEP.getProxy(), secure);
             } else {
                 route = new HttpRoute(target, null, secure);
             }

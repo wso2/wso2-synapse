@@ -23,21 +23,25 @@ import org.apache.http.HttpRequest;
 import org.apache.http.ProtocolException;
 import org.apache.http.auth.AUTH;
 import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 
+import java.util.Map;
+
 public class ProxyAuthenticator {
 
-    private final Credentials proxycreds;
+    private final Map<String, ProxyConfig> proxyConfigMap;
     
-    public ProxyAuthenticator(final Credentials proxycreds) {
-        super(); // todo get clarified
-        this.proxycreds = proxycreds;
+    public ProxyAuthenticator(Map<String, ProxyConfig> proxyConfigMap) {
+        this.proxyConfigMap = proxyConfigMap;
     }
 
     public void authenticatePreemptively(
             final HttpRequest request, final HttpContext context) throws ProtocolException {
+        String ep = request.getRequestLine().getUri();
+        Credentials proxycreds = proxyConfigMap.get(ep).getCreds();
         BasicScheme basicScheme = new BasicScheme();
         basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=\"proxy\""));
         Header authresp = basicScheme.authenticate(proxycreds, request, context);

@@ -55,6 +55,7 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.*;
 import org.apache.synapse.commons.jmx.ThreadingView;
+import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
@@ -145,14 +146,14 @@ public class ClientHandler implements NHttpClientEventHandler {
     public ClientHandler(
             final ConnectionPool connpool,
             final ClientConnFactory connFactory,
-            final Credentials proxycreds,
+            final Map<String, ProxyConfig> proxyConfigMap,
             final ConfigurationContext cfgCtx,
             final HttpParams params,
             final NhttpMetricsCollector metrics) {
         super();
         this.connpool = connpool;
         this.connFactory = connFactory;
-        this.proxyauthenticator = proxycreds != null ? new ProxyAuthenticator(proxycreds) : null;
+        this.proxyauthenticator = proxyConfigMap != null ? new ProxyAuthenticator(proxyConfigMap) : null;
         this.cfgCtx = cfgCtx;
         this.params = params;
         this.httpProcessor = getHttpProcessor();
