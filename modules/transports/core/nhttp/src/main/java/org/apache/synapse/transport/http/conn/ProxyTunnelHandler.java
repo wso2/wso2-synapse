@@ -54,8 +54,6 @@ public class ProxyTunnelHandler {
         HttpHost target = this.route.getTargetHost();
         HttpRequest connect = new BasicHttpRequest("CONNECT", target.toHostString(), HttpVersion.HTTP_1_1);
 
-        connect.setHeader(HttpHeaders.HOST, target.toHostString());
-        
         this.httpProcessor.process(connect, context);
         return connect;
     }
