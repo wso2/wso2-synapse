@@ -19,8 +19,11 @@
 package org.apache.synapse.transport.nhttp.config;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
@@ -37,8 +40,12 @@ public class ProxyConfigBuilder {
     private UsernamePasswordCredentials proxycreds;
     private String[] proxyBypass;
     private Map<String, ProxyProfileConfig> proxyProfileConfigMap;
+    private String name;
 
-    public ProxyConfigBuilder parse(TransportOutDescription transportOut) {
+    private static final Log log = LogFactory.getLog(ProxyConfigBuilder.class);
+
+    public ProxyConfigBuilder parse(TransportOutDescription transportOut) throws AxisFault {
+        name = transportOut.getName();
         proxyProfileConfigMap = getProxyProfiles(transportOut);
         String proxyHost = null;
         int proxyPort = -1;
@@ -88,80 +95,48 @@ public class ProxyConfigBuilder {
         return new ProxyConfig(proxy, proxycreds, proxyBypass, proxyProfileConfigMap);
     }
 
-    public Map<String, ProxyConfig> build(TransportOutDescription transportOut) {
+    /**
+     * Looks for a transport parameter named proxyProfiles and initializes a map of ProxyProfileConfig.
+     * The syntax for defining a proxy profiles is as follows.
+     * {@code
+     * <parameter name="proxyProfiles">
+     *      <profile>
+     *          <endPoints>localhost:8247, localhost:8251</endPoints>
+     *          <proxyHost>localhost</proxyHost>
+     *          <proxyPort>3128</proxyPort>
+     *          <proxyUserName>squidUser</proxyUserName>
+     *          <proxyPassword>password</proxyPassword>
+     *      </profile>
+     *      <profile>
+     *          <endPoints>localhost:8249</endPoints>
+     *          <proxyHost>localhost</proxyHost>
+     *          <proxyPort>7443</proxyPort>
+     *      </profile>
+     * </parameter>
+     * }
+     * @param transportOut transport out description
+     * @return map of <code>ProxyProfileConfig<code/> if configured in axis2.xml; otherwise null
+     * @throws AxisFault if at least one proxy profile is not properly configured
+     */
+    private Map<String, ProxyProfileConfig> getProxyProfiles(TransportOutDescription transportOut) throws AxisFault {
         Parameter proxyProfilesParam = transportOut.getParameter("proxyProfiles");
         if (proxyProfilesParam == null) {
             return null;
         }
 
-        //todo add proper log
+        log.debug(name + " Loading proxy profiles for the HTTP/S sender");
 
-        OMElement proxyProfilesElt = proxyProfilesParam.getParameterElement();
-        Iterator<?> profiles = proxyProfilesElt.getChildrenWithName(new QName("profile"));
-        Map<String, ProxyConfig> proxyMap = new HashMap<String, ProxyConfig>();
-        while (profiles.hasNext()) {
-            OMElement profile = (OMElement) profiles.next();
-            OMElement endPointsElt = profile.getFirstChildWithName(new QName("endPoints"));
-            if (endPointsElt == null || endPointsElt.getText() == null) {
-                //todo throw proper exception (axis2 fault ?) amd log a nice message
-                return null;
-            }
-
-            String[] endPoints = endPointsElt.getText().split(",");
-            String proxyHost = profile.getFirstChildWithName(new QName("proxyHost")).getText();
-            String proxyPortStr = profile.getFirstChildWithName(new QName("proxyPort")).getText();
-            UsernamePasswordCredentials proxyCredentials = null;
-            OMElement proxyUserNameEle = profile.getFirstChildWithName(new QName("proxyUserName"));
-            if (proxyUserNameEle != null) {
-                String proxyUserName = proxyUserNameEle.getText();
-                OMElement proxyPasswordEle = profile.getFirstChildWithName(new QName("proxyPassword"));
-                String proxyPassword = proxyPasswordEle != null ? proxyPasswordEle.getText() : "";
-                proxyCredentials = new UsernamePasswordCredentials(proxyUserName,
-                                                                    proxyPassword != null ? proxyPassword : "");
-            }
-
-            int proxyPort = Integer.parseInt(proxyPortStr);
-            HttpHost proxy = new HttpHost(proxyHost, proxyPort >= 0 ? proxyPort : 80);
-
-            ProxyConfig proxyConfig = new ProxyConfig(proxy, proxyCredentials);
-
-            for (String endPoint : endPoints) {
-                endPoint = endPoint.trim();
-                if (!proxyMap.containsKey(endPoint)) {
-                    proxyMap.put(endPoint, proxyConfig);
-                } else {
-                    System.out.println("same EP in different proxy");
-                    //todo log
-                }
-            }
-        }
-
-        if (proxyMap.size() > 0) {
-            //todo log
-            return proxyMap;
-        }
-        return null;
-    }
-
-
-
-    private Map<String, ProxyProfileConfig> getProxyProfiles(TransportOutDescription transportOut) {
-        Parameter proxyProfilesParam = transportOut.getParameter("proxyProfiles");
-        if (proxyProfilesParam == null) {
-            return null;
-        }
-
-        //todo add proper log
-
-        OMElement proxyProfilesElt = proxyProfilesParam.getParameterElement();
-        Iterator<?> profiles = proxyProfilesElt.getChildrenWithName(new QName("profile"));
+        OMElement proxyProfilesEle = proxyProfilesParam.getParameterElement();
+        Iterator<?> profiles = proxyProfilesEle.getChildrenWithName(new QName("profile"));
         Map<String, ProxyProfileConfig> proxyProfileMap = new HashMap<String, ProxyProfileConfig>();
         while (profiles.hasNext()) {
             OMElement profile = (OMElement) profiles.next();
             OMElement endPointsEle = profile.getFirstChildWithName(new QName("endPoints"));
             if (endPointsEle == null || endPointsEle.getText() == null) {
-                //todo throw proper exception (axis2 fault ?) and log a nice message
-                return null;
+                String msg = "Each proxy profile must define at least one host:port " +
+                        "pair under the endPoints element";
+                log.error(name + " " + msg);
+                throw new AxisFault(msg);
             }
 
             String[] endPoints = endPointsEle.getText().split(",");
@@ -187,14 +162,14 @@ public class ProxyConfigBuilder {
                 if (!proxyProfileMap.containsKey(endPoint)) {
                     proxyProfileMap.put(endPoint, proxyProfileConfig);
                 } else {
-                    System.out.println("same EP in different proxy");
-                    //todo log
+                    log.warn(name + " Multiple proxy profiles were found for the endPoint : " +
+                            endPoint + ". Ignoring the excessive profiles.");
                 }
             }
         }
 
         if (proxyProfileMap.size() > 0) {
-            //todo log
+            log.info(name + " Proxy profiles initialized for " + proxyProfileMap.size() + " endPoints");
             return proxyProfileMap;
         }
         return null;

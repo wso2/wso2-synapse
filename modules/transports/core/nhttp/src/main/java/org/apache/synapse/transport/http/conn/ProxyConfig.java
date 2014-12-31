@@ -32,6 +32,7 @@ public class ProxyConfig {
      * The list of known hosts to bypass proxy
      */
     private List<String> knownDirectHosts = new ArrayList<String>();
+
     /**
      * The list of known hosts to go via proxy
      */
@@ -105,10 +106,19 @@ public class ProxyConfig {
         return this.proxy;
     }
 
+    /**
+     * check weather the proxy profile map is empty
+     * @return true if proxy profile map is not empty, false otherwise
+     */
     public boolean isProxyProfileEmpty() {
         return this.proxyProfileMap.isEmpty();
     }
 
+    /**
+     * select the appropriate proxy for the endPoint
+     * @param endPoint targeted end point
+     * @return proxy mapped for the end point, if not returns null
+     */
     public HttpHost getProxyForEndPoint(String endPoint){
         ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
         if (proxyProfileConfig == null) {
@@ -117,6 +127,11 @@ public class ProxyConfig {
         return proxyProfileConfig.getProxy();
     };
 
+    /**
+     * select the proxy credential for the end point
+     * @param endPoint targeted end point
+     * @return proxy credential for the given end point, if not returns null
+     */
     public UsernamePasswordCredentials getCredentialsForEndPoint(String endPoint) {
         ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
         if (proxyProfileConfig == null) {
