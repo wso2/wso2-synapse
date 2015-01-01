@@ -47,7 +47,7 @@ import com.jayway.jsonpath.JsonPath;
 
 public class ForEachMediator extends AbstractMediator {
 
-	/** The XPath that will list the elements to be splitted */
+	/** The path that will list the elements to be splitted */
 	private SynapsePath expression = null;
 
 	/** The target for the newly splitted messages */

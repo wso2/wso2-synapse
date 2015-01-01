@@ -302,8 +302,9 @@ public class EIPUtils {
 		                   getMatchingElements(envelope, synCtxt,
 		                                       parentExpression);
 		OMElement enrichingElement = enricher.getBody().getFirstElement();
+		
 		Object o = elementList.get(0);
-		if (checkNotEmpty(elementList)) {
+		if (checkNotEmpty(elementList) && (enrichingElement!=null)) {
 			if (o instanceof OMElement && ((OMElement) o).getParent() != null &&
 			    ((OMElement) o).getParent() instanceof OMElement) {
 				((OMElement) o).addChild(enrichingElement);

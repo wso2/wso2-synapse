@@ -62,42 +62,19 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 		ForEachMediator mediator = new ForEachMediator();
 		processAuditStatus(mediator, elem);
 		OMAttribute expression = elem.getAttribute(ATT_EXPRN);
+
 		if (expression != null) {
-			if (expression.getAttributeValue().startsWith("json-eval(")) {
-				String value =
-				               expression.getAttributeValue()
-				                         .substring(10,
-				                                    expression.getAttributeValue()
-				                                              .length() - 1);
-				SynapseJsonPath exp;
-				try {
-					exp = SynapseJsonPathFactory.getSynapseJsonPath(value);
-					exp.setPathType(SynapsePath.JSON_PATH);
-					mediator.setExpression(exp);
-				} catch (JaxenException e) {
-					handleException("Unable to build the ForEachMediator. " +
-					                        "Invalid Xpath or JsonPath " +
-					                        expression.getAttributeValue(), e);
-				}
-
-			} else {
-				try {
-					SynapseXPath exp =
-					                   SynapseXPathFactory.getSynapseXPath(elem,
-					                                                       ATT_EXPRN);
-					exp.setPathType(SynapsePath.X_PATH);
-					exp.setForceDisableStreamXpath(Boolean.TRUE);
-					mediator.setExpression(exp);
-				} catch (JaxenException e) {
-					handleException("Unable to build the ForEachMediator. " +
-					                        "Invalid Xpath or JsonPath " +
-					                        expression.getAttributeValue(), e);
-				}
+			try {
+				mediator.setExpression(SynapsePathFactory.getSynapsePath(elem,
+				                                                         ATT_EXPRN));
+			} catch (JaxenException e) {
+				handleException("Unable to build the ForEach Mediator. " +
+				                        "Invalid XPath or JsonPath " +
+				                        expression.getAttributeValue(), e);
 			}
-
 		} else {
-			handleException("Xpath or JsonPath expression is required "
-			                + "for an ForEach under the \"expression\" attribute");
+			handleException("XPath or JsonPath expression is required "
+			                + "for an ForEach Mediator under the \"expression\" attribute");
 		}
 
 		OMElement targetElement = elem.getFirstChildWithName(TARGET_Q);
@@ -126,18 +103,20 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 
 	private boolean validateTarget(Target target) {
 		SequenceMediator sequence = target.getSequence();
-		List<Mediator> mediators = sequence.getList();
 		boolean valid = true;
-		for (Mediator m : mediators) {
-			if (m instanceof CallMediator) {
-				valid = false;
-				break;
-			} else if (m instanceof CalloutMediator) {
-				valid = false;
-				break;
-			} else if (m instanceof SendMediator) {
-				valid = false;
-				break;
+		if (sequence != null) {
+			List<Mediator> mediators = sequence.getList();
+			for (Mediator m : mediators) {
+				if (m instanceof CallMediator) {
+					valid = false;
+					break;
+				} else if (m instanceof CalloutMediator) {
+					valid = false;
+					break;
+				} else if (m instanceof SendMediator) {
+					valid = false;
+					break;
+				}
 			}
 		}
 		return valid;
