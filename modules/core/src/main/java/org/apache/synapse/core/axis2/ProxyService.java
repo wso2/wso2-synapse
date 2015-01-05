@@ -221,6 +221,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private String fileName;
 
+    private URL filePath;
+
     private String serviceGroup;
 
     private boolean moduleEngaged;
@@ -532,7 +534,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         if (description != null) {
             proxyService.setDocumentation(description);
         }
-
+        // Setting file path for axis2 service
+        if (filePath != null) {
+            proxyService.setFileName(filePath);
+        }
         // process transports and expose over requested transports. If none
         // is specified, default to all transports using service name as
         // destination
@@ -799,7 +804,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                 }
             } else {
                 auditWarn("Unable to find the SynapseEnvironment. " +
-                    "Components of the proxy service may not be initialized");
+                        "Components of the proxy service may not be initialized");
             }
 
             AxisService as = axisConfig.getServiceForActivation(this.getName());
@@ -1139,6 +1144,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public void setFilePath(URL filePath) {
+        this.filePath = filePath;
     }
 
     public String getServiceGroup() {

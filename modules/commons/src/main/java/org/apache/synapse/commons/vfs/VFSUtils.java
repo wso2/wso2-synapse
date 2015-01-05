@@ -1,5 +1,3 @@
-
-
 /*
 *  Licensed to the Apache Software Foundation (ASF) under one
 *  or more contributor license agreements.  See the NOTICE file
@@ -20,30 +18,34 @@
 */
 package org.apache.synapse.commons.vfs;
 
-import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.description.Parameter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.FileContent;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileSystemManager;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
-import java.util.Random;
-import java.util.regex.Pattern;
+import java.util.*;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.ParameterInclude;
+import org.apache.axis2.transport.base.ParamUtils;
+import org.apache.commons.lang.WordUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.vfs2.*;
+import org.apache.commons.vfs2.provider.UriParser;
+import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
 
 public class VFSUtils {
 
     private static final Log log = LogFactory.getLog(VFSUtils.class);
 
+    private static final String STR_SPLITER = ":";
+    
     /**
      * URL pattern
      */
@@ -106,31 +108,65 @@ public class VFSUtils {
      *
      * @param fsManager used to resolve the processing file
      * @param fo representing the processing file item
+     * @param fso represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
-    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo) {
+    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
+        return acquireLock(fsManager, fo, null, fso);
+    }
+
+    /**
+     * Acquires a file item lock before processing the item, guaranteing that
+     * the file is not processed while it is being uploaded and/or the item is
+     * not processed by two listeners
+     * 
+     * @param fsManager
+     *            used to resolve the processing file
+     * @param fo
+     *            representing the processing file item
+     * @param fso
+     *            represents file system options used when resolving file from file system manager.
+     * @return boolean true if the lock has been acquired or false if not
+     */
+    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO,
+                                                   FileSystemOptions fso) {
         
         // generate a random lock value to ensure that there are no two parties
         // processing the same file
         Random random = new Random();
-        byte[] lockValue = String.valueOf(random.nextLong()).getBytes();
+        // Lock format random:hostname:hostip:time
+        String strLockValue = String.valueOf(random.nextLong());
+        try {
+            strLockValue += STR_SPLITER + InetAddress.getLocalHost().getHostName();
+            strLockValue += STR_SPLITER + InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException ue) {
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to get the Hostname or IP.");
+            }
+        }
+        strLockValue += STR_SPLITER + (new Date()).getTime();
+        byte[] lockValue = strLockValue.getBytes();
         
         try {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
             // lock file is derived by attaching the ".lock" second extension to the file name
-	    String fullPath = fo.getName().getURI();	
+            String fullPath = fo.getName().getURI();
             int pos = fullPath.indexOf("?");
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
-            }
-            FileObject lockObject = fsManager.resolveFile(fullPath + ".lock");
+            }            
+            FileObject lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
-                        + fo.getName() + ". This could possibly be due to some other party already "
+                        + fo.getName()
+                        + ". This could possibly be due to some other party already "
                         + "processing this file or the file is still being uploaded");
+                if(paramDTO != null && paramDTO.isAutoLockRelease()){
+                    releaseLock(lockValue, strLockValue, lockObject, paramDTO.isAutoLockReleaseSameNode(),
+                            paramDTO.getAutoLockReleaseInterval());
+                }
             } else {
-
                 // write a lock file before starting of the processing, to ensure that the
                 // item is not processed by any other parties
                 lockObject.createFile();
@@ -140,11 +176,11 @@ public class VFSUtils {
                     stream.flush();
                     stream.close();
                 } catch (IOException e) {
-                    lockObject.delete();
+                    lockObject.delete();                 
                     log.error("Couldn't create the lock file before processing the file "
                             + fullPath, e);
                     return false;
-                } finally {
+                } finally {                  
                     lockObject.close();
                 }
 
@@ -154,7 +190,7 @@ public class VFSUtils {
                 // as the written random lock value.
                 // NOTE: this may not be optimal but is sub optimal
                 FileObject verifyingLockObject = fsManager.resolveFile(
-                        fullPath + ".lock");
+                        fullPath + ".lock", fso);
                 if (verifyingLockObject.exists() && verifyLock(lockValue, verifyingLockObject)) {
                     return true;
                 }
@@ -165,21 +201,23 @@ public class VFSUtils {
         }
         return false;
     }
-
+    
     /**
      * Release a file item lock acquired either by the VFS listener or a sender
      *
      * @param fsManager which is used to resolve the processed file
      * @param fo representing the processed file
+     * @param fso represents file system options used when resolving file from file system manager.
      */
-    public static void releaseLock(FileSystemManager fsManager, FileObject fo) {
-        try {
-	    String fullPath = fo.getName().getURI();	
+    public static void releaseLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
+        String fullPath = fo.getName().getURI();    
+        
+        try {	    
             int pos = fullPath.indexOf("?");
             if (pos > -1) {
                 fullPath = fullPath.substring(0, pos);
             }
-            FileObject lockObject = fsManager.resolveFile(fullPath + ".lock");
+            FileObject lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
             if (lockObject.exists()) {
                 lockObject.delete();
             }
@@ -300,4 +338,94 @@ public class VFSUtils {
         }
     }    
     
+    private static boolean releaseLock(byte[] bLockValue, String sLockValue, FileObject lockObject,
+        Boolean autoLockReleaseSameNode, Long autoLockReleaseInterval) {
+        try {
+            InputStream is = lockObject.getContent().getInputStream();
+            byte[] val = new byte[bLockValue.length];
+            // noinspection ResultOfMethodCallIgnored
+            is.read(val);
+            String strVal = new String(val);
+            // Lock format random:hostname:hostip:time
+            String[] arrVal = strVal.split(":");
+            String[] arrValNew = sLockValue.split(STR_SPLITER);
+            if (arrVal.length == 4 && arrValNew.length == 4) {
+                if (!autoLockReleaseSameNode
+                        || (arrVal[1].equals(arrValNew[1]) && arrVal[2].equals(arrValNew[2]))) {
+                    long lInterval = 0;
+                    try{
+                        lInterval = Long.parseLong(arrValNew[3]) - Long.parseLong(arrVal[3]);
+                    }catch(NumberFormatException nfe){}
+                    if (autoLockReleaseInterval == null
+                            || autoLockReleaseInterval <= lInterval) {
+                        try {
+                            lockObject.delete();
+                        } catch (Exception e) {
+                            log.warn("Unable to delete the lock file during auto release cycle.", e);
+                        } finally {
+                            lockObject.close();
+                        }
+                        return true;
+                    }
+                }
+            }
+        } catch (FileSystemException e) {
+            log.error("Couldn't verify the lock", e);
+            return false;
+        } catch (IOException e) {
+            log.error("Couldn't verify the lock", e);
+            return false;
+        }
+        return false;
+    }
+
+    public static Map<String, String> parseSchemeFileOptions(String fileURI, ParameterInclude params) {
+        String scheme = UriParser.extractScheme(fileURI);
+        if (scheme == null) {
+            return null;
+        }
+
+        HashMap<String, String> schemeFileOptions = new HashMap<String, String>();
+        schemeFileOptions.put(VFSConstants.SCHEME, scheme);
+
+        try {
+            addOptions(scheme, schemeFileOptions, params);
+        } catch (AxisFault axisFault) {
+            log.error("Error while loading VFS parameter. " + axisFault.getMessage());
+        }
+
+        return schemeFileOptions;
+    }
+
+    private static void addOptions(String scheme, Map<String, String> schemeFileOptions, ParameterInclude params) throws AxisFault {
+        if (scheme.equals(VFSConstants.SCHEME_SFTP)) {
+            for (VFSConstants.SFTP_FILE_OPTION option : VFSConstants.SFTP_FILE_OPTION.values()) {
+                schemeFileOptions.put(option.toString(), ParamUtils.getOptionalParam(
+                        params, VFSConstants.SFTP_PREFIX + WordUtils.capitalize(option.toString())));
+            }
+
+            return;
+        }
+    }
+
+    public static FileSystemOptions attachFileSystemOptions(Map<String, String> options, FileSystemManager fsManager) throws FileSystemException, InstantiationException, IllegalAccessException {
+        if (options == null) {
+            return null;
+        }
+
+        FileSystemOptions opts = new FileSystemOptions();
+        DelegatingFileSystemOptionsBuilder delegate = new DelegatingFileSystemOptionsBuilder(fsManager);
+
+        if (VFSConstants.SCHEME_SFTP.equals(options.get(VFSConstants.SCHEME))) {
+            for (String key: options.keySet()) {
+                for (VFSConstants.SFTP_FILE_OPTION o: VFSConstants.SFTP_FILE_OPTION.values()) {
+                    if (key.equals(o.toString()) && null != options.get(key)) {
+                        delegate.setConfigString(opts, VFSConstants.SCHEME_SFTP, key.toLowerCase(), options.get(key));
+                    }
+                }
+            }
+        }
+
+        return opts;
+    }
 }
