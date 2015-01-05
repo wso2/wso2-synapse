@@ -65,25 +65,30 @@ public class ForEachMediator extends AbstractMediator {
 			}
 		}
 
-		if (expression != null) {
-			synLog.traceOrDebug("FE*=ForEach: expression = " + expression.toString());
-		} else {
+		if (expression == null) {
 			synLog.traceOrDebug("FE*=ForEach: expression is null");
-		}
+			return false;
+		} else {
 
-		if (expression.getPathType().equals(SynapsePath.JSON_PATH)) {
+			synLog.traceOrDebug("FE*=ForEach: expression = " +
+			                    expression.toString());
 
-			if (synLog.isTraceOrDebugEnabled()) {
-				synLog.traceOrDebug("FE*=Splitting with Json : " + expression);
+			if (expression.getPathType().equals(SynapsePath.JSON_PATH)) {
 
-			}
+				if (synLog.isTraceOrDebugEnabled()) {
+					synLog.traceOrDebug("FE*=Splitting with Json : " +
+					                    expression);
 
-			if (expression != null)
+				}
+
 				try {
 					Object splitElements = expression.evaluate(synCtx);
 					// ((SynapseJsonPath)expression).remove(synCtx);
 
 					Object jsonPayload = EIPUtils.getRootJSONObject(synCtx);
+
+					synLog.traceOrDebug("FE*=root jsonPayLoad=" +
+					                    jsonPayload.toString());
 
 					int msgNumber = 0;
 					int msgCount = 0;
@@ -97,126 +102,151 @@ public class ForEachMediator extends AbstractMediator {
 						}
 
 						if (synLog.isTraceOrDebugEnabled()) {
-							synLog.traceOrDebug("FE*=Splitting with Json : " + expression +
-							                    " resulted in " + msgCount + " elements");
+							synLog.traceOrDebug("FE*=Splitting with Json : " +
+							                    expression + " resulted in " +
+							                    msgCount + " elements");
 						}
-						synLog.traceOrDebug("FE*=Original Envelop =  " + synCtx.getEnvelope());
+						synLog.traceOrDebug("FE*=Original Envelop =  " +
+						                    synCtx.getEnvelope());
 
-//						SOAPEnvelope envelope =
-//						                        MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+						// SOAPEnvelope envelope =
+						// MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 
 						for (Object o : splitElementList) {
 							// ((SynapseJsonPath)expression).remove(jsonPayload,
 							// splitElementList, o);
 							if (synLog.isTraceOrDebugEnabled()) {
-								synLog.traceOrDebug("FE*=Submitting " + msgNumber + " of " +
+								synLog.traceOrDebug("FE*=Submitting " +
+								                    msgNumber + " of " +
 								                    msgCount +
 								                    " messages for processing in sequentially, in a general loop");
 							}
-							MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, o);
+							MessageContext iteratedMsgCtx =
+							                                getIteratedMessage(synCtx,
+							                                                   o);
 
 							target.mediate(iteratedMsgCtx);
-							synLog.traceOrDebug("FE*=" + msgNumber + "iteratedMsgCtxEnv=" +
+							synLog.traceOrDebug("FE*=" + msgNumber +
+							                    "iteratedMsgCtxEnv=" +
 							                    iteratedMsgCtx.getEnvelope());
 
-							//need to replace the first and append the remaining for the case where $.list or $.list[*] for all other cases replace works
-							//if (msgNumber == 0) {
-								((SynapseJsonPath) expression).replace(jsonPayload,
-								                                       EIPUtils.getRootJSONObject(iteratedMsgCtx));
-//							} else {
-//								((SynapseJsonPath) expression).appendToParent(jsonPayload,
-//								                                              EIPUtils.getRootJSONObject(iteratedMsgCtx));
-//							}
+							// need to replace the first and append the
+							// remaining
+							// for the case where $.list or $.list[*] for all
+							// other
+							// cases replace works
+							// if (msgNumber == 0) {
+							((SynapseJsonPath) expression).replace(jsonPayload,
+							                                       EIPUtils.getRootJSONObject(iteratedMsgCtx));
+							// } else {
+							// ((SynapseJsonPath)
+							// expression).appendToParent(jsonPayload,
+							// EIPUtils.getRootJSONObject(iteratedMsgCtx));
+							// }
 
-							//synLog.traceOrDebug("FE*=" + msgNumber + "envelope=" + envelope);
-							synLog.traceOrDebug("FE*=" + msgNumber + "jsonPayload=" + jsonPayload);
+							// synLog.traceOrDebug("FE*=" + msgNumber +
+							// "envelope="
+							// + envelope);
+							synLog.traceOrDebug("FE*=" + msgNumber +
+							                    "jsonPayload=" + jsonPayload);
 							msgNumber++;
 						}
 
 						JsonUtil.newJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(),
-						                        JSONProviderUtil.objectToString(jsonPayload), true,
-						                        true);
+						                        JSONProviderUtil.objectToString(jsonPayload),
+						                        true, true);
 
 					} else {
-						handleException("Json Expression doesn't match any elements", synCtx);
+						handleException("Json Expression doesn't match any elements",
+						                synCtx);
 					}
 
 				} catch (JaxenException e) {
-
-					e.printStackTrace();
+					handleException("Error evaluating split JsonPath expression : " +
+					                        expression, e, synCtx);
 				} catch (AxisFault e) {
-
-					e.printStackTrace();
+					handleException("Error creating an iterated copy of the message",
+					                e, synCtx);
 				} catch (OMException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					handleException("Error creating an iterated copy of the message",
+					                e, synCtx);
 				}
-
-			return true;
-		} else if (expression.getPathType().equals(SynapsePath.X_PATH)) {
-
-			if (synLog.isTraceOrDebugEnabled()) {
-				synLog.traceOrDebug("FE*=Splitting with Xpath : " + expression);
-
-			}
-			try {
-				// get a copy of the message for the processing, if the
-				// continueParent is set to true
-				// this original message can go in further mediations and hence
-				// we
-				// should not change
-				// the original message context FIXME: Needed?
-				SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
-				// get the iteration elements and iterate through the list,
-				// this call will also detach all the iteration elements
-				List<?> splitElements =
-				                        EIPUtils.getDetachedMatchingElements(envelope,
-				                                                             synCtx,
-				                                                             (SynapseXPath) expression);
-
-				int msgCount = splitElements.size();
-				int msgNumber = 0;
+				return true;
+			} else if (expression.getPathType().equals(SynapsePath.X_PATH)) {
 
 				if (synLog.isTraceOrDebugEnabled()) {
-					synLog.traceOrDebug("FE*=Splitting with XPath : " + expression +
-					                    " resulted in " + msgCount + " elements");
-				}
+					synLog.traceOrDebug("FE*=Splitting with Xpath : " +
+					                    expression);
 
-				// iterate through the list
-				for (Object o : splitElements) {
-					if (!(o instanceof OMNode)) {
-						handleException("Error splitting message with XPath : " + expression +
-						                " - result not an OMNode", synCtx);
-					}
+				}
+				try {
+					// get a copy of the message for the processing, if the
+					// continueParent is set to true
+					// this original message can go in further mediations and
+					// hence
+					// we
+					// should not change
+					// the original message context FIXME: Needed?
+					SOAPEnvelope envelope =
+					                        MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+					// get the iteration elements and iterate through the list,
+					// this call will also detach all the iteration elements
+					List<?> splitElements =
+					                        EIPUtils.getDetachedMatchingElements(envelope,
+					                                                             synCtx,
+					                                                             (SynapseXPath) expression);
+
+					int msgCount = splitElements.size();
+					int msgNumber = 0;
 
 					if (synLog.isTraceOrDebugEnabled()) {
-						synLog.traceOrDebug("FE*=Submitting " + msgNumber + " of " + msgCount +
-						                    " messages for processing in sequentially, in a general loop");
+						synLog.traceOrDebug("FE*=Splitting with XPath : " +
+						                    expression + " resulted in " +
+						                    msgCount + " elements");
 					}
 
-					MessageContext iteratedMsgCtx =
-					                                getIteratedMessage(synCtx, envelope, (OMNode) o);
+					// iterate through the list
+					for (Object o : splitElements) {
+						if (!(o instanceof OMNode)) {
+							handleException("Error splitting message with XPath : " +
+							                        expression +
+							                        " - result not an OMNode",
+							                synCtx);
+						}
 
-					target.mediate(iteratedMsgCtx);
-					EIPUtils.includeEnvelope(envelope, iteratedMsgCtx.getEnvelope(), synCtx,
-					                         (SynapseXPath) expression);
-					synCtx.setEnvelope(envelope);
+						if (synLog.isTraceOrDebugEnabled()) {
+							synLog.traceOrDebug("FE*=Submitting " + msgNumber +
+							                    " of " + msgCount +
+							                    " messages for processing in sequentially, in a general loop");
+						}
+
+						MessageContext iteratedMsgCtx =
+						                                getIteratedMessage(synCtx,
+						                                                   envelope,
+						                                                   (OMNode) o);
+
+						target.mediate(iteratedMsgCtx);
+						EIPUtils.includeEnvelope(envelope,
+						                         iteratedMsgCtx.getEnvelope(),
+						                         synCtx,
+						                         (SynapseXPath) expression);
+						synCtx.setEnvelope(envelope);
+					}
+
+				} catch (JaxenException e) {
+					handleException("Error evaluating split XPath expression : " +
+					                        expression, e, synCtx);
+				} catch (AxisFault af) {
+					handleException("Error creating an iterated copy of the message",
+					                af, synCtx);
 				}
-
-			} catch (JaxenException e) {
-				handleException("Error evaluating split XPath expression : " + expression, e,
+				synLog.traceOrDebug("FE*=End : For Each mediator");
+				return true;
+			} else {
+				handleException("Error evaluating  expression : " + expression,
 				                synCtx);
-			} catch (AxisFault af) {
-				handleException("Error creating an iterated copy of the message", af, synCtx);
+				return false;
 			}
-			synLog.traceOrDebug("FE*=End : For Each mediator");
-			return true;
-		} else {
-			handleException("Error evaluating  expression : " + expression, synCtx);
-			return false;
 		}
 	}
 
@@ -231,7 +261,8 @@ public class ForEachMediator extends AbstractMediator {
 	 * @throws AxisFault
 	 * @throws JaxenException
 	 */
-	private MessageContext getIteratedMessage(MessageContext synCtx, Object node) throws AxisFault,
+	private MessageContext getIteratedMessage(MessageContext synCtx, Object node)
+	                                                                             throws AxisFault,
 	                                                                             JaxenException {
 		// clone the message for the mediation in iteration
 		MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
@@ -242,7 +273,8 @@ public class ForEachMediator extends AbstractMediator {
 
 		// write the new JSON message to the stream
 		JsonUtil.newJsonPayload(((Axis2MessageContext) newCtx).getAxis2MessageContext(),
-		                        JSONProviderUtil.objectToString(rootObject), true, true);
+		                        JSONProviderUtil.objectToString(rootObject),
+		                        true, true);
 		return newCtx;
 	}
 
@@ -264,9 +296,10 @@ public class ForEachMediator extends AbstractMediator {
 	 *             if the expression evauation failure
 	 */
 
-	private MessageContext getIteratedMessage(MessageContext synCtx, SOAPEnvelope envelope, OMNode o)
-	                                                                                                 throws AxisFault,
-	                                                                                                 JaxenException {
+	private MessageContext getIteratedMessage(MessageContext synCtx,
+	                                          SOAPEnvelope envelope, OMNode o)
+	                                                                          throws AxisFault,
+	                                                                          JaxenException {
 
 		// clone the message for the mediation in iteration FIXME: is cloning
 		// needed?
