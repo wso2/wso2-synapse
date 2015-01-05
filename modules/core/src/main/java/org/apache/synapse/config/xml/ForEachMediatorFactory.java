@@ -40,7 +40,22 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 /**
- * <foreach expression> </foreach>
+ * The &lt;foreach&gt; element is used to split messages in Synapse to smaller messages with only
+ * one part of the elements described in the XPath or JsonPath expression.
+ * <p/>
+ * <pre>
+ * &lt;foreach expression="xpath"&gt;
+ *   &lt;target [to="uri"] [soapAction="qname"] [sequence="sequence_ref"]
+ *          [endpoint="endpoint_ref"]&gt;
+ *     &lt;sequence&gt;
+ *       (mediator)+
+ *     &lt;/sequence&gt;?
+ *     &lt;endpoint&gt;
+ *       endpoint
+ *     &lt;/endpoint&gt;?
+ *   &lt;/target&gt;+
+ * &lt;/foreach&gt;
+ * </pre>
  */
 public class ForEachMediatorFactory extends AbstractMediatorFactory {
 

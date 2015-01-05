@@ -45,14 +45,8 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 		ForEachMediator forEachMed = (ForEachMediator) m;
 
 		if (forEachMed.getExpression() != null) {
-			 SynapsePathSerializer.serializePath(forEachMed.getExpression(), forEachElem, "expression");
-//			SynapsePath path = forEachMed.getExpression();
-//			if (path instanceof SynapseXPath) {
-//				SynapseXPathSerializer.serializeXPath((SynapseXPath) forEachMed.getExpression(),
-//				                                      forEachElem, "expression");
-//			} else {
-//
-//			}
+			SynapsePathSerializer.serializePath(forEachMed.getExpression(),
+			                                    forEachElem, "expression");
 		} else {
 			handleException("Missing expression of the ForEach which is required.");
 		}
