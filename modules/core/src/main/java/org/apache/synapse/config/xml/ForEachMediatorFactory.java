@@ -40,9 +40,11 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 /**
- * The &lt;foreach&gt; element is used to split messages in Synapse to smaller messages with only
+ * The &lt;foreach&gt; element is used to split messages in Synapse to smaller
+ * messages with only
  * one part of the elements described in the XPath or JsonPath expression.
  * <p/>
+ * 
  * <pre>
  * &lt;foreach expression="xpath"&gt;
  *   &lt;target [to="uri"] [soapAction="qname"] [sequence="sequence_ref"]
@@ -100,7 +102,7 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 			if (target != null) {
 				boolean valid = validateTarget(target);
 				if (!valid) {
-					handleException("Sequence for ForEach mediator invalid :: cannot contain Call, Send or Callout mediators");
+					handleException("Target contains an endpoint OR Sequence for ForEach mediator invalid :: cannot contain Call, Send or Callout mediators");
 				} else {
 					// asynchronous is false since mediation happens in the same
 					// original thread that invoked the mediate method.
@@ -133,6 +135,9 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 					break;
 				}
 			}
+		} else if ((target.getEndpoint() != null) ||
+		           (target.getEndpointRef() != null)) {
+			valid = false;
 		}
 		return valid;
 	}
