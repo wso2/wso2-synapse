@@ -64,8 +64,7 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
         if (source.getSourceType() == EnrichMediator.PROPERTY) {
             sourceEle.addAttribute(fac.createOMAttribute("property", nullNS, source.getProperty()));
         } else if (source.getSourceType() == EnrichMediator.CUSTOM) {
-            //SynapseXPathSerializer.serializeXPath(source.getXpath(), sourceEle, "xpath");
-        	SynapsePathSerializer.serializePath(source.getXpath(), sourceEle, "xpath");
+            SynapseXPathSerializer.serializeXPath(source.getXpath(), sourceEle, "xpath");
         } else if (source.getSourceType() == EnrichMediator.INLINE) {
             if (source.getInlineOMNode() instanceof OMElement) {
                 sourceEle.addChild(((OMElement) source.getInlineOMNode()).cloneOMElement());
@@ -95,8 +94,7 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
         if (target.getTargetType() == EnrichMediator.PROPERTY) {
             targetEle.addAttribute(fac.createOMAttribute("property", nullNS, target.getProperty()));
         } else if (target.getTargetType() == EnrichMediator.CUSTOM) {
-            //SynapseXPathSerializer.serializeXPath(target.getXpath(), targetEle, "xpath");
-        	SynapsePathSerializer.serializePath(target.getXpath(), targetEle, "xpath");
+            SynapseXPathSerializer.serializeXPath(target.getXpath(), targetEle, "xpath");
         }
 
         return targetEle;

@@ -81,7 +81,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
     private void populateSource(Source source, OMElement sourceEle) {
 
-        // type attribute
+        // type attribue
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
             source.setSourceType(convertTypeToInit(typeAttr.getAttributeValue()));
@@ -96,8 +96,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             OMAttribute xpathAttr = sourceEle.getAttribute(ATT_XPATH);
             if (xpathAttr != null && xpathAttr.getAttributeValue() != null) {
                 try {
-                    //source.setXpath(SynapseXPathFactory.getSynapseXPath(sourceEle, ATT_XPATH));
-                	source.setXpath(SynapsePathFactory.getSynapsePath(sourceEle, ATT_XPATH));
+                    source.setXpath(SynapseXPathFactory.getSynapseXPath(sourceEle, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression: " + xpathAttr);
                 }
@@ -121,7 +120,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
                 source.setInlineOMNode(inlineElem);
             } else if (sourceEle.getText() != null
                     && (!sourceEle.getText().equals(""))) {
-            	source.setInlineOMNode(OMAbstractFactory.getOMFactory().createOMText(sourceEle.getText()));
+                source.setInlineOMNode(OMAbstractFactory.getOMFactory().createOMText(sourceEle.getText()));
             } else if (sourceEle.getAttributeValue(ATT_KEY) != null) {
                 source.setInlineKey(sourceEle.getAttributeValue(ATT_KEY));
             } else {
@@ -151,8 +150,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             OMAttribute xpathAttr = sourceEle.getAttribute(ATT_XPATH);
             if (xpathAttr != null && xpathAttr.getAttributeValue() != null) {
                 try {
-                    //target.setXpath(SynapseXPathFactory.getSynapseXPath(sourceEle, ATT_XPATH));
-                	target.setXpath(SynapsePathFactory.getSynapsePath(sourceEle, ATT_XPATH));
+                    target.setXpath(SynapseXPathFactory.getSynapseXPath(sourceEle, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression: " + xpathAttr);
                 }

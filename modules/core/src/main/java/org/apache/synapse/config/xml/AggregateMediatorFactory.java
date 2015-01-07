@@ -19,10 +19,6 @@
 
 package org.apache.synapse.config.xml;
 
-import java.util.Properties;
-
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
@@ -30,6 +26,9 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.DropMediator;
 import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
 import org.jaxen.JaxenException;
+
+import javax.xml.namespace.QName;
+import java.util.Properties;
 
 /**
  * Factory for {@link AggregateMediator} instances from the config;
@@ -92,7 +91,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
             if (corelateExpr != null) {
                 try {
                     mediator.setCorrelateExpression(
-                        SynapsePathFactory.getSynapsePath(corelateOn, EXPRESSION_Q));
+                        SynapseXPathFactory.getSynapseXPath(corelateOn, EXPRESSION_Q));
                 } catch (JaxenException e) {
                     handleException("Unable to load the corelate XPATH expression", e);
                 }
@@ -128,7 +127,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
             if (aggregateExpr != null) {
                 try {
                     mediator.setAggregationExpression(
-                        SynapsePathFactory.getSynapsePath(onComplete, EXPRESSION_Q));
+                        SynapseXPathFactory.getSynapseXPath(onComplete, EXPRESSION_Q));
                 } catch (JaxenException e) {
                     handleException("Unable to load the aggregating XPATH", e);
                 }
