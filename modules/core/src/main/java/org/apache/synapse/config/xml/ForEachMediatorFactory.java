@@ -82,15 +82,15 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 
 		if (expression != null) {
 			try {
-				mediator.setExpression(SynapsePathFactory.getSynapsePath(elem,
+				mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem,
 				                                                         ATT_EXPRN));
 			} catch (JaxenException e) {
 				handleException("Unable to build the ForEach Mediator. " +
-				                        "Invalid XPath or JsonPath " +
+				                        "Invalid XPath " +
 				                        expression.getAttributeValue(), e);
 			}
 		} else {
-			handleException("XPath or JsonPath expression is required "
+			handleException("XPath expression is required "
 			                + "for an ForEach Mediator under the \"expression\" attribute");
 		}
 

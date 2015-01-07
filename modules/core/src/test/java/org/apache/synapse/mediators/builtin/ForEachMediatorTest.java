@@ -138,39 +138,4 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 
 	}
 
-	public void testForEachJsonpath() throws Exception {
-
-		String jsonPayload =
-		                     "{\"getquote\" : [{\"symbol\":\"IBM\"},{\"symbol\":\"WSO2\"}]}";
-		JsonUtil.newJsonPayload(((Axis2MessageContext) testCtx).getAxis2MessageContext(),
-		                        jsonPayload, true, true);
-
-		MediatorFactory fac = new ForEachMediatorFactory();
-
-		Mediator foreach =
-		                   fac.createMediator(createOMElement("<foreach "
-		                                                      + "expression=\"json-eval($.getquote)\" xmlns=\"http://ws.apache.org/ns/synapse\">"
-		                                                      + "<target soapAction=\"urn:iterate\" sequence=\"seqRef\"></target></foreach>"),
-
-		                                      new Properties());
-
-		helperMediator.clearMediatedContexts();
-		foreach.mediate(testCtx);
-
-		assertEquals(2, helperMediator.getMsgCount());
-
-		assertEquals(helperMediator.getMediatedContext(0).getSoapAction(),
-		             "urn:iterate");
-		assertEquals(helperMediator.getMediatedContext(1).getSoapAction(),
-		             "urn:iterate");
-
-		assertEquals("<jsonObject><symbol>IBM</symbol></jsonObject>",
-		             helperMediator.getMediatedContext(0).getEnvelope()
-		                           .getBody().getFirstElement().toString());
-		assertEquals("<jsonObject><symbol>WSO2</symbol></jsonObject>",
-		             helperMediator.getMediatedContext(1).getEnvelope()
-		                           .getBody().getFirstElement().toString());
-
-	}
-
 }
