@@ -117,7 +117,7 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
             <version>${commons.vfs.version}</version>
-        </dependency>  
+        </dependency>
     </dependencies>
 
     <properties>
