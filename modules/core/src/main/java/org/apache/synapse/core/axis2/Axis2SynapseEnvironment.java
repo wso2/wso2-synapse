@@ -316,23 +316,26 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /**
      * 
      * Used by inbound polling endpoints to inject the message to synapse engine
+     * 
      * @param MessageContext
      * @param SequenceMediator
      * @param sequential
      * @return Boolean - Indicate if were able to inject the message
-     * @throws SynapseException - in case error occured during the mediation
+     * @throws SynapseException
+     *             - in case error occured during the mediation
      * 
      */
-    public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq, boolean sequential) throws SynapseException{
+    public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
+            boolean sequential) throws SynapseException {
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
-                + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
+                    + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
-        if(sequential){
-        	try{
-        		seq.mediate(synCtx);
-        		return true;
+        if (sequential) {
+            try {
+                seq.mediate(synCtx);
+                return true;
             } catch (SynapseException syne) {
                 if (!synCtx.getFaultStack().isEmpty()) {
                     log.warn("Executing fault handler due to exception encountered");
@@ -353,7 +356,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 } else {
                     log.warn("Exception encountered but no fault handler found - message dropped");
                 }
-                throw new SynapseException("Exception encountered but no fault handler found - message dropped", e);
+                throw new SynapseException(
+                        "Exception encountered but no fault handler found - message dropped", e);
             } catch (Throwable e) {
                 String msg = "Unexpected error executing inbound/async inject, message dropped";
                 log.error(msg, e);
@@ -361,18 +365,18 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     synCtx.getServiceLog().error(msg, e);
                 }
                 throw new SynapseException(msg, e);
-            }        	        
-        }else{
-        	try{
-        		synCtx.setEnvironment(this);
-        		executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-        		return true;
-        	}catch(RejectedExecutionException re){
-        		log.warn("Inbound worker pool has reached the maximum capacity and will be ignorning the processing.");
-        	}
+            }
+        } else {
+            try {
+                synCtx.setEnvironment(this);
+                executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
+                return true;
+            } catch (RejectedExecutionException re) {
+                log.warn("Inbound worker pool has reached the maximum capacity and will be ignorning the processing.");
+            }
         }
         return false;
-    }    
+    }
     
     /**
      * This will be used for sending the message provided, to the endpoint specified by the
