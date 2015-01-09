@@ -26,10 +26,12 @@ import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.vfs.VFSConstants; 
+import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Map;
 
 /**
  * Holds information about an entry in the VFS transport poll table used by the
@@ -86,6 +88,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     
     private Integer fileProcessingCount;
 
+    private Map<String, String> vfsSchemeProperties;
     private boolean autoLockRelease;
 
     private Long autoLockReleaseInterval;
@@ -285,6 +288,13 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return distributedLockTimeout;
     }
 
+    public Map<String, String> getVfsSchemeProperties() {
+        return vfsSchemeProperties;
+    }
+
+    public void setVfsSchemeProperties(Map<String, String> vfsSchemeProperties) {
+        this.vfsSchemeProperties = vfsSchemeProperties;
+    }
 
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
@@ -337,6 +347,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
             if(moveFileTimestampFormat != null) {
                 moveTimestampFormat = new SimpleDateFormat(moveFileTimestampFormat);
             }
+
+            setVfsSchemeProperties(VFSUtils.parseSchemeFileOptions(fileURI, params));
 
             String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
             if (strStreaming != null) {
