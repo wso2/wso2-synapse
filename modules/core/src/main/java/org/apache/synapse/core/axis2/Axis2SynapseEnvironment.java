@@ -30,6 +30,8 @@ import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -71,6 +73,7 @@ import java.util.concurrent.RejectedExecutionException;
 public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     private static final Log log = LogFactory.getLog(Axis2SynapseEnvironment.class);
+    private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
     private SynapseConfiguration synapseConfig;
     private ConfigurationContext configContext;
@@ -806,4 +809,57 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
     }
 
+    public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
+        if (log.isDebugEnabled()) {
+            log.debug("Injecting MessageContext for asynchronous mediation using the : "
+                    + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
+        }
+        smc.setEnvironment(this);
+        try {
+            seq.mediate(smc);
+            return true;
+        } catch (SynapseException syne) {
+            if (!smc.getFaultStack().isEmpty()) {
+                warn(false, "Executing fault handler due to exception encountered", smc);
+                smc.getFaultStack().pop().handleFault(smc, syne);
+
+            } else {
+                warn(false, "Exception encountered but no fault handler found - " +
+                        "message dropped", smc);
+            }
+            return false;
+        } catch (Exception e) {
+            String msg = "Unexpected error executing task  inject";
+            log.error(msg, e);
+            if (smc.getServiceLog() != null) {
+                smc.getServiceLog().error(msg, e);
+            }
+            if (!smc.getFaultStack().isEmpty()) {
+                warn(false, "Executing fault handler due to exception encountered", smc);
+                smc.getFaultStack().pop().handleFault(smc, e);
+
+            } else {
+                warn(false, "Exception encountered but no fault handler found - " +
+                        "message dropped", smc);
+            }
+            return false;
+        } catch (Throwable e) {
+            String msg = "Unexpected error executing task inject, message dropped";
+            log.error(msg, e);
+            if (smc.getServiceLog() != null) {
+                smc.getServiceLog().error(msg, e);
+            }
+            return false;
+        }
+    }
+
+    private void warn(boolean traceOn, String msg, MessageContext msgContext) {
+        if (traceOn) {
+            trace.warn(msg);
+        }
+        log.warn(msg);
+        if (msgContext.getServiceLog() != null) {
+            msgContext.getServiceLog().warn(msg);
+        }
+    }
 }

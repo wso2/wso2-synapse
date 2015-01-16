@@ -55,13 +55,13 @@ import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
+import org.apache.synapse.transport.passthru.core.PassThroughSenderManager;
 import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.jmx.TransportView;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
@@ -141,6 +141,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 transportOutDescription, workerPool, metrics, 
                 proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);
         targetConfiguration.build();
+        if(!scheme.isSSL()){
+            PassThroughSenderManager.registerPassThroughHttpSender(this);
+        }
+
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
         

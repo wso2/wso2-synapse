@@ -215,4 +215,13 @@ public interface SynapseEnvironment {
      */
     public void clearUnavailabilityOfArtifact(String key);
 
+    /**
+     * Inject message to the sequence in synchronous manner
+     * @param smc - Synapse message context to be injected
+     * @param seq - Sequence to be used for mediation
+     * @return boolean true if the message processing should be continued
+     *  and false if it should be aborted
+     */
+    public boolean injectMessage(MessageContext smc,SequenceMediator seq);
+
 }
