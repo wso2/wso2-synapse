@@ -37,12 +37,12 @@ import java.util.List;
 public class ForEachMediator extends AbstractMediator {
 
 	/**
-	 * The xpath that will list the elements to be splitted
+	 * The xpath that will list the elements to be split
 	 */
 	private SynapseXPath expression = null;
 
 	/**
-	 * The target for the newly splitted messages
+	 * The target for the newly split messages
 	 */
 	private Target target = null;
 
@@ -51,8 +51,6 @@ public class ForEachMediator extends AbstractMediator {
 
 		if (synLog.isTraceOrDebugEnabled()) {
 			synLog.traceOrDebug("Start : Foreach mediator");
-			// synLog.traceOrDebug("FE*=Message : " + synCtx.getEnvelope());
-			// synLog.traceTrace("FE*=Message : " + synCtx.getEnvelope());
 		}
 
 		if (expression == null) {
@@ -62,9 +60,10 @@ public class ForEachMediator extends AbstractMediator {
 			synLog.traceOrDebug("ForEach: expression = " +
 			                    expression.toString());
 
-			if (!validateSequence(synCtx)) {
+			if (!validateTarget(synCtx)) {
 				synLog.error(
-						"ForEach: Target cannot contain an endpoint OR Sequence is invalid/null :: cannot contain Call, Send or Callout mediators");
+						"ForEach: Target cannot contain an endpoint OR Sequence is invalid/null :: "
+						+ "cannot contain Call, Send or CallOut mediators");
 				return false;
 			} else {
 
@@ -76,9 +75,8 @@ public class ForEachMediator extends AbstractMediator {
 				try {
 
 					SOAPEnvelope envelope = synCtx.getEnvelope();
-					// get the iteration elements and iterate through the
-					// list,
-					// this call will also detach all the iteration elements
+					// get the iteration elements and iterate through the list, this call
+					// will also detach all the iteration elements from the message
 					List<?> splitElements =
 							EIPUtils.getDetachedMatchingElements(envelope,
 							                                     synCtx,
@@ -94,8 +92,8 @@ public class ForEachMediator extends AbstractMediator {
 					}
 
 					// iterate through the list
-					for (Object o : splitElements) {
-						if (!(o instanceof OMNode)) {
+					for (Object element : splitElements) {
+						if (!(element instanceof OMNode)) {
 							handleException("Error splitting message with XPath : " +
 							                expression +
 							                " - result not an OMNode",
@@ -111,7 +109,7 @@ public class ForEachMediator extends AbstractMediator {
 						MessageContext iteratedMsgCtx =
 								getIteratedMessage(synCtx,
 								                   envelope,
-								                   (OMNode) o);
+								                   (OMNode) element);
 
 						target.mediate(iteratedMsgCtx);
 						EIPUtils.includeEnvelope(envelope,
@@ -137,7 +135,19 @@ public class ForEachMediator extends AbstractMediator {
 		}
 	}
 
-	private boolean validateSequence(MessageContext synCtx) {
+	/**
+	 * Validate at runtime tha the Target of the ForEach mediator. The target cannot contain :
+	 * <ul>
+	 * <li>A sequence with Call, CallOut or Send Mediators</li>
+	 * <li>A reference to a sequence that contains Call, CallOut or Send Mediators </li>
+	 * <li>A target endpoint</li>
+	 * <li>A reference to a target endpoint</li>
+	 * </ul>
+	 *
+	 * @param synCtx Message Context being mediated
+	 * @return validity of the sequence
+	 */
+	private boolean validateTarget(MessageContext synCtx) {
 
 		SequenceMediator sequence = target.getSequence();
 		boolean valid = true;
@@ -165,6 +175,12 @@ public class ForEachMediator extends AbstractMediator {
 
 	}
 
+	/**
+	 * Validate a sequence mediator to not contain Call, CallOut or Send mediators in it.
+	 *
+	 * @param seqMediator Sequence Mediator to validate
+	 * @return validity of the sequence mediator
+	 */
 	private boolean validateSequenceMediatorList(SequenceMediator seqMediator) {
 		boolean valid = true;
 		List<Mediator> mediators = seqMediator.getList();
@@ -190,14 +206,13 @@ public class ForEachMediator extends AbstractMediator {
 	 *
 	 * @param synCtx   - original message context
 	 * @param envelope - envelope to be used in the iteration
-	 * @param o        - element which participates in the iteration replacement
-	 * @return newCtx created by the iteration
+	 * @param omNode   - element which participates in the iteration replacement
+	 * @return new Message Context created by the iteration
 	 * @throws AxisFault      if there is a message creation failure
-	 * @throws JaxenException if the expression evauation failure
+	 * @throws JaxenException if the expression evaluation failure
 	 */
-
 	private MessageContext getIteratedMessage(MessageContext synCtx,
-	                                          SOAPEnvelope envelope, OMNode o)
+	                                          SOAPEnvelope envelope, OMNode omNode)
 			throws AxisFault,
 			       JaxenException {
 
@@ -210,7 +225,7 @@ public class ForEachMediator extends AbstractMediator {
 			if (newEnvelope.getBody().getFirstElement() != null) {
 				newEnvelope.getBody().getFirstElement().detach();
 			}
-			newEnvelope.getBody().addChild(o);
+			newEnvelope.getBody().addChild(omNode);
 		}
 
 		newCtx.setEnvelope(newEnvelope);
