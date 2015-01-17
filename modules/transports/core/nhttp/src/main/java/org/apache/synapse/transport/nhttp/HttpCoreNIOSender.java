@@ -155,12 +155,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         proxyConfig = new ProxyConfigBuilder().parse(transportOut).build();
         if (log.isInfoEnabled()) {
-            if (proxyConfig.isProxyProfileEmpty() && proxyConfig.getProxy() != null) {
-                log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " +
-                        proxyConfig.getProxyBypass());
-            } else {
-                log.info("HTTP Sender using proxy profile");
-            }
+            log.info(proxyConfig.logProxyConfig());
         }
         
         Parameter param = transportOut.getParameter("warnOnHTTP500");
@@ -337,13 +332,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             HttpHost target = new HttpHost(hostname, port, scheme);
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
-            HttpHost proxy;
-            if(proxyConfig.isProxyProfileEmpty()) {
-                proxy = proxyConfig.selectProxy(target);
-            }else {
-                String endPoint = hostname+":"+port;
-                proxy = proxyConfig.getProxyForEndPoint(endPoint);
-            }
+            HttpHost proxy = proxyConfig.selectProxy(target);
 
             HttpRoute route;
             if (proxy != null) {

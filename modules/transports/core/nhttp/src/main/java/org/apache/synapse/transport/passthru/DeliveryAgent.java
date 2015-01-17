@@ -121,13 +121,7 @@ public class DeliveryAgent {
             HttpHost target = new HttpHost(hostname, port, scheme);
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
-            HttpHost proxy;
-            if(proxyConfig.isProxyProfileEmpty()) {
-                proxy = proxyConfig.selectProxy(target);
-            }else {
-                String endPoint = hostname+":"+port;
-                proxy = proxyConfig.getProxyForEndPoint(endPoint);
-            }
+            HttpHost proxy = proxyConfig.selectProxy(target);
 
             HttpRoute route;
             if (proxy != null) {

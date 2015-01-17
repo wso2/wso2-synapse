@@ -20,11 +20,15 @@ package org.apache.synapse.transport.http.conn;
 
 import java.util.*;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
+import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
 public class ProxyConfig {
 
+    private static final Log log = LogFactory.getLog(ProxyConfig.class);
     private final HttpHost proxy;
     private final UsernamePasswordCredentials creds;
     private final Set<String> proxyBypass;
@@ -68,14 +72,6 @@ public class ProxyConfig {
         }
     }
 
-    public ProxyConfig(final HttpHost proxy, final UsernamePasswordCredentials creds) {
-        super();
-        this.proxy = proxy;
-        this.creds = creds;
-        this.proxyBypass = null;
-    }
-
-
     public HttpHost getProxy() {
         return proxy;
     }
@@ -89,6 +85,12 @@ public class ProxyConfig {
     }
 
     public HttpHost selectProxy(final HttpHost target) {
+
+        if (!isProxyProfileEmpty()) {
+            String endPoint = target.getHostName() + ":" + target.getPort();
+            return getProxyForEndPoint(endPoint);
+        }
+
         if (this.proxy != null) {
             if (knownProxyHosts.contains(target.getHostName().toLowerCase(Locale.US))) {
                 return this.proxy;
@@ -98,7 +100,7 @@ public class ProxyConfig {
                 // we are encountering this host for the first time
                 if (isBypass(target.getHostName().toLowerCase(Locale.US))) {
                     return null;
-                }else{
+                } else {
                     return this.proxy;
                 }
             }
@@ -107,7 +109,8 @@ public class ProxyConfig {
     }
 
     /**
-     * check weather the proxy profile map is empty
+     * checks weather the proxy profile map is empty
+     *
      * @return true if proxy profile map is not empty, false otherwise
      */
     public boolean isProxyProfileEmpty() {
@@ -115,20 +118,22 @@ public class ProxyConfig {
     }
 
     /**
-     * select the appropriate proxy for the endPoint
+     * select the appropriate proxy for the given endPoint
+     *
      * @param endPoint targeted end point
      * @return proxy mapped for the end point, if not returns null
      */
-    public HttpHost getProxyForEndPoint(String endPoint){
+    private HttpHost getProxyForEndPoint(String endPoint) {
         ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
         if (proxyProfileConfig == null) {
             return null;
         }
         return proxyProfileConfig.getProxy();
-    };
+    }
 
     /**
      * select the proxy credential for the end point
+     *
      * @param endPoint targeted end point
      * @return proxy credential for the given end point, if not returns null
      */
@@ -138,6 +143,81 @@ public class ProxyConfig {
             return null;
         }
         return proxyProfileConfig.getCreds();
+    }
+
+    /**
+     * returns appropriate log message based on the proxy configuration
+     * whether loading proxy profile or single proxy server or no proxy configured
+     *
+     * @return log message
+     */
+    public String logProxyConfig() {
+        if (!isProxyProfileEmpty()) {
+            return "HTTP Sender using proxy profile";
+        }
+
+        if (this.proxy != null) {
+            return "HTTP Sender using Proxy " + getProxy() + " and  bypassing " + getProxyBypass();
+        } else {
+            return "No proxy configuration found";
+        }
+    }
+
+    /**
+     * checks whether proxy configured (either proxy profile or single server)
+     *
+     * @return true when either proxy profile is configure or default proxy server is configure, false otherwise
+     */
+    private boolean isProxyConfigured() {
+        return proxy != null || !isProxyProfileEmpty();
+    }
+
+    /**
+     * checks the proxy configuration and profile configuration whether proxy is configured with credential
+     *
+     * @return true when at least one proxy has configured with credential, false otherwise
+     */
+    private boolean isProxyHasCredential() {
+        if (!isProxyConfigured()) {
+            return false;
+        }
+
+        if (isProxyProfileEmpty()) {
+            return getCreds() != null;
+        }
+
+        for (Map.Entry<String, ProxyProfileConfig> proxyProfile : this.proxyProfileMap.entrySet()) {
+            if (proxyProfile.getValue().getCreds() != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * returns DefaultProxyAuthenticator if single proxy server is configured
+     * ProfileProxyAuthenticator if proxy profile is configured
+     *
+     * @return ProxyAuthenticator, if proxy is not configured null
+     */
+    public ProxyAuthenticator newProxyAuthenticator() {
+        if (!isProxyHasCredential()) return null;
+
+        ProxyAuthenticator proxyAuthenticator = null;
+
+        try {
+            if (isProxyProfileEmpty()) {
+                proxyAuthenticator = new DefaultProxyAuthenticator(getCreds());
+            } else {
+                proxyAuthenticator = new ProfileProxyAuthenticator(this);
+            }
+
+        } catch (MalformedChallengeException e) {
+            log.error("Error while creating Proxy Authenticator");
+        }
+
+        return proxyAuthenticator;
+
     }
 
     @Override
