@@ -65,9 +65,9 @@ public class ProxyConfig {
             this.proxyBypass = Collections.<String>emptySet();
         }
 
-        if(proxyProfileMap != null) {
+        if (proxyProfileMap != null) {
             this.proxyProfileMap = proxyProfileMap;
-        } else{
+        } else {
             this.proxyProfileMap = Collections.emptyMap();
         }
     }

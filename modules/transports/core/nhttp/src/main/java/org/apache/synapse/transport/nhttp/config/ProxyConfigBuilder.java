@@ -47,6 +47,11 @@ public class ProxyConfigBuilder {
     public ProxyConfigBuilder parse(TransportOutDescription transportOut) throws AxisFault {
         name = transportOut.getName();
         proxyProfileConfigMap = getProxyProfiles(transportOut);
+
+        if (proxyProfileConfigMap != null) {
+            return this;
+        }
+
         String proxyHost = null;
         int proxyPort = -1;
         Parameter proxyHostParam = transportOut.getParameter("http.proxyHost");
@@ -114,6 +119,7 @@ public class ProxyConfigBuilder {
      *      </profile>
      * </parameter>
      * }
+     *
      * @param transportOut transport out description
      * @return map of <code>ProxyProfileConfig<code/> if configured in axis2.xml; otherwise null
      * @throws AxisFault if at least one proxy profile is not properly configured
