@@ -55,7 +55,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     private final Log apiLog;
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
-
     private int traceState = SynapseConstants.TRACING_UNSET;
 
     public API(String name, String context) {
@@ -79,7 +78,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             return name + ":v" +versionStrategy.getVersion();
         }
         return name;
-
     }
 
     public int getProtocol() {
@@ -356,7 +354,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
         if (!processed) {
             auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
-
             Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
             if (sequence != null) {
                 sequence.mediate(synCtx);
@@ -453,6 +450,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     private void auditInfo(String message) {
         log.info(message);
         apiLog.info(message);
+
         //TODO - Implement 'trace' attribute support in API configuration.
         if (trace()) {
             trace.info(message);
@@ -467,6 +465,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         if (log.isDebugEnabled()){
             log.debug(message);
             apiLog.debug(message);
+
+            //TODO - Implement 'trace' attribute support in API configuration.
             if (trace()) {
                trace.debug(message);
             }
