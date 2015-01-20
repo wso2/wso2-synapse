@@ -80,7 +80,8 @@ public class XMLConfigConstants {
     public static final QName MESSAGE_PROCESSOR_ELT = new QName(SYNAPSE_NAMESPACE, "messageProcessor");
     public static final QName API_ELT = new QName(SYNAPSE_NAMESPACE, "api");
     public static final QName TASK_MANAGER_ELT = new QName(SYNAPSE_NAMESPACE, "taskManager");
-
+    public static final QName INBOUND_ENDPOINT_ELT = new QName(SYNAPSE_NAMESPACE, "inboundEndpoint");
+    
     public static final String NULL_NAMESPACE = "";
     public static final Object QUARTZ_QNAME   =
         new QName("http://www.opensymphony.com/quartz/JobSchedulingData", "quartz");
