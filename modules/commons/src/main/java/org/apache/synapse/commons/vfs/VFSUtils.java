@@ -159,7 +159,7 @@ public class VFSUtils {
             FileObject lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
-                        + fo.getName()
+                        + maskURLPassword(fo.getName().getURI())
                         + ". This could possibly be due to some other party already "
                         + "processing this file or the file is still being uploaded");
                 if(paramDTO != null && paramDTO.isAutoLockRelease()){
@@ -178,7 +178,7 @@ public class VFSUtils {
                 } catch (IOException e) {
                     lockObject.delete();                 
                     log.error("Couldn't create the lock file before processing the file "
-                            + fullPath, e);
+                            + maskURLPassword(fullPath), e);
                     return false;
                 } finally {                  
                     lockObject.close();
@@ -223,7 +223,7 @@ public class VFSUtils {
             }
         } catch (FileSystemException e) {
             log.error("Couldn't release the lock for the file : "
-                    + fo.getName() + " after processing");
+                    + maskURLPassword(fo.getName().getURI()) + " after processing");
         }
     }
 
@@ -297,7 +297,7 @@ public class VFSUtils {
                  stream.close();
              } catch (IOException e) {
               	 failObject.delete();
-                 log.error("Couldn't create the fail file before processing the file " + fullPath, e);                 
+                 log.error("Couldn't create the fail file before processing the file " + maskURLPassword(fullPath), e);
              } finally {
              	failObject.close();
              }
@@ -317,7 +317,7 @@ public class VFSUtils {
             	return true;
             }
         } catch (FileSystemException e) {
-            log.error("Couldn't release the fail for the file : " + fo.getName());
+            log.error("Couldn't release the fail for the file : " + maskURLPassword(fo.getName().getURI()));
         }
         return false;
     }
@@ -334,7 +334,7 @@ public class VFSUtils {
             	failObject.delete();
             }
         } catch (FileSystemException e) {
-            log.error("Couldn't release the fail for the file : " + fo.getName());
+            log.error("Couldn't release the fail for the file : " + maskURLPassword(fo.getName().getURI()));
         }
     }    
     
