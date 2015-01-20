@@ -56,6 +56,13 @@ public final class NHttpConfiguration {
     private static final String C_T_QLEN     = "lst_qlen";
     private static final String C_IO_WORKERS = "lst_io_threads";
 
+    // Client error handler
+    private static final String ERROR_HANDLER_POOL_ENABLED = "error_handler_pool_enabled";
+    private static final String ERROR_HANDLER_T_CORE     = "error_handler_t_core";
+    private static final String ERROR_HANDLER_T_MAX      = "error_handler_t_max";
+    private static final String ERROR_HANDLER_T_ALIVE    = "error_handler_alive_sec";
+    private static final String ERROR_HANDLER_T_QLEN     = "error_handler_qlen";
+
     // general
     private static final String G_BUFFER_SIZE  = "nhttp_buffer_size";
     private static final String G_DISABLED_HTTP_METHODS = "nhttp_disabled_methods";
@@ -133,6 +140,27 @@ public final class NHttpConfiguration {
     public int getMaxActiveConnections() {
     	return getProperty(C_MAX_ACTIVE, MAX_ACTIVE_CON);
     }    
+
+    public int getErrorHandlerCoreThreads() {
+        return getProperty(ERROR_HANDLER_T_CORE, getClientCoreThreads()/2);
+    }
+
+    public int getErrorHandlerTMaxThreads() {
+        return getProperty(ERROR_HANDLER_T_MAX, getClientMaxThreads()/2);
+    }
+
+    public int getErrorHandlerKeepAlive() {
+        return getProperty(ERROR_HANDLER_T_ALIVE, WORKER_KEEP_ALIVE);
+    }
+
+    public int getErrorHandlerQueuelen() {
+        return getProperty(ERROR_HANDLER_T_QLEN, BLOCKING_QUEUE_LENGTH);
+    }
+
+    public boolean isErrorHandlerPoolEnabled() {
+        return getBooleanValue(ERROR_HANDLER_POOL_ENABLED, false);
+
+    }
 
     public int getBufferSize() {
         return getProperty(G_BUFFER_SIZE, BUFFER_SIZE);
