@@ -114,6 +114,31 @@ public final class VFSConstants {
      * */    
     public static final String TRANSPORT_FILE_COUNT = "transport.vfs.FileProcessCount";
     
+    /**
+     * Lock release true/false
+     * */
+    public static final String TRANSPORT_AUTO_LOCK_RELEASE = "transport.vfs.AutoLockRelease";
+
+    /**
+     * Lock release interval
+     * */
+    public static final String TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL = "transport.vfs.AutoLockReleaseInterval";
+
+    /**
+     * Lock release same node
+     * */
+    public static final String TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE = "transport.vfs.LockReleaseSameNode";  
+
+    /**
+     * Distributed Lock enable/disable
+     * */
+    public static final String TRANSPORT_DISTRIBUTED_LOCK = "transport.vfs.DistributedLock";
+
+    /**
+     * Distributed Lock timeout
+     * */
+    public static final String TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT = "transport.vfs.DistributedTimeout";     
+    
     public static final String FAILED_RECORD_DELIMITER = " ";
 
     public static final int DEFAULT_MAX_RETRY_COUNT = 3;
@@ -125,4 +150,16 @@ public final class VFSConstants {
     public static final String FILE_NAME = "FILE_NAME";
     public static final String FILE_LENGTH = "FILE_LENGTH";
     public static final String LAST_MODIFIED = "LAST_MODIFIED";
+
+    // identifies the scheme in use, i.e. file, ftp, sftp, http etc..
+    public static final String SCHEME = "VFS_SCHEME";
+
+    // sftp parameter prefix
+    public static final String SFTP_PREFIX = "transport.vfs.SFTP";
+    // sftp scheme
+    public static final String SCHEME_SFTP = "sftp";
+    // sftp scheme file option list
+    public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
+
+
 }

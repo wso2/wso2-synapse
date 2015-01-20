@@ -68,7 +68,8 @@ public class SourceResponse {
     // private boolean chunk = true;
     /** response has an entity or not**/
     private boolean hasEntity = true;
-    
+    /** Keep alive request */
+    private boolean keepAlive = true;    
     private SourceRequest request = null;
     
     /** If version change required default HTTP 1.1 will be overridden*/
@@ -152,6 +153,9 @@ public class SourceResponse {
                 }   
             }
         }
+		if (!keepAlive) {
+			response.setHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+		}  
         response.setParams(new DefaultedHttpParams(response.getParams(),
                                                    sourceConfiguration.getHttpParams()));
 
@@ -289,6 +293,8 @@ public class SourceResponse {
        return this.hasEntity;
     }
 
+	public void setKeepAlive(boolean keepAlive) {
+		this.keepAlive = keepAlive;
+	}
 
-    
 }

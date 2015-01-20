@@ -22,7 +22,5 @@ public interface InboundRequestProcessor {
 
     public void init();
 
-    public void start();
-
     public void destroy();
 }
