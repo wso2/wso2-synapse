@@ -111,10 +111,12 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineAPI(config, elt, properties);
                 } else if (XMLConfigConstants.DESCRIPTION_ELT.equals(elt.getQName())) {
                     config.setDescription(elt.getText());
+                } else if (XMLConfigConstants.INBOUND_ENDPOINT_ELT.equals(elt.getQName())) {
+                    defineInboundEndpoint(config, elt, properties);                    
                 } else {
                     handleException("Invalid configuration element at the top level, one of \'sequence\', " +
-                            "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\' " +
-                            "or \'registry\' is expected");
+                            "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\'" +
+                            ", \'registry\' or \'inboundEndpoint\' is expected");
                 }
             }
         }
