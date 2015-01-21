@@ -14,9 +14,20 @@ import java.io.Reader;
  * than {@link org.apache.synapse.util.jaxp.SchemaResourceLSInput#getByteStream()} and
  * {@link org.apache.synapse.util.jaxp.SchemaResourceLSInput#setByteStream(java.io.InputStream)} are just place holders.
  */
+
+/**
+ * getter and setter for systemId is needed when resolving the resources
+ * (used in {@link org.apache.xerces.util.DOMEntityResolverWrapper}), especially when there is a cyclic import or
+ * include in the resources. systemId act as a key and eliminates duplicating resources being resolved.
+ * <p/>
+ * Also implementing the other getters and setters which are used in {@link org.apache.synapse.util.jaxp.SchemaResourceResolver}
+ */
 public class SchemaResourceLSInput implements LSInput {
 
     InputStream byteStream = null;
+    String fSystemId = null;
+    String fPublicId = null;
+    String fBaseURI = null;
 
     public Reader getCharacterStream() {
         return null;
@@ -43,27 +54,27 @@ public class SchemaResourceLSInput implements LSInput {
     }
 
     public String getSystemId() {
-        return null;
+        return fSystemId;
     }
 
     public void setSystemId(String systemId) {
-
+        this.fSystemId = systemId;
     }
 
     public String getPublicId() {
-        return null;
+        return fPublicId;
     }
 
     public void setPublicId(String publicId) {
-
+        this.fPublicId = publicId;
     }
 
     public String getBaseURI() {
-        return null;
+        return fBaseURI;
     }
 
     public void setBaseURI(String baseURI) {
-
+        this.fBaseURI = baseURI;
     }
 
     public String getEncoding() {
