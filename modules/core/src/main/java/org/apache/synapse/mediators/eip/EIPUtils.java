@@ -19,35 +19,19 @@
 
 package org.apache.synapse.mediators.eip;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axis2.AxisFault;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.commons.json.JsonUtil;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import com.jayway.jsonpath.JsonPath;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Utility methods for the EIP mediators
@@ -55,6 +39,7 @@ import java.util.Map;
 public class EIPUtils {
 
     private static final Log log = LogFactory.getLog(EIPUtils.class);
+
     /**
      * Return the set of elements specified by the XPath over the given envelope
      *
@@ -221,4 +206,6 @@ public class EIPUtils {
         envelope.getBody().addChild(encloseElement);
         return envelope;
     }
+
+
 }
