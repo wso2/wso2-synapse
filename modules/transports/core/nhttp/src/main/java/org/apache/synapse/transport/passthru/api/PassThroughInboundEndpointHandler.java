@@ -66,4 +66,13 @@ public class PassThroughInboundEndpointHandler {
                                 "PassThroughListeners  are starting");
         }
     }
+
+    /**
+     * Check Whether inbound endpoint is running for a particular port
+     * @param port port
+     * @return whether inbound endpoint is running
+     */
+    public static boolean isEndpointRunning(int port) {
+        return PassThroughListeningIOReactorManager.getInstance().isDynamicEndpointRunning(port);
+    }
 }
