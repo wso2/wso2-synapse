@@ -150,4 +150,16 @@ public final class VFSConstants {
     public static final String FILE_NAME = "FILE_NAME";
     public static final String FILE_LENGTH = "FILE_LENGTH";
     public static final String LAST_MODIFIED = "LAST_MODIFIED";
+
+    // identifies the scheme in use, i.e. file, ftp, sftp, http etc..
+    public static final String SCHEME = "VFS_SCHEME";
+
+    // sftp parameter prefix
+    public static final String SFTP_PREFIX = "transport.vfs.SFTP";
+    // sftp scheme
+    public static final String SCHEME_SFTP = "sftp";
+    // sftp scheme file option list
+    public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
+
+
 }

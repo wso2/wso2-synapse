@@ -42,6 +42,7 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
+import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -87,46 +88,15 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void requestReceived(NHttpServerConnection conn) {
         try {
-        	
-        	HttpContext _context = conn.getContext();
-        	_context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
-        	 
-            if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
-                handleInvalidState(conn, "Request received");
+            SourceRequest request =	getSourceRequest(conn);
+        	if(request == null){
                 return;
             }
-            // we have received a message over this connection. So we must inform the pool
-            sourceConfiguration.getSourceConnections().useConnection(conn);
-
-            // at this point we have read the HTTP Headers
-            SourceContext.updateState(conn, ProtocolState.REQUEST_HEAD);
-
-            SourceRequest request = new SourceRequest(
-                    sourceConfiguration, conn.getHttpRequest(), conn);
-
-            SourceContext.setRequest(conn, request);
-
-            request.start(conn);
-
-            metrics.incrementMessagesReceived();
-            
-            /******/
             String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
-            OutputStream os = null;
-            if ("GET".equals(method) || "HEAD".equals(method)) {
-				HttpContext context = request.getConnection().getContext();
-				ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(8192,	new HeapByteBufferAllocator());
-				// ContentOutputBuffer outputBuffer
-				// = new SharedOutputBuffer(8192, conn, new
-				// HeapByteBufferAllocator());
-				context.setAttribute("synapse.response-source-buffer",outputBuffer);
-				os = new ContentOutputStream(outputBuffer);
-			} 
-
-            sourceConfiguration.getWorkerPool().execute(
-                    new ServerWorker(request, sourceConfiguration,os));
+            OutputStream os= getOutputStream(method,request);
+            sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration,os));
         } catch (HttpException e) {
-            log.error(e.getMessage(), e);
+            log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
             informReaderError(conn);
 
@@ -295,7 +265,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
     }
 
-    private void logIOException(NHttpServerConnection conn, IOException e) {
+    public void logIOException(NHttpServerConnection conn, IOException e) {
         // this check feels like crazy! But weird things happened, when load testing.
         if (e == null) {
             return;
@@ -448,7 +418,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
     }
 
-    private void informReaderError(NHttpServerConnection conn) {
+    public void informReaderError(NHttpServerConnection conn) {
         Pipe reader = SourceContext.get(conn).getReader();
 
         metrics.incrementFaultsReceiving();
@@ -458,7 +428,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private void informWriterError(NHttpServerConnection conn) {
+    public void informWriterError(NHttpServerConnection conn) {
         Pipe writer = SourceContext.get(conn).getWriter();
 
         metrics.incrementFaultsSending();
@@ -497,7 +467,52 @@ public class SourceHandler implements NHttpServerEventHandler {
             //shutdownConnection(conn);
         }
     }
-    
-    
+
+    /**
+     * Create synapse.response-source-buffer for GET and HEAD Http methods
+     * @param method  Http Method
+     * @param request Source Request
+     * @return OutputStream
+     */
+    public OutputStream getOutputStream(String method,SourceRequest request){
+        OutputStream os=null;
+        if (HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)) {
+            HttpContext context = request.getConnection().getContext();
+            ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(
+                    sourceConfiguration.getIOBufferSize(), new HeapByteBufferAllocator());
+            context.setAttribute("synapse.response-source-buffer",outputBuffer);
+            os = new ContentOutputStream(outputBuffer);
+        }
+        return os;
+    }
+
+    /**
+     * Create SourceRequest from NHttpServerConnection conn
+     * @param conn the connection being processed
+     * @return SourceRequest
+     * @throws IOException
+     * @throws HttpException
+     */
+    public SourceRequest getSourceRequest(NHttpServerConnection conn) throws IOException, HttpException {
+        HttpContext context = conn.getContext();
+        context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+
+        if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
+            handleInvalidState(conn, "Request received");
+            return null;
+        }
+        // we have received a message over this connection. So we must inform the pool
+        sourceConfiguration.getSourceConnections().useConnection(conn);
+
+        // at this point we have read the HTTP Headers
+        SourceContext.updateState(conn, ProtocolState.REQUEST_HEAD);
+
+        SourceRequest request = new SourceRequest(
+                sourceConfiguration, conn.getHttpRequest(), conn);
+        SourceContext.setRequest(conn, request);
+        request.start(conn);
+        metrics.incrementMessagesReceived();
+        return request;
+    }
     
 }

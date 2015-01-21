@@ -74,17 +74,22 @@ public class ClientWorker implements Runnable {
 		(response.getStatus() != HttpStatus.SC_SEE_OTHER) &&
 		(response.getStatus() != HttpStatus.SC_TEMPORARY_REDIRECT) )) {
             URL url;
+            String urlContext = null;
             try {
                 url = new URL(oriURL);
+                urlContext = url.getFile();
             } catch (MalformedURLException e) {
-                log.error("Invalid URL received", e);
-                return;
+                //Fix ESBJAVA-3461 - In the case when relative path is sent should be handled
+                if(log.isDebugEnabled()){
+                    log.debug("Relative URL received for Location : " + oriURL, e);
+                }
+                urlContext = oriURL;
             }
 
             headers.remove(PassThroughConstants.LOCATION);
             String prfix = (String) outMsgCtx.getProperty(PassThroughConstants.SERVICE_PREFIX);
             if (prfix != null) {
-                headers.put(PassThroughConstants.LOCATION, prfix + url.getFile());
+                headers.put(PassThroughConstants.LOCATION, prfix + urlContext);
             }
 
         }

@@ -39,6 +39,7 @@ import org.apache.http.*;
 import org.apache.http.impl.nio.reactor.SSLIOSession;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
 
@@ -212,9 +213,12 @@ public class ServerWorker implements Runnable {
 
         // find the remote party IP address and set it to the message context
         if (conn instanceof HttpInetConnection) {
+            HttpContext httpContext = conn.getContext();
             HttpInetConnection inetConn = (HttpInetConnection) conn;
             InetAddress remoteAddr = inetConn.getRemoteAddress();
             if (remoteAddr != null) {
+                httpContext.setAttribute(NhttpConstants.CLIENT_REMOTE_ADDR, remoteAddr);
+                httpContext.setAttribute(NhttpConstants.CLIENT_REMOTE_PORT, inetConn.getRemotePort());
                 msgContext.setProperty(
                         MessageContext.REMOTE_ADDR, remoteAddr.getHostAddress());
                 msgContext.setProperty(
