@@ -18,24 +18,30 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMContainer;
+import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
+import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ForEachMediator extends AbstractMediator {
 
+	private static OMContainer parent;
 	/**
 	 * The xpath that will list the elements to be split
 	 */
@@ -60,9 +66,9 @@ public class ForEachMediator extends AbstractMediator {
 			synLog.traceOrDebug("ForEach: expression = " +
 			                    expression.toString());
 
-			if (!validateTarget(synCtx)) {
+			if (!validateSequenceRef(synCtx)) {
 				synLog.error(
-						"ForEach: Target cannot contain an endpoint OR Sequence is invalid/null :: "
+						"ForEach: Referred sequence is invalid or null :: "
 						+ "cannot contain Call, Send or CallOut mediators");
 				return false;
 			} else {
@@ -76,11 +82,21 @@ public class ForEachMediator extends AbstractMediator {
 
 					SOAPEnvelope envelope = synCtx.getEnvelope();
 					// get the iteration elements and iterate through the list, this call
-					// will also detach all the iteration elements from the message
+					// will also detach all the iteration elements from the message and deduce the
+					// parent node to merge back the mediated content
 					List<?> splitElements =
-							EIPUtils.getDetachedMatchingElements(envelope,
-							                                     synCtx,
-							                                     (SynapseXPath) expression);
+							getDetachedMatchingElements(envelope,
+							                            synCtx,
+							                            (SynapseXPath) expression);
+
+					if (synLog.isTraceOrDebugEnabled()) {
+						if (parent != null) {
+							synLog.traceOrDebug(
+									"Parent node for merging is : " + parent.toString());
+						} else {
+							synLog.traceOrDebugWarn("Error detecting parent element to merge");
+						}
+					}
 
 					int msgCount = splitElements.size();
 					int msgNumber = 0;
@@ -112,10 +128,11 @@ public class ForEachMediator extends AbstractMediator {
 								                   (OMNode) element);
 
 						target.mediate(iteratedMsgCtx);
-						EIPUtils.includeEnvelope(envelope,
-						                         iteratedMsgCtx.getEnvelope(),
-						                         synCtx,
-						                         (SynapseXPath) expression);
+
+						//add the mediated element to the parent from original message context
+						((OMElement) parent)
+								.addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+
 						synCtx.setEnvelope(envelope);
 					}
 
@@ -136,42 +153,32 @@ public class ForEachMediator extends AbstractMediator {
 	}
 
 	/**
-	 * Validate at runtime tha the Target of the ForEach mediator. The target cannot contain :
+	 * Validate at runtime the the Target of the ForEach mediator. The target cannot contain :
 	 * <ul>
 	 * <li>A sequence with Call, CallOut or Send Mediators</li>
 	 * <li>A reference to a sequence that contains Call, CallOut or Send Mediators </li>
 	 * <li>A target endpoint</li>
 	 * <li>A reference to a target endpoint</li>
 	 * </ul>
+	 * <p/>
+	 * This method only validates a sequence reference since other cases are covered during mediator
+	 * creation.
 	 *
 	 * @param synCtx Message Context being mediated
 	 * @return validity of the sequence
 	 */
-	private boolean validateTarget(MessageContext synCtx) {
-
-		SequenceMediator sequence = target.getSequence();
-		boolean valid = true;
-		if (sequence != null) {
-			valid = validateSequenceMediatorList(sequence);
-		} else {
-			String sequenceRef = target.getSequenceRef();
-			if (sequenceRef != null) {
-				SequenceMediator refSequence =
-						(SequenceMediator) synCtx.getSequence(sequenceRef);
-
-				if (refSequence != null) {
-					valid = validateSequenceMediatorList(refSequence);
-				} else {
-					valid = false;
-				}
-			} else if ((target.getEndpoint() != null) ||
-			           (target.getEndpointRef() != null)) {
-				valid = false;
+	private boolean validateSequenceRef(MessageContext synCtx) {
+		String sequenceRef = target.getSequenceRef();
+		if (sequenceRef != null) {
+			SequenceMediator refSequence =
+					(SequenceMediator) synCtx.getSequence(sequenceRef);
+			if (refSequence != null) {
+				return validateSequenceMediatorList(refSequence);
 			} else {
-				valid = false;
+				return false;
 			}
 		}
-		return valid;
+		return true;
 
 	}
 
@@ -215,10 +222,9 @@ public class ForEachMediator extends AbstractMediator {
 	                                          SOAPEnvelope envelope, OMNode omNode)
 			throws AxisFault,
 			       JaxenException {
-
 		MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
 
-		SOAPEnvelope newEnvelope = MessageHelper.cloneSOAPEnvelope(envelope);
+		SOAPEnvelope newEnvelope = createNewSoapEnvelope(envelope);
 
 		if (newEnvelope.getBody() != null) {
 
@@ -231,6 +237,52 @@ public class ForEachMediator extends AbstractMediator {
 		newCtx.setEnvelope(newEnvelope);
 
 		return newCtx;
+	}
+
+	private SOAPEnvelope createNewSoapEnvelope(SOAPEnvelope envelope) {
+		SOAPFactory fac;
+		if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI
+				.equals(envelope.getBody().getNamespace().getNamespaceURI())) {
+			fac = OMAbstractFactory.getSOAP11Factory();
+		} else {
+			fac = OMAbstractFactory.getSOAP12Factory();
+		}
+		return fac.getDefaultEnvelope();
+	}
+
+	/**
+	 * Return the set of detached elements specified by the XPath over the given envelope
+	 *
+	 * @param envelope   SOAPEnvelope from which the elements will be extracted
+	 * @param synCtx     Message context from which to extract the elements
+	 * @param expression SynapseXPath expression describing the elements to be extracted
+	 * @return List detached OMElements in the envelope matching the expression
+	 * @throws JaxenException if the XPath expression evaluation fails
+	 */
+	public static List<OMNode> getDetachedMatchingElements(SOAPEnvelope envelope,
+	                                                       MessageContext synCtx,
+	                                                       SynapseXPath expression)
+			throws JaxenException {
+
+		List<OMNode> elementList = new ArrayList<OMNode>();
+		Object o = expression.evaluate(envelope, synCtx);
+		if (o instanceof OMNode) {
+			parent = ((OMNode) o).getParent();
+			elementList.add(((OMNode) o).detach());
+		} else if (o instanceof List) {
+			List oList = (List) o;
+			if (oList.size() > 0) {
+				parent = (((OMNode) oList.get(0)).getParent());
+			} else {
+				parent = null;
+			}
+			for (Object elem : oList) {
+				if (elem instanceof OMNode) {
+					elementList.add(((OMNode) elem).detach());
+				}
+			}
+		}
+		return elementList;
 	}
 
 	public Target getTarget() {

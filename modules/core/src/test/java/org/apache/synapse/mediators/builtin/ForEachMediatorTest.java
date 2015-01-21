@@ -72,7 +72,11 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 		super.tearDown();
 	}
 
-	public void testForEachXpath() throws Exception {
+	/**
+	 * Testing when the xpath returns a list of elements
+	 * @throws Exception
+	 */
+	public void testForEachXpathList() throws Exception {
 		testCtx.getEnvelope()
 		       .getBody()
 		       .addChild(createOMElement("<original>"
@@ -84,7 +88,7 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 		Mediator foreach =
 		                   fac.createMediator(createOMElement("<foreach "
 		                                                      + "expression=\"//original/itr\" xmlns=\"http://ws.apache.org/ns/synapse\">"
-		                                                      + "<target soapAction=\"urn:iterate\" sequence=\"seqRef\"></target></foreach>"),
+		                                                      + "<target soapAction=\"urn:foreach\" sequence=\"seqRef\"></target></foreach>"),
 
 		                                      new Properties());
 
@@ -94,9 +98,9 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 		assertEquals(2, helperMediator.getMsgCount());
 
 		assertEquals(helperMediator.getMediatedContext(0).getSoapAction(),
-		             "urn:iterate");
+		             "urn:foreach");
 		assertEquals(helperMediator.getMediatedContext(1).getSoapAction(),
-		             "urn:iterate");
+		             "urn:foreach");
 
 		assertEquals("<itr>test-split-context-itr1-body</itr>",
 		             helperMediator.getMediatedContext(0).getEnvelope()
@@ -107,6 +111,11 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 
 	}
 
+	/**
+	 * Testing validity of reference sequence. Other cases : inline sequence, endpoint, endpointRef
+	 * is covered in ForEachMediatorFactory
+	 * @throws Exception
+	 */
 	public void testTargetSequenceValidity() throws Exception {
 		testCtx.getEnvelope()
 		       .getBody()
@@ -119,7 +128,7 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 		Mediator foreachInvalid =
 		                          fac.createMediator(createOMElement("<foreach "
 		                                                             + "expression=\"//original/itr\" xmlns=\"http://ws.apache.org/ns/synapse\">"
-		                                                             + "<target soapAction=\"urn:iterate\" sequence=\"seqRefInvalid\"></target></foreach>"),
+		                                                             + "<target soapAction=\"urn:foreach\" sequence=\"seqRefInvalid\"></target></foreach>"),
 
 		                                             new Properties());
 
@@ -129,7 +138,7 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 		Mediator foreachValid =
 		                        fac.createMediator(createOMElement("<foreach "
 		                                                           + "expression=\"//original/itr\" xmlns=\"http://ws.apache.org/ns/synapse\">"
-		                                                           + "<target soapAction=\"urn:iterate\" sequence=\"seqRef\"></target></foreach>"),
+		                                                           + "<target soapAction=\"urn:foreach\" sequence=\"seqRef\"></target></foreach>"),
 
 		                                           new Properties());
 
@@ -138,4 +147,111 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
 
 	}
 
+	/**
+	 * Testing when the xpath returns only one element
+	 * @throws Exception
+	 */
+	public void testForEachXpathNode() throws Exception {
+		testCtx.getEnvelope()
+		       .getBody()
+		       .addChild(createOMElement("<original>"
+		                                 + "<itr id=\"one\">test-split-context-itr1-body</itr>"
+		                                 + "<itr>test-split-context-itr2-body</itr>"
+		                                 + "</original>"));
+		MediatorFactory fac = new ForEachMediatorFactory();
+
+		Mediator foreach =
+				fac.createMediator(createOMElement("<foreach "
+				                                   + "expression=\"//original/itr[@id='one']\" xmlns=\"http://ws.apache.org/ns/synapse\">"
+				                                   + "<target soapAction=\"urn:foreach\" sequence=\"seqRef\"></target></foreach>"),
+
+				                   new Properties());
+
+		helperMediator.clearMediatedContexts();
+		foreach.mediate(testCtx);
+
+		assertEquals(1, helperMediator.getMsgCount());
+
+		assertEquals(helperMediator.getMediatedContext(0).getSoapAction(),
+		             "urn:foreach");
+
+		assertEquals("<itr id=\"one\">test-split-context-itr1-body</itr>",
+		             helperMediator.getMediatedContext(0).getEnvelope()
+		                           .getBody().getFirstElement().toString());
+
+	}
+
+
+	/**
+	 * Testing when the relative xpath returns a list of elements
+	 * @throws Exception
+	 */
+	public void testForEachXpathListRelativePath() throws Exception {
+		testCtx.getEnvelope()
+		       .getBody()
+		       .addChild(createOMElement("<original>"
+		                                 + "<itr>test-split-context-itr1-body</itr>"
+		                                 + "<itr>test-split-context-itr2-body</itr>"
+		                                 + "</original>"));
+		MediatorFactory fac = new ForEachMediatorFactory();
+
+		Mediator foreach =
+				fac.createMediator(createOMElement("<foreach "
+				                                   + "expression=\"//itr\" xmlns=\"http://ws.apache.org/ns/synapse\">"
+				                                   + "<target soapAction=\"urn:foreach\" sequence=\"seqRef\"></target></foreach>"),
+
+				                   new Properties());
+
+		helperMediator.clearMediatedContexts();
+		foreach.mediate(testCtx);
+
+		assertEquals(2, helperMediator.getMsgCount());
+
+		assertEquals(helperMediator.getMediatedContext(0).getSoapAction(),
+		             "urn:foreach");
+		assertEquals(helperMediator.getMediatedContext(1).getSoapAction(),
+		             "urn:foreach");
+
+		assertEquals("<itr>test-split-context-itr1-body</itr>",
+		             helperMediator.getMediatedContext(0).getEnvelope()
+		                           .getBody().getFirstElement().toString());
+		assertEquals("<itr>test-split-context-itr2-body</itr>",
+		             helperMediator.getMediatedContext(1).getEnvelope()
+		                           .getBody().getFirstElement().toString());
+
+	}
+
+	/**
+	 * Testing when the xpath returns only one element
+	 * @throws Exception
+	 */
+	public void testForEachXpathNodeRelativePath() throws Exception {
+		testCtx.getEnvelope()
+		       .getBody()
+		       .addChild(createOMElement("<original>"
+		                                 + "<itr id=\"one\">test-split-context-itr1-body</itr>"
+		                                 + "<itr>test-split-context-itr2-body</itr>"
+		                                 + "</original>"));
+		MediatorFactory fac = new ForEachMediatorFactory();
+
+		Mediator foreach =
+				fac.createMediator(createOMElement("<foreach "
+				                                   + "expression=\"//itr[@id='one']\" xmlns=\"http://ws.apache.org/ns/synapse\">"
+				                                   + "<target soapAction=\"urn:foreach\" sequence=\"seqRef\"></target></foreach>"),
+
+				                   new Properties());
+
+		helperMediator.clearMediatedContexts();
+		foreach.mediate(testCtx);
+
+		assertEquals(1, helperMediator.getMsgCount());
+
+		assertEquals(helperMediator.getMediatedContext(0).getSoapAction(),
+		             "urn:foreach");
+
+		assertEquals("<itr id=\"one\">test-split-context-itr1-body</itr>",
+		             helperMediator.getMediatedContext(0).getEnvelope()
+		                           .getBody().getFirstElement().toString());
+
+	}
 }
