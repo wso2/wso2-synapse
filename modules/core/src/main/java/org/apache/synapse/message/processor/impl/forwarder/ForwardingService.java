@@ -355,9 +355,8 @@ public class ForwardingService implements InterruptableJob, Service {
                                     + "] failed to send message to the endpoint");
 							// Some Error has occurred while having out only
 							// operation. Try to send the to fault sequence,
-							// since
-							// outCtx is null passing the messageContext
-							sendThroughFaultSeq(messageContext);
+							// since outCtx is null passing the messageContext
+                            sendThroughFaultSeq(messageContext);
                         }
                     }
 
