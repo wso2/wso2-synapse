@@ -23,7 +23,7 @@ import org.apache.http.protocol.HttpContext;
 
 public interface ProxyAuthenticator {
     
-    public void authenticatePreemptively(final HttpRequest request, final HttpContext context) throws ProtocolException;
+    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws ProtocolException;
     
 }
 
