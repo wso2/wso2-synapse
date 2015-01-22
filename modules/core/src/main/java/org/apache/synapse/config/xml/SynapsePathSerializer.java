@@ -83,7 +83,12 @@ public class SynapsePathSerializer {
 		if (path != null && expression != null) {
 
             if(path.getPathType() == SynapsePath.JSON_PATH) {
-			    elem.setText("json-eval(" + expression + ")");
+                if (expression.contains("json-eval(")) {
+                    // JSON evaluation expression as a value. eg: {json-eval($.)}
+                    elem.setText(expression);
+                } else {
+                    elem.setText("json-eval(" + expression + ")");
+                }
             } else if(path.getPathType() == SynapsePath.X_PATH) {
                 elem.setText(expression);
             }
