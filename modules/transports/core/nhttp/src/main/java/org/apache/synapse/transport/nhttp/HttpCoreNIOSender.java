@@ -154,10 +154,8 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         connpool = new ConnectionPool();
 
         proxyConfig = new ProxyConfigBuilder().parse(transportOut).build();
-        if (log.isInfoEnabled()) {
-            log.info(proxyConfig.logProxyConfig());
-        }
-        
+        log.info(proxyConfig.logProxyConfig());
+
         Parameter param = transportOut.getParameter("warnOnHTTP500");
         if (param != null) {
             String[] warnOnHttp500 = ((String) param.getValue()).split("\\|");

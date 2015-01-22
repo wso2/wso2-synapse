@@ -84,6 +84,12 @@ public class ProxyConfig {
         return proxyBypass;
     }
 
+    /**
+     * Selects the configured proxy server
+     * @param target request endpoint
+     * @return proxy host based on the proxy profile or http.proxyHost,
+     *         null when no proxy is configured or if the target is matched with proxy bypass
+     */
     public HttpHost selectProxy(final HttpHost target) {
 
         if (!isProxyProfileEmpty()) {

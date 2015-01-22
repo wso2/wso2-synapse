@@ -28,6 +28,9 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 
+/**
+ * ProfileProxyAuthenticator will be initialized when proxy profile is configured
+ */
 public class ProfileProxyAuthenticator implements ProxyAuthenticator{
     private ProxyConfig proxyConfig;
     private BasicScheme basicScheme;
@@ -39,11 +42,17 @@ public class ProfileProxyAuthenticator implements ProxyAuthenticator{
 
     }
 
+    /**
+     * this will add authentication header to the request
+     * @param request outgoing http request
+     * @param context http context
+     * @throws ProtocolException
+     */
     public void authenticatePreemptively(HttpRequest request, HttpContext context) throws ProtocolException {
         String endPoint = request.getRequestLine().getUri();
-        Credentials proxycreds = proxyConfig.getCredentialsForEndPoint(endPoint);
+        Credentials proxyCredentials = proxyConfig.getCredentialsForEndPoint(endPoint);
 
-        Header authresp = basicScheme.authenticate(proxycreds, request, context);
-        request.addHeader(authresp);
+        Header authHeader = basicScheme.authenticate(proxyCredentials, request, context);
+        request.addHeader(authHeader);
     }
 }

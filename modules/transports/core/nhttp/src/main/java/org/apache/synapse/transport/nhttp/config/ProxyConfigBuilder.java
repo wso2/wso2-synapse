@@ -44,10 +44,17 @@ public class ProxyConfigBuilder {
 
     private static final Log log = LogFactory.getLog(ProxyConfigBuilder.class);
 
+    /**
+     * Tries to read the axis2.xml transport sender's proxy configuration
+     * @param transportOut axis2 transport out description
+     * @return ProxyConfigBuilder
+     * @throws AxisFault
+     */
     public ProxyConfigBuilder parse(TransportOutDescription transportOut) throws AxisFault {
         name = transportOut.getName();
         proxyProfileConfigMap = getProxyProfiles(transportOut);
 
+        // if proxy profile is configured, we can ignore the proxy configured with http.proxyHost
         if (proxyProfileConfigMap != null) {
             return this;
         }
@@ -130,7 +137,9 @@ public class ProxyConfigBuilder {
             return null;
         }
 
-        log.debug(name + " Loading proxy profiles for the HTTP/S sender");
+        if (log.isDebugEnabled()) {
+            log.debug(name + " Loading proxy profiles for the HTTP/S sender");
+        }
 
         OMElement proxyProfilesEle = proxyProfilesParam.getParameterElement();
         Iterator<?> profiles = proxyProfilesEle.getChildrenWithName(new QName("profile"));
@@ -145,9 +154,23 @@ public class ProxyConfigBuilder {
                 throw new AxisFault(msg);
             }
 
+            String proxyHost;
+            String proxyPortStr;
+
             String[] endPoints = endPointsEle.getText().split(",");
-            String proxyHost = profile.getFirstChildWithName(new QName("proxyHost")).getText();
-            String proxyPortStr = profile.getFirstChildWithName(new QName("proxyPort")).getText();
+            OMElement proxyHostEle = profile.getFirstChildWithName(new QName("proxyHost"));
+            if (proxyHostEle != null) {
+                proxyHost = proxyHostEle.getText();
+                OMElement proxyPortEle = profile.getFirstChildWithName(new QName("proxyPort"));
+                if (proxyPortEle != null) {
+                    proxyPortStr = proxyPortEle.getText();
+                } else {
+                    throw new AxisFault("Proxy Port didn't configure correctly in proxy profile");
+                }
+            } else {
+                throw new AxisFault("Proxy Host didn't configure correctly in proxy profile");
+            }
+
             UsernamePasswordCredentials proxyCredentials = null;
             OMElement proxyUserNameEle = profile.getFirstChildWithName(new QName("proxyUserName"));
             if (proxyUserNameEle != null) {

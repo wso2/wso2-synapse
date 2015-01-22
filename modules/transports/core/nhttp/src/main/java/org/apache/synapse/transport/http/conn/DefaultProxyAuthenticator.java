@@ -29,20 +29,28 @@ import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 
+/**
+ * DefaultProxyAuthenticator will be initialized when proxy is configured with http.proxyHost
+ */
 public class DefaultProxyAuthenticator implements ProxyAuthenticator {
-    private Credentials proxycreds;
+    private Credentials proxyCredentials;
     private BasicScheme basicScheme;
 
-    public DefaultProxyAuthenticator(Credentials proxycreds) throws MalformedChallengeException {
-        this.proxycreds = proxycreds;
+    public DefaultProxyAuthenticator(Credentials credentials) throws MalformedChallengeException {
+        this.proxyCredentials = credentials;
         basicScheme = new BasicScheme();
         basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=\"proxy\""));
     }
 
+
+    /**
+     * this will add authentication header to the request
+     * @param request outgoing http request
+     * @param context http context
+     * @throws ProtocolException
+     */
     public void authenticatePreemptively(HttpRequest request, HttpContext context) throws ProtocolException {
-
-        Header authresp = basicScheme.authenticate(proxycreds, request, context);
-        request.addHeader(authresp);
-
+        Header authHeader = basicScheme.authenticate(proxyCredentials, request, context);
+        request.addHeader(authHeader);
     }
 }
