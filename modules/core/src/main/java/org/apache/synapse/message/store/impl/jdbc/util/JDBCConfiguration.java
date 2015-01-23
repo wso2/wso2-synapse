@@ -200,20 +200,19 @@ public class JDBCConfiguration {
     }
 
     /**
-     * Get a PreparedStatement for a given statement
+     * Get a Connection from current datasource
      *
-     * @param stmnt - A statement with query and parameters
-     * @return - Prepared statement
+     * @return - Connection
      * @throws java.sql.SQLException - Failure in creating datasource connection
      */
-    public PreparedStatement getPreparedStatement(Statement stmnt) throws SQLException {
+    public Connection getConnection() throws SQLException {
         Connection con = getDataSource().getConnection();
         if (con == null) {
             String msg = "Connection from DataSource " + getDSName() + " is null.";
             log.error(msg);
             throw new SynapseException(msg);
         }
-        return con.prepareStatement(stmnt.getRawStatement());
+        return con;
     }
 
     /**

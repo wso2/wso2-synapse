@@ -142,7 +142,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
         PreparedStatement ps = null;
 
         try {
-            ps = jdbcConfiguration.getPreparedStatement(stmt);
+            con = jdbcConfiguration.getConnection();
+            ps = con.prepareStatement(stmt.getRawStatement());
             int index = 1;
             for (Object param : stmt.getParameters()) {
                 if (param instanceof String) {
@@ -152,7 +153,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 }
                 index++;
             }
-            con = ps.getConnection();
             rs = ps.executeQuery();
             while (rs.next()) {
                 final Object msgObj;
@@ -206,7 +206,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
         PreparedStatement ps = null;
 
         try {
-            ps = jdbcConfiguration.getPreparedStatement(stmnt);
+            con = jdbcConfiguration.getConnection();
+            ps = con.prepareStatement(stmnt.getRawStatement());
             int index = 1;
             for (Object param : stmnt.getParameters()) {
                 if (param instanceof String) {
@@ -216,7 +217,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 }
                 index++;
             }
-            con = ps.getConnection();
             ps.execute();
             result = true;
         } catch (SQLException e) {
@@ -447,7 +447,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
         int size = 0;
         Statement stmt = new Statement("SELECT COUNT(*) FROM " + jdbcConfiguration.getTableName());
         try {
-            ps = jdbcConfiguration.getPreparedStatement(stmt);
+            con = jdbcConfiguration.getConnection();
+            ps = con.prepareStatement(stmt.getRawStatement());
             con = ps.getConnection();
             rs = ps.executeQuery();
             while (rs.next()) {
