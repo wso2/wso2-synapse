@@ -278,6 +278,13 @@ public class SourceResponse {
         }
     }
 
+    public String getHeader(String name) {
+        if (headers.containsKey(name)){
+            return headers.get(name).first();
+        }
+        return null;
+    }
+
     private boolean canResponseHaveBody(final HttpRequest request, final HttpResponse response) {
         if (request != null && "HEAD".equalsIgnoreCase(request.getRequestLine().getMethod())) {
             return false;
