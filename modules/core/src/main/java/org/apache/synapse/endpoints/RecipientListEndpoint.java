@@ -34,12 +34,9 @@ import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-
-import javax.xml.stream.XMLStreamException;
 
 /**
  * @author nuwan
@@ -180,7 +177,8 @@ public class RecipientListEndpoint extends AbstractEndpoint {
     }
 
     private void sendToDynamicMembers(MessageContext synCtx) {
-        String dynamicUrlStr = dynamicEnpointSet.evaluateValue(synCtx);
+		//remove containing new lines and spaces from the string to create valid url
+	    String dynamicUrlStr = dynamicEnpointSet.evaluateValue(synCtx).replace("\n", "").trim();
         String[] dynamicUrlSet = dynamicUrlStr.split(DELIMETER);
         if (dynamicUrlSet.length == 0) {
             log.warn("No recipient/s was derived from the expression : " + dynamicEnpointSet.toString());
