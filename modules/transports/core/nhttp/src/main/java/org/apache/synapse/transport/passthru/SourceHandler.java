@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -160,6 +161,22 @@ public class SourceHandler implements NHttpServerEventHandler {
             // because the duplex nature of http core we can reach hear without a actual response
             SourceResponse response = SourceContext.getResponse(conn);
             if (response != null) {
+
+                // Handle Http ETag
+                String ifNoneMatchHeader =
+                        SourceContext.getRequest(conn).getHeaders().get(HttpHeaders.IF_NONE_MATCH);
+                if (ifNoneMatchHeader != null) {
+                    String eTagHeader = response.getHeader(HttpHeaders.ETAG);
+                    if (eTagHeader != null) {
+                        for (String hashValue : ifNoneMatchHeader.split(",")) {
+                            if (hashValue.trim().equals(eTagHeader)) {
+                                response.setStatus(HttpStatus.SC_NOT_MODIFIED);
+                                break;
+                            }
+                        }
+                    }
+                }
+            
                 response.start(conn);
 
                 metrics.incrementMessagesSent();
@@ -238,7 +255,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-        } 
+        }
     }
 
     private void updateStatistics(NHttpServerConnection conn) {
@@ -371,7 +388,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             } else if (state == ProtocolState.RESPONSE_DONE) {
                 informWriterError(conn);
             }
-            
+
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } else if (ex instanceof HttpException) {
