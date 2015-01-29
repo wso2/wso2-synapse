@@ -25,9 +25,10 @@
     <modelVersion>4.0.0</modelVersion>
     <!-- TODO: shouldn't this be a Synapse specific parent-POM??? -->
     <parent>
-        <groupId>org.apache</groupId>
-        <artifactId>apache</artifactId>
-        <version>7</version>
+        <groupId>org.apache.synapse</groupId>
+        <artifactId>Apache-Synapse</artifactId>
+        <version>2.1.3-wso2v1-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <groupId>org.apache.synapse</groupId>
     <artifactId>synapse-securevault</artifactId>
