@@ -69,6 +69,7 @@
       <connection>scm:git:https://github.com/wso2/wso2-synapse.git</connection>
       <developerConnection>scm:git:https://github.com/wso2/wso2-synapse.git</developerConnection>
       <url>https://github.com/wso2/wso2-synapse.git/</url>
+      <tag>HEAD</tag>
    </scm>
    <organization>
       <name>Apache Software Foundation</name>
