@@ -39,6 +39,7 @@ import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -277,17 +278,19 @@ public class TargetRequest {
        
 
         // Pre-process HTTP request
-        conn.getContext().setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
-        conn.getContext().setAttribute(ExecutionContext.HTTP_TARGET_HOST,
-                new HttpHost(url.getHost(), port));
-        conn.getContext().setAttribute(ExecutionContext.HTTP_REQUEST, request);
+        HttpContext httpContext = conn.getContext();
+        httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+        httpContext.setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost(), port));
+        httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, request);
+        httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST,
+                requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
 
         // start the request
-        targetConfiguration.getHttpProcessor().process(request, conn.getContext());
-        
+        targetConfiguration.getHttpProcessor().process(request, httpContext);
+
         if (targetConfiguration.getProxyAuthenticator() != null 
                 && route.getProxyHost() != null && !route.isTunnelled()) {
-            targetConfiguration.getProxyAuthenticator().authenticatePreemptively(request, conn.getContext());
+            targetConfiguration.getProxyAuthenticator().authenticatePreemptively(request, httpContext);
         }
         
         conn.submitRequest(request);

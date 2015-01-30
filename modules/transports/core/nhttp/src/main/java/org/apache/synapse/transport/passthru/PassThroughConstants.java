@@ -153,4 +153,7 @@ public class PassThroughConstants {
 
     public static final String HTTP_CONTENT_TYPE = "Content-type";
     public static final String HTTP_CONTENT_LENGTH = "Content-Length";
+
+    // Used to determine the configured proxy profile
+    public static final String PROXY_PROFILE_TARGET_HOST = "PROXY_PROFILE_TARGET_HOST";
 }

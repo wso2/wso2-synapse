@@ -1,25 +1,25 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
+ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *   * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.apache.synapse.transport.http.conn;
 
 import java.util.*;
 
+import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpHost;
@@ -41,6 +41,9 @@ public class ProxyConfig {
      * The list of known hosts to go via proxy
      */
     private List<String> knownProxyHosts = new ArrayList<String>();
+
+
+    private Map<String, ProxyProfileConfig> knownProxyConfigMap = new HashMap<String,ProxyProfileConfig>();
 
 
     /**
@@ -92,9 +95,8 @@ public class ProxyConfig {
      */
     public HttpHost selectProxy(final HttpHost target) {
 
-        if (!isProxyProfileEmpty()) {
-            String endPoint = target.getHostName() + ":" + target.getPort();
-            return getProxyForEndPoint(endPoint);
+        if (isProxyProfileConfigured()) {
+            return getProxyForTargetHost(target.getHostName());
         }
 
         if (this.proxy != null) {
@@ -119,36 +121,114 @@ public class ProxyConfig {
      *
      * @return true if proxy profile map is not empty, false otherwise
      */
-    public boolean isProxyProfileEmpty() {
-        return this.proxyProfileMap.isEmpty();
+    public boolean isProxyProfileConfigured() {
+        return !this.proxyProfileMap.isEmpty();
     }
 
     /**
-     * select the appropriate proxy for the given endPoint
+     * select the appropriate proxy for the given targetHost
      *
-     * @param endPoint targeted end point
+     * @param targetHost targeted end point
      * @return proxy mapped for the end point, if not returns null
      */
-    private HttpHost getProxyForEndPoint(String endPoint) {
-        ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
-        if (proxyProfileConfig == null) {
-            return null;
+    private HttpHost getProxyForTargetHost(String targetHost) {
+
+        HttpHost proxy = null;
+
+        ProxyProfileConfig proxyProfileForTargetHost = getProxyProfileForTargetHost(targetHost);
+        if (proxyProfileForTargetHost != null) {
+            proxy = proxyProfileForTargetHost.getProxy();
         }
-        return proxyProfileConfig.getProxy();
+
+        return proxy;
     }
 
     /**
-     * select the proxy credential for the end point
+     * Selects the appropriate proxyProfileConfiguration for the given targetHost
      *
-     * @param endPoint targeted end point
-     * @return proxy credential for the given end point, if not returns null
+     * First, checks in the knownProxyConfigMap and returns the proxyProfile. If the profile is not in the
+     * knowProxyConfigMap checks the knowDirectHosts and returns null (since the targetHost is not associated with
+     * any proxy).
+     *
+     * If the request hits the ESB for the first time, checks whether the default profile is configured. If so, a flag
+     * is set true. Then the targetHost is matched against the proxyProfileMaps key set
+     * i.e check any of the key patten is matching with the targetHost. If the targetHost is matched against a key then
+     * calls getProxyProfileConfig(String, String) and returns the proxyProfileConfig.
+     *
+     * If the targetHost is not matched against the proxyProfileMap key set and default profile flag is set true
+     * then calls getProxyProfileConfig(String, String) and returns the defaultProfile.
+     *
+     * @param targetHost request's targeted host
+     * @return ProxyProfileConfig for the given targetHost
      */
-    public UsernamePasswordCredentials getCredentialsForEndPoint(String endPoint) {
-        ProxyProfileConfig proxyProfileConfig = this.proxyProfileMap.get(endPoint);
-        if (proxyProfileConfig == null) {
+    private ProxyProfileConfig getProxyProfileForTargetHost(String targetHost) {
+
+        if (knownProxyConfigMap.containsKey(targetHost)) {
+            return knownProxyConfigMap.get(targetHost);
+        }
+
+        if (knownDirectHosts.contains(targetHost)) {
             return null;
         }
-        return proxyProfileConfig.getCreds();
+
+        boolean defaultProfile = false;
+        for (String key : proxyProfileMap.keySet()) {
+            if (key.equals("*")) {
+                defaultProfile = true;
+                continue;
+            }
+            if (targetHost.matches(key)) {
+                return getProxyProfileConfig(targetHost, key);
+            }
+        }
+
+        if (defaultProfile) {
+            return getProxyProfileConfig(targetHost, "*");
+        }
+
+        return null;
+    }
+
+    /**
+     * Selects the proxyProfile for the given key and gets the bypass set. Matches the targetHost against the
+     * bypass set. If it is matched then adds the targetHost to the knownDirectHosts List and returns null.
+     * Otherwise (i.e the targetHost is not matched in the bypass proxy) puts the proxyProfile against the targetHost
+     * into the knownProxyConfigMap and returns the proxyProfileConfig
+     *
+     * @param targetHost request's targeted host
+     * @param key proxyProfileMap's key, if default profile then the key is "*"
+     * @return proxyProfileConfig
+     */
+    private ProxyProfileConfig getProxyProfileConfig(String targetHost, String key) {
+        ProxyProfileConfig proxyProfileConfig = proxyProfileMap.get(key);
+        Set<String> proxyByPass = proxyProfileConfig.getProxyByPass();
+        for (String bypass : proxyByPass) {
+            if (targetHost.matches(bypass)) {
+                knownDirectHosts.add(targetHost);
+                return null;
+            }
+        }
+        knownProxyConfigMap.put(targetHost, proxyProfileConfig);
+        return proxyProfileConfig;
+    }
+
+
+    /**
+     * select the proxy credential for the targetHost
+     *
+     * @param targetHost targeted host
+     * @return proxy credential for the given end point, if not returns null
+     */
+    public UsernamePasswordCredentials getCredentialsForTargetHost(String targetHost) {
+
+        UsernamePasswordCredentials credentials = null;
+        ProxyProfileConfig proxyProfileForTargetHost = getProxyProfileForTargetHost(targetHost);
+
+        if (proxyProfileForTargetHost != null) {
+            credentials = proxyProfileForTargetHost.getCredentials();
+        }
+
+        return credentials;
     }
 
     /**
@@ -158,7 +238,7 @@ public class ProxyConfig {
      * @return log message
      */
     public String logProxyConfig() {
-        if (!isProxyProfileEmpty()) {
+        if (isProxyProfileConfigured()) {
             return "HTTP Sender using proxy profile";
         }
 
@@ -175,7 +255,7 @@ public class ProxyConfig {
      * @return true when either proxy profile is configure or default proxy server is configure, false otherwise
      */
     private boolean isProxyConfigured() {
-        return proxy != null || !isProxyProfileEmpty();
+        return proxy != null || isProxyProfileConfigured();
     }
 
     /**
@@ -188,12 +268,12 @@ public class ProxyConfig {
             return false;
         }
 
-        if (isProxyProfileEmpty()) {
+        if (!isProxyProfileConfigured()) {
             return getCreds() != null;
         }
 
         for (Map.Entry<String, ProxyProfileConfig> proxyProfile : this.proxyProfileMap.entrySet()) {
-            if (proxyProfile.getValue().getCreds() != null) {
+            if (proxyProfile.getValue().getCredentials() != null) {
                 return true;
             }
         }
@@ -205,25 +285,25 @@ public class ProxyConfig {
      * ProfileProxyAuthenticator if proxy profile is configured
      *
      * @return ProxyAuthenticator, if proxy is not configured null
+     * @throws AxisFault
      */
-    public ProxyAuthenticator newProxyAuthenticator() {
+    public ProxyAuthenticator createProxyAuthenticator() throws AxisFault {
         if (!isProxyHasCredential()) return null;
 
-        ProxyAuthenticator proxyAuthenticator = null;
+        ProxyAuthenticator proxyAuthenticator;
 
         try {
-            if (isProxyProfileEmpty()) {
-                proxyAuthenticator = new DefaultProxyAuthenticator(getCreds());
-            } else {
+            if (isProxyProfileConfigured()) {
                 proxyAuthenticator = new ProfileProxyAuthenticator(this);
+            } else {
+                proxyAuthenticator = new DefaultProxyAuthenticator(getCreds());
             }
 
         } catch (MalformedChallengeException e) {
-            log.error("Error while creating Proxy Authenticator");
+            throw new AxisFault("Error while creating proxy authenticator", e);
         }
 
         return proxyAuthenticator;
-
     }
 
     @Override

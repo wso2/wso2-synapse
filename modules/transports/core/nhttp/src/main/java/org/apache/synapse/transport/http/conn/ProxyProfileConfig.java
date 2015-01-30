@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -18,27 +18,36 @@
 
 package org.apache.synapse.transport.http.conn;
 
-
 import org.apache.http.HttpHost;
 import org.apache.http.auth.UsernamePasswordCredentials;
 
+import java.util.Set;
+
+/**
+ * Represents a proxy profile configured in the axis2.xml
+ */
 public class ProxyProfileConfig {
 
     private final HttpHost proxy;
-    private final UsernamePasswordCredentials creds;
+    private final UsernamePasswordCredentials credentials;
+    private final Set<String> proxyByPass;
 
 
-    public ProxyProfileConfig(HttpHost proxy, UsernamePasswordCredentials creds) {
+    public ProxyProfileConfig(HttpHost proxy, UsernamePasswordCredentials credentials, Set<String> proxyByPass) {
         this.proxy = proxy;
-        this.creds = creds;
+        this.credentials = credentials;
+        this.proxyByPass = proxyByPass;
     }
 
     public HttpHost getProxy() {
         return proxy;
     }
 
-    public UsernamePasswordCredentials getCreds() {
-        return creds;
+    public UsernamePasswordCredentials getCredentials() {
+        return credentials;
     }
 
+    public Set<String> getProxyByPass() {
+        return proxyByPass;
+    }
 }

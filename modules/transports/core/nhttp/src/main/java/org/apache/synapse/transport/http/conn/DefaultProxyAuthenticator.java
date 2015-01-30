@@ -21,8 +21,8 @@ package org.apache.synapse.transport.http.conn;
 
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
-import org.apache.http.ProtocolException;
 import org.apache.http.auth.AUTH;
+import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.impl.auth.BasicScheme;
@@ -47,9 +47,9 @@ public class DefaultProxyAuthenticator implements ProxyAuthenticator {
      * this will add authentication header to the request
      * @param request outgoing http request
      * @param context http context
-     * @throws ProtocolException
+     * @throws AuthenticationException
      */
-    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws ProtocolException {
+    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws AuthenticationException {
         Header authHeader = basicScheme.authenticate(proxyCredentials, request, context);
         request.addHeader(authHeader);
     }

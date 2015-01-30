@@ -20,13 +20,14 @@ package org.apache.synapse.transport.http.conn;
 
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
-import org.apache.http.ProtocolException;
 import org.apache.http.auth.AUTH;
+import org.apache.http.auth.AuthenticationException;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 /**
  * ProfileProxyAuthenticator will be initialized when proxy profile is configured
@@ -46,13 +47,18 @@ public class ProfileProxyAuthenticator implements ProxyAuthenticator{
      * this will add authentication header to the request
      * @param request outgoing http request
      * @param context http context
-     * @throws ProtocolException
+     * @throws AuthenticationException
      */
-    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws ProtocolException {
-        String endPoint = request.getRequestLine().getUri();
-        Credentials proxyCredentials = proxyConfig.getCredentialsForEndPoint(endPoint);
+    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws AuthenticationException {
 
-        Header authHeader = basicScheme.authenticate(proxyCredentials, request, context);
-        request.addHeader(authHeader);
+        String targetHost = (String) context.getAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST);
+
+        Credentials proxyCredentials = proxyConfig.getCredentialsForTargetHost(targetHost);
+
+        if (proxyCredentials != null) {
+            Header authHeader = basicScheme.authenticate(proxyCredentials, request, context);
+            request.addHeader(authHeader);
+        }
+
     }
 }

@@ -18,12 +18,12 @@
 package org.apache.synapse.transport.http.conn;
 
 import org.apache.http.HttpRequest;
-import org.apache.http.ProtocolException;
+import org.apache.http.auth.AuthenticationException;
 import org.apache.http.protocol.HttpContext;
 
 public interface ProxyAuthenticator {
     
-    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws ProtocolException;
+    public void authenticatePreemptively(HttpRequest request, HttpContext context) throws AuthenticationException;
     
 }
 

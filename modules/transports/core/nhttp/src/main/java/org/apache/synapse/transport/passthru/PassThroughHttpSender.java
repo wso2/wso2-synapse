@@ -44,7 +44,6 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
-import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -61,7 +60,6 @@ import org.apache.synapse.transport.passthru.jmx.TransportView;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
@@ -131,12 +129,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         MBeanRegistrar.getInstance().registerMBean(view, "Transport",
                  "passthru-" + namePrefix.toLowerCase() + "-sender");
         
-        proxyConfig = new ProxyConfigBuilder().parse(transportOutDescription).build();
+        proxyConfig = new ProxyConfigBuilder().build(transportOutDescription);
         log.info(proxyConfig.logProxyConfig());
 
         targetConfiguration = new TargetConfiguration(configurationContext,
                 transportOutDescription, workerPool, metrics,
-                proxyConfig.newProxyAuthenticator());
+                proxyConfig.createProxyAuthenticator());
         targetConfiguration.build();
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());

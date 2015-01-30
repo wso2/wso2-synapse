@@ -147,11 +147,11 @@ public class ClientHandler implements NHttpClientEventHandler {
             final ProxyConfig proxyConfig,
             final ConfigurationContext cfgCtx,
             final HttpParams params,
-            final NhttpMetricsCollector metrics) {
+            final NhttpMetricsCollector metrics) throws AxisFault {
         super();
         this.connpool = connpool;
         this.connFactory = connFactory;
-        this.proxyauthenticator = proxyConfig.newProxyAuthenticator();
+        this.proxyauthenticator = proxyConfig.createProxyAuthenticator();
         this.cfgCtx = cfgCtx;
         this.params = params;
         this.httpProcessor = getHttpProcessor();
