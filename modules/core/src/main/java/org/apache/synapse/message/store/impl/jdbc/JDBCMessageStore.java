@@ -390,8 +390,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (position < 0) {
             throw new IllegalArgumentException("Index:" + position + " out of table bound");
         }
-        if (!this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER).
-                equals("com.mysql.jdbc.Driver")) {
+        if (!"com.mysql.jdbc.Driver".
+                equals(this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER))) {
             throw new UnsupportedOperationException("Only support in MYSQL");
         }
         // Gets the minimum value of the sub-table which contains indexId values greater than given position ('position' has minimum of 0 while indexId has minimum of 1)

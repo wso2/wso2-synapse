@@ -32,7 +32,6 @@ import org.wso2.securevault.secret.SecretManager;
 import javax.naming.Context;
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
@@ -167,7 +166,9 @@ public class JDBCConfiguration {
                                 " properties :" + jndiProperties);
             }
         }
-        log.info("Successfully looked up datasource " + dataSourceName);
+        if (dataSource != null) {
+            log.info("Successfully looked up datasource " + dataSourceName);
+        }
         return dataSource;
     }
 
@@ -209,7 +210,6 @@ public class JDBCConfiguration {
         Connection con = getDataSource().getConnection();
         if (con == null) {
             String msg = "Connection from DataSource " + getDSName() + " is null.";
-            log.error(msg);
             throw new SynapseException(msg);
         }
         return con;
