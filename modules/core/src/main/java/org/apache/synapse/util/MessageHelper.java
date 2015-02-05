@@ -132,7 +132,12 @@ public class MessageHelper {
                         log.debug("Deep clone for Statistic Record");
                     }
                     obj = getClonedStatisticRecord((StatisticsRecord) obj);
-                } else {
+                } else if (obj instanceof OMElement) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deep clone for OMElement");
+                    }
+                    obj = (OMElement) ((OMElement) obj).cloneOMElement();
+                } else{
                     /**
                      * Need to add conditions according to type if found in
                      * future
