@@ -88,7 +88,6 @@ public class ProxyConfig {
      *         null when no proxy is configured or if the target is matched with proxy bypass
      */
     public HttpHost selectProxy(final HttpHost target) {
-
         if (isProxyProfileConfigured()) {
             return getProxyForTargetHost(target.getHostName());
         }
@@ -126,7 +125,6 @@ public class ProxyConfig {
      * @return proxy mapped for the end point, if not returns null
      */
     private HttpHost getProxyForTargetHost(String targetHost) {
-
         HttpHost proxy = null;
 
         ProxyProfileConfig proxyProfileForTargetHost = getProxyProfileForTargetHost(targetHost);
@@ -156,7 +154,6 @@ public class ProxyConfig {
      * @return ProxyProfileConfig for the given targetHost
      */
     private ProxyProfileConfig getProxyProfileForTargetHost(String targetHost) {
-
         if (knownProxyConfigMap.containsKey(targetHost)) {
             return knownProxyConfigMap.get(targetHost);
         }
@@ -215,7 +212,6 @@ public class ProxyConfig {
      * @return proxy credential for the given end point, if not returns null
      */
     public UsernamePasswordCredentials getCredentialsForTargetHost(String targetHost) {
-
         UsernamePasswordCredentials credentials = null;
         ProxyProfileConfig proxyProfileForTargetHost = getProxyProfileForTargetHost(targetHost);
 

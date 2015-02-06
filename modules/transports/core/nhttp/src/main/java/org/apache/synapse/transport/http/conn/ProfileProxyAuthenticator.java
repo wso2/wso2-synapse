@@ -49,7 +49,6 @@ public class ProfileProxyAuthenticator implements ProxyAuthenticator{
      * @throws AuthenticationException
      */
     public void authenticatePreemptively(HttpRequest request, HttpContext context) throws AuthenticationException {
-
         String targetHost = (String) context.getAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST);
         Credentials proxyCredentials = proxyConfig.getCredentialsForTargetHost(targetHost);
         if (proxyCredentials != null) {
