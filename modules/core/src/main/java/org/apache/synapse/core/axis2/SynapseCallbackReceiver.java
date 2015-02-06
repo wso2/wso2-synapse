@@ -50,6 +50,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -443,11 +444,15 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     	 ((FaultHandler) successfulEndpoint).handleFault(synapseOutMsgCtx, null);
                     }else{
                     	faultStack = synapseOutMsgCtx.getFaultStack();
-						if (faultStack != null) {
-							synapseInMessageContext.getFaultStack().addAll(faultStack);
-							((FaultHandler) successfulEndpoint).handleFault(synapseInMessageContext,
-							                                                null);
-						}
+	                    if (faultStack != null) {
+		                    if (faultStack.size() == 0) {
+			                    synapseInMessageContext.pushFaultHandler(
+					                    new MediatorFaultHandler(synapseInMessageContext.getFaultSequence()));
+		                    }
+		                    synapseInMessageContext.getFaultStack().addAll(faultStack);
+		                    ((FaultHandler) successfulEndpoint).handleFault(synapseInMessageContext,
+		                                                                    null);
+	                    }
                     }
                     return;
                 } else {
