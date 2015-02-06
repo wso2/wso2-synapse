@@ -32,23 +32,17 @@ public class ProxyConfig {
     private final HttpHost proxy;
     private final UsernamePasswordCredentials creds;
     private final Set<String> proxyBypass;
-    /**
-     * The list of known hosts to bypass proxy
-     */
-    private List<String> knownDirectHosts = new ArrayList<String>();
 
-    /**
-     * The list of known hosts to go via proxy
-     */
-    private List<String> knownProxyHosts = new ArrayList<String>();
+    // The set of known hosts to bypass proxy
+    private Set<String> knownDirectHosts = new HashSet<String>();
 
+     // The set of known hosts to go via proxy
+    private Set<String> knownProxyHosts = new HashSet<String>();
 
+    // Map to hold the known proxy profile configuration
     private Map<String, ProxyProfileConfig> knownProxyConfigMap = new HashMap<String,ProxyProfileConfig>();
 
-
-    /**
-     * Map to hold the custom proxy profile details
-     */
+    // Map to hold the custom proxy profile details
     private Map<String, ProxyProfileConfig> proxyProfileMap = new HashMap<String, ProxyProfileConfig>();
 
     public ProxyConfig(
@@ -174,6 +168,7 @@ public class ProxyConfig {
         boolean defaultProfile = false;
         for (String key : proxyProfileMap.keySet()) {
             if (key.equals("*")) {
+                log.debug("Default proxy profile found");
                 defaultProfile = true;
                 continue;
             }
@@ -308,10 +303,8 @@ public class ProxyConfig {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("[proxy=").append(proxy).append(", proxycreds=")
-            .append(creds).append(", proxyBypass=").append(proxyBypass).append("]");
-        return builder.toString();
+        return "[proxy=" + proxy + ", proxyCredential=" + creds + ", proxyBypass=" + proxyBypass +
+                ", proxyProfileMap=" + proxyProfileMap + "]";
     }
 
     private boolean isBypass(String hostName) {

@@ -156,4 +156,13 @@ public class PassThroughConstants {
 
     // Used to determine the configured proxy profile
     public static final String PROXY_PROFILE_TARGET_HOST = "PROXY_PROFILE_TARGET_HOST";
+
+    public static final String PROXY_BASIC_REALM = "BASIC realm=\"proxy\"";
+
+    public static final String HTTP_PROXY_HOST = "http.proxyHost";
+    public static final String HTTP_PROXY_PORT = "http.proxyPort";
+    public static final String HTTP_PROXY_USERNAME = "http.proxy.username";
+    public static final String HTTP_PROXY_PASSWORD = "http.proxy.password";
+    public static final String HTTP_NON_PROXY_HOST = "http.nonProxyHosts";
+
 }

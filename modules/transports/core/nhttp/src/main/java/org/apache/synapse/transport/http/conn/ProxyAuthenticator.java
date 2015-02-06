@@ -21,8 +21,17 @@ import org.apache.http.HttpRequest;
 import org.apache.http.auth.AuthenticationException;
 import org.apache.http.protocol.HttpContext;
 
+/**
+ * If proxy server is configured with username and password, appropriate implementation of ProxyAuthenticator
+ * will be initialised based on the proxy configuration (profile / default)
+ */
 public interface ProxyAuthenticator {
-    
+    /**
+     * Adds proxy authentication header to the request
+     * @param request out going request
+     * @param context http context
+     * @throws AuthenticationException
+     */
     public void authenticatePreemptively(HttpRequest request, HttpContext context) throws AuthenticationException;
     
 }

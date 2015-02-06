@@ -32,7 +32,6 @@ public class ProxyProfileConfig {
     private final UsernamePasswordCredentials credentials;
     private final Set<String> proxyByPass;
 
-
     public ProxyProfileConfig(HttpHost proxy, UsernamePasswordCredentials credentials, Set<String> proxyByPass) {
         this.proxy = proxy;
         this.credentials = credentials;
@@ -49,5 +48,10 @@ public class ProxyProfileConfig {
 
     public Set<String> getProxyByPass() {
         return proxyByPass;
+    }
+
+    @Override
+    public String toString() {
+        return "(proxy=" + proxy + ", credential=" + credentials + ", bypass=" + proxyByPass + ")";
     }
 }

@@ -39,8 +39,7 @@ public class ProfileProxyAuthenticator implements ProxyAuthenticator{
     public ProfileProxyAuthenticator(ProxyConfig proxyConfig) throws MalformedChallengeException {
         this.proxyConfig = proxyConfig;
         basicScheme = new BasicScheme();
-        basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=\"proxy\""));
-
+        basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, PassThroughConstants.PROXY_BASIC_REALM));
     }
 
     /**
@@ -52,13 +51,10 @@ public class ProfileProxyAuthenticator implements ProxyAuthenticator{
     public void authenticatePreemptively(HttpRequest request, HttpContext context) throws AuthenticationException {
 
         String targetHost = (String) context.getAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST);
-
         Credentials proxyCredentials = proxyConfig.getCredentialsForTargetHost(targetHost);
-
         if (proxyCredentials != null) {
             Header authHeader = basicScheme.authenticate(proxyCredentials, request, context);
             request.addHeader(authHeader);
         }
-
     }
 }

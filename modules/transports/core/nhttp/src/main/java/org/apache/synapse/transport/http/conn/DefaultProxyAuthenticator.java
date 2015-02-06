@@ -28,6 +28,7 @@ import org.apache.http.auth.MalformedChallengeException;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 /**
  * DefaultProxyAuthenticator will be initialized when proxy is configured with http.proxyHost
@@ -39,7 +40,7 @@ public class DefaultProxyAuthenticator implements ProxyAuthenticator {
     public DefaultProxyAuthenticator(Credentials credentials) throws MalformedChallengeException {
         this.proxyCredentials = credentials;
         basicScheme = new BasicScheme();
-        basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, "BASIC realm=\"proxy\""));
+        basicScheme.processChallenge(new BasicHeader(AUTH.PROXY_AUTH, PassThroughConstants.PROXY_BASIC_REALM));
     }
 
 

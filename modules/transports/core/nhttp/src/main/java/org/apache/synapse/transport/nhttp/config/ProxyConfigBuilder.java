@@ -27,6 +27,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.ProxyProfileConfig;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import javax.xml.namespace.QName;
 import java.util.HashMap;
@@ -60,20 +61,18 @@ public class ProxyConfigBuilder {
 
             String proxyHost = null;
             int proxyPort = -1;
-            String proxyHostStr = "http.proxyHost";
-            String proxyPortStr = "http.proxyPort";
-            Parameter proxyHostParam = transportOut.getParameter(proxyHostStr);
+            Parameter proxyHostParam = transportOut.getParameter(PassThroughConstants.HTTP_PROXY_HOST);
             if (proxyHostParam != null) {
                 proxyHost = (String) proxyHostParam.getValue();
-                Parameter proxyPortParam = transportOut.getParameter(proxyPortStr);
+                Parameter proxyPortParam = transportOut.getParameter(PassThroughConstants.HTTP_PROXY_PORT);
                 if (proxyPortParam != null) {
                     proxyPort = Integer.parseInt((String) proxyPortParam.getValue());
                 }
             }
             if (proxyHost == null) {
-                proxyHost = System.getProperty(proxyHostStr);
+                proxyHost = System.getProperty(PassThroughConstants.HTTP_PROXY_HOST);
                 if (proxyHost != null) {
-                    String s = System.getProperty(proxyPortStr);
+                    String s = System.getProperty(PassThroughConstants.HTTP_PROXY_PORT);
                     if (s != null) {
                         proxyPort = Integer.parseInt(s);
                     }
@@ -83,20 +82,19 @@ public class ProxyConfigBuilder {
                 proxy = new HttpHost(proxyHost, proxyPort >= 0 ? proxyPort : 80);
 
                 String bypassListStr = null;
-                String nonProxyHostStr = "http.nonProxyHosts";
-                Parameter bypassListParam = transportOut.getParameter(nonProxyHostStr);
-                if (bypassListParam != null) {
+                Parameter bypassListParam = transportOut.getParameter(PassThroughConstants.HTTP_NON_PROXY_HOST);
+
+                if (bypassListParam == null) {
+                    bypassListStr = System.getProperty(PassThroughConstants.HTTP_NON_PROXY_HOST);
+                } else {
                     bypassListStr = (String) bypassListParam.getValue();
-                }
-                if (bypassListStr == null) {
-                    bypassListStr = System.getProperty(nonProxyHostStr);
                 }
                 if (bypassListStr != null) {
                     proxyBypass = bypassListStr.split("\\|");
                 }
 
-                Parameter proxyUsernameParam = transportOut.getParameter("http.proxy.username");
-                Parameter proxyPasswordParam = transportOut.getParameter("http.proxy.password");
+                Parameter proxyUsernameParam = transportOut.getParameter(PassThroughConstants.HTTP_PROXY_USERNAME);
+                Parameter proxyPasswordParam = transportOut.getParameter(PassThroughConstants.HTTP_PROXY_PASSWORD);
                 if (proxyUsernameParam != null) {
                     proxyCredentials = new UsernamePasswordCredentials((String) proxyUsernameParam.getValue(),
                             proxyPasswordParam != null ? (String) proxyPasswordParam.getValue() : "");
@@ -117,7 +115,7 @@ public class ProxyConfigBuilder {
      *          <proxyPort>3128</proxyPort>
      *          <proxyUserName>squidUser</proxyUserName>
      *          <proxyPassword>password</proxyPassword>
-     *          <bypass>xxx.sample.com, </bypass>
+     *          <bypass>xxx.sample.com</bypass>
      *      </profile>
      *      <profile>
      *          <targetHosts>localhost</targetHosts>
@@ -192,6 +190,13 @@ public class ProxyConfigBuilder {
         return null;
     }
 
+    /**
+     * Extracts the proxy server detail from given profile
+     * @param profile profile element
+     * @param targetHosts targetHosts given in the profile
+     * @return proxyServer(HttpHost) configured in the given profile element
+     * @throws AxisFault, if host or port element is not configured properly
+     */
     private HttpHost getHttpProxy(OMElement profile, String targetHosts) throws AxisFault {
         String proxyHost;
         String proxyPortStr;
@@ -204,16 +209,21 @@ public class ProxyConfigBuilder {
             if (proxyPortEle != null) {
                 proxyPortStr = proxyPortEle.getText();
             } else {
-                throw new AxisFault("Proxy Port didn't configure correctly in proxy profile ["+targetHosts+"]");
+                throw new AxisFault("Proxy Port didn't configure correctly in proxy profile [" + targetHosts + "]");
             }
         } else {
-            throw new AxisFault("Proxy Host didn't configure correctly in proxy profile ["+targetHosts+"]");
+            throw new AxisFault("Proxy Host didn't configure correctly in proxy profile [" + targetHosts + "]");
         }
 
         int proxyPort = Integer.parseInt(proxyPortStr);
         return new HttpHost(proxyHost, proxyPort >= 0 ? proxyPort : 80);
     }
 
+    /**
+     * Extracts the credential from given profile
+     * @param profile profile element
+     * @return usernamePasswordCredentials if username, password is configured, null otherwise
+     */
     private UsernamePasswordCredentials getUsernamePasswordCredentials(OMElement profile) {
         UsernamePasswordCredentials proxyCredentials = null;
         QName proxyUserQName = new QName("proxyUserName");
@@ -230,21 +240,23 @@ public class ProxyConfigBuilder {
         return proxyCredentials;
     }
 
+    /**
+     * Extracts the proxyBypass hosts from given profile
+     * @param profile profile element
+     * @return Set of String containing bypass hosts; empty set if bypass hosts is not configured
+     */
     private Set<String> getProxyBypass(OMElement profile) {
         Set<String> bypassSet = new HashSet<String>();
         QName bypassQName = new QName("bypass");
         OMElement bypassEle = profile.getFirstChildWithName(bypassQName);
         if (bypassEle != null && !bypassEle.getText().equals("")) {
-            String[] bypass = bypassEle.getText().split(",");
+            String[] bypassHosts = bypassEle.getText().split(",");
 
-            for (String s : bypass) {
-                bypassSet.add(s.trim());
+            for (String bypassHost : bypassHosts) {
+                bypassSet.add(bypassHost.trim());
             }
         }
-
         return bypassSet;
     }
-
-
 
 }
