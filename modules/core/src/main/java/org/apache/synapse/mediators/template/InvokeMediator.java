@@ -95,6 +95,9 @@ public class InvokeMediator extends AbstractMediator implements
 		if (this.isDynamicMediator() && mediator ==null) {
 			handleException("Failed to locate the configure element for connector [" +
 			                targetTemplate + "]", synCtx);
+		}else if(mediator==null){
+			handleException("Failed to locate the configure element for connector [" +
+			                targetTemplate + "]", synCtx);
 		}
 
 		// executing key reference if found defined at configuration.
