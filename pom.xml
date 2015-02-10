@@ -237,6 +237,22 @@
    <dependencyManagement>
       <dependencies>
           <dependency>
+              <groupId>org.apache.geronimo.specs</groupId>
+              <artifactId>geronimo-jta_1.1_spec</artifactId>
+              <version>${geronimo-spec.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>commons-collections</groupId>
+              <artifactId>commons-collections</artifactId>
+              <version>${commons-collections.version}</version>
+          </dependency>
+          <!-- task scheduling -->
+          <dependency>
+              <groupId>org.quartz-scheduler</groupId>
+              <artifactId>quartz</artifactId>
+              <version>${quartz.version}</version>
+          </dependency>
+          <dependency>
               <groupId>quickfixj</groupId>
               <artifactId>quickfixj-all</artifactId>
               <version>${qfj.version}</version>
@@ -727,17 +743,6 @@
          <artifactId>JLex</artifactId>
          <version>${JLex.version}</version>
       </dependency>
-      <dependency>
-         <groupId>commons-collections</groupId>
-         <artifactId>commons-collections</artifactId>
-         <version>${commons-collections.version}</version>
-      </dependency>
-      <!-- task scheduling -->
-      <dependency>
-         <groupId>org.quartz-scheduler</groupId>
-         <artifactId>quartz</artifactId>
-         <version>${quartz.version}</version>
-      </dependency>
       <!-- Saxon Dependency - is not a direct dependency, but optional runtime -->
       <dependency>
          <groupId>net.sf.saxon</groupId>
@@ -817,7 +822,7 @@
       <module>modules/securevault</module>
       <module>modules/commons</module>
       <module>modules/transports</module>
-      <!--<module>modules/tasks</module>-->
+      <module>modules/tasks</module>
       <!--<module>modules/core</module>-->
       <!--<module>modules/extensions</module>-->
       <!--<module>modules/samples</module>-->
