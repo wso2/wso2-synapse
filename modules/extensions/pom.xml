@@ -290,6 +290,14 @@
   	        <groupId>org.apache.commons</groupId>
   	        <artifactId>commons-vfs2</artifactId>
   	    </dependency>
+        <dependency>
+            <groupId>rhino</groupId>
+            <artifactId>js</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-transport-local</artifactId>
+        </dependency>
     </dependencies>
     
     <properties/>
