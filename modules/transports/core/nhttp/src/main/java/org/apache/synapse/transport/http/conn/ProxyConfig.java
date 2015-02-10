@@ -17,7 +17,13 @@
  */
 package org.apache.synapse.transport.http.conn;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
@@ -164,7 +170,7 @@ public class ProxyConfig {
 
         boolean defaultProfile = false;
         for (String key : proxyProfileMap.keySet()) {
-            if (key.equals("*")) {
+            if ("*".equals(key)) {
                 log.debug("Default proxy profile found");
                 defaultProfile = true;
                 continue;
