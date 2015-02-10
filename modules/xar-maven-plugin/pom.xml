@@ -32,39 +32,28 @@
     <name>Apache Synapse - XAR Maven Plugin</name>
     <description>Maven 2 plugin to create Synapse extension archives</description>
     
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.version>2.0.7</maven.version>
-        <maven.artifact.version>2.0.8</maven.artifact.version>
-        <maven.archiver.version>2.2</maven.archiver.version>
-        <plexus.utils.version>1.5.4</plexus.utils.version>
-    </properties>
-    
+    <properties/>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>${maven.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-project</artifactId>
-            <version>${maven.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>${maven.artifact.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-archiver</artifactId>
-            <version>${maven.archiver.version}</version>
         </dependency>
         <dependency>
             <groupId>org.codehaus.plexus</groupId>
             <artifactId>plexus-utils</artifactId>
-            <version>${plexus.utils.version}</version>
         </dependency>
     </dependencies>
     

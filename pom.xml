@@ -237,6 +237,31 @@
    <dependencyManagement>
       <dependencies>
           <dependency>
+              <groupId>org.apache.maven</groupId>
+              <artifactId>maven-plugin-api</artifactId>
+              <version>${maven.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.maven</groupId>
+              <artifactId>maven-project</artifactId>
+              <version>${maven.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.maven</groupId>
+              <artifactId>maven-artifact</artifactId>
+              <version>${maven.artifact.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.maven</groupId>
+              <artifactId>maven-archiver</artifactId>
+              <version>${maven.archiver.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.codehaus.plexus</groupId>
+              <artifactId>plexus-utils</artifactId>
+              <version>${plexus.utils.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.apache.synapse</groupId>
               <artifactId>synapse-experimental</artifactId>
               <version>${project.version}</version>
@@ -923,14 +948,18 @@
       <module>modules/patches</module>
       <module>modules/war</module>
       <module>modules/handler</module>
-      <!--<module>modules/xar-maven-plugin</module>-->
+      <module>modules/xar-maven-plugin</module>
       <module>modules/experimental</module>
-      <!--<module>modules/migrator</module>-->
+      <module>modules/migrator</module>
       <!--<module>modules/distribution</module>-->
       <!--<module>modules/packaging/package-skeleton</module>-->
       <module>modules/packaging/package-archetype</module>
    </modules>
    <properties>
+      <maven.version>2.0.7</maven.version>
+      <maven.artifact.version>2.0.8</maven.artifact.version>
+      <maven.archiver.version>2.2</maven.archiver.version>
+      <plexus.utils.version>1.5.4</plexus.utils.version>
       <com.google.code.gson.version>2.1</com.google.code.gson.version>
       <org.codehaus.jettison.wso2.version>1.1.wso2v1</org.codehaus.jettison.wso2.version>
       <com.damnhandy.version>1.1.7</com.damnhandy.version>
