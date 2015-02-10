@@ -20,7 +20,12 @@ package org.apache.synapse.transport.http.conn;
 
 import java.io.IOException;
 
-import org.apache.http.*;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpVersion;
 import org.apache.http.client.protocol.RequestClientConnControl;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.message.BasicHttpRequest;
@@ -53,7 +58,7 @@ public class ProxyTunnelHandler {
     public HttpRequest generateRequest(final HttpContext context) throws IOException, HttpException {
         HttpHost target = this.route.getTargetHost();
         HttpRequest connect = new BasicHttpRequest("CONNECT", target.toHostString(), HttpVersion.HTTP_1_1);
-
+        
         this.httpProcessor.process(connect, context);
         return connect;
     }
