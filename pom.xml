@@ -237,6 +237,11 @@
    <dependencyManagement>
       <dependencies>
           <dependency>
+              <groupId>org.apache.geronimo.specs</groupId>
+              <artifactId>geronimo-jms_1.1_spec</artifactId>
+              <version>${jms-1.1-spec.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.apache.synapse</groupId>
               <artifactId>synapse-core</artifactId>
               <version>${project.version}</version>
@@ -904,8 +909,8 @@
       <module>modules/tasks</module>
       <module>modules/core</module>
       <module>modules/extensions</module>
-      <!--<module>modules/samples</module>-->
-      <!--<module>modules/patches</module>-->
+      <module>modules/samples</module>
+      <module>modules/patches</module>
       <!--<module>modules/war</module>-->
       <!--<module>modules/handler</module>-->
       <!--<module>modules/xar-maven-plugin</module>-->

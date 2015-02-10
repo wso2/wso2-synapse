@@ -392,18 +392,15 @@
         <dependency>
             <groupId>org.jruby</groupId>
             <artifactId>jruby-complete</artifactId>
-            <version>${jruby.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-jms_1.1_spec</artifactId>
-            <version>${jms-1.1-spec.version}</version>
         </dependency>
         <!-- Rampart -->
         <dependency>
             <groupId>org.apache.rampart</groupId>
             <artifactId>rampart-core</artifactId>
-            <version>${rampart.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.woden</groupId>
