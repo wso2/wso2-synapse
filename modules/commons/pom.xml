@@ -71,12 +71,10 @@
         <dependency>
           <groupId>javax.activation</groupId>
           <artifactId>activation</artifactId>
-          <version>1.1</version>
         </dependency>
         <dependency>
           <groupId>org.apache.axis2</groupId>
           <artifactId>axis2-transport-base</artifactId>
-            <version>${axis2.version}</version>
         </dependency>
         <dependency>
             <groupId>org.wso2.securevault</groupId>
@@ -93,33 +91,24 @@
         <dependency>
             <groupId>org.wso2.staxon</groupId>
             <artifactId>staxon-core</artifactId>
-            <version>${staxon.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2</groupId>
             <artifactId>axis2-transport-http</artifactId>
-            <version>${axis2.transport.http.version}</version>
         </dependency>
         <dependency>
-                    <groupId>org.springframework</groupId>
-                    <artifactId>spring-core</artifactId>
-                    <version>${spring.version}</version>
-                </dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <version>${commons-lang.version}</version>
-        </dependency>                
+        </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
-            <version>${commons.vfs.version}</version>
-        </dependency>  
+        </dependency>
     </dependencies>
 
-    <properties>
-        <staxon.version>1.2.0.wso2v2</staxon.version>
-        <spring.version>1.2.8</spring.version>
-        <axis2.transport.http.version>1.6.1-wso2v10</axis2.transport.http.version>
-    </properties>
+    <properties/>
 </project>
