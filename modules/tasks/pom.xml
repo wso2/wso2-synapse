@@ -29,7 +29,6 @@
 
     <groupId>org.apache.synapse</groupId>
     <artifactId>synapse-tasks</artifactId>
-
     <name>Apache Synapse - Tasks classes</name>
     <description>Apache Synapse - Tasks classes</description>
     <packaging>bundle</packaging>
