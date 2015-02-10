@@ -30,7 +30,6 @@
 
 	<build>
 		<plugins>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -198,7 +197,6 @@
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>jms</artifactId>
-            <version>1.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.axis2.transport</groupId>
@@ -224,7 +222,6 @@
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr-runtime</artifactId>
-			<version>3.4</version>
 		</dependency>
 
 		<!-- This is used by the CacheMediator. TODO: since axis2-saaj is based 
@@ -237,25 +234,19 @@
 		<dependency>
 			<groupId>org.wso2.uri.template</groupId>
 			<artifactId>wso2-uri-templates</artifactId>
-			<version>1.6.4</version>
 		</dependency>
 		<dependency>
 			<groupId>com.damnhandy</groupId>
 			<artifactId>handy-uri-templates</artifactId>
-			<version>1.1.7</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
-			<version>2.3</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.codehaus.jettison.wso2</groupId>
 			<artifactId>jettison</artifactId>
-			<version>1.1.wso2v1</version>
 		</dependency>
-
 		<!--dependency>
 			<groupId>org.apache.axis2</groupId>
 			<artifactId>axis2-json</artifactId>
@@ -264,12 +255,10 @@
 		<dependency>
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
-			<version>0.8.0</version>
 		</dependency>
-        	<dependency>
+        <dependency>
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path-assert</artifactId>
-			<version>0.8.0</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

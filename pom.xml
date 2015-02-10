@@ -237,6 +237,42 @@
    <dependencyManagement>
       <dependencies>
           <dependency>
+              <groupId>org.wso2.uri.template</groupId>
+              <artifactId>wso2-uri-templates</artifactId>
+              <version>${org.wso2.uri.template.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.jayway.jsonpath</groupId>
+              <artifactId>json-path</artifactId>
+              <version>${com.jayway.jsonpath.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.jayway.jsonpath</groupId>
+              <artifactId>json-path-assert</artifactId>
+              <version>${com.jayway.jsonpath.version}</version>
+              <!--<scope>test</scope>-->
+          </dependency>
+          <dependency>
+              <groupId>org.codehaus.jettison.wso2</groupId>
+              <artifactId>jettison</artifactId>
+              <version>${org.codehaus.jettison.wso2.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.damnhandy</groupId>
+              <artifactId>handy-uri-templates</artifactId>
+              <version>${com.damnhandy.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>javax.jms</groupId>
+              <artifactId>jms</artifactId>
+              <version>${javax.jms.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.antlr</groupId>
+              <artifactId>antlr-runtime</artifactId>
+              <version>${org.antlr.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.apache.geronimo.specs</groupId>
               <artifactId>geronimo-jta_1.1_spec</artifactId>
               <version>${geronimo-spec.version}</version>
@@ -759,13 +795,6 @@
          <artifactId>saxon-xqj</artifactId>
          <version>${saxon.version}</version>
       </dependency>
-
-
-      <dependency>
-         <groupId>org.wso2.uri.template</groupId>
-         <artifactId>wso2-uri-templates</artifactId>
-         <version>1.6.4</version>
-      </dependency>
       <!-- Caching dependencies -->
       <dependency>
          <groupId>org.wso2.caching</groupId>
@@ -823,7 +852,7 @@
       <module>modules/commons</module>
       <module>modules/transports</module>
       <module>modules/tasks</module>
-      <!--<module>modules/core</module>-->
+      <module>modules/core</module>
       <!--<module>modules/extensions</module>-->
       <!--<module>modules/samples</module>-->
       <!--<module>modules/patches</module>-->
@@ -837,6 +866,12 @@
       <!--<module>modules/packaging/package-archetype</module>-->
    </modules>
    <properties>
+      <org.codehaus.jettison.wso2.version>1.1.wso2v1</org.codehaus.jettison.wso2.version>
+      <com.damnhandy.version>1.1.7</com.damnhandy.version>
+      <javax.jms.version>1.1</javax.jms.version>
+      <org.antlr.version>3.4</org.antlr.version>
+      <org.wso2.uri.template.version>1.6.4</org.wso2.uri.template.version>
+      <com.jayway.jsonpath.version>0.8.0</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
       <org.bouncycastle.version>1.46</org.bouncycastle.version>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
