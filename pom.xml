@@ -237,6 +237,71 @@
    <dependencyManagement>
       <dependencies>
           <dependency>
+              <groupId>quickfixj</groupId>
+              <artifactId>quickfixj-all</artifactId>
+              <version>${qfj.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>oro</groupId>
+              <artifactId>oro</artifactId>
+              <version>${oro.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>com.jcraft</groupId>
+              <artifactId>jsch</artifactId>
+              <version>${jsch.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>commons-net</groupId>
+              <artifactId>commons-net</artifactId>
+              <version>${commons.net.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>de.schlichtherle.io</groupId>
+              <artifactId>truezip</artifactId>
+              <version>${truezip.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.slf4j</groupId>
+              <artifactId>slf4j-api</artifactId>
+              <version>${slf4j.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.mina</groupId>
+              <artifactId>mina-core</artifactId>
+              <version>${mina.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.bouncycastle</groupId>
+              <artifactId>bcprov-jdk16</artifactId>
+              <version>${org.bouncycastle.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.httpcomponents</groupId>
+              <artifactId>httpcore</artifactId>
+              <version>${hc.httpcore.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.httpcomponents</groupId>
+              <artifactId>httpcore-nio</artifactId>
+              <version>${hc.httpcore.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.httpcomponents</groupId>
+              <artifactId>httpclient</artifactId>
+              <version>${hc.httpclient.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.axis2.transport</groupId>
+              <artifactId>axis2-transport-testkit</artifactId>
+              <version>${axis2.transport.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.aspectj</groupId>
+              <artifactId>aspectjweaver</artifactId>
+              <version>${aspectj.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.apache.commons</groupId>
               <artifactId>commons-vfs2</artifactId>
               <version>${commons.vfs.version}</version>
@@ -751,7 +816,7 @@
    <modules>
       <module>modules/securevault</module>
       <module>modules/commons</module>
-      <!--<module>modules/transports</module>-->
+      <module>modules/transports</module>
       <!--<module>modules/tasks</module>-->
       <!--<module>modules/core</module>-->
       <!--<module>modules/extensions</module>-->
@@ -767,6 +832,11 @@
       <!--<module>modules/packaging/package-archetype</module>-->
    </modules>
    <properties>
+      <qfj.version>1.5.3</qfj.version>
+      <org.bouncycastle.version>1.46</org.bouncycastle.version>
+      <hc.httpcore.version>4.3.3</hc.httpcore.version>
+      <hc.httpclient.version>4.3.6</hc.httpclient.version>
+      <aspectj.version>1.6.1</aspectj.version>
       <spring.version>1.2.8</spring.version>
       <staxon.version>1.2.0.wso2v2</staxon.version>
       <commons-codec.version>1.2</commons-codec.version>

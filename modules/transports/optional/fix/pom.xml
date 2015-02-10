@@ -104,7 +104,6 @@
         <dependency>
             <groupId>quickfixj</groupId>
             <artifactId>quickfixj-all</artifactId>
-            <version>${qfj.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
@@ -113,8 +112,6 @@
         </dependency>
     </dependencies>
 
-    <properties>
-        <qfj.version>1.5.3</qfj.version>
-    </properties>
+    <properties/>
 
 </project>
