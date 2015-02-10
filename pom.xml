@@ -237,6 +237,16 @@
    <dependencyManagement>
       <dependencies>
           <dependency>
+              <groupId>org.apache.synapse</groupId>
+              <artifactId>synapse-experimental</artifactId>
+              <version>${project.version}</version>
+          </dependency>
+          <dependency>
+              <groupId>org.apache.synapse</groupId>
+              <artifactId>synapse-patches</artifactId>
+              <version>${project.version}</version>
+          </dependency>
+          <dependency>
               <groupId>org.apache.geronimo.specs</groupId>
               <artifactId>geronimo-jms_1.1_spec</artifactId>
               <version>${jms-1.1-spec.version}</version>
@@ -911,14 +921,14 @@
       <module>modules/extensions</module>
       <module>modules/samples</module>
       <module>modules/patches</module>
-      <!--<module>modules/war</module>-->
-      <!--<module>modules/handler</module>-->
+      <module>modules/war</module>
+      <module>modules/handler</module>
       <!--<module>modules/xar-maven-plugin</module>-->
-      <!--<module>modules/experimental</module>-->
+      <module>modules/experimental</module>
       <!--<module>modules/migrator</module>-->
       <!--<module>modules/distribution</module>-->
       <!--<module>modules/packaging/package-skeleton</module>-->
-      <!--<module>modules/packaging/package-archetype</module>-->
+      <module>modules/packaging/package-archetype</module>
    </modules>
    <properties>
       <com.google.code.gson.version>2.1</com.google.code.gson.version>

@@ -38,17 +38,14 @@
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-extensions</artifactId>
-            <version>${pom.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-samples</artifactId>
-            <version>${pom.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-experimental</artifactId>
-            <version>${pom.version}</version>
         </dependency>
         
         <!-- Because of a design flaw in Axis2 (see AXIS2-4265), axis2-codegen is required
@@ -76,7 +73,6 @@
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-patches</artifactId>
-            <version>${pom.version}</version>
         </dependency>
     </dependencies>
 
