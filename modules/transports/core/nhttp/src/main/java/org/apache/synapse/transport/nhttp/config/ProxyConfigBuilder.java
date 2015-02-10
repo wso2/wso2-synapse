@@ -43,6 +43,14 @@ public class ProxyConfigBuilder {
     private String[] proxyBypass;
     private String name;
 
+    private static final QName Q_PROFILE = new QName("profile");
+    private static final QName Q_TARGET_HOSTS = new QName("targetHosts");
+    private static final QName Q_PROXY_HOST = new QName("proxyHost");
+    private static final QName Q_PROXY_PORT = new QName("proxyPort");
+    private static final QName Q_PROXY_USER = new QName("proxyUserName");
+    private static final QName Q_PROXY_PASSWORD = new QName("proxyPassword");
+    private static final QName Q_BYPASS = new QName("bypass");
+
     private static final Log log = LogFactory.getLog(ProxyConfigBuilder.class);
 
     /**
@@ -145,16 +153,13 @@ public class ProxyConfigBuilder {
             log.debug(name + " Loading proxy profiles for the HTTP/S sender");
         }
 
-        QName profileQName = new QName("profile");
-        QName targetHostsQName = new QName("targetHosts");
-
         OMElement proxyProfilesParamEle = proxyProfilesParam.getParameterElement();
-        Iterator<?> profiles = proxyProfilesParamEle.getChildrenWithName(profileQName);
+        Iterator<?> profiles = proxyProfilesParamEle.getChildrenWithName(Q_PROFILE);
         Map<String, ProxyProfileConfig> proxyProfileMap = new HashMap<String, ProxyProfileConfig>();
 
         while (profiles.hasNext()) {
             OMElement profile = (OMElement) profiles.next();
-            OMElement targetHostsEle = profile.getFirstChildWithName(targetHostsQName);
+            OMElement targetHostsEle = profile.getFirstChildWithName(Q_TARGET_HOSTS);
             if (targetHostsEle == null || targetHostsEle.getText() == null) {
                 String msg = "Each proxy profile must define at least one host " +
                         "or a wildcard matcher under the targetHosts element";
@@ -200,12 +205,10 @@ public class ProxyConfigBuilder {
     private HttpHost getHttpProxy(OMElement profile, String targetHosts) throws AxisFault {
         String proxyHost;
         String proxyPortStr;
-        QName proxyHostQName = new QName("proxyHost");
-        QName proxyPortQName = new QName("proxyPort");
-        OMElement proxyHostEle = profile.getFirstChildWithName(proxyHostQName);
+        OMElement proxyHostEle = profile.getFirstChildWithName(Q_PROXY_HOST);
         if (proxyHostEle != null) {
             proxyHost = proxyHostEle.getText();
-            OMElement proxyPortEle = profile.getFirstChildWithName(proxyPortQName);
+            OMElement proxyPortEle = profile.getFirstChildWithName(Q_PROXY_PORT);
             if (proxyPortEle != null) {
                 proxyPortStr = proxyPortEle.getText();
             } else {
@@ -226,13 +229,10 @@ public class ProxyConfigBuilder {
      */
     private UsernamePasswordCredentials getUsernamePasswordCredentials(OMElement profile) {
         UsernamePasswordCredentials proxyCredentials = null;
-        QName proxyUserQName = new QName("proxyUserName");
-        QName proxyPasswordQName = new QName("proxyPassword");
-
-        OMElement proxyUserNameEle = profile.getFirstChildWithName(proxyUserQName);
+        OMElement proxyUserNameEle = profile.getFirstChildWithName(Q_PROXY_USER);
         if (proxyUserNameEle != null) {
             String proxyUserName = proxyUserNameEle.getText();
-            OMElement proxyPasswordEle = profile.getFirstChildWithName(proxyPasswordQName);
+            OMElement proxyPasswordEle = profile.getFirstChildWithName(Q_PROXY_PASSWORD);
             String proxyPassword = proxyPasswordEle != null ? proxyPasswordEle.getText() : "";
             proxyCredentials = new UsernamePasswordCredentials(proxyUserName,
                     proxyPassword != null ? proxyPassword : "");
@@ -247,8 +247,7 @@ public class ProxyConfigBuilder {
      */
     private Set<String> getProxyBypass(OMElement profile) {
         Set<String> bypassSet = new HashSet<String>();
-        QName bypassQName = new QName("bypass");
-        OMElement bypassEle = profile.getFirstChildWithName(bypassQName);
+        OMElement bypassEle = profile.getFirstChildWithName(Q_BYPASS);
         if (bypassEle != null && !bypassEle.getText().equals("")) {
             String[] bypassHosts = bypassEle.getText().split(",");
 
