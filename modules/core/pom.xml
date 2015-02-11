@@ -33,7 +33,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.0</version>
 				<executions>
 					<execution>
 						<id>copy</id>
@@ -46,7 +45,6 @@
 								<artifactItem>
 									<groupId>org.apache.axis2</groupId>
 									<artifactId>addressing</artifactId>
-									<version>${addressing.version}</version>
 									<type>mar</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>target/test_repos/synapse/modules</outputDirectory>
@@ -60,7 +58,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.1</version>
 				<executions>
 					<execution>
 						<id>create_repo</id>
@@ -84,7 +81,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.3</version>
 				<configuration>
 					<systemProperties>
 						<property>
@@ -106,7 +102,6 @@
 			<plugin>
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr3-maven-plugin</artifactId>
-				<version>3.4</version>
 				<executions>
 					<execution>
 						<goals>
@@ -133,7 +128,6 @@
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
-				<version>1.4.0</version>
 				<extensions>true</extensions>
 				<configuration>
 					<instructions>
@@ -164,10 +158,10 @@
 							javax.xml.namespace;
 							version=0.0.0,
 							!javax.xml.soap,
-							javax.xml.soap; version=1.0.0,
+							javax.xml.soap; version=${javax.xml.soap.version},
 							!org.apache.commons.io,
 							org.apache.commons.io; version=0.0.0,
-							org.quartz.*;version="2.1.1",
+							org.quartz.*;version="${quartz.version}",
 							*;resolution:=optional,
                         </Import-Package>
 						<DynamicImport-Package>*</DynamicImport-Package>

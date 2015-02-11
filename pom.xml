@@ -157,81 +157,133 @@
       </extensions>
       <pluginManagement>
          <plugins>
-            <plugin>
-               <artifactId>maven-clean-plugin</artifactId>
-               <version>2.2</version>
-            </plugin>
-            <plugin>
-               <artifactId>maven-resources-plugin</artifactId>
-               <version>2.2</version>
-            </plugin>
-            <plugin>
-               <artifactId>maven-site-plugin</artifactId>
-               <version>2.0-beta-6</version>
-            </plugin>
+             <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>2.2</version>
+             </plugin>
+             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.2</version>
+             </plugin>
+             <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>2.0-beta-6</version>
+             </plugin>
+
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-surefire-plugin</artifactId>
+                 <version>2.2</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-assembly-plugin</artifactId>
+                 <version>2.2-beta-2</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.felix</groupId>
+                 <artifactId>maven-bundle-plugin</artifactId>
+                 <version>1.4.0</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-dependency-plugin</artifactId>
+                 <version>2.0</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.antlr</groupId>
+                 <artifactId>antlr3-maven-plugin</artifactId>
+                 <version>3.4</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-antrun-plugin</artifactId>
+                 <version>1.1</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-war-plugin</artifactId>
+                 <version>2.1-alpha-2</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.codehaus.mojo</groupId>
+                 <artifactId>build-helper-maven-plugin</artifactId>
+                 <version>1.0</version>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.archetype</groupId>
+                 <artifactId>archetype-packaging</artifactId>
+                 <version>2.0-alpha-4</version>
+             </plugin>
+             <plugin>
+                 <artifactId>maven-archetype-plugin</artifactId>
+                 <version>2.0-alpha-4</version>
+             </plugin>
+
+             <plugin>
+                 <groupId>org.jvnet.maven.incrementalbuild</groupId>
+                 <artifactId>incremental-build-plugin</artifactId>
+                 <version>1.3</version>
+                 <executions>
+                     <execution>
+                         <goals>
+                             <goal>incremental-build</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-compiler-plugin</artifactId>
+                 <version>2.0</version>
+                 <configuration>
+                     <source>1.5</source>
+                     <target>1.6</target>
+                 </configuration>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-surefire-plugin</artifactId>
+                 <version>2.3</version>
+                 <configuration>
+                     <argLine>-Xms128m -Xmx256m</argLine>
+                 </configuration>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-jar-plugin</artifactId>
+                 <version>2.1</version>
+                 <configuration>
+                     <archive>
+                         <manifestEntries>
+                             <Extension-Name>${pom.groupId}</Extension-Name>
+                             <Specification-Title>${pom.artifactId}</Specification-Title>
+                             <Specification-Vendor>Apache Software Foundation</Specification-Vendor>
+                             <Specification-Version>${pom.version}</Specification-Version>
+                             <Implementation-Title>Apache Synapse</Implementation-Title>
+                             <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
+                             <Implementation-Vendor>Apache Software Foundation</Implementation-Vendor>
+                             <Implementation-Version>${pom.version}</Implementation-Version>
+                         </manifestEntries>
+                     </archive>
+                 </configuration>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-release-plugin</artifactId>
+                 <configuration>
+                     <preparationGoals>clean install</preparationGoals>
+                     <autoVersionSubmodules>true</autoVersionSubmodules>
+                 </configuration>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-deploy-plugin</artifactId>
+             </plugin>
          </plugins>
       </pluginManagement>
       <plugins>
-         <plugin>
-            <groupId>org.jvnet.maven.incrementalbuild</groupId>
-            <artifactId>incremental-build-plugin</artifactId>
-            <version>1.3</version>
-            <executions>
-               <execution>
-                  <goals>
-                     <goal>incremental-build</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <version>2.0</version>
-            <configuration>
-               <source>1.5</source>
-               <target>1.6</target>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.3</version>
-            <configuration>
-               <argLine>-Xms128m -Xmx256m</argLine>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-jar-plugin</artifactId>
-            <version>2.1</version>
-            <configuration>
-               <archive>
-                  <manifestEntries>
-                     <Extension-Name>${pom.groupId}</Extension-Name>
-                     <Specification-Title>${pom.artifactId}</Specification-Title>
-                     <Specification-Vendor>Apache Software Foundation</Specification-Vendor>
-                     <Specification-Version>${pom.version}</Specification-Version>
-                     <Implementation-Title>Apache Synapse</Implementation-Title>
-                     <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
-                     <Implementation-Vendor>Apache Software Foundation</Implementation-Vendor>
-                     <Implementation-Version>${pom.version}</Implementation-Version>
-                  </manifestEntries>
-               </archive>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-release-plugin</artifactId>
-            <configuration>
-               <preparationGoals>clean install</preparationGoals>
-               <autoVersionSubmodules>true</autoVersionSubmodules>
-            </configuration>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-deploy-plugin</artifactId>
-         </plugin>
+
       </plugins>
    </build>
    <dependencyManagement>
@@ -878,6 +930,7 @@
       <module>modules/packaging/package-archetype</module>
    </modules>
    <properties>
+      <javax.xml.soap.version>1.0.0</javax.xml.soap.version>
       <maven.version>2.0.7</maven.version>
       <com.oopsconsultancy.version>1.14</com.oopsconsultancy.version>
       <maven.artifact.version>2.0.8</maven.artifact.version>
