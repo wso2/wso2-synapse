@@ -391,6 +391,32 @@ public class ServerHandler implements NHttpServerEventHandler {
     public void commitResponse(final NHttpServerConnection conn,
         final HttpResponse response) throws IOException, HttpException {
         try {
+            BasicHttpEntity entity = (BasicHttpEntity) response.getEntity();
+            Header[] headers = response.getAllHeaders();
+            int contentLength = -1;
+            if (canResponseHaveBody(response)) {
+                if (entity == null) {
+                    entity = new BasicHttpEntity();
+                }
+                for (Header header : headers) {
+                    if (header.getName().equals(HTTP.CONTENT_LEN) && Integer.parseInt(header.getValue()) > 0) {
+                        contentLength = Integer.parseInt(header.getValue());
+                        response.removeHeader(header);
+                    }
+                }
+                if (contentLength != -1) {
+                    entity.setChunked(false);
+                    entity.setContentLength(contentLength);
+                } else {
+                    entity.setChunked(true);
+                }
+            } else {
+                if (entity != null) {
+                    entity.setChunked(false);
+                    entity.setContentLength(contentLength);
+                }
+            }
+            response.setEntity(entity);
             conn.suspendInput();
             HttpContext context = conn.getContext();
             httpProcessor.process(response, context);
@@ -715,5 +741,13 @@ public class ServerHandler implements NHttpServerEventHandler {
                 executor.destroy();
             }
         } catch (InterruptedException ignore) {}
+    }
+
+    private boolean canResponseHaveBody(final HttpResponse response) {
+        int status = response.getStatusLine().getStatusCode();
+        return status >= HttpStatus.SC_OK
+               && status != HttpStatus.SC_NO_CONTENT
+               && status != HttpStatus.SC_NOT_MODIFIED
+               && status != HttpStatus.SC_RESET_CONTENT;
     }
 }
