@@ -36,29 +36,24 @@
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-extensions</artifactId>
-            <version>${pom.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-samples</artifactId>
-            <version>${pom.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-experimental</artifactId>
-            <version>${pom.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-config-migrator</artifactId>
-            <version>${pom.version}</version>
         </dependency>
 
         <!-- Wrapper jars -->
         <dependency>
             <groupId>wrapper</groupId>
             <artifactId>wrapper</artifactId>
-            <version>${wrapper.version}</version>
         </dependency>
 
         <!-- The distribution is configured for log4j. Normally, log4j should not
@@ -72,7 +67,6 @@
         <dependency>
             <groupId>org.apache.rampart</groupId>
             <artifactId>rampart</artifactId>
-            <version>${rampart.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.woden</groupId>
@@ -88,7 +82,6 @@
         <dependency>
             <groupId>org.apache.sandesha2</groupId>
             <artifactId>sandesha2</artifactId>
-            <version>${sandesha2.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.axis2</groupId>
@@ -100,7 +93,6 @@
         <dependency>
             <groupId>org.apache.axis2</groupId>
             <artifactId>addressing</artifactId>
-            <version>${addressing.version}</version>
             <type>mar</type>
             <exclusions>
                 <exclusion>
@@ -138,14 +130,12 @@
         <dependency>
             <groupId>com.oopsconsultancy</groupId>
             <artifactId>xmltask</artifactId>
-            <version>1.14</version>
         </dependency>
         
         <!-- Patches -->
         <dependency>
             <groupId>org.apache.synapse</groupId>
             <artifactId>synapse-patches</artifactId>
-            <version>${pom.version}</version>
             <classifier>jars</classifier>
             <type>zip</type>
         </dependency>
@@ -171,7 +161,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2-beta-2</version>
                 <executions>
                     <execution>
                         <id>distribution-package</id>

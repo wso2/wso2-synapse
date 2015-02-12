@@ -38,7 +38,6 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
-                <version>1.4.0</version>
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
@@ -63,7 +62,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.0</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -87,7 +85,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.3</version>
                 <configuration>
                     <systemProperties>
                         <property>
@@ -112,7 +109,6 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-assembly-plugin</artifactId>
-                        <version>2.2-beta-2</version>
                         <configuration>
                             <descriptors>
                                 <descriptor>src/main/assembly/testkit-logs.xml</descriptor>
@@ -134,49 +130,42 @@
     </profiles>
 
     <dependencies>
-
-
-
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>${hc.httpcore.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore-nio</artifactId>
-            <version>${hc.httpcore.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${hc.httpclient.version}</version>
         </dependency>
-
-
-
-
         <!-- The HTTP NIO transport depends on a few methods from the blocking HTTP transport,
              so we need to add this as an explicit dependency. -->
         <dependency>
             <groupId>org.apache.axis2</groupId>
             <artifactId>axis2-transport-http</artifactId>
         </dependency>
-
         <!-- BouncyCastle Api which needs when validating Certificates. -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk16</artifactId>
-            <version>1.46</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.wso2.caching</groupId>
+            <artifactId>wso2caching-core</artifactId>
+            <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
-    <properties>
-        <hc.httpcore.version>4.3.3</hc.httpcore.version>
-        <hc.httpclient.version>4.3.6</hc.httpclient.version>
-
-    </properties>
-
+    <properties/>
 
 </project>
