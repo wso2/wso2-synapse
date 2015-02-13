@@ -47,15 +47,14 @@ public class RecipeMessageExecutor implements Task, ManagedLifecycle {
         invoker = new InvokeMediator();
         invoker.setTargetTemplate(recipeKey);
         buildParameters(recipeParams);
-        if (se.getSynapseConfiguration().getSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode()) == null) {
-            seqMed = new SequenceMediator();
-            seqMed.setName(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
-            seqMed.addChild(invoker);
-            se.getSynapseConfiguration().addSequence(seqMed.getName(), seqMed);
-        } else {
-            seqMed = (SequenceMediator) se.getSynapseConfiguration().getSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
+        // Remove if there's a sequence already exists
+        if (se.getSynapseConfiguration().getSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode()) != null) {
+            se.getSynapseConfiguration().removeSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
         }
-
+        seqMed = new SequenceMediator();
+        seqMed.setName(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
+        seqMed.addChild(invoker);
+        se.getSynapseConfiguration().addSequence(seqMed.getName(), seqMed);
     }
 
     public void destroy() {
