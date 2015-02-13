@@ -77,16 +77,6 @@ public class EndpointDefinitionSerializer {
             element.addChild(addressing);
         }
 
-        if (endpointDefinition.isReliableMessagingOn()) {
-            OMElement rm = fac.createOMElement("enableRM", SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-            if (endpointDefinition.getWsRMPolicyKey() != null) {
-                rm.addAttribute(fac.createOMAttribute(
-                        "policy", null, endpointDefinition.getWsRMPolicyKey()));
-            }
-            element.addChild(rm);
-        }
-
         if (endpointDefinition.isSecurityOn()) {
             OMElement sec = fac.createOMElement("enableSec", SynapseConstants.SYNAPSE_OMNAMESPACE);
 
