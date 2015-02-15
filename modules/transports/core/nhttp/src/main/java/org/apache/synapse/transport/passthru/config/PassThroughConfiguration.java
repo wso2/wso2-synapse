@@ -285,5 +285,4 @@ public class PassThroughConfiguration {
         return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false);
     }
 
-
 }
