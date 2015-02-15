@@ -86,4 +86,8 @@ public interface PassThroughConfigPNames {
      * Defines whether Listening IOReactor is shared among non axis2 Listeners
      */
     public String HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE ="http_listening_io_reactor_sharing_enable";
+    /**
+     * Defines Whether WS-Addressing validation is enables in published wsdl in proxy service
+     */
+    public String ENABLE_WS_ADDRESSING_VALIDATION ="enable_ws_addressing_validation";
 }

@@ -111,6 +111,10 @@ public class ServerWorker implements Runnable {
                 PassThroughConstants.PASS_THROUGH_SOURCE_CONFIGURATION, sourceConfiguration);
         msgContext.setProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION,
                 request.getConnection());
+
+        if(PassThroughConfiguration.getInstance().isWSAddressingValidatonEndabled()){
+            msgContext.setProperty(PassThroughConstants.ENABLE_WS_ADDRESSING_VALIDATION,true);
+        }
     }
 
     public void run() {
