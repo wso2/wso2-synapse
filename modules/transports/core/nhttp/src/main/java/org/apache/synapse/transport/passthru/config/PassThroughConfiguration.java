@@ -285,7 +285,5 @@ public class PassThroughConfiguration {
         return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false);
     }
 
-    public boolean isWSAddressingValidatonEndabled(){
-        return  getBooleanProperty(PassThroughConfigPNames.ENABLE_WS_ADDRESSING_VALIDATION,false);
-    }
+
 }
