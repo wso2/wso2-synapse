@@ -22,6 +22,7 @@ package org.apache.synapse.startup.tasks;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -34,7 +35,6 @@ import java.util.Iterator;
 
 public class TemplateMessageExecutor implements Task, ManagedLifecycle {
 
-    private static final String TEMPLATE_SEQUENCE = "_Template_Sequence";
     private SynapseEnvironment synapseEnvironment;
     private SequenceMediator seqMed;
     private String templateKey;
@@ -48,11 +48,11 @@ public class TemplateMessageExecutor implements Task, ManagedLifecycle {
         invoker.setTargetTemplate(templateKey);
         buildParameters(templateParams);
         // Remove if there's a sequence already exists
-        if (se.getSynapseConfiguration().getSequence(TEMPLATE_SEQUENCE + "_" + templateKey.hashCode()) != null) {
-            se.getSynapseConfiguration().removeSequence(TEMPLATE_SEQUENCE + "_" + templateKey.hashCode());
+        if (se.getSynapseConfiguration().getSequence(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY + templateKey.hashCode()) != null) {
+            se.getSynapseConfiguration().removeSequence(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY + templateKey.hashCode());
         }
         seqMed = new SequenceMediator();
-        seqMed.setName(TEMPLATE_SEQUENCE + "_" + templateKey.hashCode());
+        seqMed.setName(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY + templateKey.hashCode());
         seqMed.addChild(invoker);
         se.getSynapseConfiguration().addSequence(seqMed.getName(), seqMed);
     }
