@@ -57,6 +57,7 @@ public final class SynapseConstants {
 
     //- names of modules to be engaged at runtime -
     /** The Name of the WS-RM module */
+    @Deprecated
     public static final String RM_MODULE_NAME = "sandesha2";
     /** The Name of the WS-A Addressing module */
     public static final String ADDRESSING_MODULE_NAME = "addressing";
@@ -483,5 +484,8 @@ public final class SynapseConstants {
     //Inbound endpoint
     public static final String IS_INBOUND = "isInbound";
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
+
+    //Sandesha
+    public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 
 }

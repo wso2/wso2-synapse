@@ -80,17 +80,6 @@
             <type>mar</type>
         </dependency>
         <dependency>
-            <groupId>org.apache.sandesha2</groupId>
-            <artifactId>sandesha2</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.axis2</groupId>
-                    <artifactId>axis2</artifactId>
-                </exclusion>
-            </exclusions>
-            <type>mar</type>
-        </dependency>
-        <dependency>
             <groupId>org.apache.axis2</groupId>
             <artifactId>addressing</artifactId>
             <type>mar</type>

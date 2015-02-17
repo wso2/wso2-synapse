@@ -34,7 +34,6 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
-import org.apache.sandesha2.client.SandeshaClientConstants;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
@@ -148,7 +147,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     messageID = relatesTo.getValue();
                 }
             }
-        } else if (messageCtx.getProperty(SandeshaClientConstants.SEQUENCE_KEY) == null) {
+        } else if (messageCtx.getProperty(SynapseConstants.SANDESHA2_SEQUENCE_KEY) == null) {
             messageID = (String) messageCtx.getProperty(SynapseConstants.RELATES_TO_FOR_POX);
         }
 
