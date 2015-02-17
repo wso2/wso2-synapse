@@ -42,7 +42,6 @@ import java.util.Properties;
  *            [statistics="enable|disable"] [trace="enable|disable"]&gt;
  *     .. extensibility ..
  *
- *     &lt;enableRM [policy="<em>key</em>"]/&gt;?
  *     &lt;enableSec [policy="<em>key</em>"]/&gt;?
  *     &lt;enableAddressing [version="final|submission"] [separateListener="true|false"]/&gt;?
  *
