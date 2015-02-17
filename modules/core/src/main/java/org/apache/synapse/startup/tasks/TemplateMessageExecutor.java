@@ -32,27 +32,27 @@ import org.apache.synapse.task.Task;
 
 import java.util.Iterator;
 
-public class RecipeMessageExecutor implements Task, ManagedLifecycle {
+public class TemplateMessageExecutor implements Task, ManagedLifecycle {
 
-    private static final String RECIPE_SEQUENCE = "_Recipe_Sequence";
+    private static final String TEMPLATE_SEQUENCE = "_Template_Sequence";
     private SynapseEnvironment synapseEnvironment;
     private SequenceMediator seqMed;
-    private String recipeKey;
-    private OMElement recipeParams;
+    private String templateKey;
+    private OMElement templateParams;
     private InvokeMediator invoker;
 
     public void init(SynapseEnvironment se) {
         //Initialize the template and populate the parameters
         synapseEnvironment = se;
         invoker = new InvokeMediator();
-        invoker.setTargetTemplate(recipeKey);
-        buildParameters(recipeParams);
+        invoker.setTargetTemplate(templateKey);
+        buildParameters(templateParams);
         // Remove if there's a sequence already exists
-        if (se.getSynapseConfiguration().getSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode()) != null) {
-            se.getSynapseConfiguration().removeSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
+        if (se.getSynapseConfiguration().getSequence(TEMPLATE_SEQUENCE + "_" + templateKey.hashCode()) != null) {
+            se.getSynapseConfiguration().removeSequence(TEMPLATE_SEQUENCE + "_" + templateKey.hashCode());
         }
         seqMed = new SequenceMediator();
-        seqMed.setName(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
+        seqMed.setName(TEMPLATE_SEQUENCE + "_" + templateKey.hashCode());
         seqMed.addChild(invoker);
         se.getSynapseConfiguration().addSequence(seqMed.getName(), seqMed);
     }
@@ -68,21 +68,21 @@ public class RecipeMessageExecutor implements Task, ManagedLifecycle {
         synapseEnvironment.injectAsync(mc, seqMed);
     }
 
-    public String getRecipeKey() {
-        return recipeKey;
+    public String getTemplateKey() {
+        return templateKey;
     }
 
-    public void setRecipeKey(String recipeKey) {
-        this.recipeKey = recipeKey;
+    public void setTemplateKey(String templateKey) {
+        this.templateKey = templateKey;
     }
 
 
-    public OMElement getRecipeParams() {
-        return recipeParams;
+    public OMElement getTemplateParams() {
+        return templateParams;
     }
 
-    public void setRecipeParams(OMElement recipeParams) {
-        this.recipeParams = recipeParams;
+    public void setTemplateParams(OMElement templateParams) {
+        this.templateParams = templateParams;
     }
 
     private void buildParameters(OMElement elem) {

@@ -297,7 +297,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             for (Object o : localRegistry.values()) {
                 if (o instanceof SequenceMediator) {
                     SequenceMediator seq = (SequenceMediator) o;
-                    if(!seq.getName().startsWith("_Recipe_Sequence_")) {
+                    if(!seq.getName().startsWith("_Template_Sequence_")) {
                     definedSequences.put(seq.getName(), seq);
                     }
                 }
