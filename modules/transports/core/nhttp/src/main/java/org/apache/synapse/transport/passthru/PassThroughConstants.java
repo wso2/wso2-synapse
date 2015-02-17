@@ -153,4 +153,7 @@ public class PassThroughConstants {
 
     public static final String HTTP_CONTENT_TYPE = "Content-type";
     public static final String HTTP_CONTENT_LENGTH = "Content-Length";
+
+    public static final String HTTP_ETAG_ENABLED = "HTTP_ETAG";
+
 }

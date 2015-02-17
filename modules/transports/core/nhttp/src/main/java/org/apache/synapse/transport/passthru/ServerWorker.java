@@ -660,4 +660,12 @@ public class ServerWorker implements Runnable {
         }
     }
 
+    /**
+     * Get the shared pass-through source configuration
+     * @return source configuration
+     */
+    public SourceConfiguration getSourceConfiguration() {
+        return sourceConfiguration;
+    }
+
 }

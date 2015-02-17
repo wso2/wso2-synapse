@@ -460,4 +460,14 @@ public class PassThroughListeningIOReactorManager {
         }
         return listeningIOReactor;
     }
+
+    /**
+     * Check whether dynamic endpoint is running for a particular port
+     *
+     * @param port port
+     * @return whether dynamic endpoint is running for a particular port
+     */
+    public boolean isDynamicEndpointRunning(int port) {
+        return dynamicPTTListeningEndpointMapper.get(port) != null ? true : false;
+    }
 }
