@@ -285,7 +285,9 @@ public class ProxyConfig {
      * @throws AxisFault
      */
     public ProxyAuthenticator createProxyAuthenticator() throws AxisFault {
-        if (!isProxyHasCredential()) return null;
+        if (!isProxyHasCredential()) {
+            return null;
+        }
 
         ProxyAuthenticator proxyAuthenticator;
 

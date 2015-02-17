@@ -160,7 +160,7 @@ public class ProxyConfigBuilder {
         while (profiles.hasNext()) {
             OMElement profile = (OMElement) profiles.next();
             OMElement targetHostsEle = profile.getFirstChildWithName(Q_TARGET_HOSTS);
-            if (targetHostsEle == null || targetHostsEle.getText() == null) {
+            if (targetHostsEle == null || targetHostsEle.getText().isEmpty()) {
                 String msg = "Each proxy profile must define at least one host " +
                         "or a wildcard matcher under the targetHosts element";
                 log.error(name + " " + msg);
@@ -248,7 +248,7 @@ public class ProxyConfigBuilder {
     private Set<String> getProxyBypass(OMElement profile) {
         Set<String> bypassSet = new HashSet<String>();
         OMElement bypassEle = profile.getFirstChildWithName(Q_BYPASS);
-        if (bypassEle != null && !bypassEle.getText().equals("")) {
+        if (bypassEle != null && !bypassEle.getText().isEmpty()) {
             String[] bypassHosts = bypassEle.getText().split(",");
 
             for (String bypassHost : bypassHosts) {
