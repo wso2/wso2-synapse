@@ -301,7 +301,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             } else {
                 synLog.traceOrDebug("Unable to find aggrgation correlation XPath or property");
                 if(CollectorEnabler.checkCollectorRequired()){
-                synCtx.setCurrent(current.getParent());
+                   synCtx.setCurrent(current.getParent());
                 }
                 return true;
             }
@@ -326,7 +326,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 if (aggregate.isComplete(synLog)) {
                     synLog.traceOrDebug("Aggregation completed - invoking onComplete");
                     boolean onCompleteSeqResult = completeAggregate(aggregate);
-                    
 					if (CollectorEnabler.checkCollectorRequired()) {
 						current = synCtx.getCurrent();
 						MediatorData.setEndingTime(current);
@@ -393,7 +392,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      	if (CollectorEnabler.checkCollectorRequired()) {
 	        MediatorData.setEndingTime(current);
 	        synCtx.setCurrent(current.getParent());
-	     	}
+	    }
 
         return result;
     }
@@ -430,7 +429,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         
         MessageContext newSynCtx = getAggregatedMessage(aggregate);
         if (CollectorEnabler.checkCollectorRequired()) {
-        			newSynCtx.setCurrent(current);
+        	newSynCtx.setCurrent(current);
         }
 
         if (newSynCtx == null) {
@@ -475,7 +474,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 && newSynCtx.getSequence(onCompleteSequenceRef) != null) {
 
                 ContinuationStackManager.updateSeqContinuationState(newSynCtx, getMediatorPosition());
-
         		if (CollectorEnabler.checkCollectorRequired()) {
         			current=newSynCtx.getCurrent();
         		}

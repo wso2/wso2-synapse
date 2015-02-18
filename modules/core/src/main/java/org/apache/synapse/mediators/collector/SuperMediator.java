@@ -9,7 +9,6 @@ import org.apache.synapse.MessageContext;
 
 /**
  * This class is used to keep per mediator data
- * 
  */
 public class SuperMediator {
 
@@ -53,7 +52,7 @@ public class SuperMediator {
 	/**
 	 * This method will generate a deepcopy of the existing data fields while
 	 * creating a clone
-	 * 
+	 *
 	 * @param other the mediator of which's data that are subjected to be cloned
 	 */
 	public void copy(SuperMediator other) {
@@ -164,18 +163,19 @@ public class SuperMediator {
 	}
 
 	public String printData() {
-		String a = "Name        : " + mediatorName + "\n";
-		String b = "Type        : " + type + "\n";
-		String c = "MsgID       : " + msgID + "\n";
-		String d = "Success     : " + success + "\n";
-		String e = "Start Time  : " + startTime + "\n";
-		String f = "End Time    : " + endTime + "\n";
-		String g = "Proxy/API   : " + serviceName + "\n";
-		String h = "Mediator id : " + id + "\n";
-		String i = "envelop     : " + envelop + "\n";
-		String j = "Root Name   : " + rootType + "\n";
-		String k = "Resp/Req    : " + req_resp + "\n";
-		return a + b + c + d + e + f + g + h + i + j + k;
+		String dataName = "Name        : " + mediatorName + "\n";
+		String dataType = "Type        : " + type + "\n";
+		String dataMsgId = "MsgID       : " + msgID + "\n";
+		String dataSucess = "Success     : " + success + "\n";
+		String dataStart = "Start Time  : " + startTime + "\n";
+		String dataEnd = "End Time    : " + endTime + "\n";
+		String dataProxy = "Proxy/API   : " + serviceName + "\n";
+		String dataId = "Mediator id : " + id + "\n";
+		String dataEnv = "envelop     : " + envelop + "\n";
+		String dataRoot = "Root Name   : " + rootType + "\n";
+		String dataResp = "Resp/Req    : " + req_resp + "\n";
+		return dataName + dataType + dataMsgId + dataSucess + dataStart + dataEnd + dataProxy + dataId + dataEnv +
+		       dataRoot + dataResp;
 
 	}
 

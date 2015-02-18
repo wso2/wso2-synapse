@@ -35,7 +35,6 @@ public class RespondMediator extends AbstractMediator{
 
         	MediatorData.toTheList((TreeNode) synCtx
         			.getProperty("NonFaultRoot"));
-
         }
         return false;
     }

@@ -45,7 +45,6 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
-
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
@@ -109,6 +108,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      * Holds the reference to the node that contains data of the currently executing parent mediator
      */
     private TreeNode current;
+
     /**
      * The SchemaFactory used to create new schema instances.
      */
@@ -119,16 +119,13 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
     public boolean mediate(MessageContext synCtx) {
 
         SynapseLog synLog = getLog(synCtx);
-
         if (CollectorEnabler.checkCollectorRequired()) {
-    	 current=MediatorData.createNewMediator(synCtx, this);
+	        current=MediatorData.createNewMediator(synCtx, this);
         }
-
         synLog.traceOrDebug("Start : Validate mediator");
         if (synLog.isTraceTraceEnabled()) {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
-
         // Input source for the validation
         Source validateSrc = getValidationSource(synCtx, synLog);
 
@@ -254,12 +251,10 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 + source + " succeeded against the given schemas and the current message");
             synLog.traceOrDebug("End : Validate mediator");
         }
-
         if (CollectorEnabler.checkCollectorRequired()) {
               MediatorData.setEndingTime(current);
               synCtx.setCurrent(current.getParent());
         }
-
         return true;
     }
 
@@ -267,7 +262,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                            ContinuationState continuationState) {
 
         SynapseLog synLog = getLog(synCtx);
-
         if (CollectorEnabler.checkCollectorRequired()) {
         	  synCtx.setCurrent(current);
         }
@@ -284,7 +278,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     (FlowContinuableMediator) getChild(continuationState.getPosition());
             result = mediator.mediate(synCtx, continuationState.getChildContState());
         }
-
         if (CollectorEnabler.checkCollectorRequired()) {
         	MediatorData.setEndingTime(current);
         	synCtx.setCurrent(current.getParent());

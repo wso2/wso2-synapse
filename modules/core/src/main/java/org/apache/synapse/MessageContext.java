@@ -125,7 +125,7 @@ public interface MessageContext {
      * @param key
      * @return the format mapped with the key
      */
-public OMElement getFormat(String key);
+	public OMElement getFormat(String key);
 
     /**
      * Return the Sequence Template with the given key from the configuration, or the local message
@@ -439,8 +439,6 @@ public OMElement getFormat(String key);
 	 * @param current returns the current node that conatins details about currently executing mediator
 	 */
 	public void setCurrent(TreeNode current);
-
-
 
 	/**
 	 * @param Root sets the node that contains the details of the initially executing mediator

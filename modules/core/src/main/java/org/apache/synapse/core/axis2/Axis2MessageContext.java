@@ -631,15 +631,15 @@ public class Axis2MessageContext implements MessageContext {
         return mediatorPosition;
     }
     public TreeNode getRoot() {
-	return root;
+		return root;
     }
     public void setRoot(TreeNode root) {
-	this.root = root;
+	    this.root = root;
     }
     public TreeNode getCurrent() {
-	return current;
+	    return current;
     }
     public void setCurrent(TreeNode current) {
-	this.current = current;
+	    this.current = current;
    }
 }

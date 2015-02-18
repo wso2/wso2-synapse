@@ -265,7 +265,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param msgContext the message context
      */
     protected void handleException(String msg, MessageContext msgContext) {
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 			// If an exception is thrown since the execution of the mediators
 			// halt, publish the current tree to the list

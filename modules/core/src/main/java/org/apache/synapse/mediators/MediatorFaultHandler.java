@@ -70,11 +70,9 @@ public class MediatorFaultHandler extends FaultHandler {
      * @see org.apache.synapse.FaultHandler#handleFault(org.apache.synapse.MessageContext)
      */
     public void onFault(MessageContext synCtx) throws SynapseException {
-
-    			if (CollectorEnabler.checkCollectorRequired()) {
-    				 current=synCtx.getCurrent();
-    			}
-
+    	if (CollectorEnabler.checkCollectorRequired()) {
+    		current=synCtx.getCurrent();
+    	}
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
@@ -98,8 +96,6 @@ public class MediatorFaultHandler extends FaultHandler {
      	if (CollectorEnabler.checkCollectorRequired()) {
              synCtx.setCurrent(current);
      	}
-
-
     }
 
     /**

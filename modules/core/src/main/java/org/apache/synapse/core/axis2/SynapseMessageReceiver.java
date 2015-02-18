@@ -30,7 +30,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
-import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.collector.CollectorEnabler;
 
 /**
@@ -46,11 +45,10 @@ public class SynapseMessageReceiver implements MessageReceiver {
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
-
         if(CollectorEnabler.checkCollectorRequired()){
         	//Set the common message id in non-proxy situations
-        synCtx.setProperty("CommonMessageID",mc.getMessageID() );
-     }
+            synCtx.setProperty("CommonMessageID",mc.getMessageID() );
+        }
 
         StatisticsReporter.reportForComponent(synCtx,
                 AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),

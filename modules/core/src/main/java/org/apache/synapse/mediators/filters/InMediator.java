@@ -42,7 +42,6 @@ import org.apache.synapse.mediators.collector.TreeNode;
  */
 public class InMediator extends AbstractListMediator implements org.apache.synapse.mediators.FilterMediator,
                                                                 FlowContinuableMediator {
-
 	private TreeNode current;
     /**
      * Executes the list of sub/child mediators, if the filter condition is satisfied
@@ -51,8 +50,6 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
      * @return true if filter condition fails. else returns as per List mediator semantics
      */
     public boolean mediate(MessageContext synCtx) {
-
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 			current= MediatorData.createNewMediator(synCtx, this);
 		}
@@ -87,16 +84,12 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
 			//Adding this mediator is of no use since its child mediators are not executed. Therefore
 			//change its name and later the change node will be removed from the tree.
 			if(CollectorEnabler.checkCollectorRequired()){
-
 				current.getContents().setMediatorName("Skipped");
 				synCtx.setCurrent(current.getParent());
-
-        }
-
+             }
 		}
 
         synLog.traceOrDebug("End : In mediator");
-
         return result;
     }
 

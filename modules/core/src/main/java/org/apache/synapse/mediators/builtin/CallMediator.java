@@ -62,7 +62,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     private Endpoint endpoint = null;
 
     private SynapseEnvironment synapseEnv;
-    private TreeNode current;
+	private TreeNode current;
     /**
      * This will call the send method on the messages with implicit message parameters
      * or else if there is an endpoint, with that endpoint parameters
@@ -72,7 +72,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      * true for out only invocations
      */
     public boolean mediate(MessageContext synInCtx) {
-
         SynapseLog synLog = getLog(synInCtx);
         if (CollectorEnabler.checkCollectorRequired()) {
         	// Set a property within the synInCtx as a reference to the current node(in order to copy the reference to the synOutCtx)
@@ -97,7 +96,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         } else {
             synOutCtx = synInCtx;
         }
-		if (CollectorEnabler.checkCollectorRequired()) {
+	    if (CollectorEnabler.checkCollectorRequired()) {
 			// Set the root and the current node of the new MessageContext
 			synOutCtx.setProperty("Root", synInCtx.getProperty("Root"));
 			synOutCtx.setCurrent((TreeNode) synOutCtx
@@ -133,10 +132,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (outOnlyMessage) {
             return true;
         }
-        if (CollectorEnabler.checkCollectorRequired()) {
-
-        	current=synInCtx.getCurrent().getLastChild();
-
+	    if (CollectorEnabler.checkCollectorRequired()) {
+			current=synInCtx.getCurrent().getLastChild();
         }
         return false;
     }

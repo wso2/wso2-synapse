@@ -60,10 +60,8 @@ public class DropMediator extends AbstractMediator {
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Drop mediator");
         }
-
 		if (CollectorEnabler.checkCollectorRequired()) {
-
-			collectMediatorData(synCtx.getCurrent(), synCtx);
+			collectMediatorData(synCtx);
 		}
 
         return false;
@@ -74,23 +72,18 @@ public class DropMediator extends AbstractMediator {
         return false;
     }
 
-	public void collectMediatorData(TreeNode current, MessageContext synCtx) {
-
+	public void collectMediatorData(MessageContext synCtx) {
 		// Incase of a drop mediator, if the mediator's immediate parent node is
 		// the root of the tree then publish the existing tree to the list
-
 		try {
 			MediatorData.setEndingTime(synCtx.getCurrent().getLastChild());
-
 			if (synCtx.getCurrent().equals(synCtx.getProperty("Root"))
 					|| synCtx.getCurrent().equals(
 							synCtx.getProperty("NonFaultRoot"))) {
 				MediatorData.toTheList(synCtx.getCurrent());
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 }

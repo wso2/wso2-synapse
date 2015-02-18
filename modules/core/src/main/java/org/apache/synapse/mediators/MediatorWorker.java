@@ -54,11 +54,9 @@ public class MediatorWorker implements Runnable {
     public MediatorWorker(Mediator seq, MessageContext synCtx) {
         this.seq = seq;
         this.synCtx = synCtx;
-
-      if(CollectorEnabler.checkCollectorRequired()){
-    	  current=synCtx.getCurrent();
-    }
-
+		if(CollectorEnabler.checkCollectorRequired()){
+			current=synCtx.getCurrent();
+        }
     }
 
     /**
@@ -79,11 +77,9 @@ public class MediatorWorker implements Runnable {
     public void run() {
         try {
             seq.mediate(synCtx);
-
-        	      if(CollectorEnabler.checkCollectorRequired()){
-        	    	  current.getContents().setEndTime(System.currentTimeMillis());
-        	      }
-
+        	if(CollectorEnabler.checkCollectorRequired()){
+        	    current.getContents().setEndTime(System.currentTimeMillis());
+        	}
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 
         } catch (SynapseException syne) {
@@ -119,11 +115,9 @@ public class MediatorWorker implements Runnable {
         }
         synCtx = null;
         seq = null;
-
-
-        if(CollectorEnabler.checkCollectorRequired())
-        current=null;
-
+        if(CollectorEnabler.checkCollectorRequired()) {
+	        current = null;
+        }
     }
 
     private void warn(boolean traceOn, String msg, MessageContext msgContext) {

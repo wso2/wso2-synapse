@@ -73,8 +73,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     private SequenceType sequenceType = SequenceType.NAMED;
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
-	private SuperMediator a;
-	private TreeNode current;
+ 	private TreeNode current;
 
     /**
      * If this mediator refers to another named Sequence, execute that. Else
@@ -112,10 +111,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 				// If the currently executing mediator is a SequenceMediator it is added to the list as a parent node
 				MediatorData.addNestedMediator(synCtx, this.sequenceType, this);
 				current = synCtx.getCurrent();
-
-
 			}
-
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
@@ -132,7 +128,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 // push the errorHandler sequence into the current message as the fault handler
                 if (errorHandler != null) {
                     errorHandlerMediator = synCtx.getSequence(errorHandler);
-
                     if (errorHandlerMediator != null) {
                         if (synLog.isTraceOrDebugEnabled()) {
                             synLog.traceOrDebug("Setting the onError handler : " +
@@ -145,7 +140,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                                 name + " cannot be found");
                     }
                 }
-
                 // Add a new SeqContinuationState as we branched to new Sequence.
                 if (dynamic && registryKey != null) {
                     ContinuationStackManager.addSeqContinuationState(synCtx, registryKey, sequenceType);
@@ -159,7 +153,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     // if flow completed remove the previously added SeqContinuationState
                     ContinuationStackManager.removeSeqContinuationState(synCtx, sequenceType);
                 }
-
                 // if we pushed an error handler, pop it from the fault stack
                 // before we exit normally without an exception
                 if (errorHandlerMediator != null) {
@@ -205,13 +198,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 						  MediatorData.toTheList(mainRoot);
 
 						  }
-
-
 					}
 					// set the current node as the parent of this node as this
 					// is the end of the mediator
 					synCtx.setCurrent(current.getParent());
-
 				}
                 return result;
 
@@ -255,7 +245,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 return result;
             }
         }
-
         return false;
     }
 
@@ -291,9 +280,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         boolean result;
 
 		if (CollectorEnabler.checkCollectorRequired()) {
-		synCtx.setCurrent(current);
-		synLog.traceOrDebug("********** Printing current node from Continuation State of SequenceMediator:"
-				+ current.getContents().getMediatorName());
+			synCtx.setCurrent(current);
 		}
 
         if (!continuationState.hasChild()) {
@@ -301,13 +288,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         } else {
             // if children exists first mediate from them starting from grandchild.
             do {
-
 				if (CollectorEnabler.checkCollectorRequired()) {
-				synCtx.setCurrent(current);
-				synLog.traceOrDebug("********** FlowContinuable Mediator to be executed from Continuation State of SequenceMediator"
-						+ getChild(continuationState.getPosition()));
+					synCtx.setCurrent(current);
 				}
-
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) getChild(continuationState.getPosition());
                 result = mediator.mediate(synCtx,
@@ -320,13 +303,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
             if (result) {
                 // after mediating from children, mediate from current SeqContinuationState
-
 				if (CollectorEnabler.checkCollectorRequired()) {
-				synCtx.setCurrent(current);
-				synLog.traceOrDebug("********** Printing current node after mediating from children of Continuation State of SequenceMediator:"
-						+ current.getContents().getMediatorName());
+					synCtx.setCurrent(current);
 				}
-
                 result = super.mediate(synCtx, continuationState.getPosition() + 1);
             }
         }
@@ -350,20 +329,15 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
             }
         }
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 		MediatorData.setEndingTime(current);
 		if (result) {
 			if (current.getParent() == null || "".equals(current.getParent())) {
-
 				MediatorData.toTheList(current);
-
 			}
 		}
-
 		synCtx.setCurrent(current.getParent()); // only if proxy_inseq doesn't arrive at this point
-		}
-
+	}
 
         return result;
     }

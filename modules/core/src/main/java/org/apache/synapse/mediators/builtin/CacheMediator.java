@@ -93,7 +93,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
     private static final String CACHE_KEY_PREFIX = "synapse.cache_key_";
 
     private String cacheKey = "synapse.cache_key";
-
 	private TreeNode current;
     public void init(SynapseEnvironment se) {
         if (onCacheHitSequence != null) {
@@ -108,12 +107,9 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
     }
 
     public boolean mediate(MessageContext synCtx) {
-
         if(CollectorEnabler.checkCollectorRequired()){
-    	current=MediatorData.createNewMediator(synCtx, this);
+    	    current=MediatorData.createNewMediator(synCtx, this);
         }
-
-
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -140,12 +136,10 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
             } catch (SynapseException syne) {
                 synLog.traceOrDebug("Message size exceeds the upper bound for caching, " +
                         "request will not be cached");
-
                 if(CollectorEnabler.checkCollectorRequired()){
                 	MediatorData.setEndingTime(current);
                 	synCtx.setCurrent(current.getParent());
                 }
-
                 return true;
             }
         }
@@ -230,7 +224,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         	MediatorData.setEndingTime(current);
         	synCtx.setCurrent(current.getParent());
         }
-
         return false;
     }
 

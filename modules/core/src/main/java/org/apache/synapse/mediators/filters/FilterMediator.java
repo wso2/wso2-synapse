@@ -120,11 +120,9 @@ public class FilterMediator extends AbstractListMediator implements
      * @return true if filter condition fails. else returns as per List mediator semantics
      */
     public boolean mediate(MessageContext synCtx) {
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 			current = MediatorData.createNewMediator(synCtx, this);
 		}
-
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -210,7 +208,6 @@ public class FilterMediator extends AbstractListMediator implements
                 }
 
             } else {
-
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
                         "Source : " + source + " against : " + regex.pattern() + " does not match" :
@@ -220,12 +217,10 @@ public class FilterMediator extends AbstractListMediator implements
                 result = true;
             }
         }
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 			MediatorData.setEndingTime(current);
 			synCtx.setCurrent(current.getParent());
 		}
-
         synLog.traceOrDebug("End : Filter mediator ");
         return result;
     }
@@ -233,11 +228,9 @@ public class FilterMediator extends AbstractListMediator implements
     public boolean mediate(MessageContext synCtx,
                            ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
-
 		if(CollectorEnabler.checkCollectorRequired()){
-				synCtx.setCurrent(current);
+			synCtx.setCurrent(current);
 		}
-
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Filter mediator : Mediating from ContinuationState");
         }
@@ -262,7 +255,6 @@ public class FilterMediator extends AbstractListMediator implements
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
             }
         }
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 			MediatorData.setEndingTime(current);
 			synCtx.setCurrent(current.getParent());

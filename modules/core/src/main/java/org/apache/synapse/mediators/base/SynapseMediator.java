@@ -45,12 +45,9 @@ public class SynapseMediator extends AbstractListMediator {
      * @return as per standard mediate() semantics
      */
     public boolean mediate(MessageContext synCtx) {
-
 		if (CollectorEnabler.checkCollectorRequired()) {
 			current= MediatorData.createNewMediator(synCtx, this);
 		}
-
-
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -75,7 +72,6 @@ public class SynapseMediator extends AbstractListMediator {
 			MediatorData.setEndingTime(current);
 			synCtx.setCurrent(current.getParent());
 		}
-
         return result;
     }
 }

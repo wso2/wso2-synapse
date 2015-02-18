@@ -194,9 +194,8 @@ public class MessageHelper {
             }
         }
 		 if (CollectorEnabler.checkCollectorRequired()) {
-
-        	newCtx.setCurrent(MessageHelper.cloneTree(newCtx, synCtx)) ;
-        }
+			 newCtx.setCurrent(MessageHelper.cloneTree(newCtx, synCtx)) ;
+		 }
         return newCtx;
     }
     
@@ -307,9 +306,8 @@ public class MessageHelper {
             }
         }
 		 if (CollectorEnabler.checkCollectorRequired()) {
-
         	newCtx.setCurrent(MessageHelper.cloneTree(newCtx, synCtx)) ;
-        }
+         }
         return newCtx;
     }
 
@@ -393,9 +391,7 @@ public class MessageHelper {
      */
     public static TreeNode cloneTree( MessageContext newCtx, MessageContext synCtx){
     	TreeNode root= (TreeNode)synCtx.getProperty("Root");
-
     	newCtx.setProperty("CommonMessageID", UIDGenerator.generateURNString());
-
     	TreeNode newRoot=TreeNode.copyTree(root, (String)newCtx.getProperty("CommonMessageID"), null);
     	newCtx.setRoot(newRoot);
     	newRoot.getContents().setMsgID((String)newCtx.getProperty("CommonMessageID"));
@@ -404,15 +400,13 @@ public class MessageHelper {
     	return newCtx.getCurrent();
     	}
 
-		/**
-		 * This method will change the setcurrent() of the synCtx into the node that was subjected to clone
-		 * @param root node of the newCtx
-		 * @param synCtx cloned messagecontext
-		 */
+	/**
+	 * This method will change the setcurrent() of the synCtx into the node that was subjected to clone
+	 * @param root node of the newCtx
+	 * @param synCtx cloned messagecontext
+	*/
 		private static void getLastCurrentMediator(TreeNode root,MessageContext synCtx) {
-    		// TODO Auto-generated method stub
     		TreeNode lastAddedNode;
-
     		 if(root.getChildren()!=null && root.getChildren().size()>0){
     				 lastAddedNode=root.getLastChild();
     				  getLastCurrentMediator(lastAddedNode,synCtx);

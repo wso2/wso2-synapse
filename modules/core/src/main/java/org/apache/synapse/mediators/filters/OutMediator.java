@@ -86,10 +86,8 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
 			//Adding this mediator is of no use since its child mediators are not executed. Therefore
 			//change its name and later the change node will be removed from the tree.
 			if(CollectorEnabler.checkCollectorRequired()){
-
 				current.getContents().setMediatorName("Skipped");
 				synCtx.setCurrent(current.getParent());
-
 			}
 
             synLog.traceOrDebug("Current message is a request - skipping child mediators");

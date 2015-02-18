@@ -21,7 +21,6 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.mediators.collector.CollectorEnabler;
 import org.apache.synapse.mediators.collector.MediatorData;
 import org.apache.synapse.mediators.collector.TreeNode;
@@ -69,7 +68,7 @@ public abstract class FaultHandler {
 
     	if (CollectorEnabler.checkCollectorRequired()) {
              synCtx.getCurrent().getContents().setEndTime(System.currentTimeMillis());
-		}
+			}
         } catch (SynapseException e) {
 
             Stack faultStack = synCtx.getFaultStack();
@@ -135,7 +134,6 @@ public abstract class FaultHandler {
             	throw new RuntimeException(se);
             }
         }
-
         if (CollectorEnabler.checkCollectorRequired()) {
         	MediatorData.toTheList((TreeNode)synCtx.getProperty("NonFaultRoot"));
     	}
