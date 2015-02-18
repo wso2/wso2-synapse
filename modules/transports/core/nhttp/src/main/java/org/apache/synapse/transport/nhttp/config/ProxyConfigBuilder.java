@@ -177,13 +177,13 @@ public class ProxyConfigBuilder {
 
             String[] targetHosts = targetHostsEle.getText().split(",");
 
-            for (String endPoint : targetHosts) {
-                endPoint = endPoint.trim();
-                if (!proxyProfileMap.containsKey(endPoint)) {
-                    proxyProfileMap.put(endPoint, proxyProfileConfig);
+            for (String endpoint : targetHosts) {
+                endpoint = endpoint.trim();
+                if (!proxyProfileMap.containsKey(endpoint)) {
+                    proxyProfileMap.put(endpoint, proxyProfileConfig);
                 } else {
-                    log.warn(name + " Multiple proxy profiles were found for the endPoint : " +
-                            endPoint + ". Ignoring the excessive profiles.");
+                    log.warn(name + " Multiple proxy profiles were found for the endpoint: " +
+                            endpoint + ". Ignoring the excessive profiles.");
                 }
             }
         }
