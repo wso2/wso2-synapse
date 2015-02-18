@@ -25,7 +25,6 @@ import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.mediators.collector.CollectorEnabler;
 import org.apache.synapse.mediators.collector.MediatorData;
 import org.apache.synapse.mediators.collector.TreeNode;
-
 import java.util.Stack;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -51,14 +50,11 @@ public abstract class FaultHandler {
     				.getMediatorName().contains("Call")) {
     			MediatorData.toTheList((TreeNode) synCtx.getProperty("Root"));
     		}
-
-
     		TreeNode nowCurrent = synCtx.getCurrent();
     		// setting the success status of last added item as false.
     		nowCurrent.getLastFaultChild().getContents().setSuccess(false);
     		MediatorData.setEndingTime(nowCurrent.getLastFaultChild());
     	}
-
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -96,13 +92,11 @@ public abstract class FaultHandler {
         if (CollectorEnabler.checkCollectorRequired()) {
         	// If this method is invoked from the call mediator ppublish the
         	// current tree to the list
-
         	if (synCtx.getCurrent().getLastChild().getContents()
         			.getMediatorName().contains("Call")) {
         		MediatorData.toTheList((TreeNode) synCtx.getProperty("Root"));
         	}
         }
-
         if (e != null && synCtx.getProperty(SynapseConstants.ERROR_CODE) == null) {
             synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.DEFAULT_ERROR);
             // use only the first line as the message for multiline exception messages (Axis2 has these)
@@ -144,7 +138,7 @@ public abstract class FaultHandler {
 
         if (CollectorEnabler.checkCollectorRequired()) {
         	MediatorData.toTheList((TreeNode)synCtx.getProperty("NonFaultRoot"));
-    }
+    	}
 
     }
 
