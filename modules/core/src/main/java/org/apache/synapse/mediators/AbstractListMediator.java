@@ -44,7 +44,7 @@ import java.util.List;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
-	private TreeNode current;
+    private TreeNode current;
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
 
@@ -57,10 +57,10 @@ public abstract class AbstractListMediator extends AbstractMediator
 
     public boolean mediate(MessageContext synCtx, int mediatorPosition) {
 
-		if(CollectorEnabler.checkCollectorRequired()){
-			// Set the parent mediator that is subjected to execute its set of children mediators as the current node of this instance
-			current = synCtx.getCurrent();
-		}
+	if(CollectorEnabler.checkCollectorRequired()){
+		// Set the parent mediator that is subjected to execute its set of children mediators as the current node of this instance
+		current = synCtx.getCurrent();
+	}
 
         boolean returnVal = true;
         int parentsEffectiveTraceState = synCtx.getTracingState();
@@ -90,58 +90,48 @@ public abstract class AbstractListMediator extends AbstractMediator
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
-
-				// If the current mediator is incapable of containing child mediators then it is added as an leaf-node
-				if(CollectorEnabler.checkCollectorRequired()){
-					if (!MediatorData.hasList(mediators.get(i))) {
-						MediatorData.createNewSingleMediator(synCtx,
-								mediators.get(i));
-					}
-				}
+		// If the current mediator is incapable of containing child mediators then it is added as an leaf-node
+		if(CollectorEnabler.checkCollectorRequired()){
+			if (!MediatorData.hasList(mediators.get(i))) {
+				MediatorData.createNewSingleMediator(synCtx,mediators.get(i));
+			}
+		}
 
                 if (!mediators.get(i).mediate(synCtx)) {
                     returnVal = false;
                     break;
                 }else{
-
-					if (CollectorEnabler.checkCollectorRequired()) {
-						// To remove in/out mediators in a scenario where 'in mediator' occur in a response and 'out mediator' occur in a request
-						if (current.getChildren() != null
-								&& !"".equals(current.getChildren())) {
-                            if(current.getLastChild()!=null) {
-
-                                if (!"".equals(current.getLastChild().getContents() // The name of the mediator is collected by getType() method. Since property mediator etc. override this method, the name is set as null
-                                        .getMediatorName())
-                                        && current.getLastChild().getContents()
-                                        .getMediatorName() != null
-                                        && current.getLastChild().getContents()
-                                        .getMediatorName()
-                                        .equals("Skipped")) {
-
-                                    synCtx.getCurrent()
-                                            .getChildren()
-                                            .remove(synCtx.getCurrent()
-                                                    .getLastChild());
-                }
-                                // if the executed child mediator is not removed then set  its ending time
-                                else {
-                                    MediatorData.setEndingTime(current
-                                            .getLastChild());
-
-            }
-                            }
-						}
-						current = synCtx.getCurrent();
-						synLog.traceOrDebug("********** Printing the current node after execution of the mediator from AbstractListMediator : "
-								+ current.getContents().getMediatorName());
+			if (CollectorEnabler.checkCollectorRequired()) {
+			// To remove in/out mediators in a scenario where 'in mediator' occur in a response and 'out mediator' occur in a request
+				if (current.getChildren() != null && !"".equals(current.getChildren())) {
+	                            	if(current.getLastChild()!=null) {
+		                                if (!"".equals(current.getLastChild().getContents() // The name of the mediator is collected by getType() method. Since property mediator etc. override this method, the name is set as null
+		                                        .getMediatorName())
+		                                        && current.getLastChild().getContents()
+		                                        .getMediatorName() != null
+		                                        && current.getLastChild().getContents()
+		                                        .getMediatorName()
+		                                        .equals("Skipped")) {
+		
+			                                    synCtx.getCurrent()
+			                                            .getChildren()
+			                                            .remove(synCtx.getCurrent()
+			                                                    .getLastChild());
+		                			}
+		                		   	// if the executed child mediator is not removed then set  its ending time
+		                        		else {
+			                            		MediatorData.setEndingTime(current
+			                                            .getLastChild());
+							}
+		                		}
 					}
-
+					current = synCtx.getCurrent();
 				}
-            }
+			}
+           	}
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
-
         return returnVal;
     }
 
@@ -169,10 +159,9 @@ public abstract class AbstractListMediator extends AbstractMediator
         return mediators.remove(pos);
     }
 
-	public void setSequenceType(SequenceType sequenceType) {
-		this.sequenceType = sequenceType;
-	}
-
+    public void setSequenceType(SequenceType sequenceType) {
+	this.sequenceType = sequenceType;
+    }
     /**
      * Initialize child mediators recursively
      * @param se synapse environment
