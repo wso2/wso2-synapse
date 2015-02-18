@@ -93,7 +93,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         if (CollectorEnabler.checkCollectorRequired()) {
         	//Set a common message id to uniquely identify each message
         	synCtx.setProperty("CommonMessageID",mc.getMessageID() );
-
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -261,11 +260,10 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     }
 
     private void handleException(String msg, MessageContext msgContext) {
-		if (CollectorEnabler.checkCollectorRequired()) {
-			// Since an exception haults the execution send the current tree to
-			// the list
-			MediatorData.toTheList(msgContext.getRoot());
-		}
+	if (CollectorEnabler.checkCollectorRequired()) {
+	// Since an exception haults the execution send the current tree to the list
+	     MediatorData.toTheList(msgContext.getRoot());
+	}
         log.error(msg);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
