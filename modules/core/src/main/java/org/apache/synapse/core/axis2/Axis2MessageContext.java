@@ -70,10 +70,7 @@ public class Axis2MessageContext implements MessageContext {
      * Holds the reference to the root node of the MessageContext
      */
     private TreeNode root=null;
-
-
-
-	/**
+   /**
      * Holds the environment on which synapse operates
      */
     private SynapseEnvironment synEnv = null;
@@ -634,18 +631,15 @@ public class Axis2MessageContext implements MessageContext {
         return mediatorPosition;
     }
     public TreeNode getRoot() {
-		return root;
-	}
-
-	public void setRoot(TreeNode root) {
-		this.root = root;
-	}
-
-	public TreeNode getCurrent() {
-		return current;
-	}
-
-	public void setCurrent(TreeNode current) {
-		this.current = current;
-	}
+	return root;
+    }
+    public void setRoot(TreeNode root) {
+	this.root = root;
+    }
+    public TreeNode getCurrent() {
+	return current;
+    }
+    public void setCurrent(TreeNode current) {
+	this.current = current;
+   }
 }
