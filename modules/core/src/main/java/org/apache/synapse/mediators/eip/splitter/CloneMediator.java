@@ -34,6 +34,10 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.SuperMediator;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
@@ -67,6 +71,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
 
+    /** Reference to the node that conains data of the executing mediator */
+
+    private TreeNode current;
+
     /**
      * This will implement the mediate method of the Mediator interface and will provide the
      * functionality of cloning message into the specified targets and mediation
@@ -75,6 +83,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
      * @return boolean true if this needs to be further mediated (continueParent=true)
      */
     public boolean mediate(MessageContext synCtx) {
+
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	current=MediatorData.createNewMediator(synCtx, this);
+         }
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -112,14 +125,24 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         // finalize tracing and debugging
         synLog.traceOrDebug("End : Clone mediator");
 
-        // if continue parent is true mediators after the clone will be called for the further
-        // mediation of the message which is subjected for clonning (parent message)
-        return continueParent;
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+        MediatorData.setEndingTime(current);
+        synCtx.setCurrent(current.getParent());
+        }
+	    // if continue parent is true mediators after the clone will be called for the further
+	    // mediation of the message which is subjected for clonning (parent message)
+
+	    return continueParent;
     }
 
     public boolean mediate(MessageContext synCtx,
                            ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+              synCtx.setCurrent(current);
+        }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Clone mediator : Mediating from ContinuationState");
@@ -137,6 +160,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                     getChild(continuationState.getPosition());
             result = mediator.mediate(synCtx, continuationState.getChildContState());
         }
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	MediatorData.setEndingTime(current);
+        	synCtx.setCurrent(current.getParent());
+        }
+
         return result;
     }
 

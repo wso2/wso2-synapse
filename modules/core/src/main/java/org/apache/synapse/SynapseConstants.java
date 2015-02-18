@@ -488,4 +488,9 @@ public final class SynapseConstants {
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 
+	//enable data collection only if the variable is set to true
+    public static final String MEDIATOR_DATA_COLLECTOR = "synapse.enable_mediator_data_collector";
+    public static final String DEFAULT_MEDIATOR_DATA_COLLECTOR ="false";
+
+
 }

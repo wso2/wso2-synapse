@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.mediators.collector.TreeNode;
 
 import java.util.Map;
 import java.util.Set;
@@ -428,4 +429,27 @@ public OMElement getFormat(String key);
 	 * @return the sequence mediator mapped to the key
 	 */
 	public Mediator getDefaultConfiguration(String key);
+
+	/**
+	 * @return sets the node that contains details about current executing mediator
+	 */
+	public TreeNode getCurrent();
+
+	/**
+	 * @param current returns the current node that conatins details about currently executing mediator
+	 */
+	public void setCurrent(TreeNode current);
+
+
+
+	/**
+	 * @param Root sets the node that contains the details of the initially executing mediator
+	 */
+	public void setRoot(TreeNode Root);
+
+	/**
+	 * @return the node that contains the details of the initially executing mediator
+	 */
+	public TreeNode getRoot();
+
 }

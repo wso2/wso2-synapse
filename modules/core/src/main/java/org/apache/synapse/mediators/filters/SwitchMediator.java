@@ -24,12 +24,17 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.SuperMediator;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
@@ -50,6 +55,7 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
     private final List<SwitchCase> cases = new ArrayList<SwitchCase>();
     /** The default switch case, if any */
     private SwitchCase defaultCase = null;
+    private TreeNode current;
 
     public void init(SynapseEnvironment se) {
         for (ManagedLifecycle swCase : cases) {
@@ -78,6 +84,10 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
     public boolean mediate(MessageContext synCtx) {
 
         SynapseLog synLog = getLog(synCtx);
+
+    	if (CollectorEnabler.checkCollectorRequired()) {
+    		current= MediatorData.createNewMediator(synCtx, this);
+    	}
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Switch mediator");
@@ -108,6 +118,13 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
+
+        		if (CollectorEnabler.checkCollectorRequired()) {
+        			MediatorData.setEndingTime(current);
+        			synCtx.setCurrent(current.getParent());
+        		}
+
+
                 return result;
 
             } else {
@@ -124,6 +141,14 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                             if (result) {
                                 ContinuationStackManager.removeReliantContinuationState(synCtx);
                             }
+
+
+                    		if (CollectorEnabler.checkCollectorRequired()) {
+                    			MediatorData.setEndingTime(current);
+                    			synCtx.setCurrent(current.getParent());
+                    		}
+
+
                             return result;
                         }
                     }
@@ -138,10 +163,21 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                     if (result) {
                         ContinuationStackManager.removeReliantContinuationState(synCtx);
                     }
+
+            		if (CollectorEnabler.checkCollectorRequired()) {
+            			MediatorData.setEndingTime(current);
+            			synCtx.setCurrent(current.getParent());
+            		}
+
                     return result;
                 } else {
                     synLog.traceOrDebug("None of the switch cases matched - no default case");
+
+            		if (CollectorEnabler.checkCollectorRequired()) {
+                        current.getContents().setType("single");
+                        synCtx.setCurrent(current.getParent());
                 }
+            }
             }
 
         } finally {
@@ -154,6 +190,10 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
 
     public boolean mediate(MessageContext synCtx,
                            ContinuationState continuationState) {
+
+    		if(CollectorEnabler.checkCollectorRequired()){
+    			synCtx.setCurrent(current);
+    		}
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -184,6 +224,12 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
             }
         }
+
+		if (CollectorEnabler.checkCollectorRequired()) {
+				MediatorData.setEndingTime(current);
+				synCtx.setCurrent(current.getParent());
+		}
+
         return result;
     }
 

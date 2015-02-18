@@ -23,6 +23,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.mediators.AbstractListMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.TreeNode;
 
 /**
  * The SynapseMediator is the "mainmediator" of the synapse engine. It is
@@ -34,7 +37,7 @@ import org.apache.synapse.mediators.AbstractListMediator;
  * @see org.apache.synapse.config.SynapseConfiguration#getMainSequence()
  */
 public class SynapseMediator extends AbstractListMediator {
-
+	private TreeNode current;
     /**
      * Perform the mediation specified by the rule set
      *
@@ -42,6 +45,11 @@ public class SynapseMediator extends AbstractListMediator {
      * @return as per standard mediate() semantics
      */
     public boolean mediate(MessageContext synCtx) {
+
+		if (CollectorEnabler.checkCollectorRequired()) {
+			current= MediatorData.createNewMediator(synCtx, this);
+		}
+
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -62,6 +70,12 @@ public class SynapseMediator extends AbstractListMediator {
             synLog.traceOrDebug("End : Mediation using '" +
                 SynapseConstants.MAIN_SEQUENCE_KEY + "' sequence");
         }
-        return result;        
+
+		if (CollectorEnabler.checkCollectorRequired()) {
+			MediatorData.setEndingTime(current);
+			synCtx.setCurrent(current.getParent());
+		}
+
+        return result;
     }
 }

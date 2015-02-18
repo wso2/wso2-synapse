@@ -43,6 +43,10 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.SuperMediator;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.template.TemplateContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -189,7 +193,10 @@ public class MessageHelper {
                 }
             }
         }
+		 if (CollectorEnabler.checkCollectorRequired()) {
 
+        	newCtx.setCurrent(MessageHelper.cloneTree(newCtx, synCtx)) ;
+        }
         return newCtx;
     }
     
@@ -299,6 +306,10 @@ public class MessageHelper {
                 }
             }
         }
+		 if (CollectorEnabler.checkCollectorRequired()) {
+
+        	newCtx.setCurrent(MessageHelper.cloneTree(newCtx, synCtx)) ;
+        }
         return newCtx;
     }
 
@@ -371,6 +382,45 @@ public class MessageHelper {
             clonedRecord.collect(clonedLog);
         }
         return clonedRecord;
+    }
+
+	/**
+     * This method sets new properties for the newCtx and the  original synCtx's root is passed inorder to create
+     * a deepcopy of it.
+     * @param newCtx the newly cloned MessageContext
+     * @param synCtx orginal MessageContext
+     * @return node through which the messagecontext was subjected to clone
+     */
+    public static TreeNode cloneTree( MessageContext newCtx, MessageContext synCtx){
+    	TreeNode root= (TreeNode)synCtx.getProperty("Root");
+
+    	newCtx.setProperty("CommonMessageID", UIDGenerator.generateURNString());
+
+    	TreeNode newRoot=TreeNode.copyTree(root, (String)newCtx.getProperty("CommonMessageID"), null);
+    	newCtx.setRoot(newRoot);
+    	newRoot.getContents().setMsgID((String)newCtx.getProperty("CommonMessageID"));
+    	newCtx.setProperty("Root", newRoot);
+     	MessageHelper.getLastCurrentMediator(newRoot,newCtx);
+    	return newCtx.getCurrent();
+    	}
+
+		/**
+		 * This method will change the setcurrent() of the synCtx into the node that was subjected to clone
+		 * @param root node of the newCtx
+		 * @param synCtx cloned messagecontext
+		 */
+		private static void getLastCurrentMediator(TreeNode root,MessageContext synCtx) {
+    		// TODO Auto-generated method stub
+    		TreeNode lastAddedNode;
+
+    		 if(root.getChildren()!=null && root.getChildren().size()>0){
+    				 lastAddedNode=root.getLastChild();
+    				  getLastCurrentMediator(lastAddedNode,synCtx);
+    		 }
+    		else{
+    			lastAddedNode=root;
+    			synCtx.setCurrent(lastAddedNode);
+    		}
     }
      /* 
      * This method will deep clone array list by creating a new ArrayList and cloning and adding each element in it

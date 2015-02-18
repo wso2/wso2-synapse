@@ -40,6 +40,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 
@@ -62,6 +63,17 @@ public class Axis2MessageContext implements MessageContext {
     private SynapseConfiguration synCfg = null;
 
     /**
+     * Holds the reference to the currently executing node
+     */
+    private TreeNode current;
+    /**
+     * Holds the reference to the root node of the MessageContext
+     */
+    private TreeNode root=null;
+
+
+
+	/**
      * Holds the environment on which synapse operates
      */
     private SynapseEnvironment synEnv = null;
@@ -621,4 +633,19 @@ public class Axis2MessageContext implements MessageContext {
     public int getMediatorPosition() {
         return mediatorPosition;
     }
+    public TreeNode getRoot() {
+		return root;
+	}
+
+	public void setRoot(TreeNode root) {
+		this.root = root;
+	}
+
+	public TreeNode getCurrent() {
+		return current;
+	}
+
+	public void setCurrent(TreeNode current) {
+		this.current = current;
+	}
 }

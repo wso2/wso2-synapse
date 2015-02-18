@@ -19,6 +19,7 @@
 
 package org.apache.synapse.core.axis2;
 
+import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.commons.logging.Log;
@@ -33,6 +34,12 @@ import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.DataPublishClient;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.StoreList;
+import org.apache.synapse.mediators.collector.TimerData;
+import org.apache.synapse.mediators.collector.TreeNode;
 
 /**
  * This is the MessageReceiver set to act on behalf of Proxy services.
@@ -46,8 +53,13 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     private String name = null;
     /** The proxy service */
     private ProxyService proxy = null;
+    private String messageIDNumber=UIDGenerator.generateURNString();
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
+
+	   if (CollectorEnabler.checkCollectorRequired()) {
+	 	TimerData.addData();
+	   }
 
         boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -77,6 +89,13 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	//Set a common message id to uniquely identify each message
+        	synCtx.setProperty("CommonMessageID",mc.getMessageID() );
+
+        }
+
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
         if (configurator != null) {
             configurator.extractTenantInfo(synCtx);
@@ -242,6 +261,11 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     }
 
     private void handleException(String msg, MessageContext msgContext) {
+		if (CollectorEnabler.checkCollectorRequired()) {
+			// Since an exception haults the execution send the current tree to
+			// the list
+			MediatorData.toTheList(msgContext.getRoot());
+		}
         log.error(msg);
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);

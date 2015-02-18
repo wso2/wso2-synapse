@@ -19,8 +19,11 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import java.util.ArrayList;
+
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
@@ -28,6 +31,10 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.SuperMediator;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.util.MessageHelper;
 
 /**
@@ -55,7 +62,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     private Endpoint endpoint = null;
 
     private SynapseEnvironment synapseEnv;
-
+    private TreeNode current;
     /**
      * This will call the send method on the messages with implicit message parameters
      * or else if there is an endpoint, with that endpoint parameters
@@ -67,7 +74,10 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     public boolean mediate(MessageContext synInCtx) {
 
         SynapseLog synLog = getLog(synInCtx);
-
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	// Set a property within the synInCtx as a reference to the current node(in order to copy the reference to the synOutCtx)
+        	synInCtx.setProperty("copyCurrent", synInCtx.getCurrent());
+        }
         synLog.traceOrDebug("Start : Call mediator");
         if (synLog.isTraceTraceEnabled()) {
             synLog.traceTrace("Message : " + synInCtx.getEnvelope());
@@ -87,7 +97,12 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         } else {
             synOutCtx = synInCtx;
         }
-
+		if (CollectorEnabler.checkCollectorRequired()) {
+			// Set the root and the current node of the new MessageContext
+			synOutCtx.setProperty("Root", synInCtx.getProperty("Root"));
+			synOutCtx.setCurrent((TreeNode) synOutCtx
+					.getProperty("copyCurrent"));
+		}
         synOutCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
         ContinuationStackManager.updateSeqContinuationState(synOutCtx, getMediatorPosition());
 
@@ -117,6 +132,11 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         synLog.traceOrDebug("End : Call mediator");
         if (outOnlyMessage) {
             return true;
+        }
+        if (CollectorEnabler.checkCollectorRequired()) {
+
+        	current=synInCtx.getCurrent().getLastChild();
+
         }
         return false;
     }

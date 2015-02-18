@@ -23,6 +23,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.TreeNode;
 
 /**
  * Halts further processing/mediation of the current message. i.e. returns false
@@ -58,6 +61,11 @@ public class DropMediator extends AbstractMediator {
             synLog.traceOrDebug("End : Drop mediator");
         }
 
+		if (CollectorEnabler.checkCollectorRequired()) {
+
+			collectMediatorData(synCtx.getCurrent(), synCtx);
+		}
+
         return false;
     }
 
@@ -65,4 +73,24 @@ public class DropMediator extends AbstractMediator {
     public boolean isContentAware() {
         return false;
     }
+
+	public void collectMediatorData(TreeNode current, MessageContext synCtx) {
+
+		// Incase of a drop mediator, if the mediator's immediate parent node is
+		// the root of the tree then publish the existing tree to the list
+
+		try {
+			MediatorData.setEndingTime(synCtx.getCurrent().getLastChild());
+
+			if (synCtx.getCurrent().equals(synCtx.getProperty("Root"))
+					|| synCtx.getCurrent().equals(
+							synCtx.getProperty("NonFaultRoot"))) {
+				MediatorData.toTheList(synCtx.getCurrent());
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
 }

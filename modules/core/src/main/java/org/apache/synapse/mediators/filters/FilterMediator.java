@@ -32,6 +32,10 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.SuperMediator;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -52,6 +56,8 @@ public class FilterMediator extends AbstractListMediator implements
     private boolean thenElementPresent = false;
     private String thenKey = null;
     private String elseKey = null;
+	private SuperMediator a;
+	private TreeNode current;
     private SynapseEnvironment synapseEnv;
 
     @Override
@@ -114,6 +120,10 @@ public class FilterMediator extends AbstractListMediator implements
      * @return true if filter condition fails. else returns as per List mediator semantics
      */
     public boolean mediate(MessageContext synCtx) {
+
+		if (CollectorEnabler.checkCollectorRequired()) {
+			current = MediatorData.createNewMediator(synCtx, this);
+		}
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -211,6 +221,11 @@ public class FilterMediator extends AbstractListMediator implements
             }
         }
 
+		if (CollectorEnabler.checkCollectorRequired()) {
+			MediatorData.setEndingTime(current);
+			synCtx.setCurrent(current.getParent());
+		}
+
         synLog.traceOrDebug("End : Filter mediator ");
         return result;
     }
@@ -218,6 +233,10 @@ public class FilterMediator extends AbstractListMediator implements
     public boolean mediate(MessageContext synCtx,
                            ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
+
+		if(CollectorEnabler.checkCollectorRequired()){
+				synCtx.setCurrent(current);
+		}
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Filter mediator : Mediating from ContinuationState");
@@ -242,6 +261,11 @@ public class FilterMediator extends AbstractListMediator implements
                                 continuationState.getPosition());
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
             }
+        }
+
+		if (CollectorEnabler.checkCollectorRequired()) {
+			MediatorData.setEndingTime(current);
+			synCtx.setCurrent(current.getParent());
         }
 
         return result;

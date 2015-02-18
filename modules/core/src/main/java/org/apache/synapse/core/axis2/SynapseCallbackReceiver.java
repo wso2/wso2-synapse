@@ -49,6 +49,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -291,6 +292,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             //Processes 'Accept-Encoding'
             ResponseAcceptEncodingProcessor.process(response, axisOutMsgCtx);
+
+            if(CollectorEnabler.checkCollectorRequired()){
+            	//Generate a CommonMessageID for the out sequence
+            	response.setProperty("CommonMessageID",(String)axisOutMsgCtx.getMessageID());
+            }
 
             response.setServiceContext(null);
             response.setOperationContext(axisOutMsgCtx.getOperationContext());

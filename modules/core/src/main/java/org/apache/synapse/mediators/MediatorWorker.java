@@ -20,6 +20,9 @@
 package org.apache.synapse.mediators;
 
 import org.apache.synapse.*;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -39,6 +42,10 @@ public class MediatorWorker implements Runnable {
     private MessageContext synCtx = null;
 
     /**
+     * A reference to the current parent node which is in execution
+     */
+    private TreeNode current;
+    /**
      * Constructor of the MediatorWorker which sets the sequence and the message context
      *
      * @param seq    - Sequence Mediator to be set
@@ -47,6 +54,11 @@ public class MediatorWorker implements Runnable {
     public MediatorWorker(Mediator seq, MessageContext synCtx) {
         this.seq = seq;
         this.synCtx = synCtx;
+
+      if(CollectorEnabler.checkCollectorRequired()){
+    	  current=synCtx.getCurrent();
+    }
+
     }
 
     /**
@@ -67,6 +79,11 @@ public class MediatorWorker implements Runnable {
     public void run() {
         try {
             seq.mediate(synCtx);
+
+        	      if(CollectorEnabler.checkCollectorRequired()){
+        	    	  current.getContents().setEndTime(System.currentTimeMillis());
+        	      }
+
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 
         } catch (SynapseException syne) {
@@ -102,6 +119,11 @@ public class MediatorWorker implements Runnable {
         }
         synCtx = null;
         seq = null;
+
+
+        if(CollectorEnabler.checkCollectorRequired())
+        current=null;
+
     }
 
     private void warn(boolean traceOn, String msg, MessageContext msgContext) {

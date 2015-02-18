@@ -36,6 +36,9 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.collector.CollectorEnabler;
+import org.apache.synapse.mediators.collector.MediatorData;
+import org.apache.synapse.mediators.collector.TreeNode;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
@@ -77,7 +80,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     private Target target = null;
 
     private String id = null;
-
+    private TreeNode current;
     private SynapseEnvironment synapseEnv;
 
     /**
@@ -87,6 +90,10 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      * @return boolean false if need to stop processing of the parent message
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	current=MediatorData.createNewMediator(synCtx, this);
+        }
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -162,6 +169,11 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         synLog.traceOrDebug("End : Iterate mediator");
 
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	MediatorData.setEndingTime(current);
+        	synCtx.setCurrent(current.getParent());
+        }
+
         // whether to continue mediation on the original message
         return continueParent;
     }
@@ -169,6 +181,10 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     public boolean mediate(MessageContext synCtx,
                            ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+            synCtx.setCurrent(current);
+        }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Iterate mediator : Mediating from ContinuationState");
@@ -183,6 +199,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                             getChild(continuationState.getPosition());
             result = mediator.mediate(synCtx, continuationState.getChildContState());
         }
+
+        if (CollectorEnabler.checkCollectorRequired()) {
+        	MediatorData.setEndingTime(current);
+        	synCtx.setCurrent(current.getParent());
+        }
+
         return result;
     }
 
