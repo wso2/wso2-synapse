@@ -20,9 +20,8 @@ package org.apache.synapse.message.processor.impl.sampler;
 
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
-import org.quartz.JobDataMap;
+import org.apache.synapse.task.Task;
 
 public class SamplingProcessor extends ScheduledMessageProcessor {
 
@@ -46,14 +45,12 @@ public class SamplingProcessor extends ScheduledMessageProcessor {
                 "Message Sampling Processor view", getName());
     }
 
-    @Override
-    protected JobDataMap getJobDataMap() {
-        JobDataMap jdm = new JobDataMap();
-        jdm.put(MessageProcessorConstants.PROCESSOR_INSTANCE, this);
-        return jdm;
-    }
-
     public SamplingProcessorView getView() {
         return view;
     }
+    
+	@Override
+	protected Task getTask() {
+		return new SamplingService(this, synapseEnvironment, CONCURRENCY, SEQUENCE);
+	}
 }
