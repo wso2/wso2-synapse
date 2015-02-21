@@ -21,7 +21,6 @@ package org.apache.synapse.message.processor.impl.forwarder;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
-import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
 
 /**
@@ -29,10 +28,6 @@ import org.apache.synapse.task.Task;
  * It will Time to time Redeliver the Messages to a given target.
  */
 public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcessor {
-
-    public static final String BLOCKING_SENDER = "blocking.sender";
-
-    private BlockingMsgSender sender = null;
     private MessageForwardingProcessorView view;
 
 	@Override

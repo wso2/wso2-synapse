@@ -45,44 +45,58 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
 
+/**
+ * This task is responsible for forwarding a request to a given endpoint. This
+ * is based on a blocking implementation and can send only one message at a
+ * time. Also this supports Throttling and reliable messaging.
+ * 
+ */
 public class ForwardingService implements Task, ManagedLifecycle {
     private static final Log log = LogFactory.getLog(ForwardingService.class);
 
-    /** The consumer that is associated with the particular message store */
-    private MessageConsumer messageConsumer;
+	// The consumer that is associated with the particular message store
+	private MessageConsumer messageConsumer;
 
-    /** Owner of the this job */
-    private MessageProcessor messageProcessor;
+	// Owner of the this job
+	private MessageProcessor messageProcessor;
 
-    /** This is the client which sends messages to the end point */
+    // This is the client which sends messages to the end point
     private BlockingMsgSender sender;
 
-    /** Interval between two retries to the client. This only come to affect only if the client is un-reachable */
-    private int retryInterval = 1000;
+	/*
+	 * Interval between two retries to the client. This only come to affect only
+	 * if the client is un-reachable
+	 */
+	private int retryInterval = 1000;
 
-    /** Sequence to invoke in a failure */
-    private String faultSeq = null;
+	// Sequence to invoke in a failure
+	private String faultSeq = null;
 
-    /** Sequence to reply on success */
-    private String replySeq = null;
+	// Sequence to reply on success
+	private String replySeq = null;
 
     private String targetEndpoint = null;
 
-    /**
-     * This is specially used for REST scenarios where http status codes can take semantics in a RESTful architecture.
-     */
-    private String[] nonRetryStatusCodes = null;
+	/*
+	 * This is specially used for REST scenarios where http status codes can
+	 * take semantics in a RESTful architecture.
+	 */
+	private String[] nonRetryStatusCodes = null;
 
-    /**
-     * These two maintain the state of service. For each iteration these should be reset
-     */
-    private boolean isSuccessful = false;
-    private volatile boolean isTerminated = false;
+	/*
+	 * These two maintain the state of service. For each iteration these should
+	 * be reset
+	 */
+	private boolean isSuccessful = false;
+	private volatile boolean isTerminated = false;
 
-    /** Number of retries before shutting-down the processor. -1 default value indicates that
-     * retry should happen forever */
-    private int maxDeliverAttempts = -1;
-    private int attemptCount = 0;
+	/*
+	 * Number of retries before shutting-down the processor. -1 default value
+	 * indicates that
+	 * retry should happen forever
+	 */
+	private int maxDeliverAttempts = -1;
+	private int attemptCount = 0;
 
     private boolean isThrottling = true;
 
@@ -94,9 +108,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	// Message Queue polling interval value.
 	private long interval;
 
-    /** Configuration to continue the message processor even without stopping
-     * the message processor after maximum number of delivery */
-    private boolean isMaxDeliveryAttemptDropEnabled = false;
+	/*
+	 * Configuration to continue the message processor even without stopping
+	 * the message processor after maximum number of delivery
+	 */
+	private boolean isMaxDeliveryAttemptDropEnabled = false;
     
 	private SynapseEnvironment synapseEnvironment;
 
@@ -333,191 +349,249 @@ public class ForwardingService implements Task, ManagedLifecycle {
          return nonRetryCodes;
     }
     
-    public MessageContext fetch(MessageConsumer msgConsumer) {
-        return messageConsumer.receive();
-    }
+	/**
+	 * Receives the next message from the message store.
+	 * 
+	 * @param msgConsumer
+	 *            message consumer
+	 * @return {@link MessageContext} of the last message received from the
+	 *         store.
+	 */
+	public MessageContext fetch(MessageConsumer msgConsumer) {
+		return messageConsumer.receive();
+	}
 
-    public boolean dispatch(MessageContext messageContext) {
+	/**
+	 * Sends the mesage to a given endpoint.
+	 * 
+	 * @param messageContext
+	 *            synapse {@link MessageContext} to be sent
+	 */
+	public void dispatch(MessageContext messageContext) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Sending the message to client with message processor [" + messageProcessor.getName() + "]");
-        }
+		if (log.isDebugEnabled()) {
+			log.debug("Sending the message to client with message processor [" +
+			          messageProcessor.getName() + "]");
+		}
 
-        // The below code is just for keeping the backward compatibility with the old code.
-        if (targetEndpoint == null) {
-            targetEndpoint = (String) messageContext.getProperty(ForwardingProcessorConstants.TARGET_ENDPOINT);
-        }
+		// The below code is just for keeping the backward compatibility with
+		// the old code.
+		if (targetEndpoint == null) {
+			targetEndpoint =
+			                 (String) messageContext.getProperty(ForwardingProcessorConstants.TARGET_ENDPOINT);
+		}
 
-        MessageContext outCtx = null;
-        SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
+		MessageContext outCtx = null;
+		SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
 
-        if (targetEndpoint != null) {
-            Endpoint ep = messageContext.getEndpoint(targetEndpoint);
+		if (targetEndpoint != null) {
+			Endpoint ep = messageContext.getEndpoint(targetEndpoint);
 
+			try {
 
-            try {
+				// Send message to the client
+				while (!isSuccessful && !isTerminated) {
+					try {
+						// For each retry we need to have a fresh copy of the
+						// actual message. otherwise retry may not
+						// work as expected.
+						messageContext.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
+						OMElement firstChild = null; //
+						org.apache.axis2.context.MessageContext origAxis2Ctx =
+						                                                       ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+						if (JsonUtil.hasAJsonPayload(origAxis2Ctx)) {
+							firstChild = origAxis2Ctx.getEnvelope().getBody().getFirstElement();
+						} // Had to do this because
+						  // MessageHelper#cloneSOAPEnvelope does not clone
+						  // OMSourcedElemImpl correctly.
+						if (JsonUtil.hasAJsonPayload(firstChild)) { //
+							OMElement clonedFirstElement =
+							                               messageContext.getEnvelope().getBody()
+							                                             .getFirstElement();
+							if (clonedFirstElement != null) {
+								clonedFirstElement.detach();
+								messageContext.getEnvelope().getBody().addChild(firstChild);
+							}
+						}// Had to do this because
+						 // MessageHelper#cloneSOAPEnvelope does not clone
+						 // OMSourcedElemImpl correctly.
+						origAxis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
+						                         getNonRetryStatusCodes());
+						outCtx = sender.send(ep, messageContext);
+						isSuccessful = true;
 
-                // Send message to the client
-                while (!isSuccessful && !isTerminated) {
-                    try {
-                        // For each retry we need to have a fresh copy of the actual message. otherwise retry may not
-                        // work as expected.
-                        messageContext.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
-                        OMElement firstChild = null; //
-                        org.apache.axis2.context.MessageContext origAxis2Ctx = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
-                        if (JsonUtil.hasAJsonPayload(origAxis2Ctx)) {
-                            firstChild = origAxis2Ctx.getEnvelope().getBody().getFirstElement();
-                        } // Had to do this because MessageHelper#cloneSOAPEnvelope does not clone OMSourcedElemImpl correctly.
-                        if (JsonUtil.hasAJsonPayload(firstChild)) { //
-                            OMElement clonedFirstElement = messageContext.getEnvelope().getBody().getFirstElement();
-                            if (clonedFirstElement != null) {
-                                clonedFirstElement.detach();
-                                messageContext.getEnvelope().getBody().addChild(firstChild);
-                            }
-                        }// Had to do this because MessageHelper#cloneSOAPEnvelope does not clone OMSourcedElemImpl correctly.
-                        origAxis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES, getNonRetryStatusCodes());
-                        outCtx = sender.send(ep, messageContext);
-                        isSuccessful = true;
+					} catch (Exception e) {
 
-                    } catch (Exception e) {
+						// this means send has failed due to some reason so we
+						// have to retry it
+						if (e instanceof SynapseException) {
+							isSuccessful = isNonRetryErrorCode(e.getCause().getMessage());
+						}
+						if (!isSuccessful) {
+							log.error("BlockingMessageSender of message processor [" +
+							          this.messageProcessor.getName() +
+							          "] failed to send message to the endpoint");
+							// Some Error has occurred while having out only
+							// operation. Try to send the to fault sequence,
+							// since
+							// outCtx is null passing the messageContext
+							sendThroughFaultSeq(messageContext);
 
-                        // this means send has failed due to some reason so we have to retry it
-                        if (e instanceof SynapseException) {
-                            isSuccessful = isNonRetryErrorCode(e.getCause().getMessage());
-                        }
-                        if (!isSuccessful) {
-                            log.error("BlockingMessageSender of message processor ["+ this.messageProcessor.getName()
-                                    + "] failed to send message to the endpoint");
-                            // Some Error has occurred while having out only
-                            // operation. Try to send the to fault sequence, since
-                            // outCtx is null passing the messageContext
-                            sendThroughFaultSeq(messageContext);
+						}
+					}
 
-                        }
-                    }
+					if (isSuccessful) {
+						if (outCtx != null) {
+							if ("true".equals(outCtx.getProperty(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
 
-                    if (isSuccessful) {
-                        if (outCtx != null) {
-                            if ("true".equals(outCtx.
-                                    getProperty(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
+								// this means send has failed due to some reason
+								// so we have to retry it
+								isSuccessful =
+								               isNonRetryErrorCode((String) outCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
 
-                                // this means send has failed due to some reason so we have to retry it
-                                isSuccessful = isNonRetryErrorCode(
-                                        (String) outCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
+								if (isSuccessful) {
+									sendThroughReplySeq(outCtx);
+								} else {
+									// This means some error has occurred so
+									// must try to send down the fault sequence.
+									log.error("BlockingMessageSender of message processor [" +
+									          this.messageProcessor.getName() +
+									          "] failed to send message to the endpoint");
+									sendThroughFaultSeq(outCtx);
+								}
+							} else {
+								// Send the message down the reply sequence if
+								// there is one
+								sendThroughReplySeq(outCtx);
+								messageConsumer.ack();
+								attemptCount = 0;
+								isSuccessful = true;
 
-                                if (isSuccessful) {
-                                    sendThroughReplySeq(outCtx);
-                                } else {
-                                    // This means some error has occurred so must try to send down the fault sequence.
-                                    log.error("BlockingMessageSender of message processor ["+ this.messageProcessor.getName()
-                                            + "] failed to send message to the endpoint");
-                                    sendThroughFaultSeq(outCtx);
-                                }
-                            }
-                            else {
-                                // Send the message down the reply sequence if there is one
-                                sendThroughReplySeq(outCtx);
-                                messageConsumer.ack();
-                                attemptCount = 0;
-                                isSuccessful = true;
+								if (log.isDebugEnabled()) {
+									log.debug("Successfully sent the message to endpoint [" +
+									          ep.getName() + "]" + " with message processor [" +
+									          messageProcessor.getName() + "]");
+								}
+							}
+						} else {
+							// This Means we have invoked an out only operation
+							// remove the message and reset the count
+							messageConsumer.ack();
+							attemptCount = 0;
+							isSuccessful = true;
 
-                                if (log.isDebugEnabled()) {
-                                    log.debug("Successfully sent the message to endpoint [" + ep.getName() +"]"
-                                                      + " with message processor [" + messageProcessor.getName() + "]");
-                                }
-                            }
-                        }
-                        else {
-                            // This Means we have invoked an out only operation
-                            // remove the message and reset the count
-                            messageConsumer.ack();
-                            attemptCount = 0;
-                            isSuccessful = true;
+							if (log.isDebugEnabled()) {
+								log.debug("Successfully sent the message to endpoint [" +
+								          ep.getName() + "]" + " with message processor [" +
+								          messageProcessor.getName() + "]");
+							}
+						}
+					}
 
-                            if (log.isDebugEnabled()) {
-                                log.debug("Successfully sent the message to endpoint [" + ep.getName() +"]"
-                                                      + " with message processor [" + messageProcessor.getName() + "]");
-                            }
-                        }
-                    }
+					if (!isSuccessful) {
+						// Then we have to retry sending the message to the
+						// client.
+						prepareToRetry();
+					} else {
+						if (messageProcessor.isPaused()) {
+							this.messageProcessor.resumeService();
+							log.info("Resuming the service of message processor [" +
+							         messageProcessor.getName() + "]");
+						}
+					}
+				}
+			} catch (Exception e) {
+				log.error("Message processor [" + messageProcessor.getName() +
+				          "] failed to send the message to" + " client", e);
+			}
+		} else {
+			/*
+			 * No Target Endpoint defined for the Message So we do not have a
+			 * place to deliver.
+			 * Here we log a warning and remove the message todo: we can improve
+			 * this by implementing a target inferring
+			 * mechanism.
+			 */
 
-                    if (!isSuccessful) {
-                        // Then we have to retry sending the message to the client.
-                        prepareToRetry();
-                    }
-                    else {
-                        if (messageProcessor.isPaused()) {
-                            this.messageProcessor.resumeService();
-                            log.info("Resuming the service of message processor [" + messageProcessor.getName() + "]");
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                log.error("Message processor [" + messageProcessor.getName() + "] failed to send the message to" +
-                        " client", e);
-            }
-        }
-        else {
-            //No Target Endpoint defined for the Message
-            //So we do not have a place to deliver.
-            //Here we log a warning and remove the message
-            //todo: we can improve this by implementing a target inferring mechanism
+			log.warn("Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
+			         " not found in the message context , Hence removing the message ");
 
-            log.warn("Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
-                    " not found in the message context , Hence removing the message ");
+			messageConsumer.ack();
+		}
 
-            messageConsumer.ack();
-        }
+		return;
+	}
 
-        return true;
-    }
+	/**
+	 * Sending the out message through the fault sequence.
+	 * 
+	 * @param msgCtx
+	 *            Synapse {@link MessageContext} to be sent through the fault
+	 *            sequence.
+	 */
+	public void sendThroughFaultSeq(MessageContext msgCtx) {
+		if (faultSeq == null) {
+			log.warn("Failed to send the message through the fault sequence. Sequence name does not Exist.");
+			return;
+		}
+		Mediator mediator = msgCtx.getSequence(faultSeq);
 
-    public void sendThroughFaultSeq(MessageContext msgCtx) {
-        if (faultSeq == null) {
-            log.warn("Failed to send the message through the fault sequence. Sequence name does not Exist.");
-            return;
-        }
-        Mediator mediator = msgCtx.getSequence(faultSeq);
+		if (mediator == null) {
+			log.warn("Failed to send the message through the fault sequence. Sequence [" +
+			         faultSeq + "] does not Exist.");
+			return;
+		}
 
-        if (mediator == null) {
-            log.warn("Failed to send the message through the fault sequence. Sequence [" + faultSeq + "] does not Exist.");
-            return;
-        }
+		mediator.mediate(msgCtx);
+	}
 
-        mediator.mediate(msgCtx);
-    }
+	/**
+	 * Sending the out message through the reply sequence.
+	 * 
+	 * @param outCtx
+	 *            Synapse out {@link MessageContext} to be sent through the
+	 *            reply sequence.
+	 */
+	public void sendThroughReplySeq(MessageContext outCtx) {
+		if (replySeq == null) {
+			this.messageProcessor.deactivate();
+			log.error("Failed to send the out message. Reply sequence does not Exist. Deactivated the message processor");
+			return;
+		}
+		Mediator mediator = outCtx.getSequence(replySeq);
 
-    public void sendThroughReplySeq(MessageContext outCtx) {
-        if (replySeq == null) {
-            this.messageProcessor.deactivate();
-            log.error("Failed to send the out message. Reply sequence does not Exist. Deactivated the message processor");
-            return;
-        }
-        Mediator mediator = outCtx.getSequence(replySeq);
+		if (mediator == null) {
+			this.messageProcessor.deactivate();
+			log.error("Failed to send the out message. Reply sequence [" + replySeq +
+			          "] does not exist. Deactivated the message processor");
+			return;
+		}
 
-        if (mediator == null) {
-            this.messageProcessor.deactivate();
-            log.error("Failed to send the out message. Reply sequence [" + replySeq + "] does not exist. Deactivated the message processor");
-            return;
-        }
+		mediator.mediate(outCtx);
+	}
 
-        mediator.mediate(outCtx);
-    }
+	/**
+	 * Terminates the job of the message processor.
+	 * 
+	 * @return <code>true</code> if the job is terminated successfully,
+	 *         <code>false</code> otherwise.
+	 */
+	public boolean terminate() {
+		try {
+			isTerminated = true;
+			Thread.currentThread().interrupt();
 
-    public boolean terminate() {
-        try {
-            isTerminated = true;
-            Thread.currentThread().interrupt();
-
-            if (log.isDebugEnabled()) {
-                log.debug("Successfully terminated job of message processor [" + messageProcessor.getName() + "]");
-            }
-            return true;
-        } catch (Exception e) {
-            log.error("Failed to terminate the job of message processor [" + messageProcessor.getName() + "]");
-            return false;
-        }
-    }
+			if (log.isDebugEnabled()) {
+				log.debug("Successfully terminated job of message processor [" +
+				          messageProcessor.getName() + "]");
+			}
+			return true;
+		} catch (Exception e) {
+			log.error("Failed to terminate the job of message processor [" +
+			          messageProcessor.getName() + "]");
+			return false;
+		}
+	}
 
 	/*
 	 * If the max delivery attempt is reached, this will deactivate the message
@@ -550,31 +624,38 @@ public class ForwardingService implements Task, ManagedLifecycle {
     }
 
 
-    private void prepareToRetry() {
-        if (!isTerminated) {
-            // First stop the processor since no point in re-triggering jobs if the we can't send
-            // it to the client
-            if (!messageProcessor.isPaused()) {
-                this.messageProcessor.pauseService();
+	/*
+	 * Prepares the message processor for the next retry of delivery.
+	 */
+	private void prepareToRetry() {
+		if (!isTerminated) {
+			/*
+			 * First stop the processor since no point in re-triggering jobs if
+			 * the we can't send
+			 * it to the client
+			 */
+			if (!messageProcessor.isPaused()) {
+				this.messageProcessor.pauseService();
 
-                log.info("Pausing the service of message processor [" + messageProcessor.getName() + "]");
-            }
+				log.info("Pausing the service of message processor [" + messageProcessor.getName() +
+				         "]");
+			}
 
-            checkAndDeactivateProcessor();
+			checkAndDeactivateProcessor();
 
-            if (log.isDebugEnabled()) {
-                log.debug("Failed to send to client retrying after " + retryInterval +
-                        "s with attempt count - " + attemptCount);
-            }
+			if (log.isDebugEnabled()) {
+				log.debug("Failed to send to client retrying after " + retryInterval +
+				          "s with attempt count - " + attemptCount);
+			}
 
-            try {
-                // wait for some time before retrying
-                Thread.sleep(retryInterval);
-            } catch (InterruptedException ignore) {
-                // No harm even it gets interrupted. So nothing to handle.
-            }
-        }
-    }
+			try {
+				// wait for some time before retrying
+				Thread.sleep(retryInterval);
+			} catch (InterruptedException ignore) {
+				// No harm even it gets interrupted. So nothing to handle.
+			}
+		}
+	}
 
     private void resetService() {
         isSuccessful = false;
@@ -599,18 +680,16 @@ public class ForwardingService implements Task, ManagedLifecycle {
         return this.isThrottling && (throttlingInterval > -1);
     }
 
-    /**
-     * This method is enable to the
-     */
-    private void dropMessageAndContinueMessageProcessor() {
-        messageConsumer.ack();
-        attemptCount = 0;
-        isSuccessful = true;
-        if (this.messageProcessor.isPaused()) {
-            this.messageProcessor.resumeService();
-        }
-        log.info("Removed failed message and continue the message processor [" + this.messageProcessor.getName() + "]");
-    }
+	private void dropMessageAndContinueMessageProcessor() {
+		messageConsumer.ack();
+		attemptCount = 0;
+		isSuccessful = true;
+		if (this.messageProcessor.isPaused()) {
+			this.messageProcessor.resumeService();
+		}
+		log.info("Removed failed message and continue the message processor [" +
+		         this.messageProcessor.getName() + "]");
+	}
     
 	private boolean setMessageConsumer() {
 		final String messageStore = messageProcessor.getMessageStoreName();

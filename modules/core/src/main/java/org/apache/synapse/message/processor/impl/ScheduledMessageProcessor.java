@@ -18,11 +18,8 @@
  */
 package org.apache.synapse.message.processor.impl;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +33,16 @@ import org.apache.synapse.task.TaskManager;
 import org.wso2.carbon.mediation.ntask.NTaskTaskManager;
 import org.wso2.carbon.mediation.ntask.TaskManagerObserver;
 
+/**
+ * Implements the common message processor infrastructure which is used by the
+ * both <code>Forwarding</code> and <code>Sampling</code> message Processors.
+ * Mainly
+ * responsible for handling life cycle states of the message processors. Some of
+ * the well known life cycle states are <code>start</code>, <code>pause</code> ,
+ * <code>destroy</code>, <code>deactivate</code> etc.
+ * 
+ *
+ */
 public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor implements TaskManagerObserver{
     private static final Log logger = LogFactory.getLog(ScheduledMessageProcessor.class.getName());
 
@@ -50,14 +57,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     protected String cronExpression = null;
 
     /**
-     * This only needed for the associated service. This value could not be changed manually. Moving to this state
-     * only happens when the service reaches the maximum retry limit
-     */
-    protected AtomicBoolean isPaused = new AtomicBoolean(false);
-
-    private AtomicBoolean isActivated = new AtomicBoolean(true);
-
-    /**
      * This is specially used for REST scenarios where http status codes can take semantics in a RESTful architecture.
      */
     protected String[] nonRetryStatusCodes = null;
@@ -68,17 +67,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	private TaskManager nTaskManager = null;
 
-	/*
-	 * This was used to guard the messageProcessorState enum against concurrent
-	 * modifications.
-	 */
-	private final Object lock = new Object();
-
-	private MessageProcessorState messageProcessorState = MessageProcessorState.OTHER;
-
 	private int memberCount = 1;
     
     private static final String TASK_PREFIX = "MSMP_";
+    
+    private static final String DEFAULT_TASK_SUFFIX = "0";
 
 	public void init(SynapseEnvironment se) {
 		this.synapseEnvironment = se;
@@ -143,7 +136,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
 			nTaskManager.schedule(taskDescription);
 		}
-		messageProcessorState = MessageProcessorState.STARTED;
+		// messageProcessorState = MessageProcessorState.STARTED;
 		if (logger.isDebugEnabled()) {
 			logger.info("Started message processor. [" + getName() + "].");
 		}
@@ -151,66 +144,40 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return true;
 	}
 	
-	/*
-	 * Fetches the number of tasks running on behalf of this message processor
-	 * at the moment.
-	 */
-	private int getRunningTaskCount() {
-		int runningTaskCount = 0;
-		List<String> runningTaskList = ((NTaskTaskManager) nTaskManager).getRunningTaskList();
-		if (runningTaskList != null) {
-			for (String taskName : runningTaskList) {
-				if (taskName.contains(TASK_PREFIX + name)) {
-					runningTaskCount++;
-				}
-			}
-		}
-		return runningTaskCount;
-	}
-
 	public boolean isDeactivated() {
-		boolean deactivated;
-		synchronized (lock) {
-			deactivated = messageProcessorState.equals(MessageProcessorState.STOPPED);
-		}
-
-		if (nTaskManager.isInitialized() && ((NTaskTaskManager) nTaskManager).isMgrNode() &&
-		    ((NTaskTaskManager) nTaskManager).getServerCount() > 0) {
-			deactivated = deactivated || getRunningTaskCount() == 0 ? true : false;
-
-		}
-
-		return deactivated;
+		return ((NTaskTaskManager) nTaskManager).isTaskDeactivated(TASK_PREFIX + name +
+		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
-    public void setParameters(Map<String, Object> parameters) {
+	public void setParameters(Map<String, Object> parameters) {
 
-        super.setParameters(parameters);
+		super.setParameters(parameters);
 
-        if (parameters != null && !parameters.isEmpty()) {
-            Object o = parameters.get(MessageProcessorConstants.CRON_EXPRESSION);
-            if (o != null) {
-                cronExpression = o.toString();
-            }
-            o = parameters.get(MessageProcessorConstants.INTERVAL);
-            if (o != null) {
-                interval = Integer.parseInt(o.toString());
-            }
+		if (parameters != null && !parameters.isEmpty()) {
+			Object o = parameters.get(MessageProcessorConstants.CRON_EXPRESSION);
+			if (o != null) {
+				cronExpression = o.toString();
+			}
+			o = parameters.get(MessageProcessorConstants.INTERVAL);
+			if (o != null) {
+				interval = Integer.parseInt(o.toString());
+			}
 			o = parameters.get(MessageProcessorConstants.MEMBER_COUNT);
 			if (o != null) {
 				memberCount = Integer.parseInt(o.toString());
 			}
-            o = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
-            if (o != null) {
-                isActivated.set(Boolean.valueOf(o.toString()));
-            }
-            o = parameters.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
-            if (o != null) {
-                // we take it out of param set and send it because we need split the array.
-                nonRetryStatusCodes = o.toString().split(",");
-            }
-        }
-    }
+			o = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
+			if (o != null) {
+				setActivated(Boolean.valueOf(o.toString()));
+			}
+			o = parameters.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
+			if (o != null) {
+				// we take it out of param set and send it because we need split
+				// the array.
+				nonRetryStatusCodes = o.toString().split(",");
+			}
+		}
+	}
 
 
 	public boolean stop() {
@@ -258,8 +225,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 */
 		try {
 			stop();
-			// TODO: Check whether this is really needed.
-			messageProcessorState = MessageProcessorState.DESTROYED;
 		}
 
 		finally {
@@ -340,57 +305,34 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		for (int i = 0; i < memberCount; i++) {
 			nTaskManager.pause(TASK_PREFIX + name + i);
 		}
-		synchronized (lock) {
-			messageProcessorState = MessageProcessorState.PAUSED;
-		}
 	}
 
 	public void resumeService() {
 		for (int i = 0; i < memberCount; i++) {
 			nTaskManager.resume(TASK_PREFIX + name + i);
 		}
-		synchronized (lock) {
-			messageProcessorState = MessageProcessorState.STARTED;
-		}
 	}
 
 	public boolean isActive() {
-		return !isDeactivated();
+		return ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
+		                                                       DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean isPaused() {
-		return messageProcessorState.equals(MessageProcessorState.PAUSED);
+		return ((NTaskTaskManager) nTaskManager).isTaskDeactivated(TASK_PREFIX + name +
+		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean getActivated() {
-		return messageProcessorState.equals(MessageProcessorState.STARTED);
+		return ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
+		                                                       DEFAULT_TASK_SUFFIX);
 	}
 
-    public void setActivated(boolean activated) {
-        isActivated.set(activated);
-        parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(getActivated()));
-    }
+	private void setActivated(boolean activated) {
+		parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(activated));
+	}
 
-    private Properties getSchedulerProperties(String name) {
-        Properties config = new Properties();
-
-        // This is important to have a separate scheduler for each message processor.
-        config.put(MessageProcessorConstants.SCHEDULER_INSTANCE_NAME, name);
-        config.put(MessageProcessorConstants.SCHEDULER_RMI_EXPORT, "false");
-        config.put(MessageProcessorConstants.SCHEDULER_RMI_PROXY, "false");
-        config.put(MessageProcessorConstants.SCHEDULER_WRAP_JOB_EXE_IN_USER_TRANSACTION, "false");
-        config.put(MessageProcessorConstants.THREAD_POOL_CLASS, "org.quartz.simpl.SimpleThreadPool");
-        // This is set to one because according to the current implementation one scheduler
-        // only have one job
-        config.put(MessageProcessorConstants.THREAD_POOL_THREAD_COUNT, "1");
-        config.put(MessageProcessorConstants.THREAD_POOL_THREAD_PRIORITY, "5");
-        config.put(MessageProcessorConstants.JOB_STORE_MISFIRE_THRESHOLD, "60000");
-        config.put(MessageProcessorConstants.THREAD_INHERIT_CONTEXT_CLASSLOADER_OF_INIT_THREAD, "true");
-        config.put(MessageProcessorConstants.JOB_STORE_CLASS, "org.quartz.simpl.RAMJobStore");
-
-        return config;
-    }
-
+	// TODO: Need to test this functionality
     private boolean isPinnedServer(String serverName) {
         boolean pinned = false;
         Object pinnedServersObj = this.parameters.get(MessageProcessorConstants.PINNED_SERVER);
@@ -420,13 +362,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     }
 
 	/**
-	 * nTask does not except values less than 0 for its schedule interval. Therefore when the
-	 * interval is zero we have
-	 * to handle as a separate case.
+	 * nTask does not except values less than 1000 for its schedule interval.
+	 * Therefore when the
+	 * interval is less than 1000 ms we have
+	 * to handle it as a separate case.
 	 * 
 	 * @param interval
 	 *            in which scheduler triggers its job.
-	 * @return true if it has run on non-throttle mode.
+	 * @return true if it needs to run on throttle mode, <code>false</code>
+	 *         otherwise.
 	 */
 	protected boolean isThrottling(long interval) {
 		return interval < MessageProcessorConstants.THRESHOULD_INTERVAL;
@@ -453,14 +397,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return sender;
 	}
 	
-	/**
-	 * Retrieves the message processors current state.
-	 * 
-	 * @return current state of the message processor.
-	 */
-	public MessageProcessorState getMessageProcessorState() {
-		return messageProcessorState;
-	}
 
 	/**
 	 * Gives the {@link Task} instance associated with this processor.

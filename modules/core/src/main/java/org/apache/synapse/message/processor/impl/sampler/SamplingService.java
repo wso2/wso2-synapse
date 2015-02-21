@@ -32,20 +32,25 @@ import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.task.Task;
 
+/**
+ * This {@link Task} injects a message to a given sequence. It also supports
+ * Throttling scenarios.
+ *
+ */
 public class SamplingService implements Task, ManagedLifecycle {
     private static Log log = LogFactory.getLog(SamplingService.class);
 
-    /** The consumer that is associated with the particular message store */
-    private MessageConsumer messageConsumer;
+	// The consumer that is associated with the particular message store
+	private MessageConsumer messageConsumer;
 
-    /** Owner of the this job */
-    private MessageProcessor messageProcessor;
+	// Owner of the this job
+	private MessageProcessor messageProcessor;
 
-    /** Determines how many messages at a time it should execute */
-    private int concurrency = 1;
+	// Determines how many messages at a time it should execute
+	private int concurrency = 1;
 
-    /** Represents the send sequence of a message */
-    private String sequence;
+	// Represents the send sequence of a message
+	private String sequence;
     
 	private SynapseEnvironment synapseEnvironment;
 
@@ -141,16 +146,30 @@ public class SamplingService implements Task, ManagedLifecycle {
 		initialized = true;
 	}
 
-    public MessageContext fetch(MessageConsumer msgConsumer) {
-        MessageContext newMsg = messageConsumer.receive();
-        if (newMsg != null) {
-            messageConsumer.ack();
-        }
+	/**
+	 * Receives the next message from the message store.
+	 * 
+	 * @param msgConsumer
+	 *            message consumer
+	 * @return {@link MessageContext} of the last message received from the
+	 *         store.
+	 */
+	public MessageContext fetch(MessageConsumer msgConsumer) {
+		MessageContext newMsg = messageConsumer.receive();
+		if (newMsg != null) {
+			messageConsumer.ack();
+		}
 
-        return newMsg;
-    }
+		return newMsg;
+	}
 
-    public boolean dispatch(final MessageContext messageContext) {
+	/**
+	 * Sends the message to a given sequence.
+	 * 
+	 * @param messageContext
+	 *            message to be injected.
+	 */
+    public void dispatch(final MessageContext messageContext) {
 
         final ExecutorService executor = messageContext.getEnvironment().
                 getExecutorService();
@@ -167,19 +186,22 @@ public class SamplingService implements Task, ManagedLifecycle {
                     }
                     log.error("Error occurred while executing the message", syne);
                 } catch (Throwable t) {
-                    // TODO : Should I send throw this ???
                     log.error("Error occurred while executing the message", t);
                 }
             }
         });
-
-        return true;
     }
 
-    public boolean terminate() {
-        messageConsumer.cleanup();
-        return true;
-    }
+	/**
+	 * Terminates the job of the message processor.
+	 * 
+	 * @return <code>true</code> if the job is terminated successfully,
+	 *         <code>false</code> otherwise.
+	 */
+	public boolean terminate() {
+		messageConsumer.cleanup();
+		return true;
+	}
 
 	private boolean setMessageConsumer() {
 		final String messageStore = messageProcessor.getMessageStoreName();

@@ -23,10 +23,15 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
 import org.apache.synapse.task.Task;
 
+/**
+ * Implements the functionality of the Sampling message processor which injects
+ * a message to a given sequence.
+ *
+ */
 public class SamplingProcessor extends ScheduledMessageProcessor {
 
-    public static final String CONCURRENCY = "concurrency";
-    public static final String SEQUENCE = "sequence";
+    private static final String CONCURRENCY = "concurrency";
+    private static final String SEQUENCE = "sequence";
 
     private SamplingProcessorView view;
 
@@ -45,9 +50,14 @@ public class SamplingProcessor extends ScheduledMessageProcessor {
                 "Message Sampling Processor view", getName());
     }
 
-    public SamplingProcessorView getView() {
-        return view;
-    }
+	/**
+	 * This method is used by Admin service of the message processor
+	 * 
+	 * @return The associated MBean.
+	 */
+	public SamplingProcessorView getView() {
+		return view;
+	}
     
 	@Override
 	protected Task getTask() {
