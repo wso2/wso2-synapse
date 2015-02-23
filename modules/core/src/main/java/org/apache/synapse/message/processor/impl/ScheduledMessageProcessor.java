@@ -136,7 +136,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
 			nTaskManager.schedule(taskDescription);
 		}
-		// messageProcessorState = MessageProcessorState.STARTED;
 		if (logger.isDebugEnabled()) {
 			logger.info("Started message processor. [" + getName() + "].");
 		}

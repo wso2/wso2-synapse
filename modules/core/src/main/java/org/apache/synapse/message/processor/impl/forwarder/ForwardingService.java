@@ -18,6 +18,7 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -132,6 +133,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * queue and dispatch it to a given endpoint.
 	 */
 	public void execute() {
+		final long startTime = new Date().getTime();
 		/*
 		 * Initialize only if it is NOT already done. This will make sure that
 		 * the initialization is done only once.
@@ -248,6 +250,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				} catch (InterruptedException e) {
 					log.debug("Current Thread was interrupted while it is sleeping.");
 				}
+			}
+			
+			// Gives the control back to Quartz.
+			if (new Date().getTime() - startTime > 1000) {
+				break;
 			}
 
 		} while (isThrottling && !isTerminated);
