@@ -29,8 +29,10 @@ import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
+import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
@@ -162,7 +164,13 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
         serializeMessageProcessors(definitions,synCfg.getMessageProcessors());
 
         serializeAPIs(definitions, synCfg.getAPIs());
-     
+
+        if (synCfg.getInboundEndpoints() != null && synCfg.getInboundEndpoints().size() > 0) {
+            Collection<InboundEndpoint> inboundEndpoints = synCfg.getInboundEndpoints();
+            for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
+                InboundEndpointSerializer.serializeInboundEndpoint(definitions, inboundEndpoint);
+            }
+        }
 
         return definitions;
     }

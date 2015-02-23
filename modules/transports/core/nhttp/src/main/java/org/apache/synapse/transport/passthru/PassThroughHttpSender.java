@@ -36,6 +36,7 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.nio.NHttpServerConnection;
@@ -55,16 +56,21 @@ import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
+import org.apache.synapse.transport.passthru.core.PassThroughSenderManager;
 import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.jmx.TransportView;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
+import org.wso2.caching.CachingConstants;
+import org.wso2.caching.digest.DigestGenerator;
 
-import java.io.ByteArrayOutputStream;
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * PassThroughHttpSender for Synapse based on HttpCore and NIO extensions
@@ -97,6 +103,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     private volatile int state = BaseConstants.STOPPED;
 
     private String namePrefix;
+
+    private DigestGenerator digestGenerator  = CachingConstants.DEFAULT_XML_IDENTIFIER;
 
     public PassThroughHttpSender() {
         log = LogFactory.getLog(this.getClass().getName());
@@ -141,6 +149,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 transportOutDescription, workerPool, metrics, 
                 proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);
         targetConfiguration.build();
+        if(!scheme.isSSL()){
+            PassThroughSenderManager.registerPassThroughHttpSender(this);
+        }
+
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
         
@@ -425,6 +437,23 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             } else {
                 throw new IllegalStateException("Unable to correlate the response to a request");
             }
+        }
+
+        // Handle ETag caching
+        if (msgContext.getProperty(PassThroughConstants.HTTP_ETAG_ENABLED) != null
+            && (Boolean) msgContext.getProperty(PassThroughConstants.HTTP_ETAG_ENABLED)) {
+
+            try {
+                RelayUtils.buildMessage(msgContext);
+            } catch (IOException e) {
+                handleException("IO Error occurred while building the message", e);
+            } catch (XMLStreamException e) {
+                handleException("XML Error occurred while building the message", e);
+            }
+
+            String hash = digestGenerator.getDigest(msgContext);
+            Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+            headers.put(HttpHeaders.ETAG,"\""+hash+"\"");
         }
 
         SourceRequest sourceRequest = SourceContext.getRequest(conn);

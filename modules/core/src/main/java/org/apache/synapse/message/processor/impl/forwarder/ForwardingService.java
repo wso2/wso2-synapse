@@ -353,6 +353,11 @@ public class ForwardingService implements InterruptableJob, Service {
                         if (!isSuccessful) {
                             log.error("BlockingMessageSender of message processor ["+ this.messageProcessor.getName()
                                     + "] failed to send message to the endpoint");
+                            // Some Error has occurred while having out only
+                            // operation. Try to send the to fault sequence, since
+                            // outCtx is null passing the messageContext
+                            sendThroughFaultSeq(messageContext);
+
                         }
                     }
 

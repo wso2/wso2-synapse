@@ -216,11 +216,6 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="enableRM" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:attribute name="policy" type="xs:string" use="optional"/>
-                </xs:complexType>
-            </xs:element>
             <xs:element name="enableSec" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:attribute name="policy" type="xs:string" use="required"/>

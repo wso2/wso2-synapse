@@ -65,6 +65,19 @@ public interface SynapseEnvironment {
     public void injectAsync(MessageContext smc, SequenceMediator seq);
 
     /**
+     * This method injects a new message into the Synapse engine for the mediation
+     * by the specified sequence. This is used by inbound pooling listeners
+     * in EIP mediation. This method will do the mediation asynchronously or synchronously using a separate
+     * thread from the environment thread pool
+     *
+     * @param smc - Synapse message context to be injected
+     * @param seq - Sequence to be used for mediation
+     * @param sequential - Injection behavior
+     * @return a Boolean Status of the injection
+     */
+    public boolean injectInbound(MessageContext smc, SequenceMediator seq, boolean sequential);
+
+    /**
      * This method allows a message to be sent through the underlying SOAP engine. This will
      * send request messages on (forward), and send the response messages back to the client
      *
@@ -201,5 +214,14 @@ public interface SynapseEnvironment {
      * @param key artifact reference key
      */
     public void clearUnavailabilityOfArtifact(String key);
+
+    /**
+     * Inject message to the sequence in synchronous manner
+     * @param smc - Synapse message context to be injected
+     * @param seq - Sequence to be used for mediation
+     * @return boolean true if the message processing should be continued
+     *  and false if it should be aborted
+     */
+    public boolean injectMessage(MessageContext smc,SequenceMediator seq);
 
 }

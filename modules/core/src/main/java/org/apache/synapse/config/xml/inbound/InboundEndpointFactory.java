@@ -100,7 +100,7 @@ public class InboundEndpointFactory {
                 inboundEndpoint.addParameter(paramName, parameter.getText());
             }
         }
-
+        inboundEndpoint.setFileName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME))+".xml");
         return inboundEndpoint;
     }
 

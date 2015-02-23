@@ -126,19 +126,6 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             }
         }
 
-        OMElement wsRm = elem.getFirstChildWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableRM"));
-        if (wsRm != null) {
-
-            definition.setReliableMessagingOn(true);
-
-            OMAttribute policy
-                    = wsRm.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "policy"));
-            if (policy != null) {
-                definition.setWsRMPolicyKey(policy.getAttributeValue());
-            }
-        }
-
         // set the timeout configuration
         OMElement timeout = elem.getFirstChildWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "timeout"));

@@ -26,10 +26,12 @@ import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.vfs.VFSConstants; 
+import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Map;
 
 /**
  * Holds information about an entry in the VFS transport poll table used by the
@@ -85,6 +87,17 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private Integer fileProcessingInterval;
     
     private Integer fileProcessingCount;
+
+    private Map<String, String> vfsSchemeProperties;
+    private boolean autoLockRelease;
+
+    private Long autoLockReleaseInterval;
+
+    private Boolean autoLockReleaseSameNode;   
+    
+    private boolean distributedLock;
+    
+    private Long distributedLockTimeout;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -217,6 +230,72 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return moveTimestampFormat;
     }
 
+    /**
+     * @return the autoLockRelease
+     */
+    public Boolean getAutoLockRelease() {
+        return autoLockRelease;
+    }
+
+    /**
+     * @param autoLockRelease the autoLockRelease to set
+     */
+    public void setAutoLockRelease(Boolean autoLockRelease) {
+        this.autoLockRelease = autoLockRelease;
+    }
+
+    /**
+     * @return the autoLockReleaseInterval
+     */
+    public Long getAutoLockReleaseInterval() {
+        return autoLockReleaseInterval;
+    }
+
+    /**
+     * @param autoLockReleaseInterval the autoLockReleaseInterval to set
+     */
+    public void setAutoLockReleaseInterval(Long autoLockReleaseInterval) {
+        this.autoLockReleaseInterval = autoLockReleaseInterval;
+    }
+
+    /**
+     * @return the autoLockReleaseSameNode
+     */
+    public Boolean getAutoLockReleaseSameNode() {
+        return autoLockReleaseSameNode;
+    }
+
+    /**
+     * @param autoLockReleaseSameNode the autoLockReleaseSameNode to set
+     */
+    public void setAutoLockReleaseSameNode(Boolean autoLockReleaseSameNode) {
+        this.autoLockReleaseSameNode = autoLockReleaseSameNode;
+    }
+
+    
+    
+    /**
+     * @return the distributedLock
+     */
+    public boolean isDistributedLock() {
+        return distributedLock;
+    }
+
+    /**
+     * @return the distributedLockTimeout
+     */
+    public Long getDistributedLockTimeout() {
+        return distributedLockTimeout;
+    }
+
+    public Map<String, String> getVfsSchemeProperties() {
+        return vfsSchemeProperties;
+    }
+
+    public void setVfsSchemeProperties(Map<String, String> vfsSchemeProperties) {
+        this.vfsSchemeProperties = vfsSchemeProperties;
+    }
+
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
         
@@ -268,6 +347,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
             if(moveFileTimestampFormat != null) {
                 moveTimestampFormat = new SimpleDateFormat(moveFileTimestampFormat);
             }
+
+            setVfsSchemeProperties(VFSUtils.parseSchemeFileOptions(fileURI, params));
 
             String strStreaming = ParamUtils.getOptionalParam(params, VFSConstants.STREAMING);
             if (strStreaming != null) {
@@ -341,6 +422,75 @@ public class PollTableEntry extends AbstractPollTableEntry {
             	}
             }                        
             
+            String strAutoLock = ParamUtils.getOptionalParam(params,
+                    VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE);
+            autoLockRelease = false;
+            autoLockReleaseSameNode = true;
+            autoLockReleaseInterval = null;
+            if (strAutoLock != null) {
+                try {
+                    autoLockRelease = Boolean.parseBoolean(strAutoLock);
+                } catch (Exception e) {
+                    autoLockRelease = false;
+                    log.warn("VFS Auto lock removal not set properly. Current value is : "
+                            + strAutoLock, e);
+                }
+                if (autoLockRelease) {
+                    String strAutoLockInterval = ParamUtils.getOptionalParam(params,
+                            VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL);
+                    if (strAutoLockInterval != null) {
+                        try {
+                            autoLockReleaseInterval = Long.parseLong(strAutoLockInterval);
+                        } catch (Exception e) {
+                            autoLockReleaseInterval = null;
+                            log.warn(
+                                    "VFS Auto lock removal property not set properly. Current value is : "
+                                            + strAutoLockInterval, e);
+                        }
+                    }
+                    String strAutoLockReleaseSameNode = ParamUtils.getOptionalParam(params,
+                            VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE);
+                    if (strAutoLockReleaseSameNode != null) {
+                        try {
+                            autoLockReleaseSameNode = Boolean
+                                    .parseBoolean(strAutoLockReleaseSameNode);
+                        } catch (Exception e) {
+                            autoLockReleaseSameNode = true;
+                            log.warn(
+                                    "VFS Auto lock removal property not set properly. Current value is : "
+                                            + autoLockReleaseSameNode, e);
+                        }
+                    }
+                }
+
+            }            
+            
+            distributedLock = false;
+            distributedLockTimeout = null;
+            String strDistributedLock = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_DISTRIBUTED_LOCK);
+            if(strDistributedLock != null){
+                try {
+                    distributedLock = Boolean.parseBoolean(strDistributedLock);
+                } catch (Exception e) {
+                    autoLockRelease = false;
+                    log.warn("VFS Distributed lock not set properly. Current value is : " + strDistributedLock, e);
+                }            
+                
+                if(distributedLock){                
+                    String strDistributedLockTimeout = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT);
+                    if (strDistributedLockTimeout != null) {
+                        try {
+                            distributedLockTimeout = Long.parseLong(strDistributedLockTimeout);
+                        } catch (Exception e) {
+                            distributedLockTimeout = null;
+                            log.warn(
+                                    "VFS Distributed lock timeout property not set properly. Current value is : "
+                                            + strDistributedLockTimeout, e);
+                        }
+                    }                
+                }
+                
+            }            
             return super.loadConfiguration(params);
         }
     }
