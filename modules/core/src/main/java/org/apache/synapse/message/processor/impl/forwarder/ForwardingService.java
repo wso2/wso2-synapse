@@ -242,7 +242,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			 * using the while loop since ntask rejects any intervals whose
 			 * value is less then 1000 ms.
 			 */
-			if (interval > 0 && interval < 1000) {
+			if (interval > 0 && interval < MessageProcessorConstants.THRESHOULD_INTERVAL) {
 				try {
 					Thread.sleep(interval);
 				} catch (InterruptedException e) {

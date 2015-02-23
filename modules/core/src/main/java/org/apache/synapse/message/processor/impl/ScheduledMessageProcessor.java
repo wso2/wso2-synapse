@@ -143,7 +143,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 		return true;
 	}
-	
+
 	public boolean isDeactivated() {
 		return ((NTaskTaskManager) nTaskManager).isTaskDeactivated(TASK_PREFIX + name +
 		                                                           DEFAULT_TASK_SUFFIX);
@@ -314,6 +314,18 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public boolean isActive() {
+		/*
+		 * If the interval value is less than 1000 ms, then the task is run
+		 * inside the while loop. Due to that control is not returned back to
+		 * the taskmanager and hence the task is in BLOCKED state. This
+		 * situation is handled separately.
+		 */
+		if (isThrottling(interval)) {
+			return ((NTaskTaskManager) nTaskManager).isTaskBlocked(TASK_PREFIX + name +
+			                                                       DEFAULT_TASK_SUFFIX) ||
+			       ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
+			                                                       DEFAULT_TASK_SUFFIX);
+		}
 		return ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
 		                                                       DEFAULT_TASK_SUFFIX);
 	}
@@ -372,11 +384,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	 * @return true if it needs to run on throttle mode, <code>false</code>
 	 *         otherwise.
 	 */
-	protected boolean isThrottling(long interval) {
+	protected boolean isThrottling(final long interval) {
 		return interval < MessageProcessorConstants.THRESHOULD_INTERVAL;
 	}
 
-	protected boolean isThrottling(String cronExpression) {
+	protected boolean isThrottling(final String cronExpression) {
 		return cronExpression != null;
 	}
 	
