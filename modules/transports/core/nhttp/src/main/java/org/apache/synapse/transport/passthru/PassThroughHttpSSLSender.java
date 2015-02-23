@@ -17,11 +17,27 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 
 public class PassThroughHttpSSLSender extends PassThroughHttpSender {
+
+    @Override
+    public void init(ConfigurationContext configurationContext,
+                     TransportOutDescription transportOutDescription){
+
+        try {
+            super.init(configurationContext,transportOutDescription);
+            //Start new polling thread
+            Thread thrd=new Thread(new SenderProfileNotifierThread(this,transportOutDescription));
+            thrd.start();
+        } catch (AxisFault axisFault) {
+            axisFault.printStackTrace();
+        }
+
+    }
 
     @Override
     protected Scheme getScheme() {

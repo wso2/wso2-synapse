@@ -33,6 +33,11 @@ public class HttpCoreNIOMultiSSLListener extends HttpCoreNIOListener {
             throws AxisFault {
         super.init(ctx, transportIn);
         new MultiSSLProfileReloader(this, transportIn);
+
+        //start polling thread for listener
+        ListenerProfileNotifierThread listenerProfNotifier=new ListenerProfileNotifierThread(this,transportIn);
+        Thread testThread=new Thread(listenerProfNotifier);
+        testThread.start();
     }
     @Override
     protected Scheme initScheme() {

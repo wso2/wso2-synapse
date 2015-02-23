@@ -16,11 +16,14 @@
 
 package org.apache.synapse.transport.passthru.util;
 
+import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.Constants;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.axis2.description.AxisService;
@@ -30,9 +33,15 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.HttpStatus;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
+import javax.xml.namespace.QName;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.NetworkInterface;
@@ -103,7 +112,7 @@ public class PassThroughTransportUtils {
      * Remove unwanted headers from the http response of outgoing request. These are headers which
      * should be dictated by the transport and not the user. We remove these as these may get
      * copied from the request messages
-     * 
+     *
      * @param msgContext the Axis2 Message context from which these headers should be removed
      * @param preserveServerHeader if true preserve the original server header
      * @param preserveUserAgentHeader if true preserve the original user-agent header
@@ -112,13 +121,12 @@ public class PassThroughTransportUtils {
                                              boolean preserveServerHeader,
                                              boolean preserveUserAgentHeader) {
         Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
-   	
+
         if (headers == null || headers.isEmpty()) {
             return;
         }
-        
 
-        
+
         //a hack which takes the original content header
      	if(headers.get(HTTP.CONTENT_LEN) != null){
            msgContext.setProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH,headers.get(HTTP.CONTENT_LEN));
@@ -307,7 +315,7 @@ public class PassThroughTransportUtils {
     	}else{
     		format = new OMOutputFormat();
     	}
-     
+
         msgContext.setDoingMTOM(TransportUtils.doWriteMTOM(msgContext));
         msgContext.setDoingSwA(TransportUtils.doWriteSwA(msgContext));
         msgContext.setDoingREST(TransportUtils.isDoingREST(msgContext));
@@ -335,4 +343,37 @@ public class PassThroughTransportUtils {
         return format;
     }
 
+    public static OMElement getpSSLParameter(TransportOutDescription transportOut){
+        try {
+
+            Parameter outPathParam=transportOut.getParameter("OutBoundSSLProfilesConfigPath");
+
+            if(outPathParam==null){
+                return null;
+            }
+
+            OMElement outPathElement=outPathParam.getParameterElement();
+            String path=outPathElement.getFirstChildWithName(new QName("filePath")).getText();
+
+            InputStream inputStream=new FileInputStream(path);
+            StAXOMBuilder builder=createBuilder(inputStream);
+            OMElement docElement=builder.getDocumentElement();
+
+            return docElement;
+
+        } catch (FileNotFoundException e) {
+            return null;
+        }
+        catch (XMLStreamException ex){
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public static StAXOMBuilder createBuilder(InputStream inputStream) throws XMLStreamException {
+        XMLStreamReader xmlStreamReader= XMLInputFactory.newInstance().createXMLStreamReader(inputStream);
+        StAXOMBuilder builder=new StAXOMBuilder(xmlStreamReader);
+
+        return builder;
+    }
 }
