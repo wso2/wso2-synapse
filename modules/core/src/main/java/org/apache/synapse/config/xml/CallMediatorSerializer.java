@@ -47,6 +47,8 @@ public class CallMediatorSerializer extends AbstractMediatorSerializer {
             call.addChild(EndpointSerializer.getElementFromEndpoint(activeEndpoint));
         }
 
+        call.addAttribute(fac.createOMAttribute("blocking",nullNS,Boolean.toString(mediator.getBlocking())));
+
         return call;
     }
 

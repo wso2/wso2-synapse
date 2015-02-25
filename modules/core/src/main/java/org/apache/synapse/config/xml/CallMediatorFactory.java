@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
@@ -74,6 +75,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory  {
 
     private static final QName CALL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "call");
     private static final QName ENDPOINT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
+    private static final QName BLOCKING_Q = new QName("blocking");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -91,8 +93,15 @@ public class CallMediatorFactory extends AbstractMediatorFactory  {
                 callMediator.setEndpoint(endpoint);
             }
         }
-
+        OMAttribute blocking=elem.getAttribute(BLOCKING_Q);
+        if (blocking!=null)
+        {
+            callMediator.setBlocking(Boolean.parseBoolean(blocking.getAttributeValue()));
+        }else {
+            callMediator.setBlocking(false);
+        }
         return callMediator;
+
     }
 
     public QName getTagQName() {
