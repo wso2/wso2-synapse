@@ -96,7 +96,10 @@ public class CallMediatorFactory extends AbstractMediatorFactory  {
         OMAttribute blocking=elem.getAttribute(BLOCKING_Q);
         if (blocking!=null)
         {
+            boolean EndpointType = epElement.toString().contains("endpoint key");
             callMediator.setBlocking(Boolean.parseBoolean(blocking.getAttributeValue()));
+            callMediator.setEndpointType(EndpointType);
+
         }else {
             callMediator.setBlocking(false);
         }

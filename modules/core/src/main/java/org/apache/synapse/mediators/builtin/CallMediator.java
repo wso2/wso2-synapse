@@ -59,7 +59,6 @@ import java.util.List;
  * which resides in the MessageContext.
  * <p/>
  * These ContinuationStates are used to mediate the response message and continue the message flow.
- *
  */
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
@@ -68,8 +67,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     BlockingMsgSender blockingMsgSender = null;
     private ConfigurationContext configCtx = null;
     private Endpoint endpoint = null;
-    private boolean blocking=false;
+    private boolean blocking = false;
     private SynapseEnvironment synapseEnv;
+    private boolean endpointType = false;
 
     /**
      * This will call the send method on the messages with implicit message parameters
@@ -137,11 +137,11 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 return false;
             }
 
-        }
-        else {
+        } else {
             //If call mediator is a marked as blocking function
             MessageContext resultMsgCtx = null;
             try {
+                blockingMsgSender.setEndpointType(endpointType);
                 if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                     blockingMsgSender.send(endpoint, synInCtx);
                 } else {
@@ -162,7 +162,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                     synInCtx.setEnvelope(resultMsgCtx.getEnvelope());
                     synLog.traceOrDebug("End : Call mediator - Blocking Call");
                     return true;
-                }catch (Exception e){
+                } catch (Exception e) {
                     handleFault(synInCtx, e);
                 }
             } else {
@@ -178,6 +178,10 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
+    }
+
+    public void setEndpointType(boolean endpointType) {
+        this.endpointType = endpointType;
     }
 
     public void init(SynapseEnvironment synapseEnvironment) {
@@ -197,8 +201,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             } catch (AxisFault axisFault) {
                 axisFault.printStackTrace();
             }
-        }
-        else {
+        } else {
             synapseEnvironment.updateCallMediatorCount(true);
         }
     }
@@ -215,13 +218,12 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         return false;
     }
 
-    public boolean getBlocking()
-    {
+    public boolean getBlocking() {
         return blocking;
     }
 
-    public void setBlocking(boolean blocking){
-        this.blocking=blocking;
+    public void setBlocking(boolean blocking) {
+        this.blocking = blocking;
     }
 
     private void handleFault(MessageContext synCtx, Exception ex) {

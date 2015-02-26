@@ -43,6 +43,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
@@ -56,6 +57,7 @@ public class BlockingMsgSender {
     private String axis2xml = null;
     private ConfigurationContext configurationContext = null;
     boolean initClientOptions = true;
+    private boolean endpointType = false;
 
     private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
 
@@ -77,6 +79,11 @@ public class BlockingMsgSender {
 
         if (log.isDebugEnabled()) {
             log.debug("Start Sending the Message ");
+        }
+
+        if (endpointType) {
+            String endpointKey = ((IndirectEndpoint) endpoint).getKey();
+            endpoint = synapseInMsgCtx.getEndpoint(endpointKey);
         }
 
         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
@@ -288,5 +295,10 @@ public class BlockingMsgSender {
         log.error(msg);
         throw new SynapseException(msg);
     }
+
+    public void setEndpointType(boolean endpointType) {
+        this.endpointType = endpointType;
+    }
+
 
 }
