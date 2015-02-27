@@ -419,4 +419,20 @@ public class QuartzTaskManager implements TaskManager {
             throw new SynapseTaskException("Error determine start state of the scheduler ", e, logger);
         }
     }
+
+	public void addObserver(TaskManagerObserver o) {
+	    
+    }
+
+	public boolean isTaskDeactivated(String taskName) {
+	    return false;
+    }
+
+	public boolean isTaskBlocked(String taskName) {
+	    return false;
+    }
+
+	public boolean isTaskRunning(String taskName) {
+	    return false;
+    }
 }

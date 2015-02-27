@@ -27,7 +27,7 @@ import org.wso2.carbon.mediation.ntask.NTaskTaskManager;
  *
  */
 public class TaskManagerFactory {
-	private static NTaskTaskManager nTaskTaskManager = null;
+	private static TaskManager nTaskTaskManager = null;
 
 	/*
 	 * Explicitly defined private constructor.

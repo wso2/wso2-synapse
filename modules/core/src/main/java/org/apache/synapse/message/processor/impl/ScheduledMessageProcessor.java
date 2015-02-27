@@ -23,15 +23,16 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
+import org.apache.synapse.message.processor.impl.forwarder.HouseKeepingThread;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
-import org.wso2.carbon.mediation.ntask.NTaskTaskManager;
-import org.wso2.carbon.mediation.ntask.TaskManagerObserver;
+import org.apache.synapse.task.TaskManagerObserver;
 
 /**
  * Implements the common message processor infrastructure which is used by the
@@ -90,19 +91,22 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * related to the pending tasks.
 		 */
 		if (nTaskManager == null) {
-			nTaskManager = TaskManagerFactory.createNTaskTaskManager();
-			nTaskManager.setName(name + " Schedular");
-			nTaskManager.init(synapseEnvironment.getSynapseConfiguration().getProperties());
+			nTaskManager = new SynapseConfiguration().getTaskManager();
+			
+			// nTaskManager = TaskManagerFactory.createNTaskTaskManager();
+			// nTaskManager.setName(name + " Schedular");
+			// nTaskManager.init(synapseEnvironment.getSynapseConfiguration().getProperties());
 		}
 		/*
 		 * If the task manager is not initialized yet, subscribe to
 		 * initialization completion event here.
 		 */
 		if (!nTaskManager.isInitialized()) {
-			((NTaskTaskManager) nTaskManager).addObserver(this);
+			nTaskManager.addObserver(this);
 			return;
 		}
-		if (!isDeactivated()) {
+		
+		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
 			this.start();
 		}
 
@@ -134,6 +138,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			taskDescription.setIntervalInMs(true);
 			taskDescription.addResource(TaskDescription.INSTANCE, task);
 			taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+
+			/*
+			 * If there is a Cron Expression we need to set it into the
+			 * TaskDescription so that the framework will take care of it.
+			 */
+			if (cronExpression != null) {
+				taskDescription.setCronExpression(cronExpression);
+			}
 			nTaskManager.schedule(taskDescription);
 		}
 		if (logger.isDebugEnabled()) {
@@ -144,7 +156,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public boolean isDeactivated() {
-		return ((NTaskTaskManager) nTaskManager).isTaskDeactivated(TASK_PREFIX + name +
+		return nTaskManager.isTaskDeactivated(TASK_PREFIX + name +
 		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
@@ -253,7 +265,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 				logger.info("Successfully deactivated the message processor [" + getName() + "]");
 
-				setActivated(false);
 			} finally {
 				// This is to remove the consumer from the queue.
 				/*
@@ -292,7 +303,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 			logger.info("Successfully re-activated the message processor [" + getName() + "]");
 
-			setActivated(true);
+			// setActivated(true);
 
 			return true;
 		} else {
@@ -320,23 +331,18 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * situation is handled separately.
 		 */
 		if (isThrottling(interval)) {
-			return ((NTaskTaskManager) nTaskManager).isTaskBlocked(TASK_PREFIX + name +
-			                                                       DEFAULT_TASK_SUFFIX) ||
-			       ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
-			                                                       DEFAULT_TASK_SUFFIX);
+			return nTaskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
+			       nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 		}
-		return ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
-		                                                       DEFAULT_TASK_SUFFIX);
+		return nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean isPaused() {
-		return ((NTaskTaskManager) nTaskManager).isTaskDeactivated(TASK_PREFIX + name +
-		                                                           DEFAULT_TASK_SUFFIX);
+		return nTaskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean getActivated() {
-		return ((NTaskTaskManager) nTaskManager).isTaskRunning(TASK_PREFIX + name +
-		                                                       DEFAULT_TASK_SUFFIX);
+		return nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
 	private void setActivated(boolean activated) {
@@ -387,7 +393,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return interval < MessageProcessorConstants.THRESHOULD_INTERVAL;
 	}
 
-	protected boolean isThrottling(final String cronExpression) {
+	public boolean isThrottling(final String cronExpression) {
 		return cronExpression != null;
 	}
 	
@@ -417,8 +423,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	protected abstract Task getTask();
 
 	public void update() {
-		start();
-
+		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
+			start();
+		}
 	}
 
 }

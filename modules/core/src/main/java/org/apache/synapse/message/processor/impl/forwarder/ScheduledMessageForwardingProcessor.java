@@ -33,9 +33,10 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
 	@Override
 	public void init(SynapseEnvironment se) {
 		parameters.put(ForwardingProcessorConstants.THROTTLE,
-		               String.valueOf((isThrottling(interval) || isThrottling(cronExpression))));
+		               String.valueOf((isThrottling(interval))));
 		if (isThrottling(cronExpression)) {
 			parameters.put(ForwardingProcessorConstants.THROTTLE_INTERVAL, String.valueOf(interval));
+			parameters.put(ForwardingProcessorConstants.CRON_EXPRESSION, cronExpression);
 		}
 
 		if (nonRetryStatusCodes != null) {

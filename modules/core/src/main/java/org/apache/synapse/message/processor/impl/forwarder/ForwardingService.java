@@ -77,6 +77,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	private String replySeq = null;
 
     private String targetEndpoint = null;
+    
+	/*
+	 * The cron expression under which the message processor runs.
+	 */
+	private String cronExpression = null;
 
 	/*
 	 * This is specially used for REST scenarios where http status codes can
@@ -252,12 +257,19 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				}
 			}
 			
-			// Gives the control back to Quartz.
-			if (new Date().getTime() - startTime > 1000) {
+			/*
+			 * Gives the control back to Quartz scheduler. This needs to be done
+			 * only if the interval value is less than the Threshould interval
+			 * value of 1000 ms, where the scheduling is done outside of Quartz
+			 * via the while loop. Otherwise the schedular will get blocked.
+			 * For cron expressions this scenario is already
+			 * handled above.
+			 */
+			if (isThrottling && new Date().getTime() - startTime > 1000) {
 				break;
 			}
 
-		} while (isThrottling && !isTerminated);
+		} while ((isThrottling || isRunningUnderCronExpression()) && !isTerminated);
 
 		if (log.isDebugEnabled()) {
 			log.debug("Exiting service thread of message processor [" +
@@ -314,9 +326,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			isThrottling =
 			               Boolean.parseBoolean((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE));
 		}
+		
+		if (parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION) != null) {
+			cronExpression =
+			                 String.valueOf(parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION));
+		}
 
 		// Default Value should be -1.
-		if (isThrottling &&
+		if (cronExpression != null &&
 		    parametersMap.get(ForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
 			throttlingInterval =
 			                     Long.parseLong((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE_INTERVAL));
@@ -586,7 +603,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	public boolean terminate() {
 		try {
 			isTerminated = true;
-			Thread.currentThread().interrupt();
+			// Thread.currentThread().interrupt();
 
 			if (log.isDebugEnabled()) {
 				log.debug("Successfully terminated job of message processor [" +
@@ -683,9 +700,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
         return isSuccess;
     }
 
-    private boolean isRunningUnderCronExpression() {
-        return this.isThrottling && (throttlingInterval > -1);
-    }
+	private boolean isRunningUnderCronExpression() {
+		return (cronExpression != null) && (throttlingInterval > -1);
+	}
 
 	private void dropMessageAndContinueMessageProcessor() {
 		messageConsumer.ack();
