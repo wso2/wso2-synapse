@@ -19,17 +19,35 @@ package org.apache.synapse.startup.quartz;
  *  under the License.
  */
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.task.*;
-import org.quartz.*;
+import org.apache.synapse.task.DefaultTaskJobDetailFactory;
+import org.apache.synapse.task.DefaultTaskTriggerFactory;
+import org.apache.synapse.task.SynapseTaskException;
+import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskConstants;
+import org.apache.synapse.task.TaskDescription;
+import org.apache.synapse.task.TaskJobDetailFactory;
+import org.apache.synapse.task.TaskManager;
+import org.apache.synapse.task.TaskManagerObserver;
+import org.apache.synapse.task.TaskTriggerFactory;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobKey;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
-
-import java.util.*;
 
 public class QuartzTaskManager implements TaskManager {
     private static final Log logger = LogFactory.getLog(QuartzTaskManager.class.getName());

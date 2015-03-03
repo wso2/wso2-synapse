@@ -23,11 +23,9 @@ import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
-import org.apache.synapse.message.processor.impl.forwarder.HouseKeepingThread;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
@@ -50,7 +48,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     /**
      * The interval at which this processor runs , default value is 1000ms
      */
-    protected long interval = MessageProcessorConstants.THRESHOULD_INTERVAL;;
+    protected long interval = MessageProcessorConstants.THRESHOULD_INTERVAL;
 
     /**
      * A cron expression to run the sampler
@@ -91,12 +89,12 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * related to the pending tasks.
 		 */
 		if (nTaskManager == null) {
-			nTaskManager = new SynapseConfiguration().getTaskManager();
-			
+			nTaskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
 			// nTaskManager = TaskManagerFactory.createNTaskTaskManager();
 			// nTaskManager.setName(name + " Schedular");
 			// nTaskManager.init(synapseEnvironment.getSynapseConfiguration().getProperties());
 		}
+		
 		/*
 		 * If the task manager is not initialized yet, subscribe to
 		 * initialization completion event here.
@@ -105,8 +103,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			nTaskManager.addObserver(this);
 			return;
 		}
-		
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
+
+		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) && !isDeactivated()) {
 			this.start();
 		}
 
@@ -161,7 +159,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public void setParameters(Map<String, Object> parameters) {
-
 		super.setParameters(parameters);
 
 		if (parameters != null && !parameters.isEmpty()) {
@@ -303,8 +300,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 			logger.info("Successfully re-activated the message processor [" + getName() + "]");
 
-			// setActivated(true);
-
 			return true;
 		} else {
 			return false;
@@ -427,5 +422,4 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			start();
 		}
 	}
-
 }

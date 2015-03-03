@@ -146,47 +146,35 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		if (!initialized) {
 			this.init(synapseEnvironment);
 		}
-
 		do {
 			resetService();
-
 			try {
 				if (!this.messageProcessor.isDeactivated()) {
 					MessageContext messageContext = fetch(messageConsumer);
-
 					if (messageContext != null) {
-
 						String serverName =
 						                    (String) messageContext.getProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-
 						if (serverName != null && messageContext instanceof Axis2MessageContext) {
-
 							AxisConfiguration configuration =
 							                                  ((Axis2MessageContext) messageContext).getAxis2MessageContext()
 							                                                                        .getConfigurationContext()
 							                                                                        .getAxisConfiguration();
-
 							String myServerName =
 							                      getAxis2ParameterValue(configuration,
 							                                             SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-
 							if (!serverName.equals(myServerName)) {
 								return;
 							}
 						}
-
 						Set proSet = messageContext.getPropertyKeySet();
-
 						if (proSet != null) {
 							if (proSet.contains(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR)) {
 								proSet.remove(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR);
 							}
 						}
-
 						// Now it is NOT terminated anymore.
 						isTerminated = messageProcessor.isDeactivated();
 						dispatch(messageContext);
-
 					} else {
 						// either the connection is broken or there are no new
 						// massages.
@@ -201,7 +189,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						}
 					}
 				} else {
-
 					/*
 					 * we need this because when start the server while the
 					 * processors in deactivated mode
@@ -222,7 +209,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				 */
 				log.fatal("Deactivating the message processor [" + this.messageProcessor.getName() +
 				          "]", e);
-
 				this.messageProcessor.deactivate();
 			}
 
@@ -230,7 +216,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				log.debug("Exiting the iteration of message processor [" +
 				          this.messageProcessor.getName() + "]");
 			}
-
 			/*
 			 * This code wrote handle scenarios in which cron expressions are
 			 * used for scheduling task
@@ -243,7 +228,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					log.debug("Current Thread was interrupted while it is sleeping.");
 				}
 			}
-
 			/*
 			 * If the interval is less than 1000 ms, then the scheduling is done
 			 * using the while loop since ntask rejects any intervals whose
@@ -256,7 +240,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					log.debug("Current Thread was interrupted while it is sleeping.");
 				}
 			}
-			
 			/*
 			 * Gives the control back to Quartz scheduler. This needs to be done
 			 * only if the interval value is less than the Threshould interval
@@ -268,7 +251,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			if (isThrottling && new Date().getTime() - startTime > 1000) {
 				break;
 			}
-
 		} while ((isThrottling || isRunningUnderCronExpression()) && !isTerminated);
 
 		if (log.isDebugEnabled()) {
@@ -286,7 +268,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
      */
     private static String getAxis2ParameterValue(AxisConfiguration axisConfiguration,
                                                  String paramKey) {
-
         Parameter parameter = axisConfiguration.getParameter(paramKey);
         if (parameter == null) {
             return null;
@@ -392,7 +373,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 *            synapse {@link MessageContext} to be sent
 	 */
 	public void dispatch(MessageContext messageContext) {
-
 		if (log.isDebugEnabled()) {
 			log.debug("Sending the message to client with message processor [" +
 			          messageProcessor.getName() + "]");
@@ -410,9 +390,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 		if (targetEndpoint != null) {
 			Endpoint ep = messageContext.getEndpoint(targetEndpoint);
-
 			try {
-
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
 					try {
@@ -443,9 +421,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						                         getNonRetryStatusCodes());
 						outCtx = sender.send(ep, messageContext);
 						isSuccessful = true;
-
 					} catch (Exception e) {
-
 						// this means send has failed due to some reason so we
 						// have to retry it
 						if (e instanceof SynapseException) {
@@ -460,14 +436,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							// since
 							// outCtx is null passing the messageContext
 							sendThroughFaultSeq(messageContext);
-
 						}
 					}
-
 					if (isSuccessful) {
 						if (outCtx != null) {
 							if ("true".equals(outCtx.getProperty(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
-
 								// this means send has failed due to some reason
 								// so we have to retry it
 								isSuccessful =
@@ -511,7 +484,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							}
 						}
 					}
-
 					if (!isSuccessful) {
 						// Then we have to retry sending the message to the
 						// client.
@@ -539,10 +511,8 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 			log.warn("Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
 			         " not found in the message context , Hence removing the message ");
-
 			messageConsumer.ack();
 		}
-
 		return;
 	}
 
