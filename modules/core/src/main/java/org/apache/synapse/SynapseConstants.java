@@ -49,6 +49,8 @@ public final class SynapseConstants {
     public static final String FAULT_SEQUENCE_XML = "fault.xml";
     /** The name of the mandatory sequence to execute before the begining of the actual mediation */
     public static final String MANDATORY_SEQUENCE_KEY = "pre-mediate";
+    /** The name prefix of the hidden sequence */
+    public static final String PREFIX_HIDDEN_SEQUENCE_KEY = "_Hidden_Sequence_";
 
     /** The name of the Synapse service (used for message mediation) */
     public static final String SYNAPSE_SERVICE_NAME ="__SynapseService";
