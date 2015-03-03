@@ -73,17 +73,17 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         initMessageSender(parameters);
         if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
                 .getServerName())) {
-			// If it is not a pinned server we do not start the message processor. In that server.
+            // If it is not a pinned server we do not start the message processor. In that server.
             setActivated(false);
         }
         super.init(se);
 
-		// initialize the task manager only once to alleviate complexities related to the pending tasks.
+        // initialize the task manager only once to alleviate complexities related to the pending tasks.
         if (nTaskManager == null) {
             nTaskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
         }
-		
-		// If the task manager is not initialized yet, subscribe to initialization completion event here.
+
+        // If the task manager is not initialized yet, subscribe to initialization completion event here.
         if (!nTaskManager.isInitialized()) {
             nTaskManager.addObserver(this);
             return;
@@ -96,13 +96,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public boolean start() {
         for (int i = 0; i < memberCount; i++) {
 
-			// Make sure to fetch the task after initializing the message sender and consumer properly.
-			// Otherwise you may get NullPointer exceptions.
+            // Make sure to fetch the task after initializing the message sender and consumer properly.
+            // Otherwise you may get NullPointer exceptions.
             Task task = this.getTask();
             TaskDescription taskDescription = new TaskDescription();
             taskDescription.setName(TASK_PREFIX + name + i);
             taskDescription.setTaskGroup(MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
-			/*
+            /*
 			 * If this interval value is less than 1000 ms, ntask will throw an exception while building the task. So to get around that we are
 			 * setting threshold interval value of 1000 ms to the task description here. But actual interval value may be less than 1000 ms,
 			 * and hence isThrotling is set to TRUE.
@@ -116,7 +116,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
             taskDescription.addResource(TaskDescription.INSTANCE, task);
             taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
 
-			// If there is a Cron Expression we need to set it into the TaskDescription so that the framework will take care of it.
+            // If there is a Cron Expression we need to set it into the TaskDescription so that the framework will take care of it.
             if (cronExpression != null) {
                 taskDescription.setCronExpression(cronExpression);
             }
@@ -202,9 +202,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         // which will cause to shutdown the job
         try {
             stop();
-        }
-
-        finally {
+        } finally {
             if (getMessageConsumer() != null) {
                 boolean success = getMessageConsumer().cleanup();
                 if (!success) {
@@ -314,7 +312,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     }
 
     public boolean isActive() {
-		/*
+        /*
 		 * If the interval value is less than 1000 ms, then the task is run inside the while loop. Due to that control is not
 		 * returned back to the taskmanager and hence the task is in BLOCKED state. This situation is handled separately.
 		 */

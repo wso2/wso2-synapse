@@ -33,9 +33,7 @@ import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.task.Task;
 
 /**
- * This {@link Task} injects a message to a given sequence. It also supports
- * Throttling scenarios.
- *
+ * This {@link Task} injects a message to a given sequence. It also supports Throttling scenarios.
  */
 public class SamplingService implements Task, ManagedLifecycle {
     private static Log log = LogFactory.getLog(SamplingService.class);
@@ -69,17 +67,11 @@ public class SamplingService implements Task, ManagedLifecycle {
         this.sequencePropName = sequencePropName;
     }
 
-    /**
-     * Starts the execution of this task which grabs a message from the message
-     * queue and inject it to a given sequence.
-     */
+    // Starts the execution of this task which grabs a message from the message queue and inject it to a given sequence.
     public void execute() {
 
         try {
-			/*
-			 * Initialize only if it is NOT already done. This will make sure
-			 * that the initialization is done only once.
-			 */
+			// Initialize only if it is NOT already done. This will make sure that the initialization is done only once.
             if (!initialized) {
                 this.init(synapseEnvironment);
             }
