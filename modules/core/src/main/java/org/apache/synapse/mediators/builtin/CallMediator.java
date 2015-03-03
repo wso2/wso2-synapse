@@ -69,7 +69,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     private Endpoint endpoint = null;
     private boolean blocking = false;
     private SynapseEnvironment synapseEnv;
-    private boolean endpointType = false;
 
     /**
      * This will call the send method on the messages with implicit message parameters
@@ -89,7 +88,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 synLog.traceTrace("Message : " + synInCtx.getEnvelope());
             }
 
-            //Original Call mediator functionality
+            //If call mediator is a marked as non blocking function
             boolean outOnlyMessage = "true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY));
 
             // Prepare the outgoing message context
@@ -107,7 +106,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             synOutCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
             ContinuationStackManager.updateSeqContinuationState(synOutCtx, getMediatorPosition());
 
-            // if no endpoints are defined, send where implicitly stated
+            // If no endpoints are defined, send where implicitly stated
             if (endpoint == null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -141,7 +140,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             //If call mediator is a marked as blocking function
             MessageContext resultMsgCtx = null;
             try {
-                blockingMsgSender.setEndpointType(endpointType);
                 if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                     blockingMsgSender.send(endpoint, synInCtx);
                 } else {
@@ -178,10 +176,6 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
-    }
-
-    public void setEndpointType(boolean endpointType) {
-        this.endpointType = endpointType;
     }
 
     public void init(SynapseEnvironment synapseEnvironment) {
