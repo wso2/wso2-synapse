@@ -80,7 +80,7 @@ public class BlockingMsgSender {
             log.debug("Start Sending the Message ");
         }
 
-        if (endpoint instanceof IndirectEndpoint) {
+        if (endpoint instanceof  IndirectEndpoint) {
             String endpointKey = ((IndirectEndpoint) endpoint).getKey();
             endpoint = synapseInMsgCtx.getEndpoint(endpointKey);
         }
@@ -109,7 +109,7 @@ public class BlockingMsgSender {
 
         AxisService anonymousService;
         if (endpointReferenceValue != null &&
-                endpointReferenceValue.startsWith(Constants.TRANSPORT_LOCAL)) {
+            endpointReferenceValue.startsWith(Constants.TRANSPORT_LOCAL)) {
             configurationContext = axisInMsgCtx.getConfigurationContext();
             anonymousService =
                     AnonymousServiceFactory.getAnonymousService(
@@ -132,7 +132,7 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
-        // Fill MessageContext
+		// Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
             JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
@@ -150,7 +150,7 @@ public class BlockingMsgSender {
         anonymousService.getParent().addParameter(SynapseConstants.HIDDEN_SERVICE_PARAM, "true");
         ServiceGroupContext serviceGroupContext =
                 new ServiceGroupContext(configurationContext,
-                        (AxisServiceGroup) anonymousService.getParent());
+                                        (AxisServiceGroup) anonymousService.getParent());
         ServiceContext serviceCtx = serviceGroupContext.getServiceContext(anonymousService);
         axisOutMsgCtx.setServiceContext(serviceCtx);
 
@@ -161,10 +161,10 @@ public class BlockingMsgSender {
                 sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
             } else {
                 org.apache.axis2.context.MessageContext result =
-                        sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
+                sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
                 synapseInMsgCtx.setEnvelope(result.getEnvelope());
                 if (JsonUtil.hasAJsonPayload(result)) {
-                    JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                 }
                 Object statusCode = result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
                 synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
@@ -186,12 +186,12 @@ public class BlockingMsgSender {
                 if (ex instanceof AxisFault) {
                     AxisFault fault = (AxisFault) ex;
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
-                            fault.getFaultCode() != null ?
-                                    fault.getFaultCode().getLocalPart() : "");
+                                                fault.getFaultCode() != null ?
+                                                fault.getFaultCode().getLocalPart() : "");
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                            fault.getDetail() != null ?
-                                    fault.getDetail().getText() : "");
+                                                fault.getDetail() != null ?
+                                                fault.getDetail().getText() : "");
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
                     org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
                     if (faultMC != null) {
@@ -204,7 +204,7 @@ public class BlockingMsgSender {
                 return synapseInMsgCtx;
             }
             handleException("Error sending Message to url : " +
-                    ((AbstractEndpoint) endpoint).getDefinition().getAddress(), ex);
+                            ((AbstractEndpoint) endpoint).getDefinition().getAddress(), ex);
         }
         return null;
     }
@@ -248,11 +248,11 @@ public class BlockingMsgSender {
         if (resultMsgCtx.getEnvelope() != null) {
             returnMsgCtx.setEnvelope(MessageHelper.cloneSOAPEnvelope(resultMsgCtx.getEnvelope()));
             if (JsonUtil.hasAJsonPayload(resultMsgCtx)) {
-                JsonUtil.cloneJsonPayload(resultMsgCtx, returnMsgCtx);
+               JsonUtil.cloneJsonPayload(resultMsgCtx, returnMsgCtx);
             }
         }
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
-                resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
+                                 resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
         axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
         returnMsgCtx.setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
@@ -264,9 +264,9 @@ public class BlockingMsgSender {
     private boolean isOutOnly(MessageContext messageIn,
                               org.apache.axis2.context.MessageContext axis2Ctx) {
         return "true".equals(messageIn.getProperty(SynapseConstants.OUT_ONLY)) ||
-                axis2Ctx.getOperationContext() != null &&
-                        WSDL2Constants.MEP_URI_IN_ONLY.equals(axis2Ctx.getOperationContext().
-                                getAxisOperation().getMessageExchangePattern());
+               axis2Ctx.getOperationContext() != null &&
+               WSDL2Constants.MEP_URI_IN_ONLY.equals(axis2Ctx.getOperationContext().
+                       getAxisOperation().getMessageExchangePattern());
     }
 
     public void setClientRepository(String clientRepository) {

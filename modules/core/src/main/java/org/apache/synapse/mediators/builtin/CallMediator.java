@@ -33,13 +33,6 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.context.ConfigurationContextFactory;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMNode;
-
-import java.util.List;
 
 /**
  * Call Mediator sends a message using specified semantics. If it contains an endpoint it will
