@@ -23,6 +23,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
@@ -68,7 +69,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
                     }
-                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
                 } catch (Exception e) {
                     handleException("Error while building message", e, synCtx);
                 }
@@ -82,6 +83,10 @@ public abstract class AbstractListMediator extends AbstractMediator
                     break;
                 }
             }
+        } catch (SynapseException synEx) {
+            handleException("Error occurred in list mediator", synEx, synCtx);
+        } catch (Exception ex) {
+            handleException("Error occurred in list mediator", ex, synCtx);
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
