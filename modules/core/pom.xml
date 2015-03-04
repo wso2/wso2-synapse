@@ -256,6 +256,11 @@
 			<version>1.1.wso2v1</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.rabbitmq.wso2</groupId>
+			<artifactId>amqp-client</artifactId>
+			<version>${version.orbit.rabbitmq}</version>
+		</dependency>
 		<!--dependency>
 			<groupId>org.apache.axis2</groupId>
 			<artifactId>axis2-json</artifactId>
@@ -273,4 +278,7 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<properties>
+		<version.orbit.rabbitmq>3.4.4.wso2v1</version.orbit.rabbitmq>
+	</properties>
 </project>
