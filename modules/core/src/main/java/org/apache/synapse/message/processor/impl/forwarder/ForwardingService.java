@@ -595,7 +595,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
     private void checkAndDeactivateProcessor() {
         if (maxDeliverAttempts > 0) {
             this.attemptCount++;
-
             if (attemptCount >= maxDeliverAttempts) {
           
                 if (this.isMaxDeliveryAttemptDropEnabled) {

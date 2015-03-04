@@ -64,7 +64,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	protected SynapseEnvironment synapseEnvironment;
 
-	private TaskManager nTaskManager = null;
+	private TaskManager taskManager = null;
 
 	private int memberCount = 1;
     
@@ -88,23 +88,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * initialize the task manager only once to alleviate complexities
 		 * related to the pending tasks.
 		 */
-		if (nTaskManager == null) {
-			nTaskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
-			// nTaskManager = TaskManagerFactory.createNTaskTaskManager();
-			// nTaskManager.setName(name + " Schedular");
-			// nTaskManager.init(synapseEnvironment.getSynapseConfiguration().getProperties());
+		if (taskManager == null) {
+			taskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
 		}
-		
+
 		/*
 		 * If the task manager is not initialized yet, subscribe to
 		 * initialization completion event here.
 		 */
-		if (!nTaskManager.isInitialized()) {
-			nTaskManager.addObserver(this);
+		if (!taskManager.isInitialized()) {
+			taskManager.addObserver(this);
 			return;
 		}
 
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) && !isDeactivated()) {
+		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) &&
+		    !isDeactivated()) {
 			this.start();
 		}
 
@@ -144,17 +142,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			if (cronExpression != null) {
 				taskDescription.setCronExpression(cronExpression);
 			}
-			nTaskManager.schedule(taskDescription);
+			taskManager.schedule(taskDescription);
 		}
-		if (logger.isDebugEnabled()) {
-			logger.info("Started message processor. [" + getName() + "].");
-		}
+		logger.info("Started message processor. [" + getName() + "].");
 
 		return true;
 	}
 
 	public boolean isDeactivated() {
-		return nTaskManager.isTaskDeactivated(TASK_PREFIX + name +
+		return taskManager.isTaskDeactivated(TASK_PREFIX + name +
 		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
@@ -193,25 +189,24 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * There could be servers that are disabled at startup time.
 		 * therefore not started but initiated.
 		 */
-		if (nTaskManager != null && nTaskManager.isInitialized()) {
+		if (taskManager != null && taskManager.isInitialized()) {
 			for (int i = 0; i < memberCount; i++) {
 				/*
 				 * This is to immediately stop the scheduler to avoid firing new
 				 * services
 				 */
-				nTaskManager.pause(TASK_PREFIX + name + i);
+				taskManager.pause(TASK_PREFIX + name + i);
 				if (logger.isDebugEnabled()) {
 					logger.debug("ShuttingDown Message Processor Scheduler : " +
-					             nTaskManager.getName());
+					             taskManager.getName());
 				}
-				// gracefully shutdown
 				/*
 				 * This value should be given in the format -->
 				 * taskname::taskgroup.
 				 * Otherwise a default group is assigned by the ntask task
 				 * manager.
 				 */
-				nTaskManager.delete(TASK_PREFIX + name + i + "::" +
+				taskManager.delete(TASK_PREFIX + name + i + "::" +
 				                    MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
 			}
 
@@ -226,11 +221,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public void destroy() {
-		/*
-		 * Since for one scheduler there is only one job, we can simply shutdown
-		 * the scheduler
-		 * which will cause to shutdown the job
-		 */
 		try {
 			stop();
 		}
@@ -252,7 +242,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public boolean deactivate() {
-		if (nTaskManager != null && nTaskManager.isInitialized()) {
+		if (taskManager != null && taskManager.isInitialized()) {
 			try {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Deactivating message processor [" + getName() + "]");
@@ -263,11 +253,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				logger.info("Successfully deactivated the message processor [" + getName() + "]");
 
 			} finally {
-				// This is to remove the consumer from the queue.
 				/*
 				 * This will close the connection with the JMS Provider/message
 				 * store.
-				 */
+				 */ 
 				if (messageConsumer != null) {
 					messageConsumer.cleanup();
 				}
@@ -279,21 +268,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public boolean activate() {
-		if (messageConsumer == null) {
-			/*
-			 * This is for the message processors who are deactivated at
-			 * startup time.
-			 */
-			setMessageConsumer(configuration.getMessageStore(messageStore).getConsumer());
-		}
-
 		/*
 		 * Checking whether it is already deactivated. If it is deactivated only
 		 * we can activate again.
 		 */
-		if (nTaskManager != null && isDeactivated()) {
+		if (taskManager != null && isDeactivated()) {
 			if (logger.isDebugEnabled()) {
-				logger.debug("Starting Message Processor Scheduler : " + nTaskManager.getName());
+				logger.debug("Starting Message Processor Scheduler : " + taskManager.getName());
 			}
 
 			resumeService();
@@ -308,13 +289,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	public void pauseService() {
 		for (int i = 0; i < memberCount; i++) {
-			nTaskManager.pause(TASK_PREFIX + name + i);
+			taskManager.pause(TASK_PREFIX + name + i);
 		}
 	}
 
 	public void resumeService() {
 		for (int i = 0; i < memberCount; i++) {
-			nTaskManager.resume(TASK_PREFIX + name + i);
+			taskManager.resume(TASK_PREFIX + name + i);
 		}
 	}
 
@@ -326,25 +307,24 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * situation is handled separately.
 		 */
 		if (isThrottling(interval)) {
-			return nTaskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
-			       nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+			return taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
+			       taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 		}
-		return nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean isPaused() {
-		return nTaskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+		return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
 	public boolean getActivated() {
-		return nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
 	private void setActivated(boolean activated) {
 		parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(activated));
 	}
 
-	// TODO: Need to test this functionality
     private boolean isPinnedServer(String serverName) {
         boolean pinned = false;
         Object pinnedServersObj = this.parameters.get(MessageProcessorConstants.PINNED_SERVER);
