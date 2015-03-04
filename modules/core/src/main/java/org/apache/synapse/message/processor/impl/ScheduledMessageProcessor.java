@@ -60,7 +60,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     protected SynapseEnvironment synapseEnvironment;
 
-    private TaskManager nTaskManager = null;
+    private TaskManager taskManager = null;
 
     private int memberCount = 1;
 
@@ -79,13 +79,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         super.init(se);
 
         // initialize the task manager only once to alleviate complexities related to the pending tasks.
-        if (nTaskManager == null) {
-            nTaskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
+        if (taskManager == null) {
+            taskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
         }
 
         // If the task manager is not initialized yet, subscribe to initialization completion event here.
-        if (!nTaskManager.isInitialized()) {
-            nTaskManager.addObserver(this);
+        if (!taskManager.isInitialized()) {
+            taskManager.addObserver(this);
             return;
         }
         if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) && !isDeactivated()) {
@@ -120,16 +120,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
             if (cronExpression != null) {
                 taskDescription.setCronExpression(cronExpression);
             }
-            nTaskManager.schedule(taskDescription);
+            taskManager.schedule(taskDescription);
         }
-        if (logger.isDebugEnabled()) {
             logger.info("Started message processor. [" + getName() + "].");
-        }
+
         return true;
     }
 
     public boolean isDeactivated() {
-        return nTaskManager.isTaskDeactivated(TASK_PREFIX + name +
+        return taskManager.isTaskDeactivated(TASK_PREFIX + name +
                 DEFAULT_TASK_SUFFIX);
     }
 
@@ -307,7 +306,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     public void resumeService() {
         for (int i = 0; i < memberCount; i++) {
-            nTaskManager.resume(TASK_PREFIX + name + i);
+            taskManager.resume(TASK_PREFIX + name + i);
         }
     }
 
@@ -317,18 +316,18 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * returned back to the taskmanager and hence the task is in BLOCKED state. This situation is handled separately.
 		 */
         if (isThrottling(interval)) {
-            return nTaskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
-                    nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+            return taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
+                    taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
         }
-        return nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
     }
 
     public boolean isPaused() {
-        return nTaskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
     }
 
     public boolean getActivated() {
-        return nTaskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
     }
 
     private void setActivated(boolean activated) {
