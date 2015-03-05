@@ -335,7 +335,9 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         CacheReplicationCommand cacheReplicationCommand = new CacheReplicationCommand();
 
         byte[] responseEnvelop;
-        if (cachedResponse != null && (responseEnvelop = cachedResponse.getResponseEnvelope()) != null) {
+        Map<String, Object> headerProperties;
+        if (cachedResponse != null && (responseEnvelop = cachedResponse.getResponseEnvelope()) != null &&
+                (headerProperties = cachedResponse.getHeaderProperties()) != null) {
             // get the response from the cache and attach to the context and change the
             // direction of the message
             if (!cachedResponse.isExpired()) {
@@ -355,7 +357,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                                 responseEnvelop, cachedResponse.isSOAP11());
                             msgCtx.removeProperty("NO_ENTITY_BODY");
                             msgCtx.removeProperty(Constants.Configuration.CONTENT_TYPE);
-                            Map<String, Object> headerProperties = cachedResponse.getHeaderProperties();
                             msgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                                     headerProperties.get(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                             msgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
