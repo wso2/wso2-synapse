@@ -19,6 +19,7 @@ package org.apache.synapse.message.store.impl.rabbitmq;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -28,6 +29,7 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.store.AbstractMessageStore;
+
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
@@ -46,8 +48,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 	public static final String HOST_PORT = "store.rabbitmq.host.port";
 	/** RabbitMQ Server Virtual Host*/
 	public static final String VIRTUAL_HOST= "store.rabbitmq.virtual.host";
-	/** Whether to cache the connection or not */
-	public static final String CACHE = "store.rabbitmq.cache.connection";
 	/** RabbitMQ queue name that this message store must store the messages to. */
 	public static final String QUEUE_NAME = "store.rabbitmq.queue.name";
 	/** */
@@ -69,12 +69,8 @@ public class RabbitmqStore extends AbstractMessageStore {
 	/** RabbitMQ virtual host */
 	private String virtualHost;
 	private static final Log logger = LogFactory.getLog(RabbitmqStore.class.getName());
-//	/** Look up context */
-//	private Context context;
 	/** Rabbitmq Connection factory */
 	private ConnectionFactory connectionFactory;
-	/** RabbitMQ destination */
-	private Queue queue;
 	/** */
 	private final Object queueLock = new Object();
 	/** RabbitMQ Connection used to send messages to the queue */
@@ -186,6 +182,10 @@ public class RabbitmqStore extends AbstractMessageStore {
 		return true;
 	}
 
+	/**
+	 * Create a Queue to store messages, this will used queueName parameter
+	 * @throws IOException
+	 */
 	private void setQueue() throws IOException {
 		Channel channel = null;
 		try {
@@ -207,9 +207,16 @@ public class RabbitmqStore extends AbstractMessageStore {
 		}
 	}
 
+	/**
+	 * Create a new message producer connection, if there is an existing connection close it and
+	 * create a new connection
+	 *
+	 * @return true if a new connection is created successfully
+	 */
 	public boolean newWriteConnection() {
 		synchronized (producerLock) {
 			if (producerConnection != null) {
+				//if the exiting producer connection not closed successfully, this will return false
 				if (!closeConnection(producerConnection)) {
 					return false;
 				}
@@ -233,6 +240,11 @@ public class RabbitmqStore extends AbstractMessageStore {
 		super.destroy();
 	}
 
+	/**
+	 * Close any given connection
+	 * @param connection
+	 * @return true if the connection closed successfully false otherwise
+	 */
 	public boolean closeConnection(Connection connection) {
 		try {
 			connection.close();
@@ -262,6 +274,10 @@ public class RabbitmqStore extends AbstractMessageStore {
 		return true;
 	}
 
+	/**
+	 *
+	 * @return new MessageProducer
+	 */
 	public MessageProducer getProducer() {
 		RabbitmqProducer producer = new RabbitmqProducer(this);
 		producer.setId(nextProducerId());
@@ -272,13 +288,16 @@ public class RabbitmqStore extends AbstractMessageStore {
 			synchronized (producerLock) {
 				if (producerConnection == null) {
 					boolean ok = newWriteConnection();
+					//if its not possible to create a producer connection, return messagePeoducer
+					//without a connection
 					if (!ok) {
 						return producer;
 					}
 				}
-				if(!producerConnection.isOpen())    producerConnection = connectionFactory.newConnection();
+				if(!producerConnection.isOpen())   {
+					producerConnection = connectionFactory.newConnection();
+				}
 			}
-
 			producer.setConnection(producerConnection());
 		} catch (Throwable t) {
 			error = true;
@@ -312,9 +331,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 				retryTime = -1;
 			}
 		} catch (IOException e) {
-
 			retryTime = System.currentTimeMillis();
-
 			if (logger.isDebugEnabled()) {
 				logger.error("Could not create a Message Consumer for "
 				             + nameString() + ". Could not create connection.");
@@ -325,7 +342,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 			return consumer;
 		}
 		consumer.setConnection(connection);
-
 		if (logger.isDebugEnabled()) {
 			logger.debug(nameString() + " created message consumer " + consumer.getId());
 		}
@@ -376,7 +392,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 	}
 
 	/**
-	 * Cleans up the RabbitMQ Connection and Session associated with a JMS client.
+	 * Cleans up the RabbitMQ Connection
 	 *
 	 * @param connection  RabbitMQ Connection
 	 * @param error is this method called upon an error

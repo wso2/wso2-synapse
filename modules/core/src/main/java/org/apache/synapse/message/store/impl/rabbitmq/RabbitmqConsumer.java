@@ -29,14 +29,15 @@ import org.apache.commons.lang.SerializationUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 public class RabbitmqConsumer  implements MessageConsumer {
 	private static final Log logger = LogFactory.getLog(RabbitmqConsumer.class.getName());
 
 	private Connection connection;
+
+	private Channel channel;
 
 	private RabbitmqStore store;
 
@@ -61,24 +62,36 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		isInitialized = true;
 	}
 
-
 	public MessageContext receive() {
 		if (!checkConnection()) {
 			if (!reconnect()) {
 				if (logger.isDebugEnabled()) {
 					logger.debug(getId()
-					             + " cannot receive message from store. Cannot reconnect.");
+					             + " cannot receive message from store. Can not reconnect.");
 				}
 				return null;
 			} else {
 				logger.info(getId() + " reconnected to store.");
 				isReceiveError = false;
 			}
-
+		}
+		//setting channel
+		if(channel != null){
+			if(!channel.isOpen()){
+				if(!setChannel()){
+					logger.info(getId() + " unable to create the channel.");
+					return null;
+				}
+			}
+		}
+		else{
+			if(!setChannel()){
+				logger.info(getId() + " unable to create the channel.");
+				return null;
+			}
 		}
 		//receive messages
 		try{
-			Channel channel = connection.createChannel();
 			QueueingConsumer consumer = new QueueingConsumer(channel);
 			channel.basicConsume(queueName, false, consumer);
 			try {
@@ -97,17 +110,27 @@ public class RabbitmqConsumer  implements MessageConsumer {
 
 			if (delivery != null) {
 				try {
-//					Object tempObj = SerializationUtils.deserialize(delivery.getBody());
-//					StorableMessage storableMessage=(StorableMessage) (tempObj);
-					ByteArrayInputStream bais = new ByteArrayInputStream(delivery.getBody());
-					ObjectInputStream ois = new ObjectInputStream(bais);
-					logger.info("Message Received");
-					StorableMessage storableMessage = null;
+//					Object storedMsg = SerializationUtils.deserialize(delivery.getBody());
+//					AMQPStorableMessage storableMessage=(AMQPStorableMessage) (storedMsg);
+//					ByteArrayInputStream bais = new ByteArrayInputStream(delivery.getBody());
+//					ObjectInputStream ois = new ObjectInputStream(bais);
+//					logger.info("Message Received");
+//					StorableMessage storableMessage = null;
+//					try {
+//						storableMessage = (StorableMessage) (ois.readObject());
+//					} catch (ClassNotFoundException e) {
+//						e.printStackTrace();
+//					}
+					AMQPStorableMessage storableMessage = null;
+					ByteArrayInputStream bis = new ByteArrayInputStream(delivery.getBody());
+					ObjectInput in = new ObjectInputStream(bis);
 					try {
-						storableMessage = (StorableMessage) (ois.readObject());
+						storableMessage = (AMQPStorableMessage)  in.readObject();
 					} catch (ClassNotFoundException e) {
-						e.printStackTrace();
+						logger.error(getId() + "Unable to read the stored message"+e);
 					}
+					bis.close();
+					in.close();
 					org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
 					MessageContext synapseMc = store.newSynapseMc(axis2Mc);
 					synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
@@ -159,8 +182,6 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		return false;
 	}
 
-
-
 	public RabbitmqConsumer setConnection(Connection connection) {
 		this.connection = connection;
 		return this;
@@ -169,6 +190,20 @@ public class RabbitmqConsumer  implements MessageConsumer {
 	public void setQueueName(String queueName){
 		this.queueName = queueName;
 	}
+
+	public boolean setChannel(){
+		if(connection != null && connection.isOpen()){
+			try {
+				this.channel = connection.createChannel();
+				return true;
+			} catch (IOException e) {
+				return false;
+			}
+		}
+		return false;
+	}
+
+
 	public void setId(int id) {
 		idString = "[" + store.getName() + "-C-" + id + "]";
 	}
@@ -184,7 +219,13 @@ public class RabbitmqConsumer  implements MessageConsumer {
 	private boolean checkConnection() {
 		if (connection == null) {
 			if (logger.isDebugEnabled()) {
-				logger.debug(getId() + " cannot proceed. JMS Connection is null.");
+				logger.debug(getId() + " cannot proceed. RabbitMQ Connection is null.");
+			}
+			return false;
+		}
+		if (!connection.isOpen()) {
+			if (logger.isDebugEnabled()) {
+				logger.debug(getId() + " cannot proceed. RabbitMQ Connection is closed.");
 			}
 			return false;
 		}
@@ -200,11 +241,11 @@ public class RabbitmqConsumer  implements MessageConsumer {
 			}
 			return false;
 		}
-		connection = consumer.getConnection();
+		setConnection(consumer.getConnection());
 		if (logger.isDebugEnabled()) {
 			logger.debug(getId() + " ===> " + consumer.getId());
 		}
-		//setStringId(consumer.getId());
+		idString = consumer.getId();
 		return true;
 	}
 	private final class CachedMessage {

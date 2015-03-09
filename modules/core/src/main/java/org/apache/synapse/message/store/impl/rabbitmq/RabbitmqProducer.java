@@ -26,25 +26,22 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
 import org.apache.commons.lang.SerializationUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
+import java.io.*;
 
 public class RabbitmqProducer  implements MessageProducer {
 
 	private static final Log logger = LogFactory.getLog(RabbitmqProducer.class.getName());
-
+	/** Connection to the Rabbitmq broker. Passed reference from Store **/
 	private Connection connection;
-
+	/** Reference of the store **/
 	private RabbitmqStore store;
-
+	/** Message storing queue name **/
 	private String queueName;
 
 	private boolean isInitialized = false;
 
 	private boolean isConnectionError = false;
-
+	/** ID of the MessageProducer **/
 	private String idString;
 
 	public RabbitmqProducer(RabbitmqStore store) {
@@ -59,6 +56,15 @@ public class RabbitmqProducer  implements MessageProducer {
 	public void setQueueName(String queueName){
 		this.queueName = queueName;
 	}
+
+	public void setConnection(Connection connection) {
+		this.connection = connection;
+	}
+
+	public void setId(int id) {
+		idString = "[" + store.getName() + "-P-" + id + "]";
+	}
+
 	public boolean storeMessage(MessageContext synCtx) {
 		if (synCtx == null) {
 			return false;
@@ -70,7 +76,7 @@ public class RabbitmqProducer  implements MessageProducer {
 			logger.warn(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
 			return false;
 		}
-		StorableMessage message = MessageConverter.toStorableMessage(synCtx);
+		AMQPStorableMessage message = MessageConverter.toStorableMessage(synCtx);
 		boolean error = false;
 		Throwable throwable = null;
 		Channel channel=null;
@@ -83,27 +89,45 @@ public class RabbitmqProducer  implements MessageProducer {
 			channel = connection.createChannel();
 			channel.basicPublish("",queueName,builder.build(),message.getAxis2message().getSoapEnvelope().getBytes());
 			*/
-			/*message serialization manual
+		//	message serialization manual
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(os);
 			objOut.writeObject(message);
+			//objOut.writeObject(new TestStorableClass("xyz"));
+
 			byte[] byteForm = os.toByteArray();
 			objOut.close();
 			os.close();
+
+
+
+			AMQPStorableMessage storableMessage = null;
+			//TestStorableClass tst= null;
+			ByteArrayInputStream bis = new ByteArrayInputStream(byteForm);
+			ObjectInput in = new ObjectInputStream(bis);
+			storableMessage = (AMQPStorableMessage)  in.readObject();
+			//tst = (TestStorableClass) in.readObject();
+			//System.out.println(tst.name);
+			logger.info("Message Serialized fine");
+
+			//--------------------------------------------
 			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
 			channel = connection.createChannel();
 			channel.basicPublish("",queueName,builder.build(),byteForm);
-			*/
-			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
+
+		/*	AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
 			channel = connection.createChannel();
 			//Temp
+			byte[] testData = SerializationUtils.serialize(new TestStorableClass("XYZ"));
+			TestStorableClass output = (TestStorableClass)SerializationUtils.deserialize(testData);
+			System.out.println("Name : "+output.name);
 			byte[] data = SerializationUtils.serialize(message);
-			StorableMessage msg = (StorableMessage) SerializationUtils.deserialize(data);
+			AMQPStorableMessage msg = (AMQPStorableMessage) SerializationUtils.deserialize(data);
 			//
 			channel.basicPublish("",queueName,builder.build(),SerializationUtils.serialize(message));
-
+*/
 		} catch (IOException e) {
 			throwable = e;
 			error = true;
@@ -132,7 +156,7 @@ public class RabbitmqProducer  implements MessageProducer {
 			}
 			return false;
 		} else {
-			store.cleanup(null, false);
+			cleanup();
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug(getId() + ". Stored MessageID : " + synCtx.getMessageID());
@@ -140,21 +164,13 @@ public class RabbitmqProducer  implements MessageProducer {
 		store.enqueued();
 		return true;
 	}
-
-	public void setConnection(Connection connection) {
-		this.connection = connection;
-	}
-
+	//Not useful yet, this should be use to close the session ( channel )
 	public boolean cleanup() {
 		return store.cleanup(null, false);
 	}
 
 	public boolean isInitialized() {
 		return isInitialized;
-	}
-
-	public void setId(int id) {
-		idString = "[" + store.getName() + "-P-" + id + "]";
 	}
 
 	public String getId() {

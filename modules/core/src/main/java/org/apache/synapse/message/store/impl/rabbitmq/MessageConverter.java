@@ -70,7 +70,7 @@ public final class MessageConverter {
      * @param synCtx Final Synapse message Context
      * @return Final Synapse Message Context
      */
-    public static MessageContext toMessageContext(StorableMessage message,
+    public static MessageContext toMessageContext(AMQPStorableMessage message,
                                                   org.apache.axis2.context.MessageContext axis2Ctx,
                                                   MessageContext synCtx) {
         if (message == null) {
@@ -198,8 +198,8 @@ public final class MessageConverter {
      * @param synCtx Source Synapse message context.
      * @return Storable representation of the provided message context.
      */
-    public static StorableMessage toStorableMessage(MessageContext synCtx) {
-        StorableMessage message = new StorableMessage();
+    public static AMQPStorableMessage toStorableMessage(MessageContext synCtx) {
+        AMQPStorableMessage message = new AMQPStorableMessage();
         Axis2Message axis2msg = new Axis2Message();
         SynapseMessage synMsg = new SynapseMessage();
         Axis2MessageContext axis2MessageContext;
