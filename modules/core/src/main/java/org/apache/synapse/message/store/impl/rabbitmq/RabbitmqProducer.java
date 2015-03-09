@@ -24,7 +24,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
-import org.apache.commons.lang.SerializationUtils;
 
 import java.io.*;
 
@@ -81,53 +80,18 @@ public class RabbitmqProducer  implements MessageProducer {
 		Throwable throwable = null;
 		Channel channel=null;
 		try {
-			/*message Body sending
-			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
-			builder.messageId(synCtx.getMessageID());
-			builder.contentType("text/plain");
-			message.getAxis2message().getSoapEnvelope();
-			channel = connection.createChannel();
-			channel.basicPublish("",queueName,builder.build(),message.getAxis2message().getSoapEnvelope().getBytes());
-			*/
-		//	message serialization manual
+			//Serializing message
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(os);
 			objOut.writeObject(message);
-			//objOut.writeObject(new TestStorableClass("xyz"));
-
 			byte[] byteForm = os.toByteArray();
 			objOut.close();
 			os.close();
-
-
-
-			AMQPStorableMessage storableMessage = null;
-			//TestStorableClass tst= null;
-			ByteArrayInputStream bis = new ByteArrayInputStream(byteForm);
-			ObjectInput in = new ObjectInputStream(bis);
-			storableMessage = (AMQPStorableMessage)  in.readObject();
-			//tst = (TestStorableClass) in.readObject();
-			//System.out.println(tst.name);
-			logger.info("Message Serialized fine");
-
-			//--------------------------------------------
+			//building AMQP message
 			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
 			channel = connection.createChannel();
 			channel.basicPublish("",queueName,builder.build(),byteForm);
-
-		/*	AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
-			builder.messageId(synCtx.getMessageID());
-			channel = connection.createChannel();
-			//Temp
-			byte[] testData = SerializationUtils.serialize(new TestStorableClass("XYZ"));
-			TestStorableClass output = (TestStorableClass)SerializationUtils.deserialize(testData);
-			System.out.println("Name : "+output.name);
-			byte[] data = SerializationUtils.serialize(message);
-			AMQPStorableMessage msg = (AMQPStorableMessage) SerializationUtils.deserialize(data);
-			//
-			channel.basicPublish("",queueName,builder.build(),SerializationUtils.serialize(message));
-*/
 		} catch (IOException e) {
 			throwable = e;
 			error = true;

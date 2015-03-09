@@ -21,6 +21,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
+import com.sun.xml.internal.bind.v2.TODO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -110,17 +111,7 @@ public class RabbitmqConsumer  implements MessageConsumer {
 
 			if (delivery != null) {
 				try {
-//					Object storedMsg = SerializationUtils.deserialize(delivery.getBody());
-//					AMQPStorableMessage storableMessage=(AMQPStorableMessage) (storedMsg);
-//					ByteArrayInputStream bais = new ByteArrayInputStream(delivery.getBody());
-//					ObjectInputStream ois = new ObjectInputStream(bais);
-//					logger.info("Message Received");
-//					StorableMessage storableMessage = null;
-//					try {
-//						storableMessage = (StorableMessage) (ois.readObject());
-//					} catch (ClassNotFoundException e) {
-//						e.printStackTrace();
-//					}
+					//deserilizing message
 					AMQPStorableMessage storableMessage = null;
 					ByteArrayInputStream bis = new ByteArrayInputStream(delivery.getBody());
 					ObjectInput in = new ObjectInputStream(bis);
@@ -203,7 +194,6 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		return false;
 	}
 
-
 	public void setId(int id) {
 		idString = "[" + store.getName() + "-C-" + id + "]";
 	}
@@ -248,6 +238,7 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		idString = consumer.getId();
 		return true;
 	}
+	//TODO: implement cahcedMessage class similar to JMS
 	private final class CachedMessage {
 	}
 }
