@@ -21,12 +21,10 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.ShutdownSignalException;
-import com.sun.xml.internal.bind.v2.TODO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
-import org.apache.commons.lang.SerializationUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
