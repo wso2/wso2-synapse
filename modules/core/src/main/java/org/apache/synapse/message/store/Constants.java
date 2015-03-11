@@ -35,3 +35,4 @@ public final class Constants {
     public static final String DEPRECATED_JMS_CLASS = "org.wso2.carbon.message.store.persistence.jms.JMSMessageStore";
 
 }
+
