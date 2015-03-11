@@ -57,10 +57,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 	public static final String EXCHANGE_NAME = "store.rabbitmq.exchange.name";
 	/** RabbitMQ exchange. */
 	public static final String EXCHANGE_TYPE = "store.rabbitmq.exchange.type";
-	/** */
-	public static final String CONSUMER_TIMEOUT = "store.rabbitmq.ConsumerReceiveTimeOut";
-	/** */
-	public static final String CONN_FACTORY = "store.rabbitmq.connection.factory";
 	/** RabbitMQ connection properties */
 	private final Properties properties = new Properties();
 	/** RabbitMQ username */
@@ -84,8 +80,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 	private static final Log logger = LogFactory.getLog(RabbitmqStore.class.getName());
 	/** Rabbitmq Connection factory */
 	private ConnectionFactory connectionFactory;
-	/** */
-	private final Object queueLock = new Object();
 	/** RabbitMQ Connection used to send messages to the queue */
 	private Connection producerConnection;
 	/** lock protecting the producer connection */
@@ -121,6 +115,8 @@ public class RabbitmqStore extends AbstractMessageStore {
 		hostPort = (String) parameters.get(HOST_PORT);
 		virtualHost = (String) parameters.get(VIRTUAL_HOST);
 
+		//Possible timeouts that can be added in future if requested, should be added to the
+		//setConnectionTimeout, ShutdownTimeout, RequestedHeartbeat
 		connectionFactory = new ConnectionFactory();
 		if (hostName != null && !hostName.equals("")) {
 			connectionFactory.setHost(hostName);
@@ -140,6 +136,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			connectionFactory.setPort(5672);
 			logger.info(nameString()+" port is set to default value (5672");
 		}
+
 		if (userName != null && !userName.equals("")) {
 			connectionFactory.setUsername(userName);
 		}
@@ -177,21 +174,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 			            "Setting queue name "+this.queueName+" as routing key.");
 			routeKey =this.queueName;
 		}
-
-		String consumerReceiveTimeOut = (String) parameters.get(CONSUMER_TIMEOUT);
-		//TODO: find other timeouts
-		int consumerReceiveTimeOutI = 6000;
-		if (consumerReceiveTimeOut != null) {
-			try {
-				consumerReceiveTimeOutI = Integer.parseInt(consumerReceiveTimeOut);
-			} catch (NumberFormatException e) {
-				//logger.error(nameString() + ". Error parsing consumer receive time out value. " +
-				//             "Set to 60s.");
-			}
-		} //else {
-		//logger.warn(nameString() + ". Consumer Receiving time out not passed in. " +
-		//            "Set to 60s.");
-		//}
 
 		if (!newWriteConnection()) {
 			logger.warn(nameString() + ". Starting with a faulty connection to the broker.");
