@@ -199,7 +199,7 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
     private static void serializeSequences(OMElement definitions,
                                            Map<String, SequenceMediator> sequences) {
         for (SequenceMediator seq : sequences.values()) {
-            if(!(seq.getName().startsWith("_Recipe_Sequence_"))) {
+            if(!(seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY))) {
             MediatorSerializerFinder.getInstance().getSerializer(seq)
                     .serializeMediator(definitions, seq);
             }

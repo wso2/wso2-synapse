@@ -17,9 +17,11 @@
  */
 package org.apache.synapse.message.store.impl.rabbitmq;
 
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -29,64 +31,105 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.store.AbstractMessageStore;
-
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Channel;
 import org.apache.synapse.message.store.Constants;
 
 import java.io.IOException;
 import java.util.*;
 
 public class RabbitmqStore extends AbstractMessageStore {
-	/** RabbitMQ Broker username */
+	/**
+	 * RabbitMQ Broker username
+	 */
 	public static final String USERNAME = "store.rabbitmq.username";
-	/** RabbitMQ Broker password */
+	/**
+	 * RabbitMQ Broker password
+	 */
 	public static final String PASSWORD = "store.rabbitmq.password";
-	/** RabbitMQ Server Host name*/
+	/**
+	 * RabbitMQ Server Host name
+	 */
 	public static final String HOST_NAME = "store.rabbitmq.host.name";
-	/** RabbitMQ Server Port*/
+	/**
+	 * RabbitMQ Server Port
+	 */
 	public static final String HOST_PORT = "store.rabbitmq.host.port";
-	/** RabbitMQ Server Virtual Host*/
-	public static final String VIRTUAL_HOST= "store.rabbitmq.virtual.host";
-	/** RabbitMQ queue name that this message store must store the messages to. */
+	/**
+	 * RabbitMQ Server Virtual Host
+	 */
+	public static final String VIRTUAL_HOST = "store.rabbitmq.virtual.host";
+	/**
+	 * RabbitMQ queue name that this message store must store the messages to.
+	 */
 	public static final String QUEUE_NAME = "store.rabbitmq.queue.name";
-	/** RabbitMQ route key which queue is binded */
+	/**
+	 * RabbitMQ route key which queue is binded
+	 */
 	public static final String ROUTE_KEY = "store.rabbitmq.route.key";
-	/** RabbitMQ exchange. */
+	/**
+	 * RabbitMQ exchange.
+	 */
 	public static final String EXCHANGE_NAME = "store.rabbitmq.exchange.name";
-	/** RabbitMQ exchange. */
+	/**
+	 * RabbitMQ exchange.
+	 */
 	public static final String EXCHANGE_TYPE = "store.rabbitmq.exchange.type";
-	/** RabbitMQ connection properties */
+	/**
+	 * RabbitMQ connection properties
+	 */
 	private final Properties properties = new Properties();
-	/** RabbitMQ username */
+	/**
+	 * RabbitMQ username
+	 */
 	private String userName;
-	/** RabbitMQ password */
+	/**
+	 * RabbitMQ password
+	 */
 	private String password;
-	/** RabbitMQ queue name */
+	/**
+	 * RabbitMQ queue name
+	 */
 	private String queueName;
-	/** RabbitMQ routing key */
+	/**
+	 * RabbitMQ routing key
+	 */
 	private String routeKey;
-	/** RabbitMQ exchange name */
+	/**
+	 * RabbitMQ exchange name
+	 */
 	private String exchangeName;
-	/** RabbitMQ exchange type */
+	/**
+	 * RabbitMQ exchange type
+	 */
 	private String exchangeType;
-	/** RabbitMQ host name */
+	/**
+	 * RabbitMQ host name
+	 */
 	private String hostName;
-	/** RabbitMQ host port */
+	/**
+	 * RabbitMQ host port
+	 */
 	private String hostPort;
-	/** RabbitMQ virtual host */
+	/**
+	 * RabbitMQ virtual host
+	 */
 	private String virtualHost;
 	private static final Log logger = LogFactory.getLog(RabbitmqStore.class.getName());
-	/** Rabbitmq Connection factory */
+	/**
+	 * Rabbitmq Connection factory
+	 */
 	private ConnectionFactory connectionFactory;
-	/** RabbitMQ Connection used to send messages to the queue */
+	/**
+	 * RabbitMQ Connection used to send messages to the queue
+	 */
 	private Connection producerConnection;
-	/** lock protecting the producer connection */
+	/**
+	 * lock protecting the producer connection
+	 */
 	private final Object producerLock = new Object();
-	/** records the last retried time between the broker and ESB */
+	/**
+	 * records the last retried time between the broker and ESB
+	 */
 	private long retryTime = -1;
-
 
 	public void init(SynapseEnvironment se) {
 		if (se == null) {
@@ -121,20 +164,20 @@ public class RabbitmqStore extends AbstractMessageStore {
 		if (hostName != null && !hostName.equals("")) {
 			connectionFactory.setHost(hostName);
 		} else {
-			throw new SynapseException(nameString() +" host name is not correctly defined");
+			throw new SynapseException(nameString() + " host name is not correctly defined");
 		}
 		int port = 0;
 		try {
 			port = Integer.parseInt(hostPort);
-		}catch (NumberFormatException nfe){
-			logger.error("Port value for "+nameString()+" is not correctly defined"+nfe);
+		} catch (NumberFormatException nfe) {
+			logger.error("Port value for " + nameString() + " is not correctly defined" + nfe);
 		}
 
 		if (port > 0) {
 			connectionFactory.setPort(port);
-		}else {
+		} else {
 			connectionFactory.setPort(5672);
-			logger.info(nameString()+" port is set to default value (5672");
+			logger.info(nameString() + " port is set to default value (5672");
 		}
 
 		if (userName != null && !userName.equals("")) {
@@ -159,7 +202,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			if (name != null && !name.isEmpty()) {
 				defaultQueue = name + "_Queue";
 			} else {
-				defaultQueue =  "RabiitmqStore_" + System.currentTimeMillis() + "_Queue";
+				defaultQueue = "RabiitmqStore_" + System.currentTimeMillis() + "_Queue";
 			}
 			logger.warn(nameString() + ". Destination not provided. " +
 			            "Setting default destination to [" + defaultQueue + "].");
@@ -169,10 +212,10 @@ public class RabbitmqStore extends AbstractMessageStore {
 		exchangeName = (String) properties.get(EXCHANGE_NAME);
 		exchangeType = (String) properties.get(EXCHANGE_TYPE);
 		routeKey = (String) properties.get(ROUTE_KEY);
-		if(routeKey == null){
+		if (routeKey == null) {
 			logger.warn(nameString() + ". Routing key is not provided. " +
-			            "Setting queue name "+this.queueName+" as routing key.");
-			routeKey =this.queueName;
+			            "Setting queue name " + this.queueName + " as routing key.");
+			routeKey = this.queueName;
 		}
 
 		if (!newWriteConnection()) {
@@ -182,13 +225,14 @@ public class RabbitmqStore extends AbstractMessageStore {
 		try {
 			setQueue();
 		} catch (IOException e) {
-			logger.error(nameString()+" error in storage declaring queue "+queueName);
+			logger.error(nameString() + " error in storage declaring queue " + queueName);
 		}
 		return true;
 	}
 
 	/**
 	 * Create a Queue to store messages, this will used queueName parameter
+	 *
 	 * @throws IOException
 	 */
 	private void setQueue() throws IOException {
@@ -218,12 +262,11 @@ public class RabbitmqStore extends AbstractMessageStore {
 					}
 					channel.exchangeDeclare(exchangeName, exchangeType, false, false, null);
 				}
-				channel.queueBind(queueName,exchangeName,routeKey);
+				channel.queueBind(queueName, exchangeName, routeKey);
 			}
-		}catch (IOException e){
-			logger.error(nameString()+" error in storage declaring queue "+queueName);
-		}
-		finally {
+		} catch (IOException e) {
+			logger.error(nameString() + " error in storage declaring queue " + queueName);
+		} finally {
 			channel.close();
 		}
 	}
@@ -245,7 +288,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			try {
 				producerConnection = connectionFactory.newConnection();
 			} catch (IOException e) {
-				logger.error(nameString() + " cannot create connection to the broker."+e);
+				logger.error(nameString() + " cannot create connection to the broker." + e);
 				producerConnection = null;
 			}
 		}
@@ -263,6 +306,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 
 	/**
 	 * Close any given connection
+	 *
 	 * @param connection
 	 * @return true if the connection closed successfully false otherwise
 	 */
@@ -296,7 +340,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 	}
 
 	/**
-	 *
 	 * @return new MessageProducer
 	 */
 	public MessageProducer getProducer() {
@@ -305,13 +348,13 @@ public class RabbitmqStore extends AbstractMessageStore {
 		if (exchangeName != null && exchangeType != null) {
 			producer.setQueueName(routeKey);
 			producer.setExchangeName(exchangeName);
-		}
-		else{
+		} else {
 			producer.setQueueName(queueName);
 			producer.setExchangeName(null);
 			if (logger.isDebugEnabled()) {
-				logger.debug(nameString() + " exchange is not defined, using default exchange and " +
-				             "queue name for routing messages");
+				logger.debug(
+						nameString() + " exchange is not defined, using default exchange and " +
+						"queue name for routing messages");
 			}
 		}
 
@@ -327,7 +370,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 						return producer;
 					}
 				}
-				if (!producerConnection.isOpen())   {
+				if (!producerConnection.isOpen()) {
 					producerConnection = connectionFactory.newConnection();
 				}
 			}
@@ -341,7 +384,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			                  + nameString() + ". Error:" + throwable.getLocalizedMessage();
 			logger.error(errorMsg, throwable);
 			synchronized (producerLock) {
-				cleanup(producerConnection,  true);
+				cleanup(producerConnection, true);
 				producerConnection = null;
 			}
 			return producer;
@@ -400,7 +443,8 @@ public class RabbitmqStore extends AbstractMessageStore {
 		return null;
 	}
 
-	public void clear() {	}
+	public void clear() {
+	}
 
 	public int getType() {
 		return Constants.RABBIT_MS;
@@ -429,8 +473,8 @@ public class RabbitmqStore extends AbstractMessageStore {
 	/**
 	 * Cleans up the RabbitMQ Connection
 	 *
-	 * @param connection  RabbitMQ Connection
-	 * @param error is this method called upon an error
+	 * @param connection RabbitMQ Connection
+	 * @param error      is this method called upon an error
 	 * @return {@code true} if the cleanup is successful. {@code false} otherwise.
 	 */
 	public boolean cleanup(Connection connection, boolean error) {

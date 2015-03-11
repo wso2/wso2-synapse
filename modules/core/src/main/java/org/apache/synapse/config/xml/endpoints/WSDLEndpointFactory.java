@@ -53,7 +53,6 @@ import java.util.Properties;
  *     &lt;wsdl:definition&gt;...&lt;/wsdl:definition&gt;?
  *     &lt;wsdl20:description&gt;...&lt;/wsdl20:description&gt;?
  *
- *     &lt;enableRM [policy="<em>key</em>"]/&gt;?
  *     &lt;enableSec [policy="<em>key</em>"]/&gt;?
  *     &lt;enableAddressing [version="final|submission"] [separateListener="true|false"]/&gt;?
  *
