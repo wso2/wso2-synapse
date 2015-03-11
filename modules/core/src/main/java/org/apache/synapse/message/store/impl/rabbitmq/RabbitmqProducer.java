@@ -100,7 +100,6 @@ public class RabbitmqProducer implements MessageProducer {
 		Channel channel = null;
 		try {
 			//Serializing message
-			//TODO : test for reply message
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(os);
 			objOut.writeObject(message);

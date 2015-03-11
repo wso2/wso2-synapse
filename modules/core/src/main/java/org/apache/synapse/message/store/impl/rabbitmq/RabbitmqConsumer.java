@@ -119,7 +119,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 					try {
 						storableMessage = (AMQPStorableMessage) in.readObject();
 					} catch (ClassNotFoundException e) {
-						logger.error(getId() + "Unable to read the stored message" + e);
+						logger.error(getId() + "unable to read the stored message" + e);
 					}
 					bis.close();
 					in.close();
@@ -242,7 +242,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 		return true;
 	}
 
-	//TODO: implement cahcedMessage class similar to JMS
+	//Implement cahcedMessage class similar to JMS (requirement is not clear in JMS)
 	private final class CachedMessage {
 	}
 }
