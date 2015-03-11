@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.provider.UriParser;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -45,6 +46,7 @@ public class VFSOutTransportInfo implements OutTransportInfo {
     private long reconnectTimeout = 30000;
     private boolean append;
     private boolean fileLocking;
+    private Map<String, String> fso = null;
 
     private static final String[] uriParamsToDelete = {VFSConstants.APPEND+"=true", VFSConstants.APPEND+"=false"};
 
@@ -71,6 +73,11 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         }
 
         Map<String,String> properties = BaseUtils.getEPRProperties(outFileURI);
+
+        String scheme = UriParser.extractScheme(this.outFileURI);
+        properties.put(VFSConstants.SCHEME, scheme);
+        setOutFileSystemOptionsMap(properties);
+
         if (properties.containsKey(VFSConstants.MAX_RETRY_COUNT)) {
             String strMaxRetryCount = properties.get(VFSConstants.MAX_RETRY_COUNT);
             maxRetryCount = Integer.parseInt(strMaxRetryCount);
@@ -186,5 +193,20 @@ public class VFSOutTransportInfo implements OutTransportInfo {
 
     public boolean isFileLockingEnabled() {
         return fileLocking;
+    }
+
+    public Map<String, String> getOutFileSystemOptionsMap() {
+        return fso;
+    }
+
+    private void setOutFileSystemOptionsMap(Map<String, String> fso) {
+        HashMap<String, String> options = new HashMap<String, String>();
+        if (VFSConstants.SCHEME_SFTP.equals(fso.get(VFSConstants.SCHEME))) {
+            for (String key: fso.keySet()) {
+                options.put(key.replaceAll(VFSConstants.SFTP_PREFIX, ""), fso.get(key));
+            }
+        }
+
+        this.fso = options;
     }
 }

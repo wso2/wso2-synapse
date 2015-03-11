@@ -33,12 +33,9 @@ import org.apache.axis2.transport.base.*;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.FileObject;
-import org.apache.commons.vfs2.FileSystemException;
-import org.apache.commons.vfs2.FileSystemManager;
-import org.apache.commons.vfs2.FileType;
+import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
-import org.apache.synapse.commons.vfs.VFSConstants; 
+import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo ;
 
@@ -122,6 +119,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             vfsOutInfo = (VFSOutTransportInfo) outTransportInfo;
         }
 
+        FileSystemOptions fso = null;
+        try {
+            fso = VFSUtils.attachFileSystemOptions(vfsOutInfo.getOutFileSystemOptionsMap(), fsManager);
+        } catch (Exception e) {
+            log.error("Error while attaching VFS file system properties. " + e.getMessage());
+        }
+
         if (vfsOutInfo != null) {
             FileObject replyFile = null;
             try {
@@ -136,7 +140,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     
                     try {
                         retryCount++;
-                        replyFile = fsManager.resolveFile(vfsOutInfo.getOutFileURI());
+                        replyFile = fsManager.resolveFile(vfsOutInfo.getOutFileURI(), fso);
                     
                         if (replyFile == null) {
                             log.error("replyFile is null");
@@ -171,17 +175,17 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // if file locking is not disabled acquire the lock
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
-                            acquireLockForSending(responseFile, vfsOutInfo);
+                            acquireLockForSending(responseFile, vfsOutInfo, fso);
                             if (!responseFile.exists()) {
                                 responseFile.createFile();
                             }
-                            populateResponseFile(responseFile, msgCtx,append, true);
-                            VFSUtils.releaseLock(fsManager, responseFile, null);
+                            populateResponseFile(responseFile, msgCtx,append, true, fso);
+                            VFSUtils.releaseLock(fsManager, responseFile, fso);
                         } else {
                             if (!responseFile.exists()) {
                                 responseFile.createFile();
                             }
-                            populateResponseFile(responseFile, msgCtx,append, false);
+                            populateResponseFile(responseFile, msgCtx,append, false, fso);
                         }
 
                     } else if (replyFile.getType() == FileType.FILE) {
@@ -189,11 +193,11 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                         // if file locking is not disabled acquire the lock
                         // before uploading the file
                         if (vfsOutInfo.isFileLockingEnabled()) {
-                            acquireLockForSending(replyFile, vfsOutInfo);
-                            populateResponseFile(replyFile, msgCtx, append, true);
-                            VFSUtils.releaseLock(fsManager, replyFile, null);
+                            acquireLockForSending(replyFile, vfsOutInfo, fso);
+                            populateResponseFile(replyFile, msgCtx, append, true, fso);
+                            VFSUtils.releaseLock(fsManager, replyFile, fso);
                         } else {
-                            populateResponseFile(replyFile, msgCtx, append, false);
+                            populateResponseFile(replyFile, msgCtx, append, false, fso);
                         }
 
                     } else {
@@ -203,13 +207,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 } else {
                     // if file locking is not disabled acquire the lock before uploading the file
                     if (vfsOutInfo.isFileLockingEnabled()) {
-                        acquireLockForSending(replyFile, vfsOutInfo);
+                        acquireLockForSending(replyFile, vfsOutInfo, fso);
                         replyFile.createFile();
-                        populateResponseFile(replyFile, msgCtx, append, true);
-                        VFSUtils.releaseLock(fsManager, replyFile, null);
+                        populateResponseFile(replyFile, msgCtx, append, true, fso);
+                        VFSUtils.releaseLock(fsManager, replyFile, fso);
                     } else {
                         replyFile.createFile();
-                        populateResponseFile(replyFile, msgCtx, append, false);
+                        populateResponseFile(replyFile, msgCtx, append, false, fso);
                     }
                 }
             } catch (FileSystemException e) {
@@ -249,7 +253,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
     }
 
     private void populateResponseFile(FileObject responseFile, MessageContext msgContext,
-                                      boolean append, boolean lockingEnabled) throws AxisFault {
+                                      boolean append, boolean lockingEnabled, FileSystemOptions fso) throws AxisFault {
         
         MessageFormatter messageFormatter = getMessageFormatter(msgContext);
         OMOutputFormat format = BaseUtils.getOMOutputFormat(msgContext);
@@ -269,25 +273,25 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             
         } catch (FileSystemException e) {
             if (lockingEnabled) {
-                VFSUtils.releaseLock(fsManager, responseFile, null);
+                VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         } catch (IOException e) {
             if (lockingEnabled) {
-                VFSUtils.releaseLock(fsManager, responseFile, null);
+                VFSUtils.releaseLock(fsManager, responseFile, fso);
             }
             metrics.incrementFaultsSending();
             handleException("IO Error while creating response file : " + VFSUtils.maskURLPassword(responseFile.getName().getURI()), e);
         }
     }
 
-    private void acquireLockForSending(FileObject responseFile, VFSOutTransportInfo vfsOutInfo)
+    private void acquireLockForSending(FileObject responseFile, VFSOutTransportInfo vfsOutInfo, FileSystemOptions fso)
             throws AxisFault {
         
         int tryNum = 0;
         // wait till we get the lock
-        while (!VFSUtils.acquireLock(fsManager, responseFile, null)) {
+        while (!VFSUtils.acquireLock(fsManager, responseFile, fso)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
                 handleException("Couldn't send the message to file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +

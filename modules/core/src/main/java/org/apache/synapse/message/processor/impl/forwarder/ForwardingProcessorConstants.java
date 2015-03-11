@@ -69,4 +69,6 @@ public final class ForwardingProcessorConstants {
      * Message will be dropped after maximum delivery
      */
     public static final String MAX_DELIVERY_DROP = "max.delivery.drop";
+    
+    public static final String CRON_EXPRESSION = "cron.expression";
 }
