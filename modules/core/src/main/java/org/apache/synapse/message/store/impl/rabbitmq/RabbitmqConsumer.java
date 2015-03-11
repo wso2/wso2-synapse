@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
-public class RabbitmqConsumer  implements MessageConsumer {
+public class RabbitmqConsumer implements MessageConsumer {
 	private static final Log logger = LogFactory.getLog(RabbitmqConsumer.class.getName());
 
 	private Connection connection;
@@ -45,9 +45,13 @@ public class RabbitmqConsumer  implements MessageConsumer {
 	private String idString;
 
 	private boolean isInitialized;
-	/** Holds the last message read from the message store. */
+	/**
+	 * Holds the last message read from the message store.
+	 */
 	private CachedMessage cachedMessage;
-	/** Did last receive() call cause an error? */
+	/**
+	 * Did last receive() call cause an error?
+	 */
 	private boolean isReceiveError;
 
 	public RabbitmqConsumer(RabbitmqStore store) {
@@ -75,22 +79,21 @@ public class RabbitmqConsumer  implements MessageConsumer {
 			}
 		}
 		//setting channel
-		if(channel != null){
-			if(!channel.isOpen()){
-				if(!setChannel()){
+		if (channel != null) {
+			if (!channel.isOpen()) {
+				if (!setChannel()) {
 					logger.info(getId() + " unable to create the channel.");
 					return null;
 				}
 			}
-		}
-		else{
-			if(!setChannel()){
+		} else {
+			if (!setChannel()) {
 				logger.info(getId() + " unable to create the channel.");
 				return null;
 			}
 		}
 		//receive messages
-		try{
+		try {
 			QueueingConsumer consumer = new QueueingConsumer(channel);
 			channel.basicConsume(queueName, false, consumer);
 			try {
@@ -114,18 +117,20 @@ public class RabbitmqConsumer  implements MessageConsumer {
 					ByteArrayInputStream bis = new ByteArrayInputStream(delivery.getBody());
 					ObjectInput in = new ObjectInputStream(bis);
 					try {
-						storableMessage = (AMQPStorableMessage)  in.readObject();
+						storableMessage = (AMQPStorableMessage) in.readObject();
 					} catch (ClassNotFoundException e) {
-						logger.error(getId() + "Unable to read the stored message"+e);
+						logger.error(getId() + "Unable to read the stored message" + e);
 					}
 					bis.close();
 					in.close();
 					org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
 					MessageContext synapseMc = store.newSynapseMc(axis2Mc);
-					synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
+					synapseMc =
+							MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
 					successful = true;
 					if (logger.isDebugEnabled()) {
-						logger.debug(getId() + " Received MessageId:" + delivery.getProperties().getMessageId() );
+						logger.debug(getId() + " Received MessageId:" +
+						             delivery.getProperties().getMessageId());
 					}
 					return synapseMc;
 				} finally {
@@ -145,12 +150,12 @@ public class RabbitmqConsumer  implements MessageConsumer {
 					}
 				}
 			}
-			if(channel.isOpen()) channel.close();
-		}catch(ShutdownSignalException sse){
-			logger.error(getId()+" connection error when receiving messages"+ sse);
-		}
-		catch(IOException ioe){
-			logger.error(getId()+" connection error when receiving messages" + ioe);
+			if (channel.isOpen())
+				channel.close();
+		} catch (ShutdownSignalException sse) {
+			logger.error(getId() + " connection error when receiving messages" + sse);
+		} catch (IOException ioe) {
+			logger.error(getId() + " connection error when receiving messages" + ioe);
 		}
 		return null;
 	}
@@ -163,7 +168,7 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		if (logger.isDebugEnabled()) {
 			logger.debug(getId() + " cleaning up...");
 		}
-		boolean result =  store.cleanup(connection,  true);
+		boolean result = store.cleanup(connection, true);
 		if (result) {
 			connection = null;
 			return true;
@@ -176,12 +181,12 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		return this;
 	}
 
-	public void setQueueName(String queueName){
+	public void setQueueName(String queueName) {
 		this.queueName = queueName;
 	}
 
-	public boolean setChannel(){
-		if(connection != null && connection.isOpen()){
+	public boolean setChannel() {
+		if (connection != null && connection.isOpen()) {
 			try {
 				this.channel = connection.createChannel();
 				return true;
@@ -236,6 +241,7 @@ public class RabbitmqConsumer  implements MessageConsumer {
 		idString = consumer.getId();
 		return true;
 	}
+
 	//TODO: implement cahcedMessage class similar to JMS
 	private final class CachedMessage {
 	}

@@ -24,33 +24,33 @@ import java.io.Serializable;
  * This represents the final JMS message that will be saved in the JMS queue.
  */
 public class AMQPStorableMessage implements Serializable {
-    private Axis2Message axis2message;
+	private Axis2Message axis2message;
 
-    private SynapseMessage synapseMessage;
+	private SynapseMessage synapseMessage;
 
-    private int priority = 4;
+	private int priority = 4;
 
-    public Axis2Message getAxis2message() {
-        return axis2message;
-    }
+	public Axis2Message getAxis2message() {
+		return axis2message;
+	}
 
-    public void setAxis2message(Axis2Message axis2message) {
-        this.axis2message = axis2message;
-    }
+	public void setAxis2message(Axis2Message axis2message) {
+		this.axis2message = axis2message;
+	}
 
-    public SynapseMessage getSynapseMessage() {
-        return synapseMessage;
-    }
+	public SynapseMessage getSynapseMessage() {
+		return synapseMessage;
+	}
 
-    public void setSynapseMessage(SynapseMessage synapseMessage) {
-        this.synapseMessage = synapseMessage;
-    }
+	public void setSynapseMessage(SynapseMessage synapseMessage) {
+		this.synapseMessage = synapseMessage;
+	}
 
-    public int getPriority() {
-        return priority;
-    }
+	public int getPriority() {
+		return priority;
+	}
 
-    public void setPriority(int priority) {
-        this.priority = priority;
-    }
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
 }

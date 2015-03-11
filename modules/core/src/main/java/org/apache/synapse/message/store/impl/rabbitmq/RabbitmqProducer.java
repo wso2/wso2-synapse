@@ -18,31 +18,44 @@
 package org.apache.synapse.message.store.impl.rabbitmq;
 
 import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.Channel;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 
-public class RabbitmqProducer  implements MessageProducer {
+public class RabbitmqProducer implements MessageProducer {
 
 	private static final Log logger = LogFactory.getLog(RabbitmqProducer.class.getName());
-	/** Connection to the Rabbitmq broker. Passed reference from Store **/
+	/**
+	 * Connection to the Rabbitmq broker. Passed reference from Store *
+	 */
 	private Connection connection;
-	/** Reference of the store **/
+	/**
+	 * Reference of the store *
+	 */
 	private RabbitmqStore store;
-	/** Message storing queue name **/
+	/**
+	 * Message storing queue name *
+	 */
 	private String queueName;
-	/** Message exchange **/
+	/**
+	 * Message exchange *
+	 */
 	private String exchangeName;
 
 	private boolean isInitialized = false;
 
 	private boolean isConnectionError = false;
-	/** ID of the MessageProducer **/
+	/**
+	 * ID of the MessageProducer *
+	 */
 	private String idString;
 
 	public RabbitmqProducer(RabbitmqStore store) {
@@ -54,11 +67,11 @@ public class RabbitmqProducer  implements MessageProducer {
 		isInitialized = true;
 	}
 
-	public void setQueueName(String queueName){
+	public void setQueueName(String queueName) {
 		this.queueName = queueName;
 	}
 
-	public void setExchangeName(String exchangeName){
+	public void setExchangeName(String exchangeName) {
 		this.exchangeName = exchangeName;
 	}
 
@@ -84,7 +97,7 @@ public class RabbitmqProducer  implements MessageProducer {
 		AMQPStorableMessage message = MessageConverter.toStorableMessage(synCtx);
 		boolean error = false;
 		Throwable throwable = null;
-		Channel channel=null;
+		Channel channel = null;
 		try {
 			//Serializing message
 			//TODO : test for reply message
@@ -98,11 +111,10 @@ public class RabbitmqProducer  implements MessageProducer {
 			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
 			channel = connection.createChannel();
-			if (exchangeName == null){
-				channel.basicPublish("",queueName,builder.build(),byteForm);
-			}
-			else{
-				channel.basicPublish(exchangeName,queueName,builder.build(),byteForm);
+			if (exchangeName == null) {
+				channel.basicPublish("", queueName, builder.build(), byteForm);
+			} else {
+				channel.basicPublish(exchangeName, queueName, builder.build(), byteForm);
 			}
 		} catch (IOException e) {
 			throwable = e;
@@ -111,13 +123,13 @@ public class RabbitmqProducer  implements MessageProducer {
 		} catch (Throwable t) {
 			throwable = t;
 			error = true;
-		}
-		finally {
-			if (channel != null && channel.isOpen() )
+		} finally {
+			if (channel != null && channel.isOpen())
 				try {
 					channel.close();
 				} catch (IOException e) {
-					logger.error("Error when closing connection"+synCtx.getMessageID()+". " + e);
+					logger.error(
+							"Error when closing connection" + synCtx.getMessageID() + ". " + e);
 				}
 		}
 		if (error) {
@@ -140,6 +152,7 @@ public class RabbitmqProducer  implements MessageProducer {
 		store.enqueued();
 		return true;
 	}
+
 	//Not useful yet, this should be use to close the session ( channel )
 	public boolean cleanup() {
 		return store.cleanup(null, false);

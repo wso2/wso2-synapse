@@ -27,200 +27,203 @@ import java.util.HashMap;
  * , and it will be saved as a JMS message in the JMS Store.
  */
 public class Axis2Message implements Serializable {
-    private String messageID;
+	private String messageID;
 
-    private String operationAction;
+	private String operationAction;
 
-    private QName operationName;
+	private QName operationName;
 
-    private String action;
+	private String action;
 
-    private String service;
+	private String service;
 
-    private String relatesToMessageId;
+	private String relatesToMessageId;
 
-    private String replyToAddress;
+	private String replyToAddress;
 
-    private String faultToAddress;
+	private String faultToAddress;
 
-    private String fromAddress;
+	private String fromAddress;
 
-    private String toAddress;
+	private String toAddress;
 
-    private String transportInName;
+	private String transportInName;
 
-    private String transportOutName;
+	private String transportOutName;
 
-    private boolean isDoingMTOM;
+	private boolean isDoingMTOM;
 
-    private boolean isDoingSWA;
+	private boolean isDoingSWA;
 
-    private boolean isDoingPOX;
+	private boolean isDoingPOX;
 
-    private boolean isDoingGET;
+	private boolean isDoingGET;
 
-    private String soapEnvelope;
+	private String soapEnvelope;
 
-    private byte[] jsonStream;
+	private byte[] jsonStream;
 
-    private int FLOW;
+	private int FLOW;
 
-    private HashMap<String, Object> properties = new HashMap<String, Object>();
+	private HashMap<String, Object> properties = new HashMap<String, Object>();
 
+	public String getMessageID() {
+		return messageID;
+	}
 
-    public String getMessageID() {
-        return messageID;
-    }
+	public void setMessageID(String messageID) {
+		this.messageID = messageID;
+	}
 
-    public void setMessageID(String messageID) {
-        this.messageID = messageID;
-    }
+	public String getOperationAction() {
+		return operationAction;
+	}
 
-    public String getOperationAction() {
-        return operationAction;
-    }
+	public void setOperationAction(String operationAction) {
+		this.operationAction = operationAction;
+	}
 
-    public void setOperationAction(String operationAction) {
-        this.operationAction = operationAction;
-    }
+	public QName getOperationName() {
+		return operationName;
+	}
 
-    public QName getOperationName() {
-        return operationName;
-    }
+	public void setOperationName(QName operationName) {
+		this.operationName = operationName;
+	}
 
-    public void setOperationName(QName operationName) {
-        this.operationName = operationName;
-    }
+	public String getAction() {
+		return action;
+	}
 
-    public String getAction() {
-        return action;
-    }
+	public void setAction(String action) {
+		this.action = action;
+	}
 
-    public void setAction(String action) {
-        this.action = action;
-    }
+	public String getService() {
+		return service;
+	}
 
-    public String getService() {
-        return service;
-    }
+	public void setService(String service) {
+		this.service = service;
+	}
 
-    public void setService(String service) {
-        this.service = service;
-    }
+	public String getRelatesToMessageId() {
+		return relatesToMessageId;
+	}
 
-    public String getRelatesToMessageId() {
-        return relatesToMessageId;
-    }
+	public void setRelatesToMessageId(String relatesToMessageId) {
+		this.relatesToMessageId = relatesToMessageId;
+	}
 
-    public void setRelatesToMessageId(String relatesToMessageId) {
-        this.relatesToMessageId = relatesToMessageId;
-    }
+	public String getReplyToAddress() {
+		return replyToAddress;
+	}
 
-    public String getReplyToAddress() {
-        return replyToAddress;
-    }
+	public void setReplyToAddress(String replyToAddress) {
+		this.replyToAddress = replyToAddress;
+	}
 
-    public void setReplyToAddress(String replyToAddress) {
-        this.replyToAddress = replyToAddress;
-    }
+	public String getSoapEnvelope() {
+		return soapEnvelope;
+	}
 
-    public String getSoapEnvelope() {
-        return soapEnvelope;
-    }
+	public void setJsonStream(byte[] jsonStream) {
+		this.jsonStream = jsonStream;
+	}
 
-    public void setJsonStream(byte[] jsonStream) { this.jsonStream = jsonStream; }
+	public byte[] getJsonStream() {
+		return this.jsonStream;
+	}
 
-    public byte[] getJsonStream() { return this.jsonStream; }
+	public void setSoapEnvelope(String soapEnvelope) {
+		this.soapEnvelope = soapEnvelope;
+	}
 
-    public void setSoapEnvelope(String soapEnvelope) {
-        this.soapEnvelope = soapEnvelope;
-    }
+	public int getFLOW() {
+		return FLOW;
+	}
 
-    public int getFLOW() {
-        return FLOW;
-    }
+	public void setFLOW(int FLOW) {
+		this.FLOW = FLOW;
+	}
 
-    public void setFLOW(int FLOW) {
-        this.FLOW = FLOW;
-    }
+	public String getFaultToAddress() {
+		return faultToAddress;
+	}
 
-    public String getFaultToAddress() {
-        return faultToAddress;
-    }
+	public void setFaultToAddress(String faultToAddress) {
+		this.faultToAddress = faultToAddress;
+	}
 
-    public void setFaultToAddress(String faultToAddress) {
-        this.faultToAddress = faultToAddress;
-    }
+	public String getFromAddress() {
+		return fromAddress;
+	}
 
-    public String getFromAddress() {
-        return fromAddress;
-    }
+	public void setFromAddress(String fromAddress) {
+		this.fromAddress = fromAddress;
+	}
 
-    public void setFromAddress(String fromAddress) {
-        this.fromAddress = fromAddress;
-    }
+	public String getToAddress() {
+		return toAddress;
+	}
 
-    public String getToAddress() {
-        return toAddress;
-    }
+	public void setToAddress(String toAddress) {
+		this.toAddress = toAddress;
+	}
 
-    public void setToAddress(String toAddress) {
-        this.toAddress = toAddress;
-    }
+	public boolean isDoingMTOM() {
+		return isDoingMTOM;
+	}
 
-    public boolean isDoingMTOM() {
-        return isDoingMTOM;
-    }
+	public void setDoingMTOM(boolean doingMTOM) {
+		isDoingMTOM = doingMTOM;
+	}
 
-    public void setDoingMTOM(boolean doingMTOM) {
-        isDoingMTOM = doingMTOM;
-    }
+	public boolean isDoingSWA() {
+		return isDoingSWA;
+	}
 
-    public boolean isDoingSWA() {
-        return isDoingSWA;
-    }
+	public void setDoingSWA(boolean doingSWA) {
+		isDoingSWA = doingSWA;
+	}
 
-    public void setDoingSWA(boolean doingSWA) {
-        isDoingSWA = doingSWA;
-    }
+	public boolean isDoingPOX() {
+		return isDoingPOX;
+	}
 
-    public boolean isDoingPOX() {
-        return isDoingPOX;
-    }
+	public void setDoingPOX(boolean doingPOX) {
+		isDoingPOX = doingPOX;
+	}
 
-    public void setDoingPOX(boolean doingPOX) {
-        isDoingPOX = doingPOX;
-    }
+	public boolean isDoingGET() {
+		return isDoingGET;
+	}
 
-    public boolean isDoingGET() {
-        return isDoingGET;
-    }
+	public void setDoingGET(boolean doingGET) {
+		isDoingGET = doingGET;
+	}
 
-    public void setDoingGET(boolean doingGET) {
-        isDoingGET = doingGET;
-    }
+	public void addProperty(String name, Object obj) {
+		properties.put(name, obj);
+	}
 
-    public void addProperty(String name, Object obj) {
-        properties.put(name, obj);
-    }
+	public HashMap<String, Object> getProperties() {
+		return properties;
+	}
 
-    public HashMap<String, Object> getProperties() {
-        return properties;
-    }
+	public String getTransportInName() {
+		return transportInName;
+	}
 
-    public String getTransportInName() {
-        return transportInName;
-    }
+	public void setTransportInName(String transportInName) {
+		this.transportInName = transportInName;
+	}
 
-    public void setTransportInName(String transportInName) {
-        this.transportInName = transportInName;
-    }
+	public String getTransportOutName() {
+		return transportOutName;
+	}
 
-    public String getTransportOutName() {
-        return transportOutName;
-    }
-
-    public void setTransportOutName(String transportOutName) {
-        this.transportOutName = transportOutName;
-    }
+	public void setTransportOutName(String transportOutName) {
+		this.transportOutName = transportOutName;
+	}
 }
