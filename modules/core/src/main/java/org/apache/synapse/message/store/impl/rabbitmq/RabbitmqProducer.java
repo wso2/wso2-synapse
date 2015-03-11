@@ -36,6 +36,8 @@ public class RabbitmqProducer  implements MessageProducer {
 	private RabbitmqStore store;
 	/** Message storing queue name **/
 	private String queueName;
+	/** Message exchange **/
+	private String exchangeName;
 
 	private boolean isInitialized = false;
 
@@ -54,6 +56,10 @@ public class RabbitmqProducer  implements MessageProducer {
 
 	public void setQueueName(String queueName){
 		this.queueName = queueName;
+	}
+
+	public void setExchangeName(String exchangeName){
+		this.exchangeName = exchangeName;
 	}
 
 	public void setConnection(Connection connection) {
@@ -81,6 +87,7 @@ public class RabbitmqProducer  implements MessageProducer {
 		Channel channel=null;
 		try {
 			//Serializing message
+			//TODO : test for reply message
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			ObjectOutput objOut = new ObjectOutputStream(os);
 			objOut.writeObject(message);
@@ -91,7 +98,12 @@ public class RabbitmqProducer  implements MessageProducer {
 			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
 			channel = connection.createChannel();
-			channel.basicPublish("",queueName,builder.build(),byteForm);
+			if (exchangeName == null){
+				channel.basicPublish("",queueName,builder.build(),byteForm);
+			}
+			else{
+				channel.basicPublish(exchangeName,queueName,builder.build(),byteForm);
+			}
 		} catch (IOException e) {
 			throwable = e;
 			error = true;
@@ -101,7 +113,7 @@ public class RabbitmqProducer  implements MessageProducer {
 			error = true;
 		}
 		finally {
-			if(channel != null && channel.isOpen())
+			if (channel != null && channel.isOpen() )
 				try {
 					channel.close();
 				} catch (IOException e) {

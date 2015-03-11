@@ -33,6 +33,7 @@ import org.apache.synapse.message.store.AbstractMessageStore;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
+import org.apache.synapse.message.store.Constants;
 
 import java.io.IOException;
 import java.util.*;
@@ -50,6 +51,12 @@ public class RabbitmqStore extends AbstractMessageStore {
 	public static final String VIRTUAL_HOST= "store.rabbitmq.virtual.host";
 	/** RabbitMQ queue name that this message store must store the messages to. */
 	public static final String QUEUE_NAME = "store.rabbitmq.queue.name";
+	/** RabbitMQ route key which queue is binded */
+	public static final String ROUTE_KEY = "store.rabbitmq.route.key";
+	/** RabbitMQ exchange. */
+	public static final String EXCHANGE_NAME = "store.rabbitmq.exchange.name";
+	/** RabbitMQ exchange. */
+	public static final String EXCHANGE_TYPE = "store.rabbitmq.exchange.type";
 	/** */
 	public static final String CONSUMER_TIMEOUT = "store.rabbitmq.ConsumerReceiveTimeOut";
 	/** */
@@ -62,6 +69,12 @@ public class RabbitmqStore extends AbstractMessageStore {
 	private String password;
 	/** RabbitMQ queue name */
 	private String queueName;
+	/** RabbitMQ routing key */
+	private String routeKey;
+	/** RabbitMQ exchange name */
+	private String exchangeName;
+	/** RabbitMQ exchange type */
+	private String exchangeType;
 	/** RabbitMQ host name */
 	private String hostName;
 	/** RabbitMQ host port */
@@ -156,7 +169,17 @@ public class RabbitmqStore extends AbstractMessageStore {
 			this.queueName = defaultQueue;
 		}
 
+		exchangeName = (String) properties.get(EXCHANGE_NAME);
+		exchangeType = (String) properties.get(EXCHANGE_TYPE);
+		routeKey = (String) properties.get(ROUTE_KEY);
+		if(routeKey == null){
+			logger.warn(nameString() + ". Routing key is not provided. " +
+			            "Setting queue name "+this.queueName+" as routing key.");
+			routeKey =this.queueName;
+		}
+
 		String consumerReceiveTimeOut = (String) parameters.get(CONSUMER_TIMEOUT);
+		//TODO: find other timeouts
 		int consumerReceiveTimeOutI = 6000;
 		if (consumerReceiveTimeOut != null) {
 			try {
@@ -197,7 +220,23 @@ public class RabbitmqStore extends AbstractMessageStore {
 				if (!channel.isOpen()) {
 					channel = producerConnection.createChannel();
 				}
+				//TODO Test for JASON
+				//Hashmap with names and parameters can be used in the place of null argument
+				//Eg: adding dead letter exchange to the queue
 				channel.queueDeclare(queueName, true, false, false, null);
+			}
+			//declaring exchange
+			if (exchangeName != null && exchangeType != null) {
+				try {
+					channel.exchangeDeclarePassive(exchangeName);
+				} catch (java.io.IOException e) {
+					logger.info("Exchange :" + exchangeName + " not found. Declaring exchange.");
+					if (!channel.isOpen()) {
+						channel = producerConnection.createChannel();
+					}
+					channel.exchangeDeclare(exchangeName, exchangeType, false, false, null);
+				}
+				channel.queueBind(queueName,exchangeName,routeKey);
 			}
 		}catch (IOException e){
 			logger.error(nameString()+" error in storage declaring queue "+queueName);
@@ -281,7 +320,19 @@ public class RabbitmqStore extends AbstractMessageStore {
 	public MessageProducer getProducer() {
 		RabbitmqProducer producer = new RabbitmqProducer(this);
 		producer.setId(nextProducerId());
-		producer.setQueueName(queueName);
+		if (exchangeName != null && exchangeType != null) {
+			producer.setQueueName(routeKey);
+			producer.setExchangeName(exchangeName);
+		}
+		else{
+			producer.setQueueName(queueName);
+			producer.setExchangeName(null);
+			if (logger.isDebugEnabled()) {
+				logger.debug(nameString() + " exchange is not defined, using default exchange and " +
+				             "queue name for routing messages");
+			}
+		}
+
 		Throwable throwable = null;
 		boolean error = false;
 		try {
@@ -294,7 +345,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 						return producer;
 					}
 				}
-				if(!producerConnection.isOpen())   {
+				if (!producerConnection.isOpen())   {
 					producerConnection = connectionFactory.newConnection();
 				}
 			}
@@ -367,8 +418,10 @@ public class RabbitmqStore extends AbstractMessageStore {
 		return null;
 	}
 
-	public void clear() {
+	public void clear() {	}
 
+	public int getType() {
+		return Constants.RABBIT_MS;
 	}
 
 	public MessageContext remove(String messageID) {
