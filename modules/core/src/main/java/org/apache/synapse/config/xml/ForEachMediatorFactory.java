@@ -23,10 +23,6 @@ import java.util.Properties;
 
 import javax.xml.namespace.QName;
 
-import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMElement;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -35,9 +31,6 @@ import org.apache.synapse.mediators.builtin.CalloutMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.SendMediator;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
-import org.apache.synapse.util.xpath.SynapseXPath;
-import org.jaxen.JaxenException;
 
 /**
  * The &lt;foreach&gt; element is used to split messages in Synapse to smaller
@@ -135,7 +128,8 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 					break;
 				}
 			}
-		} else if ((target.getEndpoint() != null) ||
+		}
+		if ((target.getEndpoint() != null) ||
 		           (target.getEndpointRef() != null)) {
 			valid = false;
 		}
