@@ -246,7 +246,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 				if (!channel.isOpen()) {
 					channel = producerConnection.createChannel();
 				}
-				//TODO Test for JASON
 				//Hashmap with names and parameters can be used in the place of null argument
 				//Eg: adding dead letter exchange to the queue
 				channel.queueDeclare(queueName, true, false, false, null);
