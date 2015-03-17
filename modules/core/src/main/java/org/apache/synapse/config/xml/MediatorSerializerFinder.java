@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.config.xml.comments.CommentMediatorSerializer;
 import org.apache.synapse.config.xml.eventing.EventPublisherMediatorSerializer;
 import sun.misc.Service;
 
@@ -73,7 +74,8 @@ public class MediatorSerializerFinder {
         EJBMediatorSerializer.class,
         CallMediatorSerializer.class,
         LoopBackMediatorSerializer.class,
-        RespondMediatorSerializer.class
+        RespondMediatorSerializer.class,
+        CommentMediatorSerializer.class
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();

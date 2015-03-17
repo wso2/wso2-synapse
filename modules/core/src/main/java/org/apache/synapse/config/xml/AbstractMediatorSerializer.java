@@ -19,10 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.*;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +29,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.comment.CommentMediator;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
@@ -79,32 +77,40 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
      * @return the serialized Element
      */
     public final OMElement serializeMediator(OMElement parent, Mediator m) {
+        OMElement serializedElement;
 
         if (m instanceof AnonymousListMediator) {
             ((AnonymousListMediatorSerializer) this).serializeChildren(parent,
                     ((AnonymousListMediator) m).getList());
-            return parent;
+            serializedElement = parent;
         } else {
+            if(m instanceof CommentMediator){
+                // serialize comment mediator
+                OMComment commendNode = fac.createOMComment(parent,"comment");
+                commendNode.setValue(((CommentMediator) m).getCommentText());
+                parent.addChild(commendNode);
+                serializedElement =  parent;
+            } else {
+                // delegate the specific serializations to it's serializer
+                OMElement elem = serializeSpecificMediator(m);
+                if (m.getDescription() != null) {
+                    OMElement descriptionElem = fac.createOMElement(DESCRIPTION_Q, elem);
+                    descriptionElem.setText(m.getDescription());
+                    elem.addChild(descriptionElem);
+                }
+                if (m.getShortDescription() != null) {
+                    elem.addAttribute(
+                            fac.createOMAttribute("description", nullNS, m.getShortDescription()));
+                }
 
-            // delegate the specific serializations to it's serializer
-            OMElement elem = serializeSpecificMediator(m);
-            if (m.getDescription() != null) {
-                OMElement descriptionElem = fac.createOMElement(DESCRIPTION_Q, elem);
-                descriptionElem.setText(m.getDescription());
-                elem.addChild(descriptionElem);
+                // attach the serialized element to the parent
+                if (parent != null) {
+                    parent.addChild(elem);
+                }
+                serializedElement =  elem;
             }
-            if (m.getShortDescription() != null) {
-                elem.addAttribute(
-                        fac.createOMAttribute("description", nullNS, m.getShortDescription()));
-            }
-
-            // attach the serialized element to the parent
-            if (parent != null) {
-                parent.addChild(elem);
-            }
-            return elem;
         }
-
+        return serializedElement;
     }
 
     /**

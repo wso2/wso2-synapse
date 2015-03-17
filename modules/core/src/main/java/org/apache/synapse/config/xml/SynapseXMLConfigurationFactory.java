@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -118,6 +119,9 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                             "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\'" +
                             ", \'registry\' or \'inboundEndpoint\' is expected");
                 }
+            } else if(o instanceof OMComment){
+                OMComment commentNode = (OMComment) o;
+                defineComments(config, commentNode);
             }
         }
 
@@ -450,5 +454,14 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             log.error(msg, e);
             throw new SynapseException(msg, e);
         }
+    }
+
+    /**
+     * Add comment node value to the synapse configuration's comments list
+     * @param config Synapse Configuration instance
+     * @param comm OMComment Node
+     */
+    private void defineComments(SynapseConfiguration config, OMComment comm){
+        config.addToCommentedTextList(comm.getValue());
     }
 }

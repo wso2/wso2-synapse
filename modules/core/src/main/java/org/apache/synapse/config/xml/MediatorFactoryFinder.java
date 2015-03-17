@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.XMLToObjectMapper;
+import org.apache.synapse.config.xml.comments.CommentMediatorFactory;
 import org.apache.synapse.config.xml.eventing.EventPublisherMediatorFactory;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
@@ -97,7 +98,8 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
         EJBMediatorFactory.class,
         CallMediatorFactory.class,
         LoopBackMediatorFactory.class,
-        RespondMediatorFactory.class
+        RespondMediatorFactory.class,
+        CommentMediatorFactory.class
     };
 
     private final static MediatorFactoryFinder instance  = new MediatorFactoryFinder();

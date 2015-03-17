@@ -19,10 +19,13 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.ListMediator;
+import org.apache.synapse.mediators.comment.CommentMediator;
 
 import java.util.Iterator;
 import java.util.Properties;
@@ -30,22 +33,32 @@ import java.util.Properties;
 /**
  * This implements the basic logic to build a list mediator from a given XML
  * configuration. It recursively builds the child mediators of the list.
+ * If there is a Comment Node, it will be added as a Comment Mediator, which
+ * does not do any mediation, but for preserving comments
  */
 public abstract class AbstractListMediatorFactory extends AbstractMediatorFactory {
 
     protected static void addChildren(OMElement el, ListMediator m, Properties properties) {
-        Iterator it = el.getChildElements();
+        Iterator it = el.getChildren();
+
         while (it.hasNext()) {
-            OMElement child = (OMElement) it.next();
-            if (!DESCRIPTION_Q.equals(child.getQName())) { // neglect the description tag
-                Mediator med = MediatorFactoryFinder.getInstance().getMediator(child, properties);
-                if (med != null) {
-                    m.addChild(med);
-                } else {
-                    String msg = "Unknown mediator : " + child.getLocalName();
-                    log.error(msg);
-                    throw new SynapseException(msg);
+            OMNode child = (OMNode) it.next();
+
+            if (child instanceof OMElement) {
+                if (!DESCRIPTION_Q.equals(((OMElement) child).getQName())) { // neglect the description tag
+                    Mediator med = MediatorFactoryFinder.getInstance().getMediator(((OMElement) child), properties);
+                    if (med != null) {
+                        m.addChild(med);
+                    } else {
+                        String msg = "Unknown mediator : " + ((OMElement) child).getLocalName();
+                        log.error(msg);
+                        throw new SynapseException(msg);
+                    }
                 }
+            } else if (child instanceof OMComment) {
+                CommentMediator commendMediator = new CommentMediator();
+                commendMediator.setCommentText(((OMComment) child).getValue());
+                m.addChild(commendMediator);
             }
         }
     }
