@@ -85,10 +85,10 @@ public class ServerConnFactoryBuilder {
         TrustManager[] trustManagers = null;
 
         if (keyStoreEl != null) {
-            String location      = keyStoreEl.getFirstChildWithName(new QName("Location")).getText();
-            String type          = keyStoreEl.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = keyStoreEl.getFirstChildWithName(new QName("Password")).getText();
-            String keyPassword   = keyStoreEl.getFirstChildWithName(new QName("KeyPassword")).getText();
+            String location      = getValueOfElementWithLocalName(keyStoreEl,"Location");
+            String type          = getValueOfElementWithLocalName(keyStoreEl,"Type");
+            String storePassword = getValueOfElementWithLocalName(keyStoreEl,"Password");
+            String keyPassword   = getValueOfElementWithLocalName(keyStoreEl, "KeyPassword");
 
             FileInputStream fis = null;
             try {
@@ -138,9 +138,9 @@ public class ServerConnFactoryBuilder {
         }
 
         if (trustStoreEl != null) {
-            String location      = trustStoreEl.getFirstChildWithName(new QName("Location")).getText();
-            String type          = trustStoreEl.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = trustStoreEl.getFirstChildWithName(new QName("Password")).getText();
+            String location      = getValueOfElementWithLocalName(trustStoreEl, "Location");
+            String type          = getValueOfElementWithLocalName(trustStoreEl, "Type");
+            String storePassword = getValueOfElementWithLocalName(trustStoreEl, "Password");
 
             FileInputStream fis = null;
             try {
@@ -197,7 +197,8 @@ public class ServerConnFactoryBuilder {
 
 
         try {
-            SSLContext sslContext = SSLContext.getInstance(sslProtocol);
+            final String sslProtocolValue = sslProtocol != null ? sslProtocol : "TLS";
+            SSLContext sslContext = SSLContext.getInstance(sslProtocolValue);
             sslContext.init(keymanagers, trustManagers, null);
 
             ServerSSLSetupHandler sslSetupHandler =
@@ -325,6 +326,16 @@ public class ServerConnFactoryBuilder {
         } else {
             return new ServerConnFactory(params);
         }
+    }
+
+    private String getValueOfElementWithLocalName(OMElement element, String localName) {
+        Iterator iterator = element.getChildrenWithLocalName(localName);
+        String value = null;
+        Object obj = iterator.next();
+        if (obj instanceof OMElement) {
+            value = ((OMElement) obj).getText();
+        }
+        return value;
     }
 
 }

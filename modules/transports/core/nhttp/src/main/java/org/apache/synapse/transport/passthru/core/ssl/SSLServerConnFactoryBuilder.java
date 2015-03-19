@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.synapse.transport.passthru.config;
+package org.apache.synapse.transport.passthru.core.ssl;
 
 
 import org.apache.axiom.om.OMElement;
@@ -28,6 +28,7 @@ import org.apache.synapse.transport.certificatevalidation.RevocationVerification
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 
 import javax.xml.namespace.QName;
+import java.util.Iterator;
 
 public class SSLServerConnFactoryBuilder extends ServerConnFactoryBuilder {
 
@@ -41,26 +42,36 @@ public class SSLServerConnFactoryBuilder extends ServerConnFactoryBuilder {
 
     public ServerConnFactoryBuilder parseSSL(OMElement keyStoreEl, OMElement trustStoreEl,
                                              OMElement clientAuthEl, OMElement httpsProtocolsEl,
-                                             OMElement revocationVerifier, OMElement sslProtocol) throws AxisFault {
+                                             String sslProtocol, OMElement cvp) throws AxisFault {
+        final String cvEnable = cvp != null ?
+                                cvp.getAttribute(new QName("enable")).getAttributeValue() : null;
+        RevocationVerificationManager revocationVerifier = null;
 
-        final String sslProtocolVal = sslProtocol != null ? sslProtocol.getText() : "TLS";
-        final String cvEnable = revocationVerifier != null ?
-                                revocationVerifier.getAttribute(new QName("enable")).getAttributeValue() : null;
-        RevocationVerificationManager revocationVerifierManager = null;
         if ("true".equalsIgnoreCase(cvEnable)) {
-            String cacheSizeString = revocationVerifier.getFirstChildWithName(new QName("CacheSize")).getText();
-            String cacheDelayString = revocationVerifier.getFirstChildWithName(new QName("CacheDelay")).getText();
+            Iterator iterator = cvp.getChildElements();
+            String cacheDelayString = null;
+            String cacheSizeString = null;
+            while(iterator.hasNext()) {
+                Object obj = iterator.next();
+                if (obj instanceof OMElement && ((OMElement) obj).getLocalName().equals("CacheSize")) {
+                    cacheSizeString = ((OMElement)obj).getText();
+                } else if (obj instanceof OMElement && ((OMElement) obj).getLocalName().equals("CacheDelay")) {
+                    cacheDelayString = ((OMElement)obj).getText();
+                }
+            }
             Integer cacheSize = null;
             Integer cacheDelay = null;
             try {
-                cacheSize = new Integer(cacheSizeString);
-                cacheDelay = new Integer(cacheDelayString);
+                if (cacheDelayString != null && cacheSizeString != null) {
+                    cacheSize = new Integer(cacheSizeString);
+                    cacheDelay = new Integer(cacheDelayString);
+                }
             } catch (NumberFormatException e) {
-                log.error("Cache Size or Cache Delay need to be an Integer");
+                log.error("Please specify correct Integer numbers for CacheDelay and CacheSize");
             }
-            revocationVerifierManager = new RevocationVerificationManager(cacheSize, cacheDelay);
+            revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
-        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, revocationVerifierManager, sslProtocolVal);
+        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, revocationVerifier, sslProtocol);
         return this;
     }
 
