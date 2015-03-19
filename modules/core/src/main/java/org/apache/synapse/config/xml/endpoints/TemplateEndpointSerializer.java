@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
@@ -61,7 +62,7 @@ public class TemplateEndpointSerializer extends EndpointSerializer {
                 endpointElement.addAttribute(fac.createOMAttribute("uri", nullNS, entry.getValue()));
             } else {
                 OMElement paramElement = fac.createOMElement(
-                        new QName(SynapseConstants.SYNAPSE_NAMESPACE, "parameter"));
+                    new QName(SynapseConstants.SYNAPSE_NAMESPACE, "parameter"));
 
                 endpointElement.addChild(paramElement);
                 paramElement.addAttribute(fac.createOMAttribute("name", nullNS, entry.getKey()));

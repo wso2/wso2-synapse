@@ -27,7 +27,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
- *
+ * 
  */
 public class SynapseXPathSerializer {
 
@@ -36,12 +36,12 @@ public class SynapseXPathSerializer {
     public static OMElement serializeXPath(SynapseXPath xpath, OMElement elem, String attribName) {
 
         OMNamespace nullNS = elem.getOMFactory()
-                .createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
+            .createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
 
         if (xpath != null) {
-
+            
             elem.addAttribute(elem.getOMFactory().createOMAttribute(
-                    attribName, nullNS, xpath.toString()));
+                attribName, nullNS, xpath.toString()));
 
             serializeNamespaces(elem, xpath);
 
@@ -56,12 +56,12 @@ public class SynapseXPathSerializer {
                                            OMElement elem, String attribName) {
 
         OMNamespace nullNS = elem.getOMFactory()
-                .createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
+            .createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
 
         if (xpath != null && expression != null) {
 
             elem.addAttribute(elem.getOMFactory().createOMAttribute(
-                    attribName, nullNS, expression));
+                attribName, nullNS, expression));
 
             serializeNamespaces(elem, xpath);
 
@@ -71,23 +71,25 @@ public class SynapseXPathSerializer {
 
         return elem;
     }
+    
+	public static OMElement serializeTextXPath(SynapseXPath xpath, String expression,
+			OMElement elem, String attribName) {
 
-    public static OMElement serializeTextXPath(SynapseXPath xpath, String expression,
-                                               OMElement elem, String attribName) {
+		if (xpath != null && expression != null) {
 
-        if (xpath != null && expression != null) {
+			elem.setText(expression);
 
-            elem.setText(expression);
+			serializeNamespaces(elem, xpath);
 
-            serializeNamespaces(elem, xpath);
+		} else {
+			handleException("Couldn't find the xpath in the SynapseXPath");
+		}
 
-        } else {
-            handleException("Couldn't find the xpath in the SynapseXPath");
-        }
+		return elem;
+	}
 
-        return elem;
-    }
-
+    
+    
 
     private static void serializeNamespaces(OMElement elem, SynapseXPath xpath) {
 
@@ -102,6 +104,6 @@ public class SynapseXPathSerializer {
 
     private static void handleException(String message) {
         log.error(message);
-        throw new SynapseException(message);
+        throw new SynapseException(message); 
     }
 }

@@ -35,15 +35,14 @@ public abstract class BeanUtils {
     /**
      * Invokes the given method on the given object via reflection, handles simple type conversion
      * from String to simple types.
-     *
-     * @param instance Instance to invoke the method on.
-     * @param method   Method to be invoked.
-     * @param args     Arguments for the method invocation.
-     * @return Return value of the method invocation.
+     * @param instance  Instance to invoke the method on.
+     * @param method    Method to be invoked.
+     * @param args      Arguments for the method invocation.
+     * @return          Return value of the method invocation.
      * @throws SynapseException If method invocation fails.
      */
     public static Object invokeInstanceMethod(Object instance, Method method, Object[] args) throws
-            SynapseException {
+                                                                                  SynapseException {
         Class[] paramTypes = method.getParameterTypes();
 
         if (paramTypes.length != args.length) {
@@ -90,12 +89,12 @@ public abstract class BeanUtils {
      * @param clazz      Class to search for the method in.
      * @param methodName Method name to search for.
      * @param argCount   Length of the argument list.
-     * @return The resolved method, or null if no matching method is found.
+     * @return           The resolved method, or null if no matching method is found.
      * @throws SynapseException If two or more overloaded methods are found with the given name and
-     *                          argument count.
+     * argument count.
      */
     public static Method resolveMethod(Class clazz, String methodName, int argCount) throws
-            SynapseException {
+                                                                                  SynapseException {
         Method resolvedMethod = null;
 
         for (Method method : clazz.getMethods()) {

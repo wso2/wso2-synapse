@@ -32,41 +32,41 @@ import java.sql.Types;
 
 /**
  * Base class for serializers for database related mediators.
- * <p/>
+ * 
  * <dbreport | dblookup | .. etc>
- * <connection>
- * <pool>
- * (
- * <driver/>
- * <url/>
- * <user/>
- * <password/>
- * |
- * <dsName/>
- * |
- * <dsName/>
- * <icClass/>
- * <url/>
- * <user/>
- * <password/>
- * )
- * <property name="name" value="value"/>*
- * </pool>
- * </connection>
- * <statement>
- * <sql>insert into table values (?, ?, ..) OR select target from destinations where src = ?</sql>
- * <parameter (value="const" | expression="xpath") type="INTEGER|VARCHAR|..."/>*
- * <result name="propName" column="target | number"/>*
- * </statement>+
+ *   <connection>
+ *     <pool>
+ *     (
+ *       <driver/>
+ *       <url/>
+ *       <user/>
+ *       <password/>
+ *     |
+ *       <dsName/>
+ *     |
+ *       <dsName/>
+ *       <icClass/>
+ *       <url/>
+ *       <user/>
+ *       <password/>
+ *     )
+ *       <property name="name" value="value"/>*
+ *     </pool>
+ *   </connection>
+ *   <statement>
+ *     <sql>insert into table values (?, ?, ..) OR select target from destinations where src = ?</sql>
+ *     <parameter (value="const" | expression="xpath") type="INTEGER|VARCHAR|..."/>*
+ *     <result name="propName" column="target | number"/>*
+ *   </statement>+
  * </dbreport | dblookup | .. etc>
- * <p/>
+ *
  * Supported properties
  * autocommit = true | false
  * isolation = Connection.TRANSACTION_NONE
- * | Connection.TRANSACTION_READ_COMMITTED
- * | Connection.TRANSACTION_READ_UNCOMMITTED
- * | Connection.TRANSACTION_REPEATABLE_READ
- * | Connection.TRANSACTION_SERIALIZABLE
+ *           | Connection.TRANSACTION_READ_COMMITTED
+ *           | Connection.TRANSACTION_READ_UNCOMMITTED
+ *           | Connection.TRANSACTION_REPEATABLE_READ
+ *           | Connection.TRANSACTION_SERIALIZABLE
  * initialsize = int
  * maxactive = int
  * maxidle = int
@@ -107,22 +107,22 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
 
             } else if (o instanceof String) {
                 OMElement elt = fac.createOMElement(
-                        AbstractDBMediatorFactory.PROP_Q.getLocalPart(), synNS);
+                    AbstractDBMediatorFactory.PROP_Q.getLocalPart(), synNS);
                 elt.addAttribute(fac.createOMAttribute("name", nullNS, (String) o));
                 elt.addAttribute(fac.createOMAttribute("value", nullNS, value));
                 poolElt.addChild(elt);
-            }
+             }
         }
         return poolElt;
     }
 
     private OMNode createStatementElement(Statement statement) {
-
+        
         OMElement stmntElt = fac.createOMElement(
-                AbstractDBMediatorFactory.STMNT_Q.getLocalPart(), synNS);
+            AbstractDBMediatorFactory.STMNT_Q.getLocalPart(), synNS);
 
         OMElement sqlElt = fac.createOMElement(
-                AbstractDBMediatorFactory.SQL_Q.getLocalPart(), synNS);
+            AbstractDBMediatorFactory.SQL_Q.getLocalPart(), synNS);
         OMText sqlText = fac.createOMText(statement.getRawStatement(), XMLStreamConstants.CDATA);
         sqlElt.addChild(sqlText);
         stmntElt.addChild(sqlElt);
@@ -139,12 +139,12 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
             String columnStr = statement.getResultsMap().get(name);
 
             OMElement resultElt = fac.createOMElement(
-                    AbstractDBMediatorFactory.RESULT_Q.getLocalPart(), synNS);
+                AbstractDBMediatorFactory.RESULT_Q.getLocalPart(), synNS);
 
             resultElt.addAttribute(
-                    fac.createOMAttribute("name", nullNS, name));
+                fac.createOMAttribute("name", nullNS, name));
             resultElt.addAttribute(
-                    fac.createOMAttribute("column", nullNS, columnStr));
+                fac.createOMAttribute("column", nullNS, columnStr));
 
             stmntElt.addChild(resultElt);
         }
@@ -154,11 +154,11 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
 
     private OMElement createStatementParamElement(Statement.Parameter param) {
         OMElement paramElt = fac.createOMElement(
-                AbstractDBMediatorFactory.PARAM_Q.getLocalPart(), synNS);
+            AbstractDBMediatorFactory.PARAM_Q.getLocalPart(), synNS);
 
         if (param.getPropertyName() != null) {
             paramElt.addAttribute(
-                    fac.createOMAttribute("value", nullNS, param.getPropertyName()));
+                fac.createOMAttribute("value", nullNS, param.getPropertyName()));
         }
         if (param.getXpath() != null) {
             SynapseXPathSerializer.serializeXPath(param.getXpath(), paramElt, "expression");
@@ -231,7 +231,7 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
             }
             default: {
                 throw new SynapseException("Unknown or unsupported JDBC type : " +
-                        param.getType());
+                    param.getType());                            
             }
         }
         return paramElt;

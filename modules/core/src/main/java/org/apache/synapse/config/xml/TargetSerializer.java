@@ -23,13 +23,13 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.SynapseConstants;
 
 /**
  * Serializer for {@link Target} instances.
- *
+ * 
  * @see TargetFactory
  */
 public class TargetSerializer {
@@ -73,7 +73,7 @@ public class TargetSerializer {
 
         if (target.getEndpointRef() != null) {
             targetElem.addAttribute("endpoint", target.getEndpointRef(), nullNS);
-        }
+        }        
 
         if (target.getSequence() != null) {
             SequenceMediatorSerializer serializer = new SequenceMediatorSerializer();

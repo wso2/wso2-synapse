@@ -32,10 +32,7 @@ import org.apache.synapse.task.*;
 import javax.xml.namespace.QName;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class StartUpController extends AbstractStartup {
     private static final Log logger = LogFactory.getLog(StartUpController.class.getName());
@@ -83,10 +80,10 @@ public class StartUpController extends AbstractStartup {
         resolveTaskImpl(taskDescription, synapseEnvironment);
         loadTaskProperties();
         initializeTask(synapseEnvironment);
-        if (taskDescription.getResource(TaskDescription.INSTANCE) == null
+        if(taskDescription.getResource(TaskDescription.INSTANCE) == null
                 || taskDescription.getResource(TaskDescription.CLASSNAME) == null) {
-            taskDescription.addResource(TaskDescription.INSTANCE, task);
-            taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+        	taskDescription.addResource(TaskDescription.INSTANCE, task);
+        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         }
         try {
             Map<String, Object> map = new HashMap<String, Object>();

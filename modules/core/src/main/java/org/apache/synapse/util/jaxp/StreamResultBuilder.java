@@ -44,14 +44,14 @@ import java.nio.charset.Charset;
  */
 public class StreamResultBuilder implements ResultBuilder {
     private static final Log log = LogFactory.getLog(StreamResultBuilder.class);
-
+    
     private final SynapseEnvironment synEnv;
     private final ResultBuilderFactory.Output expectedOutput;
     private OverflowBlob tmp;
     private OutputStream out;
-
+    
     public StreamResultBuilder(SynapseEnvironment synEnv,
-                               ResultBuilderFactory.Output expectedOutput) {
+            ResultBuilderFactory.Output expectedOutput) {
         this.synEnv = synEnv;
         this.expectedOutput = expectedOutput;
     }

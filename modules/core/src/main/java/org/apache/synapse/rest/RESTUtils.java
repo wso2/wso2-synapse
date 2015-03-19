@@ -24,10 +24,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.dispatch.DefaultDispatcher;
 import org.apache.synapse.rest.dispatch.RESTDispatcher;
-import org.apache.synapse.rest.dispatch.URITemplateBasedDispatcher;
+import org.apache.synapse.rest.dispatch.DefaultDispatcher;
 import org.apache.synapse.rest.dispatch.URLMappingBasedDispatcher;
+import org.apache.synapse.rest.dispatch.URITemplateBasedDispatcher;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.net.MalformedURLException;

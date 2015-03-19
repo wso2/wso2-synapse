@@ -19,15 +19,15 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
-import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.config.xml.SynapseXPathSerializer;
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.SynapseXPathSerializer;
 
 /**
- *
+ * 
  */
 public class ResolvingEndpointSerializer extends EndpointSerializer {
 

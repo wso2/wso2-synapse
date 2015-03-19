@@ -20,27 +20,16 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.commons.executors.PriorityExecutor;
-import org.apache.synapse.commons.executors.config.PriorityExecutorFactory;
-import org.apache.synapse.config.Entry;
-import org.apache.synapse.config.SynapseConfigUtils;
-import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
-import org.apache.synapse.config.xml.eventing.EventSourceFactory;
 import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.rest.APIFactory;
-import org.apache.synapse.core.axis2.ProxyService;
-import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.Template;
-import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
@@ -48,7 +37,18 @@ import org.apache.synapse.libraries.util.LibDeployerUtils;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
+import org.apache.synapse.commons.executors.PriorityExecutor;
+import org.apache.synapse.commons.executors.config.PriorityExecutorFactory;
+import org.apache.synapse.config.Entry;
+import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.xml.endpoints.EndpointFactory;
+import org.apache.synapse.config.xml.eventing.EventSourceFactory;
+import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.registry.Registry;
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.rest.API;
 import org.apache.synapse.task.TaskManager;
 
@@ -66,7 +66,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             throw new SynapseException(
                     "Wrong QName for this configuration factory " + definitions.getQName());
         }
-        SynapseConfiguration config = SynapseConfigUtils.newConfiguration();
+        SynapseConfiguration config = SynapseConfigUtils.newConfiguration();               
         config.setDefaultQName(definitions.getQName());
 
         Iterator itr = definitions.getChildren();
@@ -99,11 +99,11 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineEventSource(config, elt, properties);
                 } else if (XMLConfigConstants.EXECUTOR_ELT.equals(elt.getQName())) {
                     defineExecutor(config, elt, properties);
-                } else if (XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
+                } else if(XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
                     defineMessageStore(config, elt, properties);
-                } else if (XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
+                } else if(XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
                     defineTaskManager(config, elt, properties);
-                } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())) {
+                } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())){
                     defineMessageProcessor(config, elt, properties);
                 } else if (StartupFinder.getInstance().isStartup(elt.getQName())) {
                     defineStartup(config, elt, properties);
@@ -112,7 +112,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                 } else if (XMLConfigConstants.DESCRIPTION_ELT.equals(elt.getQName())) {
                     config.setDescription(elt.getText());
                 } else if (XMLConfigConstants.INBOUND_ENDPOINT_ELT.equals(elt.getQName())) {
-                    defineInboundEndpoint(config, elt, properties);
+                    defineInboundEndpoint(config, elt, properties);                    
                 } else {
                     handleException("Invalid configuration element at the top level, one of \'sequence\', " +
                             "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\'" +
@@ -165,7 +165,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "name"))) + " cannot be built";
             handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_PROXY_SERVICES, msg, e);
         }
-
+        
         return proxy;
     }
 
@@ -185,30 +185,30 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         }
         return entry;
     }
-
-    public static Entry defineEntry(SynapseConfiguration config, OMElement elem,
-                                    Properties properties, Library library) {
-        Entry entry = null;
-        try {
-            entry = EntryFactory.createEntry(elem, properties);
-            String key = library.getQName().getLocalPart() + "." + entry.getKey();
-            if (entry != null && config.getEntry(key) != null) {
-                //already existing thus need to update entry
-                config.updateEntry(library.getQName().getLocalPart() + "." + entry.getKey(), entry);
-            } else {
-                config.addEntry(library.getQName().getLocalPart() + "." + entry.getKey(), entry);
-                library.getLocalEntries().add(key);
-            }
-
-
-        } catch (Exception e) {
-            String msg = "Local entry configuration: "
-                    + elem.getAttributeValue((new QName(XMLConfigConstants.NULL_NAMESPACE, "key")))
-                    + " cannot be built";
-            handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_LOCALENTRIES, msg, e);
-        }
-        return entry;
-    }
+    
+	public static Entry defineEntry(SynapseConfiguration config, OMElement elem,
+			Properties properties,Library library) {
+		Entry entry = null;
+		try {
+			entry = EntryFactory.createEntry(elem, properties);
+			String key = library.getQName().getLocalPart()+"."+entry.getKey();
+			if(entry != null && config.getEntry(key) != null){
+				//already existing thus need to update entry
+				config.updateEntry(library.getQName().getLocalPart()+"."+entry.getKey(), entry);
+			}else{
+				config.addEntry(library.getQName().getLocalPart()+"."+entry.getKey(), entry);
+				library.getLocalEntries().add(key);
+			}
+			
+			
+		} catch (Exception e) {
+			String msg = "Local entry configuration: "
+					+ elem.getAttributeValue((new QName(XMLConfigConstants.NULL_NAMESPACE, "key")))
+					+ " cannot be built";
+			handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_LOCALENTRIES, msg, e);
+		}
+		return entry;
+	}
 
     public static Mediator defineSequence(SynapseConfiguration config, OMElement ele,
                                           Properties properties) {
@@ -217,7 +217,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         String name = ele.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
         if (name != null) {
             try {
-                MediatorFactoryFinder.getInstance().setSynapseImportMap(config.getSynapseImports());
+            	MediatorFactoryFinder.getInstance().setSynapseImportMap(config.getSynapseImports());
                 mediator = MediatorFactoryFinder.getInstance().getMediator(ele, properties);
                 if (mediator != null) {
                     config.addSequence(name, mediator);
@@ -249,7 +249,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             try {
                 mediator = MediatorFactoryFinder.getInstance().getMediator(ele, properties);
                 if (mediator != null) {
-                    config.addSequenceTemplate(name, (TemplateMediator) mediator);
+                    config.addSequenceTemplate(name, (TemplateMediator) mediator) ;
                 }
             } catch (Exception e) {
                 String msg = "Template configuration: " + name + " cannot be built";
@@ -304,7 +304,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
     }
 
     public static PriorityExecutor defineExecutor(SynapseConfiguration config,
-                                                  OMElement elem, Properties properties) {
+                                                       OMElement elem, Properties properties) {
 
         PriorityExecutor executor = null;
         try {
@@ -359,7 +359,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
     }
 
     public static Template defineEndpointTemplate(SynapseConfiguration config,
-                                                  OMElement elem, Properties properties) {
+                                                    OMElement elem, Properties properties) {
 
         TemplateFactory templateFactory = new TemplateFactory();
         String name = elem.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));

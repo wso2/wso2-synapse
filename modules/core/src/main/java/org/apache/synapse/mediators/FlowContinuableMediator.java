@@ -24,6 +24,7 @@ import org.apache.synapse.MessageContext;
 
 /**
  * Mediators which implements this interface can mediate the message using a ContinuationState
+ *
  */
 public interface FlowContinuableMediator {
 
@@ -32,7 +33,7 @@ public interface FlowContinuableMediator {
      * This is used when mediating the response message when service is invoked
      * using a Call Mediator.
      *
-     * @param synCtx            MessageContext
+     * @param synCtx MessageContext
      * @param continuationState ContinuationState
      * @return whether mediation flow is completed
      */

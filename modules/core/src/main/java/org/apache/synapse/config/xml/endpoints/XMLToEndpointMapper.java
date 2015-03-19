@@ -19,10 +19,10 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMNode;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.XMLToObjectMapper;
+import org.apache.synapse.SynapseException;
+import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.OMElement;
 
 import java.util.Properties;
 
@@ -37,8 +37,7 @@ public class XMLToEndpointMapper implements XMLToObjectMapper {
 
     private static XMLToEndpointMapper instance = new XMLToEndpointMapper();
 
-    private XMLToEndpointMapper() {
-    }
+    private XMLToEndpointMapper() {}
 
     public static XMLToEndpointMapper getInstance() {
         return instance;

@@ -29,7 +29,6 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     /**
      * This method is used to start the message processor. Once the message processor is started
      * it will start receiving messages
-     *
      * @return {@code true} if successful, {@code false} otherwise
      */
     boolean start();
@@ -38,14 +37,12 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * This method is used to stop the message processor. Once the the message processor is stopped
      * it will no longer receive messages. A stopped message processor cannot re restarted without
      * re-instantiating.
-     *
      * @return {@code true} if successful, {@code false} otherwise
      */
     boolean stop();
 
     /**
      * This method is used to deactivate the message processor. This will temporarily halt executing services.
-     *
      * @return {@code true} if successful, {@code false} otherwise
      */
     boolean deactivate();
@@ -53,14 +50,12 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     /**
      * This method is used to activate a deactivated message processor. Activating message processor
      * will cause the services to start
-     *
      * @return {@code true} if successful, {@code false} otherwise
      */
     boolean activate();
 
     /**
      * This method is used to see if the message processor is deactivated.
-     *
      * @return {@code true} if successful, {@code false} otherwise
      */
     boolean isDeactivated();
@@ -68,14 +63,12 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     /**
      * This method is used to set the associated message store of the message processor. Every message processor
      * has to be bound to a message store
-     *
      * @param messageStoreName Name of this message store.
      */
     void setMessageStoreName(String messageStoreName);
 
     /**
      * This method returns the associated message store name of the message processor.
-     *
      * @return Name of this message store.
      */
     String getMessageStoreName();
@@ -83,29 +76,25 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     /**
      * This method is used to set configuration parameters of the message processor. For example, triggering interval
      * retrying interval, and etc.
-     *
      * @param parameters Message processor parameters.
      */
-    void setParameters(Map<String, Object> parameters);
+    void setParameters(Map<String,Object> parameters);
 
     /**
      * This method is used to retrieve the configuration parameters of message processor.
-     *
      * @return the extracted parameters of the message processor configuration
      */
-    Map<String, Object> getParameters();
+    Map<String , Object> getParameters();
 
     /**
      * This method is used to set the actual configuration file. This file has all the configuration related
      * to particular message processor.
-     *
      * @param fileName is the name of the file
      */
     void setFileName(String fileName);
 
     /**
      * This method is used to retrieve the configuration file name of the message processor.
-     *
      * @return the file name
      */
     String getFileName();
@@ -113,7 +102,6 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     /**
      * This method is used to set the message consumer of message processor. Consumer is the one who is
      * responsible for retrieving messages from a store.
-     *
      * @param messageConsumer is the name of the associated message consumer
      * @return is true if the message if the message consumer is returned successfully. Otherwise false.
      */
@@ -121,7 +109,6 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
 
     /**
      * This method retrieves the message consumer of message processor.
-     *
      * @return the message consumer
      */
     MessageConsumer getMessageConsumer();
@@ -129,14 +116,12 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
     /**
      * This method set the target endpoint associated with the message processor. Without a target endpoint
      * a message processor could not operated successfully.
-     *
      * @param targetEndpoint is the name of the associated endpoint
      */
     void setTargetEndpoint(String targetEndpoint);
 
     /**
      * This method is used to retrieve the associated target endpoint name of the message processor.
-     *
      * @return The name of the endpoint
      */
     String getTargetEndpoint();
@@ -156,7 +141,6 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
 
     /**
      * This method is used to check if the state is in paused mode.
-     *
      * @return returns true on success.
      */
     boolean isPaused();

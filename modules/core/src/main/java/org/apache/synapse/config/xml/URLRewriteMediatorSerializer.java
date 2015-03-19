@@ -25,10 +25,10 @@ import org.apache.synapse.commons.evaluators.Evaluator;
 import org.apache.synapse.commons.evaluators.EvaluatorException;
 import org.apache.synapse.commons.evaluators.config.EvaluatorSerializer;
 import org.apache.synapse.commons.evaluators.config.EvaluatorSerializerFinder;
-import org.apache.synapse.mediators.transform.url.RewriteAction;
-import org.apache.synapse.mediators.transform.url.RewriteRule;
-import org.apache.synapse.mediators.transform.url.URIFragments;
 import org.apache.synapse.mediators.transform.url.URLRewriteMediator;
+import org.apache.synapse.mediators.transform.url.RewriteRule;
+import org.apache.synapse.mediators.transform.url.RewriteAction;
+import org.apache.synapse.mediators.transform.url.URIFragments;
 
 import java.util.List;
 
@@ -41,22 +41,22 @@ public class URLRewriteMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         URLRewriteMediator mediator = (URLRewriteMediator) m;
-        OMElement rewrite = fac.createOMElement("rewrite", synNS);
-
+        OMElement rewrite = fac.createOMElement("rewrite", synNS);        
+        
         String inProperty = mediator.getInputProperty();
         String outProperty = mediator.getOutputProperty();
-
+        
         if (inProperty != null) {
-            rewrite.addAttribute(fac.createOMAttribute("inProperty", nullNS,
-                    inProperty));
+        	rewrite.addAttribute(fac.createOMAttribute("inProperty", nullNS,
+        	                                              inProperty));
         }
         if (outProperty != null) {
-            rewrite.addAttribute(fac.createOMAttribute("outProperty", nullNS,
-                    outProperty));
+        	rewrite.addAttribute(fac.createOMAttribute("outProperty", nullNS,
+        	                                              outProperty));
         }
 
         saveTracingState(rewrite, mediator);
-
+        
         List<RewriteRule> rules = mediator.getRules();
         try {
             for (RewriteRule r : rules) {
@@ -94,7 +94,7 @@ public class URLRewriteMediatorSerializer extends AbstractMediatorSerializer {
         OMElement action = fac.createOMElement("action", synNS);
         if (a.getValue() != null) {
             action.addAttribute("value", a.getValue(), null);
-        } else if (a.getXpath() != null) {
+        } else if (a.getXpath() != null) {         
             SynapseXPathSerializer.serializeXPath(a.getXpath(), action, "xpath");
         }
 
@@ -161,7 +161,7 @@ public class URLRewriteMediatorSerializer extends AbstractMediatorSerializer {
                 fragmentStr = URLRewriteMediatorFactory.FRAGMENT_FULL_URI;
         }
         action.addAttribute("fragment", fragmentStr, null);
-
+        
         return action;
     }
 

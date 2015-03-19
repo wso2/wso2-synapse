@@ -32,13 +32,9 @@ import org.apache.synapse.aspects.AspectConfiguration;
  */
 public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
-    /**
-     * the standard log for mediators, will assign the logger for the actual subclass
-     */
+    /** the standard log for mediators, will assign the logger for the actual subclass */
     protected Log log;
-    /**
-     * The runtime trace log for mediators
-     */
+    /** The runtime trace log for mediators */
     protected static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
     /**
@@ -63,7 +59,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Returns the class name of the mediator
-     *
      * @return the class name of the mediator
      */
     public String getType() {
@@ -77,7 +72,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Returns the tracing state
-     *
      * @return the tracing state for this mediator (see SynapseConstants)
      */
     public int getTraceState() {
@@ -86,7 +80,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Set the tracing state variable
-     *
      * @param traceState the new tracing state for this mediator (see SynapseConstants)
      */
     public void setTraceState(int traceState) {
@@ -95,7 +88,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Set the description of the mediator
-     *
      * @param description tobe set to the mediator
      */
     public void setDescription(String description) {
@@ -104,7 +96,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Gives the description of the mediator
-     *
      * @return description of the mediator
      */
     public String getDescription() {
@@ -113,7 +104,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Set the short description of the mediator
-     *
      * @param shortDescription to be set to the mediator
      */
     public void setShortDescription(String shortDescription) {
@@ -122,7 +112,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Gives the short description of the mediator
-     *
      * @return short description of the mediator
      */
     public String getShortDescription() {
@@ -145,8 +134,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Get a SynapseLog instance appropriate for the given context.
-     *
-     * @param synCtx the current message context
+     * 
+     * @param synCtx  the current message context
      * @return MediatorLog instance - an implementation of the SynapseLog
      */
     protected SynapseLog getLog(MessageContext synCtx) {
@@ -156,45 +145,46 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Should this mediator perform tracing? True if its explicitly asked to
      * trace, or its parent has been asked to trace and it does not reject it
-     *
      * @param parentTraceState parents trace state
      * @return true if tracing should be performed
      */
-    public boolean shouldTrace(int parentTraceState) {
+    public boolean shouldTrace(int parentTraceState){
         return
-                (traceState == SynapseConstants.TRACING_ON) ||
-                        (traceState == SynapseConstants.TRACING_UNSET &&
-                                parentTraceState == SynapseConstants.TRACING_ON);
+            (traceState == SynapseConstants.TRACING_ON) ||
+            (traceState == SynapseConstants.TRACING_UNSET &&
+                parentTraceState == SynapseConstants.TRACING_ON);
     }
 
     /**
      * Should this mediator perform tracing? True if its explicitly asked to
      * trace, or its parent has been asked to trace and it does not reject it
-     *
+     * 
+     * @deprecated This method will be removed in a future version of Synapse.
+     *             Please use the {@link SynapseLog} instance returned by
+     *             {@link #getLog(MessageContext)} for all logging inside a
+     *             mediator.
+     * 
      * @param msgCtx the current message
      * @return true if tracing should be performed
-     * @deprecated This method will be removed in a future version of Synapse.
-     * Please use the {@link SynapseLog} instance returned by
-     * {@link #getLog(MessageContext)} for all logging inside a
-     * mediator.
      */
     @Deprecated
     protected boolean isTraceOn(MessageContext msgCtx) {
         return
-                (traceState == SynapseConstants.TRACING_ON) ||
-                        (traceState == SynapseConstants.TRACING_UNSET &&
-                                msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
+            (traceState == SynapseConstants.TRACING_ON) ||
+            (traceState == SynapseConstants.TRACING_UNSET &&
+                msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
     }
 
     /**
      * Is tracing or debug logging on?
-     *
+     * 
+     * @deprecated This method will be removed in a future version of Synapse.
+     *             Please use the {@link SynapseLog} instance returned by
+     *             {@link #getLog(MessageContext)} for all logging inside a
+     *             mediator.
+     * 
      * @param isTraceOn is tracing known to be on?
      * @return true, if either tracing or debug logging is on
-     * @deprecated This method will be removed in a future version of Synapse.
-     * Please use the {@link SynapseLog} instance returned by
-     * {@link #getLog(MessageContext)} for all logging inside a
-     * mediator.
      */
     @Deprecated
     protected boolean isTraceOrDebugOn(boolean isTraceOn) {
@@ -203,13 +193,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Perform Trace and Debug logging of a message @INFO (trace) and DEBUG (log)
-     *
-     * @param traceOn is runtime trace on for this message?
-     * @param msg     the message to log/trace
+     * 
      * @deprecated This method will be removed in a future version of Synapse.
-     * Please use the {@link SynapseLog} instance returned by
-     * {@link #getLog(MessageContext)} for all logging inside a
-     * mediator.
+     *             Please use the {@link SynapseLog} instance returned by
+     *             {@link #getLog(MessageContext)} for all logging inside a
+     *             mediator.
+     * 
+     * @param traceOn is runtime trace on for this message?
+     * @param msg the message to log/trace
      */
     @Deprecated
     protected void traceOrDebug(boolean traceOn, String msg) {
@@ -223,13 +214,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Perform Trace and Debug logging of a message @WARN
-     *
-     * @param traceOn is runtime trace on for this message?
-     * @param msg     the message to log/trace
+     * 
      * @deprecated This method will be removed in a future version of Synapse.
-     * Please use the {@link SynapseLog} instance returned by
-     * {@link #getLog(MessageContext)} for all logging inside a
-     * mediator.
+     *             Please use the {@link SynapseLog} instance returned by
+     *             {@link #getLog(MessageContext)} for all logging inside a
+     *             mediator.
+     * 
+     * @param traceOn is runtime trace on for this message?
+     * @param msg the message to log/trace
      */
     @Deprecated
     protected void traceOrDebugWarn(boolean traceOn, String msg) {
@@ -244,13 +236,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Perform an audit log message to all logs @ INFO. Writes to the general log, the service log
      * and the trace log (of trace is on)
-     *
-     * @param msg        the log message
-     * @param msgContext the message context
+     * 
      * @deprecated This method will be removed in a future version of Synapse.
-     * Please use the {@link SynapseLog} instance returned by
-     * {@link #getLog(MessageContext)} for all logging inside a
-     * mediator.
+     *             Please use the {@link SynapseLog} instance returned by
+     *             {@link #getLog(MessageContext)} for all logging inside a
+     *             mediator.
+     * 
+     * @param msg the log message
+     * @param msgContext the message context
      */
     @Deprecated
     protected void auditLog(String msg, MessageContext msgContext) {
@@ -266,8 +259,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Perform an error log message to all logs @ ERROR. Writes to the general log, the service log
      * and the trace log (of trace is on) and throws a SynapseException
-     *
-     * @param msg        the log message
+     * @param msg the log message
      * @param msgContext the message context
      */
     protected void handleException(String msg, MessageContext msgContext) {
@@ -283,13 +275,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     /**
      * Write an audit entry at WARN and trace and standard logs @WARN
-     *
-     * @param msg        the message to log
-     * @param msgContext message context
+     * 
      * @deprecated This method will be removed in a future version of Synapse.
-     * Please use the {@link SynapseLog} instance returned by
-     * {@link #getLog(MessageContext)} for all logging inside a
-     * mediator.
+     *             Please use the {@link SynapseLog} instance returned by
+     *             {@link #getLog(MessageContext)} for all logging inside a
+     *             mediator.
+     * 
+     * @param msg the message to log
+     * @param msgContext message context
      */
     @Deprecated
     protected void auditWarn(String msg, MessageContext msgContext) {
@@ -305,9 +298,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Perform an error log message to all logs @ ERROR. Writes to the general log, the service log
      * and the trace log (of trace is on) and throws a SynapseException
-     *
-     * @param msg        the log message
-     * @param e          an Exception encountered
+     * @param msg the log message
+     * @param e an Exception encountered
      * @param msgContext the message context
      */
     protected void handleException(String msg, Exception e, MessageContext msgContext) {
@@ -344,7 +336,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param aspectConfiguration AspectConfiguration instance
      */
     public void configure(AspectConfiguration aspectConfiguration) {
-        this.aspectConfiguration = aspectConfiguration;
+       this.aspectConfiguration = aspectConfiguration;
     }
 
     /**
@@ -361,14 +353,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     }
 
     public int getMediatorPosition() {
-        return mediatorPosition;
+       return mediatorPosition;
     }
 
     public void setMediatorPosition(int position) {
-        mediatorPosition = position;
+       mediatorPosition = position;
     }
 
-    public String getInputType() {
+	public String getInputType() {
         return null;
     }
 

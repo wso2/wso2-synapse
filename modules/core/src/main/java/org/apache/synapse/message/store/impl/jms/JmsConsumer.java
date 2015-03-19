@@ -24,7 +24,11 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.store.Constants;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.ObjectMessage;
+import javax.jms.Session;
 
 public class JmsConsumer implements MessageConsumer {
     private static final Log logger = LogFactory.getLog(JmsConsumer.class.getName());
@@ -40,13 +44,9 @@ public class JmsConsumer implements MessageConsumer {
     private String idString;
 
     private boolean isInitialized;
-    /**
-     * Holds the last message read from the message store.
-     */
+    /** Holds the last message read from the message store. */
     private CachedMessage cachedMessage;
-    /**
-     * Did last receive() call cause an error?
-     */
+    /** Did last receive() call cause an error? */
     private boolean isReceiveError;
 
     public JmsConsumer(JmsStore store) {
@@ -115,7 +115,7 @@ public class JmsConsumer implements MessageConsumer {
         if (error) {
             if (!isReceiveError) {
                 logger.error(getId() + " cannot receive message from store. Error:"
-                        + exception.getLocalizedMessage());//, exception);
+                             + exception.getLocalizedMessage());//, exception);
             }
             updateCache(null, null, "", true);
             cleanup();
@@ -136,7 +136,7 @@ public class JmsConsumer implements MessageConsumer {
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " cleaning up...");
         }
-        boolean result = store.cleanup(connection, session, true);
+        boolean result =  store.cleanup(connection, session, true);
         if (result) {
             connection = null;
             session = null;
@@ -222,7 +222,7 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     private void updateCache(Message message, MessageContext synCtx, String messageId,
-                             boolean receiveError) {
+                        boolean receiveError) {
         isReceiveError = receiveError;
         cachedMessage.setMessage(message);
         cachedMessage.setMc(synCtx);
@@ -277,7 +277,7 @@ public class JmsConsumer implements MessageConsumer {
                 return false;
             } catch (JMSException e) {
                 logger.error(getId() + " cannot ack last read message. Error:"
-                        + e.getLocalizedMessage(), e);
+                             + e.getLocalizedMessage(), e);
                 return false;
             }
             return true;

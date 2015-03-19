@@ -28,25 +28,25 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
+import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
+import org.apache.synapse.config.xml.rest.APISerializer;
+import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.imports.SynapseImport;
+import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.commons.executors.config.PriorityExecutorSerializer;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
-import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
 import org.apache.synapse.config.xml.eventing.EventSourceSerializer;
-import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
-import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.eventing.SynapseEventSource;
-import org.apache.synapse.inbound.InboundEndpoint;
-import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.template.TemplateMediator;
-import org.apache.synapse.message.processor.MessageProcessor;
-import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.rest.API;
 
 import javax.xml.namespace.QName;
@@ -87,13 +87,13 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
             RegistrySerializer.serializeRegistry(definitions, synCfg
                     .getRegistry());
         }
-
+        
         // then process a remote registry if present
         if (synCfg.getTaskManager() != null) {
             TaskManagerSerializer.serializetaskManager(definitions, synCfg
                     .getTaskManager());
         }
-
+        
         serializeImports(definitions, synCfg.getSynapseImports().values());
 
         // add proxy services
@@ -121,7 +121,7 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
                 continue;
             }
             Object o = synCfg.getLocalRegistry().get(key);
-            if (o instanceof TemplateMediator) {
+            if (o instanceof TemplateMediator){
                 templates.put(key.toString(), (TemplateMediator) o);
             } else if (o instanceof SequenceMediator) {
                 sequences.put(key.toString(), (SequenceMediator) o);
@@ -158,10 +158,10 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
         // Executors
         serializeExecutors(definitions, synCfg.getPriorityExecutors());
 
-        // Message stores
-        serializeMessageStores(definitions, synCfg.getMessageStores());
-        //Message Processors
-        serializeMessageProcessors(definitions, synCfg.getMessageProcessors());
+       // Message stores
+        serializeMessageStores(definitions, synCfg.getMessageStores());        
+       //Message Processors
+        serializeMessageProcessors(definitions,synCfg.getMessageProcessors());
 
         serializeAPIs(definitions, synCfg.getAPIs());
 
@@ -191,7 +191,7 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
     }
 
     private static void serializeEndpoints(OMElement definitions, Map<String, Endpoint> endpoints) {
-        for (Endpoint endpoint : endpoints.values()) {
+        for (Endpoint endpoint: endpoints.values()) {
             definitions.addChild(EndpointSerializer.getElementFromEndpoint(endpoint));
         }
     }
@@ -199,9 +199,9 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
     private static void serializeSequences(OMElement definitions,
                                            Map<String, SequenceMediator> sequences) {
         for (SequenceMediator seq : sequences.values()) {
-            if (!(seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY))) {
-                MediatorSerializerFinder.getInstance().getSerializer(seq)
-                        .serializeMediator(definitions, seq);
+            if(!(seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY))) {
+            MediatorSerializerFinder.getInstance().getSerializer(seq)
+                    .serializeMediator(definitions, seq);
             }
 
         }
@@ -221,21 +221,21 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
         for (PriorityExecutor exec : executors.values()) {
             PriorityExecutorSerializer.serialize(definitions, exec,
                     XMLConfigConstants.SYNAPSE_NAMESPACE);
-        }
+        }        
     }
 
     private static void serializeMessageStores(OMElement definitions,
-                                               Map<String, MessageStore> messageStores) {
+                                               Map<String, MessageStore> messageStores ){
 
         for (MessageStore ms : messageStores.values()) {
             MessageStoreSerializer.serializeMessageStore(definitions, ms);
-        }
+        }        
     }
 
     private static void serializeMessageProcessors(OMElement definitions,
-                                                   Map<String, MessageProcessor> processorMap) {
+                                               Map<String, MessageProcessor> processorMap ){
         for (MessageProcessor mp : processorMap.values()) {
-            MessageProcessorSerializer.serializeMessageProcessor(definitions, mp);
+            MessageProcessorSerializer.serializeMessageProcessor(definitions,mp);
         }
     }
 
@@ -256,7 +256,7 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
     }
 
     private static void serializeImports(OMElement definitions,
-                                         Collection<SynapseImport> synImportSet) {
+                                      Collection<SynapseImport> synImportSet) {
         for (SynapseImport synapseImport : synImportSet) {
             OMElement importElt = SynapseImportSerializer.serializeImport(synapseImport);
             definitions.addChild(importElt);
@@ -270,6 +270,6 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
 
     public QName getTagQName() {
         return XMLConfigConstants.DEFINITIONS_ELT;
-    }
+	}
 
 }

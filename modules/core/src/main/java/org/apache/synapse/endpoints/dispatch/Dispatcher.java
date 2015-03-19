@@ -77,7 +77,6 @@ public interface Dispatcher {
 
     /**
      * Remove the session Id - To clear out session information from current message
-     *
      * @param syCtx MessageContext containing an session ID
      */
     public void removeSessionID(MessageContext syCtx);

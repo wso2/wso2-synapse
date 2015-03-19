@@ -111,7 +111,7 @@ public class POJOCommandMediator extends AbstractMediator {
             commandObject = command.newInstance();
         } catch (Exception e) {
             handleException("Error creating an instance of the POJO command class : " +
-                    command.getClass(), e, synCtx);
+                command.getClass(), e, synCtx);
         }
 
         synLog.traceOrDebug("Instance created, setting static and dynamic properties");
@@ -124,7 +124,7 @@ public class POJOCommandMediator extends AbstractMediator {
         // now set the any dynamic properties from the message context properties
         for (String name : contextSetterProperties.keySet()) {
             PropertyHelper.setInstanceProperty(name, synCtx.getProperty(contextSetterProperties.get(name)),
-                    commandObject);
+                commandObject);
         }
 
         // now set the any dynamic properties evaluating XPath's on the current message
@@ -142,7 +142,7 @@ public class POJOCommandMediator extends AbstractMediator {
                 ((Command) commandObject).execute();
             } catch (Exception e) {
                 handleException("Error invoking POJO command class : "
-                        + command.getClass(), e, synCtx);
+                    + command.getClass(), e, synCtx);
             }
 
         } else {
@@ -152,17 +152,17 @@ public class POJOCommandMediator extends AbstractMediator {
                 exeMethod.invoke(commandObject);
             } catch (NoSuchMethodException e) {
                 handleException("Cannot locate an execute() method on POJO class : " +
-                        command.getClass(), e, synCtx);
+                    command.getClass(), e, synCtx);
             } catch (Exception e) {
                 handleException("Error invoking the execute() method on POJO class : " +
-                        command.getClass(), e, synCtx);
+                    command.getClass(), e, synCtx);
             }
         }
 
         // then set the context properties back to the messageContext from the command
         for (String name : contextGetterProperties.keySet()) {
             synCtx.setProperty(contextGetterProperties.get(name),
-                    getInstanceProperty(name, commandObject, synCtx));
+                getInstanceProperty(name, commandObject, synCtx));
         }
 
         // now set the any message properties evaluating XPath's on the current message back
@@ -178,7 +178,7 @@ public class POJOCommandMediator extends AbstractMediator {
                     Object o = list.get(0);
                     if (resultValue instanceof String) {
                         OMAbstractFactory.getOMFactory().createOMText(
-                                ((OMNode) o).getParent(), (String) resultValue);
+                            ((OMNode) o).getParent(), (String) resultValue);
                         ((OMNode) o).detach();
                     } else if (resultValue instanceof OMNode) {
                         ((OMNode) o).insertSiblingAfter((OMNode) resultValue);
@@ -188,13 +188,13 @@ public class POJOCommandMediator extends AbstractMediator {
                 } else {
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Unable to set the message property " + resultValue
-                                + "back to the message : Specified element by the xpath "
-                                + xpath + " can not be found");
+                            + "back to the message : Specified element by the xpath "
+                            + xpath + " can not be found");
                     }
                 }
             } catch (JaxenException e) {
                 handleException("Unable to set the command property "
-                        + name + " back to the message", e, synCtx);
+                    + name + " back to the message", e, synCtx);
             }
         }
 
@@ -206,8 +206,8 @@ public class POJOCommandMediator extends AbstractMediator {
      * Find and invoke the getter method with the name of form getXXX and returns the value given
      * on the POJO object
      *
-     * @param name   name of the getter field
-     * @param obj    POJO instance
+     * @param name name of the getter field
+     * @param obj POJO instance
      * @param synCtx current message
      * @return object representing the value of the getter method
      */
@@ -222,12 +222,12 @@ public class POJOCommandMediator extends AbstractMediator {
                     return method.invoke(obj);
                 }
             }
-        } catch (InvocationTargetException e) {
+        } catch(InvocationTargetException e) {
             handleException("Unable to get the command property '"
-                    + name + "' back to the message", e, synCtx);
-        } catch (IllegalAccessException e) {
+                + name + "' back to the message", e, synCtx);
+        } catch(IllegalAccessException e){
             handleException("Unable to get the command property '"
-                    + name + "' back to the message", e, synCtx);
+                + name + "' back to the message", e, synCtx);
         }
 
         return null;
@@ -248,7 +248,7 @@ public class POJOCommandMediator extends AbstractMediator {
     public void addMessageSetterProperty(String name, SynapseXPath xpath) {
         this.messageSetterProperties.put(name, xpath);
     }
-
+    
     public void addContextSetterProperty(String name, String ctxName) {
         this.contextSetterProperties.put(name, ctxName);
     }

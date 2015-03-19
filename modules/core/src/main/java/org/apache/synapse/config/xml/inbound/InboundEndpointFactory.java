@@ -58,7 +58,7 @@ public class InboundEndpointFactory {
         if (inboundEndpointElem.getAttributeValue(ATT_PROTOCOL) != null) {
             inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(ATT_PROTOCOL));
         }
-        if (inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_CLASS) != null) {
+        if (inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_CLASS) != null ) {
             inboundEndpoint.setClassImpl(inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_CLASS));
         }
         if (inboundEndpointElem.getAttributeValue(ATT_ENDPOINT_SUSPEND) != null) {
@@ -91,7 +91,7 @@ public class InboundEndpointFactory {
             Iterator parameters =
                     parametersElt.getChildrenWithName(
                             new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
-                                    InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER));
+                                      InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER));
 
             while (parameters.hasNext()) {
                 OMElement parameter = (OMElement) parameters.next();
@@ -100,7 +100,7 @@ public class InboundEndpointFactory {
                 inboundEndpoint.addParameter(paramName, parameter.getText());
             }
         }
-        inboundEndpoint.setFileName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME)) + ".xml");
+        inboundEndpoint.setFileName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME))+".xml");
         return inboundEndpoint;
     }
 

@@ -34,14 +34,14 @@ import java.io.File;
 import java.util.Properties;
 
 /**
- * Handles the <code>Sequence</code> deployment and undeployment tasks
+ *  Handles the <code>Sequence</code> deployment and undeployment tasks
  *
  * @see AbstractSynapseArtifactDeployer
  */
 public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
 
     private static Log log = LogFactory.getLog(SequenceDeployer.class);
-
+    
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
                                         Properties properties) {
@@ -87,14 +87,14 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
-
+        
         if (log.isDebugEnabled()) {
             log.debug("Sequence update from file : " + fileName + " has started");
         }
 
         try {
             Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
-            if (m == null || !(m instanceof SequenceMediator)) {
+            if (m == null || !(m instanceof  SequenceMediator)) {
                 handleSynapseArtifactDeploymentError("Sequence update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid sequence.");
                 return null;
@@ -145,7 +145,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("Sequence Undeployment of the sequence named : "
                     + artifactName + " : Started");
         }
-
+        
         try {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);

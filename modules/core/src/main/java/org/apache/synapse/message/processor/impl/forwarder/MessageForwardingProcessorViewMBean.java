@@ -45,7 +45,7 @@ public interface MessageForwardingProcessorViewMBean {
      * @param messageID ID of the message to be resent
      * @return true if the resend operation was successful and false otherwise
      */
-    public void resend(String messageID) throws Exception;
+    public void  resend(String messageID) throws Exception;
 
     /**
      * Delete the Message with Given id
@@ -63,14 +63,14 @@ public interface MessageForwardingProcessorViewMBean {
     public String getEnvelope(String messageID) throws Exception;
 
     /**
+     *
      * @return the number of Messages stored in the store.
      */
     public int getSize();
 
     /**
      * Get the Status of the Message Processor
-     *
-     * @return status of the Processor
+     * @return  status of the Processor
      */
     public boolean isActive();
 

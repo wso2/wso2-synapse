@@ -20,7 +20,11 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.axiom.om.OMNode;
-import org.apache.synapse.*;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.FaultHandler;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseLog;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -87,7 +91,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      * This is a thred-safe instance.
      */
     private Schema cachedSchema;
-
+    
     /**
      * This is the cached schema key.
      */
@@ -123,10 +127,10 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
         for (Value schemaKey : schemaKeys) {
             // Derive actual key from message context
             String propKey = schemaKey.evaluateValue(synCtx);
-            if (!propKey.equals(cachedPropKey)) {
-                reCreate = true;       // request re-initialization of Validator
+            if (!propKey.equals(cachedPropKey)){
+            	reCreate = true;       // request re-initialization of Validator
             }
-
+            
             Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
             if (dp != null && dp.isDynamic()) {
                 if (!dp.isCached() || dp.isExpired()) {
@@ -153,13 +157,14 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 }
                 // load the UserDefined SchemaURIResolver implementations
                 try {
-                    SynapseConfiguration synCfg = synCtx.getConfiguration();
-                    if (synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER) != null) {
-                        setUserDefinedSchemaResourceResolver(synCtx);
-                    } else {
-                        factory.setResourceResolver(
-                                new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap));
-                    }
+                	SynapseConfiguration synCfg = synCtx.getConfiguration();
+                	if(synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER) !=null){
+                		setUserDefinedSchemaResourceResolver(synCtx);
+                	}
+                	else{
+                		factory.setResourceResolver(
+                		                            new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap));
+                	}
                     cachedSchema = factory.newSchema(sources);
                 } catch (SAXException e) {
                     handleException("Error creating a new schema objects for " +
@@ -192,9 +197,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     String msg = "Validation of element returned by XPath : " + source +
-                            " failed against the given schema(s) " + schemaKeys +
-                            "with error : " + errorHandler.getSaxParseException().getMessage() +
-                            " Executing 'on-fail' sequence";
+                        " failed against the given schema(s) " + schemaKeys +
+                        "with error : " + errorHandler.getSaxParseException().getMessage() +
+                        " Executing 'on-fail' sequence";
                     synLog.traceOrDebug(msg);
 
                     // write a warning to the service log
@@ -207,11 +212,11 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
                 // set error message and detail (stack trace) into the message context
                 synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
-                        errorHandler.getSaxParseException().getMessage());
+                    errorHandler.getSaxParseException().getMessage());
                 synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION,
-                        errorHandler.getSaxParseException());
+                    errorHandler.getSaxParseException());
                 synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                        FaultHandler.getStackTrace(errorHandler.getSaxParseException()));
+                    FaultHandler.getStackTrace(errorHandler.getSaxParseException()));
 
                 // super.mediate() invokes the "on-fail" sequence of mediators
                 ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
@@ -229,7 +234,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Validation of element returned by the XPath expression : "
-                    + source + " succeeded against the given schemas and the current message");
+                + source + " succeeded against the given schemas and the current message");
             synLog.traceOrDebug("End : Validate mediator");
         }
 
@@ -258,7 +263,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
     /**
      * UserDefined schema resource resolver
-     *
+
      * @param synCtx message context
      */
     private void setUserDefinedSchemaResourceResolver(MessageContext synCtx) {
@@ -288,12 +293,12 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             handleException(msg, e, synCtx);
         }
     }
-
+    
     /**
      * Get the validation Source for the message context
      *
      * @param synCtx the current message to validate
-     * @param synLog SynapseLog instance
+     * @param synLog  SynapseLog instance
      * @return the validation Source for the current message
      */
     private Source getValidationSource(MessageContext synCtx, SynapseLog synLog) {
@@ -343,8 +348,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
         /**
          * To set explicitly validation error condition
-         *
-         * @param validationError is occur validation error?
+         * @param validationError  is occur validation error?
          */
         public void setValidationError(boolean validationError) {
             this.validationError = validationError;
@@ -372,12 +376,12 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
     /**
      * add a feature which need to set for the Schema Factory
      *
-     * @param featureName     The name of the feature
+     * @param  featureName The name of the feature
      * @param isFeatureEnable should this feature enable?(true|false)
-     * @throws SAXException on an unknown feature
      * @see #getFeature(String)
+     * @throws SAXException on an unknown feature
      */
-    public void addFeature(String featureName, boolean isFeatureEnable) throws SAXException {
+   public void addFeature(String featureName, boolean isFeatureEnable) throws SAXException {
         MediatorProperty mp = new MediatorProperty();
         mp.setName(featureName);
         if (isFeatureEnable) {
@@ -401,17 +405,15 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
     /**
      * Set the given XPath as the source XPath
-     *
      * @param source an XPath to be set as the source
      */
     public void setSource(SynapseXPath source) {
-        this.source.setXPath(source);
+       this.source.setXPath(source);
     }
 
     /**
      * Set the External Schema ResourceMap that will required for schema validation
-     *
-     * @param resourceMap the ResourceMap which contains external schema resources
+     * @param resourceMap  the ResourceMap which contains external schema resources
      */
     public void setResourceMap(ResourceMap resourceMap) {
         this.resourceMap = resourceMap;
@@ -419,7 +421,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
     /**
      * Get the source XPath which yields the source element for validation
-     *
      * @return the XPath which yields the source element for validation
      */
     public SynapseXPath getSource() {
@@ -428,7 +429,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
     /**
      * The keys for the schema resources used for validation
-     *
      * @return schema registry keys
      */
     public List<Value> getSchemaKeys() {
@@ -437,7 +437,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
     /**
      * Features for the actual Xerces validator
-     *
      * @return explicityFeatures to be passed to the Xerces validator
      */
     public List<MediatorProperty> getFeatures() {
@@ -445,8 +444,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
     }
 
     /**
-     * ResourceMap for the external schema resources to be used for the validation
-     *
+     *ResourceMap for the external schema resources to be used for the validation
      * @return the ResourceMap with external schema resources
      */
     public ResourceMap getResourceMap() {

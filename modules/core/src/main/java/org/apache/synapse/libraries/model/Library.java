@@ -21,30 +21,31 @@ package org.apache.synapse.libraries.model;
 import org.apache.synapse.SynapseArtifact;
 
 import javax.xml.namespace.QName;
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * @author dushan
- *
+ * 
  */
-
 /**
  * @author dushan
+ * 
  */
 public interface Library extends SynapseArtifact {
 
     /**
      * get Fully qualified Name of the Library
-     *
+     * 
      * @return returns the logical name of the Synapse library which constitutes
-     * of [package + library name]
+     *         of [package + library name]
      */
     public QName getQName();
 
     /**
      * returns the package that this Library belongs to
-     *
+     * 
      * @return package name
      */
     public String getPackage();
@@ -52,7 +53,7 @@ public interface Library extends SynapseArtifact {
     /**
      * return synapse lib artifact deployed by this library with the given
      * artifact name
-     *
+     * 
      * @param artifacName
      * @return
      */
@@ -63,7 +64,7 @@ public interface Library extends SynapseArtifact {
 
     /**
      * gives the Artifact description for the given artifact name (if available)
-     *
+     * 
      * @param artifactName
      * @return
      */
@@ -74,7 +75,7 @@ public interface Library extends SynapseArtifact {
     /**
      * load all library artifacts on this library for each and every namespace
      * this should be called when a import is taking place
-     *
+     * 
      * @return success
      */
     public boolean loadLibrary();
@@ -82,14 +83,15 @@ public interface Library extends SynapseArtifact {
     /**
      * unload all library artifacts on this library this should be called when a
      * import is no longer valid/ non-existent or library being undeployed
-     *
+     * 
      * @return success
      */
     public boolean unLoadLibrary();
 
     /**
+     * 
      * @return the Class loader that can be used to load classes/resources under
-     * this library
+     *         this library
      */
     public ClassLoader getLibClassLoader();
 
@@ -99,7 +101,7 @@ public interface Library extends SynapseArtifact {
 
     /**
      * Returns the list of local entry definitions
-     *
+     * 
      * @return
      */
     public Map<String, Object> getLocalEntryArtifacts();
@@ -109,7 +111,7 @@ public interface Library extends SynapseArtifact {
     /**
      * Gets the library status which can determine whether the library should be
      * available during run time
-     *
+     * 
      * @return
      */
     public boolean getLibStatus();

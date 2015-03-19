@@ -61,11 +61,11 @@ public class ClassMediatorDeployer extends AbstractDeployer {
      */
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
 
-        String mediatorPath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
+    	String mediatorPath = FilenameUtils.normalize(deploymentFileData.getAbsolutePath());
 
         log.info("Deploying Class mediators from file : " + mediatorPath);
         ClassLoader mediatorLoader = Utils.getClassLoader(ClassMediatorDeployer.class.getClassLoader(),
-                mediatorPath, false);
+                                                          mediatorPath, false);
         getDeploymentStore().addClassMediatorClassLoader(mediatorPath, mediatorLoader);
 
     }
@@ -79,7 +79,7 @@ public class ClassMediatorDeployer extends AbstractDeployer {
     public void undeploy(String fileName) throws DeploymentException {
         String mediatorPath = FilenameUtils.normalize(fileName);
         log.info("Undeploying Class mediator : " +
-                mediatorPath.substring(mediatorPath.lastIndexOf(File.separator) + 1));
+                 mediatorPath.substring(mediatorPath.lastIndexOf(File.separator)+1));
         getDeploymentStore().removeClassMediatorClassLoader(mediatorPath);
     }
 
@@ -97,7 +97,7 @@ public class ClassMediatorDeployer extends AbstractDeployer {
     }
 
     public void setExtension(String s) {
-        // Changing the extension is not supported
+       // Changing the extension is not supported
     }
 
 }

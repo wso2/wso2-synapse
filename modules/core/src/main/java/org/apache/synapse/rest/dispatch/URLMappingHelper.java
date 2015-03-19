@@ -31,13 +31,14 @@ public class URLMappingHelper implements DispatcherHelper {
             if (urlMapping.length() > 2) {
                 pathSegments = urlMapping.substring(1, urlMapping.length() - 2).split("/");
             } else {
-                pathSegments = new String[]{};
+                pathSegments = new String[] {};
             }
         } else if (urlMapping.startsWith("*.")) {
             extension = urlMapping.substring(1);
-        } else if (urlMapping.length() > 1 && urlMapping.endsWith("/")) {
+        } else if(urlMapping.length() > 1 && urlMapping.endsWith("/")){
             exactMatch = urlMapping.substring(0, urlMapping.length() - 1);
-        } else {
+        }
+        else {
             exactMatch = urlMapping;
         }
     }

@@ -30,21 +30,18 @@ import java.util.Collection;
 public interface PropertyInclude {
     /**
      * Add a property
-     *
      * @param property property to be added
      */
     void addProperty(MediatorProperty property);
 
     /**
      * Add a set of properties
-     *
      * @param properties <code>Collection</code> of properties to be added
      */
     void addProperties(Collection<MediatorProperty> properties);
 
     /**
      * Retrieve the property with the specific name
-     *
      * @param name name of the parameter
      * @return the value of the parameter if present otherwise <code>null</code>
      */
@@ -52,7 +49,6 @@ public interface PropertyInclude {
 
     /**
      * Remove a property and return it
-     *
      * @param name name of the property to be removed
      * @return Property which is removed
      */
@@ -60,7 +56,6 @@ public interface PropertyInclude {
 
     /**
      * Get all the parameters as a <code>Collection</code>
-     *
      * @return retrieve the parameters as a <code>Collection</code>
      */
     Collection<MediatorProperty> getProperties();

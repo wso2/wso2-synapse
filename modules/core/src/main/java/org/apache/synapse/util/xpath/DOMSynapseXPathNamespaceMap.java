@@ -2,8 +2,9 @@ package org.apache.synapse.util.xpath;
 
 import org.apache.synapse.SynapseConstants;
 
-import javax.xml.namespace.NamespaceContext;
 import java.util.*;
+
+import javax.xml.namespace.NamespaceContext;
 
 public class DOMSynapseXPathNamespaceMap implements NamespaceContext {
     Map<String, String> prefixToURIMap = new HashMap<String, String>();

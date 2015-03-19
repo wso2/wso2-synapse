@@ -342,7 +342,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     private boolean sendOptions(MessageContext synCtx) {
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).
                 getAxis2MessageContext();
-        Map<String, String> transportHeaders = (Map<String, String>) msgCtx.getProperty(
+        Map<String,String> transportHeaders = (Map<String,String>) msgCtx.getProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
         if (methods.contains(RESTConstants.METHOD_OPTIONS)) {

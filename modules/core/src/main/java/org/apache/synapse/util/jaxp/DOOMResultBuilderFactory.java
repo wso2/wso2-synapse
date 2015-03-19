@@ -27,7 +27,7 @@ import org.apache.synapse.core.SynapseEnvironment;
  */
 public class DOOMResultBuilderFactory implements ResultBuilderFactory {
     public ResultBuilder createResultBuilder(SynapseEnvironment synEnv,
-                                             ResultBuilderFactory.Output expectedOutput) {
+            ResultBuilderFactory.Output expectedOutput) {
         return new DOOMResultBuilder();
     }
 }

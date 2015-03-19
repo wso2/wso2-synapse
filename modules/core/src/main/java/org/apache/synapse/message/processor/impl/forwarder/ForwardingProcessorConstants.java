@@ -31,14 +31,14 @@ public final class ForwardingProcessorConstants {
     /**
      * The axis2 repository location to be used By the Message Sender
      */
-    public static final String AXIS2_REPO = "axis2.repo";
+    public static final String AXIS2_REPO ="axis2.repo";
 
     /**
      * The axis2 configuration file path to be used by the Message Sender
      */
     public static final String AXIS2_CONFIG = "axis2.config";
 
-    public static final String BLOCKING_SENDER_ERROR = "blocking.sender.error";
+    public static final String BLOCKING_SENDER_ERROR="blocking.sender.error";
 
     /**
      * Used for in_out messages. Processor will forward the message to this sequence
@@ -69,6 +69,6 @@ public final class ForwardingProcessorConstants {
      * Message will be dropped after maximum delivery
      */
     public static final String MAX_DELIVERY_DROP = "max.delivery.drop";
-
+    
     public static final String CRON_EXPRESSION = "cron.expression";
 }

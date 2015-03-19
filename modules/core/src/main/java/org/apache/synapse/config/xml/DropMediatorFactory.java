@@ -28,13 +28,13 @@ import java.util.Properties;
 
 /**
  * Factory for {@link DropMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;drop/&gt;
  * </pre>
  */
-public class DropMediatorFactory extends AbstractMediatorFactory {
+public class DropMediatorFactory extends AbstractMediatorFactory  {
 
     private static final QName DROP_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "drop");
 
@@ -43,7 +43,7 @@ public class DropMediatorFactory extends AbstractMediatorFactory {
         Mediator dropMediator = new DropMediator();
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(dropMediator, el);
+        processAuditStatus(dropMediator,el);
 
         return dropMediator;
     }

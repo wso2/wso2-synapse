@@ -19,15 +19,16 @@
 
 package org.apache.synapse.config.xml;
 
+import java.util.Iterator;
+
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.util.resolver.ResourceMap;
-
-import javax.xml.namespace.QName;
-import java.util.Iterator;
 
 /**
  * Creates a ResourceMap object based on a set of <tt>&lt;resource&gt;</tt> elements:
@@ -37,25 +38,25 @@ import java.util.Iterator;
  */
 public class ResourceMapFactory {
     private static final Log log = LogFactory.getLog(ResourceMapFactory.class);
-
+    
     public static ResourceMap createResourceMap(OMElement elem) {
         ResourceMap resourceMap = null;
         Iterator it = elem.getChildrenWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "resource"));
+            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "resource"));
         while (it.hasNext()) {
             // Lazily create the ResourceMap, so that when no <resource> 
             // elements are found, the method returns null.
             if (resourceMap == null) {
                 resourceMap = new ResourceMap();
             }
-            OMElement resourceElem = (OMElement) it.next();
+            OMElement resourceElem = (OMElement)it.next();
             OMAttribute location = resourceElem.getAttribute
-                    (new QName(XMLConfigConstants.NULL_NAMESPACE, "location"));
+                (new QName(XMLConfigConstants.NULL_NAMESPACE, "location"));
             if (location == null) {
                 handleException("The 'location' attribute is required for a resource definition");
             }
             OMAttribute key = resourceElem.getAttribute(
-                    new QName(XMLConfigConstants.NULL_NAMESPACE, "key"));
+                new QName(XMLConfigConstants.NULL_NAMESPACE, "key"));
             if (key == null) {
                 handleException("The 'key' attribute is required for a resource definition");
             }

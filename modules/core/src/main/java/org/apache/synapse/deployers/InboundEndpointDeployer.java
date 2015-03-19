@@ -94,11 +94,11 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
             if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint: " + inboundEndpoint.getName() + " has been built from the file: " + fileName);
             }
-
+            
             InboundEndpoint existingInboundEndpoint = getSynapseConfiguration().getInboundEndpoint(existingArtifactName);
             existingInboundEndpoint.destroy();
             inboundEndpoint.init(getSynapseEnvironment());
-
+            
 
             if (existingArtifactName.equals(inboundEndpoint.getName())) {
                 getSynapseConfiguration().updateInboundEndpoint(existingArtifactName, inboundEndpoint);
@@ -132,12 +132,12 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
             if (inboundEndpoint != null) {
-                inboundEndpoint.destroy();
+            	inboundEndpoint.destroy();
                 getSynapseConfiguration().removeInboundEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Undeployment of the Inbound Endpoint named : "
                             + artifactName + " : Completed");
-                }
+                }                
                 log.info("Inbound Endpoint named '" + inboundEndpoint.getName() + "' has been undeployed");
             } else if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint " + artifactName + " has already been undeployed");

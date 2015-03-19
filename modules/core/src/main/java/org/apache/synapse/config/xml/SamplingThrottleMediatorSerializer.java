@@ -26,7 +26,7 @@ import org.apache.synapse.mediators.eip.sample.SamplingThrottleMediator;
 /**
  * Serializes the {@link org.apache.synapse.mediators.eip.sample.SamplingThrottleMediator} instance
  * into a XML configuration as follows</p>
- * <p/>
+ *
  * <pre>&lt;sampler id="string" rate="int"/&gt;</pre>
  *
  * @see org.apache.synapse.config.xml.AbstractMediatorSerializer

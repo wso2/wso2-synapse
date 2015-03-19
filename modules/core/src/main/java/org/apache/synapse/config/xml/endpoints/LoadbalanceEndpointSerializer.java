@@ -43,18 +43,18 @@ public class LoadbalanceEndpointSerializer extends EndpointSerializer {
         fac = OMAbstractFactory.getOMFactory();
         OMElement endpointElement
                 = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
-
+        
         LoadbalanceEndpoint loadbalanceEndpoint = (LoadbalanceEndpoint) endpoint;
 
-        serializeCommonAttributes(endpoint, endpointElement);
+        serializeCommonAttributes(endpoint,endpointElement);
 
         OMElement loadbalanceElement
                 = fac.createOMElement("loadbalance", SynapseConstants.SYNAPSE_OMNAMESPACE);
         endpointElement.addChild(loadbalanceElement);
 
         loadbalanceElement.addAttribute(XMLConfigConstants.LOADBALANCE_ALGORITHM,
-                loadbalanceEndpoint.getAlgorithm().getClass().getName(),
-                null);
+                                        loadbalanceEndpoint.getAlgorithm().getClass().getName(),
+                                        null);
 
         // set if failover is turned off in the endpoint
         if (!loadbalanceEndpoint.isFailover()) {

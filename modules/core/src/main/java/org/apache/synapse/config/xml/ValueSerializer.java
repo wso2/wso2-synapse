@@ -46,9 +46,9 @@ public class ValueSerializer {
                 //static key
                 elem.addAttribute(fac.createOMAttribute(name, nullNS, key.getKeyValue()));
             } else {
-                String startChar = "{", endChar = "}";
+                String startChar = "{" , endChar = "}";
                 //if this is an expr type key we add an additional opening and closing brace
-                if (key.hasExprTypeKey()) {
+                if(key.hasExprTypeKey()){
                     startChar = startChar + "{";
                     endChar = endChar + "}";
                 }
@@ -59,7 +59,7 @@ public class ValueSerializer {
         }
         return elem;
     }
-
+    
     /**
      * Serialize the Value object to an OMElement representing the entry
      *
@@ -67,25 +67,25 @@ public class ValueSerializer {
      * @param elem OMElement
      * @return OMElement
      */
-    public OMElement serializeTextValue(Value key, String name, OMElement elem) {
-        if (key != null) {
-            if (key.getExpression() == null) {
-                // static key
-                elem.setText(key.getKeyValue());
-            } else {
-                String startChar = "{", endChar = "}";
-                // if this is an expr type key we add an additional opening and
-                // closing brace
-                if (key.hasExprTypeKey()) {
-                    startChar = startChar + "{";
-                    endChar = endChar + "}";
-                }
-                // dynamic key
-                SynapsePathSerializer.serializeTextPath(key.getExpression(), startChar
-                        + key.getExpression().toString() + endChar, elem, name);
-            }
-        }
-        return elem;
-    }
+	public OMElement serializeTextValue(Value key, String name, OMElement elem) {
+		if (key != null) {
+			if (key.getExpression() == null) {
+				// static key
+				elem.setText(key.getKeyValue());
+			} else {
+				String startChar = "{", endChar = "}";
+				// if this is an expr type key we add an additional opening and
+				// closing brace
+				if (key.hasExprTypeKey()) {
+					startChar = startChar + "{";
+					endChar = endChar + "}";
+				}
+				// dynamic key
+				SynapsePathSerializer.serializeTextPath(key.getExpression(), startChar
+						+ key.getExpression().toString() + endChar, elem, name);
+			}
+		}
+		return elem;
+	}
 
 }

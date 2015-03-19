@@ -21,11 +21,11 @@ package org.apache.synapse.startup.quartz;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Startup;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.config.xml.StartupSerializer;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskDescriptionSerializer;
+import org.apache.synapse.config.xml.StartupSerializer;
 
 public class SimpleQuartzSerializer implements StartupSerializer {
 
@@ -37,7 +37,7 @@ public class SimpleQuartzSerializer implements StartupSerializer {
         }
 
         StartUpController sq = (StartUpController) s;
-
+        
         TaskDescription taskDescription = sq.getTaskDescription();
 
         if (taskDescription != null) {

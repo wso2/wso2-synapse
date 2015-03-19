@@ -34,69 +34,72 @@ import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+import javax.xml.stream.XMLStreamException;
+
 /**
  * @author nuwan
- *         <p>
- *         A Recipient List endpoint can contain multiple child endpoints or member elements.
- *         It routes cloned copies of messages to each child recipient. This will assume that
- *         all immediate child endpoints are identical in state (state is replicated) or state
- *         is not maintained at those endpoints.
- *         </p>
+ * <p>
+ * A Recipient List endpoint can contain multiple child endpoints or member elements. 
+ * It routes cloned copies of messages to each child recipient. This will assume that 
+ * all immediate child endpoints are identical in state (state is replicated) or state 
+ * is not maintained at those endpoints.
+ * </p>
  */
 public class RecipientListEndpoint extends AbstractEndpoint {
 
     private static final Log log = LogFactory.getLog(RecipientListEndpoint.class);
     private static final String DELIMETER = ",";
     /**
-     * The list of members to which the message is delivered to
-     */
-    private List<Member> members;
+	 * The list of members to which the message is delivered to
+	 */
+	private List<Member> members;
 
-    private Map<String, Endpoint> dynamicEndpointPool;
+    private Map<String,Endpoint> dynamicEndpointPool ;
     private Value dynamicEnpointSet;
     public final static int DEFAULT_MAX_POOL = 20;
-    /**
-     * Should this recipient list failover;
-     */
-    private boolean failover;
+	/**
+	 * Should this recipient list failover;
+	 */
+	private boolean failover;
     private int currentPool;
 
     private SynapseEnvironment env = null;
 
-    public RecipientListEndpoint(int poolsize) {
+    public RecipientListEndpoint(int poolsize){
         dynamicEndpointPool = Collections.synchronizedMap(new DynamicEndpointPool<String, Endpoint>(poolsize));
         this.currentPool = poolsize;
     }
 
-    public RecipientListEndpoint() {
+    public RecipientListEndpoint(){
         this.currentPool = DEFAULT_MAX_POOL;
     }
 
-    @Override
-    public void init(SynapseEnvironment synapseEnvironment) {
-        if (!initialized) {
-            super.init(synapseEnvironment);
-        }
+	@Override
+	public void init(SynapseEnvironment synapseEnvironment) {
+		if (!initialized) {
+			super.init(synapseEnvironment);
+		}
         this.env = synapseEnvironment;
-
+        
         this.setContentAware(true);
-    }
+	}
 
-    @Override
-    public void destroy() {
-        super.destroy();
-    }
+	@Override
+	public void destroy() {
+		super.destroy();
+	}
 
-    @Override
-    public void send(MessageContext synCtx) {
+	@Override
+	public void send(MessageContext synCtx) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Sending using Recipient List " + toString());
-        }
+		if (log.isDebugEnabled()) {
+			log.debug("Sending using Recipient List " + toString());
+		}
 
         if (getContext().isState(EndpointContext.ST_OFF)) {
             informFailure(synCtx, SynapseConstants.ENDPOINT_RL_NONE_READY,
@@ -104,18 +107,20 @@ public class RecipientListEndpoint extends AbstractEndpoint {
             return;
         }
 
-        List<Endpoint> children = getChildren();
-
-        //Service child endpoints
+		List<Endpoint> children = getChildren();
+		
+		//Service child endpoints
         if (children != null && !children.isEmpty()) {
             sendToEndpointList(synCtx, children);
         }
         //Service member elements if specified
         else if (members != null && !members.isEmpty()) {
             sendToApplicationMembers(synCtx);
-        } else if (dynamicEnpointSet != null) {
+        }
+        else if (dynamicEnpointSet != null) {
             sendToDynamicMembers(synCtx);
-        } else {
+        }
+        else {
             String msg = "No child endpoints nor member elements available";
             log.error(msg);
             throw new SynapseException(msg);
@@ -125,12 +130,12 @@ public class RecipientListEndpoint extends AbstractEndpoint {
     private void sendToEndpointList(MessageContext synCtx, List<Endpoint> children) {
         int i = 0;
         boolean foundEndpoint = false;
-
+        
         //we should build the message, its should have the same behavior as clone mediator
         try {
-            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+	        RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
         } catch (Exception e) {
-            handleException("Error while building message", e);
+        	  handleException("Error while building message", e);
         }
 
         for (Endpoint childEndpoint : children) {
@@ -146,8 +151,8 @@ public class RecipientListEndpoint extends AbstractEndpoint {
 
                 //Used when aggregating responses
                 newCtx.setProperty(EIPConstants.MESSAGE_SEQUENCE,
-                        String.valueOf(i++) + EIPConstants.MESSAGE_SEQUENCE_DELEMITER +
-                                children.size());
+                                   String.valueOf(i++) + EIPConstants.MESSAGE_SEQUENCE_DELEMITER +
+                                   children.size());
 
                 // evaluate the endpoint properties
                 evaluateProperties(newCtx);
@@ -157,8 +162,8 @@ public class RecipientListEndpoint extends AbstractEndpoint {
                     childEndpoint.send(newCtx);
                 } catch (SynapseException e) {
 
-                    String msg = "Child Endpoint " + (childEndpoint.getName() != null ? childEndpoint.getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
-                            " of Recipient List endpoint " + (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) + " encountered an error while sending the message";
+                    String msg ="Child Endpoint " + (childEndpoint.getName() != null ? childEndpoint.getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
+                                " of Recipient List endpoint " + (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) + " encountered an error while sending the message";
                     log.warn(msg);
                     continue;        //continue sending message to rest of the child endpoints.
                 }
@@ -167,8 +172,8 @@ public class RecipientListEndpoint extends AbstractEndpoint {
 
         if (!foundEndpoint) {
             String msg = "Recipient List endpoint : " +
-                    (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
-                    " - no ready child endpoints";
+                         (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
+                         " - no ready child endpoints";
             log.warn(msg);
             informFailure(synCtx, SynapseConstants.ENDPOINT_RL_NONE_READY, msg);
         }
@@ -213,109 +218,107 @@ public class RecipientListEndpoint extends AbstractEndpoint {
         }
     }
 
-    /**
-     * <p>Iterates the <b>members</b> list, creates Address Endpoints
-     * from each member element and routes cloned copies of the message
-     * to each Address Endpoint.</p>
-     *
-     * @param synCtx - The Original Message received by Synapse
-     */
-    private void sendToApplicationMembers(MessageContext synCtx) {
+    /**<p>Iterates the <b>members</b> list, creates Address Endpoints
+	 * from each member element and routes cloned copies of the message
+	 * to each Address Endpoint.</p>
+	 * @param synCtx - The Original Message received by Synapse
+	 */
+	private void sendToApplicationMembers(MessageContext synCtx){
+		
+		int i = 0;
+		boolean foundEndpoint = false;
+		
+		for (Member member : members) {
+			
+			org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx)
+					.getAxis2MessageContext();
 
-        int i = 0;
-        boolean foundEndpoint = false;
+			String transport = axis2MsgCtx.getTransportIn().getName();
 
-        for (Member member : members) {
+			//If the transport is not HTTP nor HTTPS
+			if (!transport.equals("http") && !transport.equals("https")) {
+				//Skip member.
+				log.error("Cannot deliver for non-HTTP/S transport " + transport);
+				continue;
+			}	
+			
+			MessageContext newCtx = null;
 
-            org.apache.axis2.context.MessageContext axis2MsgCtx = ((Axis2MessageContext) synCtx)
-                    .getAxis2MessageContext();
+			try {
+				newCtx = MessageHelper.cloneMessageContext(synCtx);
+			} catch (AxisFault e) {
+				handleException("Error cloning the message context", e);
+			}
 
-            String transport = axis2MsgCtx.getTransportIn().getName();
+			// Used when aggregating responses
+			newCtx.setProperty(
+					EIPConstants.MESSAGE_SEQUENCE,
+					String.valueOf(i++)
+							+ EIPConstants.MESSAGE_SEQUENCE_DELEMITER
+							+ members.size());
 
-            //If the transport is not HTTP nor HTTPS
-            if (!transport.equals("http") && !transport.equals("https")) {
-                //Skip member.
-                log.error("Cannot deliver for non-HTTP/S transport " + transport);
-                continue;
-            }
+			// evaluate the endpoint properties
+			evaluateProperties(newCtx);
 
-            MessageContext newCtx = null;
+			// URL rewrite
+			String address = newCtx.getTo().getAddress();
+			if (address.indexOf(":") != -1) {
+				try {
+					address = new URL(address).getPath();
+				} catch (MalformedURLException e) {
+					String msg = "URL " + address + " is malformed";
+					log.error(msg, e);
+					throw new SynapseException(msg, e);
+				}
+			}
 
-            try {
-                newCtx = MessageHelper.cloneMessageContext(synCtx);
-            } catch (AxisFault e) {
-                handleException("Error cloning the message context", e);
-            }
+			EndpointReference epr = new EndpointReference(transport
+					+ "://"
+					+ member.getHostName()
+					+ ":"
+					+ ("http".equals(transport) ? member.getHttpPort()
+							: member.getHttpsPort()) + address);
 
-            // Used when aggregating responses
-            newCtx.setProperty(
-                    EIPConstants.MESSAGE_SEQUENCE,
-                    String.valueOf(i++)
-                            + EIPConstants.MESSAGE_SEQUENCE_DELEMITER
-                            + members.size());
+			newCtx.setTo(epr);
+			newCtx.pushFaultHandler(this);
 
-            // evaluate the endpoint properties
-            evaluateProperties(newCtx);
-
-            // URL rewrite
-            String address = newCtx.getTo().getAddress();
-            if (address.indexOf(":") != -1) {
-                try {
-                    address = new URL(address).getPath();
-                } catch (MalformedURLException e) {
-                    String msg = "URL " + address + " is malformed";
-                    log.error(msg, e);
-                    throw new SynapseException(msg, e);
-                }
-            }
-
-            EndpointReference epr = new EndpointReference(transport
-                    + "://"
-                    + member.getHostName()
-                    + ":"
-                    + ("http".equals(transport) ? member.getHttpPort()
-                    : member.getHttpsPort()) + address);
-
-            newCtx.setTo(epr);
-            newCtx.pushFaultHandler(this);
-
-            AddressEndpoint endpoint = new AddressEndpoint();
-            EndpointDefinition definition = new EndpointDefinition();
-            endpoint.setDefinition(definition);
-            endpoint.init(newCtx.getEnvironment());
-
-            if (endpoint.readyToSend()) {
-                foundEndpoint = true;
-                endpoint.send(newCtx);
-            }
-        }
-
-        if (!foundEndpoint) {
-            String msg = "Recipient List endpoint : " +
+			AddressEndpoint endpoint = new AddressEndpoint();
+			EndpointDefinition definition = new EndpointDefinition();
+			endpoint.setDefinition(definition);
+			endpoint.init(newCtx.getEnvironment());
+			
+			if(endpoint.readyToSend()){
+				foundEndpoint = true;
+				endpoint.send(newCtx);
+			}
+		}
+		
+		if(!foundEndpoint){
+			String msg = "Recipient List endpoint : " +
                     (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
                     " - no ready child members";
             log.warn(msg);
             informFailure(synCtx, SynapseConstants.ENDPOINT_RL_NONE_READY, msg);
-        }
-    }
+		}
+	}
 
-    @Override
-    public boolean readyToSend() {
+	@Override
+	public boolean readyToSend(){
         if (getContext().isState(EndpointContext.ST_OFF)) {
             return false;
         }
 
-        for (Endpoint endpoint : getChildren()) {
-            if (endpoint.readyToSend()) {
-                if (log.isDebugEnabled()) {
+		for(Endpoint endpoint : getChildren()){
+			if(endpoint.readyToSend()){
+				if (log.isDebugEnabled()) {
                     log.debug("Recipient List " + this.toString()
                             + " has at least one endpoint at ready state");
                 }
                 return true;
-            }
-        }
-        return false;
-    }
+			}
+		}
+		return false;
+	}
 
     public void onChildEndpointFail(Endpoint endpoint, MessageContext synMessageContext) {
         //we just log the failed recipient here
@@ -323,29 +326,29 @@ public class RecipientListEndpoint extends AbstractEndpoint {
         String msg = "";
         if (log.isDebugEnabled()) {
             msg = "Recipient List endpoint : " +
-                    (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
-                    " - one of the recipients encounterd an error while sending the message ";
+                         (getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT) +
+                         " - one of the recipients encounterd an error while sending the message ";
             log.debug(msg);
         }
-        informFailure(synMessageContext, SynapseConstants.ENDPOINT_RL_NONE_READY, msg);
+        informFailure(synMessageContext,SynapseConstants.ENDPOINT_RL_NONE_READY, msg);
     }
 
 
-    public List<Member> getMembers() {
-        return members;
-    }
+	public List<Member> getMembers() {
+		return members;
+	}
 
-    public void setMembers(List<Member> members) {
-        this.members = members;
-    }
+	public void setMembers(List<Member> members) {
+		this.members = members;
+	}
 
-    public boolean isFailover() {
-        return failover;
-    }
+	public boolean isFailover() {
+		return failover;
+	}
 
-    public void setFailover(boolean failover) {
-        this.failover = failover;
-    }
+	public void setFailover(boolean failover) {
+		this.failover = failover;
+	}
 
     public Value getDynamicEnpointSet() {
         return dynamicEnpointSet;

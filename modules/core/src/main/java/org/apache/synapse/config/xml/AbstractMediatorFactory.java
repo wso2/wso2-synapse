@@ -42,28 +42,26 @@ import java.util.Properties;
 @SuppressWarnings({"UnusedDeclaration"})
 public abstract class AbstractMediatorFactory implements MediatorFactory {
 
-    /**
-     * the standard log for mediators, will assign the logger for the actual subclass
-     */
+    /** the standard log for mediators, will assign the logger for the actual subclass */
     static Log log;
-    protected static final QName ATT_NAME = new QName("name");
-    protected static final QName ATT_VALUE = new QName("value");
-    protected static final QName ATT_DESCRIPTION = new QName("description");
-    protected static final QName ATT_XPATH = new QName("xpath");
-    protected static final QName ATT_REGEX = new QName("regex");
+    protected static final QName ATT_NAME    = new QName("name");
+    protected static final QName ATT_VALUE   = new QName("value");
+    protected static final QName ATT_DESCRIPTION   = new QName("description");
+    protected static final QName ATT_XPATH   = new QName("xpath");
+    protected static final QName ATT_REGEX   = new QName("regex");
     protected static final QName ATT_SEQUENCE = new QName("sequence");
-    protected static final QName ATT_EXPRN = new QName("expression");
-    protected static final QName ATT_KEY = new QName("key");
-    protected static final QName ATT_SOURCE = new QName("source");
-    protected static final QName ATT_TARGET = new QName("target");
+    protected static final QName ATT_EXPRN   = new QName("expression");
+    protected static final QName ATT_KEY     = new QName("key");
+    protected static final QName ATT_SOURCE  = new QName("source");
+    protected static final QName ATT_TARGET  = new QName("target");
     protected static final QName ATT_ONERROR = new QName("onError");
-    protected static final QName ATT_EVAL = new QName("evaluator");
+    protected static final QName ATT_EVAL   = new QName("evaluator");
     protected static final QName ATT_STATS
-            = new QName(XMLConfigConstants.STATISTICS_ATTRIB_NAME);
+        = new QName(XMLConfigConstants.STATISTICS_ATTRIB_NAME);
     protected static final QName PROP_Q
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
+        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
     protected static final QName FEATURE_Q
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "feature");
+        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "feature");
     protected static final QName TARGET_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "target");
     protected static final QName DESCRIPTION_Q
@@ -81,7 +79,7 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
      * extracting the common information from the respective element. It delegates the mediator
      * specific building to the {@link #createSpecificMediator(org.apache.axiom.om.OMElement,
      * java.util.Properties)} method, which has tobe implemented by the respective mediators</p>
-     * <p/>
+     *
      * <p>This method has been marked as <code>final</code> to avoid mistakenly overwriting
      * this method instead of the {@link #createSpecificMediator(org.apache.axiom.om.OMElement,
      * java.util.Properties)} by the sub classes
@@ -106,7 +104,7 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
      * Specific mediator factory implementations should implement this method to build the
      * {@link org.apache.synapse.Mediator} by the given XML configuration
      *
-     * @param elem       configuration element describing the properties of the mediator
+     * @param elem configuration element describing the properties of the mediator
      * @param properties bag of properties to pass in any information to the factory
      * @return built mediator of that specific type
      */
@@ -114,28 +112,30 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
 
     /**
      * This is to Initialize the mediator with the default attributes.
-     *
-     * @param mediator          of which trace state has to be set
-     * @param mediatorOmElement from which the trace state is extracted
+     * 
      * @deprecated This method is deprecated. As of Synapse 1.3, please use
-     * {@link #processAuditStatus(Mediator, OMElement)}
+     *             {@link #processAuditStatus(Mediator, OMElement)}
+     *
+     * @param mediator of which trace state has to be set
+     * @param mediatorOmElement from which the trace state is extracted
      */
     @Deprecated
     protected void processTraceState(Mediator mediator, OMElement mediatorOmElement) {
         processAuditStatus(mediator, mediatorOmElement);
     }
-
+    
     /**
      * This is to Initialize the mediator regarding tracing and statistics.
      *
-     * @param mediator          of which trace state has to be set
+     * @param mediator of which trace state has to be set
      * @param mediatorOmElement from which the trace state is extracted
+     * 
      * @since 2.0
      */
     protected void processAuditStatus(Mediator mediator, OMElement mediatorOmElement) {
 
         OMAttribute trace = mediatorOmElement.getAttribute(
-                new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
+            new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
 
         if (trace != null) {
             String traceValue = trace.getAttributeValue();
@@ -175,15 +175,15 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
     /**
      * Collect the <tt>name</tt> and <tt>value</tt> attributes from the children
      * with a given QName.
-     *
-     * @param elem             element to be traversed to find the specified <code>childElementName</code>
+     *  
+     * @param elem element to be traversed to find the specified <code>childElementName</code>
      * @param childElementName t be used to extract elements to collect the name value pairs
      * @return collected name value pairs
      */
     protected Map<String, String> collectNameValuePairs(OMElement elem, QName childElementName) {
-        Map<String, String> result = new LinkedHashMap<String, String>();
+        Map<String,String> result = new LinkedHashMap<String, String>();
         for (Iterator it = elem.getChildrenWithName(childElementName); it.hasNext(); ) {
-            OMElement child = (OMElement) it.next();
+            OMElement child = (OMElement)it.next();
             OMAttribute attName = child.getAttribute(ATT_NAME);
             OMAttribute attValue = child.getAttribute(ATT_VALUE);
             if (attName != null && attValue != null) {

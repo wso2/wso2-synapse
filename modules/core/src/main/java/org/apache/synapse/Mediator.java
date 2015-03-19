@@ -24,7 +24,7 @@ package org.apache.synapse;
  * All Synapse mediators must implement this Mediator interface. As a message passes
  * through the Synapse system, each mediator's mediate() method is invoked in the
  * sequence/order defined in the SynapseConfiguration.</p>
- * <p/>
+ *
  * <p>It is recommended to extend the abstract class
  * {@link org.apache.synapse.mediators.AbstractMediator} or the
  * {@link org.apache.synapse.mediators.AbstractListMediator} as appropriate instead of
@@ -47,21 +47,18 @@ public interface Mediator extends SynapseArtifact {
     /**
      * This is used for debugging purposes and exposes the type of the current
      * mediator for logging and debugging purposes
-     *
      * @return a String representation of the mediator type
      */
     public String getType();
 
     /**
      * This is used to check whether the tracing should be enabled on the current mediator or not
-     *
      * @return value that indicate whether tracing is on, off or unset
      */
     public int getTraceState();
 
     /**
      * This is used to set the value of tracing enable variable
-     *
      * @param traceState Set whether the tracing is enabled or not
      */
     public void setTraceState(int traceState);
@@ -70,14 +67,12 @@ public interface Mediator extends SynapseArtifact {
 
     /**
      * Get the position of the mediator in sequence flow.
-     *
      * @return position of the mediator in sequence
      */
     public int getMediatorPosition();
 
     /**
      * Set the position of the mediator in the sequence
-     *
      * @param position position
      */
     public void setMediatorPosition(int position);

@@ -37,15 +37,15 @@ public class CustomWSDLLocator implements WSDLLocator {
     private String latestImportURI;
 
     public CustomWSDLLocator(InputSource baseInputSource,
-                             String baseURI) {
+                                  String baseURI) {
         this.baseInputSource = baseInputSource;
         this.baseURI = baseURI;
     }
 
     public CustomWSDLLocator(InputSource baseInputSource,
-                             String baseURI,
-                             ResourceMap resourceMap,
-                             SynapseConfiguration synCfg) {
+                                  String baseURI,
+                                  ResourceMap resourceMap,
+                                  SynapseConfiguration synCfg) {
         this(baseInputSource, baseURI);
         this.resourceMap = resourceMap;
         this.synCfg = synCfg;

@@ -36,7 +36,7 @@ import java.util.Iterator;
 public class SynapseMustUnderstandHandler extends AbstractHandler {
 
     public static final String NAME = "SynapseMustUnderstandHandler";
-
+    
     public InvocationResponse invoke(MessageContext messageContext) throws AxisFault {
 
         SOAPEnvelope envelope = messageContext.getEnvelope();

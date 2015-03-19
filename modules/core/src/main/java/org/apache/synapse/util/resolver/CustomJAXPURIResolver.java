@@ -19,14 +19,14 @@
 
 package org.apache.synapse.util.resolver;
 
-import org.apache.synapse.config.SynapseConfigUtils;
-import org.apache.synapse.config.SynapseConfiguration;
-import org.xml.sax.InputSource;
-
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamSource;
+
+import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.xml.sax.InputSource;
 
 /**
  * Class that adapts a {@link ResourceMap} to JAXP's {@link URIResolver}.
@@ -34,12 +34,12 @@ import javax.xml.transform.stream.StreamSource;
 public class CustomJAXPURIResolver implements URIResolver {
     private final ResourceMap resourceMap;
     private final SynapseConfiguration synCfg;
-
+    
     /**
      * Constructor.
-     *
+     * 
      * @param resourceMap the resource map; may be null if no resource map is configured
-     * @param synCfg      the Synapse configuration
+     * @param synCfg the Synapse configuration
      */
     public CustomJAXPURIResolver(ResourceMap resourceMap, SynapseConfiguration synCfg) {
         this.resourceMap = resourceMap;

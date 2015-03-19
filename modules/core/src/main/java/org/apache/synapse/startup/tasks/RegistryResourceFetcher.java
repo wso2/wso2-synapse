@@ -47,7 +47,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  * Items is a xml configuration
  * <resources>
- * <resource type="sequence | endpoint | xml | text">registry path</resource>
+ *     <resource type="sequence | endpoint | xml | text">registry path</resource>
  * </resources>
  */
 public class RegistryResourceFetcher implements Task, ManagedLifecycle {
@@ -55,8 +55,8 @@ public class RegistryResourceFetcher implements Task, ManagedLifecycle {
 
     public static final String SEQUENCE = "sequence";
     public static final String ENDPOINT = "endpoint";
-    public static final String XML = "xml";
-    public static final String TEXT = "text";
+    public static final String XML      = "xml";
+    public static final String TEXT     = "text";
 
     private OMElement items;
 
@@ -284,7 +284,7 @@ public class RegistryResourceFetcher implements Task, ManagedLifecycle {
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Will not  evaluate the value of the remote entry with a key "
-                                + key + ",  because the registry is not available");
+                            + key + ",  because the registry is not available");
                     }
 
                 }
@@ -321,7 +321,7 @@ public class RegistryResourceFetcher implements Task, ManagedLifecycle {
                     seq.setDynamic(true);
                     seq.setRegistryKey(entry.getKey());
                     seq.init(synapseEnvironment);
-                } else if (entry.getValue() instanceof Endpoint) {
+                } else if (entry.getValue() instanceof  Endpoint) {
                     Endpoint ep = (Endpoint) entry.getValue();
                     ep.init(synapseEnvironment);
                 }
@@ -381,7 +381,7 @@ public class RegistryResourceFetcher implements Task, ManagedLifecycle {
         } else if (state == State.ACTIVE) {
             // we move to the SUSPECT stage
             log.info("Registry fetching state moved to :" + State.SUSPECT +
-                    " Registry seems to be no longer available & Cached values will be used");
+                        " Registry seems to be no longer available & Cached values will be used");
             state = State.SUSPECT;
         }
     }

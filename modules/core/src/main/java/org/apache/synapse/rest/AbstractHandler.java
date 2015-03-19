@@ -17,14 +17,15 @@
 */
 package org.apache.synapse.rest;
 
+import org.apache.synapse.MessageContext;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
-public abstract class AbstractHandler implements Handler {
+public abstract class AbstractHandler implements Handler{
 
-    /**
-     * A list of simple properties that would be set on the class before being used
-     */
+    /** A list of simple properties that would be set on the class before being used */
     protected final Map<String, Object> properties = new HashMap<String, Object>();
 
     public void addProperty(String name, Object value) {

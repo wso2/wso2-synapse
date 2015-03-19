@@ -33,16 +33,16 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * <p>Creates a filter mediator instance with the default behavior</p>
- * <p/>
+ *
  * <pre>
  * &lt;filter (source="xpath" regex="string") | xpath="xpath"&gt;
  *   mediator+
  * &lt;/filter&gt;
  * </pre>
- * <p/>
+ *
  * <p>or if the filter medaitor needs to support the else behavior as well (i.e. a set of mediators
  * to be executed when the filter evaluates to false).</p>
- * <p/>
+ *
  * <pre>
  * &lt;filter (source="xpath" regex="string") | xpath="xpath"&gt;
  *   &lt;then [sequence="string"]&gt;
@@ -61,16 +61,16 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
     private static final QName ELSE_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "else");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
-
+        
         FilterMediator filter = new FilterMediator();
 
-        OMAttribute attXpath = elem.getAttribute(ATT_XPATH);
+        OMAttribute attXpath  = elem.getAttribute(ATT_XPATH);
         OMAttribute attSource = elem.getAttribute(ATT_SOURCE);
-        OMAttribute attRegex = elem.getAttribute(ATT_REGEX);
+        OMAttribute attRegex  = elem.getAttribute(ATT_REGEX);
 
         if (attXpath != null) {
             if (attXpath.getAttributeValue() != null &&
-                    attXpath.getAttributeValue().trim().length() == 0) {
+                attXpath.getAttributeValue().trim().length() == 0) {
 
                 handleException("Invalid attribute value specified for xpath");
 
@@ -80,27 +80,27 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
                     filter.setXpath(SynapsePathFactory.getSynapsePath(elem, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid XPath expression for attribute xpath : "
-                            + attXpath.getAttributeValue(), e);
+                        + attXpath.getAttributeValue(), e);
                 }
-
+                
             }
 
         } else if (attSource != null && attRegex != null) {
 
             if ((attSource.getAttributeValue() != null &&
-                    attSource.getAttributeValue().trim().length() == 0) || (attRegex.getAttributeValue()
-                    != null && attRegex.getAttributeValue().trim().length() == 0)) {
+                attSource.getAttributeValue().trim().length() == 0) || (attRegex.getAttributeValue()
+                != null && attRegex.getAttributeValue().trim().length() == 0) ){
 
                 handleException("Invalid attribute values for source and/or regex specified");
 
             } else {
-
+                
                 try {
                     filter.setSource(SynapsePathFactory.getSynapsePath(elem, ATT_SOURCE));
                 } catch (JaxenException e) {
 
                     handleException("Invalid XPath expression for attribute source : "
-                            + attSource.getAttributeValue(), e);
+                        + attSource.getAttributeValue(), e);
                 }
 
                 try {
@@ -108,7 +108,7 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
                 } catch (PatternSyntaxException pse) {
 
                     handleException("Invalid Regular Expression for attribute regex : "
-                            + attRegex.getAttributeValue(), pse);
+                        + attRegex.getAttributeValue(), pse);
                 }
             }
 
@@ -119,7 +119,7 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(filter, elem);
+        processAuditStatus(filter,elem);
 
         OMElement thenElem = elem.getFirstChildWithName(THEN_Q);
 

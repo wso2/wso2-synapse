@@ -33,7 +33,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link CalloutMediator} instances.
- * <p/>
+ * 
  * <pre>
  * &lt;callout serviceURL="string" | endpointKey="string" [action="string"]&gt;
  *      &lt;configuration [axis2xml="string"] [repository="string"]/&gt;?
@@ -47,7 +47,7 @@ import java.util.Properties;
 public class CalloutMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName TAG_NAME
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "callout");
+        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "callout");
     private static final QName ATT_URL = new QName("serviceURL");
     private static final QName ATT_ENDPOINT = new QName("endpointKey");
     private static final QName ATT_ACTION = new QName("action");
@@ -68,9 +68,9 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_POLICY
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "policy");
     private static final QName ATT_OUTBOUND_SEC_POLICY
-            = new QName(XMLConfigConstants.NULL_NAMESPACE, "outboundPolicy");
+                = new QName(XMLConfigConstants.NULL_NAMESPACE, "outboundPolicy");
     private static final QName ATT_INBOUND_SEC_POLICY
-            = new QName(XMLConfigConstants.NULL_NAMESPACE, "inboundPolicy");
+                = new QName(XMLConfigConstants.NULL_NAMESPACE, "inboundPolicy");
     private static final QName Q_ENDPOINT = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
 
 
@@ -80,13 +80,13 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
 
         OMAttribute attServiceURL = elem.getAttribute(ATT_URL);
         OMAttribute attEndpoint = elem.getAttribute(ATT_ENDPOINT);
-        OMAttribute attAction = elem.getAttribute(ATT_ACTION);
+        OMAttribute attAction     = elem.getAttribute(ATT_ACTION);
         OMAttribute attUseServerConfig = elem.getAttribute(ATT_USESERVERCONFIG);
         OMAttribute initAxis2ClientOptions = elem.getAttribute(ATT_INIT_AXI2_CLIENT_OPTIONS);
-        OMElement configElt = elem.getFirstChildWithName(Q_CONFIG);
+        OMElement   configElt     = elem.getFirstChildWithName(Q_CONFIG);
         OMElement epElement = elem.getFirstChildWithName(Q_ENDPOINT);
-        OMElement sourceElt = elem.getFirstChildWithName(Q_SOURCE);
-        OMElement targetElt = elem.getFirstChildWithName(Q_TARGET);
+        OMElement   sourceElt     = elem.getFirstChildWithName(Q_SOURCE);
+        OMElement   targetElt     = elem.getFirstChildWithName(Q_TARGET);
         OMElement wsSec = elem.getFirstChildWithName(Q_SEC);
 
         if (attServiceURL != null) {
@@ -105,15 +105,15 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
         if (attAction != null) {
             callout.setAction(attAction.getAttributeValue());
         }
-
+        
         if (attUseServerConfig != null) {
-            callout.setUseServerConfig(attUseServerConfig.getAttributeValue());
+        	callout.setUseServerConfig(attUseServerConfig.getAttributeValue());
         }
 
         if (initAxis2ClientOptions != null) {
-            if ("true".equals(initAxis2ClientOptions.getAttributeValue().toLowerCase())) {
+            if("true".equals(initAxis2ClientOptions.getAttributeValue().toLowerCase())){
                 callout.setInitClientOptions(true);
-            } else if ("false".equals(initAxis2ClientOptions.getAttributeValue().toLowerCase())) {
+            } else if ("false".equals(initAxis2ClientOptions.getAttributeValue().toLowerCase())){
                 callout.setInitClientOptions(false);
             } else {
                 handleException("The 'initAxis2ClientOptions' attribute only accepts a boolean value.");
@@ -155,13 +155,13 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
                             SynapseXPathFactory.getSynapseXPath(sourceElt, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid source XPath : "
-                            + sourceElt.getAttributeValue(ATT_XPATH));
+                                    + sourceElt.getAttributeValue(ATT_XPATH));
                 }
             } else if (sourceElt.getAttribute(ATT_KEY) != null) {
                 callout.setRequestKey(sourceElt.getAttributeValue(ATT_KEY));
             } else {
                 handleException("A 'xpath' or 'key' attribute " +
-                        "is required for the Callout 'source'");
+                                "is required for the Callout 'source'");
             }
         } else {
             callout.setUseEnvelopeAsSource(true);
@@ -171,16 +171,16 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
             if (targetElt.getAttribute(ATT_XPATH) != null) {
                 try {
                     callout.setTargetXPath(
-                            SynapseXPathFactory.getSynapseXPath(targetElt, ATT_XPATH));
+                        SynapseXPathFactory.getSynapseXPath(targetElt, ATT_XPATH));
                 } catch (JaxenException e) {
                     handleException("Invalid target XPath : "
-                            + targetElt.getAttributeValue(ATT_XPATH));
+                        + targetElt.getAttributeValue(ATT_XPATH));
                 }
             } else if (targetElt.getAttribute(ATT_KEY) != null) {
                 callout.setTargetKey(targetElt.getAttributeValue(ATT_KEY));
             } else {
                 handleException("A 'xpath' or 'key' attribute " +
-                        "is required for the Callout 'target'");
+                    "is required for the Callout 'target'");
             }
         }
 
@@ -191,7 +191,7 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
             OMAttribute inboundPolicyKey = wsSec.getAttribute(ATT_INBOUND_SEC_POLICY);
             if (policyKey != null) {
                 callout.setWsSecPolicyKey(policyKey.getAttributeValue());
-            } else if (outboundPolicyKey != null || inboundPolicyKey != null) {
+            } else if (outboundPolicyKey != null || inboundPolicyKey != null){
                 if (outboundPolicyKey != null) {
                     callout.setOutboundWsSecPolicyKey(outboundPolicyKey.getAttributeValue());
                 }

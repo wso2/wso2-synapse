@@ -19,8 +19,8 @@
 
 package org.apache.synapse.registry;
 
-import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,15 +39,12 @@ public abstract class AbstractRegistry implements Registry {
 
     private static final Log log = LogFactory.getLog(AbstractRegistry.class);
 
-    /**
-     * The list of configuration properties
-     */
+    /** The list of configuration properties */
     protected final Properties properties = new Properties();
 
     /**
      * Get the resource for the given key from this registry
-     *
-     * @param entry      The Enrty instance that contains meta-data
+     * @param entry The Enrty instance that contains meta-data
      * @param properties bag of properties with additional information
      * @return the matching resultant object
      */
@@ -63,7 +60,7 @@ public abstract class AbstractRegistry implements Registry {
         if (entry.isCached() && !entry.isExpired()) {
             return entry.getValue();
 
-            // if we have not cached the referenced object, fetch it and its RegistryEntry
+        // if we have not cached the referenced object, fetch it and its RegistryEntry
         } else if (!entry.isCached()) {
             try {
                 omNode = lookup(entry.getKey());
@@ -88,8 +85,8 @@ public abstract class AbstractRegistry implements Registry {
                 re = getRegistryEntry(entry.getKey());
             }
 
-            // if we have cached it before, and now the cache has expired
-            // get its *new* registry entry and compare versions and pick new cache duration
+        // if we have cached it before, and now the cache has expired
+        // get its *new* registry entry and compare versions and pick new cache duration
         } else if (entry.isExpired()) {
             if (log.isDebugEnabled()) {
                 log.debug("Cached object has expired for key : " + entry.getKey());
@@ -97,7 +94,7 @@ public abstract class AbstractRegistry implements Registry {
             re = getRegistryEntry(entry.getKey());
 
             if (re.getVersion() != Long.MIN_VALUE &&
-                    re.getVersion() == entry.getVersion()) {
+                re.getVersion() == entry.getVersion()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Expired version number is same as current version in registry");
                 }
@@ -222,12 +219,13 @@ public abstract class AbstractRegistry implements Registry {
     }
 
     /**
+     *
      * @param entry
      * @return the OMElement of the format from the configuration
      */
-    public OMElement getFormat(Entry entry) {
+   public OMElement getFormat(Entry entry){
         OMNode omNode;
         omNode = lookupFormat(entry.getKey());
-        return (OMElement) omNode;
-    }
+       return (OMElement) omNode;
+   }
 }

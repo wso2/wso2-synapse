@@ -19,25 +19,25 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMElement;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
-import org.apache.synapse.mediators.eip.Target;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMAttribute;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
 
 /**
  * Factory for {@link Target} instances.
- * <p/>
+ * <p>
  * This will build the Target util object for EIP mediators using
  * &lt;target&gt; element specified as follows
- * <p/>
+ *
  * &lt;target (sequence="string reference")? (endpoint="string reference")?&gt;
- * (&lt;sequence&gt; | &lt;endpoinit&gt;)?
+ *  (&lt;sequence&gt; | &lt;endpoinit&gt;)?
  * &lt;/target&gt;
  */
 public class TargetFactory {
@@ -54,9 +54,9 @@ public class TargetFactory {
 
     /**
      * This static method will be used to build the Target from the specified element
-     *
-     * @param elem       - OMElement describing the xml configuration of the target
-     * @param properties bag of properties with information
+     * 
+     * @param elem - OMElement describing the xml configuration of the target
+     * @param properties bag of properties with information 
      * @return Target built by parsing the given element
      */
     public static Target createTarget(OMElement elem, Properties properties) {
@@ -110,7 +110,7 @@ public class TargetFactory {
      *
      * @param message - String message to be logged and the message of the exception
      */
-    private static void handleException(String message) {
+    private static void handleException (String message) {
         if (log.isDebugEnabled()) {
             log.debug(message);
         }

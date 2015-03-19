@@ -62,9 +62,9 @@ public class CalloutMediatorSerializer extends AbstractMediatorSerializer {
         if (mediator.getAction() != null) {
             callout.addAttribute(fac.createOMAttribute("action", nullNS, mediator.getAction()));
         }
-
+        
         if (mediator.getUseServerConfig() != null) {
-            callout.addAttribute(fac.createOMAttribute("useServerConfig", nullNS, mediator.getUseServerConfig()));
+        	callout.addAttribute(fac.createOMAttribute("useServerConfig", nullNS, mediator.getUseServerConfig()));
         }
 
         if (!mediator.getInitClientOptions()) {

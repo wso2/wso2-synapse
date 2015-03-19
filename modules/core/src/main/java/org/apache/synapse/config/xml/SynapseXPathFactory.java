@@ -30,14 +30,14 @@ import org.jaxen.JaxenException;
 import javax.xml.namespace.QName;
 
 /**
- *
+ * 
  */
 public class SynapseXPathFactory {
 
     private static final Log log = LogFactory.getLog(SynapseXPathFactory.class);
 
     public static SynapseXPath getSynapseXPath(OMElement elem, QName attribName)
-            throws JaxenException {
+        throws JaxenException {
 
         SynapseXPath xpath = null;
         OMAttribute xpathAttrib = elem.getAttribute(attribName);
@@ -50,14 +50,14 @@ public class SynapseXPathFactory {
 
         } else {
             handleException("Couldn't find the XPath attribute with the QName : "
-                    + attribName.toString() + " in the element : " + elem.toString());
-        }
+                + attribName.toString() + " in the element : " + elem.toString());
+        }       
 
         return xpath;
     }
 
     public static SynapseXPath getSynapseXPath(OMElement elem, String expression)
-            throws JaxenException {
+        throws JaxenException {
 
         if (expression == null) {
             handleException("XPath expression cannot be null");

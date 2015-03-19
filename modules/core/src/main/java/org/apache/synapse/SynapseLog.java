@@ -24,11 +24,11 @@ import org.apache.synapse.mediators.AbstractMediator;
 /**
  * Synapse logging interface.
  * This interface defines a set of Synapse specific log levels.
- * <p/>
+ * <p>
  * Note that the definition of this interface is not yet stable.
  * Please refer to https://issues.apache.org/jira/browse/SYNAPSE-374 for
  * more information.
- *
+ * 
  * @see AbstractMediator#getLog(org.apache.synapse.MessageContext)
  */
 public interface SynapseLog {
@@ -39,7 +39,7 @@ public interface SynapseLog {
      * @return <code>true</code> if trace or debug is enabled
      */
     boolean isTraceOrDebugEnabled();
-
+    
     /**
      * Log a message at level 'traceOrDebug'.
      * In mediators this method should be used to replace the following code:
@@ -47,11 +47,11 @@ public interface SynapseLog {
      * if (traceOrDebugOn) {
      *     traceOrDebug(traceOn, ...);
      * }</pre>
-     *
+     * 
      * @param msg the message to be logged
      */
     void traceOrDebug(Object msg);
-
+    
     /**
      * Log a message at level 'traceOrDebugWarn'.
      * In mediators this method should be used to replace the following code:
@@ -63,7 +63,7 @@ public interface SynapseLog {
      * @param msg the message to be logged
      */
     void traceOrDebugWarn(Object msg);
-
+    
     /**
      * Check whether a call to {@link #traceTrace(Object)} would actually cause a log
      * message to be written to the logs.
@@ -71,7 +71,7 @@ public interface SynapseLog {
      * @return <code>true</code> if trace is enabled for the trace log
      */
     boolean isTraceTraceEnabled();
-
+    
     /**
      * Log a message at level 'traceTrace'.
      * In mediators this method should be used to replace the following code:
@@ -79,16 +79,16 @@ public interface SynapseLog {
      * if (traceOn && trace.isTraceEnabled()) {
      *     trace.trace(...);
      * }</pre>
-     *
+     * 
      * @param msg the message to be logged
      */
     void traceTrace(Object msg);
-
+    
     /**
      * Log an audit message.
      * In mediators this method should be used to replace
      * {@link AbstractMediator#auditLog(String, MessageContext)}.
-     *
+     * 
      * @param msg the message to be logged
      */
     void auditLog(Object msg);
@@ -106,12 +106,12 @@ public interface SynapseLog {
      * @param msg the message to be logged
      */
     void auditTrace(Object msg);
-
+    
     /**
      * Log a warning message.
      * In mediators this method should be used to replace
      * {@link AbstractMediator#auditWarn(String, MessageContext)}.
-     *
+     * 
      * @param msg the message to be logged
      */
     void auditWarn(Object msg);
@@ -129,19 +129,19 @@ public interface SynapseLog {
      * @param msg the message to be logged
      */
     void auditFatal(Object msg);
-
+    
     /**
      * Log a message at level 'error'.
-     *
+     * 
      * @param msg the message to be logged
      */
     void error(Object msg);
-
+    
     /**
      * Log a fatal exception. This method should only be called when a
      * {@link SynapseException} is being thrown.
-     *
-     * @param msg   the message of the exception
+     * 
+     * @param msg the message of the exception
      * @param cause the cause of the exception
      */
     void logSynapseException(String msg, Throwable cause);

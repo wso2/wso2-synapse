@@ -160,7 +160,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     msgObj = rs.getObject("message");
                 } catch (SQLException e) {
                     throw new SynapseException("Error executing statement : " + stmt.getRawStatement() +
-                            " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                                               " against DataSource : " + jdbcConfiguration.getDSName(), e);
                 }
                 if (msgObj != null) {
                     ObjectInputStream ios = null;
@@ -187,7 +187,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             }
         } catch (SQLException e) {
             throw new SynapseException("Processing Statement failed : " + stmt.getRawStatement() +
-                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                                       " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
         }
@@ -221,7 +221,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
             result = true;
         } catch (SQLException e) {
             throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
-                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                                       " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             if (ps != null) {
                 try {
@@ -296,7 +296,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
     public MessageContext peek() throws SynapseException {
         Statement stmt =
                 new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() +
-                        " WHERE indexId=(SELECT min(indexId) from " + jdbcConfiguration.getTableName() + ")");
+                              " WHERE indexId=(SELECT min(indexId) from " + jdbcConfiguration.getTableName() + ")");
         MessageContext msg = null;
 
         try {
@@ -456,13 +456,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     size = rs.getInt(1);
                 } catch (Exception e) {
                     logger.error("Error executing statement : " + stmt.getRawStatement() +
-                            " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                                 " against DataSource : " + jdbcConfiguration.getDSName(), e);
                     break;
                 }
             }
         } catch (SQLException e) {
             logger.error("Error executing statement : " + stmt.getRawStatement() +
-                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                         " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
         }

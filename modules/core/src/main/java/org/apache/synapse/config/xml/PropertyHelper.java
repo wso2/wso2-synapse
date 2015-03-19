@@ -41,10 +41,9 @@ public class PropertyHelper {
     /**
      * Find and invoke the setter method with the name of form setXXX passing in the value given
      * on the POJO object
-     *
      * @param name name of the setter field
-     * @param val  value to be set
-     * @param obj  POJO instance
+     * @param val value to be set
+     * @param obj POJO instance
      */
     public static void setInstanceProperty(String name, Object val, Object obj) {
 
@@ -99,23 +98,23 @@ public class PropertyHelper {
 
             if (!invoked) {
                 handleException("Did not find a setter method named : " + mName +
-                        "() that takes a single String, int, long, float, double " +
-                        "or boolean parameter");
+                    "() that takes a single String, int, long, float, double " +
+                    "or boolean parameter");
             }
 
         } catch (Exception e) {
             handleException("Error invoking setter method named : " + mName +
-                    "() that takes a single String, int, long, float, double " +
-                    "or boolean parameter", e);
+                "() that takes a single String, int, long, float, double " +
+                "or boolean parameter", e);
         }
     }
 
     /**
      * This method will set the static property discribed in the OMElement to the specified object.
      * This Object should have the setter method for the specified property name
-     *
+     * 
      * @param property - OMElement specifying the property to be built in to the object
-     * @param o        - Object to which the specified property will be set.
+     * @param o - Object to which the specified property will be set.
      */
     public static void setStaticProperty(OMElement property, Object o) {
 
@@ -143,7 +142,7 @@ public class PropertyHelper {
                             + " as a String property into class mediator : " + o.getClass() + " : "
                             + e.getMessage(), e);
                 }
-
+                
             } else {
                 // now try XML child
                 OMElement value = property.getFirstElement();
@@ -171,13 +170,13 @@ public class PropertyHelper {
 
     /**
      * This method will check the given OMElement represent either a static property or not
-     *
+     * 
      * @param property - OMElement to be checked for the static property
      * @return boolean true if the elemet represents a static property element false otherwise
      */
     public static boolean isStaticProperty(OMElement property) {
         return "property".equals(property.getLocalName().toLowerCase())
-                && (property.getAttributeValue(new QName("expression")) == null);
+            && (property.getAttributeValue(new QName("expression")) == null);
     }
 
     private static void handleException(String message, Throwable e) {
@@ -188,5 +187,5 @@ public class PropertyHelper {
     private static void handleException(String message) {
         log.error(message);
         throw new SynapseException(message);
-    }
+    }    
 }

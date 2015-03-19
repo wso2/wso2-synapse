@@ -19,15 +19,15 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.commons.evaluators.Evaluator;
 import org.apache.synapse.commons.evaluators.EvaluatorException;
 import org.apache.synapse.commons.evaluators.config.EvaluatorFactoryFinder;
-import org.apache.synapse.mediators.transform.url.RewriteAction;
-import org.apache.synapse.mediators.transform.url.RewriteRule;
-import org.apache.synapse.mediators.transform.url.URIFragments;
 import org.apache.synapse.mediators.transform.url.URLRewriteMediator;
+import org.apache.synapse.mediators.transform.url.RewriteRule;
+import org.apache.synapse.mediators.transform.url.RewriteAction;
+import org.apache.synapse.mediators.transform.url.URIFragments;
+import org.apache.axiom.om.OMElement;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -37,7 +37,7 @@ import java.util.Properties;
 /**
  * Creates an instance of the URLRewriteMediator given an XML configuration which
  * adheres to the following grammar.
- * <p/>
+ *
  * <pre>
  *  &lt;rewrite [inProperty="inputURL"] [outProperty="outputURL"]&gt;
  *      &lt;rewriterule&gt;
@@ -99,7 +99,7 @@ public class URLRewriteMediatorFactory extends AbstractMediatorFactory {
             mediator.addRule(parseRule((OMElement) rules.next()));
         }
         processAuditStatus(mediator, element);
-
+        
         return mediator;
     }
 
@@ -135,16 +135,16 @@ public class URLRewriteMediatorFactory extends AbstractMediatorFactory {
         String value = actionElement.getAttributeValue(ATT_VALUE);
         String xpath = actionElement.getAttributeValue(ATT_XPATH);
         String type = actionElement.getAttributeValue(ATT_TYPE);
-        QName xpath_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "xpath");
-
+        QName xpath_Q  = new QName(XMLConfigConstants.NULL_NAMESPACE, "xpath");
+        
         if (value == null && xpath == null && !ACTION_REMOVE.equals(type)) {
             handleException("value or xpath attribute is required on the action element");
         }
 
         RewriteAction action = new RewriteAction();
         if (xpath != null) {
-            try {
-                action.setXpath(SynapseXPathFactory.getSynapseXPath(actionElement, xpath_Q));
+            try {        
+            	action.setXpath(SynapseXPathFactory.getSynapseXPath(actionElement, xpath_Q));
             } catch (JaxenException e) {
                 handleException("Error while parsing the XPath expression: " + xpath, e);
             }

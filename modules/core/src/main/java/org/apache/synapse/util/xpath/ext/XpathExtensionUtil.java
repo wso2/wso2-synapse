@@ -158,7 +158,7 @@ public class XpathExtensionUtil {
      * @param localName    binding localname string in xpath expression
      * @param <T>          Variable/Function Context Provider Type
      * @return matching Extension provider. returns null if no extension is found for the given
-     * combination
+     *         combination
      */
     private static <T> T getMatchingExtensionProvider(Map<QName, T> extensionMap,
                                                       String namespaceURI,
@@ -198,7 +198,7 @@ public class XpathExtensionUtil {
             return variableExt.resolve(ctxt);
         } catch (Exception e) {
             handleExceptionWarning("Error Invoking Xpath Variable Provider " +
-                    variableExt.getClass().getName(), e);
+                                   variableExt.getClass().getName(), e);
         }
         return null;
     }
@@ -217,7 +217,7 @@ public class XpathExtensionUtil {
             return funcExtProvider.getInitializedExtFunction(ctxt);
         } catch (Exception e) {
             handleExceptionWarning("Error Initializing Xpath Function Provider " +
-                    funcExtProvider.getClass().getName(), e);
+                                   funcExtProvider.getClass().getName(), e);
         }
         return null;
     }

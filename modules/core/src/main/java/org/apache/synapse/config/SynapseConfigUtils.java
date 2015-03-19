@@ -20,19 +20,20 @@
 package org.apache.synapse.config;
 
 import org.apache.axiom.om.*;
-import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ServerContextInformation;
-import org.apache.synapse.ServerState;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
+import org.wso2.securevault.definition.IdentityKeyStoreInformation;
+import org.wso2.securevault.definition.KeyStoreInformation;
+import org.wso2.securevault.definition.KeyStoreInformationFactory;
+import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -41,10 +42,6 @@ import org.apache.synapse.mediators.builtin.LogMediator;
 import org.apache.synapse.util.SynapseBinaryDataSource;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
-import org.wso2.securevault.definition.IdentityKeyStoreInformation;
-import org.wso2.securevault.definition.KeyStoreInformation;
-import org.wso2.securevault.definition.KeyStoreInformationFactory;
-import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
@@ -57,10 +54,10 @@ import java.io.*;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
+import java.util.List;
+import java.util.ArrayList;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
@@ -148,7 +145,7 @@ public class SynapseConfigUtils {
      * If a suitable XMLToObjectMapper cannot be found, the content would be
      * treated as XML and an OMNode would be returned
      *
-     * @param url        the URL to the resource
+     * @param url the URL to the resource
      * @param properties bag of properties to pass in any information to the factory
      * @return an Object created from the given URL
      */
@@ -269,7 +266,7 @@ public class SynapseConfigUtils {
     /**
      * Return an OMElement from a URL source
      *
-     * @param urlStr      a URL string
+     * @param urlStr a URL string
      * @param synapseHome synapse home parameter to be used
      * @return an OMElement of the resource
      * @throws IOException for invalid URL's or IO errors
@@ -283,11 +280,11 @@ public class SynapseConfigUtils {
         URLConnection connection = null;
 
         //If url contains http basic authentication parameters.
-        if (url.getUserInfo() != null) {
+        if(url.getUserInfo() != null){
 
             String protocol = url.getProtocol();
 
-            if ("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)) {
+            if("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)){
 
                 //Create new url excluding user info
                 URL newUrl = new URL(protocol, url.getHost(), url.getPort(), url.getFile());
@@ -296,11 +293,13 @@ public class SynapseConfigUtils {
 
                 String encoding = new String(new Base64().encode(url.getUserInfo().getBytes()));
                 connection.setRequestProperty("Authorization", "Basic " + encoding);
-            } else {
+            }
+            else{
                 handleException("Unsuported protocol [" + protocol + "]. Supports only http and https with " +
                         "basic authentication");
             }
-        } else {
+        }
+        else{
             connection = getURLConnection(url);
         }
 
@@ -370,15 +369,15 @@ public class SynapseConfigUtils {
     /**
      * Helper method to create a HttpSURLConnection with provided KeyStores
      *
-     * @param url               Https URL
+     * @param url Https URL
      * @param synapseProperties properties for extracting info
-     * @param proxy             if there is a proxy
+     * @param proxy if there is a proxy
      * @return gives out the connection created
      */
     private static HttpsURLConnection getHttpsURLConnection(
             URL url, Properties synapseProperties, Proxy proxy) {
 
-        if (log.isDebugEnabled()) {
+       if (log.isDebugEnabled()) {
             log.debug("Creating a HttpsURL Connection from given URL : " + url);
         }
 
@@ -485,7 +484,7 @@ public class SynapseConfigUtils {
      */
     public static URLConnection getURLConnection(URL url) {
 
-        try {
+         try {
             if (url == null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Provided URL is null");
@@ -551,10 +550,9 @@ public class SynapseConfigUtils {
         return null;
     }
 
-    /**
+     /**
      * Get the exclued host list for proxy server. When a connection is made for these hosts it will
      * not go through the proxy server
-     *
      * @param synapseProperties properties from the synapse.properties file
      * @return list of excluded hosts
      */
@@ -563,7 +561,7 @@ public class SynapseConfigUtils {
         String excludedHostsConfig = synapseProperties.
                 getProperty(SynapseConstants.SYNAPSE_HTTP_PROXY_EXCLUDED_HOSTS);
         if (excludedHostsConfig != null) {
-            String[] list = excludedHostsConfig.split(",");
+            String [] list = excludedHostsConfig.split(",");
 
             for (String host : list) {
                 excludedHosts.add(host.trim());
@@ -592,7 +590,7 @@ public class SynapseConfigUtils {
     /**
      * Utility method to resolve url(only If need) path using synapse home system property
      *
-     * @param path        Path to the URL
+     * @param path Path to the URL
      * @param synapseHome synapse home parameter value to be used
      * @return Valid URL instance or null(if it is invalid or can not open a connection to it )
      */
@@ -748,7 +746,7 @@ public class SynapseConfigUtils {
      * @return StatisticsCollector instance if there is any
      */
     public static StatisticsCollector getStatisticsCollector(ServerContextInformation contextInfo) {
-        if (contextInfo != null && (contextInfo.getServerState() == ServerState.INITIALIZED || contextInfo.getServerState() == ServerState.STARTED)) {
+        if (contextInfo != null && (contextInfo.getServerState() == ServerState.INITIALIZED || contextInfo.getServerState() == ServerState.STARTED )) {
             Object o = contextInfo.getServerContext();
             if (o instanceof ConfigurationContext) {
                 ConfigurationContext context = (ConfigurationContext) o;
@@ -822,9 +820,9 @@ public class SynapseConfigUtils {
      * Return the fault sequence if one is not defined. This implementation defaults to
      * a simple sequence :
      * <log level="full">
-     * <property name="MESSAGE" value="Executing default "fault" sequence"/>
-     * <property name="ERROR_CODE" expression="get-property('ERROR_CODE')"/>
-     * <property name="ERROR_MESSAGE" expression="get-property('ERROR_MESSAGE')"/>
+     *   <property name="MESSAGE" value="Executing default "fault" sequence"/>
+     *   <property name="ERROR_CODE" expression="get-property('ERROR_CODE')"/>
+     *   <property name="ERROR_MESSAGE" expression="get-property('ERROR_MESSAGE')"/>
      * </log>
      * <drop/>
      *
@@ -845,16 +843,14 @@ public class SynapseConfigUtils {
         mp.setName("ERROR_CODE");
         try {
             mp.setExpression(new SynapseXPath("get-property('ERROR_CODE')"));
-        } catch (JaxenException ignore) {
-        }
+        } catch (JaxenException ignore) {}
         log.addProperty(mp);
 
         mp = new MediatorProperty();
         mp.setName("ERROR_MESSAGE");
         try {
             mp.setExpression(new SynapseXPath("get-property('ERROR_MESSAGE')"));
-        } catch (JaxenException ignore) {
-        }
+        } catch (JaxenException ignore) {}
         log.addProperty(mp);
 
         fault.addChild(log);

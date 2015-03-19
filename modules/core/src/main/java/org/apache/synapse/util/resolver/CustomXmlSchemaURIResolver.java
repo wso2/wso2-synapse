@@ -33,20 +33,20 @@ public class CustomXmlSchemaURIResolver implements URIResolver {
 
     public CustomXmlSchemaURIResolver() {
     }
-
+    
     /**
      * Constructor.
-     *
+     * 
      * @param resourceMap the resource map; may be null if no resource map is configured
-     * @param synCfg      the Synapse configuration
+     * @param synCfg the Synapse configuration
      */
     public CustomXmlSchemaURIResolver(ResourceMap resourceMap,
-                                      SynapseConfiguration synCfg) {
+                                  SynapseConfiguration synCfg) {
         this();
         this.resourceMap = resourceMap;
         this.synCfg = synCfg;
     }
-
+    
     /**
      * Resolve a schema import.
      * This method will first attempt to resolve the location using the configured

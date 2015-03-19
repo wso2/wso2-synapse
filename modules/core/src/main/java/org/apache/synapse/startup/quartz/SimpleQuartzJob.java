@@ -23,8 +23,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.commons.util.PropertyHelper;
-import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.task.Task;
+
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.task.TaskDescription;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
@@ -34,7 +35,7 @@ import org.quartz.JobExecutionException;
 import java.util.Set;
 
 public class SimpleQuartzJob implements Job {
-
+    
     public static final String SYNAPSE_ENVIRONMENT = "SynapseEnvironment";
     public static final String CLASSNAME = "ClassName";
     public static final String PROPERTIES = "Properties";

@@ -20,9 +20,9 @@ package org.apache.synapse.util;
 
 import org.apache.axis2.clustering.ClusteringFault;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.synapse.SynapseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseException;
 
 /**
  * Helper class for replicating states

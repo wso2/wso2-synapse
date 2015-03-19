@@ -19,8 +19,8 @@
 
 package org.apache.synapse.endpoints.dispatch;
 
-import org.apache.axis2.clustering.Member;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.clustering.Member;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -29,6 +29,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.endpoints.SALoadbalanceEndpoint;
+import org.apache.synapse.endpoints.DynamicLoadbalanceEndpoint;
 import org.apache.synapse.util.Replicator;
 
 import java.util.*;
@@ -143,7 +144,7 @@ public class SALSessions {
                 SynapseConstants.PROP_SAL_CURRENT_SESSION_INFORMATION);
 
         List<Endpoint> endpoints = null;
-        Member currentMember = null;
+        Member currentMember = null; 
 
         if (oldSession == null) {
 
@@ -155,7 +156,7 @@ public class SALSessions {
 
             currentMember = (Member) synCtx.getProperty(
                     SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_MEMBER);
-
+            
             createSession = true;
         } else {
 
@@ -193,7 +194,7 @@ public class SALSessions {
 
         if (createSession) {
             SessionInformation newInformation;
-            if (currentMember == null) {
+            if(currentMember == null){
                 newInformation = createSessionInformation(synCtx, sessionID, endpoints);
             } else {
                 newInformation = createSessionInformation(synCtx, sessionID, currentMember, null);
@@ -211,115 +212,117 @@ public class SALSessions {
             }
         }
     }
+    
+	/**
+	 * Update or establish a session
+	 * 
+	 * @param synCtx
+	 *            Synapse MessageContext
+	 * @param sessionID
+	 *            session id
+	 */
+	public void updateSession(MessageContext synCtx, SessionCookie cookie) {
 
-    /**
-     * Update or establish a session
-     *
-     * @param synCtx    Synapse MessageContext
-     * @param sessionID session id
-     */
-    public void updateSession(MessageContext synCtx, SessionCookie cookie) {
+		if (cookie == null || "".equals(cookie.getSessionId())) {
+			if (log.isDebugEnabled()) {
+				log.debug("Cannot find Session ID from the cookie.");
+			}
+			return;
+		}
 
-        if (cookie == null || "".equals(cookie.getSessionId())) {
-            if (log.isDebugEnabled()) {
-                log.debug("Cannot find Session ID from the cookie.");
-            }
-            return;
-        }
+		String sessionId = cookie.getSessionId();
+		String path = cookie.getPath();
 
-        String sessionId = cookie.getSessionId();
-        String path = cookie.getPath();
+		boolean createSession = false;
 
-        boolean createSession = false;
+		if (log.isDebugEnabled()) {
+			log.debug("Starting to update the session for : " + cookie);
+		}
 
-        if (log.isDebugEnabled()) {
-            log.debug("Starting to update the session for : " + cookie);
-        }
+		// if this is related to the already established session
+		SessionInformation oldSession = (SessionInformation) synCtx
+				.getProperty(SynapseConstants.PROP_SAL_CURRENT_SESSION_INFORMATION);
 
-        // if this is related to the already established session
-        SessionInformation oldSession = (SessionInformation) synCtx
-                .getProperty(SynapseConstants.PROP_SAL_CURRENT_SESSION_INFORMATION);
+		List<Endpoint> endpoints = null;
+		Member currentMember = null;
 
-        List<Endpoint> endpoints = null;
-        Member currentMember = null;
+		if (oldSession == null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Going to create a New session with corresponds to: " + cookie);
+			}
+			endpoints = (List<Endpoint>) synCtx.getProperty(SynapseConstants.PROP_SAL_ENDPOINT_ENDPOINT_LIST);
 
-        if (oldSession == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Going to create a New session with corresponds to: " + cookie);
-            }
-            endpoints = (List<Endpoint>) synCtx.getProperty(SynapseConstants.PROP_SAL_ENDPOINT_ENDPOINT_LIST);
+			currentMember = (Member) synCtx.getProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_MEMBER);
 
-            currentMember = (Member) synCtx.getProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_MEMBER);
+			createSession = true;
+		} else {
+			String oldSessionID = oldSession.getId();
+			// This assumes that there can only be one path
+			if (!sessionId.equals(oldSessionID) && pathMatches(path, oldSession.getPath())) {
 
-            createSession = true;
-        } else {
-            String oldSessionID = oldSession.getId();
-            // This assumes that there can only be one path
-            if (!sessionId.equals(oldSessionID) && pathMatches(path, oldSession.getPath())) {
+				if (log.isDebugEnabled()) {
+					log.debug("Renew the session : previous session id :" + oldSessionID + " new session :" + cookie);
+				}
+				removeSession(oldSessionID);
+				endpoints = oldSession.getEndpointList();
+				currentMember = oldSession.getMember();
+				createSession = true;
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Renew the session : previous session id :" + oldSessionID + " new session :" + cookie);
-                }
-                removeSession(oldSessionID);
-                endpoints = oldSession.getEndpointList();
-                currentMember = oldSession.getMember();
-                createSession = true;
+			} else {
 
-            } else {
+				SessionInformation information = getSessionInformation(oldSessionID);
+				if (information == null) {
+					// This means , our session information has been removed
+					// during getting response.
+					// Therefore, it is recovered using session information in
+					// the message context
+					if (log.isDebugEnabled()) {
+						log.debug("Recovering lost session information for session id " + sessionId);
+					}
+					endpoints = oldSession.getEndpointList();
+					currentMember = oldSession.getMember();
+					createSession = true;
+				} else {
+					if (log.isDebugEnabled()) {
+						log.debug("Session with id : " + sessionId + " is still live.");
+					}
+				}
+			}
+		}
 
-                SessionInformation information = getSessionInformation(oldSessionID);
-                if (information == null) {
-                    // This means , our session information has been removed
-                    // during getting response.
-                    // Therefore, it is recovered using session information in
-                    // the message context
-                    if (log.isDebugEnabled()) {
-                        log.debug("Recovering lost session information for session id " + sessionId);
-                    }
-                    endpoints = oldSession.getEndpointList();
-                    currentMember = oldSession.getMember();
-                    createSession = true;
-                } else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Session with id : " + sessionId + " is still live.");
-                    }
-                }
-            }
-        }
+		if (createSession) {
+			SessionInformation newInformation;
 
-        if (createSession) {
-            SessionInformation newInformation;
+			List<String> paths = new ArrayList<String>();
+			// add the new path
+			paths.add(path);
 
-            List<String> paths = new ArrayList<String>();
-            // add the new path
-            paths.add(path);
+			if (currentMember == null) {
+				newInformation = createSessionInformation(synCtx, sessionId, endpoints, paths);
+			} else {
+				newInformation = createSessionInformation(synCtx, sessionId, currentMember, paths);
+			}
 
-            if (currentMember == null) {
-                newInformation = createSessionInformation(synCtx, sessionId, endpoints, paths);
-            } else {
-                newInformation = createSessionInformation(synCtx, sessionId, currentMember, paths);
-            }
+			if (log.isDebugEnabled()) {
+				log.debug("Establishing a session for :" + cookie + " and it's endpoint sequence : " + endpoints);
+			}
 
-            if (log.isDebugEnabled()) {
-                log.debug("Establishing a session for :" + cookie + " and it's endpoint sequence : " + endpoints);
-            }
+			if (isClustered) {
+				Replicator.setAndReplicateState(SESSION_IDS + sessionId, newInformation, configCtx);
+			} else {
+				establishedSessions.put(sessionId, newInformation);
+			}
+		}
+	}
 
-            if (isClustered) {
-                Replicator.setAndReplicateState(SESSION_IDS + sessionId, newInformation, configCtx);
-            } else {
-                establishedSessions.put(sessionId, newInformation);
-            }
-        }
-    }
-
-    private boolean pathMatches(String path, List<String> pathList) {
-        for (String aPath : pathList) {
-            if (aPath != null && aPath.equals(path)) {
-                return true;
-            }
-        }
-        return false;
-    }
+	private boolean pathMatches(String path, List<String> pathList) {
+		for (String aPath : pathList) {
+			if (aPath != null && aPath.equals(path)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
     /**
      * return the endpoint  for the given session.
@@ -423,8 +426,8 @@ public class SALSessions {
      * Clear all the expired sessions
      */
     public synchronized void clearSessions() {
-
-        List<String> toBeRemoved = null;
+    	
+    	List<String> toBeRemoved = null;
 
         if (!initialized) {
             return;
@@ -434,7 +437,7 @@ public class SALSessions {
             if (isClustered) {
 
                 toBeRemoved = new ArrayList<String>();
-                for (Iterator<String> props = configCtx.getPropertyNames(); props.hasNext(); ) {
+                for (Iterator<String> props = configCtx.getPropertyNames(); props.hasNext();) {
                     Object name = props.next();
 
                     if (name instanceof String && ((String) name).startsWith(SESSION_IDS)) {
@@ -475,8 +478,8 @@ public class SALSessions {
                         toBeRemoved.add(id);
                     }
                     // this is a safe precaution to avoid adding to ArrayList going OoM
-                    if (toBeRemoved.size() > 10000) {
-                        removeSessions(toBeRemoved);
+                    if(toBeRemoved.size() > 10000){
+                    	removeSessions(toBeRemoved);
                     }
                 }
                 removeSessions(toBeRemoved);
@@ -484,27 +487,28 @@ public class SALSessions {
             }
         } catch (Throwable ignored) {
             log.debug("Ignored error clearing sessions : Error " + ignored);
-        } finally {
-            if (toBeRemoved != null) {
-                toBeRemoved = null;
-            }
         }
-
+        finally{
+        	if(toBeRemoved != null){
+        		toBeRemoved = null;
+        	}
+        }
+        
     }
 
     private void removeSessions(List<String> toBeRemoved) {
 
-        if (!toBeRemoved.isEmpty()) {
+    	if (!toBeRemoved.isEmpty()) {
             if (log.isDebugEnabled()) {
                 log.debug("Clearing expired sessions");
             }
             establishedSessions.keySet().removeAll(toBeRemoved);
         }
+    	
+    	toBeRemoved.clear();
+	}
 
-        toBeRemoved.clear();
-    }
-
-    public boolean isInitialized() {
+	public boolean isInitialized() {
         return initialized;
     }
 
@@ -523,14 +527,13 @@ public class SALSessions {
         if (!initialized) {
             return;
         }
-
+        
         log.info("Clearing all states ");
         initialized = false;
         establishedSessions.clear();
         namesToEndpointsMap.clear();
         childEndpoints.clear();
     }
-
     /*
      * Helper method to get a map from a list - This is for clustered env.
      */
@@ -610,27 +613,26 @@ public class SALSessions {
 
     /**
      * Updates sessions corresponds to a particular member from the {@link #establishedSessions}
-     *
      * @param member subjected {@link Member}
      */
-    public void removeSessionsOfMember(Member member) {
-        for (Iterator<SessionInformation> iterator = establishedSessions.values().iterator(); iterator.hasNext(); ) {
-            SessionInformation info = iterator.next();
+    public void removeSessionsOfMember(Member member){
+        for (Iterator<SessionInformation> iterator = establishedSessions.values().iterator(); iterator.hasNext();) {
+        	SessionInformation info = iterator.next();
 
             if (member.equals(info.getMember())) {
-                //We don't want to lose sessions of this member. So we merely set the member to null and
-                //put it back to establishedSessions so that those can be used later.
-                info.setMember(null);
+            	//We don't want to lose sessions of this member. So we merely set the member to null and
+            	//put it back to establishedSessions so that those can be used later.
+            	info.setMember(null);
                 iterator.remove();
-
-                establishedSessions.put(info.getId(), info);
+                
+                establishedSessions.put(info.getId(),info);
                 log.debug("Session associated with member " + member.toString() +
-                        " is updated ; session id : " + info.getId());
+                		 " is updated ; session id : " + info.getId());
             }
         }
     }
 
-    /*
+	/*
      * Validate endpoint name
      */
     private void validateInput(String endpointName) {
@@ -689,17 +691,17 @@ public class SALSessions {
         }
 
         long expireTimeWindow = -1;
-        if (endpoints != null) {
-            for (Endpoint endpoint : endpoints) {
+        if(endpoints != null) {
+        	for (Endpoint endpoint : endpoints) {
 
-                if (endpoint instanceof SALoadbalanceEndpoint) {
-                    long sessionsTimeout = ((SALoadbalanceEndpoint) endpoint).getSessionTimeout();
+        		if (endpoint instanceof SALoadbalanceEndpoint) {
+        			long sessionsTimeout = ((SALoadbalanceEndpoint) endpoint).getSessionTimeout();
 
-                    if (expireTimeWindow == -1) {
-                        expireTimeWindow = sessionsTimeout;
-                    } else if (expireTimeWindow > sessionsTimeout) {
-                        expireTimeWindow = sessionsTimeout;
-                    }
+        		    if (expireTimeWindow == -1) {
+        			    expireTimeWindow = sessionsTimeout;
+        		    } else if (expireTimeWindow > sessionsTimeout) {
+        			    expireTimeWindow = sessionsTimeout;
+        		    }
                 }
             }
         }
@@ -728,7 +730,7 @@ public class SALSessions {
         }
         return information;
     }
-
+    
     /*
      * Factory method to create a session information using given endpoint list, list of paths
      * session id and other informations
@@ -802,8 +804,8 @@ public class SALSessions {
         }
 
         long expireTimeWindow = synCtx.getConfiguration().getProperty(
-                SynapseConstants.PROP_SAL_ENDPOINT_DEFAULT_SESSION_TIMEOUT,
-                SynapseConstants.SAL_ENDPOINTS_DEFAULT_SESSION_TIMEOUT);
+                    SynapseConstants.PROP_SAL_ENDPOINT_DEFAULT_SESSION_TIMEOUT,
+                    SynapseConstants.SAL_ENDPOINTS_DEFAULT_SESSION_TIMEOUT);
 
         if (log.isDebugEnabled()) {
             log.debug("For session with id " + id +
@@ -815,7 +817,7 @@ public class SALSessions {
         SessionInformation sessionInformation = new SessionInformation(id,
                 currentMember, expiryTime, expireTimeWindow);
         if (paths != null) {
-            sessionInformation.setPath(paths);
+        	sessionInformation.setPath(paths);
         }
         return sessionInformation;
     }

@@ -28,6 +28,7 @@ import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
 
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
@@ -54,10 +55,10 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                 //a synapse import with the same name (name + version) already exists
                 //we should not allow multiple such imports
                 log.warn("Synapse Import with the name : " + synImportQualfiedName + " already exists! " +
-                        "Could not load multiple Imports of same type.");
+                         "Could not load multiple Imports of same type.");
                 String backedUp = backupFile(new File(fileName));
                 log.info("Synapse Import with the name : " + synImportQualfiedName + " is now backed up in : "
-                        + backedUp);
+                         + backedUp);
                 return null;
             } else {
                 if (synImport != null) {
@@ -66,22 +67,22 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                     //get corresponding library for loading imports if available
                     Library synLib = getSynapseConfiguration().getSynapseLibraries()
                             .get(synImportQualfiedName);
-                    if (synLib != null) {
-                        if (synImport.isStatus()) {
-                            LibDeployerUtils.loadLibArtifacts(synImport, synLib);
-                        } else {
-                            synLib.setLibStatus(false);
-                            synLib.unLoadLibrary();
-                        }
-                    }
+					if (synLib != null) {
+						if (synImport.isStatus()) {
+							LibDeployerUtils.loadLibArtifacts(synImport, synLib);
+						} else {
+							synLib.setLibStatus(false);
+							synLib.unLoadLibrary();
+						}
+					}
                     log.info("Synapse Library Import named '" + synImportQualfiedName +
-                            " has been deployed from file : "
-                            + fileName);
+                             " has been deployed from file : "
+                             + fileName);
                     return synImportQualfiedName;
                 } else {
                     handleSynapseArtifactDeploymentError("Synapse Import Deployment Failed. " +
-                            "The artifact described in the file " +
-                            fileName + " is not a valid import");
+                                                         "The artifact described in the file " +
+                                                         fileName + " is not a valid import");
                 }
             }
         } catch (Exception e) {
@@ -106,7 +107,7 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
 
             if (synImport == null) {
                 handleSynapseArtifactDeploymentError("Synapse Import update failed. The artifact " +
-                        "defined in the file: " + fileName + " is not a valid import.");
+                                                     "defined in the file: " + fileName + " is not a valid import.");
                 return null;
             }
 
@@ -124,17 +125,17 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                 if (synLib != null) {
                     //this is a important step -> we need to unload what ever the components loaded previously
                     //then reload
-                    if (synImport.isStatus()) {
-                        synLib.unLoadLibrary();
-                        LibDeployerUtils.loadLibArtifacts(synImport, synLib);
-                    } else {
-                        synLib.setLibStatus(false);
-                        synLib.unLoadLibrary();
-                    }
+					if (synImport.isStatus()) {
+						synLib.unLoadLibrary();
+						LibDeployerUtils.loadLibArtifacts(synImport, synLib);
+					}else{
+						synLib.setLibStatus(false);
+						synLib.unLoadLibrary();
+					}
                 }
                 log.info("Synapse Library Import named '" + synImportQualfiedName +
-                        " has been deployed from file : "
-                        + fileName);
+                         " has been deployed from file : "
+                         + fileName);
             } else {
                 //when updating ,import Qualified Name has been changed !!
                 //check for any other import with the same name
@@ -143,12 +144,12 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                     //a synapse import with the same name (name + version) already exists
                     //we should not allow multiple such imports
                     log.warn("Synapse Import with the name : " + synImportQualfiedName + " already exists! " +
-                            "Could not load multiple Imports of same type.");
+                             "Could not load multiple Imports of same type.");
                     String backedUp = backupFile(new File(fileName));
                     log.info("Synapse Import with the name : " + synImportQualfiedName + " is now backed up in : "
-                            + backedUp);
+                             + backedUp);
                     return null;
-                } else {
+                }else {
                     synImport.setFileName((new File(fileName)).getName());
                     getSynapseConfiguration().addSynapseImport(synImportQualfiedName, synImport);
                     //get corresponding library for loading imports if available
@@ -161,8 +162,8 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                         LibDeployerUtils.loadLibArtifacts(synImport, synLib);
                     }
                     log.info("Synapse Library Import named '" + synImportQualfiedName +
-                            " has been deployed from file : "
-                            + fileName);
+                             " has been deployed from file : "
+                             + fileName);
                 }
             }
 
@@ -173,7 +174,7 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
 
         } catch (Exception e) {
             handleSynapseArtifactDeploymentError("Error while updating the Synapse Import from the " +
-                    "file: " + fileName);
+                                                 "file: " + fileName);
         }
 
         return null;
@@ -184,7 +185,7 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
 
         if (log.isDebugEnabled()) {
             log.debug("Undeployment of the Synapse Import named : "
-                    + artifactName + " : Started");
+                      + artifactName + " : Started");
         }
         try {
             SynapseImport undeployingImport = getSynapseConfiguration().getSynapseImports().get(artifactName);
@@ -256,7 +257,7 @@ public class ImportDeployer extends AbstractSynapseArtifactDeployer {
                     FileUtils.moveFile(file, new File(backupFilePath));
                 } catch (IOException e) {
                     handleSynapseArtifactDeploymentError("Error while backing up the artifact: " +
-                            file.getName(), e);
+                                                         file.getName(), e);
                 }
             }
         }

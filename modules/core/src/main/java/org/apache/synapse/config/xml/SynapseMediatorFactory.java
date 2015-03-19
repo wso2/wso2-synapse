@@ -29,7 +29,7 @@ import java.util.Properties;
 
 /**
  * Builds the main mediator (@see SynapseConfiguration) of the Synapse instance
- * <p/>
+ *
  * <pre>
  * &lt;rules&gt;
  *   mediator+
@@ -49,7 +49,7 @@ public class SynapseMediatorFactory extends AbstractListMediatorFactory {
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(sm, elem);
+        processAuditStatus(sm,elem);
 
         addChildren(elem, sm, properties);
         return sm;

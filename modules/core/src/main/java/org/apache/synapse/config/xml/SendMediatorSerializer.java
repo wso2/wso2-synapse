@@ -22,13 +22,13 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
-import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.builtin.SendMediator;
+import org.apache.synapse.endpoints.Endpoint;
 
 /**
  * Serializer for {@link SendMediator} instances.
- *
+ * 
  * @see SendMediatorFactory
  */
 public class SendMediatorSerializer extends AbstractMediatorSerializer {
@@ -55,7 +55,7 @@ public class SendMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         if (mediator.isBuildMessage()) {
-            send.addAttribute(fac.createOMAttribute("buildmessage", nullNS, "true"));
+            send.addAttribute(fac.createOMAttribute("buildmessage", nullNS,"true"));
         }
 
         return send;

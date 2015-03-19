@@ -35,35 +35,25 @@ public class AsyncCallback implements AxisCallback {
 
     private static final Log log = LogFactory.getLog(AsyncCallback.class);
 
-    /**
-     * The corresponding Synapse outgoing message context this instance is holding onto
-     */
+    /** The corresponding Synapse outgoing message context this instance is holding onto */
     private final MessageContext synapseOutMsgCtx;
 
-    /**
-     * The corresponding Axis2 outgoing message context this instance is holding onto
-     */
+    /** The corresponding Axis2 outgoing message context this instance is holding onto */
     private org.apache.axis2.context.MessageContext axis2OutMsgCtx;
 
-    /**
-     * Time to timeout this callback
-     */
+    /** Time to timeout this callback */
     private long timeOutOn;
-    /**
-     * Action to perform when timeout occurs
-     */
+    /** Action to perform when timeout occurs */
     private int timeOutAction = SynapseConstants.NONE;
 
-    public AsyncCallback(org.apache.axis2.context.MessageContext messageContext, MessageContext synapseOutMsgCtx) {
+    public AsyncCallback( org.apache.axis2.context.MessageContext messageContext,MessageContext synapseOutMsgCtx) {
         this.synapseOutMsgCtx = synapseOutMsgCtx;
         this.axis2OutMsgCtx = messageContext;
     }
 
-    public void onMessage(org.apache.axis2.context.MessageContext messageContext) {
-    }
+    public void onMessage(org.apache.axis2.context.MessageContext messageContext) {}
 
-    public void onFault(org.apache.axis2.context.MessageContext messageContext) {
-    }
+    public void onFault(org.apache.axis2.context.MessageContext messageContext) {}
 
     public void onError(Exception e) {
         axis2OutMsgCtx.setFailureReason(e);
@@ -84,8 +74,7 @@ public class AsyncCallback implements AxisCallback {
         }
     }
 
-    public void onComplete() {
-    }
+    public void onComplete() {}
 
     public org.apache.synapse.MessageContext getSynapseOutMsgCtx() {
         return synapseOutMsgCtx;

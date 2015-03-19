@@ -34,15 +34,15 @@ public final class TenantInfoConfigProvider {
         Properties properties = SynapsePropertiesLoader.loadSynapseProperties();
         String property = properties.getProperty(CARBON_TENANT_INFO_CONFIGURATOR);
         if (property != null) {
-            try {
-                Class clazz = TenantInfoConfigProvider.class.getClassLoader().
-                        loadClass(property.trim());
-                TenantInfoConfigurator obj = (TenantInfoConfigurator) clazz.newInstance();
-                return obj;
-            } catch (Exception e) {
-                logger.error("Error while initializing tenant info configuration provider. Error:"
-                        + e.getLocalizedMessage());
-            }
+                try {
+                    Class clazz = TenantInfoConfigProvider.class.getClassLoader().
+                            loadClass(property.trim());
+                    TenantInfoConfigurator obj = (TenantInfoConfigurator) clazz.newInstance();
+                    return obj;
+                } catch (Exception e) {
+                    logger.error("Error while initializing tenant info configuration provider. Error:"
+                                 + e.getLocalizedMessage());
+                }
         }
         return null;
     }

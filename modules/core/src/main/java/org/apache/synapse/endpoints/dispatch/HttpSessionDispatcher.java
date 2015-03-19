@@ -63,7 +63,7 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
         }
 
         Map headerMap = getTransportHeaderMap(synCtx);
-        String contentType = (String) headerMap.get("Content-Type");
+        String contentType = (String)headerMap.get("Content-Type");
         if (log.isDebugEnabled()) {
             log.debug("Content Type : " + contentType);
         }
@@ -75,12 +75,12 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
             if (sessionList != null) {
                 for (String sessionID : sessionList) {
                     SessionInformation sessionInfoObj = SALSessions.getInstance().getSession(sessionID);
-                    if (sessionInfoObj != null && sessionInfoObj.getMember() != null) {
+                     if (sessionInfoObj != null && sessionInfoObj.getMember() != null) {
                         Map<String, String> subDomainNames =
                                 (Map<String, String>) sessionInfoObj.getMember().getProperties().get(HOSTS);
                         if (log.isDebugEnabled()) {
                             log.debug("Member Domain : " + (subDomainNames != null ? subDomainNames.get(hostName) : null) +
-                                    " : Session ID " + sessionID);
+                                      " : Session ID " + sessionID);
                         }
                         if (subDomainNames != null && subDomainNames.get(hostName) != null) {
                             if (log.isDebugEnabled()) {
@@ -88,15 +88,15 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
                             }
                             return sessionInfoObj;
                         }
-                    } else if (sessionInfoObj != null
-                            && sessionInfoObj.getMember() == null) {
-                        // looks like a session attached to a failed member.Just return the session in this case
-                        if (log.isDebugEnabled()) {
-                            log.debug("sessionInfo object[" + sessionInfoObj.getId() + "] found with a null member. "
-                                    + "Looks like this is attached to a failed member.");
-                        }
-                        return sessionInfoObj;
-                    }
+					} else if (sessionInfoObj != null
+							&& sessionInfoObj.getMember() == null) {
+						// looks like a session attached to a failed member.Just return the session in this case
+						if (log.isDebugEnabled()) {
+							log.debug("sessionInfo object["	+ sessionInfoObj.getId()+ "] found with a null member. "
+									+ "Looks like this is attached to a failed member.");
+						}
+						return sessionInfoObj;
+                     }
                 }
             }
         }
@@ -113,19 +113,19 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
      *
      * @param synCtx MessageContext possibly containing the "Set-Cookie" HTTP header.
      */
-    public void updateSession(MessageContext synCtx) {
+	public void updateSession(MessageContext synCtx) {
 
-        SessionCookie cookie = extractSessionCookie(synCtx, SET_COOKIE);
+		SessionCookie cookie = extractSessionCookie(synCtx, SET_COOKIE);
 
-        if (cookie != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Found the HTTP header [Set-Cookie]: " + cookie.toString() + "' for updating the session");
-            }
+		if (cookie != null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Found the HTTP header [Set-Cookie]: " + cookie.toString() + "' for updating the session");
+			}
 
-            SALSessions.getInstance().updateSession(synCtx, cookie);
-        }
+			SALSessions.getInstance().updateSession(synCtx, cookie);
+		}
 
-    }
+	}
 
     public void unbind(MessageContext synCtx) {
         SALSessions.getInstance().removeSession(extractSessionID(synCtx, COOKIE));
@@ -171,16 +171,16 @@ public class HttpSessionDispatcher extends AbstractDispatcher {
                         }
                         return null;
                     }
-                    for (String sessionId : sessionIds) {
-                        if (sessionId != null
-                                && (sessionId.indexOf("JSESSIONID") != -1 || sessionId
-                                .indexOf("PHPSESSID") != -1 || sessionId.indexOf("phpMyAdmin") != -1 ||
+                    for(String sessionId : sessionIds){
+						if (sessionId != null
+								&& (sessionId.indexOf("JSESSIONID") != -1 || sessionId
+										.indexOf("PHPSESSID") != -1 || sessionId.indexOf("phpMyAdmin") != -1 || 
                                 sessionId.indexOf("wordpress_test_cookie") != -1)) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Extracted SessionID : " + sessionId);
-                            }
-                            sessionList.add(sessionId.trim());
-                        }
+							if (log.isDebugEnabled()) {
+								log.debug("Extracted SessionID : " + sessionId);
+							}
+							sessionList.add(sessionId.trim());
+						}
                     }
                 } else {
                     if (log.isDebugEnabled()) {

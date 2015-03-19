@@ -91,8 +91,7 @@ public class SynapseControllerFactory {
             if (serverName == null) {
                 try {
                     serverName = InetAddress.getLocalHost().getHostName();
-                } catch (UnknownHostException ignore) {
-                }
+                } catch (UnknownHostException ignore) {}
                 log.info("The server name was not specified, defaulting to : " + serverName);
             } else {
                 log.info("Using server name : " + serverName);

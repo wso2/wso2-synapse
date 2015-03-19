@@ -29,13 +29,13 @@ import java.util.List;
 
 /**
  * Serializer for {@link XSLTMediator} instances.
- *
+ * 
  * @see XSLTMediatorFactory
  */
 public class XSLTMediatorSerializer extends AbstractMediatorSerializer {
 
     private static final QName ATTRIBUTE_Q
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "attribute");
+                = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "attribute");
 
     public OMElement serializeSpecificMediator(Mediator m) {
 
@@ -48,12 +48,12 @@ public class XSLTMediatorSerializer extends AbstractMediatorSerializer {
 
         if (mediator.getXsltKey() != null) {
             // Serialize Value using ValueSerializer
-            ValueSerializer keySerializer = new ValueSerializer();
+            ValueSerializer keySerializer =  new ValueSerializer();
             keySerializer.serializeValue(mediator.getXsltKey(), XMLConfigConstants.KEY, xslt);
         } else {
             handleException("Invalid XSLT mediator. XSLT registry key is required");
         }
-        saveTracingState(xslt, mediator);
+        saveTracingState(xslt,mediator);
 
         if (mediator.getSource() != null) {
 
@@ -61,7 +61,7 @@ public class XSLTMediatorSerializer extends AbstractMediatorSerializer {
         }
         if (mediator.getTargetPropertyName() != null) {
             xslt.addAttribute(fac.createOMAttribute(
-                    "target", nullNS, mediator.getTargetPropertyName()));
+                "target", nullNS, mediator.getTargetPropertyName()));
         }
         serializeProperties(xslt, mediator.getProperties());
         List<MediatorProperty> features = mediator.getFeatures();
@@ -75,15 +75,15 @@ public class XSLTMediatorSerializer extends AbstractMediatorSerializer {
                 }
                 if (mp.getValue() != null) {
                     prop.addAttribute(fac.createOMAttribute("value", nullNS, mp.getValue()));
-                } else {
+                }  else {
                     handleException("The Feature value is missing");
                 }
             }
         }
         serializeMediatorProperties(xslt, mediator.getAttributes(), ATTRIBUTE_Q);
-
+        
         ResourceMapSerializer.serializeResourceMap(xslt, mediator.getResourceMap());
-
+        
         return xslt;
     }
 

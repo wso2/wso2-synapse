@@ -45,8 +45,8 @@ public class DefaultEndpointSerializer extends EndpointSerializer {
 
         DefaultEndpoint defaultEndpoint = (DefaultEndpoint) endpoint;
 
-        serializeCommonAttributes(defaultEndpoint, endpointElement);
-
+        serializeCommonAttributes(defaultEndpoint,endpointElement);
+        
         EndpointDefinition epAddress = defaultEndpoint.getDefinition();
         OMElement defaultElement = serializeEndpointDefinition(epAddress);
         endpointElement.addChild(defaultElement);
@@ -59,7 +59,7 @@ public class DefaultEndpointSerializer extends EndpointSerializer {
 
     @Override
     protected void serializeSpecificEndpointProperties(EndpointDefinition endpointDefinition,
-                                                       OMElement element) {
+        OMElement element) {
 
         if (SynapseConstants.FORMAT_POX.equals(endpointDefinition.getFormat())) {
             element.addAttribute(fac.createOMAttribute("format", null, "pox"));

@@ -5,7 +5,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.RespondMediator;
 
-public class RespondMediatorSerializer extends AbstractMediatorSerializer {
+public class RespondMediatorSerializer extends AbstractMediatorSerializer{
     @Override
     protected OMElement serializeSpecificMediator(Mediator m) {
         if (!(m instanceof RespondMediator)) {

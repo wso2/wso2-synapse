@@ -22,12 +22,11 @@ package org.apache.synapse.eventing;
 import org.apache.synapse.MessageContext;
 
 /**
- * Synapse Event Filter that use the message context to do filtering.
+ * Synapse Event Filter that use the message context to do filtering. 
  */
 public interface SynapseEventFilter {
     /**
      * Check the incoming event satisfied with the defined filter
-     *
      * @param mc Message Context
      * @return True|False
      */

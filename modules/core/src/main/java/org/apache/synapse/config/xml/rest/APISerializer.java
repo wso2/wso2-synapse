@@ -42,7 +42,7 @@ public class APISerializer {
         apiElt.addAttribute("name", api.getAPIName(), null);
         apiElt.addAttribute("context", api.getContext(), null);
 
-        VersionStrategySerializer.serializeVersioningStrategy(api.getVersionStrategy(), apiElt);
+        VersionStrategySerializer.serializeVersioningStrategy(api.getVersionStrategy(), apiElt) ;
         if (api.getHost() != null) {
             apiElt.addAttribute("hostname", api.getHost(), null);
         }
@@ -63,7 +63,7 @@ public class APISerializer {
                 OMElement handlerElt = fac.createOMElement("handler", SynapseConstants.SYNAPSE_OMNAMESPACE);
                 handlerElt.addAttribute("class", handler.getClass().getName(), null);
                 handlersElt.addChild(handlerElt);
-                if (handler.getProperties() != null) {
+                if (handler.getProperties()!=null) {
                     Map propertyMap = handler.getProperties();
                     if (propertyMap != null) {
                         Iterator itr = propertyMap.keySet().iterator();

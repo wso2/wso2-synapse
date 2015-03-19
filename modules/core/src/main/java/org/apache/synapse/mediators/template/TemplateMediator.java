@@ -31,8 +31,8 @@ import java.util.Stack;
  * This mediator is responsible for handling function templates for synapse. This will parse parameters
  * passed from an <invoke> mediator and will be made available to sequences defined within this template.
  * parameters will be accessible through synapse 'function stack'. Users should access these through an
- * xpath extension var or function , defined under function scope
- * ie:- $func:p1 or get-property('func','p2')
+ *  xpath extension var or function , defined under function scope
+ *  ie:- $func:p1 or get-property('func','p2')
  */
 public class TemplateMediator extends AbstractListMediator {
 
@@ -40,13 +40,9 @@ public class TemplateMediator extends AbstractListMediator {
 
     private String eipPatternName;
     private String fileName;
-    /**
-     * flag to ensure that each and every sequence is initialized and destroyed atmost once
-     */
+    /** flag to ensure that each and every sequence is initialized and destroyed atmost once */
     private boolean initialized = false;
-    /**
-     * is this definition dynamic
-     */
+    /** is this definition dynamic */
     private boolean dynamic = false;
 
     public void setParameters(Collection<String> paramNames) {
@@ -90,8 +86,7 @@ public class TemplateMediator extends AbstractListMediator {
     /**
      * for each message coming to this function template ,pushes a function context containing
      * parameters into Synapse Function Stack.
-     *
-     * @param synCtx Synapse Message context
+     * @param synCtx  Synapse Message context
      */
     private void pushFuncContextTo(MessageContext synCtx) {
         TemplateContext funcContext = new TemplateContext(eipPatternName, paramNames);
@@ -100,7 +95,7 @@ public class TemplateMediator extends AbstractListMediator {
 
         Object functionStackObj = synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
         Stack<TemplateContext> stack = null;
-        if ((functionStackObj instanceof Stack)) {
+        if((functionStackObj instanceof Stack)){
             stack = (Stack<TemplateContext>) functionStackObj;
         }
 

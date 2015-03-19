@@ -21,12 +21,14 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
+import org.apache.synapse.mediators.eip.Target;
+
+import java.util.Iterator;
 
 /**
  * This will serialize the CloneMediator to the xml configuration as specified bellow
- * <p/>
+ *
  * <pre>
  *  &lt;clone [continueParent=(true | false)]&gt;
  *   &lt;target [to="uri"] [soapAction="qname"] [sequence="sequence_ref"]
@@ -79,7 +81,7 @@ public class CloneMediatorSerializer extends AbstractMediatorSerializer {
     /**
      * This method will implement the getMediatorClassName method of the
      * MediatorSerializer interface
-     *
+     * 
      * @return full class name of the Mediator which is serialized by this Serializer
      */
     public String getMediatorClassName() {

@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -47,7 +48,7 @@ public class Value {
     private String name = null;
 
     /**
-     * The static key value
+     * The static key value 
      */
     private String keyValue = null;
     /**
@@ -56,7 +57,6 @@ public class Value {
     private SynapsePath expression = null;
 
     private List<OMNamespace> namespaceList = new ArrayList<OMNamespace>();
-
     /**
      * Create a key instance using a static key
      *
@@ -90,7 +90,7 @@ public class Value {
      * @return SynapsePath
      */
     public SynapsePath getExpression() {
-        if (expression == null && keyValue != null && hasExprTypeKey()) {
+        if(expression == null && keyValue != null && hasExprTypeKey()){
             try {
                 SynapseXPath expressionTypeKey = new SynapseXPath(keyValue.substring(1, keyValue.length() - 1));
                 for (OMNamespace aNamespaceList : namespaceList) {
@@ -122,7 +122,7 @@ public class Value {
             return expression.stringValueOf(synCtx);
         } else {
             handleException("Can not evaluate the key: " +
-                    "key should be static or dynamic key");
+                            "key should be static or dynamic key");
             return null;
         }
 
@@ -186,44 +186,43 @@ public class Value {
 
     /**
      * checks whether key returned by #getKeyValue() is a string of an expression type.
-     *
      * @return if true if this is an expression
      */
     public boolean hasExprTypeKey() {
         return keyValue != null && keyValue.startsWith("{") && keyValue.endsWith("}");
     }
-
-    public boolean hasPropertyEvaluateExpr() {
-        return keyValue != null && keyValue.contains("get-property");
+    
+    public boolean hasPropertyEvaluateExpr(){
+    	return keyValue != null && keyValue.contains("get-property");
     }
+    
+	public Object evalutePropertyExpression(MessageContext synCtx) {
+		//this.keyValue = null;
+		//String evaluatedProperty = this.evaluateValue(synCtx);
+		SynapseXPath _expression = null;
+		try {
+			_expression = new SynapseXPath(this.keyValue.substring(1, keyValue.length() - 1));
+			for (OMNamespace aNamespaceList : namespaceList) {
+				_expression.addNamespace(aNamespaceList);
+			}
+			String result =_expression.stringValueOf(synCtx);
+			
+			SynapseXPath expression = new SynapseXPath(result);
+			for (OMNamespace aNamespaceList : namespaceList) {
+				expression.addNamespace(aNamespaceList);
+			}
+			return expression;
+			
+		} catch (Exception e) {
+			  handleException("Can not evaluate escaped expression..");
+		}
+		return this.expression;
 
-    public Object evalutePropertyExpression(MessageContext synCtx) {
-        //this.keyValue = null;
-        //String evaluatedProperty = this.evaluateValue(synCtx);
-        SynapseXPath _expression = null;
-        try {
-            _expression = new SynapseXPath(this.keyValue.substring(1, keyValue.length() - 1));
-            for (OMNamespace aNamespaceList : namespaceList) {
-                _expression.addNamespace(aNamespaceList);
-            }
-            String result = _expression.stringValueOf(synCtx);
+	}
 
-            SynapseXPath expression = new SynapseXPath(result);
-            for (OMNamespace aNamespaceList : namespaceList) {
-                expression.addNamespace(aNamespaceList);
-            }
-            return expression;
-
-        } catch (Exception e) {
-            handleException("Can not evaluate escaped expression..");
-        }
-        return this.expression;
-
-    }
-
-    public void setNamespaces(OMElement elem) {
+    public void setNamespaces(OMElement elem){
         Iterator namespaces = elem.getAllDeclaredNamespaces();
-        while (namespaces.hasNext()) {
+        while (namespaces.hasNext()){
             OMNamespace ns = (OMNamespace) namespaces.next();
             namespaceList.add(ns);
         }

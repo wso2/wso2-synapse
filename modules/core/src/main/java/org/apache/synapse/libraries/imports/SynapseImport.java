@@ -28,39 +28,39 @@ public class SynapseImport {
     private boolean status = false;
 
     public String getLibName() {
-        return importedLibName;
+	return importedLibName;
     }
 
     public void setLibName(String name) {
-        this.importedLibName = name;
+	this.importedLibName = name;
     }
 
     public String getLibPackage() {
-        return importedLibPackage;
+	return importedLibPackage;
     }
 
     public void setLibPackage(String version) {
-        this.importedLibPackage = version;
+	this.importedLibPackage = version;
     }
 
     public String getFileName() {
-        return fileName;
+	return fileName;
     }
 
     public void setFileName(String fileName) {
-        this.fileName = fileName;
+	this.fileName = fileName;
     }
 
     public String getName() {
-        return LibDeployerUtils.getQualifiedName(this);
+	return LibDeployerUtils.getQualifiedName(this);
     }
 
     public boolean isStatus() {
-        return status;
+	return status;
     }
 
     public void setStatus(boolean status) {
-        this.status = status;
+	this.status = status;
     }
 
 }

@@ -29,6 +29,7 @@ import org.apache.synapse.endpoints.Template;
 
 import javax.xml.namespace.QName;
 import java.util.List;
+import java.util.Map;
 
 public class TemplateSerializer {
     protected static OMFactory fac = OMAbstractFactory.getOMFactory();

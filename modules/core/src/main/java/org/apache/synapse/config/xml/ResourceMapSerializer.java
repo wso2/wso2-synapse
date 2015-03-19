@@ -19,13 +19,13 @@
 
 package org.apache.synapse.config.xml;
 
+import java.util.Map;
+
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.util.resolver.ResourceMap;
-
-import java.util.Map;
 
 /**
  * Creates a sequence of <tt>&lt;resource&gt;</tt> elements from a ResourceMap object:
@@ -35,14 +35,14 @@ import java.util.Map;
  */
 public class ResourceMapSerializer {
     private static final OMFactory fac = OMAbstractFactory.getOMFactory();
-
+    
     public static void serializeResourceMap(OMElement parent, ResourceMap resourceMap) {
         if (resourceMap != null) {
-            for (Map.Entry<String, String> entry : resourceMap.getResources().entrySet()) {
+        	for (Map.Entry<String,String> entry : resourceMap.getResources().entrySet()) {
                 OMElement resource = fac.createOMElement("resource",
-                        SynapseConstants.SYNAPSE_OMNAMESPACE);
-                resource.addAttribute("location", (String) entry.getKey(), null);
-                resource.addAttribute("key", (String) entry.getValue(), null);
+                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                resource.addAttribute("location", (String)entry.getKey(), null);
+                resource.addAttribute("key", (String)entry.getValue(), null);
                 parent.addChild(resource);
             }
         }

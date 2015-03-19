@@ -47,12 +47,12 @@ public class SynapseMediator extends AbstractListMediator {
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Mediation using '" + SynapseConstants.MAIN_SEQUENCE_KEY +
-                    "' sequence Message is a : " + (synCtx.isResponse() ? "response" : "request"));
+                "' sequence Message is a : " + (synCtx.isResponse() ? "response" : "request"));
 
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
-        }
+        }       
         boolean result = super.mediate(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -60,8 +60,8 @@ public class SynapseMediator extends AbstractListMediator {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
             synLog.traceOrDebug("End : Mediation using '" +
-                    SynapseConstants.MAIN_SEQUENCE_KEY + "' sequence");
+                SynapseConstants.MAIN_SEQUENCE_KEY + "' sequence");
         }
-        return result;
+        return result;        
     }
 }

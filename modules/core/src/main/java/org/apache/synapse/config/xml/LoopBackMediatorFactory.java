@@ -33,7 +33,7 @@ public class LoopBackMediatorFactory extends AbstractMediatorFactory {
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         Mediator loopBackMediator = new LoopBackMediator();
-        processAuditStatus(loopBackMediator, elem);
+        processAuditStatus(loopBackMediator,elem);
         return loopBackMediator;
     }
 

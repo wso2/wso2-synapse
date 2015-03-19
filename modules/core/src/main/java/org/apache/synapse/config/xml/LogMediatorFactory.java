@@ -29,20 +29,20 @@ import java.util.Properties;
 
 /**
  * Created a Log mediator that logs messages using commons-logging.
- * <p/>
+ *
  * <pre>
  * &lt;log [level="simple|headers|full|custom"]&gt;
  *      &lt;property&gt; *
  * &lt;/log&gt;
  * </pre>
  */
-public class LogMediatorFactory extends AbstractMediatorFactory {
+public class LogMediatorFactory extends AbstractMediatorFactory  {
 
-    private static final QName LOG_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "log");
-    private static final String SIMPLE = "simple";
+    private static final QName LOG_Q    = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "log");
+    private static final String SIMPLE  = "simple";
     private static final String HEADERS = "headers";
-    private static final String FULL = "full";
-    private static final String CUSTOM = "custom";
+    private static final String FULL    = "full";
+    private static final String CUSTOM  = "custom";
     public static final String CAT_INFO = "INFO";
     public static final String CAT_TRACE = "TRACE";
     public static final String CAT_DEBUG = "DEBUG";
@@ -63,8 +63,8 @@ public class LogMediatorFactory extends AbstractMediatorFactory {
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(logMediator, elem);
-
+        processAuditStatus(logMediator,elem);
+        
         // Set the high level set of properties to be logged (i.e. log level)
         OMAttribute level = elem.getAttribute(ATT_LEVEL);
         if (level != null) {

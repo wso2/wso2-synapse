@@ -105,6 +105,7 @@ public class MessageStoreFactory {
         messageStore.setParameters(getParameters(elem));
 
 
+
         log.info("Successfully added Message Store configuration of : [" + nameAtt.getAttributeValue() + "].");
         return messageStore;
     }

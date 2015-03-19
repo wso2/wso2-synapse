@@ -42,7 +42,7 @@ public class SynapseException extends RuntimeException {
      * Convenience constructor that allows to log and throw the exception in a single
      * instruction. It will call {@link SynapseLog#logSynapseException(String, Throwable)}
      * to log the error.
-     *
+     * 
      * @param msg
      * @param synLog
      */
@@ -55,7 +55,7 @@ public class SynapseException extends RuntimeException {
      * Convenience constructor that allows to log and throw the exception in a single
      * instruction. It will call {@link SynapseLog#logSynapseException(String, Throwable)}
      * to log the error.
-     *
+     * 
      * @param msg
      * @param cause
      * @param synLog

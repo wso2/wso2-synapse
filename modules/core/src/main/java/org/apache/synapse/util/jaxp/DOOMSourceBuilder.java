@@ -19,13 +19,13 @@
 
 package org.apache.synapse.util.jaxp;
 
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.dom.DOOMAbstractFactory;
 import org.apache.axiom.om.util.ElementHelper;
 import org.w3c.dom.Element;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
 
 /**
  * {@link SourceBuilder} implementation that transforms the AXIOM tree
@@ -35,7 +35,7 @@ public class DOOMSourceBuilder implements SourceBuilder {
     public Source getSource(OMElement node) {
         return new DOMSource(
                 ((Element) ElementHelper.importOMElement(node,
-                        DOOMAbstractFactory.getOMFactory())).getOwnerDocument());
+                DOOMAbstractFactory.getOMFactory())).getOwnerDocument());
     }
 
     public void release() {

@@ -58,9 +58,10 @@ public class POXUtils {
                 }
 
                 OMElement om = getOMFromXML(faultDetail);
-                if (om == null) {
+                if(om == null) {
                     faultPayload.setText(faultDetail);
-                } else {
+                }
+                else  {
                     faultPayload.addChild(om);
                 }
 
@@ -70,12 +71,12 @@ public class POXUtils {
 
                 if (log.isDebugEnabled()) {
                     log.debug("Setting the fault reason : "
-                            + faultReasonValue + " as athe POX Fault");
+                        + faultReasonValue + " as athe POX Fault");
                 }
                 faultPayload.setText(faultReasonValue);
 
             } else if (log.isDebugEnabled()) {
-
+                
                 log.debug("Couldn't find the fault detail or reason to compose POX Fault");
             }
 
@@ -88,9 +89,9 @@ public class POXUtils {
             if (log.isDebugEnabled()) {
 
                 String msg = "Original SOAP Message : " + msgCtx.getEnvelope().toString() +
-                        "POXFault Message created : " + faultPayload.toString();
+                    "POXFault Message created : " + faultPayload.toString();
                 log.debug(msg);
-
+                
                 if (log.isTraceEnabled()) {
                     log.trace(msg);
                 }
@@ -109,7 +110,7 @@ public class POXUtils {
         int numOfLT = StringUtils.countMatches(text, "<") - escape;
 
         //Should satisfy the conditions if an XML
-        if (numOfLT == 0 || ((numOfLTWithS * 2 + numOfGTWithS) != numOfLT)) {
+        if(numOfLT == 0 || ((numOfLTWithS * 2 + numOfGTWithS) != numOfLT)) {
             return null;
         }
 

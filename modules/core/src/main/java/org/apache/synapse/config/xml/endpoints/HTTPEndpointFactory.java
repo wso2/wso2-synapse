@@ -43,12 +43,12 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
 
     @Override
     public EndpointDefinition createEndpointDefinition(OMElement elem) {
-        DefinitionFactory fac = getEndpointDefinitionFactory();
+            DefinitionFactory fac = getEndpointDefinitionFactory();
         EndpointDefinition endpointDefinition;
         if (fac == null) {
             fac = new EndpointDefinitionFactory();
             endpointDefinition = fac.createDefinition(elem);
-        } else {
+        } else{
             endpointDefinition = fac.createDefinition(elem);
         }
         extractSpecificEndpointProperties(endpointDefinition, elem);
@@ -76,9 +76,9 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             if (uriTemplateAttr != null) {
 
 
-                httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(uriTemplateAttr.getAttributeValue()));
-                // Set the address to the initial template value.
-                definition.setAddress(uriTemplateAttr.getAttributeValue());
+                    httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(uriTemplateAttr.getAttributeValue()));
+                    // Set the address to the initial template value.
+                    definition.setAddress(uriTemplateAttr.getAttributeValue());
 
 
             }
@@ -94,7 +94,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
                 // Method is not a mandatory parameter for HttpEndpoint. So methodAttr Can be null
                 if (log.isDebugEnabled()) {
                     log.debug("Method is not specified for HttpEndpoint. " +
-                            "Hence using the http method from incoming message");
+                              "Hence using the http method from incoming message");
                 }
             }
 
@@ -124,7 +124,7 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Invalid http method specified." +
-                            "Hence using the http method from incoming message");
+                              "Hence using the http method from incoming message");
                 }
             }
         }

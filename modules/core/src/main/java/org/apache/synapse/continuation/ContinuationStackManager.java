@@ -21,7 +21,11 @@ package org.apache.synapse.continuation;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceType;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.API;
@@ -33,6 +37,7 @@ import org.apache.synapse.rest.Resource;
  * <p/>
  * All operations for the stack done by mediators are done through this manager class in order to
  * easily control the operations from a central place.
+ *
  */
 public class ContinuationStackManager {
 
@@ -78,16 +83,16 @@ public class ContinuationStackManager {
      * @param synCtx Message Context
      */
     public static void updateSeqContinuationState(MessageContext synCtx, int position) {
-        if (synCtx.isContinuationEnabled()) {
-            if (!synCtx.getContinuationStateStack().isEmpty()) {
-                ContinuationState seqContState = synCtx
-                        .getContinuationStateStack().peek();
-                seqContState.getLeafChild().setPosition(position);
-            } else {
-                // Ideally we should not get here.
-                log.warn("Continuation Stack is empty. Probably due to a configuration issue");
-            }
-        }
+		if (synCtx.isContinuationEnabled()) {
+			if (!synCtx.getContinuationStateStack().isEmpty()) {
+				ContinuationState seqContState = synCtx
+						.getContinuationStateStack().peek();
+				seqContState.getLeafChild().setPosition(position);
+			} else {
+				// Ideally we should not get here.
+				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
+			}
+		}
     }
 
     /**
@@ -101,16 +106,16 @@ public class ContinuationStackManager {
     public static void addReliantContinuationState(MessageContext synCtx, int subBranch,
                                                    int position) {
         if (synCtx.isContinuationEnabled()) {
-            if (!synCtx.getContinuationStateStack().isEmpty()) {
-                ContinuationState seqContState = synCtx
-                        .getContinuationStateStack().peek();
-                seqContState.getLeafChild().setPosition(position);
-                seqContState.addLeafChild(new ReliantContinuationState(
-                        subBranch));
-            } else {
-                // Ideally we should not get here.
-                log.warn("Continuation Stack is empty. Probably due to a configuration issue");
-            }
+			if (!synCtx.getContinuationStateStack().isEmpty()) {
+				ContinuationState seqContState = synCtx
+						.getContinuationStateStack().peek();
+				seqContState.getLeafChild().setPosition(position);
+				seqContState.addLeafChild(new ReliantContinuationState(
+						subBranch));
+			} else {
+				// Ideally we should not get here.
+				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
+			}
         }
     }
 
@@ -121,16 +126,16 @@ public class ContinuationStackManager {
      * @param synCtx MessageContext
      */
     public static void removeReliantContinuationState(MessageContext synCtx) {
-        if (synCtx.isContinuationEnabled()) {
-            if (!synCtx.getContinuationStateStack().isEmpty()) {
-                ContinuationState seqContState = synCtx
-                        .getContinuationStateStack().peek();
-                seqContState.removeLeafChild();
-            } else {
-                // Ideally we should not get here.
-                log.warn("Continuation Stack is empty. Probably due to a configuration issue");
-            }
-        }
+		if (synCtx.isContinuationEnabled()) {
+			if (!synCtx.getContinuationStateStack().isEmpty()) {
+				ContinuationState seqContState = synCtx
+						.getContinuationStateStack().peek();
+				seqContState.removeLeafChild();
+			} else {
+				// Ideally we should not get here.
+				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
+			}
+		}
     }
 
     /**
@@ -144,7 +149,7 @@ public class ContinuationStackManager {
 
         SeqContinuationState clone =
                 new SeqContinuationState(oriSeqContinuationState.getSeqType(),
-                        oriSeqContinuationState.getSeqName());
+                                         oriSeqContinuationState.getSeqName());
         clone.setPosition(oriSeqContinuationState.getPosition());
         if (oriSeqContinuationState.hasChild()) {
             clone.setChildContState(getClonedReliantContState(
@@ -174,7 +179,6 @@ public class ContinuationStackManager {
 
     /**
      * Remove all ContinuationStates from ContinuationState Stack
-     *
      * @param synCtx MessageContext
      */
     public static void clearStack(MessageContext synCtx) {

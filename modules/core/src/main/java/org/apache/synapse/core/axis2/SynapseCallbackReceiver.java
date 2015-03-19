@@ -34,7 +34,11 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
-import org.apache.synapse.*;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.FaultHandler;
+import org.apache.synapse.ServerContextInformation;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -60,7 +64,7 @@ import java.util.Timer;
  * This is the message receiver that receives the responses for outgoing messages sent out
  * by Synapse. It holds a callbackStore that maps the [unique] messageID of each message to
  * a callback object that gets executed on timeout or when a response is received (before timeout)
- * <p/>
+ *
  * The AnonymousServiceFactory uses this MessageReceiver for all Anonymous services created by it.
  * This however - effectively - is a singleton class
  */
@@ -74,8 +78,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
     /**
      * Create the *single* instance of this class that would be used by all anonymous services
      * used for outgoing messaging.
-     *
-     * @param synCfg             the Synapse configuration
+     * @param synCfg the Synapse configuration
      * @param contextInformation server runtime information
      */
     public SynapseCallbackReceiver(SynapseConfiguration synCfg,
@@ -85,7 +88,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
         // create the Timer object and a TimeoutHandler task
         TimeoutHandler timeoutHandler = new TimeoutHandler(callbackStore, contextInformation);
-
+        
         Timer timeOutTimer = synCfg.getSynapseTimer();
         long timeoutHandlerInterval = SynapseConfigUtils.getTimeoutHandlerInterval();
 
@@ -122,19 +125,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
          * greater than 500 the registered callback will be removed and response message context will be
          * routed to the failover processes on http status code
          */
-        if (messageCtx.getProperty(NhttpConstants.HTTP_SC) != null) {
+        if(messageCtx.getProperty(NhttpConstants.HTTP_SC) != null) {
 
-            if ((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC) >= 500) {
+            if ((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC) >= 500 ) {
                 if (log.isDebugEnabled()) {
                     log.debug(this + " Server http status in the response message, response is route back to the fail-over");
                 }
                 /**Remove callback since we are going to handle response separately*/
-                AsyncCallback asyncCallback = (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
+                AsyncCallback asyncCallback = (AsyncCallback)callbackStore.remove(messageCtx.getMessageID());
                 org.apache.synapse.MessageContext synMsgCtx = ((AsyncCallback) asyncCallback).getSynapseOutMsgCtx();
 
                 FailoverEndpointOnHttpStatusCode failoverEndpointOnHttpStatusCode = new FailoverEndpointOnHttpStatusCode();
                 /**resend wil handle message resending based on the http status code*/
-                failoverEndpointOnHttpStatusCode.resend(Integer.toString((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC)), (org.apache.synapse.MessageContext) synMsgCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX));
+                failoverEndpointOnHttpStatusCode.resend(Integer.toString((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC)),(org.apache.synapse.MessageContext)synMsgCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX));
                 return;
             }
         }
@@ -173,7 +176,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         }
 
         if (messageID != null) {
-            AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageID);
+            AsyncCallback callback = (AsyncCallback)callbackStore.remove(messageID);
             if (log.isDebugEnabled()) {
                 log.debug("Callback removed for request message id : " + messageID +
                         ". Pending callbacks count : " + callbackStore.size());
@@ -186,18 +189,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // gets duplicated, and we should remove it
                 removeDuplicateRelatesTo(messageCtx, relates);
             }
-
+            
             if (callback != null) {
                 handleMessage(messageID, messageCtx, ((AsyncCallback) callback).getSynapseOutMsgCtx(),
-                        (AsyncCallback) callback);
-
+                        (AsyncCallback)callback);
+                
             } else {
                 // TODO invoke a generic synapse error handler for this message
                 log.warn("Synapse received a response for the request with message Id : " +
                         messageID + " But a callback is not registered (anymore) to process this response");
             }
 
-        } else if (!messageCtx.isPropertyTrue(NhttpConstants.SC_ACCEPTED)) {
+        } else if (!messageCtx.isPropertyTrue(NhttpConstants.SC_ACCEPTED)){
             // TODO invoke a generic synapse error handler for this message
             log.warn("Synapse received a response message without a message Id");
         }
@@ -211,10 +214,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
      * @param synapseOutMsgCtx the corresponding (outgoing) Synapse MessageContext for the above
      *                         Axis2 MC, that holds Synapse specific information such as the error
      *                         handler stack and local properties etc.
-     * @throws AxisFault if the message cannot be processed
+     * @throws AxisFault       if the message cannot be processed
      */
-    private void handleMessage(String messageID, MessageContext response,
-                               org.apache.synapse.MessageContext synapseOutMsgCtx, AsyncCallback callback) throws AxisFault {
+    private void handleMessage(String messageID ,MessageContext response,
+        org.apache.synapse.MessageContext synapseOutMsgCtx, AsyncCallback callback) throws AxisFault {
         // apply the tenant information to the out message context
         TenantInfoConfigurator configurator = synapseOutMsgCtx.getEnvironment()
                 .getTenantInfoConfigurator();
@@ -244,11 +247,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        response.getProperty(SynapseConstants.ERROR_CODE));
+                    response.getProperty(SynapseConstants.ERROR_CODE));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
-                        response.getProperty(SynapseConstants.ERROR_MESSAGE));
+                    response.getProperty(SynapseConstants.ERROR_MESSAGE));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                        response.getProperty(SynapseConstants.ERROR_DETAIL));
+                    response.getProperty(SynapseConstants.ERROR_DETAIL));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
                 if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
@@ -260,20 +263,21 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     log.debug("[Failed Request Message ID : " + messageID + "]" +
                             " [New to be Retried Request Message ID : " +
                             synapseOutMsgCtx.getMessageID() + "]");
-                }
-
-                int errorCode = (Integer) response.getProperty(SynapseConstants.ERROR_CODE);
+                }  
+                
+                int errorCode = (Integer)response.getProperty(SynapseConstants.ERROR_CODE);
 
                 //If a timeout has occured and the timeout action of the callback is to discard the message
-                if (errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT &&
-                        callback.getTimeOutAction() == SynapseConstants.DISCARD) {
-                    //Do not execute any fault sequences. Discard message
-                    if (log.isWarnEnabled()) {
-                        log.warn("Synapse timed out for the request with Message ID : " + messageID +
-                                ". Ignoring fault handlers since the timeout action is DISCARD");
-                    }
-                    faultStack.removeAllElements();
-                } else {
+                if(errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT &&
+                   callback.getTimeOutAction() == SynapseConstants.DISCARD){
+                        //Do not execute any fault sequences. Discard message
+                        if(log.isWarnEnabled()){
+                            log.warn("Synapse timed out for the request with Message ID : " + messageID +
+                                      ". Ignoring fault handlers since the timeout action is DISCARD");
+                        }
+                        faultStack.removeAllElements();
+                }
+                else{
                     ((FaultHandler) faultStack.pop()).handleFault(synapseOutMsgCtx, null);
                 }
             }
@@ -284,9 +288,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             // if the send was successful, so remove it before we proceed any further
             Stack faultStack = synapseOutMsgCtx.getFaultStack();
 
-            Endpoint successfulEndpoint = null;
+            Endpoint successfulEndpoint=null;
             if (faultStack != null && !faultStack.isEmpty()
-                    && faultStack.peek() instanceof Endpoint) {
+                && faultStack.peek() instanceof Endpoint) {
                 successfulEndpoint = (Endpoint) faultStack.pop();
             }
 
@@ -354,7 +358,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             // property state to original state.
             if (axisOutMsgCtx.getProperty(
                     AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES) != null) {
-
+                
                 response.setProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES,
                         axisOutMsgCtx.getProperty(
                                 AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES));
@@ -365,20 +369,20 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             Object messageType = axisOutMsgCtx.getProperty(
                     org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
             if (!HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(messageType)) {
-                // copy the message type property that's used by the out message to the
-                // response message
+                 // copy the message type property that's used by the out message to the
+                 // response message
                 response.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
-                        messageType);
+                    messageType);
             }
 
             // compare original received message (axisOutMsgCtx) soap version with the response
             // if they are different change to original version 
-            if (axisOutMsgCtx.isSOAP11() != response.isSOAP11()) {
-                if (axisOutMsgCtx.isSOAP11()) {
-                    SOAPUtils.convertSOAP12toSOAP11(response);
-                } else {
-                    SOAPUtils.convertSOAP11toSOAP12(response);
-                }
+            if(axisOutMsgCtx.isSOAP11() != response.isSOAP11()) {
+            	if(axisOutMsgCtx.isSOAP11()) {
+            		SOAPUtils.convertSOAP12toSOAP11(response);
+            	} else {
+            		SOAPUtils.convertSOAP11toSOAP12(response);
+            	}
             }
 
             if (axisOutMsgCtx.getMessageID() != null) {
@@ -406,78 +410,79 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             if (Constants.VALUE_TRUE.equals(errorOnSOAPFault) && successfulEndpoint != null) {
 
-                if (log.isDebugEnabled()) {
+                if(log.isDebugEnabled()){
                     log.debug("FORCE_ERROR_ON_SOAP_FAULT is true, checking for SOAPFault");
                 }
-
+                
                 try {
-                    RelayUtils.buildMessage(((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext(), true);
+                    RelayUtils.buildMessage(((Axis2MessageContext) synapseInMessageContext).getAxis2MessageContext(),true);
                 } catch (Exception e) {
-                    // handleException("Error while building message", e, synapseInMessageContext);
+                   // handleException("Error while building message", e, synapseInMessageContext);
                 }
 
                 if ((synapseInMessageContext.getEnvelope() != null) && synapseInMessageContext.getEnvelope().hasFault()) {
-
-                    if (log.isDebugEnabled()) {
-                        log.debug("SOAPFault found in response message, forcing endpoint " +
-                                successfulEndpoint.getName() + " to fail");
+                
+                    if(log.isDebugEnabled()){
+                        log.debug("SOAPFault found in response message, forcing endpoint "+
+                                successfulEndpoint.getName()+" to fail");
                     }
-
+                    
                     //setup new pipe configuration..if failure happens (this will be setup as the source writer and during the TargetContext
                     //clean up operation the writer will be reset and pull to the buffer
-                    MessageContext axis2OUTMC = ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
+                	MessageContext axis2OUTMC =((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
                     NHttpServerConnection conn = (NHttpServerConnection) axis2OUTMC.getProperty("pass-through.Source-Connection");
-                    if (conn != null) {
-                        SourceConfiguration sourceConfiguration = (SourceConfiguration) axis2OUTMC.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
-                        Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
-                                sourceConfiguration);
-                        axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
-                    }
-
-
+					if (conn != null) {
+						SourceConfiguration sourceConfiguration = (SourceConfiguration) axis2OUTMC.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+						Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
+						                     sourceConfiguration);
+						axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
+					}
+                    
+                    
+                   
                     StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
                             ErrorLogFactory.createErrorLog(response));
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
-
-                    boolean failOver = false;
-                    if (successfulEndpoint instanceof AbstractEndpoint) {
-                        Endpoint endpoint = ((AbstractEndpoint) successfulEndpoint).getParentEndpoint();
-                        if (endpoint != null && (endpoint instanceof FailoverEndpoint)) {
-                            failOver = true;
-                        }
+                    
+                    boolean failOver =false;
+                    if(successfulEndpoint instanceof AbstractEndpoint){
+                    	Endpoint endpoint =((AbstractEndpoint)successfulEndpoint).getParentEndpoint();
+                    	if(endpoint != null && (endpoint instanceof FailoverEndpoint)){
+                    		failOver =true;
+                    	}
                     }
-
-                    // set the properties of the original MC to the new MC
+                    
+                 // set the properties of the original MC to the new MC
 
                     for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
                         synapseInMessageContext.setProperty(
                                 (String) key, synapseOutMsgCtx.getProperty((String) key));
                     }
-
-                    if (failOver) {
-                        //we may required to handle same message for failover cases only other than that
-                        //should treat based on the incoming message
-                        ((FaultHandler) successfulEndpoint).handleFault(synapseOutMsgCtx, null);
-                    } else {
-                        faultStack = synapseOutMsgCtx.getFaultStack();
-                        if (faultStack != null) {
-                            synapseInMessageContext.getFaultStack().addAll(faultStack);
-                            ((FaultHandler) successfulEndpoint).handleFault(synapseInMessageContext,
-                                    null);
-                        }
+                   
+                    if(failOver){
+                    	 //we may required to handle same message for failover cases only other than that 
+                    	 //should treat based on the incoming message
+                    	 ((FaultHandler) successfulEndpoint).handleFault(synapseOutMsgCtx, null);
+                    }else{
+                    	faultStack = synapseOutMsgCtx.getFaultStack();
+						if (faultStack != null) {
+							synapseInMessageContext.getFaultStack().addAll(faultStack);
+							((FaultHandler) successfulEndpoint).handleFault(synapseInMessageContext,
+							                                                null);
+						}
                     }
                     return;
                 } else {
                     successfulEndpoint.onSuccess();
                 }
 
-            } else if (successfulEndpoint != null) {
+            } else if(successfulEndpoint != null) {
                 successfulEndpoint.onSuccess();
             }
 
             synapseInMessageContext.setTo(
-                    new EndpointReference(AddressingConstants.Final.WSA_ANONYMOUS_URL));
+                new EndpointReference(AddressingConstants.Final.WSA_ANONYMOUS_URL));
             synapseInMessageContext.setTracingState(synapseOutMsgCtx.getTracingState());
 
             // set the properties of the original MC to the new MC
@@ -489,7 +494,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             // Copy SequenceCallStack from original MC to the new MC
             Boolean isContinuationCall =
-                    (Boolean) synapseOutMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+                                    (Boolean) synapseOutMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
             if (isContinuationCall != null && isContinuationCall) {
 
                 // Set the message direction
@@ -513,7 +518,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             StatisticsReporter.reportForAllOnResponseReceived(synapseInMessageContext);
-
+            
             // send the response message through the synapse mediation flow
             try {
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);
@@ -535,8 +540,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
      * try to hold onto the outgoing message ID even for POX messages using the relates to
      * Now once we get a response, make sure we remove any trace of this before we proceed any
      * further
-     *
-     * @param mc      the message context from which a possibly duplicated relatesTo should be removed
+     * @param mc the message context from which a possibly duplicated relatesTo should be removed
      * @param relates the existing relatedTo array of the message
      */
     private void removeDuplicateRelatesTo(MessageContext mc, RelatesTo[] relates) {

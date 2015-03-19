@@ -20,54 +20,48 @@
 package org.apache.synapse.util.xpath;
 
 import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axis2.Constants;
-import org.apache.axis2.addressing.EndpointReference;
-import org.apache.axis2.description.AxisBindingOperation;
-import org.apache.axis2.description.WSDL20DefaultValueHolder;
-import org.apache.axis2.description.WSDL2Constants;
-import org.apache.axis2.transport.http.util.URIEncoderDecoder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.axis2.addressing.EndpointReference;
+import org.apache.axis2.description.AxisBindingOperation;
+import org.apache.axis2.description.WSDL2Constants;
+import org.apache.axis2.description.WSDL20DefaultValueHolder;
+import org.apache.axis2.Constants;
+import org.apache.axis2.transport.http.util.URIEncoderDecoder;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.Log;
 import org.apache.synapse.mediators.template.TemplateContext;
 import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 import org.jaxen.JaxenException;
 import org.jaxen.UnresolvableException;
 import org.jaxen.VariableContext;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
+import java.io.UnsupportedEncodingException;
 import java.util.Stack;
 
 /**
  * Jaxen variable context for the XPath variables implicitly exposed by Synapse.
  * It exposes the following variables:
  * <dl>
- * <dt><tt>body</tt></dt>
- * <dd>The SOAP 1.1 or 1.2 body element.</dd>
- * <dt><tt>header</tt></dt>
- * <dd>The SOAP 1.1 or 1.2 header element.</dd>
+ *   <dt><tt>body</tt></dt>
+ *   <dd>The SOAP 1.1 or 1.2 body element.</dd>
+ *   <dt><tt>header</tt></dt>
+ *   <dd>The SOAP 1.1 or 1.2 header element.</dd>
  * </dl>
  */
 public class SynapseXPathVariableContext implements VariableContext {
 
     private static final Log log = LogFactory.getLog(SynapseXPathVariableContext.class);
 
-    /**
-     * Parent variable context
-     */
+    /** Parent variable context */
     private final VariableContext parent;
 
-    /**
-     * MessageContext to be used for the variable resolution
-     */
+    /** MessageContext to be used for the variable resolution */
     private final MessageContext synCtx;
 
-    /**
-     * SOAPEnvelope to be used for the variable resolution
-     */
+    /** SOAPEnvelope to be used for the variable resolution */
     private final SOAPEnvelope env;
 
     /**
@@ -86,7 +80,7 @@ public class SynapseXPathVariableContext implements VariableContext {
      * <p>Initializes the <code>SynapseVariableContext</code> with the specified envelope</p>
      *
      * @param parent the parent variable context
-     * @param env    envelope to be initialized for the variable resolution
+     * @param env envelope to be initialized for the variable resolution
      */
     public SynapseXPathVariableContext(VariableContext parent, SOAPEnvelope env) {
         this.parent = parent;
@@ -99,7 +93,7 @@ public class SynapseXPathVariableContext implements VariableContext {
      *
      * @param parent the parent variable context
      * @param synCtx Synapse Message context to be initialized for the variable resolution
-     * @param env    envelope to be initialized for the variable resolution
+     * @param env envelope to be initialized for the variable resolution
      */
     public SynapseXPathVariableContext(VariableContext parent, MessageContext synCtx, SOAPEnvelope env) {
         this.parent = parent;
@@ -110,31 +104,31 @@ public class SynapseXPathVariableContext implements VariableContext {
     /**
      * Gets the variable values resolved from the context. This includes the
      * <dl>
-     * <dt><tt>body</tt></dt>
-     * <dd>The SOAP 1.1 or 1.2 body element.</dd>
-     * <dt><tt>header</tt></dt>
-     * <dd>The SOAP 1.1 or 1.2 header element.</dd>
+     *   <dt><tt>body</tt></dt>
+     *   <dd>The SOAP 1.1 or 1.2 body element.</dd>
+     *   <dt><tt>header</tt></dt>
+     *   <dd>The SOAP 1.1 or 1.2 header element.</dd>
      * </dl>
      * and the following variable prefixes
      * <dl>
-     * <dt><tt>ctx</tt></dt>
-     * <dd>Prefix for Synapse MessageContext properties</dd>
-     * <dt><tt>axis2</tt></dt>
-     * <dd>Prefix for Axis2 MessageContext properties</dd>
-     * <dt><tt>trp</tt></dt>
-     * <dd>Prefix for the transport headers</dd>
+     *   <dt><tt>ctx</tt></dt>
+     *   <dd>Prefix for Synapse MessageContext properties</dd>
+     *   <dt><tt>axis2</tt></dt>
+     *   <dd>Prefix for Axis2 MessageContext properties</dd>
+     *   <dt><tt>trp</tt></dt>
+     *   <dd>Prefix for the transport headers</dd>
      * </dl>
      * If the variable is unknown, this method attempts to resolve it using
      * the parent variable context.
      *
      * @param namespaceURI namespaces for the variable resolution
-     * @param prefix       string prefix for the variable resolution
-     * @param localName    string local name for the variable resolution
+     * @param prefix string prefix for the variable resolution
+     * @param localName string local name for the variable resolution
      * @return Resolved variable value
      * @throws UnresolvableException if the variable specified does not found
      */
     public Object getVariableValue(String namespaceURI, String prefix, String localName)
-            throws UnresolvableException {
+        throws UnresolvableException {
 
         if (namespaceURI == null) {
 
@@ -156,7 +150,7 @@ public class SynapseXPathVariableContext implements VariableContext {
                 } else if (SynapseXPathConstants.AXIS2_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
 
                     return ((Axis2MessageContext)
-                            synCtx).getAxis2MessageContext().getProperty(localName);
+                        synCtx).getAxis2MessageContext().getProperty(localName);
 
                 } else if (SynapseXPathConstants.FUNC_CONTEXT_VARIABLE_PREFIX.equals(prefix)) {
                     Stack<TemplateContext> functionStack = (Stack) synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
@@ -177,9 +171,9 @@ public class SynapseXPathVariableContext implements VariableContext {
                 } else if (SynapseXPathConstants.TRANSPORT_VARIABLE_PREFIX.equals(prefix)) {
 
                     org.apache.axis2.context.MessageContext axis2MessageContext =
-                            ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
                     Object headers = axis2MessageContext.getProperty(
-                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                        org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
                     if (headers != null && headers instanceof Map) {
                         Map headersMap = (Map) headers;
@@ -251,7 +245,7 @@ public class SynapseXPathVariableContext implements VariableContext {
         }
         //try resolving using available custom extensions
         Object obj = XpathExtensionUtil.resolveVariableContext(
-                synCtx, namespaceURI, prefix, localName);
+                synCtx,namespaceURI,prefix,localName);
         if (obj != null) {
             return obj;
         }

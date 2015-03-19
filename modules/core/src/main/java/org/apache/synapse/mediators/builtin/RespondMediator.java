@@ -6,7 +6,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
 
-public class RespondMediator extends AbstractMediator {
+public class RespondMediator extends AbstractMediator{
 
     public boolean mediate(MessageContext synCtx) {
         SynapseLog synLog = getLog(synCtx);

@@ -19,16 +19,15 @@
 
 package org.apache.synapse.eventing.managers;
 
-import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.axis2.context.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.eventing.SynapseEventingConstants;
 import org.apache.synapse.eventing.filters.TopicBasedEventFilter;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
-import org.wso2.eventing.Event;
-import org.wso2.eventing.Subscription;
-import org.wso2.eventing.SubscriptionManager;
+import org.wso2.eventing.*;
 import org.wso2.eventing.exceptions.EventException;
 
 import java.util.*;
@@ -66,7 +65,7 @@ public class DefaultInMemorySubscriptionManager implements SubscriptionManager<M
 
     }
 
-    public boolean unsubscribe(String id) throws EventException {
+  public boolean unsubscribe(String id) throws EventException {
         if (store.containsKey(id)) {
             store.remove(id);
             return true;
@@ -145,11 +144,11 @@ public class DefaultInMemorySubscriptionManager implements SubscriptionManager<M
         try {
             //TODO: pick values from the constants
             topicHeaderName = getPropertyValue("topicHeaderName");
-            if (topicHeaderName == null) {
+            if(topicHeaderName==null){
                 handleException("Unable to create topic header topic header name is null");
             }
             topicHeaderNS = getPropertyValue("topicHeaderNS");
-            if (topicHeaderNS == null) {
+            if(topicHeaderNS==null){
                 handleException("Unable to create topic header topic header namespace is null");
             }
             topicXPath = new SynapseXPath(

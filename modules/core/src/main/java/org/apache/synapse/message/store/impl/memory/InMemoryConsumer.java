@@ -31,9 +31,7 @@ public class InMemoryConsumer implements MessageConsumer {
     private Queue<MessageContext> queue;
     /** */
     private final InMemoryStore store;
-    /**
-     * ID of this message consumer instance
-     */
+    /** ID of this message consumer instance */
     private String idString;
 
     private MessageContext lastMessage;

@@ -19,92 +19,58 @@
 
 package org.apache.synapse.endpoints;
 
-import java.util.Date;
 import java.util.Map;
+import java.util.Date;
 
 public interface EndpointViewMBean {
 
     // JMX Attributes
     public long getMessagesReceived();
-
     public long getFaultsReceiving();
-
     public long getTimeoutsReceiving();
-
     public long getBytesReceived();
-
     public long getMinSizeReceived();
-
     public long getMaxSizeReceived();
-
     public double getAvgSizeReceived();
-
     public Map getReceivingFaultTable();
 
     public long getMessagesSent();
-
     public long getFaultsSending();
-
     public long getTimeoutsSending();
-
     public long getBytesSent();
-
     public long getMinSizeSent();
-
     public long getMaxSizeSent();
-
     public double getAvgSizeSent();
-
     public Map getSendingFaultTable();
-
     public Map getResponseCodeTable();
 
     public Date getSuspendedAt();
-
     public Date getTimedoutAt();
-
     public int getConsecutiveEndpointSuspensions();
-
     public int getConsecutiveEndpointTimeouts();
-
     public int getTotalEndpointSuspensions();
-
     public int getTotalEndpointTimeouts();
-
     public int getLastMinuteEndpointSuspensions();
-
     public int getLast5MinuteEndpointSuspensions();
-
     public int getLast15MinuteEndpointSuspensions();
-
     public int getLastMinuteEndpointTimeouts();
-
     public int getLast5MinuteEndpointTimeouts();
-
     public int getLast15MinuteEndpointTimeouts();
 
     // JMX Operations
     public void switchOn() throws Exception;
-
     public void switchOff() throws Exception;
 
     public boolean isActive() throws Exception;
-
     public boolean isTimedout() throws Exception;
-
     public boolean isSuspended() throws Exception;
-
     public boolean isSwitchedOff() throws Exception;
 
     public int getTotalChildren() throws Exception;
-
     public int getActiveChildren() throws Exception;
-
     public int getReadyChildren() throws Exception;
 
     public void resetStatistics();
-
     public long getLastResetTime();
-
     public long getMetricsWindow();
 }

@@ -58,7 +58,7 @@ public class MessageProcessorFactory {
     public static final QName NAME_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "name");
     public static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
             "parameter");
-    public static final QName MESSAGE_STORE_Q = new QName(XMLConfigConstants.NULL_NAMESPACE,
+    public static final QName MESSAGE_STORE_Q = new QName(XMLConfigConstants.NULL_NAMESPACE ,
             "messageStore");
     private static final QName DESCRIPTION_Q
             = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "description");
@@ -66,15 +66,14 @@ public class MessageProcessorFactory {
 
     /**
      * Creates a Message processor instance from given xml configuration element
-     *
      * @param elem OMElement of that contain the Message processor configuration
-     * @return created message processor instance
+     * @return  created message processor instance
      */
     public static MessageProcessor createMessageProcessor(OMElement elem) {
         MessageProcessor processor = null;
         OMAttribute clssAtt = elem.getAttribute(CLASS_Q);
 
-        if (clssAtt != null) {
+        if(clssAtt != null) {
             String clssName = clssAtt.getAttributeValue();
             // Make synapse configuration backward compatible
             if (MessageProcessorConstants.DEPRECATED_FORWARDING_PROCESSOR_CLASS.equals(clssName)) {
@@ -116,7 +115,7 @@ public class MessageProcessorFactory {
 
         OMAttribute storeAtt = elem.getAttribute(MESSAGE_STORE_Q);
 
-        if (storeAtt != null) {
+        if(storeAtt != null) {
             assert processor != null;
             processor.setMessageStoreName(storeAtt.getAttributeValue());
         } else {

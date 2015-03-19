@@ -46,7 +46,6 @@ public class SynapseConfigurationBuilder {
 
     /**
      * Return the default Synapse Configuration
-     *
      * @return the default configuration to be used
      */
     public static SynapseConfiguration getDefaultConfiguration() {

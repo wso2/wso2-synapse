@@ -41,11 +41,11 @@ public class ConditionalRouterMediator extends AbstractMediator {
     private List<ConditionalRoute> conditionalRoutes = new ArrayList<ConditionalRoute>();
 
     private boolean continueAfter;
-
+    
     private boolean continueAfterExplicitlySet;
-
+    
     public boolean mediate(MessageContext synCtx) {
-
+        
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
         org.apache.axis2.context.MessageContext axis2MessageCtx =
                 axis2smc.getAxis2MessageContext();

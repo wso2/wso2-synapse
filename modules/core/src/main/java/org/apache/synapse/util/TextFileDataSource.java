@@ -19,7 +19,11 @@
 
 package org.apache.synapse.util;
 
-import org.apache.axiom.om.*;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMDataSourceExt;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axiom.om.OMSourcedElement;
 import org.apache.axiom.om.ds.OMDataSourceExtBase;
 import org.apache.axiom.om.impl.MTOMXMLStreamWriter;
 import org.apache.axiom.om.impl.llom.OMSourcedElementImpl;
@@ -32,7 +36,13 @@ import org.apache.axis2.transport.base.BaseConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
-import java.io.*;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.nio.charset.Charset;
 
 public class TextFileDataSource extends OMDataSourceExtBase {
@@ -43,7 +53,7 @@ public class TextFileDataSource extends OMDataSourceExtBase {
         this.overflowBlob = overflowBlob;
         this.charset = charset;
     }
-
+    
     public static OMSourcedElement createOMSourcedElement(OverflowBlob overflowBlob, Charset charset) {
         OMFactory fac = OMAbstractFactory.getOMFactory();
         TextFileDataSource txtFileDS = new TextFileDataSource(overflowBlob, charset);
@@ -60,7 +70,7 @@ public class TextFileDataSource extends OMDataSourceExtBase {
     @Override
     public void serialize(Writer writer, OMOutputFormat format) throws XMLStreamException {
         MTOMXMLStreamWriter xmlWriter =
-                new MTOMXMLStreamWriter(StAXUtils.createXMLStreamWriter(writer));
+            new MTOMXMLStreamWriter(StAXUtils.createXMLStreamWriter(writer));
         xmlWriter.setOutputFormat(format);
         serialize(xmlWriter);
         xmlWriter.flush();
@@ -76,7 +86,8 @@ public class TextFileDataSource extends OMDataSourceExtBase {
         InputStream is;
         try {
             is = overflowBlob.getInputStream();
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             throw new XMLStreamException(ex);
         }
         return new WrappedTextNodeStreamReader(
@@ -94,7 +105,7 @@ public class TextFileDataSource extends OMDataSourceExtBase {
     public boolean isDestructiveWrite() {
         return false;
     }
-
+    
     public byte[] getXMLBytes(String encoding) throws UnsupportedEncodingException {
         throw new UnsupportedOperationException();
     }

@@ -21,11 +21,11 @@ package org.apache.synapse.mediators.transform.url;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.MessageContext;
 
-import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URI;
 
 /**
  * Represents a URL rewrite action. The action could be rewriting the entire URL
@@ -35,11 +35,11 @@ public class RewriteAction {
 
     private static final Log log = LogFactory.getLog(RewriteAction.class);
 
-    public static final int ACTION_SET = 0;
-    public static final int ACTION_APPEND = 1;
-    public static final int ACTION_PREPEND = 2;
-    public static final int ACTION_REPLACE = 3;
-    public static final int ACTION_REMOVE = 4;
+    public static final int ACTION_SET      = 0;
+    public static final int ACTION_APPEND   = 1;
+    public static final int ACTION_PREPEND  = 2;
+    public static final int ACTION_REPLACE  = 3;
+    public static final int ACTION_REMOVE   = 4;
 
     private String value;
     private SynapseXPath xpath;
@@ -85,31 +85,31 @@ public class RewriteAction {
                 currentValue = "";
             }
 
-            switch (actionType) {
-                case ACTION_PREPEND:
-                    str = result.concat(currentValue);
-                    break;
-                case ACTION_APPEND:
-                    if (result != null) {
-                        str = currentValue.concat(result);
-                    } else {
-                        str = "";
-                    }
-                    break;
-                case ACTION_REPLACE:
-                    if (result != null) {
-                        str = currentValue.replaceAll(regex, result);
-                    } else {
-                        str = "";
-                    }
-                    break;
-                case ACTION_REMOVE:
-                    str = null;
-                    break;
-                default:
-                    str = result;
-            }
-
+			switch (actionType) {
+				case ACTION_PREPEND:
+					str = result.concat(currentValue);
+					break;
+				case ACTION_APPEND:
+					if (result != null) {
+						str = currentValue.concat(result);
+					} else {
+						str = "";
+					}
+					break;
+				case ACTION_REPLACE:
+					if (result != null) {
+						str = currentValue.replaceAll(regex, result);
+					} else {
+						str = "";
+					}
+					break;
+				case ACTION_REMOVE:
+					str = null;
+					break;
+				default:
+					str = result;
+			}
+			
             fragments.setStringFragment(fragmentIndex, str);
         }
     }

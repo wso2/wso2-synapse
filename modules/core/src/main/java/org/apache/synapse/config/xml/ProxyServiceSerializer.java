@@ -22,8 +22,8 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -37,7 +37,7 @@ import java.util.List;
 
 /**
  * Serializer for {@link ProxyService} instances.
- *
+ * 
  * @see ProxyServiceFactory
  */
 public class ProxyServiceSerializer {
@@ -79,13 +79,13 @@ public class ProxyServiceSerializer {
 
         List pinnedServers = service.getPinnedServers();
         if (pinnedServers != null && !pinnedServers.isEmpty()) {
-            String pinnedServersStr = "" + pinnedServers.get(0);
-            for (int i = 1; i < pinnedServers.size(); i++) {
-                pinnedServersStr = pinnedServersStr.concat(" " + pinnedServers.get(i));
-            }
-            proxy.addAttribute(fac.createOMAttribute("pinnedServers", nullNS, pinnedServersStr));
+          String pinnedServersStr = "" + pinnedServers.get(0);
+          for (int i = 1; i < pinnedServers.size(); i++) {
+            pinnedServersStr = pinnedServersStr.concat(" " + pinnedServers.get(i));
+          }
+          proxy.addAttribute(fac.createOMAttribute("pinnedServers", nullNS, pinnedServersStr));
         }
-
+        
         if (service.isStartOnLoad()) {
             proxy.addAttribute(fac.createOMAttribute(
                     "startOnLoad", nullNS, "true"));
@@ -103,50 +103,51 @@ public class ProxyServiceSerializer {
             proxy.addChild(target);
         } else if (inLineEndpoint != null) {
             OMElement epElement = EndpointSerializer.getElementFromEndpoint(inLineEndpoint);
-            target.addChild(epElement);
+            target.addChild(epElement);            
             proxy.addChild(target);
         }
-        String inSeq = service.getTargetInSequence();
-        String outSeq = service.getTargetOutSequence();
-        String faultSeq = service.getTargetFaultSequence();
-        SequenceMediatorSerializer serializer = new SequenceMediatorSerializer();
-        if (inSeq != null) {
-            target.addAttribute(fac.createOMAttribute("inSequence", nullNS, inSeq));
-            proxy.addChild(target);
-        } else {
-            SequenceMediator inLineInSeq = service.getTargetInLineInSequence();
-            if (inLineInSeq != null) {
-                OMElement inSeqElement = serializer.serializeAnonymousSequence(null, inLineInSeq);
-                inSeqElement.setLocalName("inSequence");
-                target.addChild(inSeqElement);
+            String inSeq = service.getTargetInSequence();
+            String outSeq = service.getTargetOutSequence();
+            String faultSeq = service.getTargetFaultSequence();
+            SequenceMediatorSerializer serializer = new SequenceMediatorSerializer();
+            if (inSeq != null) {
+                target.addAttribute(fac.createOMAttribute("inSequence", nullNS, inSeq));
                 proxy.addChild(target);
+            } else {
+                SequenceMediator inLineInSeq = service.getTargetInLineInSequence();
+                if (inLineInSeq != null) {
+                    OMElement inSeqElement = serializer.serializeAnonymousSequence(null, inLineInSeq);
+                    inSeqElement.setLocalName("inSequence");
+                    target.addChild(inSeqElement);
+                    proxy.addChild(target);
+                }
             }
-        }
-        if (outSeq != null) {
-            target.addAttribute(fac.createOMAttribute("outSequence", nullNS, outSeq));
-            proxy.addChild(target);
-        } else {
-            SequenceMediator inLineOutSeq = service.getTargetInLineOutSequence();
-            if (inLineOutSeq != null) {
-                OMElement outSeqElement = serializer.serializeAnonymousSequence(null, inLineOutSeq);
-                outSeqElement.setLocalName("outSequence");
-                target.addChild(outSeqElement);
+            if (outSeq != null) {
+                target.addAttribute(fac.createOMAttribute("outSequence", nullNS, outSeq));
                 proxy.addChild(target);
+            } else {
+                SequenceMediator inLineOutSeq = service.getTargetInLineOutSequence();
+                if (inLineOutSeq != null) {
+                    OMElement outSeqElement = serializer.serializeAnonymousSequence(null, inLineOutSeq);
+                    outSeqElement.setLocalName("outSequence");
+                    target.addChild(outSeqElement);
+                    proxy.addChild(target);
+                }
             }
-        }
-        if (faultSeq != null) {
-            target.addAttribute(fac.createOMAttribute("faultSequence", nullNS, faultSeq));
-            proxy.addChild(target);
-        } else {
-            SequenceMediator inLineFaultSeq = service.getTargetInLineFaultSequence();
-            if (inLineFaultSeq != null) {
-                OMElement faultSeqElement = serializer.serializeAnonymousSequence(null, inLineFaultSeq);
-                faultSeqElement.setLocalName("faultSequence");
-                target.addChild(faultSeqElement);
+            if (faultSeq != null) {
+                target.addAttribute(fac.createOMAttribute("faultSequence", nullNS, faultSeq));
                 proxy.addChild(target);
+            } else {
+                SequenceMediator inLineFaultSeq = service.getTargetInLineFaultSequence();
+                if (inLineFaultSeq != null) {
+                    OMElement faultSeqElement = serializer.serializeAnonymousSequence(null, inLineFaultSeq);
+                    faultSeqElement.setLocalName("faultSequence");
+                    target.addChild(faultSeqElement);
+                    proxy.addChild(target);
+                }
             }
-        }
 
+        
 
         String wsdlKey = service.getWSDLKey();
         String wsdlEndpoint = service.getPublishWSDLEndpoint();
@@ -213,7 +214,7 @@ public class ProxyServiceSerializer {
         }
         if (service.isWsSecEnabled()) {
             proxy.addChild(fac.createOMElement("enableSec", synNS));
-        }
+        }        
 
         int traceState = service.getTraceState();
         String traceValue = null;

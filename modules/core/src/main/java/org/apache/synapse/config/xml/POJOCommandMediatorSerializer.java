@@ -25,25 +25,25 @@ import org.apache.synapse.mediators.ext.POJOCommandMediator;
 
 /**
  * Serializer for {@link POJOCommandMediator} instances.
- *
+ * 
  * @see POJOCommandMediatorFactory
  */
 public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
 
     public OMElement serializeSpecificMediator(Mediator m) {
-
+        
         if (!(m instanceof POJOCommandMediator)) {
             handleException("Unsupported mediator passed in for serialization : " + m.getType());
         }
-
+        
         POJOCommandMediator mediator = (POJOCommandMediator) m;
-
+        
         OMElement pojoCommand = fac.createOMElement("pojoCommand", synNS);
         saveTracingState(pojoCommand, mediator);
 
         if (mediator.getCommand() != null && mediator.getCommand().getClass().getName() != null) {
             pojoCommand.addAttribute(fac.createOMAttribute(
-                    "name", nullNS, mediator.getCommand().getName()));
+                "name", nullNS, mediator.getCommand().getName()));
         } else {
             handleException("Invalid POJO Command mediator. The command class name is required");
         }
@@ -59,15 +59,15 @@ public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
                 prop.addChild((OMElement) value);
             } else {
                 handleException("Unable to serialize the command " +
-                        "mediator property with the naem " + propName + " : Unknown type");
+                    "mediator property with the naem " + propName + " : Unknown type");
             }
 
             if (mediator.getContextGetterProperties().containsKey(propName)) {
                 prop.addAttribute(fac.createOMAttribute("context-name", nullNS,
-                        mediator.getContextGetterProperties().get(propName)));
+                    mediator.getContextGetterProperties().get(propName)));
             } else if (mediator.getMessageGetterProperties().containsKey(propName)) {
                 SynapseXPathSerializer.serializeXPath(
-                        mediator.getMessageGetterProperties().get(propName), prop, "expression");
+                    mediator.getMessageGetterProperties().get(propName), prop, "expression");
             }
             pojoCommand.addChild(prop);
         }
@@ -76,16 +76,16 @@ public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
             OMElement prop = fac.createOMElement(PROP_Q);
             prop.addAttribute(fac.createOMAttribute("name", nullNS, propName));
             SynapseXPathSerializer.serializeXPath(
-                    mediator.getMessageSetterProperties().get(propName), prop, "expression");
+                mediator.getMessageSetterProperties().get(propName), prop, "expression");
 
             if (mediator.getMessageGetterProperties().containsKey(propName)) {
                 prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadAndUpdateMessage"));
             } else if (mediator.getContextGetterProperties().containsKey(propName)) {
                 prop.addAttribute(fac.createOMAttribute("context-name", nullNS,
-                        mediator.getContextGetterProperties().get(propName)));
-                prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadMessage"));
+                    mediator.getContextGetterProperties().get(propName)));
+                prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadMessage"));                
             } else {
-                prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadMessage"));
+                prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadMessage"));                                
             }
             pojoCommand.addChild(prop);
         }
@@ -94,16 +94,16 @@ public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
             OMElement prop = fac.createOMElement(PROP_Q);
             prop.addAttribute(fac.createOMAttribute("name", nullNS, propName));
             prop.addAttribute(fac.createOMAttribute("context-name", nullNS,
-                    mediator.getContextSetterProperties().get(propName)));
+                mediator.getContextSetterProperties().get(propName)));
 
             if (mediator.getContextGetterProperties().containsKey(propName)) {
                 prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadAndUpdateContext"));
             } else if (mediator.getMessageGetterProperties().containsKey(propName)) {
                 SynapseXPathSerializer.serializeXPath(
-                        mediator.getMessageGetterProperties().get(propName), prop, "expression");
+                    mediator.getMessageGetterProperties().get(propName), prop, "expression");
                 prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadContext"));
             } else {
-                prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadContext"));
+                prop.addAttribute(fac.createOMAttribute("action", nullNS, "ReadContext"));                
             }
             pojoCommand.addChild(prop);
         }
@@ -124,7 +124,7 @@ public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
                 OMElement prop = fac.createOMElement(PROP_Q);
                 prop.addAttribute(fac.createOMAttribute("name", nullNS, propName));
                 SynapseXPathSerializer.serializeXPath(
-                        mediator.getMessageGetterProperties().get(propName), prop, "expression");
+                    mediator.getMessageGetterProperties().get(propName), prop, "expression");
                 prop.addAttribute(fac.createOMAttribute("action", nullNS, "UpdateMessage"));
                 pojoCommand.addChild(prop);
             }
@@ -135,8 +135,8 @@ public class POJOCommandMediatorSerializer extends AbstractMediatorSerializer {
 
     private boolean isSerialized(String propName, POJOCommandMediator m) {
         return m.getContextSetterProperties().containsKey(propName) ||
-                m.getStaticSetterProperties().containsKey(propName) ||
-                m.getMessageSetterProperties().containsKey(propName);
+            m.getStaticSetterProperties().containsKey(propName) ||
+            m.getMessageSetterProperties().containsKey(propName);
     }
 
     public String getMediatorClassName() {

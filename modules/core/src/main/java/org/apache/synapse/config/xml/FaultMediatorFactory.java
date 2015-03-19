@@ -33,7 +33,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link FaultMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;makefault [version="soap11|soap12|pox"] [response="true|false"]&gt;
@@ -45,7 +45,7 @@ import java.util.Properties;
  * &lt;/makefault&gt;
  * </pre>
  */
-public class FaultMediatorFactory extends AbstractMediatorFactory {
+public class FaultMediatorFactory extends AbstractMediatorFactory  {
 
     private static final QName FAULT_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "makefault");
@@ -84,7 +84,7 @@ public class FaultMediatorFactory extends AbstractMediatorFactory {
             } else {
                 handleException("Invalid SOAP version");
             }
-        } else {
+        }else{
             //Setting the default SOAP version
             faultMediator.setSoapVersion(FaultMediator.SOAP11);
         }
@@ -113,7 +113,7 @@ public class FaultMediatorFactory extends AbstractMediatorFactory {
                 String name = null;
                 if (strValue.indexOf(":") != -1) {
                     prefix = strValue.substring(0, strValue.indexOf(":"));
-                    name = strValue.substring(strValue.indexOf(":") + 1);
+                    name = strValue.substring(strValue.indexOf(":")+1);
                 } else {
                     handleException("A QName is expected for fault code as prefix:name");
                 }
@@ -125,7 +125,7 @@ public class FaultMediatorFactory extends AbstractMediatorFactory {
             } else if (expression != null) {
                 try {
                     faultMediator.setFaultCodeExpr(
-                            SynapseXPathFactory.getSynapseXPath(code, ATT_EXPRN));
+                        SynapseXPathFactory.getSynapseXPath(code, ATT_EXPRN));
                 } catch (JaxenException je) {
                     handleException("Invalid fault code expression : " + je.getMessage(), je);
                 }
@@ -148,7 +148,7 @@ public class FaultMediatorFactory extends AbstractMediatorFactory {
             } else if (expression != null) {
                 try {
                     faultMediator.setFaultReasonExpr(
-                            SynapseXPathFactory.getSynapseXPath(reason, ATT_EXPRN));
+                        SynapseXPathFactory.getSynapseXPath(reason, ATT_EXPRN));
                 } catch (JaxenException je) {
                     handleException("Invalid fault reason expression : " + je.getMessage(), je);
                 }
@@ -163,7 +163,7 @@ public class FaultMediatorFactory extends AbstractMediatorFactory {
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(faultMediator, elem);
+        processAuditStatus(faultMediator,elem);
 
         OMElement node = elem.getFirstChildWithName(NODE_Q);
         if (node != null && node.getText() != null && !SOAP11.equals(version.getAttributeValue())) {

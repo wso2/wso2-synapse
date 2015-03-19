@@ -31,7 +31,6 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,8 +98,8 @@ public class Source {
                     } else if (o instanceof OMText) {
                         sourceNodeList.add((OMText) o);
                     } else if (o instanceof String) {
-                        OMFactory fac = OMAbstractFactory.getOMFactory();
-                        sourceNodeList.add(fac.createOMText(o.toString()));
+                         OMFactory fac = OMAbstractFactory.getOMFactory();
+                         sourceNodeList.add(fac.createOMText(o.toString()));
                     }
                 }
             } else {
@@ -108,14 +107,14 @@ public class Source {
             }
         } else if (sourceType == EnrichMediator.BODY) {
             if (clone) {
-                if (synCtx.getEnvelope().getBody().getFirstElement() != null) {
-                    sourceNodeList.add(synCtx.getEnvelope().getBody().getFirstElement()
-                            .cloneOMElement());
-                }
+				if (synCtx.getEnvelope().getBody().getFirstElement() != null) {
+					sourceNodeList.add(synCtx.getEnvelope().getBody().getFirstElement()
+					                         .cloneOMElement());
+				}
             } else {
-                if (synCtx.getEnvelope().getBody().getFirstElement() != null) {
-                    sourceNodeList.add(synCtx.getEnvelope().getBody().getFirstElement());
-                }
+				if (synCtx.getEnvelope().getBody().getFirstElement() != null) {
+					sourceNodeList.add(synCtx.getEnvelope().getBody().getFirstElement());
+				}
             }
         } else if (sourceType == EnrichMediator.ENVELOPE) {
             if (clone) {
@@ -136,14 +135,14 @@ public class Source {
                 String sourceStr = (String) o;
                 OMFactory fac = OMAbstractFactory.getOMFactory();
                 sourceNodeList.add(fac.createOMText(sourceStr));
-            } else if (o instanceof ArrayList) {
-                ArrayList nodesList;
-                if (clone) {
-                    nodesList = MessageHelper.cloneArrayList((ArrayList) o);
-                } else {
-                    nodesList = (ArrayList) o;
-                }
-                for (Object node : nodesList) {
+			} else if (o instanceof ArrayList) {
+				ArrayList nodesList;
+				if (clone) {
+					nodesList = MessageHelper.cloneArrayList((ArrayList) o);
+				} else {
+					nodesList = (ArrayList) o;
+				}
+				for (Object node : nodesList) {
                     if (node instanceof OMElement) {
                         if (node instanceof SOAPEnvelope) {
                             SOAPEnvelope soapEnvelope = (SOAPEnvelope) node;
@@ -167,7 +166,7 @@ public class Source {
                             sourceNodeList.add(ele);
                         }
                     } else if (node instanceof OMText) {
-                        sourceNodeList.add((OMText) node);
+                        sourceNodeList.add((OMText)node);
                     }
                 }
             } else {
@@ -202,7 +201,7 @@ public class Source {
                         sourceNodeList.add((OMElement) inlineObj);
                     }
                 } else if (inlineObj instanceof OMText) {
-                    sourceNodeList.add((OMText) inlineObj);
+                    sourceNodeList.add((OMText)inlineObj);
                 } else if (inlineObj instanceof String) {
                     sourceNodeList.add(
                             OMAbstractFactory.getOMFactory().createOMText(inlineObj.toString()));

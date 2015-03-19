@@ -32,7 +32,7 @@ import java.util.*;
 
 /**
  * Factory for {@link ValidateMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;validate [source="xpath"]>
@@ -48,8 +48,8 @@ import java.util.*;
 public class ValidateMediatorFactory extends AbstractListMediatorFactory {
 
     private static final QName VALIDATE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "validate");
-    private static final QName ON_FAIL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "on-fail");
-    private static final QName SCHEMA_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "schema");
+    private static final QName ON_FAIL_Q  = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "on-fail");
+    private static final QName SCHEMA_Q   = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "schema");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -102,21 +102,21 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
         OMElement onFail = null;
         Iterator iterator = elem.getChildrenWithName(ON_FAIL_Q);
         if (iterator.hasNext()) {
-            onFail = (OMElement) iterator.next();
+            onFail = (OMElement)iterator.next();
         }
 
         if (onFail != null && onFail.getChildElements().hasNext()) {
             addChildren(onFail, validateMediator, properties);
         } else {
             handleException("A non-empty <on-fail> child element is required for " +
-                    "the <validate> mediator");
+                "the <validate> mediator");
         }
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(validateMediator, elem);
+        processAuditStatus(validateMediator,elem);
         // set the features
-        for (Map.Entry<String, String> entry : collectNameValuePairs(elem, FEATURE_Q).entrySet()) {
+        for (Map.Entry<String,String> entry : collectNameValuePairs(elem, FEATURE_Q).entrySet()) {
             String value = entry.getValue();
             boolean isFeatureEnabled;
             if ("true".equals(value)) {

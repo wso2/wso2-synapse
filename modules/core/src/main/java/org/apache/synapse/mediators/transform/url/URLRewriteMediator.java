@@ -19,14 +19,16 @@
 
 package org.apache.synapse.mediators.transform.url;
 
-import org.apache.axis2.addressing.EndpointReference;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.MessageContext;
+import org.apache.axis2.addressing.EndpointReference;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+import java.util.ArrayList;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * A mediator capable of rewriting URLs in messages. The input URL can be
@@ -65,11 +67,11 @@ public class URLRewriteMediator extends AbstractMediator {
             } else {
                 messageContext.setTo(new EndpointReference(fragments.toURIString()));
             }
-
-            if (log.isDebugEnabled()) {
+            
+            if(log.isDebugEnabled()) {
                 log.debug("URL Rewrite Mediator has rewritten the address url : \n " + messageContext.getEnvelope());
             }
-
+            
         } catch (URISyntaxException e) {
             handleException("Error while constructing a URI from the fragments", e, messageContext);
         }

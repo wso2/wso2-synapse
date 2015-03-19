@@ -56,7 +56,7 @@ public class ServerStateDetectionStrategy {
                         return ServerState.INITIALIZABLE;
                     }
                 }
-
+                
             } else {
                 return ServerState.INITIALIZABLE;
             }

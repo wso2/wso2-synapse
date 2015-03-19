@@ -34,7 +34,6 @@ public interface SamplingProcessorViewMBean {
 
     /**
      * Get the active status of Sampling processor
-     *
      * @return
      */
     public boolean isActive();

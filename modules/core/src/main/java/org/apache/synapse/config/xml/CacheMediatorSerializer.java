@@ -63,29 +63,29 @@ public class CacheMediatorSerializer extends AbstractMediatorSerializer {
 
             if (mediator.getDigestGenerator() != null) {
                 cache.addAttribute(fac.createOMAttribute("hashGenerator", nullNS,
-                        mediator.getDigestGenerator().getClass().getName()));
+                    mediator.getDigestGenerator().getClass().getName()));
             }
 
             if (mediator.getTimeout() != 0) {
                 cache.addAttribute(
-                        fac.createOMAttribute("timeout", nullNS, Long.toString(mediator.getTimeout())));
+                    fac.createOMAttribute("timeout", nullNS, Long.toString(mediator.getTimeout())));
             }
 
             if (mediator.getMaxMessageSize() != 0) {
                 cache.addAttribute(
-                        fac.createOMAttribute("maxMessageSize", nullNS,
-                                Integer.toString(mediator.getMaxMessageSize())));
+                    fac.createOMAttribute("maxMessageSize", nullNS,
+                        Integer.toString(mediator.getMaxMessageSize())));
             }
 
             if (mediator.getOnCacheHitRef() != null) {
                 OMElement onCacheHit = fac.createOMElement("onCacheHit", synNS);
                 onCacheHit.addAttribute(
-                        fac.createOMAttribute("sequence", nullNS, mediator.getOnCacheHitRef()));
+                    fac.createOMAttribute("sequence", nullNS, mediator.getOnCacheHitRef()));
                 cache.addChild(onCacheHit);
             } else if (mediator.getOnCacheHitSequence() != null) {
                 OMElement onCacheHit = fac.createOMElement("onCacheHit", synNS);
                 new SequenceMediatorSerializer()
-                        .serializeChildren(onCacheHit, mediator.getOnCacheHitSequence().getList());
+                    .serializeChildren(onCacheHit, mediator.getOnCacheHitSequence().getList());
                 cache.addChild(onCacheHit);
             }
 
@@ -93,7 +93,7 @@ public class CacheMediatorSerializer extends AbstractMediatorSerializer {
                 OMElement implElem = fac.createOMElement("implementation", synNS);
                 implElem.addAttribute(fac.createOMAttribute("type", nullNS, "memory"));
                 implElem.addAttribute(fac.createOMAttribute("maxSize", nullNS,
-                        Integer.toString(mediator.getInMemoryCacheSize())));
+                    Integer.toString(mediator.getInMemoryCacheSize())));
                 cache.addChild(implElem);
             }
 
@@ -101,7 +101,7 @@ public class CacheMediatorSerializer extends AbstractMediatorSerializer {
                 OMElement implElem = fac.createOMElement("implementation", synNS);
                 implElem.addAttribute(fac.createOMAttribute("type", nullNS, "disk"));
                 implElem.addAttribute(fac.createOMAttribute("maxSize", nullNS,
-                        Integer.toString(mediator.getDiskCacheSize())));
+                    Integer.toString(mediator.getDiskCacheSize())));
                 cache.addChild(implElem);
             }
         }

@@ -25,7 +25,7 @@ import org.apache.synapse.mediators.builtin.DropMediator;
 
 /**
  * Serializer for {@link DropMediator} instances.
- *
+ * 
  * @see DropMediatorFactory
  */
 public class DropMediatorSerializer extends AbstractMediatorSerializer {

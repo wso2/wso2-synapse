@@ -83,7 +83,6 @@ public class InboundProcessorParams {
 
     /**
      * Set the custom class implementation of InboundEndpoint
-     *
      * @param classImpl FQN of custom class implementation
      */
     public void setClassImpl(String classImpl) {

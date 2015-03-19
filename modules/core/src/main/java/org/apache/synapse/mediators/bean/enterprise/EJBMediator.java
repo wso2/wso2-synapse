@@ -88,6 +88,7 @@ public class EJBMediator extends AbstractMediator implements ManagedLifecycle {
     private volatile Method method;
 
     /**
+     *
      * @param se SynapseEnvironment to be used for initialization
      */
     public void init(SynapseEnvironment se) {
@@ -111,16 +112,15 @@ public class EJBMediator extends AbstractMediator implements ManagedLifecycle {
     /**
      * Calls an external EJB according to the supplied semantics and attaches the result into the
      * message/message context.
-     *
      * @param synCtx The current message for mediation
      * @return true If mediation should continue
      */
     public boolean mediate(MessageContext synCtx) {
 
         Object ejb = beanstalk.getEnterpriseBean(
-                className,
-                beanId == null ? null : beanId.evaluateValue(synCtx),
-                jndiName);
+                                    className,
+                                    beanId == null ? null : beanId.evaluateValue(synCtx),
+                                    jndiName);
 
         if (ejb == null) {
             handleException("EJB was not found. class: " + className + ", bean id: " + beanId +
@@ -141,7 +141,7 @@ public class EJBMediator extends AbstractMediator implements ManagedLifecycle {
 
         if (remove) {
             beanstalk.removeEnterpriseBean(className,
-                    beanId == null ? null : beanId.evaluateValue(synCtx));
+                                beanId == null ? null : beanId.evaluateValue(synCtx));
         }
 
         return true;

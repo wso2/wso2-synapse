@@ -42,10 +42,9 @@ public class Target {
 
     /**
      * Creates a new Target from the OMElement
-     *
      * @param attributeName Name of the attribute where the property name/ XPath expression is
-     *                      stored.
-     * @param element       OMElement where the the XPath expression and the namespaces are stored.
+     * stored.
+     * @param element OMElement where the the XPath expression and the namespaces are stored.
      */
     public Target(String attributeName, OMElement element) {
         this.value = new ValueFactory().createValue(attributeName, element);
@@ -53,7 +52,6 @@ public class Target {
 
     /**
      * Inserts the given object into the target specified by the current Target object.
-     *
      * @param synCtx Message Context to be enriched with the object.
      * @param object Object to be inserted.
      */
@@ -61,7 +59,7 @@ public class Target {
 
         if (value.getExpression() != null && value.getExpression() instanceof SynapseXPath) {
 
-            SynapseXPath expression = (SynapseXPath) value.getExpression();
+            SynapseXPath expression = (SynapseXPath)value.getExpression();
             Object targetObj = null;
 
             try {
@@ -94,7 +92,7 @@ public class Target {
      * Serialized this Target object into the given element with the given attribute name.
      *
      * @param attributeName Name of the attribute.
-     * @param element       Element to serialize this target in to.
+     * @param element Element to serialize this target in to.
      * @return Element after serializing this target.
      */
     public OMElement serializeTarget(String attributeName, OMElement element) {

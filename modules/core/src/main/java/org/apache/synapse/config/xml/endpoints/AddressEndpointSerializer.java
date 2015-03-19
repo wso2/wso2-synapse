@@ -58,7 +58,7 @@ public class AddressEndpointSerializer extends DefaultEndpointSerializer {
         endpointElement.addChild(httpStatusElement);
         //***
 
-        // serialize the properties
+         // serialize the properties
         serializeProperties(addressEndpoint, endpointElement);
         //serialize attributes
         serializeCommonAttributes(endpoint, endpointElement);

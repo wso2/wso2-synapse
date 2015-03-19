@@ -22,6 +22,8 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
  * <pre>
@@ -72,7 +74,7 @@ public class PropertyMediatorSerializer extends AbstractMediatorSerializer {
                     "action", nullNS, "remove"));
         } else if (mediator.getType() != null) {
             property.addAttribute(fac.createOMAttribute(
-                    "type", nullNS, mediator.getType()));
+                    "type" , nullNS, mediator.getType()));
         }
 
         if (mediator.getPattern() != null) {

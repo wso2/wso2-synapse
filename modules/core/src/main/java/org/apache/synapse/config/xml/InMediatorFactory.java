@@ -28,7 +28,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link InMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;in&gt;
@@ -44,7 +44,7 @@ public class InMediatorFactory extends AbstractListMediatorFactory {
         InMediator filter = new InMediator();
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(filter, elem);
+        processAuditStatus(filter,elem);
         addChildren(elem, filter, properties);
         return filter;
     }

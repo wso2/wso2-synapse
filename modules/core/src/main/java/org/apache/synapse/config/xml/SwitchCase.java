@@ -20,8 +20,8 @@ package org.apache.synapse.config.xml;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.core.SynapseEnvironment;
 
 import java.util.regex.Matcher;
@@ -42,7 +42,7 @@ public class SwitchCase implements ManagedLifecycle {
      * The regular expression pattern to be checked
      */
     private Pattern regex = null;
-
+    
     /**
      * The list mediator which is responsible on message mediation of the case
      */

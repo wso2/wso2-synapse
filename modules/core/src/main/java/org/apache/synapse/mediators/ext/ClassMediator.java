@@ -19,7 +19,11 @@
 
 package org.apache.synapse.mediators.ext;
 
-import org.apache.synapse.*;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 
@@ -34,28 +38,25 @@ import java.util.Map;
  * any one-time properties (parameter constants specified through the Synapse config)
  * are set on the instance. If each request needs synchronization, the user must
  * implement it within the specified class.
- *
+ * 
  * @see Mediator
  */
 public class ClassMediator extends AbstractMediator implements ManagedLifecycle {
 
-    /**
-     * The reference to the actual class that implments the Mediator interface
-     */
+    /** The reference to the actual class that implments the Mediator interface */
     private Mediator mediator = null;
-    /**
-     * A list of simple properties that would be set on the class before being used
-     */
+    /** A list of simple properties that would be set on the class before being used */
     private final Map<String, Object> properties = new HashMap<String, Object>();
 
     /**
-     * Don't use a new instance... do one instance of the object per instance of
-     * this mediator
-     *
-     * @param synCtx the message context
-     * @return as per standard semantics
-     */
-    public boolean mediate(MessageContext synCtx) {
+	 * Don't use a new instance... do one instance of the object per instance of
+	 * this mediator
+	 * 
+	 * @param synCtx
+	 *            the message context
+	 * @return as per standard semantics
+	 */
+	public boolean mediate(MessageContext synCtx) {
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -68,13 +69,13 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         }
 
         if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("invoking : " + mediator.getClass() + ".mediate()");
-        }
+			synLog.traceOrDebug("invoking : " + mediator.getClass() + ".mediate()");
+		}
 
         boolean result;
 
         try {
-            result = mediator.mediate(synCtx);
+			result = mediator.mediate(synCtx);
         } catch (Exception e) {
             // throw Synapse Exception for any exception in class meditor
             // so that the fault handler will be invoked
@@ -82,7 +83,7 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         }
 
         synLog.traceOrDebug("End : Class mediator");
-
+        
         return result;
     }
 
@@ -110,12 +111,12 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     }
 
     public void setMediator(Mediator mediator) {
-        this.mediator = mediator;
-    }
+		this.mediator = mediator;
+	}
 
-    public Mediator getMediator() {
-        return mediator;
-    }
+	public Mediator getMediator() {
+		return mediator;
+	}
 
     public void addProperty(String name, Object value) {
         properties.put(name, value);

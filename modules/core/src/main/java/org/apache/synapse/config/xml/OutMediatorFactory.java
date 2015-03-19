@@ -28,7 +28,7 @@ import java.util.Properties;
 
 /**
  * Creates an Out mediator instance
- * <p/>
+ *
  * <pre>
  * &lt;out&gt;
  *    mediator+
@@ -44,7 +44,7 @@ public class OutMediatorFactory extends AbstractListMediatorFactory {
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(filter, elem);
+        processAuditStatus(filter,elem);
 
         addChildren(elem, filter, properties);
         return filter;

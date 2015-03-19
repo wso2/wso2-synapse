@@ -19,10 +19,7 @@
 
 package org.apache.synapse.util.xpath;
 
-import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.*;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.impl.dom.DOOMAbstractFactory;
 import org.apache.axiom.om.impl.llom.OMDocumentImpl;
@@ -54,43 +51,42 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
+
+import java.util.*;
+
 
 
 /**
  * <p>XPath that has been used inside Synapse xpath processing. This has a extension function named
  * <code>get-property</code> which is use to retrieve message context properties with the given
  * name from the function</p>
- * <p/>
+ *
  * <p>For example the following function <code>get-property('prop')</code> can be evaluatedd using
  * an XPath to retrieve the message context property value with the name <code>prop</code>.</p>
- * <p/>
+ *
  * <p>Apart from that this XPath has a certain set of XPath variables associated with it. They are
  * as follows;
  * <dl>
- * <dt><tt>body</tt></dt>
- * <dd>The SOAP 1.1 or 1.2 body element.</dd>
- * <dt><tt>header</tt></dt>
- * <dd>The SOAP 1.1 or 1.2 header element.</dd>
+ *   <dt><tt>body</tt></dt>
+ *   <dd>The SOAP 1.1 or 1.2 body element.</dd>
+ *   <dt><tt>header</tt></dt>
+ *   <dd>The SOAP 1.1 or 1.2 header element.</dd>
  * </dl>
  * </p>
- * <p/>
+ *
  * <p>Also there are some XPath prefixes defined in <code>SynapseXPath</code> to access various
  * properties using XPath variables, where the variable name represents the particular prefix and
  * the property name as the local part of the variable. Those variables are;
  * <dl>
- * <dt><tt>ctx</tt></dt>
- * <dd>Prefix for Synapse MessageContext properties</dd>
- * <dt><tt>axis2</tt></dt>
- * <dd>Prefix for Axis2 MessageContext properties</dd>
- * <dt><tt>trp</tt></dt>
- * <dd>Prefix for the transport headers</dd>
+ *   <dt><tt>ctx</tt></dt>
+ *   <dd>Prefix for Synapse MessageContext properties</dd>
+ *   <dt><tt>axis2</tt></dt>
+ *   <dd>Prefix for Axis2 MessageContext properties</dd>
+ *   <dt><tt>trp</tt></dt>
+ *   <dd>Prefix for the transport headers</dd>
  * </dl>
  * </p>
- * <p/>
+ *
  * <p>This XPath is Thread Safe, and provides a special set of evaluate functions for the
  * <code>MessageContext</code> and <code>SOAPEnvelope</code> as well as a method to retrieve
  * string values of the evaluated XPaths</p>
@@ -113,11 +109,11 @@ public class SynapseXPath extends SynapsePath {
     //has a limitation of extracting only the first element after its iterating a list so 
     //cases like PayloadMediators though the stream xPath enables we should use the old jaxen
     //way of extracting variable.
-    private boolean forceDisableStreamXpath = false;
+    private boolean forceDisableStreamXpath=false;
 
     private String enableStreamingXpath = SynapsePropertiesLoader.loadSynapseProperties().
             getProperty(SynapseConstants.STREAMING_XPATH_PROCESSING);
-    private StreamingXPATH streamingXPATH = null;
+    private StreamingXPATH streamingXPATH =null;
 
     public String getEvaluator() {
         return evaluator;
@@ -127,7 +123,9 @@ public class SynapseXPath extends SynapsePath {
         this.evaluator = evaluator;
     }
 
-    private String evaluator = "null";
+    private String evaluator="null";
+
+
 
 
     /**
@@ -144,25 +142,25 @@ public class SynapseXPath extends SynapsePath {
         this.expression = xpathString;
 
         PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
-        bufferSizeSupport = conf.getIOBufferSize();
+        bufferSizeSupport =conf.getIOBufferSize();
 
         // TODO: Improve this
         if (xpathString.contains("/")) {
             contentAware = true;
         } else if (//xpathString.contains("get-property('To')") ||
                 xpathString.contains("get-property('From'") ||
-                        xpathString.contains("get-property('FAULT')")) {
+                xpathString.contains("get-property('FAULT')")) {
             contentAware = true;
         } else {
             contentAware = false;
         }
 
-        if (xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2")) {
+        if(xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2")){
             contentAware = false;
             return;
         }
 
-        if ("true".equals(enableStreamingXpath)) {
+        if("true".equals(enableStreamingXpath)){
             try {
                 this.streamingXPATH = new StreamingXPATH(xpathString);
                 contentAware = false;
@@ -189,9 +187,9 @@ public class SynapseXPath extends SynapsePath {
      * Construct an XPath expression from a given string and initialize its
      * namespace context based on a given element.
      *
-     * @param element   The element that determines the namespace context of the
-     *                  XPath expression. See {@link #addNamespaces(OMElement)}
-     *                  for more details.
+     * @param element The element that determines the namespace context of the
+     *                XPath expression. See {@link #addNamespaces(OMElement)}
+     *                for more details.
      * @param xpathExpr the string representation of the XPath expression.
      * @throws JaxenException if there is a syntax error while parsing the expression
      *                        or if the namespace context could not be set up
@@ -250,7 +248,7 @@ public class SynapseXPath extends SynapsePath {
         }
 
         SynapseXPath synXPath = new SynapseXPath(newXPath.toString());
-        for (Map.Entry<String, String> entry : nameSpaces.entrySet()) {
+        for (Map.Entry<String,String> entry : nameSpaces.entrySet()) {
             synXPath.addNamespace(entry.getKey(), entry.getValue());
         }
 
@@ -269,12 +267,12 @@ public class SynapseXPath extends SynapsePath {
         try {
             InputStream inputStream = null;
             Object result = null;
-            org.apache.axis2.context.MessageContext axis2MC = null;
+            org.apache.axis2.context.MessageContext axis2MC =null;
 
-            if (!forceDisableStreamXpath && "true".equals(enableStreamingXpath) && streamingXPATH != null && (((Axis2MessageContext) synCtx).getEnvelope() == null || ((Axis2MessageContext) synCtx).getEnvelope().getBody().getFirstElement() == null)) {
+            if (!forceDisableStreamXpath && "true".equals(enableStreamingXpath)&& streamingXPATH != null && (((Axis2MessageContext)synCtx).getEnvelope() == null ||  ((Axis2MessageContext)synCtx).getEnvelope().getBody().getFirstElement() == null)) {
                 try {
-                    axis2MC = ((Axis2MessageContext) synCtx).getAxis2MessageContext();//((Axis2MessageContext) context).getAxis2MessageContext();
-                    inputStream = getMessageInputStreamPT(axis2MC);
+                    axis2MC = ((Axis2MessageContext)synCtx).getAxis2MessageContext();//((Axis2MessageContext) context).getAxis2MessageContext();
+                    inputStream=getMessageInputStreamPT(axis2MC);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -334,16 +332,18 @@ public class SynapseXPath extends SynapsePath {
                     }
                 }
 
-            } else if ("true".equals(enableStreamingXpath) && streamingXPATH != null) {
-                if (!"".equals((String) result)) {
-                    OMElement re = AXIOMUtil.stringToOM((String) result);
-                    if (re != null) {
+            }else if("true".equals(enableStreamingXpath)&& streamingXPATH != null){
+                if(!"".equals((String) result)){
+                    OMElement re=AXIOMUtil.stringToOM((String) result);
+                    if(re!=null){
                         textValue.append(re.getText());
-                    } else {
+                    }
+                    else{
                         textValue.append(result.toString());
                     }
                 }
-            } else {
+            }
+            else {
                 textValue.append(result.toString());
             }
 
@@ -387,9 +387,8 @@ public class SynapseXPath extends SynapsePath {
      * (ie:-soap-envelope and on Synapse Message Context). This is useful for evaluating xpath on a
      * nodeset for function contexts (we need both nodeset and synapse ctxts for evaluating function
      * scope expressions)
-     *
-     * @param primaryContext   a context object ie:-  a soap envelope
-     * @param secondaryContext a context object ie:-synapse message ctxt
+     * @param primaryContext  a context object ie:-  a soap envelope
+     * @param secondaryContext  a context object ie:-synapse message ctxt
      * @return result
      */
     public Object evaluate(Object primaryContext, MessageContext secondaryContext) {
@@ -398,7 +397,7 @@ public class SynapseXPath extends SynapsePath {
         if (secondaryContext != null) {
             try {
                 //wrapper Context is used to evaluate 'dynamic' function scope objects
-                result = evaluate(new ContextWrapper((SOAPEnvelope) primaryContext, secondaryContext));
+                result = evaluate(new ContextWrapper((SOAPEnvelope) primaryContext,secondaryContext));
             } catch (Exception e) {
                 handleException("Evaluation of the XPath expression " + this.toString() +
                         " resulted in an error", e);
@@ -424,19 +423,19 @@ public class SynapseXPath extends SynapsePath {
      * Create a {@link Context} wrapper for the provided object.
      * This methods implements the following class specific behavior:
      * <dl>
-     * <dt>{@link MessageContext}</dt>
-     * <dd>The XPath expression is evaluated against the SOAP envelope
-     * and the functions and variables defined by
-     * {@link SynapseXPathFunctionContext} and
-     * {@link SynapseXPathVariableContext} are
-     * available.</dd>
-     * <dt>{@link SOAPEnvelope}</dt>
-     * <dd>The variables defined by {@link SynapseXPathVariableContext}
-     * are available.</dd>
+     *   <dt>{@link MessageContext}</dt>
+     *   <dd>The XPath expression is evaluated against the SOAP envelope
+     *       and the functions and variables defined by
+     *       {@link SynapseXPathFunctionContext} and
+     *       {@link SynapseXPathVariableContext} are
+     *       available.</dd>
+     *   <dt>{@link SOAPEnvelope}</dt>
+     *   <dd>The variables defined by {@link SynapseXPathVariableContext}
+     *       are available.</dd>
      * </dl>
      * For all other object types, the behavior is identical to
      * {@link BaseXPath#getContext(Object)}.
-     * <p/>
+     * <p>
      * Note that the behavior described here also applies to all evaluation
      * methods such as {@link #evaluate(Object)} or {@link #selectSingleNode(Object)},
      * given that these methods all use {@link #getContext(Object)}.
@@ -447,7 +446,7 @@ public class SynapseXPath extends SynapsePath {
     @Override
     protected Context getContext(Object obj) {
         if (obj instanceof MessageContext) {
-            MessageContext synCtx = (MessageContext) obj;
+            MessageContext synCtx = (MessageContext)obj;
             ContextSupport baseContextSupport = getContextSupport();
             ContextSupport contextSupport =
                     new ContextSupport(baseContextSupport.getNamespaceContext(),
@@ -458,7 +457,7 @@ public class SynapseXPath extends SynapsePath {
             context.setNodeSet(new SingletonList(synCtx.getEnvelope()));
             return context;
         } else if (obj instanceof SOAPEnvelope) {
-            SOAPEnvelope env = (SOAPEnvelope) obj;
+            SOAPEnvelope env = (SOAPEnvelope)obj;
             ContextSupport baseContextSupport = getContextSupport();
             ContextSupport contextSupport =
                     new ContextSupport(baseContextSupport.getNamespaceContext(),
@@ -486,22 +485,22 @@ public class SynapseXPath extends SynapsePath {
     }
 
     public boolean isForceDisableStreamXpath() {
-        return forceDisableStreamXpath;
+    	return forceDisableStreamXpath;
     }
 
-    public void setForceDisableStreamXpath(boolean forceDisableStreamXpath) {
-        this.forceDisableStreamXpath = forceDisableStreamXpath;
+	public void setForceDisableStreamXpath(boolean forceDisableStreamXpath) {
+    	this.forceDisableStreamXpath = forceDisableStreamXpath;
     }
 
     /**
      * This is a wrapper class used to inject both envelope and message contexts for xpath
      * We use this to resolve function scope xpath variables
      */
-    private static class ContextWrapper {
+    private static class ContextWrapper{
         private MessageContext ctxt;
         private SOAPEnvelope env;
 
-        public ContextWrapper(SOAPEnvelope env, MessageContext ctxt) {
+        public ContextWrapper(SOAPEnvelope env, MessageContext ctxt){
             this.env = env;
             this.ctxt = ctxt;
         }

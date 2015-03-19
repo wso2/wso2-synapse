@@ -37,7 +37,11 @@ import org.apache.synapse.util.PolicyInfo;
 import javax.xml.namespace.QName;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.StringTokenizer;
 
 /**
  * Factory for {@link ProxyService} instances.
@@ -113,13 +117,13 @@ public class ProxyServiceFactory {
                 while (st.hasMoreTokens()) {
                     String token = st.nextToken();
                     if (token.length() != 0) {
-                        pinnedServersList.add(token);
+                      pinnedServersList.add(token);
                     }
                 }
                 proxy.setPinnedServers(pinnedServersList);
             }
         }
-
+        
         OMAttribute trace = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
         if (trace != null) {
@@ -219,7 +223,7 @@ public class ProxyServiceFactory {
                     isTargetOk = true;
                 }
             }
-            if (!isTargetOk) {
+            if(!isTargetOk) {
                 handleException("Target of the proxy service must declare " +
                         "either an inSequence or endpoint or both");
             }

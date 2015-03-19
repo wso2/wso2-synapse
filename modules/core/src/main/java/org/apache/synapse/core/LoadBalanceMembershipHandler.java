@@ -64,7 +64,7 @@ public interface LoadBalanceMembershipHandler {
     /**
      * Get the algorithum uses in this membership handler
      *
-     * @return Load balance algorithm use for this Membership handler
+     * @return  Load balance algorithm use for this Membership handler
      */
     LoadbalanceAlgorithm getLoadbalanceAlgorithm();
 

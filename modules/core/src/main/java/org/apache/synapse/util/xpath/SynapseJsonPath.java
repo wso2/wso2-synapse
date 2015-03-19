@@ -30,21 +30,20 @@ import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.jaxen.JaxenException;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
 public class SynapseJsonPath extends SynapsePath {
 
     private static final Log log = LogFactory.getLog(SynapseJsonPath.class);
 
     private String enableStreamingJsonPath = SynapsePropertiesLoader.loadSynapseProperties().
-            getProperty(SynapseConstants.STREAMING_JSONPATH_PROCESSING);
+    getProperty(SynapseConstants.STREAMING_JSONPATH_PROCESSING);
 
     private JsonPath jsonPath;
 
     private boolean isWholeBody = false;
 
-    public SynapseJsonPath(String jsonPathExpression) throws JaxenException {
+    public SynapseJsonPath(String jsonPathExpression)  throws JaxenException {
         super(jsonPathExpression, SynapsePath.JSON_PATH, log);
         this.contentAware = true;
         this.expression = jsonPathExpression;
@@ -103,7 +102,7 @@ public class SynapseJsonPath extends SynapsePath {
         if (isWholeBody) {
             try {
                 return IOUtils.toString(jsonStream);
-            } catch (IOException e) {
+            } catch(IOException e) {
                 log.error("#stringValueOf. Could not convert JSON input stream to String.");
                 return "";
             }

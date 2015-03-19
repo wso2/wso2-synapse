@@ -32,19 +32,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.AddressEndpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.SynapseMessageReceiver;
-import org.apache.synapse.endpoints.AddressEndpoint;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.eventing.builders.ResponseMessageBuilder;
 import org.apache.synapse.eventing.builders.SubscriptionMessageBuilder;
 import org.apache.synapse.util.MessageHelper;
-import org.wso2.eventing.Event;
 import org.wso2.eventing.EventingConstants;
 import org.wso2.eventing.Subscription;
+import org.wso2.eventing.Event;
 import org.wso2.eventing.SubscriptionManager;
 import org.wso2.eventing.exceptions.EventException;
 
@@ -160,7 +160,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
      * @param responseAction WSE action for the response
      * @param mc             Message Context
      * @param faultMessage   Fault message
-     * @throws AxisFault AxisFault
+     * @throws AxisFault     AxisFault
      */
     private void dispatchResponse(SOAPEnvelope soapEnvelope,
                                   String responseAction,
@@ -234,7 +234,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
      *
      * @param mc             axis2 message context
      * @param messageBuilder respose message builder
-     * @throws AxisFault      axis fault
+     * @throws AxisFault     axis fault
      * @throws EventException eventing exception
      */
     private void processSubscriptionRequest(MessageContext mc,
@@ -286,7 +286,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
      *
      * @param mc             axis2 message context
      * @param messageBuilder respose message builder
-     * @throws AxisFault      axis fault
+     * @throws AxisFault     axis fault
      * @throws EventException eventing exception
      */
     private void processUnSubscribeRequest(MessageContext mc,
@@ -325,7 +325,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
      *
      * @param mc             axis2 message context
      * @param messageBuilder respose message builder
-     * @throws AxisFault      axis fault
+     * @throws AxisFault     axis fault
      * @throws EventException event
      */
     private void processGetStatusRequest(MessageContext mc,
@@ -365,7 +365,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
      *
      * @param mc             axis2 message context
      * @param messageBuilder respose message builder
-     * @throws AxisFault      axis fault
+     * @throws AxisFault axis fault
      * @throws EventException event exception
      */
     private void processReNewRequest(MessageContext mc,
@@ -412,8 +412,8 @@ public class SynapseEventSource extends SynapseMessageReceiver {
     /**
      * Create a Endpoint for a given URL
      *
-     * @param endpointUrl URL
-     * @param se          synapse environment
+     * @param endpointUrl      URL
+     * @param se    synapse environment
      * @return AddressEndpoint address endpoint
      */
     private Endpoint getEndpointFromURL(String endpointUrl, SynapseEnvironment se) {
@@ -431,7 +431,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
      * Set the operations avilable for EventSource service
      *
      * @param eventSourceService service
-     * @throws AxisFault axis fault
+     * @throws AxisFault         axis fault
      */
     private void addOperations(AxisService eventSourceService) throws AxisFault {
         // Create operations
@@ -453,7 +453,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
         unsubscribeOperation.setMessageReceiver(this);
         renewOperation.setMessageReceiver(this);
         getStatusOperation.setMessageReceiver(this);
-        subscriptionEndOperation.setMessageReceiver(this);
+        subscriptionEndOperation.setMessageReceiver(this);        
         // Set Soap Action
         subscribeOperation.setSoapAction(EventingConstants.WSE_SUBSCRIBE);
         unsubscribeOperation.setSoapAction(EventingConstants.WSE_UNSUBSCRIBE);
@@ -466,7 +466,7 @@ public class SynapseEventSource extends SynapseMessageReceiver {
         eventSourceService.addOperation(renewOperation);
         eventSourceService.addOperation(getStatusOperation);
         eventSourceService.addOperation(subscriptionEndOperation);
-
+        
     }
 
     // Methods for accessing configuration properties - self-explainable

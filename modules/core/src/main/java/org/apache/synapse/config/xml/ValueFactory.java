@@ -21,9 +21,11 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -81,7 +83,7 @@ public class ValueFactory {
         }
         return key;
     }
-
+    
     /**
      * Create a key instance
      *
@@ -150,11 +152,11 @@ public class ValueFactory {
     /**
      * we'll focus on the trivial escape ie:- ones that have escape characters at start and end
      */
-    private boolean isEscapedExpression(String escapeExpr) {
+    private boolean isEscapedExpression(String escapeExpr){
         final char startEscapeChar = '{';
         final char endEscapeChar = '}';
         String expr = escapeExpr.trim();
-        if (expr.length() <= 3) {
+        if(expr.length() <= 3){
             return false;
         }
         //check if this is a escape expression ie:- {{//m0:getQuote}}
@@ -169,7 +171,7 @@ public class ValueFactory {
         return false;
     }
 
-    private String getEscapedExpression(String originalExpr) {
+    private String getEscapedExpression(String originalExpr){
         return originalExpr.trim().substring(1, originalExpr.length() - 1);
     }
 
@@ -179,7 +181,7 @@ public class ValueFactory {
      * {} type user input is used to create real xpath expression
      *
      * @param elem the element
-     * @param key  xpath expression with {}
+     * @param key xpath expression with {}
      * @return SynapseXpath
      */
     public SynapseXPath createSynXpath(OMElement elem, String key) {

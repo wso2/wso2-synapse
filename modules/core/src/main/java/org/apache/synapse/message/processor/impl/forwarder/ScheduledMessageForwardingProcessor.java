@@ -30,48 +30,47 @@ import org.apache.synapse.task.Task;
 public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcessor {
     private MessageForwardingProcessorView view;
 
-    @Override
-    public void init(SynapseEnvironment se) {
-        parameters.put(ForwardingProcessorConstants.THROTTLE,
-                String.valueOf((isThrottling(interval))));
-        if (isThrottling(cronExpression)) {
-            parameters.put(ForwardingProcessorConstants.THROTTLE_INTERVAL, String.valueOf(interval));
-            parameters.put(ForwardingProcessorConstants.CRON_EXPRESSION, cronExpression);
-        }
+	@Override
+	public void init(SynapseEnvironment se) {
+		parameters.put(ForwardingProcessorConstants.THROTTLE,
+		               String.valueOf((isThrottling(interval))));
+		if (isThrottling(cronExpression)) {
+			parameters.put(ForwardingProcessorConstants.THROTTLE_INTERVAL, String.valueOf(interval));
+			parameters.put(ForwardingProcessorConstants.CRON_EXPRESSION, cronExpression);
+		}
 
-        if (nonRetryStatusCodes != null) {
-            parameters.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, nonRetryStatusCodes);
-        }
+		if (nonRetryStatusCodes != null) {
+			parameters.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, nonRetryStatusCodes);
+		}
 
-        // Setting the end-point here.
-        parameters.put(ForwardingProcessorConstants.TARGET_ENDPOINT, targetEndpoint);
+		// Setting the end-point here.
+		parameters.put(ForwardingProcessorConstants.TARGET_ENDPOINT, targetEndpoint);
 
-        super.init(se);
+		super.init(se);
 
-        try {
-            view = new MessageForwardingProcessorView(this);
-        } catch (Exception e) {
-            throw new SynapseException(e);
-        }
+		try {
+			view = new MessageForwardingProcessorView(this);
+		} catch (Exception e) {
+			throw new SynapseException(e);
+		}
 
-        // register MBean
-        org.apache.synapse.commons.jmx.MBeanRegistrar.getInstance()
-                .registerMBean(view,
-                        "Message Forwarding Processor view",
-                        getName());
-    }
+		// register MBean
+		org.apache.synapse.commons.jmx.MBeanRegistrar.getInstance()
+		                                             .registerMBean(view,
+		                                                            "Message Forwarding Processor view",
+		                                                            getName());
+	}
 
     /**
      * This method is used by back end of the message processor
-     *
      * @return The associated MBean.
      */
     public MessageForwardingProcessorView getView() {
         return view;
     }
-
-    @Override
-    protected Task getTask() {
-        return new ForwardingService(this, sender, synapseEnvironment, interval);
-    }
+    
+	@Override
+	protected Task getTask() {
+		return new ForwardingService(this, sender, synapseEnvironment, interval);
+	}
 }

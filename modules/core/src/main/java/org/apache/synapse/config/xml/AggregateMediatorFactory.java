@@ -32,7 +32,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link AggregateMediator} instances from the config;
- * <p/>
+ * 
  * <pre>
  * &lt;aggregate&gt;
  *   &lt;correlateOn expression="xpath"/&gt;?
@@ -47,9 +47,7 @@ import java.util.Properties;
  */
 public class AggregateMediatorFactory extends AbstractMediatorFactory {
 
-    /**
-     * Element QName definitions *
-     */
+    /** Element QName definitions **/
     protected static final QName AGGREGATE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "aggregate");
     protected static final QName CORELATE_ON_Q
@@ -61,9 +59,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
     protected static final QName ON_COMPLETE_Q
             = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "onComplete");
 
-    /**
-     * Attribute QName definitions *
-     */
+    /** Attribute QName definitions **/
     private static final QName EXPRESSION_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "expression");
     private static final QName TIMEOUT_Q
@@ -77,7 +73,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
     private static final QName ID_Q
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
     private static final QName ENCLOSING_ELEMENT_PROPERTY
-            = new QName(XMLConfigConstants.NULL_NAMESPACE, "enclosingElementProperty");
+                = new QName(XMLConfigConstants.NULL_NAMESPACE, "enclosingElementProperty");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -95,7 +91,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
             if (corelateExpr != null) {
                 try {
                     mediator.setCorrelateExpression(
-                            SynapseXPathFactory.getSynapseXPath(corelateOn, EXPRESSION_Q));
+                        SynapseXPathFactory.getSynapseXPath(corelateOn, EXPRESSION_Q));
                 } catch (JaxenException e) {
                     handleException("Unable to load the corelate XPATH expression", e);
                 }
@@ -114,12 +110,12 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
             if (messageCount != null) {
                 OMAttribute min = messageCount.getAttribute(MIN_Q);
                 if (min != null) {
-                    mediator.setMinMessagesToComplete(new ValueFactory().createValue("min", messageCount));
+                	mediator.setMinMessagesToComplete(new ValueFactory().createValue("min", messageCount));
                 }
 
                 OMAttribute max = messageCount.getAttribute(MAX_Q);
                 if (max != null) {
-                    mediator.setMaxMessagesToComplete(new ValueFactory().createValue("max", messageCount));
+                	mediator.setMaxMessagesToComplete(new ValueFactory().createValue("max", messageCount));
                 }
             }
         }
@@ -131,7 +127,7 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
             if (aggregateExpr != null) {
                 try {
                     mediator.setAggregationExpression(
-                            SynapseXPathFactory.getSynapseXPath(onComplete, EXPRESSION_Q));
+                        SynapseXPathFactory.getSynapseXPath(onComplete, EXPRESSION_Q));
                 } catch (JaxenException e) {
                     handleException("Unable to load the aggregating XPATH", e);
                 }

@@ -44,7 +44,7 @@ public class Axis2TransportHelper {
     /**
      * Creates a new Axis2TransportHelper using the provided Axis2 configuration context.
      *
-     * @param configurationContext an Axis2 configuration context
+     * @param  configurationContext  an Axis2 configuration context
      */
     public Axis2TransportHelper(ConfigurationContext configurationContext) {
         this.configurationContext = configurationContext;
@@ -73,7 +73,7 @@ public class Axis2TransportHelper {
             }
         }
     }
-
+    
     /**
      * Resumes all paused Axis2 listeners.
      */
@@ -83,7 +83,7 @@ public class Axis2TransportHelper {
 
             Map<String, TransportInDescription> trpIns
                     = configurationContext.getAxisConfiguration().getTransportsIn();
-
+    
             for (TransportInDescription trpIn : trpIns.values()) {
                 TransportListener trpLst = trpIn.getReceiver();
                 if (trpLst instanceof ManagementSupport) {
@@ -97,7 +97,7 @@ public class Axis2TransportHelper {
             }
         }
     }
-
+    
     /**
      * Pauses all Axis2 senders which support this operation.
      */
@@ -121,7 +121,7 @@ public class Axis2TransportHelper {
             }
         }
     }
-
+    
     /**
      * Resumes all paused Axis2 senders.
      */
@@ -148,7 +148,7 @@ public class Axis2TransportHelper {
 
     /**
      * Determines the total number of pending listener threads (active + queued).
-     *
+     * 
      * @return the total number of pending listener threads (active + queued).
      */
     public int getPendingListenerThreadCount() {
@@ -194,7 +194,7 @@ public class Axis2TransportHelper {
 
     /**
      * Determines the total number of pending sender threads (active + queued).
-     *
+     * 
      * @return the total number of pending sender threads (active + queued).
      */
     public int getPendingSenderThreadCount() {

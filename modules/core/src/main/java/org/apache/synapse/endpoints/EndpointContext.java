@@ -43,62 +43,40 @@ public class EndpointContext {
     private static final String LAST_SUSPEND_DURATION = ".last_suspend_duration";
 
     // The different states an endpoint could exist at any point in time
-    /**
-     * And active endpoint known to be functioning properly
-     */
-    public static final int ST_ACTIVE = 1;
-    /**
-     * An endpoint which timed out - but now maybe ready to retry depending on the current time
-     */
-    public static final int ST_TIMEOUT = 2;
+    /** And active endpoint known to be functioning properly */
+    public static final int ST_ACTIVE      = 1;
+    /** An endpoint which timed out - but now maybe ready to retry depending on the current time */
+    public static final int ST_TIMEOUT     = 2;
     /**
      * An endpoint put into the suspended state by the system.
      * Will retry after an applicable delay
      */
-    public static final int ST_SUSPENDED = 3;
+    public static final int ST_SUSPENDED   = 3;
     /**
      * An endpoint manually switched off into maintenance -
      * it will never change state automatically
      */
     public static final int ST_OFF = 4;
 
-    /**
-     * The state of the endpoint at present
-     */
-    private int localState = ST_ACTIVE;
-    /**
-     * The time in ms, until the next retry - depending on a timeout or suspension
-     */
+    /** The state of the endpoint at present */
+    private int  localState = ST_ACTIVE;
+    /** The time in ms, until the next retry - depending on a timeout or suspension */
     private long localNextRetryTime = -1;
-    /**
-     * The number of attempts left for timeout failures, until they make the endpoint suspended
-     */
-    private int localRemainingRetries = -1;
-    /**
-     * The duration in ms for the last suspension
-     */
+    /** The number of attempts left for timeout failures, until they make the endpoint suspended */
+    private int  localRemainingRetries = -1;
+    /** The duration in ms for the last suspension */
     private long localLastSuspendDuration = -1;
 
-    /**
-     * Is the environment clustered ?
-     */
+    /** Is the environment clustered ? */
     private boolean isClustered = false;
-    /**
-     * Name of the endpoint - mainly for logging
-     */
+    /** Name of the endpoint - mainly for logging */
     private String endpointName = SynapseConstants.ANONYMOUS_ENDPOINT;
-    /**
-     * The Axis2 configuration context - to replicate state in a cluster
-     */
+    /** The Axis2 configuration context - to replicate state in a cluster */
     private ConfigurationContext cfgCtx = null;
-    /**
-     * The endpoint definition that holds static endpoint information
-     */
+    /** The endpoint definition that holds static endpoint information */
     private EndpointDefinition definition = null;
 
-    /**
-     * Metrics bean to notify the state changes
-     */
+    /** Metrics bean to notify the state changes */
     private EndpointView metricsBean = null;
 
     // for clustered mode operation, keys pre-computed and used for replication
@@ -109,12 +87,11 @@ public class EndpointContext {
 
     /**
      * Create an EndpointContext to hold runtime state of an Endpoint
-     *
-     * @param endpointName       the name of the endpoint (mainly for logging)
+     * @param endpointName the name of the endpoint (mainly for logging)
      * @param endpointDefinition the definition of the endpoint
-     *                           (e.g. retry time, suspend duration..)
-     * @param clustered          is the environment clustered?
-     * @param cfgCtx             the Axis2 configurationContext for clustering
+     *  (e.g. retry time, suspend duration..)
+     * @param clustered is the environment clustered?
+     * @param cfgCtx the Axis2 configurationContext for clustering
      */
     public EndpointContext(String endpointName, EndpointDefinition endpointDefinition,
                            boolean clustered, ConfigurationContext cfgCtx, EndpointView metricsBean) {
@@ -122,9 +99,9 @@ public class EndpointContext {
         if (clustered) {
             if (endpointName == null) {
                 if (endpointDefinition != null &&
-                        !endpointDefinition.isReplicationDisabled()) {
+                    !endpointDefinition.isReplicationDisabled()) {
                     handleException("For proper clustered mode operation, all endpoints should " +
-                            "be uniquely named");
+                        "be uniquely named");
                 }
             }
             this.isClustered = true;
@@ -525,16 +502,11 @@ public class EndpointContext {
             }
         }
         switch (state) {
-            case ST_ACTIVE:
-                return "ACTIVE";
-            case ST_TIMEOUT:
-                return "TIMEOUT";
-            case ST_SUSPENDED:
-                return "SUSPENDED";
-            case ST_OFF:
-                return "MAINTNENCE";
-            default:
-                return "UNKNOWN";
+            case ST_ACTIVE : return "ACTIVE";
+            case ST_TIMEOUT : return "TIMEOUT";
+            case ST_SUSPENDED : return "SUSPENDED";
+            case ST_OFF: return "MAINTNENCE";
+            default: return "UNKNOWN";
         }
     }
 

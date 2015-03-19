@@ -49,7 +49,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 public final class MessageConverter {
     private static final String ABSTRACT_MC_PROPERTIES = "ABSTRACT_MC_PROPERTIES";
@@ -61,15 +66,13 @@ public final class MessageConverter {
 
     private static final Log logger = LogFactory.getLog(MessageConverter.class.getName());
 
-    private MessageConverter() {
-    }
+    private MessageConverter() {}
 
     /**
      * Converts a message read from the message store to a Synapse Message Context object.
-     *
-     * @param message  Message from the message store
-     * @param axis2Ctx Final Axis2 Message Context
-     * @param synCtx   Final Synapse message Context
+     * @param message Message from the message store
+     * @param axis2Ctx  Final Axis2 Message Context
+     * @param synCtx Final Synapse message Context
      * @return Final Synapse Message Context
      */
     public static MessageContext toMessageContext(StorableMessage message,
@@ -176,12 +179,12 @@ public final class MessageConverter {
             while (propertyObjects.hasNext()) {
                 String key = propertyObjects.next();
                 Object value = synMsg.getPropertyObjects().get(key);
-                if (key.startsWith(OM_ELEMENT_PREFIX)) {
-                    String originalKey = key.substring(OM_ELEMENT_PREFIX.length(), key.length());
-                    ByteArrayInputStream is = new ByteArrayInputStream((byte[]) value);
+                if(key.startsWith(OM_ELEMENT_PREFIX)){
+                    String originalKey = key.substring(OM_ELEMENT_PREFIX.length(),key.length());
+                    ByteArrayInputStream is = new ByteArrayInputStream((byte[])value);
                     StAXOMBuilder builder = new StAXOMBuilder(is);
                     OMElement omElement = builder.getDocumentElement();
-                    synCtx.setProperty(originalKey, omElement);
+                    synCtx.setProperty(originalKey,omElement);
                 }
             }
 
@@ -197,7 +200,6 @@ public final class MessageConverter {
     /**
      * Converts a Synapse Message Context to a representation that can be stored in the
      * Message store queue.
-     *
      * @param synCtx Source Synapse message context.
      * @return Storable representation of the provided message context.
      */
@@ -212,7 +214,7 @@ public final class MessageConverter {
             org.apache.axis2.context.MessageContext msgCtx =
                     axis2MessageContext.getAxis2MessageContext();
             axis2msg.setMessageID(UUIDGenerator.getUUID());
-            if (msgCtx.getAxisOperation() != null) {
+            if ( msgCtx.getAxisOperation() != null ){
                 axis2msg.setOperationAction(msgCtx.getAxisOperation().getSoapAction());
                 axis2msg.setOperationName(msgCtx.getAxisOperation().getName());
             }
@@ -220,7 +222,7 @@ public final class MessageConverter {
                 axis2msg.setJsonStream(JsonUtil.jsonPayloadToByteArray(msgCtx));
             }
             axis2msg.setAction(msgCtx.getOptions().getAction());
-            if (msgCtx.getAxisService() != null) {
+            if (msgCtx.getAxisService() != null){
                 axis2msg.setService(msgCtx.getAxisService().getName());
             }
             if (msgCtx.getRelatesTo() != null) {
@@ -262,12 +264,11 @@ public final class MessageConverter {
                 if (JMS_PRIORITY.equals(propertyName)) {
                     if (propertyValue instanceof Integer) {
                         message.setPriority((Integer) propertyValue);
-                    } else if (propertyValue instanceof String) {
+                    } else if (propertyValue instanceof  String) {
                         try {
                             int value = Integer.parseInt((String) propertyValue);
                             message.setPriority(value);
-                        } catch (NumberFormatException e) {
-                        }
+                        } catch (NumberFormatException e) {}
                     }
                 }
             }
@@ -294,7 +295,7 @@ public final class MessageConverter {
                 if (value instanceof String) {
                     synMsg.addProperty(key, (String) value);
                 }
-                if (value instanceof ArrayList && ((ArrayList) value).get(0) instanceof OMElement) {
+                if(value instanceof ArrayList && ((ArrayList)value).get(0) instanceof OMElement) {
                     OMElement elem = ((OMElement) ((ArrayList) value).get(0));
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     try {
@@ -339,18 +340,18 @@ public final class MessageConverter {
         }
     }
 
-    private static byte[] getUTF8Bytes(String soapEnvelpe) {
-        byte[] bytes;
-        try {
-            bytes = soapEnvelpe.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            logger.error("Unable to extract bytes in UTF-8 encoding. "
-                    + "Extracting bytes in the system default encoding"
-                    + e.getMessage());
-            bytes = soapEnvelpe.getBytes();
-        }
-        return bytes;
-    }
+	private static byte[] getUTF8Bytes(String soapEnvelpe) {
+		byte[] bytes;
+		try {
+			bytes = soapEnvelpe.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			logger.error("Unable to extract bytes in UTF-8 encoding. "
+					+ "Extracting bytes in the system default encoding"
+					+ e.getMessage());
+			bytes = soapEnvelpe.getBytes();
+		}
+		return bytes;
+	}
 
     private static final class Replace {
         public String CHAR;
@@ -362,9 +363,7 @@ public final class MessageConverter {
         }
     }
 
-    /**
-     * Replaced Strings
-     */
+    /** Replaced Strings */
     private static final Replace RS_HYPHEN = new Replace("-", "__HYPHEN__");
     private static final Replace RS_EQUAL = new Replace("=", "__EQUAL__");
     private static final Replace RS_SLASH = new Replace("/", "__SLASH__");

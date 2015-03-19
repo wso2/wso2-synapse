@@ -34,6 +34,7 @@ package org.apache.synapse.util;
 import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.HashMap;
@@ -72,7 +73,7 @@ public class ResponseAcceptEncodingProcessor {
 
                     Object obj = response.getProperty(MessageContext.TRANSPORT_HEADERS);
                     Map responseHeaders;
-
+                    
                     if (obj != null && obj instanceof Map) {
                         responseHeaders = (Map) obj;
                     } else {
@@ -88,7 +89,7 @@ public class ResponseAcceptEncodingProcessor {
                     //responseHeaders.put(HTTP.CONTENT_ENCODING, GZIP_CODEC);
 
                     //Transport sender can decide to enable gzip compression by looking at this property
-                    response.setProperty(PassThroughConstants.REQUEST_ACCEPTS_GZIP, "true");
+                    response.setProperty(PassThroughConstants.REQUEST_ACCEPTS_GZIP,"true");
 
                 }
                 //if there are any type for 'Accept-Encoding' , those should go here

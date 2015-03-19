@@ -34,7 +34,7 @@ import org.apache.synapse.mediators.FlowContinuableMediator;
  * @see org.apache.synapse.MessageContext#isResponse()
  */
 public class InMediator extends AbstractListMediator implements org.apache.synapse.mediators.FilterMediator,
-        FlowContinuableMediator {
+                                                                FlowContinuableMediator {
 
     /**
      * Executes the list of sub/child mediators, if the filter condition is satisfied

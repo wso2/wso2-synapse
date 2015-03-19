@@ -58,7 +58,7 @@ public class InboundEndpoint implements ManagedLifecycle {
             inboundRequestProcessor.init();
         } else {
             String msg = "Inbound Request processor not found for Inbound EP : " + name +
-                    " Protocol: " + protocol + " Class" + classImpl;
+                         " Protocol: " + protocol + " Class" + classImpl;
             log.error(msg);
             throw new SynapseException(msg);
         }
@@ -83,11 +83,11 @@ public class InboundEndpoint implements ManagedLifecycle {
             InboundRequestProcessorFactory factory = it.next();
 
             InboundRequestProcessor inboundRequestProcessor =
-                    factory.createInboundProcessor(params);
+                                factory.createInboundProcessor(params);
             if (inboundRequestProcessor != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Inbound Request Processor found in factory : " +
-                            factory.getClass().getName());
+                              factory.getClass().getName());
                 }
                 return inboundRequestProcessor;
             }

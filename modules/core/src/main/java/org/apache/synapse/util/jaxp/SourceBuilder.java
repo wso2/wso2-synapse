@@ -19,21 +19,21 @@
 
 package org.apache.synapse.util.jaxp;
 
-import org.apache.axiom.om.OMElement;
-
 import javax.xml.transform.Source;
+
+import org.apache.axiom.om.OMElement;
 
 /**
  * Interface encapsulating a strategy to transform an AXIOM tree into a
  * {@link Source} object.
  * Implementations of this interface should be used in the following way:
  * <ol>
- * <li>Create a new instance using the appropriate {@link SourceBuilderFactory}.</li>
- * <li>Call {@link #getSource(OMElement)} to get a {@link Source} object for
- * the AXIOM tree.</li>
- * <li>Use the {@link Source} object in the invocation the XSL transformer or
- * schema validator, etc.</li>
- * <li>Call {@link #release()}.</li>
+ *   <li>Create a new instance using the appropriate {@link SourceBuilderFactory}.</li>
+ *   <li>Call {@link #getSource(OMElement)} to get a {@link Source} object for
+ *       the AXIOM tree.</li>
+ *   <li>Use the {@link Source} object in the invocation the XSL transformer or
+ *       schema validator, etc.</li>
+ *   <li>Call {@link #release()}.</li>
  * </ol>
  * Note that implementations of this interface may be stateful. Therefore a single
  * instance must never be used concurrently.
@@ -41,12 +41,12 @@ import javax.xml.transform.Source;
 public interface SourceBuilder {
     /**
      * Get a {@link Source} implementation for the given AXIOM tree.
-     *
+     * 
      * @param node the root node of the AXIOM tree
      * @return the source object
      */
     Source getSource(OMElement node);
-
+    
     /**
      * Release any resources associated with this object.
      */

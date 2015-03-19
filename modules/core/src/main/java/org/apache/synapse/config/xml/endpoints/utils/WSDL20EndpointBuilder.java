@@ -19,10 +19,12 @@
 
 package org.apache.synapse.config.xml.endpoints.utils;
 
+import java.net.URI;
+
 /**
  * Currently this class is not used as Woden is dependent on Xerces, which is not included in the
  * current release.
- * <p/>
+ *  
  * Builder for WSDL 2.0 endpoints. This class extracts endpoint information from the given WSDL 2.0
  * documents.
  */

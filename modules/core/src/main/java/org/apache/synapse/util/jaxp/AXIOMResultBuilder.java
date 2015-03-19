@@ -19,17 +19,17 @@
 
 package org.apache.synapse.util.jaxp;
 
+import java.nio.charset.Charset;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.jaxp.OMResult;
-
-import java.nio.charset.Charset;
 
 /**
  * {@link ResultBuilder} implementation that relies on {@link OMResult}.
  */
 public class AXIOMResultBuilder implements ResultBuilder {
     private final OMResult result = new OMResult();
-
+    
     public OMResult getResult() {
         return result;
     }

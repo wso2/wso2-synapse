@@ -22,11 +22,12 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.commons.datasource.DataSourceInformation;
+import org.wso2.securevault.secret.SecretInformation;
 import org.apache.synapse.mediators.db.AbstractDBMediator;
 import org.apache.synapse.mediators.db.Statement;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
-import org.wso2.securevault.secret.SecretInformation;
+
 
 import javax.naming.Context;
 import javax.xml.namespace.QName;
@@ -107,7 +108,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
      * Reads the data source configuration for all mediators based on the <code>AbstractDBMediator</code>
      * and stores the configuration in the mediator for datasource initialization and de-serialization.
      *
-     * @param elem     the configuration element of the mediator
+     * @param elem the configuration element of the mediator
      * @param mediator the mediator on which the configuration shall be stored
      */
     protected void buildDataSource(OMElement elem, AbstractDBMediator mediator) {
@@ -152,7 +153,7 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
             saveElementConfig(pool, USER_Q, mediator);
             saveElementConfig(pool, PASS_Q, mediator);
         }
-
+		
     }
 
     private void readCustomDataSourceConfig(OMElement pool, AbstractDBMediator mediator) {
@@ -306,8 +307,8 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
             while (resultIter.hasNext()) {
 
                 OMElement resultElt = (OMElement) resultIter.next();
-                if (getAttribute(resultElt, ATT_NAME) == null || getAttribute(resultElt, ATT_COLUMN) == null) {
-                    handleException("Invalid result element found missing either name and column [DBLookup] mediator");
+                if(getAttribute(resultElt, ATT_NAME) ==null || getAttribute(resultElt, ATT_COLUMN) == null){
+                	handleException("Invalid result element found missing either name and column [DBLookup] mediator");
                 }
                 statement.addResult(
                         getAttribute(resultElt, ATT_NAME),

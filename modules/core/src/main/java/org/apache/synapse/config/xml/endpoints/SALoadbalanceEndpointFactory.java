@@ -37,20 +37,19 @@ import java.util.Properties;
 
 /**
  * Creates {@link SALoadbalanceEndpoint} from an XML configuration.
- * <p/>
+ *
  * &lt;endpoint [name="name"]&gt;
- * &lt;session type="soap | ..other session types.." /&gt;
- * &lt;loadbalance policy="policy"&gt;
- * &lt;endpoint&gt;+
- * &lt;/loadbalance&gt;
+ *    &lt;session type="soap | ..other session types.." /&gt;
+ *    &lt;loadbalance policy="policy"&gt;
+ *       &lt;endpoint&gt;+
+ *    &lt;/loadbalance&gt;
  * &lt;/endpoint&gt;
  */
 public class SALoadbalanceEndpointFactory extends EndpointFactory {
 
     private static SALoadbalanceEndpointFactory instance = new SALoadbalanceEndpointFactory();
 
-    private SALoadbalanceEndpointFactory() {
-    }
+    private SALoadbalanceEndpointFactory() {}
 
     public static SALoadbalanceEndpointFactory getInstance() {
         return instance;
@@ -78,7 +77,7 @@ public class SALoadbalanceEndpointFactory extends EndpointFactory {
                     handleException("Invalid session timeout value : " + sessionTimeout.getText());
                 }
             }
-
+            
             String type = sessionElement.getAttributeValue(new QName("type"));
 
             if (type.equalsIgnoreCase("soap")) {
@@ -110,7 +109,7 @@ public class SALoadbalanceEndpointFactory extends EndpointFactory {
         loadbalanceElement = epConfig.getFirstChildWithName
                 (new QName(SynapseConstants.SYNAPSE_NAMESPACE, "loadbalance"));
 
-        if (loadbalanceElement != null) {
+        if(loadbalanceElement != null) {
 
             // set endpoints
             List<Endpoint> endpoints = getEndpoints(loadbalanceElement,

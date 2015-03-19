@@ -21,17 +21,17 @@ package org.apache.synapse.mediators.transform.url;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.evaluators.Evaluator;
 import org.apache.synapse.commons.evaluators.EvaluatorContext;
 import org.apache.synapse.commons.evaluators.EvaluatorException;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
+import java.net.URISyntaxException;
 
 /**
  * Represents a URL rewrite rule. A rule can consist of an optional condition
@@ -58,7 +58,7 @@ public class RewriteRule {
             EvaluatorContext ctx = new EvaluatorContext(uriString, headers);
             ctx.setProperties(((Axis2MessageContext) messageContext).getProperties());
             ctx.setMessageContext(((Axis2MessageContext) messageContext).getAxis2MessageContext());
-
+            
             if (log.isTraceEnabled()) {
                 log.trace("Evaluating condition with URI: " + uriString);
             }

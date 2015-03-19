@@ -28,9 +28,9 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.eventing.SynapseSubscription;
+import org.wso2.securevault.PasswordManager;
 import org.wso2.eventing.SubscriptionManager;
 import org.wso2.eventing.exceptions.EventException;
-import org.wso2.securevault.PasswordManager;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -141,7 +141,7 @@ public class EventSourceFactory {
         try {
             createStaticSubscriptions(elem, eventSource);
         } catch (EventException e) {
-            handleException("Static subscription creation failure", e);
+            handleException("Static subscription creation failure",e);
         }
 
         return eventSource;
@@ -160,7 +160,7 @@ public class EventSourceFactory {
     /**
      * Generate the static subscriptions
      *
-     * @param elem               containing the static subscription configurations
+     * @param elem containing the static subscription configurations
      * @param synapseEventSource event source to which the static subscriptions belong to
      * @throws EventException in-case of a failure in creating static subscriptions
      */
@@ -168,7 +168,7 @@ public class EventSourceFactory {
                                                   SynapseEventSource synapseEventSource)
             throws EventException {
         for (Iterator iterator = elem.getChildrenWithName(SUBSCRIPTION_QNAME);
-             iterator.hasNext(); ) {
+             iterator.hasNext();) {
             SynapseSubscription synapseSubscription = new SynapseSubscription();
             OMElement elmSubscription = (OMElement) iterator.next();
             synapseSubscription.setId(elmSubscription.getAttribute(ID_QNAME).getAttributeValue());
@@ -177,14 +177,14 @@ public class EventSourceFactory {
             OMAttribute dialectAttr = elmFilter.getAttribute(FILTER_DIALECT_QNAME);
             if (dialectAttr != null && dialectAttr.getAttributeValue() != null) {
 
-                OMAttribute sourceAttr = elmFilter.getAttribute(FILTER_SOURCE_QNAME);
-                if (sourceAttr != null) {
-                    synapseSubscription.setFilterDialect(dialectAttr.getAttributeValue());
-                    synapseSubscription.setFilterValue(sourceAttr.getAttributeValue());
-                } else {
-                    handleException(
-                            "Error in creating static subscription. Filter source not defined");
-                }
+                    OMAttribute sourceAttr = elmFilter.getAttribute(FILTER_SOURCE_QNAME);
+                    if (sourceAttr != null) {
+                        synapseSubscription.setFilterDialect(dialectAttr.getAttributeValue());
+                        synapseSubscription.setFilterValue(sourceAttr.getAttributeValue());
+                    } else {
+                        handleException(
+                                "Error in creating static subscription. Filter source not defined");
+                    }             
             } else {
                 handleException(
                         "Error in creating static subscription. Filter dialect not defined");

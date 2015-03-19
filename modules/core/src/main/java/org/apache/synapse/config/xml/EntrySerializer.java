@@ -19,16 +19,16 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
-import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.OMElement;
 import org.apache.synapse.config.Entry;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseConstants;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import javax.xml.namespace.QName;

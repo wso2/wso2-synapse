@@ -157,7 +157,7 @@ public class PriorityExecutorDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void restoreSynapseArtifact(String artifactName) {
-        if (log.isDebugEnabled()) {
+         if (log.isDebugEnabled()) {
             log.debug("Restoring PriorityExecutor with name : " + artifactName + " : Started");
         }
 

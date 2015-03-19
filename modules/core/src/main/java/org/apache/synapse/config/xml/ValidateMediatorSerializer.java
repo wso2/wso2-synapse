@@ -21,15 +21,15 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.builtin.ValidateMediator;
 
 import java.util.List;
 
 /**
  * Serializer for {@link ValidateMediator} instances.
- *
+ * 
  * @see ValidateMediatorSerializer
  */
 public class ValidateMediatorSerializer extends AbstractListMediatorSerializer {
@@ -51,7 +51,7 @@ public class ValidateMediatorSerializer extends AbstractListMediatorSerializer {
         for (Value key : mediator.getSchemaKeys()) {
             OMElement schema = fac.createOMElement("schema", synNS, validate);
             // Serialize Value using ValueSerializer
-            ValueSerializer keySerializer = new ValueSerializer();
+            ValueSerializer keySerializer =  new ValueSerializer();
             keySerializer.serializeValue(key, XMLConfigConstants.KEY, schema);
         }
 

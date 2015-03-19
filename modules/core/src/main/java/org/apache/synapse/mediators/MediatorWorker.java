@@ -19,9 +19,9 @@
 
 package org.apache.synapse.mediators;
 
+import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
 
 /**
  * This class will be used as the executer for the injectAsync method for the
@@ -32,14 +32,10 @@ public class MediatorWorker implements Runnable {
     private static final Log log = LogFactory.getLog(MediatorWorker.class);
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
-    /**
-     * Mediator to be executed
-     */
+    /** Mediator to be executed */
     private Mediator seq = null;
 
-    /**
-     * MessageContext to be mediated using the mediator
-     */
+    /** MessageContext to be mediated using the mediator */
     private MessageContext synCtx = null;
 
     /**
@@ -80,7 +76,7 @@ public class MediatorWorker implements Runnable {
 
             } else {
                 warn(false, "Exception encountered but no fault handler found - " +
-                        "message dropped", synCtx);
+                    "message dropped", synCtx);
             }
 
         } catch (Exception e) {
@@ -95,7 +91,7 @@ public class MediatorWorker implements Runnable {
 
             } else {
                 warn(false, "Exception encountered but no fault handler found - " +
-                        "message dropped", synCtx);
+                    "message dropped", synCtx);
             }
         } catch (Throwable e) {
             String msg = "Unexpected error executing task/async inject, message dropped";

@@ -22,12 +22,14 @@ import org.apache.synapse.MessageContext;
 
 public interface TenantInfoConfigurator {
     /**
+     *
      * @param in
      * @return
      */
     public boolean extractTenantInfo(MessageContext in);
 
     /**
+     *
      * @param out
      * @return
      */

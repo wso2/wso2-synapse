@@ -19,10 +19,7 @@
 
 package org.apache.synapse.util.concurrent;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * This is the executor service that will be returned by the env
@@ -30,33 +27,33 @@ import java.util.concurrent.TimeUnit;
 public class InboundThreadPool extends ThreadPoolExecutor {
 
     // default values
-    public static final int INBOUND_CORE_THREADS = 20;
-    public static final int INBOUND_MAX_THREADS = 100;
-    public static final int INBOUND_KEEP_ALIVE = 1;
-    public static final int INBOUND_THREAD_QLEN = 1;
-    public static final String INBOUND_THREAD_GROUP = "inbound-thread-group";
+    public static final int INBOUND_CORE_THREADS  = 20;
+    public static final int INBOUND_MAX_THREADS   = 100;
+    public static final int INBOUND_KEEP_ALIVE    = 1;
+    public static final int INBOUND_THREAD_QLEN   = 1;
+    public static final String INBOUND_THREAD_GROUP     = "inbound-thread-group";
     public static final String INBOUND_THREAD_ID_PREFIX = "InboundWorker";
 
     // property keys
-    public static final String IB_THREAD_CORE = "inbound.threads.core";
-    public static final String IB_THREAD_MAX = "inbound.threads.max";
+    public static final String IB_THREAD_CORE     = "inbound.threads.core";
+    public static final String IB_THREAD_MAX      = "inbound.threads.max";  
 
 
     /**
      * Constructor for the Inbound thread poll
-     *
+     * 
      * @param corePoolSize    - number of threads to keep in the pool, even if they are idle
      * @param maximumPoolSize - the maximum number of threads to allow in the pool
      * @param keepAliveTime   - this is the maximum time that excess idle threads will wait
-     *                        for new tasks before terminating.
+     *  for new tasks before terminating.
      * @param unit            - the time unit for the keepAliveTime argument.
      * @param workQueue       - the queue to use for holding tasks before they are executed.
      */
     public InboundThreadPool(int corePoolSize, int maximumPoolSize, long keepAliveTime,
-                             TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+        TimeUnit unit, BlockingQueue<Runnable> workQueue) {
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,
-                new InboundThreadFactory(
-                        new ThreadGroup(INBOUND_THREAD_GROUP), INBOUND_THREAD_ID_PREFIX));
+            new InboundThreadFactory(
+                new ThreadGroup(INBOUND_THREAD_GROUP), INBOUND_THREAD_ID_PREFIX));
     }
 
     /**
@@ -64,24 +61,24 @@ public class InboundThreadPool extends ThreadPoolExecutor {
      */
     public InboundThreadPool() {
         this(INBOUND_CORE_THREADS, INBOUND_MAX_THREADS, INBOUND_KEEP_ALIVE,
-                TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+            TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
     /**
      * Constructor for the InboundThreadPool
-     *
-     * @param corePoolSize   - number of threads to keep in the pool, even if they are idle
-     * @param maxPoolSize    - the maximum number of threads to allow in the pool
-     * @param keepAliveTime  - this is the maximum time that excess idle threads will wait
-     *                       for new tasks before terminating.
-     * @param qlen           - Thread Blocking Queue length
+     * 
+     * @param corePoolSize  - number of threads to keep in the pool, even if they are idle
+     * @param maxPoolSize   - the maximum number of threads to allow in the pool
+     * @param keepAliveTime - this is the maximum time that excess idle threads will wait
+     *  for new tasks before terminating.
+     * @param qlen          - Thread Blocking Queue length
      * @param threadGroup    - ThreadGroup name
      * @param threadIdPrefix - Thread id prefix
      */
     public InboundThreadPool(int corePoolSize, int maxPoolSize, long keepAliveTime, int qlen,
-                             String threadGroup, String threadIdPrefix) {
+        String threadGroup, String threadIdPrefix) {
         super(corePoolSize, maxPoolSize, keepAliveTime, TimeUnit.SECONDS,
-                qlen > 0 ? new LinkedBlockingQueue<Runnable>(qlen) : new LinkedBlockingQueue<Runnable>(),
-                new SynapseThreadFactory(new ThreadGroup(threadGroup), threadIdPrefix));
+            qlen > 0 ? new LinkedBlockingQueue<Runnable>(qlen) : new LinkedBlockingQueue<Runnable>(),
+            new SynapseThreadFactory(new ThreadGroup(threadGroup), threadIdPrefix));
     }
 }

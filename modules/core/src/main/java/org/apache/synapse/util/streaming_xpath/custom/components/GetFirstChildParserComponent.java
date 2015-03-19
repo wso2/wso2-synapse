@@ -26,7 +26,7 @@ public class GetFirstChildParserComponent extends ParserComponent {
 
     @Override
     public String process(OMElement node) {
-        try {
+        try{
             OMElement child = node.getFirstElement();
 
             if (nextParserComponent == null) {
@@ -34,7 +34,7 @@ public class GetFirstChildParserComponent extends ParserComponent {
             } else {
                 return nextParserComponent.process(child);
             }
-        } catch (NoSuchElementException e) {
+        }catch (NoSuchElementException e){
             return "";
         }
     }

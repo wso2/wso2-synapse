@@ -38,10 +38,8 @@ import java.util.Map;
 public abstract class AbstractMessageProcessor implements MessageProcessor {
     private static final Log logger = LogFactory.getLog(AbstractMessageProcessor.class.getName());
 
-    /**
-     * Message Store associated with Message processor
-     */
-    protected String messageStore;
+    /** Message Store associated with Message processor */
+    protected String  messageStore;
 
     protected String description;
 
@@ -53,22 +51,18 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     protected MessageConsumer messageConsumer;
 
-    /**
-     * This attribute is only need for forwarding message processor. However, it here because
-     * then we don't need to implement this in sampling processor with nothing
-     */
+    /** This attribute is only need for forwarding message processor. However, it here because
+     * then we don't need to implement this in sampling processor with nothing */
     protected String targetEndpoint;
 
-    /**
-     * message store parameters
-     */
+    /**message store parameters */
     protected Map<String, Object> parameters = null;
 
     public void init(SynapseEnvironment se) {
         configuration = se.getSynapseConfiguration();
     }
 
-    public void setMessageStoreName(String messageStore) {
+    public void setMessageStoreName(String  messageStore) {
         if (messageStore != null) {
             this.messageStore = messageStore;
         } else {
@@ -97,7 +91,7 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
     }
 
     public void setDescription(String description) {
-        this.description = description;
+        this.description=description;
     }
 
     public String getDescription() {

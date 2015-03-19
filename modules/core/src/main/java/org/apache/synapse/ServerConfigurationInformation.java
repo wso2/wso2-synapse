@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Encapsulates all server information
+ * Encapsulates all server information 
  */
 public class ServerConfigurationInformation {
 

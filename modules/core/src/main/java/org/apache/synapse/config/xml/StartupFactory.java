@@ -19,10 +19,10 @@
 
 package org.apache.synapse.config.xml;
 
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Startup;
-
-import javax.xml.namespace.QName;
 
 /**
  * Defines the factories which builds startups
@@ -32,7 +32,8 @@ public interface StartupFactory {
     /**
      * Create (build from OM) from the specified OMElement
      *
-     * @param elem OMELement describing the Startup
+     * @param elem
+     *          OMELement describing the Startup
      * @return Startup build from the given element
      */
     public Startup createStartup(OMElement elem);

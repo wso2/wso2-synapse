@@ -19,16 +19,16 @@
 
 package org.apache.synapse.eventing.filters;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.axis2.context.MessageContext;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.SynapseException;
+import org.apache.axiom.om.xpath.AXIOMXPath;
+import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseException;
-import org.apache.synapse.util.xpath.SynapseXPath;
-import org.jaxen.JaxenException;
-import org.wso2.eventing.Event;
 import org.wso2.eventing.EventFilter;
+import org.wso2.eventing.Event;
+import org.jaxen.JaxenException;
 
 /**
  * Topic baed event filter that match the subscription based on a given topic
@@ -71,9 +71,9 @@ public class TopicBasedEventFilter implements EventFilter<MessageContext> {
                 evaluatedValue = topicNode.getText();
             }
         } catch (JaxenException e) {
-            handleException("Error creating topic xpath", e);
+            handleException("Error creating topic xpath",e);
         }
-        if (evaluatedValue != null) {
+        if (evaluatedValue != null){
             if (evaluatedValue.equals(resultValue)) {
                 return true;
             } else if (evaluatedValue.startsWith((resultValue + FILTER_SEP).trim())) {

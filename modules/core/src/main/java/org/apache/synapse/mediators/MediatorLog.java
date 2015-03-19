@@ -30,18 +30,18 @@ import org.apache.synapse.SynapseLog;
  * for usage in a mediator. Instances of this class should not be created
  * directly but by using the factory method
  * {@link AbstractMediator#getLog(org.apache.synapse.MessageContext)}.
- * <p/>
+ * <p>
  * Note that this is work in progress.
  * Please refer to https://issues.apache.org/jira/browse/SYNAPSE-374 for
  * more information.
  */
 public class MediatorLog implements SynapseLog {
     private static final Log traceLog = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
-
+    
     private final Log defaultLog;
     private final boolean traceOn;
     private final MessageContext synCtx;
-
+    
     // The definition of this constructor might change...
     public MediatorLog(Log defaultLog, boolean traceOn, MessageContext synCtx) {
         this.defaultLog = defaultLog;
@@ -76,7 +76,7 @@ public class MediatorLog implements SynapseLog {
             defaultLog.warn(msg);
         }
     }
-
+    
     public boolean isTraceTraceEnabled() {
         return traceOn && traceLog.isTraceEnabled();
     }

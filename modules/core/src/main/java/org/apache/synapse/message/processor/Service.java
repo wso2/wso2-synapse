@@ -26,7 +26,6 @@ public interface Service {
     /**
      * This method is used to initialize a service. Each time it fires this method get called. This ensures
      * all the configurations of the service is up to date.
-     *
      * @param jobExecutionContext is the execution environment of the message processors
      * @return true if the message processor is successfully initialized
      */
@@ -34,7 +33,6 @@ public interface Service {
 
     /**
      * This method has the responsibility of fetching message from the message store.
-     *
      * @param msgConsumer is the associated message consumer of the message processor.
      * @return response message upon successful execution
      */
@@ -43,7 +41,6 @@ public interface Service {
     /**
      * This has the responsibility of dispatching the fetched message from the message store to the client.
      * Scenarios such as connection failures between client and service are handled by this method.
-     *
      * @param msgCtx is returned value of the fetch method.
      * @return true upon successful execution
      */
@@ -52,7 +49,6 @@ public interface Service {
     /**
      * This method terminates a running service immediately. Whatever state that of the service will not be
      * saved and it will be lost.
-     *
      * @return true upon successful execution
      */
     boolean terminate();

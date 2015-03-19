@@ -32,7 +32,6 @@ public interface FilterMediator extends ListMediator {
     /**
      * Should return true if the sub/child mediators should execute. i.e. if the filter
      * condition is satisfied
-     *
      * @param synCtx
      * @return true if the configured filter condition evaluates to true
      */

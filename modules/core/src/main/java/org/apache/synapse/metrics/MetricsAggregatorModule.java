@@ -45,8 +45,7 @@ public class MetricsAggregatorModule implements Module {
 
     }
 
-    public void engageNotify(AxisDescription axisDescription) throws AxisFault {
-    }
+    public void engageNotify(AxisDescription axisDescription) throws AxisFault {}
 
     public boolean canSupportAssertion(Assertion assertion) {
         return false;
@@ -57,6 +56,5 @@ public class MetricsAggregatorModule implements Module {
     }
 
     // shutdown the module
-    public void shutdown(ConfigurationContext configurationContext) throws AxisFault {
-    }
+    public void shutdown(ConfigurationContext configurationContext) throws AxisFault {}
 }

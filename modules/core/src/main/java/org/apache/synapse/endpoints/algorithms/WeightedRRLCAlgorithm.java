@@ -19,39 +19,37 @@
 
 package org.apache.synapse.endpoints.algorithms;
 
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.AddressEndpoint;
+import org.apache.synapse.endpoints.WSDLEndpoint;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.PropertyInclude;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.axis2.clustering.Member;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.PropertyInclude;
-import org.apache.synapse.SynapseException;
-import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.endpoints.AddressEndpoint;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.WSDLEndpoint;
-import org.apache.synapse.mediators.MediatorProperty;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * This is a Weighted Round Robin Least Connection algorithm.</p>
- * <p/>
+ *
  * <p> This algorithm is similar to {@link WeightedRoundRobin WeightedRoundRobin} algorithm
  * except it takes the active connections made by the endpoints in to account. Weights assinged
  * to each endpoint and these are static weights. But depending on the active connections these
  * weights are changed dynamically during the execution. </p>
- * <p/>
+ *
  * <p> Algorithm assumes that the endpoint connections to total connection ratio should be eqault
  * to endpoint weight to total weights ratio. If the ratios are different it tries to align them
  * by changing the weights dynamically.</p>
+ *
  */
 public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifecycle {
     private static final Log log = LogFactory.getLog(WeightedRRLCAlgorithm.class);
@@ -60,35 +58,21 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
      * Endpoints list for the round robin algorithm
      */
     private List<Endpoint> endpoints = null;
-    /**
-     * Load balance endpoint
-     */
+    /** Load balance endpoint */
     private Endpoint loadBalanceEndpoint = null;
-    /**
-     * We keep a sorted array of endpoint states, first state will point to the
-     * endpoint with the highest weight
-     */
+    /** We keep a sorted array of endpoint states, first state will point to the
+     * endpoint with the highest weight */
     private WeightedState[] list;
-    /**
-     * Keep track of the current poistion we are operating on the endpointStates array
-     */
+    /** Keep track of the current poistion we are operating on the endpointStates array */
     private int endpointCursor = 0;
-    /**
-     * How many rounds should go before re-calculating the dynamic weights based
-     * on number of active connections
-     */
+    /** How many rounds should go before re-calculating the dynamic weights based
+     * on number of active connections */
     private int roundsPerRecalculation = 1;
-    /**
-     * How many rounds we have gone throug
-     */
+    /** How many rounds we have gone throug */
     private int currentRound = 0;
-    /**
-     * total weight of the endpoints
-     */
+    /** total weight of the endpoints */
     private int totalWeight = 0;
-    /**
-     * current connection count
-     */
+    /** current connection count */
     private int totalConnections = 0;
 
     public static final String LB_WEIGHTED_RRLC_ROUNDS_PER_RECAL =
@@ -96,21 +80,20 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
     public static final String LB_WEIGHTED_RRLC_WEIGHT = "loadbalance.weight";
     public static final String LB_WEIGHTED_RRLC_WEIGHT_MIN = LB_WEIGHTED_RRLC_WEIGHT + ".min";
     public static final String LB_WEIGHTED_RRLC_WEIGHT_MAX = LB_WEIGHTED_RRLC_WEIGHT + ".max";
-    public static final int LB_WEIGHTED_RRLC_WEIGHT_SKEW = 2;
+    public static final int LB_WEIGHTED_RRLC_WEIGHT_SKEW = 2;    
 
-    public void setApplicationMembers(List<Member> members) {
-    }
+    public void setApplicationMembers(List<Member> members) {}
 
     public void setEndpoints(List<Endpoint> endpoints) {
         this.endpoints = endpoints;
     }
 
     public void setLoadBalanceEndpoint(Endpoint endpoint) {
-        this.loadBalanceEndpoint = endpoint;
+        this.loadBalanceEndpoint = endpoint;        
     }
 
     public synchronized Endpoint getNextEndpoint(MessageContext messageContext,
-                                                 AlgorithmContext algorithmContext) {
+                                                 AlgorithmContext algorithmContext) {                
         WeightedState s = list[endpointCursor];
 
         // once we choose an endpoit we countinue to use that until all
@@ -120,7 +103,7 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
             s.resetPerRound();
             do {
                 if (++endpointCursor == list.length) {
-                    endpointCursor = 0;
+                    endpointCursor = 0;             
                     // if we we have gone through enough cycles to recalculate the weights based
                     // on the current connection count recalculate the current weights
                     if (++currentRound == roundsPerRecalculation) {
@@ -204,7 +187,7 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
                     }
                 } else {
                     String msg = "Only AddressEndpoint and WSDLEndpoint can be used " +
-                            "with WeightedRRLCAlgorithm";
+                                    "with WeightedRRLCAlgorithm";
                     log.error(msg);
                     throw new SynapseException(msg);
                 }
@@ -229,7 +212,7 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
 
                 list[i] = state;
             }
-        }
+        }                   
 
         // sort the states according to the initial fixed weights
         Arrays.sort(list, new Comparator<WeightedState>() {
@@ -255,7 +238,7 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
     }
 
     public LoadbalanceAlgorithm clone() {
-        return null;
+        return null;  
     }
 
     public int getEndpointCursor() {
@@ -325,44 +308,27 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
         intialize();
     }
 
-    public void destroy() {
-    }
+    public void destroy() {}
 
     /**
      * Simple class for holding the states about the endpoints.
      */
     private class WeightedState {
-        /**
-         * this is the statics weight specified by the user
-         */
+        /** this is the statics weight specified by the user */
         private int fixedWeight = 0;
-        /**
-         * position of the endpoint related to this state
-         */
+        /** position of the endpoint related to this state */
         private int endpointPosition = 0;
-        /**
-         * current weight of the algorithm, this is calculated based on sends through this epr
-         */
+        /** current weight of the algorithm, this is calculated based on sends through this epr */
         private int currentWeight = 1;
-        /**
-         * calculated weight for this round
-         */
+        /** calculated weight for this round */
         private int currentCalcWeight = 0;
-        /**
-         * current connection count
-         */
+        /** current connection count */
         private int currentConnectionCount = 0;
-        /**
-         * minimum possible weight
-         */
+        /** minimum possible weight */
         private int minWeight = 0;
-        /**
-         * maximum possible weight
-         */
+        /** maximum possible weight */
         private int maxWeight = 0;
-        /**
-         * holds the key to access the connection count
-         */
+        /** holds the key to access the connection count */
         private String keyToConnectionCount = "";
 
         public WeightedState(int weight, int endpointPosition, String keyToConnectionCount) {
@@ -421,7 +387,7 @@ public class WeightedRRLCAlgorithm implements LoadbalanceAlgorithm, ManagedLifec
         }
 
         /**
-         * Recalcualate the weights based on the current connection count for this set of rounds.
+         * Recalcualate the weights based on the current connection count for this set of rounds.         
          */
         public void reCalcuateWeight() {
             if (totalConnections > 0) {

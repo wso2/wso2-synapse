@@ -49,7 +49,7 @@ public interface SynapseEnvironment {
      *
      * @param smc - Synapse MessageContext to be injected
      * @return boolean true if the message processing should be continued
-     * and false if it should be aborted
+     *  and false if it should be aborted
      */
     public boolean injectMessage(MessageContext smc);
 
@@ -70,8 +70,8 @@ public interface SynapseEnvironment {
      * in EIP mediation. This method will do the mediation asynchronously or synchronously using a separate
      * thread from the environment thread pool
      *
-     * @param smc        - Synapse message context to be injected
-     * @param seq        - Sequence to be used for mediation
+     * @param smc - Synapse message context to be injected
+     * @param seq - Sequence to be used for mediation
      * @param sequential - Injection behavior
      * @return a Boolean Status of the injection
      */
@@ -81,8 +81,8 @@ public interface SynapseEnvironment {
      * This method allows a message to be sent through the underlying SOAP engine. This will
      * send request messages on (forward), and send the response messages back to the client
      *
-     * @param endpoint - Endpoint to be used for sending
-     * @param smc      - Synapse MessageContext to be sent
+     * @param endpoint  - Endpoint to be used for sending
+     * @param smc       - Synapse MessageContext to be sent
      */
     public void send(EndpointDefinition endpoint, MessageContext smc);
 
@@ -100,7 +100,7 @@ public interface SynapseEnvironment {
      */
     public OverflowBlob createOverflowBlob();
 
-    /**
+   /**
      * This method returns the <code>StatisticsCollector</code> responsible for
      * collecting stats for this synapse instance.
      *
@@ -119,28 +119,28 @@ public interface SynapseEnvironment {
     /**
      * This is used by anyone who needs access to a SynapseThreadPool.
      * It offers the ability to start work.
-     *
+     * 
      * @return Returns the ExecutorService
      */
-    public ExecutorService getExecutorService();
+     public ExecutorService getExecutorService();
 
     /**
      * Has the Synapse Environment properly initialized?
-     *
+     * 
      * @return true if the environment is ready for processing
      */
     public boolean isInitialized();
 
     /**
      * Set the environment as ready for message processing
-     *
+     * 
      * @param state true means ready for processing
      */
     public void setInitialized(boolean state);
 
     /**
      * Retrieves the {@link SynapseConfiguration} from the <code>environment</code>
-     *
+     * 
      * @return configuration of the synapse
      */
     public SynapseConfiguration getSynapseConfiguration();
@@ -156,14 +156,13 @@ public interface SynapseEnvironment {
 
     /**
      * Get the information about the synapse environment.
-     *
+     * 
      * @return {@link org.apache.synapse.ServerContextInformation} of this synapse environment
      */
     public ServerContextInformation getServerContextInformation();
 
     /**
      * Get all Xpath Extension objects for Function contexts
-     *
      * @return Map containing xpath extension objects
      */
     public Map<QName, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions();
@@ -171,33 +170,30 @@ public interface SynapseEnvironment {
 
     /**
      * Get all Xpath Extension objects for Variable contexts
-     *
      * @return Map containing xpath extension objects
      */
     public Map<QName, SynapseXpathVariableResolver> getXpathVariableExtensions();
 
     /**
+     *
      * @return
      */
     public TenantInfoConfigurator getTenantInfoConfigurator();
 
     /**
      * Increment/Decrement the Call mediator count in the environment by 1
-     *
      * @param isIncrement whether to increment the count
      */
     public void updateCallMediatorCount(boolean isIncrement);
 
     /**
      * Whether continuation is enabled in the environment
-     *
      * @return whether continuation is enabled in the environment
      */
     public boolean isContinuationEnabled();
 
     /**
      * Add an artifact reference not available in the environment.
-     *
      * @param key artifact reference key
      */
     public void addUnavailableArtifactRef(String key);
@@ -221,12 +217,11 @@ public interface SynapseEnvironment {
 
     /**
      * Inject message to the sequence in synchronous manner
-     *
      * @param smc - Synapse message context to be injected
      * @param seq - Sequence to be used for mediation
      * @return boolean true if the message processing should be continued
-     * and false if it should be aborted
+     *  and false if it should be aborted
      */
-    public boolean injectMessage(MessageContext smc, SequenceMediator seq);
+    public boolean injectMessage(MessageContext smc,SequenceMediator seq);
 
 }

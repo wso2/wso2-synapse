@@ -34,7 +34,7 @@ import java.util.regex.PatternSyntaxException;
 
 /**
  * Factory for {@link SwitchMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;switch source="xpath"&gt;

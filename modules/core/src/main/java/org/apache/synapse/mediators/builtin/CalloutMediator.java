@@ -31,28 +31,40 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.endpoints.*;
+import org.apache.synapse.endpoints.AbstractEndpoint;
+import org.apache.synapse.endpoints.AddressEndpoint;
+import org.apache.synapse.endpoints.DefaultEndpoint;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * <callout serviceURL="string" | endpointKey="string" [action="string"] [initAxis2ClientOptions="boolean"]>
- * <configuration [axis2xml="string"] [repository="string"]/>?
- * <endpoint/>?
- * <source xpath="expression" | key="string" | type="envelope">? <!-- key can be a MC property or entry key -->
- * <target xpath="expression" | key="string"/>?
- * <enableSec policy="string" | outboundPolicy="String" | inboundPolicy="String"/>?
+ *      <configuration [axis2xml="string"] [repository="string"]/>?
+ *      <endpoint/>?
+ *      <source xpath="expression" | key="string" | type="envelope">? <!-- key can be a MC property or entry key -->
+ *      <target xpath="expression" | key="string"/>?
+ *      <enableSec policy="string" | outboundPolicy="String" | inboundPolicy="String"/>?
  * </callout>
  */
 public class CalloutMediator extends AbstractMediator implements ManagedLifecycle {
@@ -137,10 +149,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
             MessageContext synapseOutMsgCtx = MessageHelper.cloneMessageContext(synCtx);
             // Send the SOAP Header Blocks to support WS-Addressing
-            setSoapHeaderBlock(synapseOutMsgCtx);
+            setSoapHeaderBlock(synapseOutMsgCtx);            
             if (!useEnvelopeAsSource
-                    // if the payload is JSON, we do not consider the request (ie. source) path. Instead, we use the complete payload.
-                    && !JsonUtil.hasAJsonPayload(((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext())) {
+            		// if the payload is JSON, we do not consider the request (ie. source) path. Instead, we use the complete payload.
+            		&& !JsonUtil.hasAJsonPayload(((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext())) {
                 SOAPBody soapBody = synapseOutMsgCtx.getEnvelope().getBody();
                 for (Iterator itr = soapBody.getChildElements(); itr.hasNext(); ) {
                     OMElement child = (OMElement) itr.next();
@@ -182,7 +194,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 org.apache.axis2.context.MessageContext resultAxisMsgCtx =
                         ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
                 org.apache.axis2.context.MessageContext inAxisMsgCtx =
-                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
                 if (JsonUtil.hasAJsonPayload(resultAxisMsgCtx)) {
                     JsonUtil.cloneJsonPayload(resultAxisMsgCtx, inAxisMsgCtx);
                 } else {
@@ -206,12 +218,12 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                         OMElement result = resultMsgCtx.getEnvelope().getBody().getFirstElement();
                         synCtx.setProperty(targetKey, result);
                     } else {
-                        synCtx.setEnvelope(resultMsgCtx.getEnvelope());
+                    	synCtx.setEnvelope(resultMsgCtx.getEnvelope());
                     }
                 }
                 // Set HTTP Status code
                 inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC,
-                        resultAxisMsgCtx.getProperty(SynapseConstants.HTTP_SC));
+                                         resultAxisMsgCtx.getProperty(SynapseConstants.HTTP_SC));
                 if ("false".equals(synCtx.getProperty(
                         SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
                     inAxisMsgCtx.setProperty(
@@ -225,16 +237,16 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
         } catch (AxisFault e) {
             handleException("Error invoking service : " + serviceURL +
-                    (action != null ? " with action : " + action : ""), e, synCtx);
+                            (action != null ? " with action : " + action : ""), e, synCtx);
         } catch (JaxenException e) {
             handleException("Error while evaluating the XPath expression: " + targetXPath,
-                    e, synCtx);
+                            e, synCtx);
         }
 
         synLog.traceOrDebug("End : Callout mediator");
         return true;
     }
-
+    
     private void setSoapHeaderBlock(MessageContext synCtx) {
         // Send the SOAP Header Blocks to support WS-Addressing
         if (synCtx.getEnvelope().getHeader() != null) {
@@ -263,7 +275,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             }
         }
     }
-
+        
     private void handleFault(MessageContext synCtx, Exception ex) {
         synCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
 
@@ -272,27 +284,27 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
             if (axisFault.getFaultCodeElement() != null) {
                 synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        axisFault.getFaultCodeElement().getText());
+                                   axisFault.getFaultCodeElement().getText());
             } else {
                 synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        SynapseConstants.CALLOUT_OPERATION_FAILED);
+                                   SynapseConstants.CALLOUT_OPERATION_FAILED);
             }
 
             if (axisFault.getMessage() != null) {
                 synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
-                        axisFault.getMessage());
+                                   axisFault.getMessage());
             } else {
                 synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, "Error while performing " +
-                        "the callout operation");
+                                                                   "the callout operation");
             }
 
             if (axisFault.getFaultDetailElement() != null) {
                 if (axisFault.getFaultDetailElement().getFirstElement() != null) {
                     synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                            axisFault.getFaultDetailElement().getFirstElement());
+                                       axisFault.getFaultDetailElement().getFirstElement());
                 } else {
                     synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                            axisFault.getFaultDetailElement().getText());
+                                       axisFault.getFaultDetailElement().getText());
                 }
             }
         }
@@ -323,11 +335,11 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                     return (OMElement) ((List) o).get(0);  // Always fetches *only* the first
                 } else {
                     handleException("The evaluation of the XPath expression : "
-                            + requestXPath.toString() + " did not result in an OMElement", synCtx);
+                                    + requestXPath.toString() + " did not result in an OMElement", synCtx);
                 }
             } catch (JaxenException e) {
                 handleException("Error evaluating XPath expression : "
-                        + requestXPath.toString(), e, synCtx);
+                                + requestXPath.toString(), e, synCtx);
             }
         }
         return null;
@@ -388,8 +400,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     public void destroy() {
         try {
             configCtx.terminate();
-        } catch (AxisFault ignore) {
-        }
+        } catch (AxisFault ignore) {}
     }
 
     public String getServiceURL() {
@@ -500,7 +511,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     /**
      * Request that WS-Sec be turned on/off on this endpoint
      *
-     * @param securityOn a boolean flag indicating security is on or not
+     * @param securityOn  a boolean flag indicating security is on or not
      */
     public void setSecurityOn(boolean securityOn) {
         this.securityOn = securityOn;
@@ -557,7 +568,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     /**
      * Set the inbound security policy key. This is used when we specify different policies for
      * inbound and outbound.
-     *
      * @param inboundWsSecPolicyKey inbound security policy key.
      */
     public void setInboundWsSecPolicyKey(String inboundWsSecPolicyKey) {
@@ -568,7 +578,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     /**
      * This method checks for dynamic url in callout medaitor and replace it with given system properties.
      * properties has to given as -D{parameter}={value}
-     *
      * @param epr end point url
      * @return fixed end point url
      */

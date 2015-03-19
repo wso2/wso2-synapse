@@ -31,7 +31,7 @@ import java.util.List;
 public abstract class AbstractListMediatorSerializer extends AbstractMediatorSerializer {
 
     protected void serializeChildren(OMElement parent, List<Mediator> list) {
-
+        
         for (Mediator child : list) {
             MediatorSerializer medSer = MediatorSerializerFinder.getInstance().getSerializer(child);
             if (medSer != null) {

@@ -27,14 +27,12 @@ package org.apache.synapse.message.store;
 public interface MessageStoreObserver {
     /**
      * Method invoked when a message is added to the store
-     *
      * @param messageId of the message that was added to the Message store
      */
     public void messageAdded(String messageId);
 
     /**
      * Method invoked when a message is removed from the store
-     *
      * @param messageId of the Message that was removed
      */
     public void messageRemoved(String messageId);

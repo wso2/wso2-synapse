@@ -19,6 +19,12 @@
 
 package org.apache.synapse.util.jaxp;
 
+import java.nio.charset.Charset;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Result;
+import javax.xml.transform.dom.DOMResult;
+
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.dom.jaxp.DOOMDocumentBuilderFactory;
@@ -28,11 +34,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.w3c.dom.Document;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Result;
-import javax.xml.transform.dom.DOMResult;
-import java.nio.charset.Charset;
-
 /**
  * {@link ResultBuilder} implementation that produces a {@link DOMResult} with
  * an empty DOOM document. It reimports the document as a normal AXIOM tree
@@ -40,7 +41,7 @@ import java.nio.charset.Charset;
  */
 public class DOOMResultBuilder implements ResultBuilder {
     private static final Log log = LogFactory.getLog(DOOMResultBuilder.class);
-
+    
     private Document document;
 
     public Result getResult() {

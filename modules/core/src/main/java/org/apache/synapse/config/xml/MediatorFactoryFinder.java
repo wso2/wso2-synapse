@@ -44,61 +44,63 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
+ *
+ *
  * This class is based on J2SE Service Provider model
  * http://java.sun.com/j2se/1.3/docs/guide/jar/jar.html#Service%20Provider
  */
 
 public class MediatorFactoryFinder implements XMLToObjectMapper {
 
-    private Map<String, Library> synapseLibraryMap;
+ 	private Map<String, Library> synapseLibraryMap;
     private Map<String, SynapseImport> synapseImportMap;
 
-    private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
+	private static final Log log = LogFactory.getLog(MediatorFactoryFinder.class);
 
-    private static final Class[] mediatorFactories = {
-            SequenceMediatorFactory.class,
-            LogMediatorFactory.class,
-            SendMediatorFactory.class,
-            FilterMediatorFactory.class,
-            SynapseMediatorFactory.class,
-            DropMediatorFactory.class,
-            HeaderMediatorFactory.class,
-            FaultMediatorFactory.class,
-            PropertyMediatorFactory.class,
-            SwitchMediatorFactory.class,
-            InMediatorFactory.class,
-            OutMediatorFactory.class,
-            ClassMediatorFactory.class,
-            ValidateMediatorFactory.class,
-            XSLTMediatorFactory.class,
-            AnnotatedCommandMediatorFactory.class,
-            POJOCommandMediatorFactory.class,
-            CloneMediatorFactory.class,
-            IterateMediatorFactory.class,
-            AggregateMediatorFactory.class,
-            DBReportMediatorFactory.class,
-            DBLookupMediatorFactory.class,
-            CacheMediatorFactory.class,
-            CalloutMediatorFactory.class,
-            EventPublisherMediatorFactory.class,
-            TransactionMediatorFactory.class,
-            EnqueueMediatorFactory.class,
-            ConditionalRouterMediatorFactory.class,
-            SamplingThrottleMediatorFactory.class,
-            URLRewriteMediatorFactory.class,
-            EnrichMediatorFactory.class,
-            MessageStoreMediatorFactory.class,
-            TemplateMediatorFactory.class,
-            InvokeMediatorFactory.class,
-            PayloadFactoryMediatorFactory.class,
-            BeanMediatorFactory.class,
-            EJBMediatorFactory.class,
-            CallMediatorFactory.class,
-            LoopBackMediatorFactory.class,
-            RespondMediatorFactory.class
+	private static final Class[] mediatorFactories = {
+        SequenceMediatorFactory.class,
+        LogMediatorFactory.class,
+        SendMediatorFactory.class,
+        FilterMediatorFactory.class,
+        SynapseMediatorFactory.class,
+        DropMediatorFactory.class,
+        HeaderMediatorFactory.class,
+        FaultMediatorFactory.class,
+        PropertyMediatorFactory.class,
+        SwitchMediatorFactory.class,
+        InMediatorFactory.class,
+        OutMediatorFactory.class,
+        ClassMediatorFactory.class,
+        ValidateMediatorFactory.class,
+        XSLTMediatorFactory.class,
+        AnnotatedCommandMediatorFactory.class,
+        POJOCommandMediatorFactory.class,
+        CloneMediatorFactory.class,
+        IterateMediatorFactory.class,
+        AggregateMediatorFactory.class,
+        DBReportMediatorFactory.class,
+        DBLookupMediatorFactory.class,
+        CacheMediatorFactory.class,
+        CalloutMediatorFactory.class,
+        EventPublisherMediatorFactory.class,
+        TransactionMediatorFactory.class,
+        EnqueueMediatorFactory.class,
+        ConditionalRouterMediatorFactory.class,
+        SamplingThrottleMediatorFactory.class,
+        URLRewriteMediatorFactory.class,
+        EnrichMediatorFactory.class,
+        MessageStoreMediatorFactory.class,
+        TemplateMediatorFactory.class,
+        InvokeMediatorFactory.class,
+        PayloadFactoryMediatorFactory.class,
+        BeanMediatorFactory.class,
+        EJBMediatorFactory.class,
+        CallMediatorFactory.class,
+        LoopBackMediatorFactory.class,
+        RespondMediatorFactory.class
     };
 
-    private final static MediatorFactoryFinder instance = new MediatorFactoryFinder();
+    private final static MediatorFactoryFinder instance  = new MediatorFactoryFinder();
 
     /**
      * A map of mediator QNames to implementation class
@@ -141,7 +143,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
 
     /**
      * Register pluggable mediator factories from the classpath
-     * <p/>
+     *
      * This looks for JAR files containing a META-INF/services that adheres to the following
      * http://java.sun.com/j2se/1.3/docs/guide/jar/jar.html#Service%20Provider
      */
@@ -160,15 +162,15 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     }
 
     /**
-     * This method returns a Processor given an OMElement. This will be used
-     * recursively by the elements which contain processor elements themselves
-     * (e.g. rules)
-     *
-     * @param element    XML representation of a mediator
+	 * This method returns a Processor given an OMElement. This will be used
+	 * recursively by the elements which contain processor elements themselves
+	 * (e.g. rules)
+	 *
+	 * @param element XML representation of a mediator
      * @param properties bag of properties to pass in any information to the factory
      * @return Processor
-     */
-    public Mediator getMediator(OMElement element, Properties properties) {
+	 */
+	public Mediator getMediator(OMElement element, Properties properties) {
 
         String localName = element.getLocalName();
         QName qName;
@@ -216,8 +218,8 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
         }
 
         try {
-            MediatorFactory mf = (MediatorFactory) cls.newInstance();
-            return mf.createMediator(element, properties);
+			MediatorFactory mf = (MediatorFactory) cls.newInstance();
+			return mf.createMediator(element, properties);
 
         } catch (InstantiationException e) {
             String msg = "Error initializing mediator factory : " + cls;
@@ -228,12 +230,11 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
             String msg = "Error initializing mediator factory : " + cls;
             log.error(msg);
             throw new SynapseException(msg, e);
-        }
-    }
+		}
+	}
 
     /**
      * This method exposes all the MediatorFactories and its Extensions
-     *
      * @return factoryMap
      */
     public Map<QName, Class> getFactoryMap() {
@@ -243,7 +244,6 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
     /**
      * Allow the mediator factory finder to act as an XMLToObjectMapper for Mediators
      * (i.e. Sequence Mediator) loaded dynamically from a Registry
-     *
      * @param om node from which the object is expected
      * @return Object buit from the om node
      */
@@ -277,7 +277,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
         this.synapseImportMap = synapseImportMap;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception{
         String connectorStr = "<sfdc.getContact xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
                 "\t\t <parameter name=\"param1\" value=\"val1\"/>\n" +
                 "\t\t <parameter name=\"param2\" value=\"val2\"/>\n" +
@@ -316,17 +316,17 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
                 && !libraryName.equals("")) {
             invokeMediator.setTargetTemplate(libraryName + "." + connectorElem.getLocalName());
         }
-
-        // load configuration based references for the given connector
-        OMAttribute config_key = connectorElem.getAttribute(new QName(XMLConfigConstants.CONFIG_REF));
-        if (config_key != null) {
-            // ValueFactory for creating dynamic or static Value
-            ValueFactory keyFac = new ValueFactory();
-            // create dynamic or static key based on OMElement
-            Value generatedKey = keyFac.createValue(XMLConfigConstants.CONFIG_REF, connectorElem);
-            // setKey
-            invokeMediator.setKey(generatedKey);
-        }
+        
+		// load configuration based references for the given connector
+		OMAttribute config_key = connectorElem.getAttribute(new QName(XMLConfigConstants.CONFIG_REF));
+		if (config_key != null) {
+			// ValueFactory for creating dynamic or static Value
+			ValueFactory keyFac = new ValueFactory();
+			// create dynamic or static key based on OMElement
+			Value generatedKey = keyFac.createValue(XMLConfigConstants.CONFIG_REF, connectorElem);
+			// setKey
+			invokeMediator.setKey(generatedKey);
+		}
 
         buildParamteres(connectorElem, invokeMediator);
 
@@ -336,8 +336,8 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
 
     }
 
-    private void buildParamteres(OMElement connectorElem, InvokeMediator invokeMediator) {
-        Iterator parameters = connectorElem.getChildElements();
+	private void buildParamteres(OMElement connectorElem, InvokeMediator invokeMediator) {
+		Iterator parameters = connectorElem.getChildElements();
         while (parameters.hasNext()) {
             OMNode paramNode = (OMNode) parameters.next();
             if (paramNode instanceof OMElement) {
@@ -351,5 +351,5 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
                 }
             }
         }
-    }
+	}
 }

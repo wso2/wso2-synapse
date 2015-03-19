@@ -33,7 +33,7 @@ public class MessageStoreView implements MessageStoreViewMBean {
 
     private static final Log log = LogFactory.getLog(MessageStoreView.class);
 
-    public MessageStoreView(String name, MessageStore messageStore) {
+    public MessageStoreView(String name, MessageStore messageStore){
         this.messageStoreName = name;
         this.messageStore = messageStore;
     }
@@ -55,8 +55,8 @@ public class MessageStoreView implements MessageStoreViewMBean {
     }
 
     public void delete(String messageID) {
-        if (messageID != null) {
-            // MessageContext m =messageStore.remove(messageID);
+        if(messageID != null) {
+           // MessageContext m =messageStore.remove(messageID);
             //if (m != null){
             //    log.info("Message with ID :" + messageID + " removed from the MessageStore");
             //}

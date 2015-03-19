@@ -35,7 +35,7 @@ import java.util.Map;
 
 /**
  * A resource map.
- * <p/>
+ * 
  * Instances of this class are used to resolve resources using registry entries.
  * This is useful for XML documents that can reference other documents (e.g. WSDL documents
  * importing XSD or other WSDL documents). A <code>ResourceMap</code> object contains a set of
@@ -45,32 +45,32 @@ import java.util.Map;
  */
 public class ResourceMap {
     private static final Log log = LogFactory.getLog(ResourceMap.class);
-
-    private final Map<String, String> resources = new LinkedHashMap<String, String>();
-
+    
+    private final Map<String,String> resources = new LinkedHashMap<String,String>();
+    
     /**
      * Add a resource.
-     *
+     * 
      * @param location the location as it appears in referencing documents
-     * @param key      the registry key that points to the referenced document
+     * @param key the registry key that points to the referenced document
      */
     public void addResource(String location, String key) {
         resources.put(location, key);
     }
-
+    
     /**
      * Get the (location, registry key) mappings.
-     *
+     * 
      * @return a map containing the (location, registry key) pairs
      */
-    public Map<String, String> getResources() {
+    public Map<String,String> getResources() {
         return Collections.unmodifiableMap(resources);
     }
-
+    
     /**
      * Resolve a resource for a given location.
-     *
-     * @param synCfg   the Synapse configuration (used to access the registry)
+     * 
+     * @param synCfg the Synapse configuration (used to access the registry)
      * @param location the location of of the resource at is appears in the referencing document
      * @return an <code>InputSource</code> object for the referenced resource
      */
@@ -90,10 +90,11 @@ public class ResourceMap {
             if (keyObject instanceof OMElement) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try {
-                    ((OMElement) keyObject).serialize(baos);
-                } catch (XMLStreamException ex) {
+                    ((OMElement)keyObject).serialize(baos);
+                }
+                catch (XMLStreamException ex) {
                     String msg = "Unable to serialize registry item '" + key + "' for location '" +
-                            location + "'";
+                        location + "'";
                     log.error(msg);
                     throw new SynapseException(msg, ex);
                 }
@@ -105,7 +106,7 @@ public class ResourceMap {
                 return inputSource;
             } else {
                 String msg = "Registry item '" + key + "' for location '" +
-                        location + "' is not an OMElement";
+                    location + "' is not an OMElement";
                 log.error(msg);
                 throw new SynapseException(msg);
             }

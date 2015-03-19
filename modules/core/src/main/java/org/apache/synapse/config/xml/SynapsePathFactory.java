@@ -31,21 +31,21 @@ import org.jaxen.JaxenException;
 import javax.xml.namespace.QName;
 
 /**
- *
+ * 
  */
 public class SynapsePathFactory {
 
     private static final Log log = LogFactory.getLog(SynapsePathFactory.class);
 
     public static SynapsePath getSynapsePath(OMElement elem, QName attribName)
-            throws JaxenException {
+        throws JaxenException {
 
         SynapsePath path = null;
         OMAttribute pathAttrib = elem.getAttribute(attribName);
 
         if (pathAttrib != null && pathAttrib.getAttributeValue() != null) {
 
-            if (pathAttrib.getAttributeValue().startsWith("json-eval(")) {
+            if(pathAttrib.getAttributeValue().startsWith("json-eval(")) {
                 path = new SynapseJsonPath(pathAttrib.getAttributeValue().substring(10, pathAttrib.getAttributeValue().length() - 1));
             } else {
                 path = new SynapseXPath(pathAttrib.getAttributeValue());
@@ -56,14 +56,14 @@ public class SynapsePathFactory {
 
         } else {
             handleException("Couldn't find the XPath attribute with the QName : "
-                    + attribName.toString() + " in the element : " + elem.toString());
-        }
+                + attribName.toString() + " in the element : " + elem.toString());
+        }       
 
         return path;
     }
 
     public static SynapsePath getSynapsePath(OMElement elem, String expression)
-            throws JaxenException {
+        throws JaxenException {
 
         if (expression == null) {
             handleException("XPath expression cannot be null");

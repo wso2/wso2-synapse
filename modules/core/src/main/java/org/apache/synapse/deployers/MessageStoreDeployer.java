@@ -21,15 +21,19 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.xml.MessageStoreFactory;
 import org.apache.synapse.config.xml.MessageStoreSerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
+import org.apache.synapse.config.xml.endpoints.EndpointFactory;
+import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
+import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.message.store.MessageStore;
 
 import java.io.File;
 import java.util.Properties;
 
-public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer {
+public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
 
     private static Log log = LogFactory.getLog(MessageStoreDeployer.class);
 
@@ -39,12 +43,12 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("Message Store Deployment from file : " + fileName + " : Started");
         }
 
-        try {
+        try{
 
-            MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig, properties);
-            if (ms != null) {
+            MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig,properties);
+            if(ms != null) {
                 ms.setFileName((new File(fileName)).getName());
-                if (log.isDebugEnabled()) {
+                 if (log.isDebugEnabled()) {
                     log.debug("Message Store named '" + ms.getName()
                             + "' has been built from the file " + fileName);
                 }
@@ -61,7 +65,7 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer {
                 return ms.getName();
             } else {
                 handleSynapseArtifactDeploymentError("Message Store Deployment from the file : "
-                        + fileName + " : Failed. The artifact " +
+                    + fileName + " : Failed. The artifact " +
                         "described in the file  is not a Message Store");
             }
 
@@ -118,7 +122,7 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void undeploySynapseArtifact(String artifactName) {
-        if (log.isDebugEnabled()) {
+          if (log.isDebugEnabled()) {
             log.debug("MessageStore Undeployment of the MessageStore named : "
                     + artifactName + " : Started");
         }
@@ -155,7 +159,7 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer {
         try {
             MessageStore ms
                     = getSynapseConfiguration().getMessageStore(artifactName);
-            OMElement msElem = MessageStoreSerializer.serializeMessageStore(null, ms);
+            OMElement msElem = MessageStoreSerializer.serializeMessageStore(null,ms);
             if (ms.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()
                         + File.separator + MultiXMLConfigurationBuilder.MESSAGE_STORE_DIR

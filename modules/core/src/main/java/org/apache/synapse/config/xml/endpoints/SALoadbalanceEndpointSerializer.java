@@ -51,8 +51,8 @@ public class SALoadbalanceEndpointSerializer extends EndpointSerializer {
                 = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
         // serialize the parameters
         serializeProperties(loadbalanceEndpoint, endpointElement);
-
-        serializeCommonAttributes(endpoint, endpointElement);
+        
+        serializeCommonAttributes(endpoint,endpointElement);
 
         OMElement loadbalanceElement
                 = fac.createOMElement("loadbalance", SynapseConstants.SYNAPSE_OMNAMESPACE);

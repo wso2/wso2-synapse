@@ -19,6 +19,7 @@ package org.apache.synapse.endpoints;
 
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.clustering.Member;
+import org.apache.axis2.clustering.management.GroupManagementAgent;
 import org.apache.synapse.FaultHandler;
 
 /**

@@ -48,6 +48,7 @@ import org.apache.synapse.util.MessageHelper;
  * which resides in the MessageContext.
  * <p/>
  * These ContinuationStates are used to mediate the response message and continue the message flow.
+ *
  */
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
@@ -98,9 +99,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 sb.append("Calling ").append(synOutCtx.isResponse() ? "response" : "request")
                         .append(" message using implicit message properties..");
                 sb.append("\nCalling To: ").append(synOutCtx.getTo() != null ?
-                        synOutCtx.getTo().getAddress() : "null");
+                                                   synOutCtx.getTo().getAddress() : "null");
                 sb.append("\nSOAPAction: ").append(synOutCtx.getWSAAction() != null ?
-                        synOutCtx.getWSAAction() : "null");
+                                                   synOutCtx.getWSAAction() : "null");
                 synLog.traceOrDebug(sb.toString());
             }
 

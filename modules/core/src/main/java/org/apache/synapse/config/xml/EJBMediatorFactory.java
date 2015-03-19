@@ -107,9 +107,9 @@ public class EJBMediatorFactory extends AbstractMediatorFactory {
             Method method = null;
             try {
                 method = BeanUtils.resolveMethod(
-                        Class.forName(mediator.getClassName()),
-                        attributeValue,
-                        mediator.getArgumentList().size());
+                                        Class.forName(mediator.getClassName()),
+                                        attributeValue,
+                                        mediator.getArgumentList().size());
             } catch (ClassNotFoundException e) {
                 handleException("Could not load '" + mediator.getClassName() + "' class.", e);
             }

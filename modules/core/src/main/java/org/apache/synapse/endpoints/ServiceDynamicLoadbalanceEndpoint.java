@@ -78,10 +78,10 @@ public class ServiceDynamicLoadbalanceEndpoint extends DynamicLoadbalanceEndpoin
                 }
             }
             slbMembershipHandler = new ServiceLoadBalanceMembershipHandler(hostDomainMap,
-                    getAlgorithm(),
-                    cfgCtx,
-                    isClusteringEnabled,
-                    getName());
+                                                                           getAlgorithm(),
+                                                                           cfgCtx,
+                                                                           isClusteringEnabled,
+                                                                           getName());
 
             // Initialize the SAL Sessions if already has not been initialized.
             SALSessions salSessions = SALSessions.getInstance();
@@ -242,8 +242,8 @@ public class ServiceDynamicLoadbalanceEndpoint extends DynamicLoadbalanceEndpoin
             Integer errorCode = (Integer) synCtx.getProperty(SynapseConstants.ERROR_CODE);
             if (errorCode != null) {
                 if (errorCode.equals(NhttpConstants.CONNECTION_FAILED) ||
-                        errorCode.equals(NhttpConstants.CONNECT_CANCEL) ||
-                        errorCode.equals(NhttpConstants.CONNECT_TIMEOUT)) {
+                    errorCode.equals(NhttpConstants.CONNECT_CANCEL) ||
+                    errorCode.equals(NhttpConstants.CONNECT_TIMEOUT)) {
                     // Try to resend to another member
                     Member newMember = slbMembershipHandler.getNextApplicationMember(host);
                     if (newMember == null) {
@@ -267,7 +267,7 @@ public class ServiceDynamicLoadbalanceEndpoint extends DynamicLoadbalanceEndpoin
                     }
                     sendToApplicationMember(synCtx, newMember, this, true);
                 } else if (errorCode.equals(NhttpConstants.SND_IO_ERROR_SENDING) ||
-                        errorCode.equals(NhttpConstants.CONNECTION_CLOSED)) {
+                           errorCode.equals(NhttpConstants.CONNECTION_CLOSED)) {
                     // TODO: Envelope is consumed
                 }
             }

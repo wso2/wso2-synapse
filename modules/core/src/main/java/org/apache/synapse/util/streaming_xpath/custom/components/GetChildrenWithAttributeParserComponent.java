@@ -39,7 +39,7 @@ public class GetChildrenWithAttributeParserComponent extends ParserComponent {
     @Override
     public String process(OMElement node) {
         attributeQName = new QName(nameSpacePrefix, localName);
-        try {
+        try{
             Iterator children = node.getChildElements();
             OMElement child = (OMElement) children.next();
             OMAttribute atr = child.getAttribute(attributeQName);
@@ -52,7 +52,7 @@ public class GetChildrenWithAttributeParserComponent extends ParserComponent {
             } else {
                 return "";
             }
-        } catch (NoSuchElementException e) {
+        }catch (NoSuchElementException e){
             return "";
         }
     }

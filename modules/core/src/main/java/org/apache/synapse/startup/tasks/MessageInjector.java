@@ -87,8 +87,8 @@ public class MessageInjector implements Task, ManagedLifecycle {
     private final static String INJECT_TO_MAIN_SEQ = "main";
 
     /**
-     * Artifact type which message should be injected
-     * Could be one of "proxy" | "sequence" | "main"
+     *  Artifact type which message should be injected
+     *  Could be one of "proxy" | "sequence" | "main"
      */
     private String injectTo = INJECT_TO_MAIN_SEQ;
 
@@ -105,30 +105,33 @@ public class MessageInjector implements Task, ManagedLifecycle {
     /**
      * Initializes the Injector
      *
-     * @param se SynapseEnvironment of synapse
+     * @param se
+     *          SynapseEnvironment of synapse
      */
     public void init(SynapseEnvironment se) {
-        synapseEnvironment = se;
-    }
+		synapseEnvironment = se;
+	}
 
     /**
      * Set the message to be injected
      *
-     * @param elem OMElement describing the message
+     * @param elem
+     *          OMElement describing the message
      */
     public void setMessage(OMElement elem) {
-        log.debug("set message " + elem.toString());
-        message = elem;
-    }
+		log.debug("set message " + elem.toString());
+		message = elem;
+	}
 
     /**
      * Set the to address of the message to be injected
      *
-     * @param url String containing the to address
+     * @param url
+     *          String containing the to address
      */
     public void setTo(String url) {
-        to = url;
-    }
+		to = url;
+	}
 
     /**
      * Sets the format of the message
@@ -150,7 +153,6 @@ public class MessageInjector implements Task, ManagedLifecycle {
 
     /**
      * Artifact type which message should be injected
-     *
      * @param injectTo Could be one of "proxy" | "sequence" | "main"
      */
     public void setInjectTo(String injectTo) {
@@ -159,7 +161,6 @@ public class MessageInjector implements Task, ManagedLifecycle {
 
     /**
      * Set name of the sequence which message should be injected
-     *
      * @param sequenceName sequence name
      */
     public void setSequenceName(String sequenceName) {
@@ -168,7 +169,6 @@ public class MessageInjector implements Task, ManagedLifecycle {
 
     /**
      * Set name of the proxy service which message should be injected
-     *
      * @param proxyName proxy service name
      */
     public void setProxyName(String proxyName) {
@@ -185,15 +185,15 @@ public class MessageInjector implements Task, ManagedLifecycle {
             log.debug("execute");
         }
 
-        if (synapseEnvironment == null) {
+		if (synapseEnvironment == null) {
             handleError("Synapse Environment not set");
             return;
-        }
+		}
 
-        if (message == null) {
+		if (message == null) {
             handleError("message not set");
             return;
-        }
+		}
 
         if (INJECT_TO_PROXY.equalsIgnoreCase(injectTo)) {
 
@@ -326,7 +326,6 @@ public class MessageInjector implements Task, ManagedLifecycle {
 
     /**
      * Log the error and throws a SynapseException
-     *
      * @param msg the log message
      */
     private void handleError(String msg) {

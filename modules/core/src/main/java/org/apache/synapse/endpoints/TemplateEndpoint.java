@@ -103,7 +103,6 @@ public class TemplateEndpoint extends AbstractEndpoint {
 
     /**
      * Reload as needed , either from registry , local entries or predefined endpoints
-     *
      * @param se synapse environment
      */
     private synchronized void reLoadAndInitEndpoint(SynapseEnvironment se) {
@@ -150,21 +149,21 @@ public class TemplateEndpoint extends AbstractEndpoint {
         if (realEndpoint != null && realEndpoint.readyToSend()) {
             if (log.isDebugEnabled()) {
                 log.debug("Template Endpoint" + this.toString()
-                        + " is at ready state");
+                          + " is at ready state");
             }
             return true;
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Template Endpoint " + this.toString()
-                    + " is not in a ready state to process message");
+        	log.debug("Template Endpoint " + this.toString()
+                 + " is not in a ready state to process message");
         }
 
         return false;
     }
-
-
-    public Endpoint getRealEndpoint() {
-        return realEndpoint;
-    }
+    
+    
+	public Endpoint getRealEndpoint() {
+		return realEndpoint;
+	}
 }

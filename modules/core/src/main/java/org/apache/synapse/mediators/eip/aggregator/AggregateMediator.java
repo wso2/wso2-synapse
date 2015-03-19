@@ -25,7 +25,11 @@ import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseLog;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -54,21 +58,15 @@ import java.util.Map;
  * any fault conditions handled
  */
 public class AggregateMediator extends AbstractMediator implements ManagedLifecycle,
-        FlowContinuableMediator {
+                                                                   FlowContinuableMediator {
 
     private static final Log log = LogFactory.getLog(AggregateMediator.class);
 
-    /**
-     * The duration as a number of milliseconds for this aggregation to complete
-     */
+    /** The duration as a number of milliseconds for this aggregation to complete */
     private long completionTimeoutMillis = 0;
-    /**
-     * The maximum number of messages required to complete aggregation
-     */
+    /** The maximum number of messages required to complete aggregation */
     private Value minMessagesToComplete;
-    /**
-     * The minimum number of messages required to complete aggregation
-     */
+    /** The minimum number of messages required to complete aggregation */
     private Value maxMessagesToComplete;
 
     /**
@@ -84,48 +82,36 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      */
     private SynapseXPath aggregationExpression = null;
 
-    /**
-     * This holds the reference sequence name of the
-     */
+    /** This holds the reference sequence name of the */
     private String onCompleteSequenceRef = null;
-    /**
-     * Inline sequence definition holder that holds the onComplete sequence
-     */
+    /** Inline sequence definition holder that holds the onComplete sequence */
     private SequenceMediator onCompleteSequence = null;
 
-    /**
-     * The active aggregates currently being processd
-     */
+    /** The active aggregates currently being processd */
     private Map<String, Aggregate> activeAggregates =
-            Collections.synchronizedMap(new HashMap<String, Aggregate>());
+        Collections.synchronizedMap(new HashMap<String, Aggregate>());
 
     private String id = null;
 
-    /**
-     * Property which contains the Enclosing element of the aggregated message
-     */
+    /** Property which contains the Enclosing element of the aggregated message */
     private String enclosingElementPropertyName = null;
 
-    /**
-     * Lock object to provide the synchronized access to the activeAggregates on checking
-     */
+    /** Lock object to provide the synchronized access to the activeAggregates on checking */
     private final Object lock = new Object();
 
-    /**
-     * Reference to the synapse environment
-     */
+    /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
 
     public AggregateMediator() {
         try {
             aggregationExpression = new SynapseXPath("/s11:Envelope/s11:Body/child::*[position()=1] | " +
-                    "/s12:Envelope/s12:Body/child::*[position()=1]");
+                "/s12:Envelope/s12:Body/child::*[position()=1]");
             aggregationExpression.addNamespace("s11", SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI);
             aggregationExpression.addNamespace("s12", SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI);
         } catch (JaxenException e) {
             if (log.isDebugEnabled()) {
                 handleException("Unable to set the default " +
-                        "aggregationExpression for the aggregation", e, null);
+                    "aggregationExpression for the aggregation", e, null);
             }
         }
     }
@@ -219,7 +205,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
                             Double minMsg = Double.parseDouble(minMessagesToComplete.evaluateValue(synCtx));
                             Double maxMsg = Double.parseDouble(maxMessagesToComplete.evaluateValue(synCtx));
-
+                    
                             aggregate = new Aggregate(
                                     synCtx.getEnvironment(),
                                     correlateExpression.toString(),
@@ -284,10 +270,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                         maxMsg.intValue(), this);
 
                                 if (completionTimeoutMillis > 0) {
-                                    synchronized (aggregate) {
+                                    synchronized(aggregate) {
                                         if (!aggregate.isCompleted()) {
                                             synCtx.getConfiguration().getSynapseTimer().
-                                                    schedule(aggregate, completionTimeoutMillis);
+                                                schedule(aggregate, completionTimeoutMillis);
                                         }
                                     }
                                 }
@@ -296,7 +282,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                             }
                         }
                     }
-
+                    
                 } else {
                     synLog.traceOrDebug("Unable to find aggrgation correlation property");
                     return true;
@@ -308,7 +294,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
             // if there is an aggregate continue on aggregation
             if (aggregate != null) {
-                //this is a temporary fix
+            	//this is a temporary fix           	
                 synCtx.getEnvelope().build();
                 boolean collected = aggregate.addMessage(synCtx);
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -319,14 +305,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                         }
                     }
                 }
-
+                
                 // check the completeness of the aggregate and if completed aggregate the messages
                 // if not completed return false and block the message sequence till it completes
 
                 if (aggregate.isComplete(synLog)) {
                     synLog.traceOrDebug("Aggregation completed - invoking onComplete");
                     boolean onCompleteSeqResult = completeAggregate(aggregate);
-
+                    
                     synLog.traceOrDebug("End : Aggregate mediator");
                     return onCompleteSeqResult;
                 } else {
@@ -374,7 +360,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     /**
      * Invoked by the Aggregate objects that are timed out, to signal timeout/completion of
      * itself
-     *
      * @param aggregate the timed out Aggregate that holds collected messages and properties
      */
     public boolean completeAggregate(Aggregate aggregate) {
@@ -390,7 +375,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         }
 
         // cancel the timer
-        synchronized (this) {
+        synchronized(this) {
             if (!aggregate.isCompleted()) {
                 aggregate.cancel();
                 aggregate.setCompleted(true);
@@ -401,7 +386,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         if (!markedCompletedNow) {
             return false;
         }
-
+        
         MessageContext newSynCtx = getAggregatedMessage(aggregate);
 
         if (newSynCtx == null) {
@@ -416,7 +401,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                             MessageHelper.cloneSOAPEnvelope(newSynCtx.getEnvelope()));
                 } catch (AxisFault axisFault) {
                     log.warn("Error occurred while assigning aggregated message" +
-                            " back to the last received message context");
+                             " back to the last received message context");
                 }
             }
         }
@@ -424,8 +409,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         activeAggregates.remove(aggregate.getCorrelation());
 
         if ((correlateExpression != null &&
-                !correlateExpression.toString().equals(aggregate.getCorrelation())) ||
-                correlateExpression == null) {
+            !correlateExpression.toString().equals(aggregate.getCorrelation())) ||
+            correlateExpression == null) {
 
             if (onCompleteSequence != null) {
 
@@ -438,14 +423,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 return result;
 
             } else if (onCompleteSequenceRef != null
-                    && newSynCtx.getSequence(onCompleteSequenceRef) != null) {
+                && newSynCtx.getSequence(onCompleteSequenceRef) != null) {
 
                 ContinuationStackManager.updateSeqContinuationState(newSynCtx, getMediatorPosition());
                 return newSynCtx.getSequence(onCompleteSequenceRef).mediate(newSynCtx);
 
             } else {
                 handleException("Unable to find the sequence for the mediation " +
-                        "of the aggregated message", newSynCtx);
+                    "of the aggregated message", newSynCtx);
             }
         }
         return false;
@@ -455,7 +440,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      * Get the aggregated message from the specified Aggregate instance
      *
      * @param aggregate the Aggregate object that holds collected messages and properties of the
-     *                  aggregation
+     * aggregation
      * @return the aggregated message context
      */
     private MessageContext getAggregatedMessage(Aggregate aggregate) {
@@ -463,7 +448,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         MessageContext newCtx = null;
 
         for (MessageContext synCtx : aggregate.getMessages()) {
-
+            
             if (newCtx == null) {
                 try {
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
@@ -493,7 +478,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     handleException("Error merging aggregation results using XPath : " +
                             aggregationExpression.toString(), e, synCtx);
                 } catch (SynapseException e) {
-                    handleException("Error evaluating expression: " + aggregationExpression.toString(), e, synCtx);
+                    handleException("Error evaluating expression: " + aggregationExpression.toString() , e, synCtx);
                 }
             }
         }
@@ -503,7 +488,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
             if (log.isDebugEnabled()) {
                 log.debug("Enclosing the aggregated message with enclosing element: " +
-                        enclosingElementPropertyName);
+                          enclosingElementPropertyName);
             }
 
             Object enclosingElementProperty = newCtx.getProperty(enclosingElementPropertyName);
@@ -518,11 +503,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
                 } else {
                     handleException("Enclosing Element defined in the property: " +
-                            enclosingElementPropertyName + " is not an OMElement ", newCtx);
+                                    enclosingElementPropertyName + " is not an OMElement ", newCtx);
                 }
             } else {
                 handleException("Enclosing Element property: " +
-                        enclosingElementPropertyName + " not found ", newCtx);
+                                enclosingElementPropertyName + " not found ", newCtx);
             }
         }
 
@@ -581,20 +566,20 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.id = id;
     }
 
-    public Value getMinMessagesToComplete() {
-        return minMessagesToComplete;
+	public Value getMinMessagesToComplete() {
+    	return minMessagesToComplete;
     }
 
-    public void setMinMessagesToComplete(Value minMessagesToComplete) {
-        this.minMessagesToComplete = minMessagesToComplete;
+	public void setMinMessagesToComplete(Value minMessagesToComplete) {
+    	this.minMessagesToComplete = minMessagesToComplete;
     }
 
-    public Value getMaxMessagesToComplete() {
-        return maxMessagesToComplete;
+	public Value getMaxMessagesToComplete() {
+    	return maxMessagesToComplete;
     }
 
-    public void setMaxMessagesToComplete(Value maxMessagesToComplete) {
-        this.maxMessagesToComplete = maxMessagesToComplete;
+	public void setMaxMessagesToComplete(Value maxMessagesToComplete) {
+    	this.maxMessagesToComplete = maxMessagesToComplete;
     }
 
     public String getEnclosingElementPropertyName() {

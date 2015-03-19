@@ -20,10 +20,10 @@ package org.apache.synapse;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
+import org.apache.axis2.deployment.DeploymentEngine;
 import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
-import org.apache.axis2.deployment.DeploymentEngine;
 import org.apache.axis2.description.*;
 import org.apache.axis2.dispatchers.SOAPMessageBodyBasedDispatcher;
 import org.apache.axis2.engine.*;
@@ -35,23 +35,28 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.beanstalk.enterprise.EnterpriseBeanstalkConstants;
 import org.apache.synapse.commons.beanstalk.enterprise.EnterpriseBeanstalkManager;
-import org.apache.synapse.commons.datasource.DataSourceConstants;
-import org.apache.synapse.commons.datasource.DataSourceInformationRepository;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
-import org.apache.synapse.commons.jmx.JmxInformation;
-import org.apache.synapse.commons.jmx.JmxInformationFactory;
 import org.apache.synapse.commons.util.RMIRegistryController;
 import org.apache.synapse.config.*;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
+import org.wso2.securevault.SecurityConstants;
+import org.wso2.securevault.secret.SecretCallbackHandler;
+import org.apache.synapse.commons.datasource.DataSourceInformationRepository;
+import org.apache.synapse.commons.datasource.DataSourceConstants;
+import org.apache.synapse.commons.jmx.JmxInformation;
+import org.apache.synapse.commons.jmx.JmxInformationFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.*;
+import org.apache.synapse.deployers.ImportDeployer;
 import org.apache.synapse.deployers.LibraryArtifactDeployer;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentStore;
 import org.apache.synapse.eventing.SynapseEventSource;
+import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.task.*;
-import org.wso2.securevault.SecurityConstants;
-import org.wso2.securevault.secret.SecretCallbackHandler;
 import org.wso2.securevault.secret.handler.SharedSecretCallbackHandlerCache;
+import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
+import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
+import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
 import java.io.File;
 import java.util.*;
@@ -59,7 +64,7 @@ import java.util.*;
 /**
  * Axis2 Based Synapse Controller.
  *
- * @see org.apache.synapse.SynapseController
+ * @see  org.apache.synapse.SynapseController
  */
 public class Axis2SynapseController implements SynapseController {
 
@@ -67,44 +72,28 @@ public class Axis2SynapseController implements SynapseController {
 
     private static final String JMX_AGENT_NAME = "jmx.agent.name";
 
-    /**
-     * The Axis2 listener Manager
-     */
+    /** The Axis2 listener Manager */
     private ListenerManager listenerManager;
 
-    /**
-     * The Axis2 configuration context used by Synapse
-     */
+    /** The Axis2 configuration context used by Synapse */
     private ConfigurationContext configurationContext;
 
-    /**
-     * Reference to the Synapse configuration
-     */
+    /** Reference to the Synapse configuration */
     protected SynapseConfiguration synapseConfiguration;
 
-    /**
-     * Reference to the Synapse configuration
-     */
+    /** Reference to the Synapse configuration */
     protected SynapseEnvironment synapseEnvironment;
 
-    /**
-     * Indicate initialization state
-     */
+    /** Indicate initialization state */
     private boolean initialized;
 
-    /**
-     * ServerConfiguration Information
-     */
+    /** ServerConfiguration Information */
     protected ServerConfigurationInformation serverConfigurationInformation;
 
-    /**
-     * Runtime information about the server
-     */
+    /** Runtime information about the server */
     protected ServerContextInformation serverContextInformation;
 
-    /**
-     * JMX Adapter
-     */
+    /** JMX Adapter */
     private JmxAdapter jmxAdapter;
 
     private TaskDescriptionRepository taskDescriptionRepository;
@@ -395,8 +384,8 @@ public class Axis2SynapseController implements SynapseController {
     public SynapseEnvironment createSynapseEnvironment() {
 
         try {
-            deployMediationLibraryArtifacts();
-            deployMediatorExtensions();
+        	deployMediationLibraryArtifacts();
+        	deployMediatorExtensions();
             deploySynapseService();
             deployProxyServices();
             deployEventSources();
@@ -427,34 +416,35 @@ public class Axis2SynapseController implements SynapseController {
         return synapseEnvironment;
     }
 
-    /**
-     * The mediation library deployer will handling the process of deploying the
-     * libararyArtifacts, this is required since the library specific artifacts
-     * has to be initialized priorly for the cases like connectors
-     */
-    private void deployMediationLibraryArtifacts() {
-        if (configurationContext == null || synapseConfiguration == null) {
-            return;
-        }
-        DeploymentEngine deploymentEngine = (DeploymentEngine) configurationContext
-                .getAxisConfiguration().getConfigurator();
-        String carbonRepoPath = configurationContext.getAxisConfiguration().getRepository()
-                .getPath();
-        SynapseArtifactDeploymentStore deploymentStore = synapseConfiguration
-                .getArtifactDeploymentStore();
+	/**
+	 * The mediation library deployer will handling the process of deploying the
+	 * libararyArtifacts, this is required since the library specific artifacts
+	 * has to be initialized priorly for the cases like connectors
+	 * 
+	 */
+	private void deployMediationLibraryArtifacts() {
+		if (configurationContext == null || synapseConfiguration == null) {
+			return;
+		}
+		DeploymentEngine deploymentEngine = (DeploymentEngine) configurationContext
+				.getAxisConfiguration().getConfigurator();
+		String carbonRepoPath = configurationContext.getAxisConfiguration().getRepository()
+				.getPath();
+		SynapseArtifactDeploymentStore deploymentStore = synapseConfiguration
+				.getArtifactDeploymentStore();
 
-        String synapseImportDir = synapseConfiguration.getPathToConfigFile() + File.separator
-                + MultiXMLConfigurationBuilder.SYNAPSE_IMPORTS_DIR;
+		String synapseImportDir = synapseConfiguration.getPathToConfigFile() + File.separator
+				+ MultiXMLConfigurationBuilder.SYNAPSE_IMPORTS_DIR;
 
         /*Registering Import Deployer is not required here.*/
-        //deploymentEngine.addDeployer(new ImportDeployer(), synapseImportDir, "xml");
+		//deploymentEngine.addDeployer(new ImportDeployer(), synapseImportDir, "xml");
 
-        String libsPath = carbonRepoPath + File.separator + "synapse-libs";
-        deploymentEngine.addDeployer(new LibraryArtifactDeployer(), libsPath, "zip");
-    }
+		String libsPath = carbonRepoPath + File.separator + "synapse-libs";
+		deploymentEngine.addDeployer(new LibraryArtifactDeployer(), libsPath, "zip");
+	}
 
 
-    /**
+	/**
      * Destroys the Synapse Environment by undeploying all Axis2 services.
      */
     public void destroySynapseEnvironment() {
@@ -540,8 +530,9 @@ public class Axis2SynapseController implements SynapseController {
      *
      * @param waitIntervalMillis the pause time (delay) in milliseconds between subsequent checks
      * @param endTime            the time until which the checks need to finish successfully
+     *
      * @return true, if a safe state is reached before the specified <code>endTime</code>,
-     * otherwise false (forceful stop required)
+     *         otherwise false (forceful stop required)
      */
     public boolean waitUntilSafeToStop(long waitIntervalMillis, long endTime) {
 
@@ -737,7 +728,6 @@ public class Axis2SynapseController implements SynapseController {
             }
         }
     }
-
     /**
      * Removes all Synapse proxy services from the Axis2 configuration.
      *
@@ -902,8 +892,8 @@ public class Axis2SynapseController implements SynapseController {
     /**
      * Starts the JMX Adaptor.
      *
-     * @throws SynapseException if the JMX configuration is erroneous and/or the connector server
-     *                          cannot be started
+     * @throws  SynapseException  if the JMX configuration is erroneous and/or the connector server
+     *                            cannot be started
      */
     private void startJmxAdapter() {
         Properties synapseProperties = SynapsePropertiesLoader.loadSynapseProperties();

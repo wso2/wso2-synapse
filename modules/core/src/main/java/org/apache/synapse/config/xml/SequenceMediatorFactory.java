@@ -32,17 +32,17 @@ import java.util.Properties;
 
 /**
  * Factory for {@link SequenceMediator} instances.
- * <p/>
+ * <p>
  * It follows the following configuration:
- * <p/>
+ *
  * <pre>
  * &lt;sequence name="string" [onError="string"] [trace="enable|disable"]&gt;
  *   mediator+
  * &lt;/sequence&gt;
  * </pre>
- * <p/>
+ *
  * OR
- * <p/>
+ *
  * <pre>
  * &lt;sequence key="name"/&gt;
  * </pre>
@@ -50,7 +50,7 @@ import java.util.Properties;
 public class SequenceMediatorFactory extends AbstractListMediatorFactory {
 
     private static final QName SEQUENCE_Q
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
+        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence");
 
     public QName getTagQName() {
         return SEQUENCE_Q;
@@ -71,7 +71,7 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
         seqMediator.setSequenceType(SequenceType.ANON);
         return seqMediator;
     }
-
+    
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         SequenceMediator seqMediator = new SequenceMediator();
@@ -97,13 +97,13 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
                 seqMediator.setKey(generatedKey);
                 if (e != null) {
                     String msg = "A sequence mediator with a reference to another " +
-                            "sequence can not have 'ErrorHandler'";
+                        "sequence can not have 'ErrorHandler'";
                     log.error(msg);
                     throw new SynapseException(msg);
                 }
             } else {
                 String msg = "A sequence mediator should be a named sequence or a reference " +
-                        "to another sequence (i.e. a name attribute or key attribute is required)";
+                    "to another sequence (i.e. a name attribute or key attribute is required)";
                 log.error(msg);
                 throw new SynapseException(msg);
             }

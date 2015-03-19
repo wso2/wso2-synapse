@@ -31,51 +31,44 @@ public interface ContinuationState {
 
     /**
      * Get the child ContinuationState
-     *
      * @return child ContinuationState
      */
     public ContinuationState getChildContState();
 
     /**
      * Set the child ContinuationState.
-     *
      * @param childContState ContinuationState to be added as the child
      */
     public void setChildContState(ContinuationState childContState);
 
     /**
      * Get the position of the mediator in the current flow.
-     *
      * @return position
      */
     public int getPosition();
 
     /**
      * Set the position of the mediator in the flow which is currently being processed.
-     *
      * @param position position of the mediator which is currently being processed in the flow.
      */
     public void setPosition(int position);
 
     /**
      * Check whether child ContinuationState exists
-     *
      * @return whether child ContinuationState exists
      */
     public boolean hasChild();
 
     /**
      * Get the Leaf Child of this ContinuationState.
-     *
      * @return Leaf child of the ContinuationState
      */
     public ContinuationState getLeafChild();
 
     /**
      * Add a Leaf child to this ContinuationState
-     *
      * @param leafChild ContinuationState which can be added as a Leaf  child
-     *                  for this ContinuationState
+     * for this ContinuationState
      */
     public void addLeafChild(ContinuationState leafChild);
 

@@ -33,7 +33,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link POJOCommandMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;pojoCommand name=&quot;class-name&quot;&gt;
@@ -53,7 +53,7 @@ import java.util.Properties;
 public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName POJO_COMMAND_Q
-            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "pojoCommand");
+        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "pojoCommand");
     protected static final QName ATT_ACTION = new QName("action");
     protected static final QName ATT_CTXNAME = new QName("context-name");
 
@@ -88,18 +88,18 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
 
         // setting the properties to the command. these properties will be instantiated
         // at the mediation time
-        for (Iterator it = elem.getChildElements(); it.hasNext(); ) {
+        for (Iterator it = elem.getChildElements(); it.hasNext();) {
             OMElement child = (OMElement) it.next();
-            if ("property".equals(child.getLocalName())) {
+            if("property".equals(child.getLocalName())) {
 
                 OMAttribute nameAttr = child.getAttribute(ATT_NAME);
                 if (nameAttr != null && nameAttr.getAttributeValue() != null
-                        && !"".equals(nameAttr.getAttributeValue())) {
+                    && !"".equals(nameAttr.getAttributeValue())) {
 
                     handlePropertyAction(nameAttr.getAttributeValue(), child, pojoMediator);
                 } else {
                     handleException("A POJO command mediator " +
-                            "property must specify the name attribute");
+                        "property must specify the name attribute");
                 }
             }
         }
@@ -109,10 +109,10 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
 
     private void handlePropertyAction(String name, OMElement propElem, POJOCommandMediator m) {
 
-        OMAttribute valueAttr = propElem.getAttribute(ATT_VALUE);
-        OMAttribute exprAttr = propElem.getAttribute(ATT_EXPRN);
+        OMAttribute valueAttr   = propElem.getAttribute(ATT_VALUE);
+        OMAttribute exprAttr    = propElem.getAttribute(ATT_EXPRN);
         OMAttribute ctxNameAttr = propElem.getAttribute(ATT_CTXNAME);
-        OMAttribute actionAttr = propElem.getAttribute(ATT_ACTION);
+        OMAttribute actionAttr  = propElem.getAttribute(ATT_ACTION);
 
         SynapseXPath xpath = null;
         try {
@@ -129,8 +129,8 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
             // all other three attributes can not co-exists
             if (exprAttr != null && ctxNameAttr != null) {
                 handleException("Command properties can not contain all three 'value', " +
-                        "'expression' and 'context-name' attributes. Only one or " +
-                        "combination of two can be there.");
+                    "'expression' and 'context-name' attributes. Only one or " +
+                    "combination of two can be there.");
             } else {
                 m.addStaticSetterProperty(name, value);
                 if (exprAttr != null) {
@@ -145,8 +145,8 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
             // all other two attributes can not co-exists
             if (exprAttr != null && ctxNameAttr != null) {
                 handleException("Command properties can not contain all the " +
-                        "'expression' and 'context-name' attributes with a child. Only one " +
-                        "attribute of those can co-exists with a child");
+                    "'expression' and 'context-name' attributes with a child. Only one " +
+                    "attribute of those can co-exists with a child");
             } else {
                 m.addStaticSetterProperty(name, propElem.getFirstElement());
                 if (exprAttr != null) {
@@ -172,11 +172,11 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
                         m.addMessageGetterProperty(name, xpath);
                     } else {
                         handleException("Invalid action for " +
-                                "the command property with the name " + name);
+                            "the command property with the name " + name);
                     }
                 } else {
                     handleException("Action attribute " +
-                            "is required for the command property with name " + name);
+                        "is required for the command property with name " + name);
                 }
             } else {
                 // only one of expression or context-name is present
@@ -195,7 +195,7 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
                             m.addMessageGetterProperty(name, xpath);
                         } else {
                             handleException("Invalid action for " +
-                                    "the command property with the name " + name);
+                                "the command property with the name " + name);
                         }
                     } else if (ctxNameAttr != null) {
                         String ctxName = ctxNameAttr.getAttributeValue();
@@ -211,7 +211,7 @@ public class POJOCommandMediatorFactory extends AbstractMediatorFactory {
                             m.addContextGetterProperty(name, ctxName);
                         } else {
                             handleException("Invalid action for " +
-                                    "the command property with the name " + name);
+                                "the command property with the name " + name);
                         }
                     } else {
                         handleException("Unrecognized command property with the name " + name);

@@ -19,17 +19,17 @@
 
 package org.apache.synapse.endpoints;
 
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.description.Parameter;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.context.ConfigurationContext;
 
 /**
- *
+ * 
  */
 public class ResolvingEndpoint extends AbstractEndpoint {
 
@@ -37,7 +37,6 @@ public class ResolvingEndpoint extends AbstractEndpoint {
 
     /**
      * Send by calling to the real endpoint
-     *
      * @param synCtx the message to send
      */
     public void send(MessageContext synCtx) {

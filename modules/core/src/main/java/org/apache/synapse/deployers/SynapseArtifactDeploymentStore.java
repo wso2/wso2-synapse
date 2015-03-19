@@ -33,7 +33,7 @@ import java.util.Set;
 
 /**
  * Keeps track of the artifacts deployed with files inside the synapse repository</p>
- * <p/>
+ *
  * <p>For hot deployment to properly work we need to, keep track fo not only the artifacts
  * deployed by deployers but also the artifacts deployed from files at the startup as well. Otherwise
  * it is not possible to track the hot update cases. This is introduced as a <code>singleton</code>
@@ -44,44 +44,32 @@ import java.util.Set;
  */
 public final class SynapseArtifactDeploymentStore {
 
-    /**
-     * Keeps track of the deployed artifacts in the synapse environment
-     */
+    /** Keeps track of the deployed artifacts in the synapse environment */
     private Map<String, String> fileName2ArtifactName = new HashMap<String, String>();
 
-    /**
-     * Keeps track of the updating artifacts in the synapse environment in a particular instance
-     */
+    /** Keeps track of the updating artifacts in the synapse environment in a particular instance */
     private Map<String, String> updatingArtifacts = new HashMap<String, String>();
 
-    /**
-     * Keeps track of the restored artifacts in the synapse environment in a particular instance
-     */
+    /** Keeps track of the restored artifacts in the synapse environment in a particular instance */
     private Set<String> restoredFiles = new HashSet<String>();
 
-    /**
-     * Keeps track of the backed up artifacts in the synapse environment in a particular instance
-     */
+    /** Keeps track of the backed up artifacts in the synapse environment in a particular instance */
     private Set<String> backedUpFiles = new HashSet<String>();
 
-    /**
-     * Keeps track of last updated file of main sequence
-     */
+    /** Keeps track of last updated file of main sequence */
     private String mainSeqLstUpdatedFile = SynapseConstants.MAIN_SEQUENCE_XML;
 
-    /**
-     * Keeps track of last updated file of fault sequence
-     */
+    /** Keeps track of last updated file of fault sequence */
     private String faultSeqLstUpdatedFile = SynapseConstants.FAULT_SEQUENCE_XML;
-
+   
     private static final Log log = LogFactory.getLog(SynapseArtifactDeploymentStore.class);
 
     private Map<String, ClassLoader> classMediatorClassLoaders = new HashMap<String, ClassLoader>();
 
     /**
      * Adds artifacts indexed with the respective filename
-     *
-     * @param fileName     name of the file from which the artifact being added is loaded
+     * 
+     * @param fileName name of the file from which the artifact being added is loaded
      * @param artifactName name of the artifact being added
      */
     public void addArtifact(String fileName, String artifactName) {
@@ -99,7 +87,7 @@ public final class SynapseArtifactDeploymentStore {
 
     /**
      * Checks whether there is an artifact indexed with the given <code>filename</code>
-     *
+     * 
      * @param fileName artifact filename to be checked for the existence
      * @return boolean <code>true</code> if it is available, <code>false</code> if not
      */
@@ -119,7 +107,7 @@ public final class SynapseArtifactDeploymentStore {
 
     /**
      * Removes the indexed artifacts to the <code>filename</code> mapping from the holder
-     *
+     * 
      * @param fileName name of the file of which the artifact required to be removed
      */
     public void removeArtifactWithFileName(String fileName) {
@@ -132,8 +120,8 @@ public final class SynapseArtifactDeploymentStore {
 
     /**
      * Adds an updating artifact for the given instance
-     *
-     * @param fileName     name of the file from which the artifact has been loaded
+     * 
+     * @param fileName name of the file from which the artifact has been loaded
      * @param artifactName name of the actual artifact being updated
      */
     public void addUpdatingArtifact(String fileName, String artifactName) {
@@ -146,7 +134,7 @@ public final class SynapseArtifactDeploymentStore {
 
     /**
      * Checks whether the given artifact is at the updating state in the given instance
-     *
+     * 
      * @param fileName name of the file which describes the artifact to be checked
      * @return boolean <code>true</code> if it is at the updating state, <code>false</code> otherwise
      */
@@ -192,7 +180,7 @@ public final class SynapseArtifactDeploymentStore {
 
     /**
      * Checks whether the given artifact is being restored
-     *
+     * 
      * @param fileName name of the file to be checked
      * @return boolean <code>true</code> if the provided filename describes a restoring artifact,
      * <code>false</code> otherwise
@@ -239,7 +227,7 @@ public final class SynapseArtifactDeploymentStore {
 
     /**
      * Removes a backedUp artifact
-     *
+     * 
      * @param fileName name of the file of the artifact to be removed
      */
     public void removeBackedUpArtifact(String fileName) {

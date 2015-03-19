@@ -28,7 +28,7 @@ import java.util.Properties;
 /**
  * A mediator factory capable of creating an instance of a {@link org.apache.synapse.Mediator}
  * through a given XML should implement this interface</p>
- * <p/>
+ *
  * <p>It is recommended to extend the abstract class
  * {@link org.apache.synapse.config.xml.AbstractMediatorFactory} or the
  * {@link org.apache.synapse.config.xml.AbstractListMediatorFactory} instead of
@@ -40,8 +40,7 @@ import java.util.Properties;
 public interface MediatorFactory {
     /**
      * Creates an instance of the mediator using the OMElement
-     *
-     * @param elem       configuration element describing the mediator properties
+     * @param elem configuration element describing the mediator properties
      * @param properties bag of properties to pass in any information to the factory
      * @return the created mediator
      */
@@ -49,7 +48,6 @@ public interface MediatorFactory {
 
     /**
      * The QName of this mediator element in the XML config
-     *
      * @return QName of the mediator element
      */
     public QName getTagQName();

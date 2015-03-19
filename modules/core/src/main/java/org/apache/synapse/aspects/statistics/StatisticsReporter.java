@@ -59,8 +59,8 @@ public class StatisticsReporter {
         }
 
         StatisticsRecord record = null;
-        if (synCtx.getProperty(SynapseConstants.STATISTICS_STACK) instanceof StatisticsRecord) {
-            record = (StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK);
+        if(synCtx.getProperty(SynapseConstants.STATISTICS_STACK) instanceof StatisticsRecord){
+            record =  (StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK);
         }
         if (record == null) {
 
@@ -161,8 +161,8 @@ public class StatisticsReporter {
     private static void endReportForAll(MessageContext synCtx) {
 
         StatisticsRecord record = null;
-        if (synCtx.getProperty(SynapseConstants.STATISTICS_STACK) instanceof StatisticsRecord) {
-            record = (StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK);
+        if(synCtx.getProperty(SynapseConstants.STATISTICS_STACK) instanceof StatisticsRecord){
+            record =  (StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK);
         }
         if (record == null) {
             //There is no statistics record.

@@ -37,14 +37,14 @@ public class GetChildrenByNameRelativeParserComponent extends ParserComponent {
     @Override
     public String process(OMElement node) {
         childQName = new QName(prefixNameSpaceMap.get(nameSpacePrefix), localName);
-        OMElement result = findElement(node, childQName);
-        if (result != null) {
+        OMElement result=findElement(node,childQName);
+        if(result!=null){
             if (nextParserComponent == null) {
                 return result.toString();
             } else {
                 return nextParserComponent.process(result);
             }
-        } else {
+        }else{
             return "";
         }
 
@@ -60,15 +60,15 @@ public class GetChildrenByNameRelativeParserComponent extends ParserComponent {
         return this.nextParserComponent;
     }
 
-    private OMElement findElement(OMElement node, QName childQName) {
-        try {
+    private OMElement findElement(OMElement node,QName childQName){
+        try{
             Iterator child = node.getChildrenWithName(childQName);
             return ((OMElement) child.next());
-        } catch (NoSuchElementException e) {
-            Iterator children = node.getChildElements();
-            while (children.hasNext()) {
-                OMElement result = findElement((OMElement) children.next(), childQName);
-                if (result != null) {
+        }catch (NoSuchElementException e){
+            Iterator children=node.getChildElements();
+            while(children.hasNext()){
+                OMElement result =findElement((OMElement) children.next(),childQName);
+                if(result!=null){
                     return result;
                 }
             }

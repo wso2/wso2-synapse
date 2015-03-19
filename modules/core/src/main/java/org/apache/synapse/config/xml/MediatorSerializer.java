@@ -30,8 +30,7 @@ public interface MediatorSerializer {
 
     /**
      * Return the XML representation of this mediator
-     *
-     * @param m      mediator to be serialized
+     * @param m mediator to be serialized
      * @param parent the OMElement to which the serialization should be attached
      * @return the serialized mediator XML
      */
@@ -39,8 +38,7 @@ public interface MediatorSerializer {
 
     /**
      * Return the class name of the mediator which can be serialized
-     *
-     * @return the class name
+     * @return the class name 
      */
     public String getMediatorClassName();
 }

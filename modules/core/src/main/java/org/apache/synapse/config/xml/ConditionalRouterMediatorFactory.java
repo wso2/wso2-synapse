@@ -26,8 +26,8 @@ import org.apache.synapse.commons.evaluators.Evaluator;
 import org.apache.synapse.commons.evaluators.EvaluatorException;
 import org.apache.synapse.commons.evaluators.config.EvaluatorFactoryFinder;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.mediators.filters.router.ConditionalRoute;
 import org.apache.synapse.mediators.filters.router.ConditionalRouterMediator;
+import org.apache.synapse.mediators.filters.router.ConditionalRoute;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -60,7 +60,7 @@ public class ConditionalRouterMediatorFactory extends AbstractMediatorFactory {
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "breakRoute");
     private static final QName ASYNCHRONOUS_ATTR
             = new QName(XMLConfigConstants.NULL_NAMESPACE, "asynchronous");
-
+    
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         ConditionalRouterMediator conditionalRouterMediator = new ConditionalRouterMediator();

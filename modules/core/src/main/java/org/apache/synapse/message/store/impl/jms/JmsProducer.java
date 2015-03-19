@@ -89,8 +89,8 @@ public class JmsProducer implements MessageProducer {
         }
         if (error) {
             String errorMsg = getId() + ". Ignored MessageID : " + synCtx.getMessageID()
-                    + ". Could not store message to store ["
-                    + store.getName() + "]. Error:" + throwable.getLocalizedMessage();
+                              + ". Could not store message to store ["
+                              + store.getName() + "]. Error:" + throwable.getLocalizedMessage();
             logger.error(errorMsg, throwable);
             store.closeWriteConnection();
             connection = null;
@@ -175,13 +175,12 @@ public class JmsProducer implements MessageProducer {
                 producer.setPriority(message.getPriority());
             } catch (JMSException e) {
                 logger.warn(getId() + " could not set priority ["
-                        + message.getPriority() + "]");
+                            + message.getPriority() + "]");
             }
-        } else {
+        }  else {
             try {
                 producer.setPriority(Message.DEFAULT_PRIORITY);
-            } catch (JMSException e) {
-            }
+            } catch (JMSException e) {}
         }
     }
 

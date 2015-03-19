@@ -19,10 +19,10 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMAttribute;
-import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.CacheMediator;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMAttribute;
 import org.wso2.caching.CachingConstants;
 import org.wso2.caching.digest.DigestGenerator;
 
@@ -32,7 +32,7 @@ import java.util.Properties;
 
 /**
  * Creates an instance of a Cache mediator using XML configuration specified
- * <p/>
+ *
  * <pre>
  * &lt;cache [id="string"] [hashGenerator="class"] [timeout="seconds"]
  *      [scope=(per-host | per-mediator)] collector=(true | false) [maxMessageSize="in-bytes"]&gt;
@@ -56,9 +56,9 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
     private static final QName ATT_TYPE = new QName("type");
     private static final QName ATT_SIZE = new QName("maxSize");
     private static final QName ON_CACHE_HIT_Q =
-            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "onCacheHit");
+        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "onCacheHit");
     private static final QName IMPLEMENTATION_Q =
-            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "implementation");
+        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "implementation");
     private static final long DEFAULT_TIMEOUT = 5000L;
     private static final int DEFAULT_DISK_CACHE_SIZE = 200;
 
@@ -66,7 +66,7 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
 
         if (!CACHE_Q.equals(elem.getQName())) {
             handleException("Unable to create the cache mediator. " +
-                    "Unexpected element as the cache mediator configuration");
+                "Unexpected element as the cache mediator configuration");
         }
 
         CacheMediator cache = new CacheMediator();
@@ -78,7 +78,7 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
 
         OMAttribute scopeAttr = elem.getAttribute(ATT_SCOPE);
         if (scopeAttr != null && scopeAttr.getAttributeValue() != null &&
-                isValidScope(scopeAttr.getAttributeValue(), cache.getId())) {
+            isValidScope(scopeAttr.getAttributeValue(), cache.getId())) {
             cache.setScope(scopeAttr.getAttributeValue());
         } else {
             cache.setScope(CachingConstants.SCOPE_PER_HOST);
@@ -86,11 +86,11 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
 
         OMAttribute collectorAttr = elem.getAttribute(ATT_COLLECTOR);
         if (collectorAttr != null && collectorAttr.getAttributeValue() != null &&
-                "true".equals(collectorAttr.getAttributeValue())) {
+            "true".equals(collectorAttr.getAttributeValue())) {
 
             cache.setCollector(true);
         } else {
-
+            
             cache.setCollector(false);
 
             OMAttribute hashGeneratorAttr = elem.getAttribute(ATT_HASH_GENERATOR);
@@ -102,8 +102,8 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
                         cache.setDigestGenerator((DigestGenerator) o);
                     } else {
                         handleException("Specified class for the hashGenerator is not a " +
-                                "DigestGenerator. It *must* implement " +
-                                "org.wso2.caching.digest.DigestGenerator interface");
+                            "DigestGenerator. It *must* implement " +
+                            "org.wso2.caching.digest.DigestGenerator interface");
                     }
                 } catch (ClassNotFoundException e) {
                     handleException("Unable to load the hash generator class", e);
@@ -137,14 +137,14 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
                 }
             }
 
-            for (Iterator itr = elem.getChildrenWithName(IMPLEMENTATION_Q); itr.hasNext(); ) {
+            for (Iterator itr = elem.getChildrenWithName(IMPLEMENTATION_Q); itr.hasNext();) {
                 OMElement implElem = (OMElement) itr.next();
                 OMAttribute typeAttr = implElem.getAttribute(ATT_TYPE);
                 OMAttribute sizeAttr = implElem.getAttribute(ATT_SIZE);
                 if (typeAttr != null && typeAttr.getAttributeValue() != null) {
                     String type = typeAttr.getAttributeValue();
                     if (CachingConstants.TYPE_MEMORY.equals(type) && sizeAttr != null &&
-                            sizeAttr.getAttributeValue() != null) {
+                        sizeAttr.getAttributeValue() != null) {
                         cache.setInMemoryCacheSize(Integer.parseInt(sizeAttr.getAttributeValue()));
                     } else if (CachingConstants.TYPE_DISK.equals(type)) {
                         log.warn("Disk based and hirearchycal caching is not implemented yet");

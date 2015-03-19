@@ -36,13 +36,12 @@ public class XMLConfigurationSerializer {
 
     /**
      * Order of entries is irrelevant, however its nice to have some order.
-     *
      * @param synCfg
      * @param outputStream
      * @throws XMLStreamException
      */
     public static void serializeConfiguration(SynapseConfiguration synCfg,
-                                              OutputStream outputStream) throws XMLStreamException {
+        OutputStream outputStream) throws XMLStreamException {
 
         if (log.isDebugEnabled()) {
             log.debug("Serializing the XML Configuration to the output stream");
@@ -52,5 +51,5 @@ public class XMLConfigurationSerializer {
                 = ConfigurationFactoryAndSerializerFinder.serializeConfiguration(synCfg);
         definitions.serialize(outputStream);
     }
-
+    
 }

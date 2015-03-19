@@ -21,12 +21,9 @@ package org.apache.synapse.rest.dispatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.rest.RESTUtils;
-import org.apache.synapse.rest.Resource;
+import org.apache.synapse.rest.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 public class URLMappingBasedDispatcher implements RESTDispatcher {
 

@@ -20,6 +20,7 @@
 package org.apache.synapse.core.axis2;
 
 import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -27,11 +28,17 @@ import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.client.OperationClient;
 import org.apache.axis2.client.Options;
+import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.context.ServiceGroupContext;
-import org.apache.axis2.description.*;
+import org.apache.axis2.description.AxisOperation;
+import org.apache.axis2.description.AxisService;
+import org.apache.axis2.description.AxisServiceGroup;
+import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportOutDescription;
+import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
@@ -130,14 +137,17 @@ public class Axis2FlexibleMEPClient {
                 SynapseConstants.PRESERVE_WS_ADDRESSING);
         MessageContext axisOutMsgCtx = cloneForSend(originalInMsgCtx, preserveAddressingProperty);
 
-        /**Message will be cloned based on the requirement*/
-        if ((Integer) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG) == 1) {
+        //***
+        /**Message will be cloned based on the requirment*/
+        if((Integer) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG)==1){
             if (log.isDebugEnabled()) {
                 log.debug("Axis2FlexibleMEPClient Caloning message for resendig purposes in failover endpoint");
             }
             org.apache.synapse.MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synapseOutMessageContext);
-            synapseOutMessageContext.setProperty(SynapseConstants.CLONED_SYN_MSG_CTX, cloneMessageContext);
+            synapseOutMessageContext.setProperty(SynapseConstants.CLONED_SYN_MSG_CTX,cloneMessageContext);
         }
+        //***
+
 
         if (log.isDebugEnabled()) {
             log.debug("Message [Original Request Message ID : "
@@ -152,21 +162,21 @@ public class Axis2FlexibleMEPClient {
             String strCharSetEncoding = "";
             if (endpoint.getCharSetEncoding() != null) {
                 strCharSetEncoding = ";" + endpoint.getCharSetEncoding();
-            }
-
+            }            
+            
             if (SynapseConstants.FORMAT_POX.equals(endpoint.getFormat())) {
                 axisOutMsgCtx.setDoingREST(true);
                 axisOutMsgCtx.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
                         org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_XML);
                 axisOutMsgCtx.setProperty(Constants.Configuration.CONTENT_TYPE,
                         org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_XML);
-
+                
                 Object o = axisOutMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-                Map _headers = (Map) o;
-                if (_headers != null) {
-                    _headers.remove(HTTP.CONTENT_TYPE);
-                    _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_XML + strCharSetEncoding);
-                }
+    			Map _headers = (Map) o;
+    			if (_headers != null) {
+    				_headers.remove(HTTP.CONTENT_TYPE);
+    				_headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_XML + strCharSetEncoding);
+    			}
 
             } else if (SynapseConstants.FORMAT_GET.equals(endpoint.getFormat())) {
                 axisOutMsgCtx.setDoingREST(true);
@@ -188,11 +198,11 @@ public class Axis2FlexibleMEPClient {
                     SOAPUtils.convertSOAP12toSOAP11(axisOutMsgCtx);
                 }
                 Object o = axisOutMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-                Map _headers = (Map) o;
-                if (_headers != null) {
-                    _headers.remove(HTTP.CONTENT_TYPE);
-                    _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML + strCharSetEncoding);
-                }
+    			Map _headers = (Map) o;
+    			if (_headers != null) {
+    				_headers.remove(HTTP.CONTENT_TYPE);
+    				_headers.put(HTTP.CONTENT_TYPE,  org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML + strCharSetEncoding);
+    			}
 
             } else if (SynapseConstants.FORMAT_SOAP12.equals(endpoint.getFormat())) {
                 axisOutMsgCtx.setDoingREST(false);
@@ -211,21 +221,21 @@ public class Axis2FlexibleMEPClient {
                 if (_headers != null) {
                     _headers.remove(HTTP.CONTENT_TYPE);
 
-                    if (axisOutMsgCtx.getSoapAction() != null) {
-                        String actionHeaderPrefix = ";action=\"";
-                        String contentTypeWithAction =
-                                new StringBuilder(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML.length()
-                                        + axisOutMsgCtx.getSoapAction().length() + actionHeaderPrefix.length() + 1)
-                                        .append(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML)
-                                        .append(actionHeaderPrefix)
-                                        .append(axisOutMsgCtx.getSoapAction())
-                                        .append('\"')
-                                        .toString();
-                        _headers.put(HTTP.CONTENT_TYPE, contentTypeWithAction + strCharSetEncoding);
-                    } else {
-                        _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML + strCharSetEncoding);
-                    }
-                }
+                if ( axisOutMsgCtx.getSoapAction() != null){
+                         String actionHeaderPrefix = ";action=\"";
+                         String contentTypeWithAction =
+                                            new StringBuilder(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML.length()
+                                            + axisOutMsgCtx.getSoapAction().length() + actionHeaderPrefix.length() + 1)
+                                              .append(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML)
+                                              .append(actionHeaderPrefix)
+                                              .append(axisOutMsgCtx.getSoapAction())
+                                              .append('\"')
+                                              .toString();
+                         _headers.put(HTTP.CONTENT_TYPE, contentTypeWithAction + strCharSetEncoding);
+                     }else{
+                         _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML + strCharSetEncoding);
+                     }
+               }
             } else if (SynapseConstants.FORMAT_REST.equals(endpoint.getFormat())) {
                 /*format=rest is kept only backword compatibility. We no longer needed that.*/
                 /* Remove Message Type  for GET and DELETE Request */
@@ -282,7 +292,7 @@ public class Axis2FlexibleMEPClient {
                 String address = endpoint.getAddress(synapseOutMessageContext);
                 if (isRest && restSuffix != null && !"".equals(restSuffix)) {
 
-                    String url = "";
+                    String url="";
                     if (!address.endsWith("/") && !restSuffix.startsWith("/") &&
                             !restSuffix.startsWith("?")) {
                         url = address + "/" + restSuffix;
@@ -291,11 +301,11 @@ public class Axis2FlexibleMEPClient {
                     } else if (address.endsWith("/") && restSuffix.startsWith("?")) {
                         url = address.substring(0, address.length() - 1) + restSuffix;
                     } else {
-                        if (!address.startsWith("jms")) {
-                            url = address + restSuffix;
-                        } else {
-                            url = address;
-                        }
+                    	if(!address.startsWith("jms")){
+                 		   url = address + restSuffix;
+                    	}else{
+                    	   url = address;
+                    	}
                     }
                     axisOutMsgCtx.setTo(new EndpointReference(url));
 
@@ -535,7 +545,7 @@ public class Axis2FlexibleMEPClient {
                 restContentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
             }
         }
-        //Removed ESB 4.7.0 PPT 2013-06-28
+          //Removed ESB 4.7.0 PPT 2013-06-28
 //        if (restContentType != null && restContentType instanceof String) {
 //            String contentType = TransportUtils.getContentType((String) restContentType, originalInMsgCtx);
 //            axisOutMsgCtx.setProperty(
@@ -574,7 +584,7 @@ public class Axis2FlexibleMEPClient {
                         String.valueOf(originalInMsgCtx.getProperty(
                                 Constants.Configuration.MESSAGE_TYPE)));
 
-                if (!isRestRequest) {
+                if(!isRestRequest) {
                     isRestRequest = (String.valueOf(originalInMsgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE))
                             .equals(HTTPConstants.MEDIA_TYPE_TEXT_XML) && originalInMsgCtx.getSoapAction() == null);
                 }

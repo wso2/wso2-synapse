@@ -30,7 +30,7 @@ import java.util.Date;
 public class RegistryEntryImpl implements RegistryEntry {
 
     private static final Log log = LogFactory.getLog(RegistryEntry.class);
-
+    
     private String key = null;
     private String name = null;
     private long version = Long.MIN_VALUE;

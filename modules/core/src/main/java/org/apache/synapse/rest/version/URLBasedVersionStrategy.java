@@ -58,7 +58,7 @@ public class URLBasedVersionStrategy extends AbstractVersionStrategy {
             incomingVersionStr = versionStr;
             //check special case
             if (versionStr.contains("?")) {
-                incomingVersionStr = versionStr.substring(0, versionStr.indexOf("?"));
+                incomingVersionStr = versionStr.substring(0,versionStr.indexOf("?"));
             }
         }
 

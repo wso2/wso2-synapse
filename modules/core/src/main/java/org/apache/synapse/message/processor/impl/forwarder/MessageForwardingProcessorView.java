@@ -19,7 +19,6 @@
 package org.apache.synapse.message.processor.impl.forwarder;
 
 import org.apache.synapse.SynapseException;
-
 import java.util.List;
 
 public class MessageForwardingProcessorView implements MessageForwardingProcessorViewMBean {
@@ -37,29 +36,17 @@ public class MessageForwardingProcessorView implements MessageForwardingProcesso
         }
     }
 
-    public void resendAll() throws Exception {
-        throw new Exception("Manual operations are not supported!");
-    }
+    public void resendAll() throws Exception { throw new Exception("Manual operations are not supported!"); }
 
-    public void deleteAll() throws Exception {
-        throw new Exception("Manual operations are not supported!");
-    }
+    public void deleteAll() throws Exception { throw new Exception("Manual operations are not supported!"); }
 
-    public List<String> messageIdList() throws Exception {
-        throw new Exception("Manual operations are not supported!");
-    }
+    public List<String> messageIdList() throws Exception { throw new Exception("Manual operations are not supported!"); }
 
-    public void resend(String messageID) throws Exception {
-        throw new Exception("Manual operations are not supported!");
-    }
+    public void resend(String messageID) throws Exception { throw new Exception("Manual operations are not supported!"); }
 
-    public void delete(String messageID) throws Exception {
-        throw new Exception("Manual operations are not supported!");
-    }
+    public void delete(String messageID) throws Exception { throw new Exception("Manual operations are not supported!"); }
 
-    public String getEnvelope(String messageID) throws Exception {
-        throw new Exception("Manual operations are not supported!");
-    }
+    public String getEnvelope(String messageID) throws Exception { throw new Exception("Manual operations are not supported!"); }
 
     public int getSize() {
         // This function is not supported anymore.

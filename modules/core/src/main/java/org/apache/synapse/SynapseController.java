@@ -31,10 +31,10 @@ public interface SynapseController {
      * Initialization of the synapse controller
      *
      * @param configurationInformation server information instance Information about the server
-     * @param contextInformation       if there is a context already has been built.
+     * @param contextInformation    if there is a context already has been built.
      */
     void init(ServerConfigurationInformation configurationInformation,
-              ServerContextInformation contextInformation);
+                     ServerContextInformation contextInformation);
 
     /**
      * Destroys the Synapse Controller.
@@ -72,7 +72,7 @@ public interface SynapseController {
 
     /**
      * Creates the Synapse configuration by reading and processing the synapse configuration file.
-     *
+     * 
      * @return the synapse configuration
      */
     SynapseConfiguration createSynapseConfiguration();
@@ -90,13 +90,13 @@ public interface SynapseController {
     Object getContext();
 
     /**
-     * Puts the Synapse Server into a maintenance mode pausing transport listeners, senders
+     * Puts the Synapse Server into a maintenance mode pausing transport listeners, senders 
      * and tasks.
      */
     void startMaintenance();
 
     /**
-     * Recovers the Synapse Server from maintenance mode resuming transport listeners, senders
+     * Recovers the Synapse Server from maintenance mode resuming transport listeners, senders 
      * and tasks.
      */
     void endMaintenance();
@@ -104,13 +104,14 @@ public interface SynapseController {
     /**
      * Waits until it is safe to stop or the specified end time has been reached. A delay
      * of <code>waitIntervalMillis</code> milliseconds is used between each subsequent check.
-     * If the state "safeToStop" is reached before the specified <code>endTime</code>,
+     * If the state "safeToStop" is reached before the specified <code>endTime</code>, 
      * the return value is true.
-     *
+     * 
      * @param waitIntervalMillis the pause time (delay) in milliseconds between subsequent checks
      * @param endTime            the time until which the checks need to finish successfully
+     * 
      * @return true, if a safe state is reached before the specified <code>endTime</code>,
-     * otherwise false (forceful stop required)
+     *         otherwise false (forceful stop required)
      */
     boolean waitUntilSafeToStop(long waitIntervalMillis, long endTime);
 }

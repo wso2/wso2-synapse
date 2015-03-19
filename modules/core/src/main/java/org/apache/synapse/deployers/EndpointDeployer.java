@@ -33,7 +33,7 @@ import java.io.File;
 import java.util.Properties;
 
 /**
- * Handles the <code>Endpoint</code> deployment and undeployment tasks
+ *  Handles the <code>Endpoint</code> deployment and undeployment tasks
  *
  * @see org.apache.synapse.deployers.AbstractSynapseArtifactDeployer
  */
@@ -140,7 +140,7 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("Endpoint Undeployment of the endpoint named : "
                     + artifactName + " : Started");
         }
-
+        
         try {
             Endpoint ep = getSynapseConfiguration().getDefinedEndpoints().get(artifactName);
             if (ep != null) {

@@ -32,7 +32,7 @@ import java.io.File;
 import java.util.Properties;
 
 /**
- * Handles the <code>LocalEntry</code> deployment and undeployment tasks
+ *  Handles the <code>LocalEntry</code> deployment and undeployment tasks
  *
  * @see org.apache.synapse.deployers.AbstractSynapseArtifactDeployer
  */
@@ -124,7 +124,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("LocalEntry Undeployment of the entry named : "
                     + artifactName + " : Started");
         }
-
+        
         try {
             Entry e = getSynapseConfiguration().getDefinedEntries().get(artifactName);
             if (e != null && e.getType() != Entry.REMOTE_ENTRY) {

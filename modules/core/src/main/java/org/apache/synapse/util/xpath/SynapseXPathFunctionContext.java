@@ -30,7 +30,7 @@ import org.jaxen.UnresolvableException;
  * <p>XPath function context to be used when resolving XPath functions when using the
  * <code>SynapseXPath</code> and this resolves one function except for the standard XPath functions
  * and Jaxen extension functions.</p>
- * <p/>
+ *
  * <p>The function that has been resolved by this FunctionContext is; <tt>get-property(String)</tt>
  * which is used to retrieve message context properties</p>
  *
@@ -38,14 +38,10 @@ import org.jaxen.UnresolvableException;
  * @see org.apache.synapse.util.xpath.SynapseXPath
  */
 public class SynapseXPathFunctionContext implements FunctionContext {
-    /**
-     * Parent function context
-     */
+    /** Parent function context */
     private final FunctionContext parent;
-
-    /**
-     * MessageContext to be used by the function resolver
-     */
+    
+    /** MessageContext to be used by the function resolver */
     private final MessageContext synCtx;
 
     /**
@@ -53,6 +49,7 @@ public class SynapseXPathFunctionContext implements FunctionContext {
      *
      * @param parent the parent function context
      * @param synCtx message to be used for the function initialization
+     *
      * @see org.jaxen.XPathFunctionContext
      */
     public SynapseXPathFunctionContext(FunctionContext parent, MessageContext synCtx) {
@@ -62,18 +59,18 @@ public class SynapseXPathFunctionContext implements FunctionContext {
 
     /**
      * Get the function with a given namespace and name.
-     * <p/>
+     * <p>
      * Only the <tt>get-property</tt> function is recognized by this class. Any other
      * function will be resolved using the parent function context.
-     *
+     * 
      * @param namespaceURI namespace of the function to be resolved
-     * @param prefix       string prefix to be resolved
-     * @param localName    string local name of the function
+     * @param prefix string prefix to be resolved
+     * @param localName string local name of the function
      * @return resolved function
      * @throws UnresolvableException if the function specified does not found
      */
     public Function getFunction(String namespaceURI, String prefix, String localName)
-            throws UnresolvableException {
+        throws UnresolvableException {
 
         if (localName != null && SynapseXPathConstants.GET_PROPERTY_FUNCTION.equals(localName)) {
 
@@ -88,7 +85,7 @@ public class SynapseXPathFunctionContext implements FunctionContext {
         }
         //We check if custom Xpath extensions are available
         Function extensionFunction = XpathExtensionUtil.getFunctionContext(
-                synCtx, namespaceURI, prefix, localName);
+                synCtx,namespaceURI,prefix, localName);
         if (extensionFunction != null) {
             return extensionFunction;
         }

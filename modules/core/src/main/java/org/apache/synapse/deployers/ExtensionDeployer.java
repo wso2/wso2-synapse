@@ -19,17 +19,6 @@
 
 package org.apache.synapse.deployers;
 
-import org.apache.axis2.Constants;
-import org.apache.axis2.context.ConfigurationContext;
-import org.apache.axis2.deployment.AbstractDeployer;
-import org.apache.axis2.deployment.DeploymentClassLoader;
-import org.apache.axis2.deployment.DeploymentException;
-import org.apache.axis2.deployment.repository.util.DeploymentFileData;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.config.xml.*;
-
-import javax.xml.namespace.QName;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +27,23 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.xml.namespace.QName;
+
+import org.apache.axis2.Constants;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.deployment.AbstractDeployer;
+import org.apache.axis2.deployment.DeploymentClassLoader;
+import org.apache.axis2.deployment.DeploymentException;
+import org.apache.axis2.deployment.repository.util.DeploymentFileData;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.config.xml.MediatorFactory;
+import org.apache.synapse.config.xml.MediatorFactoryFinder;
+import org.apache.synapse.config.xml.MediatorSerializer;
+import org.apache.synapse.config.xml.MediatorSerializerFinder;
+import org.apache.synapse.config.xml.StartupFactory;
+import org.apache.synapse.config.xml.StartupFinder;
 
 /**
  * This will support the hot deployment and hot update of Synapse extensions (mediators
@@ -59,7 +65,7 @@ public class ExtensionDeployer extends AbstractDeployer {
      * Initializes the Deployer
      *
      * @param configurationContext - ConfigurationContext of Axis2 from which
-     *                             the deployer is initialized
+     *  the deployer is initialized
      */
     public void init(ConfigurationContext configurationContext) {
         this.cfgCtx = configurationContext;
@@ -88,7 +94,7 @@ public class ExtensionDeployer extends AbstractDeployer {
                     cfgCtx.getAxisConfiguration().isChildFirstClassLoading());
 
             DeploymentClassLoader urlCl
-                    = (DeploymentClassLoader) deploymentFileData.getClassLoader();
+                = (DeploymentClassLoader)deploymentFileData.getClassLoader();
             Thread.currentThread().setContextClassLoader(urlCl);
 
             // StartupFactory registration
@@ -117,7 +123,7 @@ public class ExtensionDeployer extends AbstractDeployer {
                 log.info("Registered mediator serializer " + serializer.getClass().getName()
                         + " for " + mediatorClassName);
             }
-
+            
         } catch (IOException e) {
             handleException("I/O error in reading the mediator jar file", e);
         } catch (Exception e) {
@@ -132,28 +138,28 @@ public class ExtensionDeployer extends AbstractDeployer {
             Thread.currentThread().setContextClassLoader(prevCl);
         }
     }
-
+    
     private <T> List<T> getProviders(Class<T> providerClass, URLClassLoader loader)
             throws IOException {
-
+        
         List<T> providers = new LinkedList<T>();
         String providerClassName = providerClass.getName();
-        providerClassName = providerClassName.substring(providerClassName.indexOf('.') + 1);
+        providerClassName = providerClassName.substring(providerClassName.indexOf('.')+1);
         URL servicesURL = loader.findResource("META-INF/services/" + providerClass.getName());
         if (servicesURL != null) {
             BufferedReader in
-                    = new BufferedReader(new InputStreamReader(servicesURL.openStream()));
+                = new BufferedReader(new InputStreamReader(servicesURL.openStream()));
             try {
                 String className;
                 while ((className = in.readLine()) != null && (!className.trim().equals(""))) {
                     log.info("Loading the " + providerClassName + " implementation: " + className);
                     try {
                         Class<? extends T> clazz
-                                = loader.loadClass(className).asSubclass(providerClass);
+                            = loader.loadClass(className).asSubclass(providerClass);
                         providers.add(clazz.newInstance());
                     } catch (ClassNotFoundException e) {
                         handleException("Unable to find the specified class on the path or " +
-                                "in the jar file", e);
+                        		"in the jar file", e);
                     } catch (IllegalAccessException e) {
                         handleException("Unable to load the class from the jar", e);
                     } catch (InstantiationException e) {

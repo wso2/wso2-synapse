@@ -46,7 +46,7 @@ public class Statement {
         return rawStatement;
     }
 
-    public void addParameter(String propertyName, SynapseXPath xpath, String type) {
+    public void addParameter(String propertyName, SynapseXPath xpath, String type){
         parameters.add(new Parameter(propertyName, xpath, type));
     }
 
@@ -70,7 +70,7 @@ public class Statement {
         Parameter(String value, SynapseXPath xpath, String type) {
 
             this.propertyName = value;
-            this.xpath = xpath;
+            this.xpath = xpath; 
             if ("CHAR".equals(type)) {
                 this.type = Types.CHAR;
             } else if ("VARCHAR".equals(type)) {
@@ -101,7 +101,7 @@ public class Statement {
                 this.type = Types.DATE;
             } else if ("TIME".equals(type)) {
                 this.type = Types.TIME;
-            } else if ("TIMESTAMP".equals(type)) {
+             } else if ("TIMESTAMP".equals(type)) {
                 this.type = Types.TIMESTAMP;
             } else {
                 throw new SynapseException("Unknown or unsupported JDBC type : " + type);

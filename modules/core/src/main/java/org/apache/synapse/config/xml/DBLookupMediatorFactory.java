@@ -29,7 +29,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link DBLookupMediator} instances.
- * <p/>
+ * <p>
  * Configuration syntax:
  * <pre>
  * &lt;dblookup&gt;
@@ -61,7 +61,7 @@ import java.util.Properties;
 public class DBLookupMediatorFactory extends AbstractDBMediatorFactory {
 
     private static final QName DBLOOKUP_Q =
-            new QName(SynapseConstants.SYNAPSE_NAMESPACE, "dblookup");
+        new QName(SynapseConstants.SYNAPSE_NAMESPACE, "dblookup");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 

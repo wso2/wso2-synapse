@@ -33,7 +33,7 @@ public class OutMediatorSerializer extends AbstractListMediatorSerializer {
 
         OutMediator mediator = (OutMediator) m;
         OMElement out = fac.createOMElement("out", synNS);
-        saveTracingState(out, mediator);
+        saveTracingState(out,mediator);
         serializeChildren(out, mediator.getList());
 
         return out;

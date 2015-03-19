@@ -40,7 +40,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
     private String portName;
 
     public void onFault(MessageContext synCtx) {
-
+        
         // is this an actual leaf endpoint
         if (getParentEndpoint() != null) {
             // is this really a fault or a timeout/connection close etc?
@@ -50,7 +50,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
                 getContext().onFault();
             }
         }
-
+        
         setErrorOnMessage(synCtx, null, null);
         super.onFault(synCtx);
     }
@@ -69,7 +69,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
             super.send(synCtx);
         }
     }
-
+    
     public String getWsdlURI() {
         return wsdlURI;
     }

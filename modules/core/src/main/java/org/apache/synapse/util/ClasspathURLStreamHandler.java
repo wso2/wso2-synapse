@@ -39,8 +39,7 @@ public final class ClasspathURLStreamHandler extends URLStreamHandler {
             super(url);
         }
 
-        public void connect() {
-        }
+        public void connect() {}
 
         public InputStream getInputStream() throws IOException {
             if (url == null) {

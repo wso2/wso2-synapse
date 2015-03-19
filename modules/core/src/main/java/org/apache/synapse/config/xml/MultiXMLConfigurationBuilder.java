@@ -27,28 +27,26 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.imports.SynapseImport;
+import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.eventing.SynapseEventSource;
-import org.apache.synapse.inbound.InboundEndpoint;
-import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.template.TemplateMediator;
-import org.apache.synapse.message.processor.MessageProcessor;
-import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.rest.API;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -58,15 +56,15 @@ import java.util.Properties;
  * a specified file hierarchy. If the root of the specified file hierarchy is CONFIG_HOME,
  * then the following directories are expected to be in CONFIG_HOME.
  * <ul>
- * <li>CONFIG_HOME/proxy-services</li>
- * <li>CONFIG_HOME/sequences</li>
- * <li>CONFIG_HOME/endpoints</li>
- * <li>CONFIG_HOME/local-entries</li>
- * <li>CONFIG_HOME/tasks</li>
- * <li>CONFIG_HOME/event-sources</li>
- * <li>CONFIG_HOME/priority-executors</li>
+ *  <li>CONFIG_HOME/proxy-services</li>
+ *  <li>CONFIG_HOME/sequences</li>
+ *  <li>CONFIG_HOME/endpoints</li>
+ *  <li>CONFIG_HOME/local-entries</li>
+ *  <li>CONFIG_HOME/tasks</li>
+ *  <li>CONFIG_HOME/event-sources</li>
+ *  <li>CONFIG_HOME/priority-executors</li>
  * </ul>
- * <p/>
+ *
  * Each of these directories will house a set of XML files. Each file will define exactly
  * one configuration item (eg: a proxy service, an endpoint, a sequence).
  * </p>
@@ -74,35 +72,36 @@ import java.util.Properties;
  * In addition to the directories mentioned above one can have the following file in
  * CONFIG_HOME
  * <ul>
- * <li>CONFIG_HOME/registry.xml</li>
+ *  <li>CONFIG_HOME/registry.xml</li>
  * </ul>
  * </p>
+ *
  */
 public class MultiXMLConfigurationBuilder {
 
-    public static final String PROXY_SERVICES_DIR = "proxy-services";
-    public static final String SEQUENCES_DIR = "sequences";
-    public static final String TEMPLATES_DIR = "templates";
-    public static final String ENDPOINTS_DIR = "endpoints";
-    public static final String LOCAL_ENTRY_DIR = "local-entries";
-    public static final String TASKS_DIR = "tasks";
-    public static final String EVENTS_DIR = "event-sources";
-    public static final String EXECUTORS_DIR = "priority-executors";
-    public static final String MESSAGE_STORE_DIR = "message-stores";
-    public static final String MESSAGE_PROCESSOR_DIR = "message-processors";
-    public static final String REST_API_DIR = "api";
-    public static final String INBOUND_ENDPOINT_DIR = "inbound-endpoints";
-    public static final String SYNAPSE_IMPORTS_DIR = "imports";
+    public static final String PROXY_SERVICES_DIR       = "proxy-services";
+    public static final String SEQUENCES_DIR            = "sequences";
+    public static final String TEMPLATES_DIR            = "templates";
+    public static final String ENDPOINTS_DIR            = "endpoints";
+    public static final String LOCAL_ENTRY_DIR          = "local-entries";
+    public static final String TASKS_DIR                = "tasks";
+    public static final String EVENTS_DIR               = "event-sources";
+    public static final String EXECUTORS_DIR            = "priority-executors";
+    public static final String MESSAGE_STORE_DIR        = "message-stores";
+    public static final String MESSAGE_PROCESSOR_DIR    = "message-processors";
+    public static final String REST_API_DIR             = "api";
+    public static final String INBOUND_ENDPOINT_DIR     = "inbound-endpoints";
+    public static final String SYNAPSE_IMPORTS_DIR   = "imports";
 
-    public static final String REGISTRY_FILE = "registry.xml";
+    public static final String REGISTRY_FILE       = "registry.xml";
 
-    public static final String TASK_MANAGER_FILE = "task-manager.xml";
+    public static final String TASK_MANAGER_FILE       = "task-manager.xml";
 
     public static final String SEPARATE_REGISTRY_DEFINITION = "__separateRegDef";
 
     public static final String SEPARATE_TASK_MANAGER_DEFINITION = "__separateTaskManagerDef";
 
-    private static final String[] extensions = {"xml"};
+    private static final String[] extensions = { "xml" };
 
     private static Log log = LogFactory.getLog(MultiXMLConfigurationBuilder.class);
 
@@ -126,7 +125,7 @@ public class MultiXMLConfigurationBuilder {
             createRegistry(synapseConfig, root, properties);
         } else if (log.isDebugEnabled()) {
             log.debug("Using the registry defined in the " + SynapseConstants.SYNAPSE_XML
-                    + " as the registry, any definitions in the " + REGISTRY_FILE +
+                    + " as the registry, any definitions in the "+ REGISTRY_FILE +
                     " will be neglected");
         }
 
@@ -135,7 +134,7 @@ public class MultiXMLConfigurationBuilder {
             createTaskManager(synapseConfig, root, properties);
         } else if (log.isDebugEnabled()) {
             log.debug("Using the task manager defined in the " + SynapseConstants.SYNAPSE_XML
-                    + " as the task manager, any definitions in the " + TASK_MANAGER_FILE +
+                    + " as the task manager, any definitions in the "+ TASK_MANAGER_FILE +
                     " will be neglected");
         }
 
@@ -208,7 +207,7 @@ public class MultiXMLConfigurationBuilder {
     }
 
     private static void createTaskManager(SynapseConfiguration synapseConfig, String rootDirPath,
-                                          Properties properties) {
+                                       Properties properties) {
 
         File taskManagerDef = new File(rootDirPath, TASK_MANAGER_FILE);
         try {
@@ -253,7 +252,7 @@ public class MultiXMLConfigurationBuilder {
                     String msg = "Local Entry configuration cannot be built from : " + file.getName();
                     handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_LOCALENTRIES, msg, e);
                 }
-            }
+             }
         }
     }
 
@@ -326,7 +325,7 @@ public class MultiXMLConfigurationBuilder {
             Iterator sequences = FileUtils.iterateFiles(sequencesDir, extensions, false);
             while (sequences.hasNext()) {
                 File file = (File) sequences.next();
-                try {
+                try{
                     OMElement document = getOMElement(file);
                     Mediator seq = SynapseXMLConfigurationFactory.defineSequence(synapseConfig,
                             document, properties);
@@ -341,7 +340,7 @@ public class MultiXMLConfigurationBuilder {
                     handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_SEQUENCES, msg, e);
                 }
 
-            }
+             }
         }
     }
 
@@ -478,11 +477,11 @@ public class MultiXMLConfigurationBuilder {
         }
     }
 
-    private static void createMessageStores(SynapseConfiguration synapseConfig,
+    private static void createMessageStores(SynapseConfiguration synapseConfig ,
                                             String rootDirPath, Properties properties) {
 
         File messageStoresDir = new File(rootDirPath, MESSAGE_STORE_DIR);
-        if (messageStoresDir.exists()) {
+        if (messageStoresDir.exists() ) {
             if (log.isDebugEnabled()) {
                 log.debug("Loading Message Stores from :" + messageStoresDir.getPath());
             }
@@ -509,7 +508,7 @@ public class MultiXMLConfigurationBuilder {
 
 
     private static void createMessageProcessors(SynapseConfiguration synapseConfig,
-                                                String rootDirPath, Properties properties) {
+                                            String rootDirPath, Properties properties) {
 
         File messageProcessorDir = new File(rootDirPath, MESSAGE_PROCESSOR_DIR);
         if (messageProcessorDir.exists()) {
@@ -620,6 +619,7 @@ public class MultiXMLConfigurationBuilder {
             }
         }
     }
+
 
 
     private static OMElement getOMElement(File file) {

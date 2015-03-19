@@ -31,8 +31,7 @@ public interface XMLToObjectMapper {
 
     /**
      * Create an application object from the given OMNode
-     *
-     * @param om         the XML
+     * @param om the XML
      * @param properties bag of properties to pass in any information to the factory
      * @return a suitable application object
      */

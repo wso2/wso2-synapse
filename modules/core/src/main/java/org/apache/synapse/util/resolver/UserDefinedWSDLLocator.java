@@ -18,28 +18,28 @@
  */
 package org.apache.synapse.util.resolver;
 
+import javax.wsdl.xml.WSDLLocator;
+
 import org.apache.synapse.config.SynapseConfiguration;
 import org.xml.sax.InputSource;
 
-import javax.wsdl.xml.WSDLLocator;
-
 /**
  * This interface lets user to write his/her own WSDLResolver rather using {@link CustomWSDLLocator} .
- * Here using WSDLKey, user can perform his/her own mapping between Relativelocation
+ * Here using WSDLKey, user can perform his/her own mapping between Relativelocation 
  * and Registrypath. User needs to provide a synapse.property call,"synapse.wsdl.resolver"
  * pointing to the implementation.
  */
 public interface UserDefinedWSDLLocator extends WSDLLocator {
 
-    /**
-     * Initiate the UserDefinedWSDLLocator with the required parameters
-     *
-     * @param baseInputSource InputSource "pointed at" the base document
-     * @param baseURI         URI representing the location of the base document.
-     * @param resourceMap     {@link ResourceMap} object
-     * @param synCfg          Synapseconfiguration
-     * @param wsdlKey         The registry key of the wsdl file
-     */
-    void init(InputSource baseInputSource, String baseURI, ResourceMap resourceMap,
-              SynapseConfiguration synCfg, String wsdlKey);
+	/**
+	 * Initiate the UserDefinedWSDLLocator with the required parameters
+	 * 
+	 * @param baseInputSource InputSource "pointed at" the base document
+	 * @param baseURI URI representing the location of the base document.
+	 * @param resourceMap {@link ResourceMap} object
+	 * @param synCfg Synapseconfiguration
+	 * @param wsdlKey The registry key of the wsdl file
+	 */
+	void init(InputSource baseInputSource, String baseURI, ResourceMap resourceMap,
+	          SynapseConfiguration synCfg, String wsdlKey);
 }

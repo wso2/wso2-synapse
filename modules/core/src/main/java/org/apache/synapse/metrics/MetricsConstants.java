@@ -20,7 +20,7 @@
 package org.apache.synapse.metrics;
 
 /**
- *
+ * 
  */
 public final class MetricsConstants {
     public static final String GLOBAL_REQUEST_COUNTER = "__GLOBAL_REQUEST_COUNTER__";

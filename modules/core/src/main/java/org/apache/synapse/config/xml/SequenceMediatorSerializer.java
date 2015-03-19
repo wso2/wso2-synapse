@@ -25,14 +25,14 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 
 /**
  * Serializer for {@link SequenceMediator} instances.
- *
+ * 
  * @see SequenceMediatorFactory
  */
 public class SequenceMediatorSerializer extends AbstractListMediatorSerializer {
 
     public OMElement serializeAnonymousSequence(OMElement parent, SequenceMediator mediator) {
         OMElement sequence = fac.createOMElement("sequence", synNS);
-
+        
         if (mediator.getErrorHandler() != null) {
             sequence.addAttribute(fac.createOMAttribute(
                     "onError", nullNS, mediator.getErrorHandler()));
@@ -68,12 +68,12 @@ public class SequenceMediatorSerializer extends AbstractListMediatorSerializer {
                     "key", nullNS, mediator.getRegistryKey()));
 
         } else {
-
+           
             if (mediator.getKey() != null) {
                 // Serialize Value using ValueSerializer
                 ValueSerializer keySerializer = new ValueSerializer();
                 keySerializer.serializeValue(mediator.getKey(), XMLConfigConstants.KEY, sequence);
-
+                
             } else if (mediator.getName() != null) {
                 sequence.addAttribute(fac.createOMAttribute(
                         "name", nullNS, mediator.getName()));

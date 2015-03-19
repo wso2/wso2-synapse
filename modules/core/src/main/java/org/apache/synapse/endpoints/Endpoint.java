@@ -71,49 +71,42 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
 
     /**
      * Returns true to indicate that the endpoint is ready to service requests
-     *
      * @return true if endpoint is ready to service requests
      */
     public boolean readyToSend();
 
     /**
      * Has this Endpoint initialized?
-     *
      * @return true if the endpoint is initialized
      */
     public boolean isInitialized();
 
     /**
      * Get the EndpointContext that has the run-time state of this endpoint
-     *
      * @return the runtime context
      */
     public EndpointContext getContext();
 
     /**
      * Get the children of this endpoint
-     *
      * @return the child endpoints
      */
     public List<Endpoint> getChildren();
 
     /**
      * Get a reference to the metrics MBean for this endpoint
-     *
      * @return EndpointView instance
      */
     public EndpointView getMetricsMBean();
 
     /**
      * Get the filename from which this endpoint is loaded, <code>null</code> if it is an anonymous endpoint
-     *
      * @return String file name
      */
     public String getFileName();
 
     /**
      * Set the filename from which the endpoint is loaded
-     *
      * @param fileName from which the endpoint is loaded
      */
     public void setFileName(String fileName);
@@ -121,24 +114,22 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
 
     /**
      * Get the MessageStore name associated with the Endpoint
-     *
      * @return String message store name
      */
     public String getErrorHandler();
 
     /**
      * Set the Message Store name associated with the Endpoint
-     *
      * @param onFaultMessageStore, name of the message store
      */
     public void setErrorHandler(String onFaultMessageStore);
 
-
+    //***
     /**
      * Get the Failover http status codes associated with the Endpoint
-     *
      * @return List<String> http status codes
      */
     public List<String> getHttpStatusCodes();
+    //***
 
 }

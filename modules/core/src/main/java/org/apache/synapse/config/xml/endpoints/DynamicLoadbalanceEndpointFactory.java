@@ -29,10 +29,10 @@ import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory
 import org.apache.synapse.core.LoadBalanceMembershipHandler;
 import org.apache.synapse.endpoints.DynamicLoadbalanceEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
-import org.apache.synapse.endpoints.dispatch.HttpSessionDispatcher;
 import org.apache.synapse.endpoints.dispatch.SoapSessionDispatcher;
+import org.apache.synapse.endpoints.dispatch.HttpSessionDispatcher;
+import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -40,7 +40,7 @@ import java.util.Properties;
 
 /**
  * Creates {@link DynamicLoadbalanceEndpoint} using an XML configuration.
- * <p/>
+ *
  * <pre>
  * &lt;endpoint>
  *       &lt;dynamicLoadbalance [failover="true|false"] [policy="load balance algorithm"]&gt;
@@ -70,7 +70,7 @@ public class DynamicLoadbalanceEndpointFactory extends EndpointFactory {
 
         OMElement loadbalanceElement =
                 epConfig.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,
-                        "dynamicLoadbalance"));
+                                                         "dynamicLoadbalance"));
 
         if (loadbalanceElement != null) {
 
@@ -127,24 +127,24 @@ public class DynamicLoadbalanceEndpointFactory extends EndpointFactory {
             OMElement eventHandler =
                     loadbalanceElement.
                             getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,
-                                    "membershipHandler"));
+                                                            "membershipHandler"));
             if (eventHandler != null) {
                 String clazz =
                         eventHandler.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
-                                "class")).trim();
+                                                                 "class")).trim();
                 try {
                     LoadBalanceMembershipHandler lbMembershipHandler =
                             (LoadBalanceMembershipHandler) Class.forName(clazz).newInstance();
                     Properties lbProperties = new Properties();
                     for (Iterator props = eventHandler.getChildrenWithName(new QName(
-                            SynapseConstants.SYNAPSE_NAMESPACE, "property")); props.hasNext(); ) {
+                            SynapseConstants.SYNAPSE_NAMESPACE, "property")); props.hasNext();) {
                         OMElement prop = (OMElement) props.next();
                         String propName =
                                 prop.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
-                                        "name")).trim();
+                                                                 "name")).trim();
                         String propValue =
                                 prop.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
-                                        "value")).trim();
+                                                                 "value")).trim();
                         lbProperties.put(propName, propValue);
                     }
 
