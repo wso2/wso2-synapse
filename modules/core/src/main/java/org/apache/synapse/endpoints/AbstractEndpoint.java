@@ -67,10 +67,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     /** The child endpoints of this endpoint - if any */
     private List<Endpoint> children = null;
 
-    //***
+
     /**Holds http status codes for failover endpoint*/
     private ArrayList<String> httpStatusCodes = null;
-    //***
+
 
     /** The Endpoint definition for this endpoint - i.e. holds all static endpoint information */
     private EndpointDefinition definition = null;
@@ -199,7 +199,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
-    //***
+
     /**
      * This method will set http status code list configured for a particular endpoint
      *for failover support on http status codes
@@ -212,7 +212,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public ArrayList<String> getHttpStatusCodes(){
         return httpStatusCodes;
     }
-   //***
+
     /**
      * set whether this endpoint needs to be registered for JMX MBeans. some endpoints may not need
      * to register under MBean and setting false will cut the additional overhead.

@@ -50,13 +50,13 @@ public class AddressEndpointSerializer extends DefaultEndpointSerializer {
         OMElement addressElement = serializeEndpointDefinition(epAddress);
         endpointElement.addChild(addressElement);
 
-        //***
+
         OMElement httpStatusElement
                 = fac.createOMElement("httpStatus", SynapseConstants.SYNAPSE_OMNAMESPACE);
         httpStatusElement.setText("500,501,502");
 
         endpointElement.addChild(httpStatusElement);
-        //***
+
 
          // serialize the properties
         serializeProperties(addressEndpoint, endpointElement);
