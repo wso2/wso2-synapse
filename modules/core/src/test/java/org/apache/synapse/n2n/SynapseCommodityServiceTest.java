@@ -86,7 +86,6 @@ public class SynapseCommodityServiceTest extends TestCase {
                 new ServerContextInformation(synapseConfigCtx, information);
         ServerManager serverManager = new ServerManager();
         serverManager.init(information, contextInformation);
-        serverManager.start();
 
         // Initializing Business Endpoint
         
@@ -164,20 +163,19 @@ public class SynapseCommodityServiceTest extends TestCase {
         businessClient.setOptions(options);
 
         OMElement response = null;
-        	
+
         response = businessClient.sendReceive(commodityPayload());
 
         assertNotNull(response);
 
         SynapseXPath xPath = new SynapseXPath("//return");
-        xPath.addNamespace("ns","http://services.samples/xsd");
+        xPath.addNamespace("ns", "http://services.samples/xsd");
+
         OMElement returnEle = (OMElement) xPath.selectSingleNode(response);
 
         assertNotNull(returnEle);
 
-        assertEquals(returnEle.getText().trim(),"100");
-
-
+        assertEquals(returnEle.getText().trim(), "100");
     }
 
     private static OMElement commodityPayload() {

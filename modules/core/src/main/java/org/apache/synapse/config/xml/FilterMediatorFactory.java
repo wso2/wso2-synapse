@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
+
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.jaxen.JaxenException;
 
@@ -129,9 +130,7 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
             OMAttribute sequenceAttr = thenElem.getAttribute(ATT_SEQUENCE);
 
             if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
-
                 filter.setThenKey(sequenceAttr.getAttributeValue());
-
             } else {
                 addChildren(thenElem, filter, properties);
             }
@@ -153,17 +152,15 @@ public class FilterMediatorFactory extends AbstractListMediatorFactory {
                     filter.setElseMediator(listMediator);
                 }
             }
-
         } else {
-
             filter.setThenElementPresent(false);
             addChildren(elem, filter, properties);
         }
-
         return filter;
     }
 
     public QName getTagQName() {
         return FILTER_Q;
     }
+
 }

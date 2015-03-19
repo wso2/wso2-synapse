@@ -29,10 +29,10 @@ public class CommentMediator extends AbstractMediator {
     /**
      * Dummy Mediation method. This will not do any tasks in CommentMediator
      * @param synCtx the current message for mediation
-     * @return false since no continuation of mediation
+     * @return true since remaining mediators should be executed
      */
     public boolean mediate(MessageContext synCtx){
-        return false;
+        return true;
     }
 
     /**

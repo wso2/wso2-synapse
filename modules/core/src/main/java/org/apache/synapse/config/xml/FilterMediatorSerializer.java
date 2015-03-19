@@ -97,7 +97,7 @@ public class FilterMediatorSerializer extends AbstractListMediatorSerializer {
                     serializeChildren(elseElem, mediator.getElseMediator().getList());
                 }
             }
-            
+
         } else {
             serializeChildren(filter, mediator.getList());
         }

@@ -62,4 +62,17 @@ public abstract class AbstractListMediatorFactory extends AbstractMediatorFactor
             }
         }
     }
+
+    protected static void addCommentChildren(OMElement el, ListMediator m) {
+        Iterator it = el.getChildren();
+
+        while (it.hasNext()) {
+            OMNode child = (OMNode) it.next();
+            if (child instanceof OMComment) {
+                CommentMediator commendMediator = new CommentMediator();
+                commendMediator.setCommentText(((OMComment) child).getValue());
+                m.addChild(commendMediator);
+            }
+        }
+    }
 }

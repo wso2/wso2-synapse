@@ -61,5 +61,21 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(validateConfiguration, validateMediatorFactory, validateMediatorSerializer));
     }
 
+    public void testValidateMediatorSerializationWithExternalResourcesWithComments() throws Exception {
+
+        validateMediatorFactory = new ValidateMediatorFactory();
+        validateMediatorSerializer = new ValidateMediatorSerializer();
+
+        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                "source=\"//regRequest\">" +
+                "<schema key=\"file:synapse_repository/conf/sample/validate.xsd\" />" +
+                "<resource location=\"resource2.xsd\" key=\"resource2_xsd\" />" +
+                "<resource location=\"resource1.xsd\" key=\"resource1_xsd\" />" +
+                "<feature name=\"http://javax.xml.XMLConstants/feature/secure-processing\" value=\"true\" />" +
+                "<on-fail><!--Test Comment--><drop /></on-fail>" +
+                "</validate>";
+        assertTrue(serialization(validateConfiguration, validateMediatorFactory, validateMediatorSerializer));
+    }
+
 }
 
