@@ -28,6 +28,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 
 import javax.xml.namespace.QName;
+import java.util.ArrayList;
 import java.util.Properties;
 
 /**
@@ -79,6 +80,17 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
         if (name != null) {
             addressEndpoint.setName(name.getAttributeValue());
         }
+
+        //***
+        OMElement httpStatusElement = epConfig.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "httpStatus"));
+        if(httpStatusElement != null) {
+            ArrayList<String> l = new ArrayList<String>();
+            l.add("500");
+            l.add("501");
+            l.add("502");
+            addressEndpoint.setHttpStatusCodes(l);
+        }
+        //***
 
         OMElement addressElement = epConfig.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "address"));

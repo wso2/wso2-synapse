@@ -48,6 +48,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
+import org.apache.synapse.endpoints.FailoverEndpointOnHttpStatusCode;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -117,6 +118,29 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
     public void receive(MessageContext messageCtx) throws AxisFault {
 
         String messageID = null;
+
+
+        /**
+         * Failover on http status code scenario if the response http status code is not null and it is
+         * greater than 500 the registered callback will be removed and response message context will be
+         * routed to the failover processes on http status code
+         */
+        if(messageCtx.getProperty(NhttpConstants.HTTP_SC) != null) {
+
+            if ((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC) >= 500 ) {
+                if (log.isDebugEnabled()) {
+                    log.debug(this + " Server http status in the response message, response is route back to the fail-over");
+                }
+                /**Remove callback since we are going to handle response separately*/
+                AsyncCallback asyncCallback = (AsyncCallback)callbackStore.remove(messageCtx.getMessageID());
+                org.apache.synapse.MessageContext synMsgCtx = ((AsyncCallback) asyncCallback).getSynapseOutMsgCtx();
+
+                FailoverEndpointOnHttpStatusCode failoverEndpointOnHttpStatusCode = new FailoverEndpointOnHttpStatusCode();
+                /**resend wil handle message resending based on the http status code*/
+                failoverEndpointOnHttpStatusCode.resend(Integer.toString((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC)),(org.apache.synapse.MessageContext)synMsgCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX));
+                return;
+            }
+        }
 
         /**
          * In an Out-only scenario if the client receives a HTTP 202 accepted we need to

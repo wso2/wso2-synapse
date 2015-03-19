@@ -490,4 +490,15 @@ public final class SynapseConstants {
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 
+    //***
+    /**Synapse message context property that use for index endpoints to implement failover support on http status codes*/
+    public static final String ENDPOINT_INDEX = "endpointindex";
+    /**Synapse message context property which holds endpoint list to resend messages based on http status codes*/
+    public static final String ENDPOINT_LIST = "endpointlist";
+    /**Synapse message context property which holds cloned synapse message context to resend messages based on http status codes*/
+    public static final String CLONED_SYN_MSG_CTX = "clonedsynapsemessagecontext";
+    /**Synapse message context which indicates this message context need to be cloned because of the endpoing configuration*/
+    public static final String CLONE_THIS_MSG = "clonethismessagecontext";
+    //***
+
 }

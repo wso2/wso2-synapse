@@ -25,7 +25,9 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -78,6 +80,13 @@ public class FailoverEndpoint extends AbstractEndpoint {
             return;
         }
 
+        //***
+        /**Store endpoints in a list to use when re sending*/
+        List<Endpoint> endpoints = new ArrayList<Endpoint>();
+        for (Endpoint endpoint : getChildren()) {
+            endpoints.add(endpoint);
+        }
+        //***
         // evaluate the endpoint properties
         evaluateProperties(synCtx);
         
@@ -89,6 +98,16 @@ public class FailoverEndpoint extends AbstractEndpoint {
             boolean foundEndpoint = false;
             for (Endpoint endpoint : getChildren()) {
                 if (endpoint.readyToSend()) {
+
+                    //***
+                    if (endpoint.getHttpStatusCodes() != null) {
+                        synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
+                    }
+                    /**This property will use to index the endpoints*/
+                    synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, 0);
+                    synCtx.setProperty(SynapseConstants.ENDPOINT_LIST, endpoints);
+                    //***
+
                     foundEndpoint = true;
                     if (isARetry && metricsMBean != null) {
                         metricsMBean.reportSendingFault(SynapseConstants.ENDPOINT_FO_FAIL_OVER);

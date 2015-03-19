@@ -137,6 +137,17 @@ public class Axis2FlexibleMEPClient {
                 SynapseConstants.PRESERVE_WS_ADDRESSING);
         MessageContext axisOutMsgCtx = cloneForSend(originalInMsgCtx, preserveAddressingProperty);
 
+        //***
+        /**Message will be cloned based on the requirment*/
+        if((Integer) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG)==1){
+            if (log.isDebugEnabled()) {
+                log.debug("Axis2FlexibleMEPClient Caloning message for resendig purposes in failover endpoint");
+            }
+            org.apache.synapse.MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synapseOutMessageContext);
+            synapseOutMessageContext.setProperty(SynapseConstants.CLONED_SYN_MSG_CTX,cloneMessageContext);
+        }
+        //***
+
 
         if (log.isDebugEnabled()) {
             log.debug("Message [Original Request Message ID : "

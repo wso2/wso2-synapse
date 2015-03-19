@@ -124,4 +124,12 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      */
     public void setErrorHandler(String onFaultMessageStore);
 
+    //***
+    /**
+     * Get the Failover http status codes associated with the Endpoint
+     * @return List<String> http status codes
+     */
+    public List<String> getHttpStatusCodes();
+    //***
+
 }
