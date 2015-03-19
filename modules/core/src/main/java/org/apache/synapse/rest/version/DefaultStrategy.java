@@ -20,7 +20,7 @@ package org.apache.synapse.rest.version;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.rest.API;
 
-public class DefaultStrategy extends  AbstractVersionStrategy{
+public class DefaultStrategy extends AbstractVersionStrategy {
 
     public DefaultStrategy(API api) {
         super(api, "", VersionStrategyFactory.TYPE_NULL);

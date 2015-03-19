@@ -91,7 +91,7 @@ public class Target {
                     if (targetText.getParent() != null) {
                         Object parent = targetText.getParent();
                         if (parent instanceof OMElement) {
-                            ((OMElement)parent).setText(((OMText) sourceNodeList.get(0)).getText());
+                            ((OMElement) parent).setText(((OMText) sourceNodeList.get(0)).getText());
                         }
                     }
                 } else if (sourceNodeList.get(0) instanceof OMElement) {
@@ -99,7 +99,7 @@ public class Target {
                     if (targetParent instanceof OMElement) {
                         targetText.detach();
                         synchronized (sourceNodeList.get(0)) {
-                            ((OMElement)targetParent).addChild(sourceNodeList.get(0));
+                            ((OMElement) targetParent).addChild(sourceNodeList.get(0));
                         }
                     }
                 }
@@ -122,7 +122,7 @@ public class Target {
                 // if the body is empty just add as a child
                 for (OMNode elem : sourceNodeList) {
                     if (elem instanceof OMElement) {
-                        synchronized (elem){
+                        synchronized (elem) {
                             body.addChild(elem);
                         }
                     } else {
@@ -145,26 +145,26 @@ public class Target {
             }
         } else if (targetType == EnrichMediator.PROPERTY) {
             assert property != null : "Property cannot be null for PROPERTY type";
-			if (action != null && property != null) {
-				Object propertyObj =synContext.getProperty(property);
-				OMElement documentElement = null;
-				try {
-	                 documentElement = AXIOMUtil.stringToOM((String)propertyObj);
+            if (action != null && property != null) {
+                Object propertyObj = synContext.getProperty(property);
+                OMElement documentElement = null;
+                try {
+                    documentElement = AXIOMUtil.stringToOM((String) propertyObj);
                 } catch (Exception e1) {
-	                //just ignoring the phaser error 
+                    //just ignoring the phaser error
                 }
-				if(documentElement != null && action.equals(ACTION_ADD_CHILD)){
-					//logic should valid only when adding child elements, and other cases
-					//such as sibling and replacement using the else condition
-					insertElement(sourceNodeList, documentElement, synLog);
-					synContext.setProperty(property, documentElement.getText());  
-				}else{
-					synContext.setProperty(property, sourceNodeList);  
-				}
-				
-			}else{
-			synContext.setProperty(property, sourceNodeList);  
-			}
+                if (documentElement != null && action.equals(ACTION_ADD_CHILD)) {
+                    //logic should valid only when adding child elements, and other cases
+                    //such as sibling and replacement using the else condition
+                    insertElement(sourceNodeList, documentElement, synLog);
+                    synContext.setProperty(property, documentElement.getText());
+                } else {
+                    synContext.setProperty(property, sourceNodeList);
+                }
+
+            } else {
+                synContext.setProperty(property, sourceNodeList);
+            }
         }
     }
 
@@ -187,7 +187,7 @@ public class Target {
         } else if (action.equals(ACTION_ADD_CHILD)) {
             for (OMNode elem : sourceNodeList) {
                 if (elem instanceof OMElement) {
-                    synchronized (elem){
+                    synchronized (elem) {
                         e.addChild(elem);
                     }
                 }

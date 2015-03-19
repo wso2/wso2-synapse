@@ -29,9 +29,9 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.datasource.*;
 import org.apache.synapse.commons.datasource.factory.DataSourceFactory;
 import org.apache.synapse.commons.jmx.MBeanRepository;
-import org.wso2.securevault.secret.SecretManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.wso2.securevault.secret.SecretManager;
 
 import javax.naming.Context;
 import javax.sql.DataSource;
@@ -481,7 +481,7 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
      *
      * @param aliasPasword alias password
      * @return if the SecretManager is initiated , then , get the corresponding secret
-     *         , else return alias itself
+     * , else return alias itself
      */
     private String getActualPassword(String aliasPasword) {
         SecretManager secretManager = SecretManager.getInstance();

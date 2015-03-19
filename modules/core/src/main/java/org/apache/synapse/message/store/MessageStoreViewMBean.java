@@ -50,7 +50,6 @@ public interface MessageStoreViewMBean {
     public String getEnvelope(String messageID);
 
     /**
-     *
      * @return the number of Messages stored in the store.
      */
     public long getSize();

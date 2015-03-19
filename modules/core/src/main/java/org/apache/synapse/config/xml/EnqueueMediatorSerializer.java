@@ -24,7 +24,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.EnqueueMediator;
 
 
-public class EnqueueMediatorSerializer extends AbstractMediatorSerializer{
+public class EnqueueMediatorSerializer extends AbstractMediatorSerializer {
 
     public OMElement serializeSpecificMediator(Mediator m) {
         assert m instanceof EnqueueMediator :
@@ -44,7 +44,7 @@ public class EnqueueMediatorSerializer extends AbstractMediatorSerializer{
         if (mediator.getSequenceName() != null) {
             enqueue.addAttribute(fac.createOMAttribute(
                     "sequence", nullNS, mediator.getSequenceName()));
-        }  else {
+        } else {
             handleException("Invalid enqueue mediator. sequence is required");
         }
 

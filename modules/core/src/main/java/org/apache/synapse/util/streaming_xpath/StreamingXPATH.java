@@ -54,7 +54,6 @@ public class StreamingXPATH {
      * @param inputStream for a XML
      * @return Result of the XPATH expression
      * @throws javax.xml.stream.XMLStreamException
-     *
      * @throws org.apache.synapse.util.streaming_xpath.exception.StreamingXPATHException
      */
     public String getStringValue(InputStream inputStream) throws XMLStreamException, StreamingXPATHException {
@@ -71,7 +70,6 @@ public class StreamingXPATH {
      * @param documentElement for a XML
      * @return Result of the XPATH expression
      * @throws javax.xml.stream.XMLStreamException
-     *
      * @throws org.apache.synapse.util.streaming_xpath.exception.StreamingXPATHException
      */
     public String getStringValue(OMElement documentElement) throws XMLStreamException, StreamingXPATHException {

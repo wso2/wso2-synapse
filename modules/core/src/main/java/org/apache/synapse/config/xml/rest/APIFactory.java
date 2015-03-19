@@ -20,8 +20,8 @@ package org.apache.synapse.config.xml.rest;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.axis2.Constants;
 import org.apache.axiom.om.OMNode;
+import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -41,11 +41,11 @@ public class APIFactory {
     private static final Log log = LogFactory.getLog(APIFactory.class);
 
     static final QName PROP_Q
-        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
 
     static final QName ATT_NAME = new QName("name");
 
-    static final QName ATT_VALUE   = new QName("value");
+    static final QName ATT_VALUE = new QName("value");
 
     public static API createAPI(OMElement apiElt) {
         return createAPI(apiElt, new Properties());
@@ -130,13 +130,13 @@ public class APIFactory {
             Handler handler = (Handler) clazz.newInstance();
             api.addHandler(handler);
 
-            for (Iterator it = handlerElt.getChildrenWithName(PROP_Q); it.hasNext();) {
+            for (Iterator it = handlerElt.getChildrenWithName(PROP_Q); it.hasNext(); ) {
                 OMElement child = (OMElement) it.next();
 
                 String propName = child.getAttribute(ATT_NAME).getAttributeValue();
                 if (propName == null) {
                     handleException(
-                        "A Class mediator property must specify the name attribute");
+                            "A Class mediator property must specify the name attribute");
                 } else {
                     if (child.getAttribute(ATT_VALUE) != null) {
                         String value = child.getAttribute(ATT_VALUE).getAttributeValue();
@@ -149,7 +149,7 @@ public class APIFactory {
                             PropertyHelper.setInstanceProperty(propName, omElt, handler);
                         } else {
                             handleException("A Class mediator property must specify " +
-                                "name and value attributes, or a name and a child XML fragment");
+                                    "name and value attributes, or a name and a child XML fragment");
                         }
                     }
                 }

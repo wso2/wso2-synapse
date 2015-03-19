@@ -37,14 +37,14 @@ public class GetAttributeParserComponent extends ParserComponent {
     @Override
     public String process(OMElement node) {
         attributeQName = new QName(prefixNameSpaceMap.get(nameSpacePrefix), localName);
-        try{
+        try {
             OMAttribute atr = node.getAttribute(attributeQName);
-            if(atr!=null) {
+            if (atr != null) {
                 return atr.getAttributeValue();
-            }else {
+            } else {
                 return "";
             }
-        }catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return "";
         }
     }

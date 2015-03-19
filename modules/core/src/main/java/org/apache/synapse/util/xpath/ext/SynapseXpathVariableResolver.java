@@ -19,19 +19,19 @@
 package org.apache.synapse.util.xpath.ext;
 
 import org.apache.synapse.MessageContext;
-import org.jaxen.Function;
 
 import javax.xml.namespace.QName;
 
 /**
  * <p>This XPath Variable Resolver Interface must be implemented when resolving custom XPath
- *  Variable contexts
+ * Variable contexts
  * Any xpath function that can't be resolved by <code>SynapseXPathVariableContext</code> will be
  * delegated to this interface.
  * Users should implement this API to resolve custom variable contexts
  * ie:- expression="$Custom_Property_Scope:C_PROPERTY" OR expression="$CUSTOM_RESP/urn:child" , ...
- *
+ * <p/>
  * Extensions can be registered in synapse.properties under  synapse.xpath.var.extensions
+ *
  * @see org.apache.synapse.util.xpath.SynapseXPathVariableContext
  */
 public interface SynapseXpathVariableResolver {
@@ -39,6 +39,7 @@ public interface SynapseXpathVariableResolver {
     /**
      * This method should implement the resolving code for custom xpath variable for the registered
      * QName given by #getResolvingQName().
+     *
      * @param msgCtxt Synapse Message Context
      * @return resolved object for custom xpath variable
      */
@@ -46,6 +47,7 @@ public interface SynapseXpathVariableResolver {
 
     /**
      * Should Implement this API to return supported custom expression
+     *
      * @return This should return the supported QName
      * (localname + prefix + namespace URI combination ) for this extension
      */

@@ -26,12 +26,7 @@ import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.PropertyInclude;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -55,54 +50,78 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected Log log;
     protected static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
-    /** Hold the logical name of an endpoint */
+    /**
+     * Hold the logical name of an endpoint
+     */
     private String endpointName = null;
 
-    /** Hold the description of an endpoint */
+    /**
+     * Hold the description of an endpoint
+     */
     private String description = null;
 
-    /** The parent endpoint for this endpoint */
+    /**
+     * The parent endpoint for this endpoint
+     */
     private Endpoint parentEndpoint = null;
 
-    /** The child endpoints of this endpoint - if any */
+    /**
+     * The child endpoints of this endpoint - if any
+     */
     private List<Endpoint> children = null;
 
-    //***
-    /**Holds http status codes for failover endpoint*/
+    /**
+     * Holds http status codes for failover endpoint
+     */
     private ArrayList<String> httpStatusCodes = null;
-    //***
 
-    /** The Endpoint definition for this endpoint - i.e. holds all static endpoint information */
+    /**
+     * The Endpoint definition for this endpoint - i.e. holds all static endpoint information
+     */
     private EndpointDefinition definition = null;
 
-    /** Has this endpoint been initialized ? */
+    /**
+     * Has this endpoint been initialized ?
+     */
     protected volatile boolean initialized = false;
 
-    /** The endpoint context - if applicable - that will hold the runtime state of the endpoint */
+    /**
+     * The endpoint context - if applicable - that will hold the runtime state of the endpoint
+     */
     private EndpointContext context = null;
 
-    /** Is clustering enabled */
+    /**
+     * Is clustering enabled
+     */
     protected Boolean isClusteringEnabled = null;
 
-    /** The MBean managing the endpoint */
+    /**
+     * The MBean managing the endpoint
+     */
     EndpointView metricsMBean = null;
 
-    /** The name of the file where this endpoint is defined */
+    /**
+     * The name of the file where this endpoint is defined
+     */
     protected String fileName;
 
-    /** Map for storing configuration parameters */
+    /**
+     * Map for storing configuration parameters
+     */
     private Map<String, MediatorProperty> properties = new HashMap<String, MediatorProperty>();
 
     protected boolean anonymous = false;
 
-    /** The Sequence name associated with the endpoint*/
+    /**
+     * The Sequence name associated with the endpoint
+     */
     protected String errorHandler = null;
 
     private boolean enableMBeanStats = true;
 
     private boolean contentAware = false;
-    
-    private boolean forceBuildMC =false;
+
+    private boolean forceBuildMC = false;
 
     protected AbstractEndpoint() {
         log = LogFactory.getLog(this.getClass());
@@ -199,26 +218,29 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
-    //***
+
     /**
      * This method will set http status code list configured for a particular endpoint
-     *for failover support on http status codes
+     * for failover support on http status codes
+     *
      * @param httpStatusCodes list of http status codes configured for a particular endpoint
      */
-    public void setHttpStatusCodes(ArrayList<String> httpStatusCodes){
+    public void setHttpStatusCodes(ArrayList<String> httpStatusCodes) {
         this.httpStatusCodes = httpStatusCodes;
     }
 
-    public ArrayList<String> getHttpStatusCodes(){
+    public ArrayList<String> getHttpStatusCodes() {
         return httpStatusCodes;
     }
-   //***
+
+
     /**
      * set whether this endpoint needs to be registered for JMX MBeans. some endpoints may not need
      * to register under MBean and setting false will cut the additional overhead.
+     *
      * @param flag set true/false
      */
-    public void setEnableMBeanStats(boolean flag){
+    public void setEnableMBeanStats(boolean flag) {
         enableMBeanStats = flag;
     }
 
@@ -249,7 +271,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         contentAware = definition != null && ((definition.getFormat() != null && !definition.getFormat().equals(SynapseConstants.FORMAT_REST)) ||
                 definition.isSecurityOn() || definition.isReliableMessagingOn() ||
-                definition.isAddressingOn() || definition.isUseMTOM()|| definition.isUseSwa());
+                definition.isAddressingOn() || definition.isUseMTOM() || definition.isUseSwa());
     }
 
     public boolean readyToSend() {
@@ -319,10 +341,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         if (contentAware) {
             try {
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
                 axis2Ctx.setProperty(RelayConstants.FORCE_RESPONSE_EARLY_BUILD, Boolean.TRUE);
-                if(forceBuildMC){
-                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().getEnvelope().build();
+                if (forceBuildMC) {
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext().getEnvelope().build();
                 }
             } catch (Exception e) {
                 handleException("Error while building message", e);
@@ -349,7 +371,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Is this a leaf level endpoint? or parent endpoint that has children?
-     * @return true if there is no children - a leaf endpoint 
+     *
+     * @return true if there is no children - a leaf endpoint
      */
     public boolean isLeafEndpoint() {
         return children == null || children.size() == 0;
@@ -365,20 +388,21 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Is this [fault] message a timeout?
+     *
      * @param synCtx the current fault message
      * @return true if this is defined as a timeout
      */
     protected boolean isTimeout(MessageContext synCtx) {
-        
-		Object error = synCtx.getProperty(SynapseConstants.ERROR_CODE);
-		Integer errorCode = 0;
-		if (error != null) {
-			try {
-				errorCode = Integer.parseInt(error.toString());
-			} catch (NumberFormatException e) {
-				errorCode = 0;
-			}
-		}
+
+        Object error = synCtx.getProperty(SynapseConstants.ERROR_CODE);
+        Integer errorCode = 0;
+        if (error != null) {
+            try {
+                errorCode = Integer.parseInt(error.toString());
+            } catch (NumberFormatException e) {
+                errorCode = 0;
+            }
+        }
         if (errorCode != null) {
             if (definition.getTimeoutErrorCodes().isEmpty()) {
                 // if timeout codes are not defined, assume only HTTP timeout and connection close
@@ -407,7 +431,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         if (log.isDebugEnabled()) {
             log.debug("Encountered a non-timeout error sending to " + this.toString() +
-                ", error code : " + errorCode);
+                    ", error code : " + errorCode);
         }
         return false;
     }
@@ -448,6 +472,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Is this a fault that should put the endpoint on SUSPEND? or is this a fault to ignore?
+     *
      * @param synCtx the current fault message
      * @return true if this fault should suspend the endpoint
      */
@@ -465,7 +490,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 if (definition.getSuspendErrorCodes().contains(errorCode)) {
                     if (log.isDebugEnabled()) {
                         log.debug("Encountered a suspend error : " + errorCode +
-                            " defined suspend codes are : " + definition.getSuspendErrorCodes());
+                                " defined suspend codes are : " + definition.getSuspendErrorCodes());
                     }
                     return true;
                 }
@@ -507,9 +532,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      */
     protected boolean isTraceOn(MessageContext msgCtx) {
         return definition != null &&
-               ((definition.getTraceState() == SynapseConstants.TRACING_ON) ||
-                (definition.getTraceState() == SynapseConstants.TRACING_UNSET &&
-                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));
+                ((definition.getTraceState() == SynapseConstants.TRACING_ON) ||
+                        (definition.getTraceState() == SynapseConstants.TRACING_UNSET &&
+                                msgCtx.getTracingState() == SynapseConstants.TRACING_ON));
     }
 
     /**
@@ -539,6 +564,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Process statistics for this message
+     *
      * @param synCtx the current message
      */
     protected void prepareForEndpointStatistics(MessageContext synCtx) {
@@ -621,20 +647,20 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
 
     protected void setErrorOnMessage(MessageContext synCtx, String errorCode, String errorMsg) {
-		Map<String, Integer> mEndpointLog =
-		                                    (Map<String, Integer>) synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
-		if (mEndpointLog != null) {
-			AbstractEndpoint lastEndpoint =
-			                                (AbstractEndpoint) synCtx.getProperty(SynapseConstants.LAST_ENDPOINT);
-			Object oErrorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
-			if (lastEndpoint != null && lastEndpoint.getName() != null && oErrorCode != null) {
-				try {
-					mEndpointLog.put(lastEndpoint.getName(), (Integer) oErrorCode);
-				} catch (NumberFormatException nfe) {
-					log.error("Unable to get the error code for endpoint");
-				}
-			}
-		}
+        Map<String, Integer> mEndpointLog =
+                (Map<String, Integer>) synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
+        if (mEndpointLog != null) {
+            AbstractEndpoint lastEndpoint =
+                    (AbstractEndpoint) synCtx.getProperty(SynapseConstants.LAST_ENDPOINT);
+            Object oErrorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
+            if (lastEndpoint != null && lastEndpoint.getName() != null && oErrorCode != null) {
+                try {
+                    mEndpointLog.put(lastEndpoint.getName(), (Integer) oErrorCode);
+                } catch (NumberFormatException nfe) {
+                    log.error("Unable to get the error code for endpoint");
+                }
+            }
+        }
 
         synCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
         synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorMsg);
@@ -657,7 +683,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void destroy() {
-        if(metricsMBean != null) {
+        if (metricsMBean != null) {
             metricsMBean.destroy();
         }
 
@@ -671,23 +697,24 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Add a property to the endpoint.
-      * @param property property to be added
+     *
+     * @param property property to be added
      */
-    public void addProperty(MediatorProperty property) {        
+    public void addProperty(MediatorProperty property) {
         properties.put(property.getName(), property);
     }
 
     /**
      * Get a property with the given name
-     * @param name name of the property
      *
+     * @param name name of the property
      * @return a property with the given name
      */
     public MediatorProperty getProperty(String name) {
         MediatorProperty value = properties.get(name);
         if (value == null) {
             if (getParentEndpoint() instanceof PropertyInclude) {
-                value = ((PropertyInclude)getParentEndpoint()).getProperty(name);
+                value = ((PropertyInclude) getParentEndpoint()).getProperty(name);
             }
         }
         return value;
@@ -695,7 +722,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Return the <code>Collection</code> of properties specified
-     * 
+     *
      * @return <code>Collection</code> of properties
      */
     public Collection<MediatorProperty> getProperties() {
@@ -704,8 +731,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Remove a property with the given name
-     * @param name name of the property to be removed
      *
+     * @param name name of the property to be removed
      * @return the remove property or <code>null</code> if a property doesn't exists
      */
     public MediatorProperty removeProperty(String name) {
@@ -714,7 +741,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Add all the properties to the endpoint
-     * @param mediatorProperties <code>Collection</code> of properties to be added 
+     *
+     * @param mediatorProperties <code>Collection</code> of properties to be added
      */
     public void addProperties(Collection<MediatorProperty> mediatorProperties) {
         for (MediatorProperty property : mediatorProperties) {
@@ -729,22 +757,21 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void setErrorHandler(String errorHandler) {
         this.errorHandler = errorHandler;
     }
-    
-    
+
 
     public void setContentAware(boolean contentAware) {
-    	this.contentAware = contentAware;
-    }
-    
-    
-
-	public void setForceBuildMC(boolean forceBuildMC) {
-    	this.forceBuildMC = forceBuildMC;
+        this.contentAware = contentAware;
     }
 
-	/**
+
+    public void setForceBuildMC(boolean forceBuildMC) {
+        this.forceBuildMC = forceBuildMC;
+    }
+
+    /**
      * Evaluates the endpoint properties based on the current message context and set
      * the properties to the message context appropriately
+     *
      * @param synCtx the current message context
      */
     protected void evaluateProperties(MessageContext synCtx) {

@@ -33,11 +33,7 @@ import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.TimerTask;
+import java.util.*;
 
 /**
  * An object of this class is registered to be invoked in some predefined time intervals. This
@@ -46,7 +42,7 @@ import java.util.TimerTask;
  * time or the interval of invoking this class does not affect the correctness of the timeouts,
  * although longer intervals would introduce larger error between the actual timeout and the
  * specified timeout.
- *
+ * <p/>
  * For each invocation this gets a time value to be compared against the timeouts of the callback
  * objects. This time is the System.currentTimeMillis() for Java 1.4 and System.nanoTime() for
  * Java 1.5 and later.
@@ -55,9 +51,13 @@ public class TimeoutHandler extends TimerTask {
 
     private static final Log log = LogFactory.getLog(TimeoutHandler.class);
 
-    /** The callback map - already a Collections.synchronized() hash map */
+    /**
+     * The callback map - already a Collections.synchronized() hash map
+     */
     private final Map callbackStore;
-    /** a lock to prevent concurrent execution while ensuring least overhead */
+    /**
+     * a lock to prevent concurrent execution while ensuring least overhead
+     */
     private final Object lock = new Object();
     private boolean alreadyExecuting = false;
     /*This is the timeout for otherwise non-expiring callbacks to ensure system stability over time */
@@ -82,7 +82,7 @@ public class TimeoutHandler extends TimerTask {
     public void run() {
         if (alreadyExecuting) return;
 
-        synchronized(lock) {
+        synchronized (lock) {
             alreadyExecuting = true;
             try {
                 processCallbacks();
@@ -116,7 +116,7 @@ public class TimeoutHandler extends TimerTask {
         // we have to synchronize this on the callbackStore as iterators of thread safe collections
         // are not thread safe. callbackStore can be modified
         // concurrently by the SynapseCallbackReceiver.
-        synchronized(callbackStore) {
+        synchronized (callbackStore) {
 
             if (callbackStore.size() > 0) {
 
@@ -150,7 +150,7 @@ public class TimeoutHandler extends TimerTask {
                                 buffer is released to both factories and makes system unstable
                                 */
                                 ((Axis2MessageContext) msgContext).getAxis2MessageContext().
-                                                removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+                                        removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
 
                                 // add an error code to the message context, so that error sequences
                                 // can identify the cause of error
@@ -160,20 +160,20 @@ public class TimeoutHandler extends TimerTask {
                                         SEND_TIMEOUT_MESSAGE);
 
                                 SOAPEnvelope soapEnvelope;
-                                if(msgContext.isSOAP11()){
+                                if (msgContext.isSOAP11()) {
                                     soapEnvelope = OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope();
                                     soapEnvelope.addChild(OMAbstractFactory.getSOAP11Factory().createSOAPBody());
                                 } else {
                                     soapEnvelope = OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope();
                                     soapEnvelope.addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
-                                 }
+                                }
                                 try {
                                     msgContext.setEnvelope(soapEnvelope);
                                 } catch (Exception ex) {
-                                    log.error("Error resetting SOAP Envelope",ex);
+                                    log.error("Error resetting SOAP Envelope", ex);
                                     continue;
                                 }
- 
+
                                 Stack<FaultHandler> faultStack = msgContext.getFaultStack();
                                 if (!faultStack.isEmpty()) {
                                     FaultHandler faultHandler = faultStack.pop();
@@ -195,7 +195,7 @@ public class TimeoutHandler extends TimerTask {
                     }
                 }
 
-                for(Object key : toRemove) {
+                for (Object key : toRemove) {
 
                     AsyncCallback callback = (AsyncCallback) callbackStore.get(key);
                     if (callback == null) {
@@ -216,8 +216,8 @@ public class TimeoutHandler extends TimerTask {
     /**
      * Returns the current time.
      *
-     * @return  System.currentTimeMillis() on Java 1.4
-     *          System.nanoTime() on Java 1.5 (todo: implement)
+     * @return System.currentTimeMillis() on Java 1.4
+     * System.nanoTime() on Java 1.5 (todo: implement)
      */
     private long currentTime() {
         return System.currentTimeMillis();

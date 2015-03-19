@@ -168,7 +168,7 @@ public class Axis2Sender {
 
             // If the request arrives through an inbound endpoint
             if (smc.getProperty(SynapseConstants.IS_INBOUND) != null
-                && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
+                    && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
 
                 if (smc.getProperty(InboundEndpointConstants.INBOUND_ENDPOINT_RESPONSE_WORKER) != null) {
                     InboundResponseSender inboundResponseSender =
@@ -177,7 +177,7 @@ public class Axis2Sender {
                     inboundResponseSender.sendBack(smc);
                 } else {
                     String msg = "Inbound Response Sender not found -" +
-                                 " Inbound Endpoint may not support sending a response back";
+                            " Inbound Endpoint may not support sending a response back";
                     log.error(msg);
                     throw new SynapseException(msg);
                 }

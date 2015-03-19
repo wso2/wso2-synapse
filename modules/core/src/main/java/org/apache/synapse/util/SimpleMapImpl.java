@@ -1,22 +1,15 @@
 package org.apache.synapse.util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import org.apache.axiom.attachments.ByteArrayDataSource;
+import org.apache.axiom.om.*;
 
 import javax.activation.DataHandler;
 import javax.xml.namespace.QName;
-
-import org.apache.axiom.attachments.ByteArrayDataSource;
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
-import org.apache.axiom.om.OMNode;
-import org.apache.axiom.om.OMText;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 
 public class SimpleMapImpl extends HashMap implements SimpleMap {
@@ -264,9 +257,9 @@ public class SimpleMapImpl extends HashMap implements SimpleMap {
         super();
         if (el.getQName().equals(PayloadHelper.MAPELT)) {
             for (Iterator it = el.getChildElements(); it.hasNext(); ) {
-                OMElement child = (OMElement)it.next();
+                OMElement child = (OMElement) it.next();
                 if (child.getLocalName().equals(ENTRY)) {
-                    String name = child.getAttributeValue(new QName("",NAME));
+                    String name = child.getAttributeValue(new QName("", NAME));
                     String type = child.getAttributeValue(new QName("", TYPE));
                     if (type == null || name == null) {
                         //bad!
@@ -276,7 +269,7 @@ public class SimpleMapImpl extends HashMap implements SimpleMap {
                     if (data.getType() != OMNode.TEXT_NODE) {
                         continue; // BAD!
                     }
-                    OMText text = (OMText)data;
+                    OMText text = (OMText) data;
                     if (type.equals(INTEGER)) {
                         this.put(name, new Integer(text.getText()));
                     } else if (type.equals(CHAR)) {

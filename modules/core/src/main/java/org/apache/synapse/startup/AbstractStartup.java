@@ -22,7 +22,7 @@ package org.apache.synapse.startup;
 import org.apache.synapse.Startup;
 
 /**
- * 
+ *
  */
 public abstract class AbstractStartup implements Startup {
 
@@ -53,8 +53,7 @@ public abstract class AbstractStartup implements Startup {
     /**
      * This will set the name of a Startup
      *
-     * @param name
-     *          String name to be set to the startup
+     * @param name String name to be set to the startup
      */
     public void setName(String name) {
         this.name = name;

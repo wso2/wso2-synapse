@@ -27,7 +27,7 @@ import javax.xml.namespace.QName;
 
 /**
  * Serializer for {@link HeaderMediator} instances.
- * 
+ *
  * @see HeaderMediatorFactory
  */
 public class HeaderMediatorSerializer extends AbstractMediatorSerializer {
@@ -40,23 +40,23 @@ public class HeaderMediatorSerializer extends AbstractMediatorSerializer {
 
         HeaderMediator mediator = (HeaderMediator) m;
         OMElement header = fac.createOMElement("header", synNS);
-        saveTracingState(header,mediator);
+        saveTracingState(header, mediator);
 
         QName qName = mediator.getQName();
         if (qName != null) {
             if (qName.getNamespaceURI() != null) {
                 header.addAttribute(fac.createOMAttribute(
-                    "name", nullNS,
-                    (qName.getPrefix() != null && !"".equals(qName.getPrefix())
-                        ? qName.getPrefix() + ":" : "") + 
-                    qName.getLocalPart()));
+                        "name", nullNS,
+                        (qName.getPrefix() != null && !"".equals(qName.getPrefix())
+                                ? qName.getPrefix() + ":" : "") +
+                                qName.getLocalPart()));
                 header.declareNamespace(qName.getNamespaceURI(), qName.getPrefix());
             } else {
                 header.addAttribute(fac.createOMAttribute(
-                    "name", nullNS, qName.getLocalPart()));
+                        "name", nullNS, qName.getLocalPart()));
             }
         }
-        
+
         if (mediator.getScope() != null) {
             // if we have already built a mediator with scope, scope should be valid, now save it
             header.addAttribute(fac.createOMAttribute("scope", nullNS, mediator.getScope()));
@@ -64,16 +64,16 @@ public class HeaderMediatorSerializer extends AbstractMediatorSerializer {
 
         if (mediator.getAction() == HeaderMediator.ACTION_REMOVE) {
             header.addAttribute(fac.createOMAttribute(
-                "action", nullNS, "remove"));
+                    "action", nullNS, "remove"));
         } else {
             if (mediator.getValue() != null) {
                 header.addAttribute(fac.createOMAttribute(
-                    "value", nullNS, mediator.getValue()));
+                        "value", nullNS, mediator.getValue()));
 
             } else if (mediator.getExpression() != null) {
 
                 SynapseXPathSerializer.serializeXPath(
-                    mediator.getExpression(), header, "expression");
+                        mediator.getExpression(), header, "expression");
 
             } else if (!mediator.isImplicit()) {
                 handleException("Value or expression required for a set header mediator");

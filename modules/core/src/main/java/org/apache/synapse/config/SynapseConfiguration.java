@@ -25,12 +25,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.Startup;
-import org.apache.synapse.SynapseArtifact;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -65,15 +60,7 @@ import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 
 import javax.xml.namespace.QName;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -95,7 +82,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * is supported
      */
     private Registry registry = null;
-
 
 
     private TaskManager taskManager = null;
@@ -184,7 +170,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     private Map<String, API> apiTable = new ConcurrentHashMap<String, API>();
 
     private Map<String, InboundEndpoint> inboundEndpointMap = new ConcurrentHashMap<String, InboundEndpoint>();
-    
+
     /**
      * Description/documentation of the configuration
      */
@@ -204,14 +190,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * Holds the library imports  currently being included into Synapse engine
      */
     Map<String, SynapseImport> synapseImports = new ConcurrentHashMap<String, SynapseImport>();
-    
-    
+
+
     /**
      * Cachable HasMap to hold the decrypted information in its synapse configuration space.
-     * 
      */
     private Map<String, Object> decryptedCacheMap = new ConcurrentHashMap<String, Object>();
-    
+
     private boolean allowHotUpdate = true;
 
     /**
@@ -297,7 +282,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             for (Object o : localRegistry.values()) {
                 if (o instanceof SequenceMediator) {
                     SequenceMediator seq = (SequenceMediator) o;
-                    if(!seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY)) {
+                    if (!seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY)) {
                         definedSequences.put(seq.getName(), seq);
                     }
                 }
@@ -348,45 +333,45 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         return definedTemplates;
     }
 
-	public void addInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
-		if (!inboundEndpointMap.containsKey(name)) {
-			inboundEndpointMap.put(name, inboundEndpoint);
-		} else {
-			handleException("Duplicate inbound  endpoint definition by the name: " + name);
-		}
-	}
+    public void addInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
+        if (!inboundEndpointMap.containsKey(name)) {
+            inboundEndpointMap.put(name, inboundEndpoint);
+        } else {
+            handleException("Duplicate inbound  endpoint definition by the name: " + name);
+        }
+    }
 
-	public InboundEndpoint getInboundEndpoint(String name) {
-		return inboundEndpointMap.get(name);
-	}
+    public InboundEndpoint getInboundEndpoint(String name) {
+        return inboundEndpointMap.get(name);
+    }
 
-	public Collection<InboundEndpoint> getInboundEndpoints() {
-		return Collections.unmodifiableCollection(inboundEndpointMap.values());
-	}
+    public Collection<InboundEndpoint> getInboundEndpoints() {
+        return Collections.unmodifiableCollection(inboundEndpointMap.values());
+    }
 
-	public void updateInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
-		if (!inboundEndpointMap.containsKey(name)) {
-			handleException("No Inbound Endpoint exists by the name: " + name);
-		} else {
-			inboundEndpointMap.put(name, inboundEndpoint);
-		}
-	}
+    public void updateInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
+        if (!inboundEndpointMap.containsKey(name)) {
+            handleException("No Inbound Endpoint exists by the name: " + name);
+        } else {
+            inboundEndpointMap.put(name, inboundEndpoint);
+        }
+    }
 
-	public void removeInboundEndpoint(String name) {
-		InboundEndpoint inboundEndpoint = inboundEndpointMap.get(name);
-		if (inboundEndpoint != null) {
-			inboundEndpointMap.remove(name);
-		} else {
-			handleException("No Inbound Endpoint exists by the name: " + name);
-		}
-	}   
-    
+    public void removeInboundEndpoint(String name) {
+        InboundEndpoint inboundEndpoint = inboundEndpointMap.get(name);
+        if (inboundEndpoint != null) {
+            inboundEndpointMap.remove(name);
+        } else {
+            handleException("No Inbound Endpoint exists by the name: " + name);
+        }
+    }
+
     public void addAPI(String name, API api) {
         if (!apiTable.containsKey(name)) {
             for (API existingAPI : apiTable.values()) {
                 if (api.getVersion().equals(existingAPI.getVersion()) && existingAPI.getContext().equals(api.getContext())) {
                     handleException("URL context: " + api.getContext() + " is already registered" +
-                                    " with the API: " + existingAPI.getName());
+                            " with the API: " + existingAPI.getName());
                 }
             }
             apiTable.put(name, api);
@@ -402,9 +387,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             for (API existingAPI : apiTable.values()) {
                 if (!api.getName().equals(existingAPI.getName()) && api.getVersion().equals(existingAPI.getVersion()) && existingAPI.getContext().equals(api.getContext())) {
                     handleException("URL context: " + api.getContext() + " is already registered" +
-                                    " with the API: " + existingAPI.getName());
+                            " with the API: " + existingAPI.getName());
                 }
-            }        	
+            }
             apiTable.put(name, api);
         }
     }
@@ -576,6 +561,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     /**
      * Return the format of the payload factory specified by the given key
+     *
      * @param key
      * @return OMElement
      */
@@ -683,7 +669,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 SynapseEnvironment synEnv = SynapseConfigUtils.getSynapseEnvironment(
                         axisConfiguration);
                 entry.setValue(SynapseConfigUtils.getOMElementFromURL(entry.getSrc()
-                                                                              .toString(), synEnv != null ? synEnv.getServerContextInformation()
+                        .toString(), synEnv != null ? synEnv.getServerContextInformation()
                         .getServerConfigurationInformation().getSynapseHome() : ""));
                 localRegistry.put(key, entry);
                 for (SynapseObserver o : observers) {
@@ -691,7 +677,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             } catch (IOException e) {
                 handleException("Can not read from source URL : "
-                                + entry.getSrc());
+                        + entry.getSrc());
             }
         } else {
             localRegistry.put(key, entry);
@@ -707,7 +693,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 SynapseEnvironment synEnv = SynapseConfigUtils.getSynapseEnvironment(
                         axisConfiguration);
                 entry.setValue(SynapseConfigUtils.getOMElementFromURL(entry.getSrc()
-                                                                              .toString(), synEnv != null ? synEnv.getServerContextInformation()
+                        .toString(), synEnv != null ? synEnv.getServerContextInformation()
                         .getServerConfigurationInformation().getSynapseHome() : ""));
                 localRegistry.put(key, entry);
                 for (SynapseObserver o : observers) {
@@ -715,7 +701,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             } catch (IOException e) {
                 handleException("Can not read from source URL : "
-                                + entry.getSrc());
+                        + entry.getSrc());
             }
         } else {
             localRegistry.put(key, entry);
@@ -794,8 +780,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                         // Error occurred while loading the resource from the registry
                         // Fall back to the cached value - Do not increase the expiry time
                         log.warn("Error while loading the resource " + key + " from the remote " +
-                                 "registry. Previously cached value will be used. Check the " +
-                                 "registry accessibility.");
+                                "registry. Previously cached value will be used. Check the " +
+                                "registry accessibility.");
                         return entry.getValue();
                     }
                 } else {
@@ -807,12 +793,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 if (entry.isCached()) {
                     // Fall back to the cached value
                     log.warn("The registry is no longer available in the Synapse configuration. " +
-                             "Using the previously cached value for the resource : " + key);
+                            "Using the previously cached value for the resource : " + key);
                     return entry.getValue();
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Will not  evaluate the value of the remote entry with a key "
-                                  + key + ",  because the registry is not available");
+                                + key + ",  because the registry is not available");
                     }
                     return null; // otherwise will return an entry with a value null
                     // (method expects return  a value not an entry )
@@ -1386,15 +1372,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
 
         //destroy inbound endpoint
-		for (InboundEndpoint endpoint : getInboundEndpoints()) {
-			endpoint.destroy();
-		}         
-        
+        for (InboundEndpoint endpoint : getInboundEndpoints()) {
+            endpoint.destroy();
+        }
+
         // destroy the managed endpoints
         for (Endpoint endpoint : getDefinedEndpoints().values()) {
             endpoint.destroy();
         }
-        
+
         // destroy the startups
         for (ManagedLifecycle stp : startups.values()) {
             stp.destroy();
@@ -1451,119 +1437,119 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         //initialize endpoints
         for (Endpoint endpoint : getDefinedEndpoints().values()) {
-			try {
-				endpoint.init(se);
-			} catch (Exception e) {
-				log.error(" Error in initializing endpoint ["
-						+ endpoint.getName() + "] " + e.getMessage());
-			}
+            try {
+                endpoint.init(se);
+            } catch (Exception e) {
+                log.error(" Error in initializing endpoint ["
+                        + endpoint.getName() + "] " + e.getMessage());
+            }
         }
 
         //initialize sequence templates
         for (TemplateMediator seqTemplate : getSequenceTemplates().values()) {
-			try {
-				seqTemplate.init(se);
-			} catch (Exception e) {
-				log.error(" Error in initializing Sequence Template ["
-						+ seqTemplate.getName() + "] " + e.getMessage());
-			}
+            try {
+                seqTemplate.init(se);
+            } catch (Exception e) {
+                log.error(" Error in initializing Sequence Template ["
+                        + seqTemplate.getName() + "] " + e.getMessage());
+            }
         }
 
 
-		for (InboundEndpoint endpoint : getInboundEndpoints()) {
-			try {
-				endpoint.init(se);
-			} catch (Exception e) {
-				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
-				          e.getMessage());
-			}
-		}      
-        
+        for (InboundEndpoint endpoint : getInboundEndpoints()) {
+            try {
+                endpoint.init(se);
+            } catch (Exception e) {
+                log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
+                        e.getMessage());
+            }
+        }
+
         // initialize managed mediators
         for (ManagedLifecycle seq : getDefinedSequences().values()) {
             if (seq != null) {
-				try {
-					seq.init(se);
-				} catch (Exception e) {
-					log.error(" Error in initializing Sequence "
-							+ e.getMessage());
-				}
+                try {
+                    seq.init(se);
+                } catch (Exception e) {
+                    log.error(" Error in initializing Sequence "
+                            + e.getMessage());
+                }
             }
         }
 
         // initialize all the proxy services
         for (ProxyService proxy : getProxyServices()) {
-			try {
-				if (proxy.getTargetInLineEndpoint() != null) {
-					proxy.getTargetInLineEndpoint().init(se);
-				}
+            try {
+                if (proxy.getTargetInLineEndpoint() != null) {
+                    proxy.getTargetInLineEndpoint().init(se);
+                }
 
-				if (proxy.getTargetInLineInSequence() != null) {
-					proxy.getTargetInLineInSequence().init(se);
-				}
+                if (proxy.getTargetInLineInSequence() != null) {
+                    proxy.getTargetInLineInSequence().init(se);
+                }
 
-				if (proxy.getTargetInLineOutSequence() != null) {
-					proxy.getTargetInLineOutSequence().init(se);
-				}
+                if (proxy.getTargetInLineOutSequence() != null) {
+                    proxy.getTargetInLineOutSequence().init(se);
+                }
 
-				if (proxy.getTargetInLineFaultSequence() != null) {
-					proxy.getTargetInLineFaultSequence().init(se);
-				}
-			} catch (Exception e) {
-				log.error(" Error in initializing Proxy Service [ "
-						+ proxy.getName() + "] " + e.getMessage());
-			}
+                if (proxy.getTargetInLineFaultSequence() != null) {
+                    proxy.getTargetInLineFaultSequence().init(se);
+                }
+            } catch (Exception e) {
+                log.error(" Error in initializing Proxy Service [ "
+                        + proxy.getName() + "] " + e.getMessage());
+            }
         }
 
         // initialize the startups
         for (ManagedLifecycle stp : getStartups()) {
             if (stp != null) {
-				try {
-					stp.init(se);
-				} catch (Exception e) {
-					log.error(" Error in initializing Stratups "
-							+ e.getMessage());
-				}
+                try {
+                    stp.init(se);
+                } catch (Exception e) {
+                    log.error(" Error in initializing Stratups "
+                            + e.getMessage());
+                }
             }
         }
 
         // initialize sequence executors
         for (PriorityExecutor executor : getPriorityExecutors().values()) {
-			try {
-				executor.init();
-			} catch (Exception e) {
-				log.error(" Error in initializing Executor [ "
-						+ executor.getName() + "] " + e.getMessage());
-			}
+            try {
+                executor.init();
+            } catch (Exception e) {
+                log.error(" Error in initializing Executor [ "
+                        + executor.getName() + "] " + e.getMessage());
+            }
         }
 
         //initialize message stores
-        for(MessageStore messageStore : messageStores.values()) {
-			try {
-				messageStore.init(se);
-			} catch (Exception e) {
-				log.error(" Error in initializing Message Store [ "
-						+ messageStore.getName() + "] " + e.getMessage());
-			}
+        for (MessageStore messageStore : messageStores.values()) {
+            try {
+                messageStore.init(se);
+            } catch (Exception e) {
+                log.error(" Error in initializing Message Store [ "
+                        + messageStore.getName() + "] " + e.getMessage());
+            }
         }
 
         // initialize message processors
-        for(MessageProcessor messageProcessor : messageProcessors.values()) {
-			try {
-				messageProcessor.init(se);
-			} catch (Exception e) {
-				log.error(" Error in initializing Message Processor [ "
-						+ messageProcessor.getName() + "] " + e.getMessage());
-			}
+        for (MessageProcessor messageProcessor : messageProcessors.values()) {
+            try {
+                messageProcessor.init(se);
+            } catch (Exception e) {
+                log.error(" Error in initializing Message Processor [ "
+                        + messageProcessor.getName() + "] " + e.getMessage());
+            }
         }
 
         for (API api : apiTable.values()) {
-			try {
-				api.init(se);
-			} catch (Exception e) {
-				log.error(" Error in initializing API [ " + api.getName()
-						+ "] " + e.getMessage());
-			}
+            try {
+                api.init(se);
+            } catch (Exception e) {
+                log.error(" Error in initializing API [ " + api.getName()
+                        + "] " + e.getMessage());
+            }
         }
         initImportedLibraries(se);
     }
@@ -1699,13 +1685,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @return a MessageStore instance or null
      */
     public MessageStore getMessageStore(String name) {
-        return messageStores.get(name) ;
+        return messageStores.get(name);
     }
 
     /**
      * Add MessageStore to the configuration with a given name.
      *
-     * @param name Name of the message store
+     * @param name         Name of the message store
      * @param messageStore a MessageStore instance
      */
     public void addMessageStore(String name, MessageStore messageStore) {
@@ -1724,7 +1710,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     /**
      * Get Message stores defined
-     * @return  message store map stored as name of the message store and message store
+     *
+     * @return message store map stored as name of the message store and message store
      */
     public Map<String, MessageStore> getMessageStores() {
         return messageStores;
@@ -1742,12 +1729,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     /**
      * Add message processor to the synapse configuration with given name
-     * @param name of the Message processor
+     *
+     * @param name      of the Message processor
      * @param processor instance
      */
-    public void addMessageProcessor(String name , MessageProcessor processor) {
-        if(!(messageProcessors.containsKey(name))) {
-            messageProcessors.put(name , processor);
+    public void addMessageProcessor(String name, MessageProcessor processor) {
+        if (!(messageProcessors.containsKey(name))) {
+            messageProcessors.put(name, processor);
         } else {
             handleException("Duplicate Message Processor " + name);
         }
@@ -1755,6 +1743,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     /**
      * Get all Message processors in the Synapse configuration
+     *
      * @return Return Map that contains all the message processors
      */
     public Map<String, MessageProcessor> getMessageProcessors() {
@@ -1763,8 +1752,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
     /**
      * remove the message processor from the synapse configuration
-     * @param name  of the message
-     * @return  Removed Message processor instance
+     *
+     * @param name of the message
+     * @return Removed Message processor instance
      */
     public MessageProcessor removeMessageProcessor(String name) {
         return messageProcessors.remove(name);
@@ -1773,7 +1763,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     /**
      * Add Synapse library to configuration with given name
      *
-     * @param name      of synapse lib
+     * @param name    of synapse lib
      * @param library instance
      */
     public void addSynapseLibrary(String name, Library library) {
@@ -1804,7 +1794,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
 
-
     /**
      * Add Synapse Import to a configuration with given name
      *
@@ -1812,7 +1801,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @param synImport instance
      */
     public void addSynapseImport(String name, SynapseImport synImport) {
-    	 synapseImports.put(name, synImport);
+        synapseImports.put(name, synImport);
     }
 
     /**
@@ -1862,18 +1851,17 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public SynapseArtifactDeploymentStore getArtifactDeploymentStore() {
         return artifactDeploymentStore;
     }
-    
-    
-    
-	/**
-	 * Returns the map which contains the Decrypted values read via the secure
-	 * vault provider
-	 * 
-	 * @return
-	 */
+
+
+    /**
+     * Returns the map which contains the Decrypted values read via the secure
+     * vault provider
+     *
+     * @return
+     */
     public Map<String, Object> getDecryptedCacheMap() {
-		return decryptedCacheMap;
-	}
+        return decryptedCacheMap;
+    }
 
     public TaskManager getTaskManager() {
         return taskManager;
@@ -1882,9 +1870,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     public void setTaskManager(TaskManager taskManager) {
         this.taskManager = taskManager;
     }
-    
 
-	private void assertAlreadyExists(String key, String type) {
+
+    private void assertAlreadyExists(String key, String type) {
 
         if (key == null || "".equals(key)) {
             handleException("Given entry key is empty or null.");
@@ -1970,7 +1958,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }
         }
-         //load from available libraries
+        //load from available libraries
         Template templateFromLib = LibDeployerUtils.getLibArtifact(synapseLibraries, key, Template.class);
         if (templateFromLib != null) {
             return templateFromLib;
@@ -1978,9 +1966,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         return null;
     }
-    
+
     public Mediator getDefaultConfiguration(String key) {
-    	Object o = getEntry(key);
+        Object o = getEntry(key);
         if (o instanceof Mediator) {
             return (Mediator) o;
         }
@@ -2031,7 +2019,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         return null;
     }
-    
+
 
     public boolean isAllowHotUpdate() {
         return allowHotUpdate;
@@ -2071,7 +2059,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
     /**
-     *
      * @param se
      */
     private void initCarbonTenantConfigurator(SynapseEnvironment se) {
@@ -2084,8 +2071,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     private void initImportedLibraries(SynapseEnvironment synapseEnvironment) {
         for (String importKey : synapseImports.keySet()) {
             Library lib = synapseLibraries.get(importKey);
-            if(lib==null){
-                log.error("Unable to deploy synapse import:" + importKey +". Required library not found.");
+            if (lib == null) {
+                log.error("Unable to deploy synapse import:" + importKey + ". Required library not found.");
                 continue;
             }
             for (String artifactKey : lib.getArtifacts().keySet()) {
@@ -2096,8 +2083,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         }
     }
-
-
 
 
 }

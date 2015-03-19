@@ -26,8 +26,6 @@ import org.apache.synapse.mediators.template.InvokeMediator;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.xml.namespace.QName;
-
 /**
  * Serialize a Invoke mediator to a configuration given below
  * <invoke target="">
@@ -38,7 +36,7 @@ import javax.xml.namespace.QName;
  * ..
  * </invoke>
  */
-public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
+public class InvokeMediatorSerializer extends AbstractMediatorSerializer {
     public static final String INVOKE_N = "call-template";
 
 
@@ -49,24 +47,24 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
         }
         InvokeMediator mediator = (InvokeMediator) m;
         OMElement invokeElem = null;
-        if(mediator.isDynamicMediator()){
-        	String packageName = (mediator.getPackageName() != null && !mediator.getPackageName().isEmpty())?mediator.getPackageName():"";
-        	invokeElem=fac.createOMElement(mediator.getTargetTemplate().substring(packageName.length()+1,mediator.getTargetTemplate().length()), synNS);
-        	 if (mediator.getKey() != null) {
-                 // Serialize Value using ValueSerializer
-                 ValueSerializer keySerializer = new ValueSerializer();
-                 keySerializer.serializeValue(mediator.getKey(), XMLConfigConstants.CONFIG_REF, invokeElem);
-                 
-             } 
-        }else{
-        	invokeElem=fac.createOMElement(INVOKE_N, synNS);
+        if (mediator.isDynamicMediator()) {
+            String packageName = (mediator.getPackageName() != null && !mediator.getPackageName().isEmpty()) ? mediator.getPackageName() : "";
+            invokeElem = fac.createOMElement(mediator.getTargetTemplate().substring(packageName.length() + 1, mediator.getTargetTemplate().length()), synNS);
+            if (mediator.getKey() != null) {
+                // Serialize Value using ValueSerializer
+                ValueSerializer keySerializer = new ValueSerializer();
+                keySerializer.serializeValue(mediator.getKey(), XMLConfigConstants.CONFIG_REF, invokeElem);
+
+            }
+        } else {
+            invokeElem = fac.createOMElement(INVOKE_N, synNS);
         }
 
         if (mediator.getTargetTemplate() != null) {
-        	if(!mediator.isDynamicMediator()){
-            invokeElem.addAttribute(fac.createOMAttribute(
-                    "target", nullNS, mediator.getTargetTemplate()));
-        	}
+            if (!mediator.isDynamicMediator()) {
+                invokeElem.addAttribute(fac.createOMAttribute(
+                        "target", nullNS, mediator.getTargetTemplate()));
+            }
 
             serializeParams(invokeElem, mediator);
             saveTracingState(invokeElem, mediator);
@@ -79,25 +77,25 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
         Map<String, Value> paramsMap = mediator.getpName2ExpressionMap();
         Iterator<String> paramIterator = paramsMap.keySet().iterator();
         while (paramIterator.hasNext()) {
-			String paramName = paramIterator.next();
-			if (!"".equals(paramName)) {
-				if (mediator.isDynamicMediator()) {
-					OMElement paramEl = fac.createOMElement(paramName, synNS);
-					Value value = paramsMap.get(paramName);
-					new ValueSerializer().serializeTextValue(value, "value", paramEl);
-					invokeElem.addChild(paramEl);
-				} else {
-					String prefix = mediator.isDynamicMediator()
-							? InvokeMediatorFactory.WITH_PARAM_DYNAMIC_Q.getLocalPart()
-							: InvokeMediatorFactory.WITH_PARAM_Q.getLocalPart();
-					OMElement paramEl = fac.createOMElement(prefix, synNS);
-					paramEl.addAttribute(fac.createOMAttribute("name", nullNS, paramName));
-					// serialize value attribute
-					Value value = paramsMap.get(paramName);
-					new ValueSerializer().serializeValue(value, "value", paramEl);
-					invokeElem.addChild(paramEl);
-				}
-			}
+            String paramName = paramIterator.next();
+            if (!"".equals(paramName)) {
+                if (mediator.isDynamicMediator()) {
+                    OMElement paramEl = fac.createOMElement(paramName, synNS);
+                    Value value = paramsMap.get(paramName);
+                    new ValueSerializer().serializeTextValue(value, "value", paramEl);
+                    invokeElem.addChild(paramEl);
+                } else {
+                    String prefix = mediator.isDynamicMediator()
+                            ? InvokeMediatorFactory.WITH_PARAM_DYNAMIC_Q.getLocalPart()
+                            : InvokeMediatorFactory.WITH_PARAM_Q.getLocalPart();
+                    OMElement paramEl = fac.createOMElement(prefix, synNS);
+                    paramEl.addAttribute(fac.createOMAttribute("name", nullNS, paramName));
+                    // serialize value attribute
+                    Value value = paramsMap.get(paramName);
+                    new ValueSerializer().serializeValue(value, "value", paramEl);
+                    invokeElem.addChild(paramEl);
+                }
+            }
         }
 
     }
@@ -105,6 +103,6 @@ public class InvokeMediatorSerializer extends AbstractMediatorSerializer{
     public String getMediatorClassName() {
         return InvokeMediator.class.getName();
     }
-    
- 
+
+
 }

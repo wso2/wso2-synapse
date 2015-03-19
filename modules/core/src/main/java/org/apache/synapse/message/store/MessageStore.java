@@ -32,27 +32,31 @@ import java.util.NoSuchElementException;
 public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifact {
     /**
      * Returns a Message Producer for this message store. <br/>
-     * @return  A non-null message producer that can produce messages to this message store.
+     *
+     * @return A non-null message producer that can produce messages to this message store.
      */
     MessageProducer getProducer();
 
     /**
      * Returns a Message Consumer for this message store. <br/>
+     *
      * @return A non-null message consumer that can read messages from this message store.<br/>
      */
     MessageConsumer getConsumer();
 
     /**
      * set the implementation specific parameters
+     *
      * @param parameters A map of parameters or null
      */
-    public void setParameters(Map<String,Object> parameters);
+    public void setParameters(Map<String, Object> parameters);
 
     /**
      * get the implementation specific parameters of the Message store
+     *
      * @return a properties map
      */
-    public Map<String,Object> getParameters();
+    public Map<String, Object> getParameters();
 
     /**
      * Set the name of the file that the Message store is configured
@@ -73,6 +77,7 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      * The type of a message store can be one of following types, <br/>
      * {@link Constants#JMS_MS}, {@link Constants#INMEMORY_MS},
      * or {@link Constants#JDBC_MS}
+     *
      * @return Type of the message store.
      */
     public int getType();
@@ -82,8 +87,7 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      * Message ordering will depend on the underlying implementation
      *
      * @return first message context in the store
-     * @throws java.util.NoSuchElementException
-     *          if store is empty
+     * @throws java.util.NoSuchElementException if store is empty
      */
     public MessageContext remove() throws NoSuchElementException;
 

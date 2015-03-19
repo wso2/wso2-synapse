@@ -18,11 +18,7 @@
  */
 package org.apache.synapse.mediators.template;
 
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseLog;
+import org.apache.synapse.*;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -41,76 +37,79 @@ import java.util.Map;
  * </invoke>
  */
 public class InvokeMediator extends AbstractMediator implements
-                                                     ManagedLifecycle,FlowContinuableMediator {
-	/**
-	 * refers to the target template this is going to invoke this is a read only
-	 * attribute of the mediator
-	 */
-	private String targetTemplate;
+        ManagedLifecycle, FlowContinuableMediator {
+    /**
+     * refers to the target template this is going to invoke this is a read only
+     * attribute of the mediator
+     */
+    private String targetTemplate;
 
-	/**
-	 * Refers to the parent package qualified reference
-	 * 
-	 */
-	private String packageName;
+    /**
+     * Refers to the parent package qualified reference
+     */
+    private String packageName;
 
-	/**
-	 * maps each parameter name to a Expression/Value this is a read only
-	 * attribute of the mediator
-	 */
-	private Map<String, Value> pName2ExpressionMap;
+    /**
+     * maps each parameter name to a Expression/Value this is a read only
+     * attribute of the mediator
+     */
+    private Map<String, Value> pName2ExpressionMap;
 
-	private boolean dynamicMediator = false;
+    private boolean dynamicMediator = false;
 
-	/** The local registry key which is used to pick a sequence definition */
-	private Value key = null;
+    /**
+     * The local registry key which is used to pick a sequence definition
+     */
+    private Value key = null;
 
-    /** Reference to the synapse environment */
+    /**
+     * Reference to the synapse environment
+     */
     private SynapseEnvironment synapseEnv;
 
-	public InvokeMediator() {
-		// LinkedHashMap is used to preserve tag order
-		pName2ExpressionMap = new LinkedHashMap<String, Value>();
-	}
+    public InvokeMediator() {
+        // LinkedHashMap is used to preserve tag order
+        pName2ExpressionMap = new LinkedHashMap<String, Value>();
+    }
 
 
     public boolean mediate(MessageContext synCtx) {
         return mediate(synCtx, true);
     }
 
-	private boolean mediate(MessageContext synCtx, boolean executePreFetchingSequence) {
-		SynapseLog synLog = getLog(synCtx);
+    private boolean mediate(MessageContext synCtx, boolean executePreFetchingSequence) {
+        SynapseLog synLog = getLog(synCtx);
 
-		if (synLog.isTraceOrDebugEnabled()) {
-			synLog.traceOrDebug("Invoking Target EIP Sequence " + targetTemplate +
-			                    " paramNames : " + pName2ExpressionMap.keySet());
-			if (synLog.isTraceTraceEnabled()) {
-				synLog.traceTrace("Message : " + synCtx.getEnvelope());
-			}
-		}
-		// get the target function template and invoke by passing populated
-		// parameters
-		Mediator mediator = synCtx.getSequenceTemplate(targetTemplate);
-		
-		if (this.isDynamicMediator() && mediator ==null) {
-			handleException("Failed to locate the configure element for connector [" +
-			                targetTemplate + "]", synCtx);
-		}
+        if (synLog.isTraceOrDebugEnabled()) {
+            synLog.traceOrDebug("Invoking Target EIP Sequence " + targetTemplate +
+                    " paramNames : " + pName2ExpressionMap.keySet());
+            if (synLog.isTraceTraceEnabled()) {
+                synLog.traceTrace("Message : " + synCtx.getEnvelope());
+            }
+        }
+        // get the target function template and invoke by passing populated
+        // parameters
+        Mediator mediator = synCtx.getSequenceTemplate(targetTemplate);
 
-		// executing key reference if found defined at configuration.
-		if (executePreFetchingSequence && key != null) {
-			String defaultConfiguration = key.evaluateValue(synCtx);
-			Mediator m = synCtx.getDefaultConfiguration(defaultConfiguration);
-			if (m == null) {
-				handleException("Sequence named " + key + " cannot be found", synCtx);
+        if (this.isDynamicMediator() && mediator == null) {
+            handleException("Failed to locate the configure element for connector [" +
+                    targetTemplate + "]", synCtx);
+        }
 
-			} else {
-				if (synLog.isTraceOrDebugEnabled()) {
-					synLog.traceOrDebug("Executing with key " + key);
-				}
+        // executing key reference if found defined at configuration.
+        if (executePreFetchingSequence && key != null) {
+            String defaultConfiguration = key.evaluateValue(synCtx);
+            Mediator m = synCtx.getDefaultConfiguration(defaultConfiguration);
+            if (m == null) {
+                handleException("Sequence named " + key + " cannot be found", synCtx);
+
+            } else {
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Executing with key " + key);
+                }
                 ContinuationStackManager.addReliantContinuationState(
                         synCtx, 1, getMediatorPosition());
-				boolean result = m.mediate(synCtx);
+                boolean result = m.mediate(synCtx);
 
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
@@ -118,22 +117,22 @@ public class InvokeMediator extends AbstractMediator implements
                     return false;
                 }
             }
-		}
+        }
 
-		if (mediator != null && mediator instanceof TemplateMediator) {
-			populateParameters(synCtx, ((TemplateMediator) mediator).getName());
+        if (mediator != null && mediator instanceof TemplateMediator) {
+            populateParameters(synCtx, ((TemplateMediator) mediator).getName());
             if (executePreFetchingSequence) {
                 ContinuationStackManager.addReliantContinuationState(
                         synCtx, 0, getMediatorPosition());
             }
             boolean result = mediator.mediate(synCtx);
-			if (result && executePreFetchingSequence) {
-				ContinuationStackManager.removeReliantContinuationState(synCtx);
-			}
-			return result;
-		}
-		return false;
-	}
+            if (result && executePreFetchingSequence) {
+                ContinuationStackManager.removeReliantContinuationState(synCtx);
+            }
+            return result;
+        }
+        return false;
+    }
 
     public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
         SynapseLog synLog = getLog(synCtx);
@@ -146,9 +145,9 @@ public class InvokeMediator extends AbstractMediator implements
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         if (subBranch == 0) {
-             // Default flow
+            // Default flow
             TemplateMediator templateMediator =
-                                        (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
+                    (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
 
             if (!continuationState.hasChild()) {
                 result = templateMediator.mediate(synCtx, continuationState.getPosition() + 1);
@@ -183,65 +182,65 @@ public class InvokeMediator extends AbstractMediator implements
         return result;
     }
 
-	/**
-	 * poplulate declared parameters on temp synapse properties
-	 * 
-	 * @param synCtx
-	 * @param templateQualifiedName
-	 */
-	private void populateParameters(MessageContext synCtx, String templateQualifiedName) {
-		Iterator<String> params = pName2ExpressionMap.keySet().iterator();
-		while (params.hasNext()) {
-			String parameter = params.next();
-			if (!"".equals(parameter)) {
-				Value expression = pName2ExpressionMap.get(parameter);
-				if (expression != null) {
-					EIPUtils.createSynapseEIPTemplateProperty(synCtx, templateQualifiedName,
-					                                          parameter, expression);
-				}
-			}
-		}
-	}
+    /**
+     * poplulate declared parameters on temp synapse properties
+     *
+     * @param synCtx
+     * @param templateQualifiedName
+     */
+    private void populateParameters(MessageContext synCtx, String templateQualifiedName) {
+        Iterator<String> params = pName2ExpressionMap.keySet().iterator();
+        while (params.hasNext()) {
+            String parameter = params.next();
+            if (!"".equals(parameter)) {
+                Value expression = pName2ExpressionMap.get(parameter);
+                if (expression != null) {
+                    EIPUtils.createSynapseEIPTemplateProperty(synCtx, templateQualifiedName,
+                            parameter, expression);
+                }
+            }
+        }
+    }
 
-	public String getTargetTemplate() {
-		return targetTemplate;
-	}
+    public String getTargetTemplate() {
+        return targetTemplate;
+    }
 
-	public void setTargetTemplate(String targetTemplate) {
-		this.targetTemplate = targetTemplate;
-	}
+    public void setTargetTemplate(String targetTemplate) {
+        this.targetTemplate = targetTemplate;
+    }
 
-	public Map<String, Value> getpName2ExpressionMap() {
-		return pName2ExpressionMap;
-	}
+    public Map<String, Value> getpName2ExpressionMap() {
+        return pName2ExpressionMap;
+    }
 
-	public void addExpressionForParamName(String pName, Value expr) {
-		pName2ExpressionMap.put(pName, expr);
-	}
+    public void addExpressionForParamName(String pName, Value expr) {
+        pName2ExpressionMap.put(pName, expr);
+    }
 
-	public boolean isDynamicMediator() {
-		return dynamicMediator;
-	}
+    public boolean isDynamicMediator() {
+        return dynamicMediator;
+    }
 
-	public void setDynamicMediator(boolean dynamicMediator) {
-		this.dynamicMediator = dynamicMediator;
-	}
+    public void setDynamicMediator(boolean dynamicMediator) {
+        this.dynamicMediator = dynamicMediator;
+    }
 
-	public Value getKey() {
-		return key;
-	}
+    public Value getKey() {
+        return key;
+    }
 
-	public void setKey(Value key) {
-		this.key = key;
-	}
+    public void setKey(Value key) {
+        this.key = key;
+    }
 
-	public String getPackageName() {
-		return packageName;
-	}
+    public String getPackageName() {
+        return packageName;
+    }
 
-	public void setPackageName(String packageName) {
-		this.packageName = packageName;
-	}
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
 
     public void init(SynapseEnvironment se) {
         synapseEnv = se;

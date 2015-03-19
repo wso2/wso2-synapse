@@ -40,13 +40,16 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
 import javax.xml.stream.XMLStreamException;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Properties;
 
 /**
  * Implements the generic logic for the synapse artifact deployment and provide a deployment
  * framework for the synapse.</p>
- *
+ * <p/>
  * <p>Any  synapse artifact which requires the hot deployment or hot update features should extend
  * this and just needs to concentrate on the deployment logic. By default setting the file
  * extension and directory dynamically is not supported.
@@ -56,7 +59,7 @@ import java.util.Properties;
 public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
 
     private static final Log log = LogFactory.getLog(AbstractSynapseArtifactDeployer.class);
-    protected  Log deployerLog;
+    protected Log deployerLog;
     protected ConfigurationContext cfgCtx;
 
     protected AbstractSynapseArtifactDeployer() {
@@ -65,7 +68,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
 
     /**
      * Initializes the Synapse artifact deployment
-     * 
+     *
      * @param configCtx Axis2 ConfigurationContext
      */
     public void init(ConfigurationContext configCtx) {
@@ -88,9 +91,8 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      *
      * @param deploymentFileData file to be used for the deployment
      * @throws org.apache.axis2.deployment.DeploymentException in-case of an error in deploying the file
-     * 
      * @see org.apache.synapse.deployers.AbstractSynapseArtifactDeployer#deploySynapseArtifact(org.apache.axiom.om.OMElement,
-     * String,java.util.Properties)
+     * String, java.util.Properties)
      */
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
 
@@ -132,7 +134,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
             deploymentStore.removeRestoredFile(filename);
             return;
         }
-        
+
         try {
             InputStream in = FileUtils.openInputStream(new File(filename));
             try {
@@ -142,7 +144,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                         StAXUtils.createXMLStreamReader(in)).getDocumentElement();
                 Properties properties = new Properties();
                 properties.put(SynapseConstants.CLASS_MEDIATOR_LOADERS,
-                               deploymentStore.getClassMediatorClassLoaders());
+                        deploymentStore.getClassMediatorClassLoaders());
                 properties.put(SynapseConstants.RESOLVE_ROOT, getSynapseEnvironment()
                         .getServerContextInformation()
                         .getServerConfigurationInformation().getResolveRoot());
@@ -232,9 +234,8 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      *
      * @param fileName file describing the artifact to be undeployed
      * @throws org.apache.axis2.deployment.DeploymentException in case of an error in undeployment
-     *
      * @see AbstractSynapseArtifactDeployer#undeploySynapseArtifact(
-     * String)
+     *String)
      */
     public void undeploy(String fileName) throws DeploymentException {
 
@@ -341,21 +342,23 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     }
 
     // We do not support dynamically setting the directory nor the extension
-    public void setDirectory(String directory) {}
-    public void setExtension(String extension) {}
+    public void setDirectory(String directory) {
+    }
+
+    public void setExtension(String extension) {
+    }
 
     /**
      * All synapse artifact deployers MUST implement this method and it handles artifact specific
      * deployment tasks of those artifacts.
      *
      * @param artifactConfig built element representing the artifact to be deployed loaded
-     * from the file
-     * @param fileName file name from which this artifact is being loaded
-     * @param properties Properties associated with the artifact
+     *                       from the file
+     * @param fileName       file name from which this artifact is being loaded
+     * @param properties     Properties associated with the artifact
      * @return String artifact name created by the deployment task
-     * 
      * @see AbstractSynapseArtifactDeployer#deploy(
-     * org.apache.axis2.deployment.repository.util.DeploymentFileData)
+     *org.apache.axis2.deployment.repository.util.DeploymentFileData)
      */
     public abstract String deploySynapseArtifact(OMElement artifactConfig, String fileName,
                                                  Properties properties);
@@ -364,12 +367,12 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      * All synapse artifact deployers MUST implement this method and it handles artifact specific
      * update tasks of those artifacts.
      *
-     * @param artifactConfig built element representing the artifact to be deployed loaded
-     * from the file
-     * @param fileName file name from which this artifact is being loaded
+     * @param artifactConfig       built element representing the artifact to be deployed loaded
+     *                             from the file
+     * @param fileName             file name from which this artifact is being loaded
      * @param existingArtifactName name of the artifact that was being deployed using
-     * the updated file
-     * @param properties bag of properties with the additional information
+     *                             the updated file
+     * @param properties           bag of properties with the additional information
      * @return String artifact name created by the update task
      */
     public abstract String updateSynapseArtifact(OMElement artifactConfig, String fileName,
@@ -381,7 +384,6 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      * undeployment tasks of those artifacts.
      *
      * @param artifactName name of the artifact to be undeployed
-     *
      * @see AbstractSynapseArtifactDeployer#undeploy(String)
      */
     public abstract void undeploySynapseArtifact(String artifactName);
@@ -414,7 +416,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
         return (SynapseEnvironment) synCfgParam.getValue();
     }
 
-    protected ServerConfigurationInformation getServerConfigurationInformation() 
+    protected ServerConfigurationInformation getServerConfigurationInformation()
             throws DeploymentException {
         Parameter serverCfgParam =
                 cfgCtx.getAxisConfiguration().getParameter(
@@ -493,7 +495,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
 
         //TODO: WSO2 Specific hack to prevent creating backup files in worker nodes
         String isWorker = System.getProperty("workerNode");
-        if (isWorker!=null) {
+        if (isWorker != null) {
             return "NO_BACKUP_ON_WORKER.INFO";
         }
         String filePath = SynapseArtifactDeploymentStore.getNormalizedAbsolutePath(
@@ -514,7 +516,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                 try {
                     FileUtils.moveFile(file, new File(backupFilePath));
                 } catch (IOException e) {
-		    log.warn("Error while backing up the artifact: ", e);
+                    log.warn("Error while backing up the artifact: ", e);
                     return "ERROR_WHILE_BACKING_UP_ARTIFACT";
                 }
             }
@@ -523,7 +525,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     }
 
     private void resetDefaultSequence(String sequenceFileName, String fileName, SynapseArtifactDeploymentStore deploymentStore)
-    throws IOException, XMLStreamException {
+            throws IOException, XMLStreamException {
 
         String dirpath = fileName.substring(0, fileName.lastIndexOf(File.separator));
         String seqOrgi = dirpath + File.separator + sequenceFileName;
@@ -553,7 +555,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     }
 
     private String updateDefaultSequence(String filename, OMElement element, Properties properties, String lstupdFile,
-                                       SynapseArtifactDeploymentStore deploymentStore) {
+                                         SynapseArtifactDeploymentStore deploymentStore) {
         String derpath = filename.substring(0, filename.lastIndexOf(File.separator));
         String seqFile = derpath + File.separator + lstupdFile;
         String existingArtifactName

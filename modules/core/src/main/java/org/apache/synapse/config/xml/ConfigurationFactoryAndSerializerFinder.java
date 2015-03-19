@@ -30,8 +30,6 @@ import sun.misc.Service;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
-
-import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -59,9 +57,9 @@ public class ConfigurationFactoryAndSerializerFinder implements XMLToObjectMappe
     /**
      * A map of mediator QNames to implementation class
      */
-    private final static Map<QName,Class> factoryMap = new HashMap<QName,Class>();
+    private final static Map<QName, Class> factoryMap = new HashMap<QName, Class>();
 
-    private final static Map<QName,Class> serializerMap = new HashMap<QName,Class>();
+    private final static Map<QName, Class> serializerMap = new HashMap<QName, Class>();
 
     private static boolean initialized = false;
 
@@ -105,6 +103,7 @@ public class ConfigurationFactoryAndSerializerFinder implements XMLToObjectMappe
         registerExtensions();
         initialized = true;
     }
+
     /**
      * Register plugable mediator factories from the classpath
      * <p/>
@@ -240,7 +239,7 @@ public class ConfigurationFactoryAndSerializerFinder implements XMLToObjectMappe
      * Allow the mediator factory finder to act as an XMLToObjectMapper for Mediators
      * (i.e. Sequence Mediator) loaded dynamically from a Registry
      *
-     * @param om configuration from which the object is built
+     * @param om         configuration from which the object is built
      * @param properties bag of properties to pass in any information to the factory
      * @return built object
      */

@@ -25,8 +25,8 @@ public class RESTConstants {
     }
 
     public static final int PROTOCOL_HTTP_AND_HTTPS = 0;
-    public static final int PROTOCOL_HTTP_ONLY      = 1;
-    public static final int PROTOCOL_HTTPS_ONLY     = 2;
+    public static final int PROTOCOL_HTTP_ONLY = 1;
+    public static final int PROTOCOL_HTTPS_ONLY = 2;
 
     public static final String REST_FULL_REQUEST_PATH = "REST_FULL_REQUEST_PATH";
     public static final String REST_SUB_REQUEST_PATH = "REST_SUB_REQUEST_PATH";
@@ -44,7 +44,7 @@ public class RESTConstants {
     public static final String REST_URL_PREFIX = "REST_URL_PREFIX";
 
     public static final String DEFAULT_ENCODING = "UTF-8";
-    
+
     public static final String NO_MATCHING_RESOURCE_HANDLER = "_resource_mismatch_handler_";
 
 }

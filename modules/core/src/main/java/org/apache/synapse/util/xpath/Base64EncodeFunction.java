@@ -19,16 +19,16 @@
 
 package org.apache.synapse.util.xpath;
 
-import org.jaxen.Function;
-import org.jaxen.Context;
-import org.jaxen.FunctionCallException;
-import org.jaxen.function.StringFunction;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.codec.binary.Base64;
+import org.jaxen.Context;
+import org.jaxen.Function;
+import org.jaxen.FunctionCallException;
+import org.jaxen.function.StringFunction;
 
-import java.util.List;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 /**
  * Implements the XPath extension function synapse:base64Encode(string)
@@ -44,7 +44,7 @@ public class Base64EncodeFunction implements Function {
      * Returns the base64 encoded string value of the first argument.
      *
      * @param context the context at the point in the expression when the function is called
-     * @param args  arguments of the functions
+     * @param args    arguments of the functions
      * @return The string value of a property
      * @throws FunctionCallException
      */
@@ -71,7 +71,7 @@ public class Base64EncodeFunction implements Function {
 
             // encoding is in the second argument
             String encoding = StringFunction.evaluate(args.get(1), context.getNavigator());
-            
+
             return encode(debugOn, encoding, value);
         } else {
             if (debugOn) {

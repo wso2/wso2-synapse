@@ -38,14 +38,14 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
     private static final String VALUE = "value";
     private static final String EXPRESSION = "expression";
     private static final String EVALUATOR = "evaluator";
-    private final String JSON_TYPE="json";
-    private final String MEDIA_TYPE="media-type";
+    private final String JSON_TYPE = "json";
+    private final String MEDIA_TYPE = "media-type";
 
     private final String XML = "xml";
     private final String JSON = "json";
 
     private String getEvaluator(String pathType) {
-        if(pathType == SynapsePath.JSON_PATH) {
+        if (pathType == SynapsePath.JSON_PATH) {
             return JSON;
         } else {
             return XML;
@@ -63,23 +63,23 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
         OMElement payloadFactoryElem = fac.createOMElement(PAYLOAD_FACTORY, synNS);
 
-        if(mediator.getType()!=null){
-            payloadFactoryElem.addAttribute(fac.createOMAttribute(MEDIA_TYPE,null,mediator.getType()));
+        if (mediator.getType() != null) {
+            payloadFactoryElem.addAttribute(fac.createOMAttribute(MEDIA_TYPE, null, mediator.getType()));
         }
 
         saveTracingState(payloadFactoryElem, mediator);
 
-        if(!mediator.isFormatDynamic()){
+        if (!mediator.isFormatDynamic()) {
             if (mediator.getFormat() != null) {
 
                 try {
                     OMElement formatElem = fac.createOMElement(FORMAT, synNS);
-                String type = mediator.getType();
-                if(type!=null && type.contains(JSON_TYPE)) {
-                     formatElem.setText(mediator.getFormat());
-                } else{
-                    formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
-                }
+                    String type = mediator.getType();
+                    if (type != null && type.contains(JSON_TYPE)) {
+                        formatElem.setText(mediator.getFormat());
+                    } else {
+                        formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));
+                    }
                     payloadFactoryElem.addChild(formatElem);
                 } catch (XMLStreamException e) {
                     handleException("Error while serializing payloadFactory mediator", e);
@@ -93,9 +93,9 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
             OMElement formatElem = fac.createOMElement(FORMAT, synNS);
             formatElem.addAttribute(fac.createOMAttribute(
                     "key", nullNS, mediator.getFormatKey().getKeyValue()));
-                ValueSerializer keySerializer = new ValueSerializer();
-                keySerializer.serializeValue(mediator.getFormatKey(), XMLConfigConstants.KEY, formatElem);
-             payloadFactoryElem.addChild(formatElem);
+            ValueSerializer keySerializer = new ValueSerializer();
+            keySerializer.serializeValue(mediator.getFormatKey(), XMLConfigConstants.KEY, formatElem);
+            payloadFactoryElem.addChild(formatElem);
         }
 
         OMElement argumentsElem = fac.createOMElement(ARGS, synNS);
@@ -104,13 +104,13 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
         if (null != pathArgList && pathArgList.size() > 0) {
 
             for (Argument arg : pathArgList) {
-                if(arg.getExpression() == null && arg.getValue() == null) {
+                if (arg.getExpression() == null && arg.getValue() == null) {
                     continue;
                 }
                 OMElement argElem = fac.createOMElement(ARG, synNS);
-                if(null != arg.getExpression() && null != arg.getExpression().getPathType()) {
+                if (null != arg.getExpression() && null != arg.getExpression().getPathType()) {
                     argElem.addAttribute(fac.createOMAttribute(EVALUATOR, nullNS, getEvaluator(arg.getExpression().getPathType())));
-                } else if(null == arg.getExpression() && arg.getValue() != null) {
+                } else if (null == arg.getExpression() && arg.getValue() != null) {
                     argElem.addAttribute(fac.createOMAttribute(VALUE, nullNS, arg.getValue()));
                 } else {
                     argElem.addAttribute(fac.createOMAttribute(EVALUATOR, nullNS, getEvaluator(SynapsePath.X_PATH)));
@@ -123,7 +123,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                     QName EXPR_Q = new QName(EXPRESSION);
                     String strExpr = argElem.getAttribute(EXPR_Q).getAttributeValue();
                     if (strExpr.startsWith("json-eval(")) {
-                        argElem.getAttribute(EXPR_Q).setAttributeValue(strExpr.substring(10, strExpr.length()-1));
+                        argElem.getAttribute(EXPR_Q).setAttributeValue(strExpr.substring(10, strExpr.length() - 1));
                     }
                 }
                 argumentsElem.addChild(argElem);

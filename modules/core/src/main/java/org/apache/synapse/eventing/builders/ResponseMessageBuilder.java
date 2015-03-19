@@ -89,7 +89,7 @@ public class ResponseMessageBuilder {
         EndpointReference subscriptionManagerEPR =
                 new EndpointReference(subscription.getSubManUrl());
         subscriptionManagerEPR.addReferenceParameter(new QName(EventingConstants.WSE_EVENTING_NS,
-                EventingConstants.WSE_EN_IDENTIFIER, EventingConstants.WSE_EVENTING_PREFIX),
+                        EventingConstants.WSE_EN_IDENTIFIER, EventingConstants.WSE_EVENTING_PREFIX),
                 subscription.getId());
         OMNamespace eventingNamespace = factory.createOMNamespace(EventingConstants.WSE_EVENTING_NS,
                 EventingConstants.WSE_EVENTING_PREFIX);

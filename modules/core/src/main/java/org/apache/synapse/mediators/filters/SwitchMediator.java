@@ -20,17 +20,16 @@
 package org.apache.synapse.mediators.filters;
 
 import org.apache.synapse.ContinuationState;
-import org.apache.synapse.config.xml.SynapsePath;
-import org.apache.synapse.continuation.ContinuationStackManager;
-import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.config.xml.SwitchCase;
+import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,13 +41,19 @@ import java.util.List;
  * selected case, the selected sequence gets executed.
  */
 public class SwitchMediator extends AbstractMediator implements ManagedLifecycle,
-                                                                FlowContinuableMediator {
+        FlowContinuableMediator {
 
-    /** The Path expression specifying the source element to apply the switch case expressions against   */
+    /**
+     * The Path expression specifying the source element to apply the switch case expressions against
+     */
     private SynapsePath source = null;
-    /** The list of switch cases    */
+    /**
+     * The list of switch cases
+     */
     private final List<SwitchCase> cases = new ArrayList<SwitchCase>();
-    /** The default switch case, if any */
+    /**
+     * The default switch case, if any
+     */
     private SwitchCase defaultCase = null;
 
     public void init(SynapseEnvironment se) {
@@ -103,7 +108,7 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                         "cases found. Executing the default case");
 
                 ContinuationStackManager.
-                        addReliantContinuationState(synCtx, 0, getMediatorPosition() );
+                        addReliantContinuationState(synCtx, 0, getMediatorPosition());
                 boolean result = defaultCase.mediate(synCtx);
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
@@ -235,17 +240,18 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
 
     /**
      * setting the default case ...which contains mediators to invoke when no case condition satisfy
+     *
      * @param defaultCase A SwitchCase instance representing default case
      */
     public void setDefaultCase(SwitchCase defaultCase) {
         this.defaultCase = defaultCase;
     }
-    
+
     @Override
     public boolean isContentAware() {
         if (source != null) {
             return source.isContentAware();
-        } 
+        }
         return false;
     }
 

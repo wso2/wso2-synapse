@@ -30,7 +30,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 /**
  * <code>MessageStoreMediator</code> will store the incoming Messages in associated MessageStore
  */
-public class MessageStoreMediator extends AbstractMediator{
+public class MessageStoreMediator extends AbstractMediator {
 
     /**
      * Name of the Mediator
@@ -38,41 +38,41 @@ public class MessageStoreMediator extends AbstractMediator{
     private String name;
 
     /**
-     *MessageStore Name
+     * MessageStore Name
      */
     private String messageStoreName;
 
     /**
      * Sequence name to be invoked when the message is stored
      */
-    private String  onStoreSequence;
+    private String onStoreSequence;
 
 
     public boolean mediate(MessageContext synCtx) {
-        if(synCtx != null) {
+        if (synCtx != null) {
             MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
-            if(messageStore != null) {
-                if(onStoreSequence != null) {
+            if (messageStore != null) {
+                if (onStoreSequence != null) {
                     Mediator sequence = synCtx.getSequence(onStoreSequence);
-                    if(sequence != null) {
+                    if (sequence != null) {
                         sequence.mediate(synCtx);
                     }
                 }
 
-                if(log.isDebugEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug("Message Store mediator storing the message : \n " + synCtx.getEnvelope());
                 }
 
                 // Here we set the server name in the message context before storing the message.
                 //This can be used by the Processors in a clustering setup.
-                if(synCtx instanceof Axis2MessageContext) {
+                if (synCtx instanceof Axis2MessageContext) {
 
                     String serverName =
-                                        getAxis2ParameterValue(((Axis2MessageContext)synCtx).
-                                        getAxis2MessageContext().
-                                        getConfigurationContext().getAxisConfiguration(),
-                                        SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-                    if(serverName != null) {
+                            getAxis2ParameterValue(((Axis2MessageContext) synCtx).
+                                            getAxis2MessageContext().
+                                            getConfigurationContext().getAxisConfiguration(),
+                                    SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
+                    if (serverName != null) {
                         synCtx.setProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME,
                                 serverName);
                     }
@@ -86,9 +86,9 @@ public class MessageStoreMediator extends AbstractMediator{
                     synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
                     synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
                     synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
-                                                        + "] in store [" + messageStore.getName() + "].");
+                            + "] in store [" + messageStore.getName() + "].");
                     handleException("Failed to store message [" + synCtx.getMessageID()
-                                    + "] in store [" + messageStore.getName() + "].", synCtx);
+                            + "] in store [" + messageStore.getName() + "].", synCtx);
                 }
                 // with the nio transport, this causes the listener not to write a 202
                 // Accepted response, as this implies that Synapse does not yet know if
@@ -120,19 +120,19 @@ public class MessageStoreMediator extends AbstractMediator{
         this.messageStoreName = messageStoreName;
     }
 
-    public String  getOnStoreSequence() {
+    public String getOnStoreSequence() {
         return onStoreSequence;
     }
 
-    public void setOnStoreSequence(String  onStoreSequence) {
+    public void setOnStoreSequence(String onStoreSequence) {
         this.onStoreSequence = onStoreSequence;
     }
 
-     /**
+    /**
      * Helper method to get a value of a parameters in the AxisConfiguration
      *
      * @param axisConfiguration AxisConfiguration instance
-     * @param paramKey The name / key of the parameter
+     * @param paramKey          The name / key of the parameter
      * @return The value of the parameter
      */
     private static String getAxis2ParameterValue(AxisConfiguration axisConfiguration,

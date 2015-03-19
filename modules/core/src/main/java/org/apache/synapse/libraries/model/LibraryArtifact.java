@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-public class LibraryArtifact implements SynapseArtifact{
+public class LibraryArtifact implements SynapseArtifact {
 
     protected String name;
     protected String type;
@@ -49,7 +49,7 @@ public class LibraryArtifact implements SynapseArtifact{
     private LibraryArtifact parent;
 
 
-    public LibraryArtifact(String  name) {
+    public LibraryArtifact(String name) {
         this.name = name;
         subArtifacts = new HashMap<String, LibraryArtifact>();
     }
@@ -83,7 +83,7 @@ public class LibraryArtifact implements SynapseArtifact{
         }
     }
 
-    public String  getName() {
+    public String getName() {
         return name;
     }
 
@@ -106,24 +106,24 @@ public class LibraryArtifact implements SynapseArtifact{
                         templateMediator.setDynamic(true);
                         String templateName = templateMediator.getName();
                         library.addComponent(getQualifiedName(library.getPackage(),
-                                                              templateName,
-                                                              library.getQName().getLocalPart()),
-                                             template);
+                                        templateName,
+                                        library.getQName().getLocalPart()),
+                                template);
                     } else if (template instanceof Template) {
                         String templateName = ((Template) template).getName();
                         library.addComponent(getQualifiedName(library.getPackage(),
-                                                              templateName,
-                                                              library.getQName().getLocalPart()),
-                                             template);
+                                        templateName,
+                                        library.getQName().getLocalPart()),
+                                template);
                     } else if (template != null) {
                         library.addComponent(getQualifiedName(library.getPackage(),
-                                                              artifact.getName(),
-                                                              library.getQName().getLocalPart()),
-                                             template);
+                                        artifact.getName(),
+                                        library.getQName().getLocalPart()),
+                                template);
                     } else {
                         throw new SynapseArtifactDeploymentException("Cannot load components into " +
-                                                                     "Synapse Library. Component " +
-                                                                     "cannot be built for " + artifactName);
+                                "Synapse Library. Component " +
+                                "cannot be built for " + artifactName);
                     }
                 }
             } else {
@@ -138,8 +138,8 @@ public class LibraryArtifact implements SynapseArtifact{
         artifact.file.setProperties(classLoadingProperties);
     }
 
-    private String getQualifiedName(String aPackage, String templateName,String parentArtifact) {
-        return aPackage+"."+parentArtifact+ "." + templateName;
+    private String getQualifiedName(String aPackage, String templateName, String parentArtifact) {
+        return aPackage + "." + parentArtifact + "." + templateName;
     }
 
     public void setPath(String path) {
@@ -191,9 +191,10 @@ public class LibraryArtifact implements SynapseArtifact{
                             getMediator(configurationElement, properties);
                 } catch (Exception e) {
                     String msg = "Template configuration : " + name + " cannot be built" +
-                            "for Synapse Library artifact : " + LibraryArtifact.this.name;;
+                            "for Synapse Library artifact : " + LibraryArtifact.this.name;
+                    ;
 //                        handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_TEMPLATES, msg, e);
-                    throw new SynapseArtifactDeploymentException(msg,e);
+                    throw new SynapseArtifactDeploymentException(msg, e);
                 }
                 return templateObject;
             } else {
@@ -202,15 +203,15 @@ public class LibraryArtifact implements SynapseArtifact{
                 if (element != null) {
                     TemplateFactory templateFactory = new TemplateFactory();
                     String name = element.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
-                                                                      "name"));
+                            "name"));
                     try {
                         templateObject = templateFactory.createEndpointTemplate(configurationElement,
-                                                                                properties);
+                                properties);
                     } catch (Exception e) {
                         String msg = "Endpoint Template: " + name + "configuration cannot be built " +
-                                     "for Synapse Library artifact : " + LibraryArtifact.this.name;
+                                "for Synapse Library artifact : " + LibraryArtifact.this.name;
 //                        handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_TEMPLATES, msg, e);
-                        throw new SynapseArtifactDeploymentException(msg,e);
+                        throw new SynapseArtifactDeploymentException(msg, e);
                     }
                 }
             }
@@ -224,7 +225,7 @@ public class LibraryArtifact implements SynapseArtifact{
         private String name;
         boolean markAsResolved = false;
 
-        public Dependency(String  name) {
+        public Dependency(String name) {
             this.name = name;
         }
 

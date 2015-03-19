@@ -30,14 +30,14 @@ import java.util.Properties;
 
 /**
  * Factory for {@link org.apache.synapse.mediators.builtin.CallMediator} instances.
- * <p>
+ * <p/>
  * The &lt;call&gt; element is used to send messages out of Synapse to some endpoint. In the simplest case,
  * the place to send the message to is implicit in the message (via a property of the message itself)-
  * that is indicated by the following:
  * <pre>
  *  &lt;call/&gt;
  * </pre>
- *
+ * <p/>
  * If the message is to be sent to a endpoint, then the following is used:
  * <pre>
  *  &lt;call&gt;
@@ -70,18 +70,18 @@ import java.util.Properties;
  * &lt;/call&gt;
  * </pre>
  */
-public class CallMediatorFactory extends AbstractMediatorFactory  {
+public class CallMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName CALL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "call");
     private static final QName ENDPOINT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
-        CallMediator callMediator =  new CallMediator();
+        CallMediator callMediator = new CallMediator();
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(callMediator,elem);
+        processAuditStatus(callMediator, elem);
 
         OMElement epElement = elem.getFirstChildWithName(ENDPOINT_Q);
         if (epElement != null) {

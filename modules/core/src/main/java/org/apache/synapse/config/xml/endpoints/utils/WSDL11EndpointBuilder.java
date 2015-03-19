@@ -32,10 +32,10 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.*;
-import javax.wsdl.extensions.soap.SOAPAddress;
-import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.wsdl.extensions.http.HTTPAddress;
 import javax.wsdl.extensions.http.HTTPBinding;
+import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.soap12.SOAP12Address;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLLocator;
 import javax.wsdl.xml.WSDLReader;
@@ -59,10 +59,10 @@ public class WSDL11EndpointBuilder {
      * endpoint configuration.
      *
      * @param endpointDefinition the endpoint definition to populate
-     * @param baseUri base uri of the wsdl
-     * @param wsdl    OMElement representing the inline WSDL
-     * @param service Service of the endpoint
-     * @param port    Port of the endpoint
+     * @param baseUri            base uri of the wsdl
+     * @param wsdl               OMElement representing the inline WSDL
+     * @param service            Service of the endpoint
+     * @param port               Port of the endpoint
      * @return EndpointDefinition containing the information retrieved from the WSDL
      */
     public EndpointDefinition populateEndpointDefinitionFromWSDL(
@@ -174,9 +174,9 @@ public class WSDL11EndpointBuilder {
                 endpointDefinition.setForceSOAP11(true);
             } else if (SynapseConstants.FORMAT_SOAP12.equals(format)) {
                 endpointDefinition.setForceSOAP12(true);
-            } else if (SynapseConstants.FORMAT_REST.equals(format)){
+            } else if (SynapseConstants.FORMAT_REST.equals(format)) {
                 endpointDefinition.setForceREST(true);
-            } else if (SynapseConstants.FORMAT_GET.equals(format)){
+            } else if (SynapseConstants.FORMAT_GET.equals(format)) {
                 endpointDefinition.setForceGET(true);
             } else {
                 handleException("format value '" + format + "' not yet implemented");

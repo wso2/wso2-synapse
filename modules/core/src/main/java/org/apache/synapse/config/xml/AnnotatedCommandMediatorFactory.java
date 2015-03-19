@@ -46,7 +46,7 @@ import java.util.Properties;
 public class AnnotatedCommandMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName ANNOTATED_COMMAND_Q =
-        new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "annotatedCommand");
+            new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "annotatedCommand");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -72,14 +72,14 @@ public class AnnotatedCommandMediatorFactory extends AbstractMediatorFactory {
 
         // setting the properties to the command. these properties will be instantiated
         // at the mediation time
-        for (Iterator it = elem.getChildElements(); it.hasNext();) {
+        for (Iterator it = elem.getChildElements(); it.hasNext(); ) {
             OMElement child = (OMElement) it.next();
-            if("property".equals(child.getLocalName())) {
+            if ("property".equals(child.getLocalName())) {
 
                 String propName = child.getAttribute(ATT_NAME).getAttributeValue();
                 if (propName == null) {
                     handleException(
-                        "A POJO command mediator property must specify the name attribute");
+                            "A POJO command mediator property must specify the name attribute");
                 } else {
                     if (child.getAttribute(ATT_EXPRN) != null) {
                         SynapseXPath xpath;
@@ -88,15 +88,15 @@ public class AnnotatedCommandMediatorFactory extends AbstractMediatorFactory {
                             pojoMediator.addMessageSetterProperty(propName, xpath);
                         } catch (JaxenException e) {
                             handleException("Error instantiating XPath expression : " +
-                                child.getAttribute(ATT_EXPRN), e);
+                                    child.getAttribute(ATT_EXPRN), e);
                         }
                     } else {
                         if (child.getAttribute(ATT_VALUE) != null) {
                             pojoMediator.addStaticSetterProperty(propName,
-                                child.getAttribute(ATT_VALUE).getAttributeValue());
+                                    child.getAttribute(ATT_VALUE).getAttributeValue());
                         } else {
                             handleException("A POJO mediator property must specify either " +
-                                "name and expression attributes, or name and value attributes");
+                                    "name and expression attributes, or name and value attributes");
                         }
                     }
                 }

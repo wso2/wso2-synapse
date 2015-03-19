@@ -26,7 +26,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -89,9 +92,9 @@ public class Template implements SynapseArtifact {
                 String newReplace = new String(replace);
                 Pattern pattern = Pattern.compile("\\{system(.*?)\\}");
                 Matcher matcher = pattern.matcher(replace);
-                while (matcher.find()){
+                while (matcher.find()) {
                     String propStr = matcher.group(0);
-                    String propName = propStr.substring(propStr.indexOf("{system.prop") + 13,propStr.length()-1);
+                    String propName = propStr.substring(propStr.indexOf("{system.prop") + 13, propStr.length() - 1);
                     String propVal = System.getProperty(propName);
                     if (propVal != null) {
                         newReplace = newReplace.replace(propStr, propVal);
@@ -99,7 +102,7 @@ public class Template implements SynapseArtifact {
                         log.warn("System property " + propName + " not defined in JVM");
                     }
                 }
-                log.info("Calculated replacement with system properties: "+ newReplace);
+                log.info("Calculated replacement with system properties: " + newReplace);
                 replace = newReplace;
             }
 

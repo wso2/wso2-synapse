@@ -28,30 +28,30 @@ import java.util.Properties;
 
 /**
  * Creates an instance of a MessageStore mediator using XML configuration specified
- *
+ * <p/>
  * <pre>
  * &lt;store messageStore = "message store name" [sequence = "sequence name"] /&gt;
  * </pre>
- *
+ * <p/>
  * TODO Message store mediator will be improved with more user options
  */
-public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
+public class MessageStoreMediatorFactory extends AbstractMediatorFactory {
 
-    private static final QName STORE_Q    = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "store");
-    private static final QName ATT_MESSAGE_STORE   = new QName("messageStore");
-    private static final QName ATT_SEQUENCE   = new QName("sequence");
+    private static final QName STORE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "store");
+    private static final QName ATT_MESSAGE_STORE = new QName("messageStore");
+    private static final QName ATT_SEQUENCE = new QName("sequence");
 
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         MessageStoreMediator messageStoreMediator = new MessageStoreMediator();
         OMAttribute nameAtt = elem.getAttribute(ATT_NAME);
-        if(nameAtt != null) {
+        if (nameAtt != null) {
             messageStoreMediator.setName(nameAtt.getAttributeValue());
         }
 
         OMAttribute messageStoreNameAtt = elem.getAttribute(ATT_MESSAGE_STORE);
 
-        if(messageStoreNameAtt != null) {
+        if (messageStoreNameAtt != null) {
             messageStoreMediator.setMessageStoreName(messageStoreNameAtt.getAttributeValue());
         } else {
             throw new SynapseException("Message Store mediator must have a Message store defined");
@@ -59,7 +59,7 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
 
         OMAttribute sequenceAtt = elem.getAttribute(ATT_SEQUENCE);
 
-        if(sequenceAtt != null) {
+        if (sequenceAtt != null) {
             messageStoreMediator.setOnStoreSequence(sequenceAtt.getAttributeValue());
         }
 
@@ -67,6 +67,6 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
     }
 
     public QName getTagQName() {
-       return STORE_Q;
+        return STORE_Q;
     }
 }

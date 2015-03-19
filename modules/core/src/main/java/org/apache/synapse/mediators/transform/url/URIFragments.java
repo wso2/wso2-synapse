@@ -32,15 +32,15 @@ import java.net.URISyntaxException;
  */
 public class URIFragments {
 
-    public static final int FULL_URI    = -2;
-    public static final int PORT        = -1;
+    public static final int FULL_URI = -2;
+    public static final int PORT = -1;
 
-    public static final int PROTOCOL    = 0;
-    public static final int USER_INFO   = 1;
-    public static final int HOST        = 2;
-    public static final int PATH        = 3;
-    public static final int QUERY       = 4;
-    public static final int REF         = 5;
+    public static final int PROTOCOL = 0;
+    public static final int USER_INFO = 1;
+    public static final int HOST = 2;
+    public static final int PATH = 3;
+    public static final int QUERY = 4;
+    public static final int REF = 5;
 
     private int port = -1;
     // Using an array is lightweight and enables fast lookup through array indexing

@@ -23,8 +23,8 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.mediators.ext.ClassMediator;
 
@@ -72,7 +72,7 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
                     clazz = libLoader.loadClass(name.getAttributeValue());
                 } catch (ClassNotFoundException e) {
                     String msg = "Error loading class : " + name.getAttributeValue() +
-                                 " from Synapse library";
+                            " from Synapse library";
                     log.error(msg, e);
                     throw new SynapseException(msg, e);
                 }
@@ -102,7 +102,7 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
                 clazz = getClass().getClassLoader().loadClass(name.getAttributeValue());
             } catch (ClassNotFoundException e) {
                 String msg = "Error loading class : " + name.getAttributeValue()
-                             + " - Class not found";
+                        + " - Class not found";
                 log.error(msg, e);
                 throw new SynapseException(msg, e);
             }
@@ -116,13 +116,13 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
             throw new SynapseException(msg, e);
         }
 
-        for (Iterator it = elem.getChildrenWithName(PROP_Q); it.hasNext();) {
+        for (Iterator it = elem.getChildrenWithName(PROP_Q); it.hasNext(); ) {
             OMElement child = (OMElement) it.next();
 
             String propName = child.getAttribute(ATT_NAME).getAttributeValue();
             if (propName == null) {
                 handleException(
-                    "A Class mediator property must specify the name attribute");
+                        "A Class mediator property must specify the name attribute");
             } else {
                 if (child.getAttribute(ATT_VALUE) != null) {
                     String value = child.getAttribute(ATT_VALUE).getAttributeValue();
@@ -135,7 +135,7 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
                         PropertyHelper.setInstanceProperty(propName, omElt, mediator);
                     } else {
                         handleException("A Class mediator property must specify " +
-                            "name and value attributes, or a name and a child XML fragment");
+                                "name and value attributes, or a name and a child XML fragment");
                     }
                 }
             }

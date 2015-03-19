@@ -75,11 +75,10 @@ public class BeanMediator extends AbstractMediator {
     private Class clazz;
 
 
-
-
     /**
      * Manipulates a JavaBean attached to the current message context according to the supplied
      * semantics.
+     *
      * @param synCtx The current message for mediation
      * @return true If mediation should continue
      */
@@ -137,6 +136,7 @@ public class BeanMediator extends AbstractMediator {
 
     /**
      * Creates a new bean and attaches it to the current message context.
+     *
      * @param synCtx The current message for mediation
      * @return true If mediation should continue
      */
@@ -161,6 +161,7 @@ public class BeanMediator extends AbstractMediator {
 
     /**
      * Removes a bean attached to the current message context.
+     *
      * @param synCtx The current message for mediation
      * @return true If mediation should continue
      */
@@ -172,6 +173,7 @@ public class BeanMediator extends AbstractMediator {
 
     /**
      * Sets a property of a bean attached to the current message context.
+     *
      * @param synCtx The current message for mediation
      * @return true If mediation should continue
      */
@@ -207,6 +209,7 @@ public class BeanMediator extends AbstractMediator {
 
     /**
      * Retrieves a property of a bean attached to the current message context.
+     *
      * @param synCtx The current message for mediation
      * @return true If mediation should continue
      */
@@ -224,10 +227,10 @@ public class BeanMediator extends AbstractMediator {
         } else {
             try {
                 value = BeanUtils.invokeInstanceMethod(
-                            bean,
-                            new PropertyDescriptor(propertyName, bean.getClass()).getReadMethod(),
-                            new Object[0]
-                        );
+                        bean,
+                        new PropertyDescriptor(propertyName, bean.getClass()).getReadMethod(),
+                        new Object[0]
+                );
             } catch (IntrospectionException e) {
                 handleException("Could not resolve the getter method for '" + propertyName +
                         "' property in '" + bean.getClass() + "'.", e, synCtx);

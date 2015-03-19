@@ -87,7 +87,7 @@ public class JDBCConfiguration {
                 dataSource = createCustomDataSource();
             } else {
                 handleException("The DataSource connection information must be specified for " +
-                                "using a custom DataSource connection pool or for a JNDI lookup");
+                        "using a custom DataSource connection pool or for a JNDI lookup");
             }
 
             // Get table information
@@ -163,7 +163,7 @@ public class JDBCConfiguration {
             dataSource = DataSourceFinder.find(dataSourceName, jndiProperties);
             if (dataSource == null) {
                 handleException("Cannot find a DataSource " + dataSourceName + " for given JNDI" +
-                                " properties :" + jndiProperties);
+                        " properties :" + jndiProperties);
             }
         }
         if (dataSource != null) {

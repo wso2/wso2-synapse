@@ -98,12 +98,13 @@ public class HTTPEndpoint extends AbstractEndpoint {
         try {
             return URLDecoder.decode(value, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            if(log.isDebugEnabled()){
+            if (log.isDebugEnabled()) {
                 log.warn("Encoding is not supported", e);
             }
             return value;
         }
     }
+
     private void processUrlTemplate(MessageContext synCtx) throws ExpressionParseException {
         Map<String, Object> variables = new HashMap<String, Object>();
 
@@ -111,22 +112,22 @@ public class HTTPEndpoint extends AbstractEndpoint {
         Set propertySet = synCtx.getPropertyKeySet();
 
         for (Object propertyKey : propertySet) {
-            if (propertyKey.toString() != null&&
+            if (propertyKey.toString() != null &&
                     (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
                             || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
                 if (synCtx.getProperty(propertyKey.toString()) != null) {
                     variables.put(propertyKey.toString(), decodeString((String) synCtx.getProperty(propertyKey.toString())));
-                }                              
+                }
             }
         }
 
         // Include properties defined at endpoint.
         Iterator endpointProperties = getProperties().iterator();
-        while(endpointProperties.hasNext()) {
+        while (endpointProperties.hasNext()) {
             MediatorProperty property = (MediatorProperty) endpointProperties.next();
-            if(property.getName().toString() != null
+            if (property.getName().toString() != null
                     && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
-                    property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
+                    property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
                 variables.put(property.getName(), decodeString((String) property.getValue()));
             }
         }
@@ -136,14 +137,14 @@ public class HTTPEndpoint extends AbstractEndpoint {
         UriTemplate template = null;
         template = UriTemplate.fromTemplate(uriTemplate.getTemplate());
 
-        if(template != null) {
+        if (template != null) {
             template.set(variables);
         }
 
         String evaluatedUri = "";
-        if(variables.isEmpty()){
-        	evaluatedUri = template.getTemplate();
-        }else{
+        if (variables.isEmpty()) {
+            evaluatedUri = template.getTemplate();
+        } else {
             try {
                 // Decode needs to avoid replacing special characters(e.g %20 -> %2520) when creating URL.
                 String decodedString = URLDecoder.decode(template.expand(), "UTF-8");
@@ -159,13 +160,13 @@ public class HTTPEndpoint extends AbstractEndpoint {
                     log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
                 }
                 evaluatedUri = template.getTemplate();
-            } catch(MalformedURLException e) {
+            } catch (MalformedURLException e) {
                 log.debug("Invalid URL for HTTP Endpoint: " + this.getName());
                 evaluatedUri = template.getTemplate();
-            } catch(UnsupportedEncodingException e) {
+            } catch (UnsupportedEncodingException e) {
                 log.debug("Exception while decoding the URL in HTTP Endpoint: " + this.getName());
-                evaluatedUri = template.getTemplate();                
-            } catch(ExpressionParseException e) {
+                evaluatedUri = template.getTemplate();
+            } catch (ExpressionParseException e) {
                 log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
                 evaluatedUri = template.getTemplate();
             }
@@ -174,7 +175,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
         if (evaluatedUri != null) {
             synCtx.setTo(new EndpointReference(evaluatedUri));
             if (super.getDefinition() != null) {
-            	synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
+                synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
             }
         }
     }

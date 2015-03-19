@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.eip;
 
+import org.apache.axis2.addressing.EndpointReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -26,7 +27,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.axis2.addressing.EndpointReference;
 
 /**
  * A bean class that holds the target (i.e. sequence or endpoint) information for a message
@@ -34,27 +34,41 @@ import org.apache.axis2.addressing.EndpointReference;
  */
 public class Target {
     private static final Log log = LogFactory.getLog(Target.class);
-    
-    /** An optional To address to be set on the message when handing over to the target */
+
+    /**
+     * An optional To address to be set on the message when handing over to the target
+     */
     private String toAddress = null;
 
-    /** An optional Action to be set on the message when handing over to the target */
+    /**
+     * An optional Action to be set on the message when handing over to the target
+     */
     private String soapAction = null;
 
-    /** The in-lined target sequence definition */
+    /**
+     * The in-lined target sequence definition
+     */
     private SequenceMediator sequence = null;
 
-    /** The target sequence reference key */
+    /**
+     * The target sequence reference key
+     */
     private String sequenceRef = null;
 
-    /** The in-lined target endpoint definition */
+    /**
+     * The in-lined target endpoint definition
+     */
     private Endpoint endpoint = null;
 
-    /** The target endpoint reference key */
+    /**
+     * The target endpoint reference key
+     */
     private String endpointRef = null;
 
-    /** if true the mediation will happen in a different thread than the original
-     * thread invoked the mediate method*/
+    /**
+     * if true the mediation will happen in a different thread than the original
+     * thread invoked the mediate method
+     */
     private boolean asynchronous = true;
 
     /**
@@ -143,11 +157,11 @@ public class Target {
                 if (log.isDebugEnabled()) {
                     log.debug("Sending using the endpoint named : " + endpointRef);
                 }
-				if (!epr.isInitialized()) {
-					epr.init(synCtx.getEnvironment()); // initializing registry
-													   // base endpoint configuration
-				}
-				epr.send(synCtx);
+                if (!epr.isInitialized()) {
+                    epr.init(synCtx.getEnvironment()); // initializing registry
+                    // base endpoint configuration
+                }
+                epr.send(synCtx);
                 //epr.destroy();
             } else {
                 handleException("Couldn't find the endpoint named : " + endpointRef);

@@ -32,6 +32,7 @@ public abstract class AbstractContinuationState implements ContinuationState {
 
     /**
      * Get the child ContinuationState
+     *
      * @return child ContinuationState
      */
     public ContinuationState getChildContState() {
@@ -42,6 +43,7 @@ public abstract class AbstractContinuationState implements ContinuationState {
      * Set the child ContinuationState.
      * Child ContinuationState is added when branching the flow using all FlowContinuableMediators
      * except Sequence Mediator.
+     *
      * @param childContState ContinuationState to be added as the child
      */
     public void setChildContState(ContinuationState childContState) {
@@ -50,6 +52,7 @@ public abstract class AbstractContinuationState implements ContinuationState {
 
     /**
      * Get the position of the mediator in the current flow.
+     *
      * @return position
      */
     public int getPosition() {
@@ -60,6 +63,7 @@ public abstract class AbstractContinuationState implements ContinuationState {
      * Set the position of the mediator in the flow which is currently being processed.
      * Position should be updated only when branching to a new flow (i.e. not necessary to update
      * for each and every mediator execution in the flow)
+     *
      * @param position position of the mediator which is currently being processed in the flow.
      */
     public void setPosition(int position) {
@@ -68,6 +72,7 @@ public abstract class AbstractContinuationState implements ContinuationState {
 
     /**
      * Check whether child ContinuationState exists
+     *
      * @return whether child ContinuationState exists
      */
     public boolean hasChild() {
@@ -91,8 +96,9 @@ public abstract class AbstractContinuationState implements ContinuationState {
 
     /**
      * Add a Leaf child to this ContinuationState
+     *
      * @param leafChild ContinuationState which can be added as a Leaf child
-     *                   for this SeqContinuationState
+     *                  for this SeqContinuationState
      */
     public void addLeafChild(ContinuationState leafChild) {
         if (this.hasChild()) {

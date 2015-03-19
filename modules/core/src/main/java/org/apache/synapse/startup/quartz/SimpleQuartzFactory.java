@@ -19,43 +19,43 @@
 
 package org.apache.synapse.startup.quartz;
 
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.config.xml.XMLConfigConstants;
-import org.apache.synapse.config.xml.StartupFactory;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.StartupFactory;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskDescriptionFactory;
 
+import javax.xml.namespace.QName;
+
 /**
  * &lt;task class="org.my.synapse.Task" name="string"&gt;
- *  &lt;description&gt;description in text&lt;/description&gt;
- *  &lt;property name="stringProp" value="String"/&gt;
- *  &lt;property name="xmlProp"&gt;
- *   &lt;somexml&gt;config&lt;/somexml&gt;
- *  &lt;/property&gt;
- *  &lt;trigger ([[count="10"]? interval="1000"] | [cron="0 * 1 * * ?"] | [once=(true | false)])/&gt;
+ * &lt;description&gt;description in text&lt;/description&gt;
+ * &lt;property name="stringProp" value="String"/&gt;
+ * &lt;property name="xmlProp"&gt;
+ * &lt;somexml&gt;config&lt;/somexml&gt;
+ * &lt;/property&gt;
+ * &lt;trigger ([[count="10"]? interval="1000"] | [cron="0 * 1 * * ?"] | [once=(true | false)])/&gt;
  * &lt;/task&gt;
  */
 public class SimpleQuartzFactory implements StartupFactory {
 
     public final static QName TASK
-        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "task");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "task");
 
     private final static Log log = LogFactory.getLog(SimpleQuartzFactory.class);
 
     public Startup createStartup(OMElement el) {
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Creating StartUpController Task");
         }
-        
+
         if (el.getQName().equals(TASK)) {
-            
+
             StartUpController startUpController = new StartUpController();
             TaskDescription taskDescription =
                     TaskDescriptionFactory.createTaskDescription(el,
@@ -63,7 +63,7 @@ public class SimpleQuartzFactory implements StartupFactory {
             if (taskDescription == null) {
                 handleException("Invalid task - Task description can not be created  from :" + el);
                 return null;
-            }          
+            }
             startUpController.setName(taskDescription.getName());
             startUpController.setTaskDescription(taskDescription);
             startUpController.setDescription(taskDescription.getTaskDescription());
@@ -80,7 +80,7 @@ public class SimpleQuartzFactory implements StartupFactory {
 
     public QName getTagQName() {
         return TASK;
-    }  
+    }
 
     private void handleException(String message) {
         log.error(message);

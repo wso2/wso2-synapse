@@ -25,7 +25,7 @@ import org.apache.synapse.mediators.filters.SwitchMediator;
 
 /**
  * Factory for {@link SwitchMediator} instances.
- * 
+ *
  * @see SwitchMediatorFactory
  */
 public class SwitchMediatorSerializer extends AbstractMediatorSerializer {
@@ -72,7 +72,7 @@ public class SwitchMediatorSerializer extends AbstractMediatorSerializer {
                 switchMed.addChild(caseDefaultElem);
             }
         }
-        
+
         return switchMed;
     }
 

@@ -23,12 +23,12 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.WSDLEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.WSDLEndpoint;
 
 /**
  * Serializes an {@link WSDLEndpoint} to an XML configuration.
- * 
+ *
  * @see WSDLEndpointFactory
  */
 public class WSDLEndpointSerializer extends EndpointSerializer {
@@ -42,7 +42,7 @@ public class WSDLEndpointSerializer extends EndpointSerializer {
         fac = OMAbstractFactory.getOMFactory();
         OMElement endpointElement
                 = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
-        
+
         WSDLEndpoint wsdlEndpoint = (WSDLEndpoint) endpoint;
 
         OMElement wsdlElement = fac.createOMElement("wsdl", SynapseConstants.SYNAPSE_OMNAMESPACE);
@@ -75,10 +75,10 @@ public class WSDLEndpointSerializer extends EndpointSerializer {
         serializeSpecificEndpointProperties(epDefinition, wsdlElement);
         endpointElement.addChild(wsdlElement);
 
-         // serialize the parameters
+        // serialize the parameters
         serializeProperties(wsdlEndpoint, endpointElement);
 
-        serializeCommonAttributes(endpoint,endpointElement);
+        serializeCommonAttributes(endpoint, endpointElement);
 
         return endpointElement;
     }

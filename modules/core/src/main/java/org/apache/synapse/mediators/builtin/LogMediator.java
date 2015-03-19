@@ -43,14 +43,22 @@ import java.util.List;
  */
 public class LogMediator extends AbstractMediator {
 
-    /** Only properties specified to the Log mediator */
-    public static final int CUSTOM  = 0;
-    /** To, From, WSAction, SOAPAction, ReplyTo, MessageID and any properties */
-    public static final int SIMPLE  = 1;
-    /** All SOAP header blocks and any properties */
+    /**
+     * Only properties specified to the Log mediator
+     */
+    public static final int CUSTOM = 0;
+    /**
+     * To, From, WSAction, SOAPAction, ReplyTo, MessageID and any properties
+     */
+    public static final int SIMPLE = 1;
+    /**
+     * All SOAP header blocks and any properties
+     */
     public static final int HEADERS = 2;
-    /** all attributes of level 'simple' and the SOAP envelope and any properties */
-    public static final int FULL    = 3;
+    /**
+     * all attributes of level 'simple' and the SOAP envelope and any properties
+     */
+    public static final int FULL = 3;
 
     public static final int CATEGORY_INFO = 0;
     public static final int CATEGORY_DEBUG = 1;
@@ -61,13 +69,21 @@ public class LogMediator extends AbstractMediator {
 
     public static final String DEFAULT_SEP = ", ";
 
-    /** The default log level is set to SIMPLE */
+    /**
+     * The default log level is set to SIMPLE
+     */
     private int logLevel = SIMPLE;
-    /** The separator for which used to separate logging information */
+    /**
+     * The separator for which used to separate logging information
+     */
     private String separator = DEFAULT_SEP;
-    /** Category of the log statement */
+    /**
+     * Category of the log statement
+     */
     private int category = CATEGORY_INFO;
-    /** The holder for the custom properties */
+    /**
+     * The holder for the custom properties
+     */
     private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
 
     /**
@@ -89,22 +105,22 @@ public class LogMediator extends AbstractMediator {
         }
 
         switch (category) {
-            case CATEGORY_INFO :
+            case CATEGORY_INFO:
                 synLog.auditLog(getLogMessage(synCtx));
                 break;
-            case CATEGORY_TRACE :
+            case CATEGORY_TRACE:
                 synLog.auditTrace(getLogMessage(synCtx));
                 break;
-            case CATEGORY_DEBUG :
+            case CATEGORY_DEBUG:
                 synLog.auditDebug(getLogMessage(synCtx));
                 break;
-            case CATEGORY_WARN :
+            case CATEGORY_WARN:
                 synLog.auditWarn(getLogMessage(synCtx));
                 break;
-            case CATEGORY_ERROR :
+            case CATEGORY_ERROR:
                 synLog.auditError(getLogMessage(synCtx));
                 break;
-            case CATEGORY_FATAL :
+            case CATEGORY_FATAL:
                 synLog.auditFatal(getLogMessage(synCtx));
                 break;
         }
@@ -161,7 +177,7 @@ public class LogMediator extends AbstractMediator {
         if (synCtx.getEnvelope() != null) {
             SOAPHeader header = synCtx.getEnvelope().getHeader();
             if (header != null) {
-                for (Iterator iter = header.examineAllHeaderBlocks(); iter.hasNext();) {
+                for (Iterator iter = header.examineAllHeaderBlocks(); iter.hasNext(); ) {
                     Object o = iter.next();
                     if (o instanceof SOAPHeaderBlock) {
                         SOAPHeaderBlock headerBlk = (SOAPHeaderBlock) o;
@@ -187,7 +203,7 @@ public class LogMediator extends AbstractMediator {
                 sb.append(separator).append("Envelope: ").append(synCtx.getEnvelope());
         } catch (Exception e) {
             SOAPEnvelope envelope = synCtx.isSOAP11() ? OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope()
-                    :OMAbstractFactory.getSOAP12Factory().getDefaultEnvelope();
+                    : OMAbstractFactory.getSOAP12Factory().getDefaultEnvelope();
             try {
                 synCtx.setEnvelope(envelope);
             } catch (Exception e1) {
@@ -202,10 +218,10 @@ public class LogMediator extends AbstractMediator {
     private void setCustomProperties(StringBuffer sb, MessageContext synCtx) {
         if (properties != null && !properties.isEmpty()) {
             for (MediatorProperty property : properties) {
-                if(property != null){
-                sb.append(separator).append(property.getName()).append(" = ").append(property.getValue()
-                        != null ? property.getValue() :
-                        property.getEvaluatedExpression(synCtx));
+                if (property != null) {
+                    sb.append(separator).append(property.getName()).append(" = ").append(property.getValue()
+                            != null ? property.getValue() :
+                            property.getEvaluatedExpression(synCtx));
                 }
             }
         }
@@ -247,7 +263,7 @@ public class LogMediator extends AbstractMediator {
         if (category > 0 && category <= 5) {
             this.category = category;
         } else {
-            
+
         }
     }
 

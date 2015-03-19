@@ -41,7 +41,9 @@ import java.util.Collection;
  */
 public abstract class AbstractMediatorSerializer implements MediatorSerializer {
 
-    /** the standard log for mediators, will assign the logger for the actual subclass */
+    /**
+     * the standard log for mediators, will assign the logger for the actual subclass
+     */
     protected static Log log;
 
     protected static final OMFactory fac = OMAbstractFactory.getOMFactory();
@@ -49,9 +51,10 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
     protected static final OMNamespace nullNS
             = fac.createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
     protected static final QName PROP_Q
-        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
     protected static final QName DESCRIPTION_Q
-        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "description");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "description");
+
     /**
      * A constructor that makes subclasses pick up the correct logger
      */
@@ -65,17 +68,17 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
      * delegating the mediator specific serialization to the
      * {@link #serializeSpecificMediator(org.apache.synapse.Mediator)} method, which has tobe
      * implemented by the respective mediators</p>
-     *
+     * <p/>
      * <p>It is treating the {@link org.apache.synapse.config.xml.AnonymousListMediator} as a
      * special case and calls it's children serialization, since there is nothing specific to be
      * serialized in that case</p>
-     *
+     * <p/>
      * <p>This method has been marked as <code>final</code> to avoid mistakenly overwriting
      * this method instead of the {@link #serializeSpecificMediator(org.apache.synapse.Mediator)}
      * by the sub classes
      *
      * @param parent the OMElement to which the serialization should be attached
-     * @param m mediator to be serialized
+     * @param m      mediator to be serialized
      * @return the serialized Element
      */
     public final OMElement serializeMediator(OMElement parent, Mediator m) {
@@ -121,7 +124,7 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
      * i.e. process any common attributes
      *
      * @param mediatorOmElement the OMElement being created
-     * @param mediator the Mediator instance being serialized
+     * @param mediator          the Mediator instance being serialized
      */
     protected static void saveTracingState(OMElement mediatorOmElement, Mediator mediator) {
         int traceState = mediator.getTraceState();
@@ -133,7 +136,7 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
         }
         if (traceValue != null) {
             mediatorOmElement.addAttribute(fac.createOMAttribute(
-                XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS, traceValue));
+                    XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS, traceValue));
         }
 
         if (mediator instanceof AspectConfigurable) {
@@ -174,10 +177,10 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
             }
         }
     }
-    
+
     protected void serializeMediatorProperties(OMElement parent,
-            Collection<MediatorProperty> props) {
-        
+                                               Collection<MediatorProperty> props) {
+
         serializeMediatorProperties(parent, props, PROP_Q);
     }
 

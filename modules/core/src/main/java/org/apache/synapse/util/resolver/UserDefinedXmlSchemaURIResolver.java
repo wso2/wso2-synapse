@@ -18,49 +18,46 @@
  */
 package org.apache.synapse.util.resolver;
 
-import java.util.List;
-
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.mediators.Value;
 import org.apache.ws.commons.schema.resolver.URIResolver;
 import org.w3c.dom.ls.LSResourceResolver;
 
+import java.util.List;
+
 /**
  * This interface lets user to write his/her own XmlSchemaURIResolver rather
  * using {@link CustomXmlSchemaURIResolver} .
- * Here using WSDLKey/schemaKey, user can perform his/her own mapping between Relativelocation 
+ * Here using WSDLKey/schemaKey, user can perform his/her own mapping between Relativelocation
  * and Registrypath . User needs to provide a synapse.property call,"synapse.schema.resolver="
  * pointing to the implementation.
  */
 
 public interface UserDefinedXmlSchemaURIResolver extends URIResolver, LSResourceResolver {
 
-	/**
-	 * Initiate the UserDefinedXmlSchemaURIResolver with the required parameters
-	 * 
-	 * @param resourceMap {@link ResourceMap} object
-	 * @param synCfg Synapseconfiguration
-	 * @param wsdlKey The registry key of the wsdl file
-	 */
-	void init(ResourceMap resourceMap, SynapseConfiguration synCfg, String wsdlKey);
+    /**
+     * Initiate the UserDefinedXmlSchemaURIResolver with the required parameters
+     *
+     * @param resourceMap {@link ResourceMap} object
+     * @param synCfg      Synapseconfiguration
+     * @param wsdlKey     The registry key of the wsdl file
+     */
+    void init(ResourceMap resourceMap, SynapseConfiguration synCfg, String wsdlKey);
 
-	/**
-	 * This will used by Validate mediator to resolve external schema references
-	 * defined in Validate mediator configuration
-	 * using
-	 *
-	 * <pre>
-	 * &lt;resource location="location" key="key"/&gt;
-	 * </pre>
-	 *
-	 * inside Validate mediator configuration.
-	 *
-	 * @param resourceMap
-	 *            {@link ResourceMap} object
-	 * @param synCfg
-	 *            Synapseconfiguration
-	 * @param schemaRegKey
-	 *            , List of base schemas' registryKeys
-	 */
-	void init(ResourceMap resourceMap, SynapseConfiguration synCfg, List<Value> schemaRegKey);
+    /**
+     * This will used by Validate mediator to resolve external schema references
+     * defined in Validate mediator configuration
+     * using
+     * <p/>
+     * <pre>
+     * &lt;resource location="location" key="key"/&gt;
+     * </pre>
+     * <p/>
+     * inside Validate mediator configuration.
+     *
+     * @param resourceMap  {@link ResourceMap} object
+     * @param synCfg       Synapseconfiguration
+     * @param schemaRegKey , List of base schemas' registryKeys
+     */
+    void init(ResourceMap resourceMap, SynapseConfiguration synCfg, List<Value> schemaRegKey);
 }

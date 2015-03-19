@@ -18,10 +18,10 @@
 */
 package org.apache.synapse.config;
 
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
 
 import java.util.Properties;
 
@@ -88,7 +88,7 @@ public class SynapsePropertiesLoader {
     /**
      * Load a value of the property from the synapse properties
      *
-     * @param key Key of the property
+     * @param key          Key of the property
      * @param defaultValue Default value
      * @return Value of the property
      */

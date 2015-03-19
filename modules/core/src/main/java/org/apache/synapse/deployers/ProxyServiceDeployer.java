@@ -32,7 +32,7 @@ import java.io.File;
 import java.util.Properties;
 
 /**
- *  Handles the <code>ProxyService</code> deployment and undeployment tasks
+ * Handles the <code>ProxyService</code> deployment and undeployment tasks
  *
  * @see org.apache.synapse.deployers.AbstractSynapseArtifactDeployer
  */
@@ -88,7 +88,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 if (!proxy.isStartOnLoad()) {
                     proxy.stop(getSynapseConfiguration());
                     log.info("ProxyService named '" + proxy.getName()
-                             + "' has been stopped as startOnLoad parameter is set to false");
+                            + "' has been stopped as startOnLoad parameter is set to false");
                 }
 
                 return proxy.getName();
@@ -149,7 +149,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("ProxyService named '" + proxy.getName()
                         + "' has been " + (existingArtifactName.equals(proxy.getName()) ?
-                            "update" : "deployed") + " from file : " + fileName);
+                        "update" : "deployed") + " from file : " + fileName);
                 return proxy.getName();
             } else {
                 handleSynapseArtifactDeploymentError("ProxyService Update Failed. The artifact " +
@@ -170,7 +170,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("ProxyService Undeployment of the proxy named : "
                     + artifactName + " : Started");
         }
-        
+
         try {
             ProxyService proxy = getSynapseConfiguration().getProxyService(artifactName);
             if (proxy != null) {

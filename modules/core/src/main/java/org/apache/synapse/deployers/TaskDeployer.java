@@ -31,7 +31,7 @@ import java.io.File;
 import java.util.Properties;
 
 /**
- *  Handles the <code>Startup Task</code> deployment and undeployment
+ * Handles the <code>Startup Task</code> deployment and undeployment
  *
  * @see org.apache.synapse.deployers.AbstractSynapseArtifactDeployer
  */
@@ -48,22 +48,22 @@ public class TaskDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             Startup st = StartupFinder.getInstance().getStartup(artifactConfig, properties);
-                st.setFileName((new File(fileName)).getName());
-                if (log.isDebugEnabled()) {
-                    log.debug("StartupTask named '" + st.getName()
-                            + "' has been built from the file " + fileName);
-                }
-                st.init(getSynapseEnvironment());
-                if (log.isDebugEnabled()) {
-                    log.debug("Initialized the StartupTask : " + st.getName());
-                }
-                getSynapseConfiguration().addStartup(st);
-                if (log.isDebugEnabled()) {
-                    log.debug("StartupTask Deployment from file : " + fileName + " : Completed");
-                }
-                log.info("StartupTask named '" + st.getName()
-                        + "' has been deployed from file : " + fileName);
-                return st.getName();
+            st.setFileName((new File(fileName)).getName());
+            if (log.isDebugEnabled()) {
+                log.debug("StartupTask named '" + st.getName()
+                        + "' has been built from the file " + fileName);
+            }
+            st.init(getSynapseEnvironment());
+            if (log.isDebugEnabled()) {
+                log.debug("Initialized the StartupTask : " + st.getName());
+            }
+            getSynapseConfiguration().addStartup(st);
+            if (log.isDebugEnabled()) {
+                log.debug("StartupTask Deployment from file : " + fileName + " : Completed");
+            }
+            log.info("StartupTask named '" + st.getName()
+                    + "' has been deployed from file : " + fileName);
+            return st.getName();
         } catch (Exception e) {
             handleSynapseArtifactDeploymentError(
                     "StartupTask Deployment from the file : " + fileName + " : Failed.", e);

@@ -60,7 +60,7 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         if (buildMessage) {
-              synCtx.getEnvelope().buildWithAttachments();
+            synCtx.getEnvelope().buildWithAttachments();
         }
 
         if (receivingSequence != null) {

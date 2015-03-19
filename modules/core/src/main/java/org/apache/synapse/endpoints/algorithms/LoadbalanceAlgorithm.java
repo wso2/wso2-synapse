@@ -47,7 +47,7 @@ public interface LoadbalanceAlgorithm extends Cloneable {
 
     /**
      * Set the loadbalance endpoint
-     * 
+     *
      * @param endpoint the endpoint which uses this algorithm
      */
     void setLoadBalanceEndpoint(Endpoint endpoint);
@@ -81,6 +81,7 @@ public interface LoadbalanceAlgorithm extends Cloneable {
 
     /**
      * Return the name of the load balancing algorithm
+     *
      * @return the name of the algorithm implemented
      */
     public String getName();

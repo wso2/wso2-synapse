@@ -45,8 +45,8 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
 
-    private final String JSON_TYPE="json";
-    private final String XML_TYPE="xml";
+    private final String JSON_TYPE = "json";
+    private final String XML_TYPE = "xml";
 
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -54,7 +54,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
-        if(mediaTypeValue != null) {
+        if (mediaTypeValue != null) {
             payloadFactoryMediator.setType(mediaTypeValue); //set the mediaType for the PF
         } else {
             payloadFactoryMediator.setType(XML_TYPE);
@@ -68,7 +68,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
-                if(mediaTypeValue != null && mediaTypeValue.contains(JSON_TYPE))  {
+                if (mediaTypeValue != null && mediaTypeValue.contains(JSON_TYPE)) {
                     payloadFactoryMediator.setFormat(copy.getText());
                 } else {
                     payloadFactoryMediator.setFormat(copy.getFirstElement().toString());
@@ -106,9 +106,9 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                         try {
                             //set the evaluator
                             String evaluator = argElem.getAttributeValue(ATT_EVAL);
-                            if(evaluator != null && evaluator.equals(JSON_TYPE)){
-                                if(value.startsWith("json-eval(")) {
-                                    value = value.substring(10, value.length()-1);
+                            if (evaluator != null && evaluator.equals(JSON_TYPE)) {
+                                if (value.startsWith("json-eval(")) {
+                                    value = value.substring(10, value.length() - 1);
                                 }
                                 arg.setExpression(SynapseJsonPathFactory.getSynapseJsonPath(value));
                                 // we have to explicitly define the path type since we are not going to mark

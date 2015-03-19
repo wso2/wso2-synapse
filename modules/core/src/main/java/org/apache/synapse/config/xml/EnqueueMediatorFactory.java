@@ -19,17 +19,17 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.builtin.EnqueueMediator;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMAttribute;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
 
 
-public class EnqueueMediatorFactory extends AbstractMediatorFactory{
+public class EnqueueMediatorFactory extends AbstractMediatorFactory {
 
     public static final QName ENQUEUE_Q = new QName(SynapseConstants.SYNAPSE_NAMESPACE, "enqueue");
     public static final QName SEQUENCE_ATT = new QName("sequence");

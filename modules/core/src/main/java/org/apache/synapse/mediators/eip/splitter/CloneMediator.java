@@ -49,7 +49,7 @@ import java.util.List;
  * messages created is the number of targets specified
  */
 public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
-                                                               FlowContinuableMediator {
+        FlowContinuableMediator {
 
     /**
      * Continue processing the parent message or not?
@@ -57,14 +57,18 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
      */
     private boolean continueParent = false;
 
-    /** the list of targets to which cloned copies of the message will be given for mediation */
+    /**
+     * the list of targets to which cloned copies of the message will be given for mediation
+     */
     private List<Target> targets = new ArrayList<Target>();
 
     private String id = null;
 
     private boolean sequential = false;
 
-    /** Reference to the synapse environment */
+    /**
+     * Reference to the synapse environment
+     */
     private SynapseEnvironment synapseEnv;
 
     /**
@@ -92,8 +96,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int i = 0;
         while (iter.hasNext()) {
             if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Submitting " + (i+1) + " of " + targets.size() +
-                    " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
+                synLog.traceOrDebug("Submitting " + (i + 1) + " of " + targets.size() +
+                        " messages for " + (isSequential() ? "sequential processing" : "parallel processing"));
             }
 
             MessageContext clonedMsgCtx = getClonedMessageContext(synCtx, i++, targets.size());
@@ -104,7 +108,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         // if the continuation of the parent message is stopped from here set the RESPONSE_WRITTEN
         // property to SKIP to skip the blank http response 
         OperationContext opCtx
-            = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
+                = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
         if (!continueParent && opCtx != null) {
             opCtx.setProperty(Constants.RESPONSE_WRITTEN, "SKIP");
         }
@@ -134,7 +138,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) targets.get(subBranch).getSequence().
-                    getChild(continuationState.getPosition());
+                            getChild(continuationState.getPosition());
             result = mediator.mediate(synCtx, continuationState.getChildContState());
         }
         return result;
@@ -147,7 +151,6 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
      * @param synCtx          - MessageContext which is subjected to the cloning
      * @param messageSequence - the position of this message of the cloned set
      * @param messageCount    - total of cloned copies
-     *
      * @return MessageContext the cloned message context
      */
     private MessageContext getClonedMessageContext(MessageContext synCtx, int messageSequence,
@@ -155,7 +158,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         MessageContext newCtx = null;
         try {
-        	
+
             newCtx = MessageHelper.cloneMessageContext(synCtx);
             // Set isServerSide property in the cloned message context
             ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(

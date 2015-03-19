@@ -213,7 +213,7 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                 if (e.getMessage().indexOf("Cannot locate an either local or remote entry for key") != -1) {
                     if (log.isDebugEnabled()) {
                         log.debug("Undeploying template is not of endpoint type. Undeployer will now check " +
-                                  "for sequence template for the key: " + artifactName);
+                                "for sequence template for the key: " + artifactName);
                     }
                 } else {
                     //different error hence stop undeployment/report failure

@@ -21,9 +21,9 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.commons.evaluators.config.EvaluatorSerializerFinder;
-import org.apache.synapse.commons.evaluators.config.EvaluatorSerializer;
 import org.apache.synapse.commons.evaluators.EvaluatorException;
+import org.apache.synapse.commons.evaluators.config.EvaluatorSerializer;
+import org.apache.synapse.commons.evaluators.config.EvaluatorSerializerFinder;
 import org.apache.synapse.mediators.filters.router.ConditionalRoute;
 import org.apache.synapse.mediators.filters.router.ConditionalRouterMediator;
 
@@ -38,7 +38,7 @@ import org.apache.synapse.mediators.filters.router.ConditionalRouterMediator;
  * </pre>
  */
 public class ConditionalRouterMediatorSerializer extends AbstractMediatorSerializer {
-    
+
     public OMElement serializeSpecificMediator(Mediator m) {
         OMElement conditionalRouterElem = fac.createOMElement("conditionalRouter", synNS);
         saveTracingState(conditionalRouterElem, m);
@@ -55,7 +55,7 @@ public class ConditionalRouterMediatorSerializer extends AbstractMediatorSeriali
             if (conditionalRoute.isBreakRouteExplicitlySet()) {
                 routeElem.addAttribute("breakRoute", Boolean.toString(conditionalRoute.isBreakRoute()), nullNS);
             }
-            
+
             if (conditionalRoute.getEvaluator() != null) {
                 EvaluatorSerializer evaluatorSerializer =
                         EvaluatorSerializerFinder.getInstance().getSerializer(

@@ -25,7 +25,7 @@ import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
 
 /**
  * Serializer for {@link AggregateMediator} instances.
- * 
+ *
  * @see AggregateMediatorFactory
  */
 public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
@@ -50,7 +50,7 @@ public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
         if (mediator.getCorrelateExpression() != null) {
             OMElement corelateOn = fac.createOMElement("correlateOn", synNS);
             SynapseXPathSerializer.serializeXPath(
-                mediator.getCorrelateExpression(), corelateOn, "expression");
+                    mediator.getCorrelateExpression(), corelateOn, "expression");
             aggregator.addChild(corelateOn);
         }
 
@@ -61,12 +61,12 @@ public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
         }
         OMElement messageCount = fac.createOMElement("messageCount", synNS);
         if (mediator.getMinMessagesToComplete() != null) {
-       	   new ValueSerializer().serializeValue(
+            new ValueSerializer().serializeValue(
                     mediator.getMinMessagesToComplete(), "min", messageCount);
         }
         if (mediator.getMaxMessagesToComplete() != null) {
-        	new ValueSerializer().serializeValue(
-        	        mediator.getMaxMessagesToComplete(), "max", messageCount);
+            new ValueSerializer().serializeValue(
+                    mediator.getMaxMessagesToComplete(), "max", messageCount);
         }
         completeCond.addChild(messageCount);
         aggregator.addChild(completeCond);
@@ -74,7 +74,7 @@ public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
         OMElement onCompleteElem = fac.createOMElement("onComplete", synNS);
         if (mediator.getAggregationExpression() != null) {
             SynapseXPathSerializer.serializeXPath(
-                mediator.getAggregationExpression(), onCompleteElem, "expression");
+                    mediator.getAggregationExpression(), onCompleteElem, "expression");
         }
         if (mediator.getOnCompleteSequenceRef() != null) {
             onCompleteElem.addAttribute("sequence", mediator.getOnCompleteSequenceRef(), nullNS);
@@ -85,7 +85,7 @@ public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
 
         String enclosingElementPropertyName = mediator.getEnclosingElementPropertyName();
         if (enclosingElementPropertyName != null) {
-            onCompleteElem.addAttribute("enclosingElementProperty", enclosingElementPropertyName,nullNS);
+            onCompleteElem.addAttribute("enclosingElementProperty", enclosingElementPropertyName, nullNS);
         }
         aggregator.addChild(onCompleteElem);
 

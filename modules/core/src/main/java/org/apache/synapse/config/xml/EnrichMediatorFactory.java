@@ -22,14 +22,12 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.jaxen.JaxenException;
-
-import javax.xml.namespace.QName;
-
 import org.apache.synapse.mediators.elementary.EnrichMediator;
 import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
+import org.jaxen.JaxenException;
 
+import javax.xml.namespace.QName;
 import java.util.Properties;
 
 

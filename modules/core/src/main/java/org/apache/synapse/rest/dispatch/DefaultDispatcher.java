@@ -19,7 +19,6 @@
 package org.apache.synapse.rest.dispatch;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.apache.synapse.rest.Resource;
 
 import java.util.Collection;

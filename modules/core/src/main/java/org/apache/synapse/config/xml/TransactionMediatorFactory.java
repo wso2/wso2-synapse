@@ -32,8 +32,8 @@ import java.util.Properties;
  * <p/>
  * <pre>
  * &lt;transaction action="new|use-existing-or-new|fault-if-no-tx|commit|rollback|suspend|resume" /&gt;
- * <p/>
- * <p/>
+ *
+ *
  */
 public class TransactionMediatorFactory extends AbstractMediatorFactory {
 
@@ -44,7 +44,7 @@ public class TransactionMediatorFactory extends AbstractMediatorFactory {
      * Create a Transaction mediator instance referring to the bean and configuration given
      * by the OMElement declaration
      *
-     * @param elem the OMElement that specifies the Transaction mediator configuration
+     * @param elem       the OMElement that specifies the Transaction mediator configuration
      * @param properties
      * @return the Transaction mediator instance created
      */

@@ -19,15 +19,15 @@
 
 package org.apache.synapse.mediators.eip.aggregator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.eip.EIPConstants;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TimerTask;
 
 /**
@@ -40,14 +40,22 @@ public class Aggregate extends TimerTask {
     private static final Log log = LogFactory.getLog(Aggregate.class);
 
     private long timeoutMillis = 0;
-    /** The time in millis at which this aggregation should be considered as expired */
+    /**
+     * The time in millis at which this aggregation should be considered as expired
+     */
     private long expiryTimeMillis = 0;
-    /** The minimum number of messages to be collected to consider this aggregation as complete */
+    /**
+     * The minimum number of messages to be collected to consider this aggregation as complete
+     */
     private int minCount = -1;
-    /** The maximum number of messages that should be collected by this aggregation */
+    /**
+     * The maximum number of messages that should be collected by this aggregation
+     */
     private int maxCount = -1;
     private String correlation = null;
-    /** The AggregateMediator that should be invoked on completion of the aggregation */
+    /**
+     * The AggregateMediator that should be invoked on completion of the aggregation
+     */
     private AggregateMediator aggregateMediator = null;
     private List<MessageContext> messages = new ArrayList<MessageContext>();
     private boolean locked = false;
@@ -57,14 +65,14 @@ public class Aggregate extends TimerTask {
     /**
      * Save aggregation properties and timeout
      *
-     * @param corelation representing the corelation name of the messages in the aggregate
+     * @param corelation    representing the corelation name of the messages in the aggregate
      * @param timeoutMillis the timeout duration in milliseconds
-     * @param min the minimum number of messages to be aggregated
-     * @param max the maximum number of messages to be aggregated
+     * @param min           the minimum number of messages to be aggregated
+     * @param max           the maximum number of messages to be aggregated
      * @param mediator
      */
     public Aggregate(SynapseEnvironment synEnv, String corelation, long timeoutMillis, int min,
-        int max, AggregateMediator mediator) {
+                     int max, AggregateMediator mediator) {
 
         this.synEnv = synEnv;
         this.correlation = corelation;
@@ -99,7 +107,6 @@ public class Aggregate extends TimerTask {
      * Has this aggregation group completed?
      *
      * @param synLog the Synapse log to use
-     *
      * @return boolean true if aggregation is complete
      */
     public synchronized boolean isComplete(SynapseLog synLog) {
@@ -113,7 +120,7 @@ public class Aggregate extends TimerTask {
                 MessageContext mc = messages.get(0);
                 Object prop = mc.getProperty(EIPConstants.MESSAGE_SEQUENCE +
                         (aggregateMediator.getId() != null ? "." + aggregateMediator.getId() : ""));
-            
+
                 if (prop != null && prop instanceof String) {
                     String[] msgSequence = prop.toString().split(
                             EIPConstants.MESSAGE_SEQUENCE_DELEMITER);
@@ -163,7 +170,7 @@ public class Aggregate extends TimerTask {
             synLog.traceOrDebug(
                     "Aggregation already completed - this message will not be processed in aggregation");
         }
-        
+
         return false;
     }
 
@@ -237,6 +244,7 @@ public class Aggregate extends TimerTask {
 
     private class AggregateTimeout implements Runnable {
         private Aggregate aggregate = null;
+
         AggregateTimeout(Aggregate aggregate) {
             this.aggregate = aggregate;
         }

@@ -29,8 +29,8 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.xml.endpoints.utils.WSDL11EndpointBuilder;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.WSDLEndpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.WSDLEndpoint;
 
 import javax.xml.namespace.QName;
 import java.io.File;
@@ -41,7 +41,7 @@ import java.util.Properties;
 
 /**
  * Creates an {@link WSDLEndpoint} based endpoint from a XML configuration.
- * <p>
+ * <p/>
  * Configuration syntax:
  * <pre>
  * &lt;endpoint [name="<em>name</em>"]&gt;

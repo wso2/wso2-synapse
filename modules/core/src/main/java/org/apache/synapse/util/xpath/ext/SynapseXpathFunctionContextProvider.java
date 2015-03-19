@@ -28,8 +28,9 @@ import javax.xml.namespace.QName;
  * XPath Function contexts .Any xpath function that can't be resolved by
  * <code>SynapseXPathFunctionContext</code> will be delegated to this interface.
  * Users should implement this API as well as jaxen based <code>Function</code> API .
- *
+ * <p/>
  * Extensions can be registered in synapse.properties under  synapse.xpath.func.extensions
+ *
  * @see org.jaxen.Function
  * @see org.apache.synapse.util.xpath.SynapseXPathFunctionContext
  */
@@ -40,18 +41,18 @@ public interface SynapseXpathFunctionContextProvider {
      * QNames given by #getResolvingQName().Note that this extension provider is responsible for
      * initalizing custom xpath function and returning a fresh function instance to Synapse. Callers
      * should be responsible for invoking the function explicitly.
-     * @see org.jaxen.Function#call(org.jaxen.Context, java.util.List)
      *
      * @param msgCtxt Synapse Message Context
-     *
      * @return extension Function constructed with message
+     * @see org.jaxen.Function#call(org.jaxen.Context, java.util.List)
      */
-     public Function getInitializedExtFunction(MessageContext msgCtxt);
+    public Function getInitializedExtFunction(MessageContext msgCtxt);
 
     /**
      * Should Implement this API to return supported custom expression
+     *
      * @return This should return the supported QName (localname + prefix + namespace URI combination ) for
      * this extension
      */
-     public QName getResolvingQName();
+    public QName getResolvingQName();
 }

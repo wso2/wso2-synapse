@@ -26,7 +26,7 @@ import org.apache.synapse.mediators.transform.FaultMediator;
 
 /**
  * Serializer for {@link FaultMediator} instances.
- * 
+ *
  * @see FaultMediatorFactory
  */
 public class FaultMediatorSerializer extends AbstractMediatorSerializer {
@@ -45,17 +45,17 @@ public class FaultMediatorSerializer extends AbstractMediatorSerializer {
 
         FaultMediator mediator = (FaultMediator) m;
         OMElement fault = fac.createOMElement("makefault", synNS);
-        saveTracingState(fault,mediator);
+        saveTracingState(fault, mediator);
 
-        if(mediator.getSoapVersion()==FaultMediator.SOAP11) {
-           fault.addAttribute(fac.createOMAttribute(
-                "version", nullNS, SOAP11));
-        } else if(mediator.getSoapVersion()==FaultMediator.SOAP12) {
-           fault.addAttribute(fac.createOMAttribute(
-                "version", nullNS, SOAP12));
-        } else if(mediator.getSoapVersion()==FaultMediator.POX) {
-           fault.addAttribute(fac.createOMAttribute(
-                "version", nullNS, POX));
+        if (mediator.getSoapVersion() == FaultMediator.SOAP11) {
+            fault.addAttribute(fac.createOMAttribute(
+                    "version", nullNS, SOAP11));
+        } else if (mediator.getSoapVersion() == FaultMediator.SOAP12) {
+            fault.addAttribute(fac.createOMAttribute(
+                    "version", nullNS, SOAP12));
+        } else if (mediator.getSoapVersion() == FaultMediator.POX) {
+            fault.addAttribute(fac.createOMAttribute(
+                    "version", nullNS, POX));
         }
 
         if (mediator.isSerializeResponse()) {
@@ -66,13 +66,13 @@ public class FaultMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
-        OMElement code = mediator.getSoapVersion()!=FaultMediator.POX?fac.createOMElement("code", synNS, fault): null;
+        OMElement code = mediator.getSoapVersion() != FaultMediator.POX ? fac.createOMElement("code", synNS, fault) : null;
         if (mediator.getFaultCodeValue() != null && code != null) {
             OMNamespace ns = code.declareNamespace(mediator.getFaultCodeValue().getNamespaceURI(),
                     mediator.getFaultCodeValue().getPrefix());
             code.addAttribute(fac.createOMAttribute(
                     "value", nullNS, ns.getPrefix() + ":"
-                    + mediator.getFaultCodeValue().getLocalPart()));
+                            + mediator.getFaultCodeValue().getLocalPart()));
 
         } else if (mediator.getFaultCodeExpr() != null && code != null) {
             SynapseXPathSerializer.serializeXPath(mediator.getFaultCodeExpr(), code, "expression");
@@ -85,12 +85,12 @@ public class FaultMediatorSerializer extends AbstractMediatorSerializer {
         OMElement reason = fac.createOMElement("reason", synNS, fault);
         if (mediator.getFaultReasonValue() != null) {
             reason.addAttribute(fac.createOMAttribute(
-                "value", nullNS, mediator.getFaultReasonValue()));
+                    "value", nullNS, mediator.getFaultReasonValue()));
 
         } else if (mediator.getFaultReasonExpr() != null) {
 
             SynapseXPathSerializer.serializeXPath(
-                mediator.getFaultReasonExpr(), reason, "expression");
+                    mediator.getFaultReasonExpr(), reason, "expression");
 
         } else if (mediator.getSoapVersion() != FaultMediator.POX) {
             handleException("Fault reason is required for a fault " +
@@ -111,7 +111,7 @@ public class FaultMediatorSerializer extends AbstractMediatorSerializer {
         if (mediator.getFaultDetailExpr() != null) {
             OMElement detail = fac.createOMElement("detail", synNS, fault);
             SynapseXPathSerializer.serializeXPath(
-                    mediator.getFaultDetailExpr(), detail, "expression");            
+                    mediator.getFaultDetailExpr(), detail, "expression");
         } else if (mediator.getFaultDetail() != null) {
             OMElement detail = fac.createOMElement("detail", synNS, fault);
             detail.setText(mediator.getFaultDetail());

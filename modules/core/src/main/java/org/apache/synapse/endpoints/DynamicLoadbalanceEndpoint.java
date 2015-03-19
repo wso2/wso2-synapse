@@ -53,7 +53,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
     private static final String PORT_MAPPING_PREFIX = "port.mapping.";
 
     /**
-     *  Flag to enable session affinity based load balancing.
+     * Flag to enable session affinity based load balancing.
      */
     protected boolean sessionAffinity = false;
 
@@ -209,40 +209,40 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         return null;
     }
 
-	/**
-	 * Adding the X-Forwarded-For/X-Originating-IP headers to the outgoing message.
-	 * 
-	 * @param synCtx Current message context
-	 */
-	protected void setupTransportHeaders(MessageContext synCtx) {
-		Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
-		org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-		Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-		if (headers != null && headers instanceof Map) {
-			Map headersMap = (Map) headers;
-			String xForwardFor = (String) headersMap.get(NhttpConstants.HEADER_X_FORWARDED_FOR);
-		    String remoteHost = (String) axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
+    /**
+     * Adding the X-Forwarded-For/X-Originating-IP headers to the outgoing message.
+     *
+     * @param synCtx Current message context
+     */
+    protected void setupTransportHeaders(MessageContext synCtx) {
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+        Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headers != null && headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            String xForwardFor = (String) headersMap.get(NhttpConstants.HEADER_X_FORWARDED_FOR);
+            String remoteHost = (String) axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
 
-			if (xForwardFor != null && !"".equals(xForwardFor)) {
-				StringBuilder xForwardedForString = new StringBuilder();
-				xForwardedForString.append(xForwardFor);
-				if (remoteHost != null && !"".equals(remoteHost)) {
-					xForwardedForString.append(",").append(remoteHost);
-				}
-				headersMap.put(NhttpConstants.HEADER_X_FORWARDED_FOR, xForwardedForString.toString());
-			} else {
-				headersMap.put(NhttpConstants.HEADER_X_FORWARDED_FOR, remoteHost);
-			}
+            if (xForwardFor != null && !"".equals(xForwardFor)) {
+                StringBuilder xForwardedForString = new StringBuilder();
+                xForwardedForString.append(xForwardFor);
+                if (remoteHost != null && !"".equals(remoteHost)) {
+                    xForwardedForString.append(",").append(remoteHost);
+                }
+                headersMap.put(NhttpConstants.HEADER_X_FORWARDED_FOR, xForwardedForString.toString());
+            } else {
+                headersMap.put(NhttpConstants.HEADER_X_FORWARDED_FOR, remoteHost);
+            }
 
-			//Extracting information of X-Originating-IP
-			if (headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_1) != null) {
-				headersMap.put(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_1, headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_1));
-			} else if (headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_2) != null) {
-				headersMap.put(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_2, headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_2));
-			}
+            //Extracting information of X-Originating-IP
+            if (headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_1) != null) {
+                headersMap.put(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_1, headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_1));
+            } else if (headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_2) != null) {
+                headersMap.put(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_2, headersMap.get(NhttpConstants.HEADER_X_ORIGINATING_IP_FORM_2));
+            }
 
-		}
-	}
+        }
+    }
 
     public void setName(String name) {
         super.setName(name);
@@ -265,11 +265,11 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         this.sessionTimeout = sessionTimeout;
     }
 
-    public void setSessionAffinity(boolean sessionAffinity){
+    public void setSessionAffinity(boolean sessionAffinity) {
         this.sessionAffinity = sessionAffinity;
     }
 
-    public boolean isSessionAffinityBasedLB(){
+    public boolean isSessionAffinityBasedLB() {
         return sessionAffinity;
     }
 
@@ -308,11 +308,11 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
             synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_DEFAULT_SESSION_TIMEOUT, getSessionTimeout());
             synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_DISPATCHER, dispatcher);
             prepareEndPointSequence(synCtx, endpoint);
-            if(newSession) {
-            	synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_MEMBER, currentMember);
-            	// we should also indicate that this is the first message in the session. so that
-            	// onFault(...) method can resend only the failed attempts for the first message.
-            	synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_FIRST_MESSAGE_IN_SESSION, Boolean.TRUE);
+            if (newSession) {
+                synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_CURRENT_MEMBER, currentMember);
+                // we should also indicate that this is the first message in the session. so that
+                // onFault(...) method can resend only the failed attempts for the first message.
+                synCtx.setProperty(SynapseConstants.PROP_SAL_ENDPOINT_FIRST_MESSAGE_IN_SESSION, Boolean.TRUE);
             }
         }
 
@@ -326,7 +326,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         try {
             endpoint.send(synCtx);
         } catch (Exception e) {
-            if(e.getMessage().toLowerCase().contains("io reactor shutdown")){
+            if (e.getMessage().toLowerCase().contains("io reactor shutdown")) {
                 log.fatal("System cannot continue normal operation. Restarting", e);
                 System.exit(121); // restart
             } else {
@@ -384,8 +384,8 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         if (transport.startsWith("http") || transport.startsWith("https")) {
             if (address.startsWith("http://") || address.startsWith("https://")) {
                 try {
-                    String _address= address.indexOf("?")>0? address.substring(address.indexOf("?"), address.length()):"";
-                    address = new URL(address).getPath()+_address;
+                    String _address = address.indexOf("?") > 0 ? address.substring(address.indexOf("?"), address.length()) : "";
+                    address = new URL(address).getPath() + _address;
                 } catch (MalformedURLException e) {
                     String msg = "URL " + address + " is malformed";
                     log.error(msg, e);
@@ -407,7 +407,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
             String remoteHost = memberProperties.getProperty("remoteHost");
             String hostName = (remoteHost == null) ? currentMember.getHostName() : remoteHost;
             return new EndpointReference(transport + "://" + hostName +
-                                 ":" + port + address);
+                    ":" + port + address);
         } else {
             String msg = "Cannot load balance for non-HTTP/S transport " + transport;
             log.error(msg);
@@ -416,8 +416,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
     }
 
     /**
-     *
-     * @param to get an endpoint to send the information
+     * @param to     get an endpoint to send the information
      * @param member The member to which an EP has to be created
      * @param synCtx synapse context
      * @return the created endpoint
@@ -425,7 +424,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
     private Endpoint getEndpoint(EndpointReference to, Member member, MessageContext synCtx) {
         AddressEndpoint endpoint = new AddressEndpoint();
         endpoint.setEnableMBeanStats(false);
-        endpoint.setName("DLB:" +  member.getHostName() +
+        endpoint.setName("DLB:" + member.getHostName() +
                 ":" + member.getPort() + ":" + UUID.randomUUID());
         EndpointDefinition definition = new EndpointDefinition();
         definition.setSuspendMaximumDuration(10000);
@@ -461,25 +460,24 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
 
         Map headerMap = (Map) msgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         int port = -1;
-		if (headerMap != null) {
-			String hostHeader = (String) headerMap.get(HTTP.TARGET_HOST);
-			int preIndex = hostHeader.indexOf(":");
-			int postIndex = hostHeader.indexOf("/");
-			if (preIndex != -1 && postIndex != -1) {
-				port = Integer.parseInt(hostHeader.trim().substring(preIndex + 1, postIndex));
-			} else if (preIndex != -1) {
-				port = Integer.parseInt(hostHeader.trim().substring(preIndex + 1));
-			} else {
-				if ("http".equals(transport)) {
-					port = 80;
-				} else if ("https".equals(transport)) {
-					port = 443;
-				}
-			}
-		}
+        if (headerMap != null) {
+            String hostHeader = (String) headerMap.get(HTTP.TARGET_HOST);
+            int preIndex = hostHeader.indexOf(":");
+            int postIndex = hostHeader.indexOf("/");
+            if (preIndex != -1 && postIndex != -1) {
+                port = Integer.parseInt(hostHeader.trim().substring(preIndex + 1, postIndex));
+            } else if (preIndex != -1) {
+                port = Integer.parseInt(hostHeader.trim().substring(preIndex + 1));
+            } else {
+                if ("http".equals(transport)) {
+                    port = 80;
+                } else if ("https".equals(transport)) {
+                    port = 443;
+                }
+            }
+        }
         return port;
     }
-
 
 
     /**
@@ -505,7 +503,7 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
 
         public void onFault(MessageContext synCtx) {
             //cleanup endpoint if exists
-            if(currentEp != null){
+            if (currentEp != null) {
                 currentEp.destroy();
             }
             if (currentMember == null) {
@@ -518,13 +516,13 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
             }
 
             currentMember = lbMembershipHandler.getNextApplicationMember(algorithmContext);
-            if(currentMember == null){
+            if (currentMember == null) {
                 String msg = "No application members available";
                 log.error(msg);
                 throw new SynapseException(msg);
             }
             synCtx.setTo(to);
-            if(isSessionAffinityBasedLB()){
+            if (isSessionAffinityBasedLB()) {
                 //We are sending the this message on a new session,
                 // hence we need to remove previous session information
                 Set pros = synCtx.getPropertyKeySet();

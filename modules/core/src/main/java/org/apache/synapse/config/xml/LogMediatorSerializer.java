@@ -40,32 +40,32 @@ public class LogMediatorSerializer extends AbstractMediatorSerializer {
 
         LogMediator mediator = (LogMediator) m;
         OMElement log = fac.createOMElement("log", synNS);
-        saveTracingState(log,mediator);
+        saveTracingState(log, mediator);
 
         if (mediator.getLogLevel() != LogMediator.SIMPLE) {
             log.addAttribute(fac.createOMAttribute(
-                "level", nullNS,
+                    "level", nullNS,
                     mediator.getLogLevel() == LogMediator.HEADERS ? "headers" :
-                    mediator.getLogLevel() == LogMediator.FULL ? "full" :
-                    mediator.getLogLevel() == LogMediator.CUSTOM ? "custom" : "simple"
-                ));
+                            mediator.getLogLevel() == LogMediator.FULL ? "full" :
+                                    mediator.getLogLevel() == LogMediator.CUSTOM ? "custom" : "simple"
+            ));
         }
 
         if (mediator.getCategory() != LogMediator.CATEGORY_INFO) {
             log.addAttribute(fac.createOMAttribute(
-                "category", nullNS,
+                    "category", nullNS,
                     mediator.getCategory() == LogMediator.CATEGORY_TRACE ?
                             LogMediatorFactory.CAT_TRACE :
-                    mediator.getCategory() == LogMediator.CATEGORY_DEBUG ?
-                            LogMediatorFactory.CAT_DEBUG :
-                    mediator.getCategory() == LogMediator.CATEGORY_WARN ?
-                            LogMediatorFactory.CAT_WARN :
-                    mediator.getCategory() == LogMediator.CATEGORY_ERROR ?
-                            LogMediatorFactory.CAT_ERROR :
-                    mediator.getCategory() == LogMediator.CATEGORY_FATAL ?
-                            LogMediatorFactory.CAT_FATAL :
-                            LogMediatorFactory.CAT_INFO
-                ));
+                            mediator.getCategory() == LogMediator.CATEGORY_DEBUG ?
+                                    LogMediatorFactory.CAT_DEBUG :
+                                    mediator.getCategory() == LogMediator.CATEGORY_WARN ?
+                                            LogMediatorFactory.CAT_WARN :
+                                            mediator.getCategory() == LogMediator.CATEGORY_ERROR ?
+                                                    LogMediatorFactory.CAT_ERROR :
+                                                    mediator.getCategory() == LogMediator.CATEGORY_FATAL ?
+                                                            LogMediatorFactory.CAT_FATAL :
+                                                            LogMediatorFactory.CAT_INFO
+            ));
         }
 
         if (!LogMediator.DEFAULT_SEP.equals(mediator.getSeparator())) {

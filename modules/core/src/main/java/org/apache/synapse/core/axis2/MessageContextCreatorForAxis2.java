@@ -25,8 +25,8 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
@@ -39,7 +39,7 @@ public class MessageContextCreatorForAxis2 {
     private static final Log log = LogFactory.getLog(MessageContextCreatorForAxis2.class);
 
     private static SynapseConfiguration synCfg = null;
-    private static SynapseEnvironment   synEnv = null;
+    private static SynapseEnvironment synEnv = null;
 
     public static MessageContext getSynapseMessageContext(
             org.apache.axis2.context.MessageContext axisMsgCtx) throws AxisFault {

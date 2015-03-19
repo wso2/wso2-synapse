@@ -84,17 +84,17 @@ public class DefaultEndpointFactory extends EndpointFactory {
         if (defaultElement != null) {
             EndpointDefinition endpoint = createEndpointDefinition(defaultElement);
             defaultEndpoint.setDefinition(endpoint);
-            processAuditStatus(endpoint, defaultEndpoint.getName(),defaultElement);
+            processAuditStatus(endpoint, defaultEndpoint.getName(), defaultElement);
         }
 
         processProperties(defaultEndpoint, epConfig);
-        
+
         return defaultEndpoint;
     }
 
     @Override
     protected void extractSpecificEndpointProperties(EndpointDefinition definition,
-        OMElement elem) {
+                                                     OMElement elem) {
 
         OMAttribute format
                 = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "format"));
@@ -141,14 +141,14 @@ public class DefaultEndpointFactory extends EndpointFactory {
         if (fac == null) {
             fac = new EndpointDefinitionFactory();
             endpointDefinition = fac.createDefinition(elem);
-        } else{
+        } else {
             endpointDefinition = fac.createDefinition(elem);
         }
         extractSpecificEndpointProperties(endpointDefinition, elem);
         return endpointDefinition;
     }
-    
-    protected void processAuditStatus(EndpointDefinition definition ,String name , OMElement epOmElement){
+
+    protected void processAuditStatus(EndpointDefinition definition, String name, OMElement epOmElement) {
 
         if (name == null || "".equals(name)) {
             name = SynapseConstants.ANONYMOUS_ENDPOINT;
@@ -165,5 +165,5 @@ public class DefaultEndpointFactory extends EndpointFactory {
                 }
             }
         }
-    }   
+    }
 }

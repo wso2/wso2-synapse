@@ -26,7 +26,7 @@ import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 /**
  * This class will be acting as the serializer for the IterateMediator which will convert the
  * IterateMediator instance to the following xml configuration
- *
+ * <p/>
  * <pre>
  * &lt;iterate [continueParent=(true | false)] [preservePayload=(true | false)]
  *          (attachPath="xpath")? expression="xpath"&gt;
@@ -48,9 +48,7 @@ public class IterateMediatorSerializer extends AbstractMediatorSerializer {
      * This method will implement the serialization logic of the IterateMediator class to the
      * relevant xml configuration
      *
-     * @param m
-     *          IterateMediator to be serialized
-     *
+     * @param m IterateMediator to be serialized
      * @return OMElement describing the serialized configuration of the IterateMediator
      */
     public OMElement serializeSpecificMediator(Mediator m) {
@@ -58,7 +56,7 @@ public class IterateMediatorSerializer extends AbstractMediatorSerializer {
         if (!(m instanceof IterateMediator)) {
             handleException("Unsupported mediator passed in for serialization : " + m.getType());
         }
-        
+
         OMElement itrElem = fac.createOMElement("iterate", synNS);
         saveTracingState(itrElem, m);
 
@@ -78,7 +76,7 @@ public class IterateMediatorSerializer extends AbstractMediatorSerializer {
         if (itrMed.getAttachPath() != null && !".".equals(itrMed.getAttachPath().toString())) {
             SynapseXPathSerializer.serializeXPath(itrMed.getAttachPath(), itrElem, "attachPath");
         }
-        
+
         if (itrMed.getExpression() != null) {
             SynapseXPathSerializer.serializeXPath(itrMed.getExpression(), itrElem, "expression");
         } else {

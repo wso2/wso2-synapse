@@ -37,7 +37,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     protected Log log;
     private final static String TRANSPORT_HEADERS = "TRANSPORT_HEADERS";
-    private final static String[] SESSION_COOKIES = new String[] {"JSESSIONID", "PHPSESSID", "phpMyAdmin", "wordpress_test_cookie"};
+    private final static String[] SESSION_COOKIES = new String[]{"JSESSIONID", "PHPSESSID", "phpMyAdmin", "wordpress_test_cookie"};
 
     protected AbstractDispatcher() {
         log = LogFactory.getLog(this.getClass());
@@ -70,10 +70,10 @@ public abstract class AbstractDispatcher implements Dispatcher {
     }
 
     protected String extractSessionID(MessageContext synCtx, String key) {
-    	SessionCookie sessionCookie = extractSessionCookie(synCtx, key);
-    	if (sessionCookie != null) {
-    		return sessionCookie.getSessionId();
-    	}
+        SessionCookie sessionCookie = extractSessionCookie(synCtx, key);
+        if (sessionCookie != null) {
+            return sessionCookie.getSessionId();
+        }
         return null;
     }
 
@@ -149,30 +149,30 @@ public abstract class AbstractDispatcher implements Dispatcher {
         }
         return null;
     }
-    
-	private boolean isASessionCookie(String cookie) {
-		for (String sessionCookie : SESSION_COOKIES) {
-			if (cookie.indexOf(sessionCookie) != -1) {
-				return true;
-			}
-		}
-		return false;
-	}
+
+    private boolean isASessionCookie(String cookie) {
+        for (String sessionCookie : SESSION_COOKIES) {
+            if (cookie.indexOf(sessionCookie) != -1) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     @SuppressWarnings("unchecked")
-	protected void removeSessionID(MessageContext synCtx, String key) {
+    protected void removeSessionID(MessageContext synCtx, String key) {
 
         if (key != null) {
             Map headerMap = getTransportHeaderMap(synCtx);
             if (headerMap != null) {
-            	Object cookieObj = headerMap.remove(key);
+                Object cookieObj = headerMap.remove(key);
 
                 if (cookieObj instanceof String) {
                     String cookie = (String) cookieObj;
                     if (log.isDebugEnabled()) {
                         log.debug("Cookies String : " + cookie);
                     }
-                    
+
                     String[] sessionIds = cookie.split(";");
 
                     if (sessionIds == null || sessionIds.length == 0) {
@@ -183,28 +183,28 @@ public abstract class AbstractDispatcher implements Dispatcher {
                     }
                     // reset
                     StringBuilder newCookie = new StringBuilder("");
-                    
+
                     for (int i = 0; i < sessionIds.length; i++) {
-						String sessionId = sessionIds[i];
-                    	if(sessionId != null && (sessionId.indexOf("JSESSIONID") != -1 || sessionId
-                    			.indexOf("PHPSESSID") != -1 || sessionId.indexOf("phpMyAdmin") != -1 || 
-                                sessionId.indexOf("wordpress_test_cookie") != -1)){
-                    		if (log.isDebugEnabled()) {
-                    			log.debug("Extracted SessionID : " + sessionId);
-                    		}
-                    		// do not add this session id back 
-                    		continue;
-                    	}
-                    	newCookie.append(sessionId+"; ");
-					}
+                        String sessionId = sessionIds[i];
+                        if (sessionId != null && (sessionId.indexOf("JSESSIONID") != -1 || sessionId
+                                .indexOf("PHPSESSID") != -1 || sessionId.indexOf("phpMyAdmin") != -1 ||
+                                sessionId.indexOf("wordpress_test_cookie") != -1)) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Extracted SessionID : " + sessionId);
+                            }
+                            // do not add this session id back
+                            continue;
+                        }
+                        newCookie.append(sessionId + "; ");
+                    }
 
                     String modifiedCookie = ("".equals(newCookie.toString()) ? "" : newCookie.substring(0,
-                                            newCookie.lastIndexOf(";")));
-                    
+                            newCookie.lastIndexOf(";")));
+
                     log.debug("Modified Cookie header: " + modifiedCookie);
 
                     // add the modified Cookie header
-					headerMap.put(key, modifiedCookie);
+                    headerMap.put(key, modifiedCookie);
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Couldn't find the " + key + " header to find the session");
@@ -213,7 +213,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
             }
         }
     }
-    
+
     protected void removeSessionID(OMElement header, QName keyQName) {
 
         OMElement sgcIDElm = getHeaderBlock(header, keyQName);

@@ -22,7 +22,7 @@ import org.apache.synapse.rest.API;
 public abstract class AbstractVersionStrategy implements VersionStrategy {
     protected API api;
     protected String version;
-    protected String versionType ;
+    protected String versionType;
 
     public AbstractVersionStrategy(API api, String version, String versionType) {
         this.api = api;
@@ -34,11 +34,11 @@ public abstract class AbstractVersionStrategy implements VersionStrategy {
         return version;
     }
 
-    public API getAPI(){
+    public API getAPI() {
         return api;
     }
 
-    public String getVersionType(){
+    public String getVersionType() {
         return versionType;
     }
 

@@ -25,15 +25,15 @@ import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.registry.Registry;
 
 import java.util.Iterator;
 
 /**
  * &lt;registry [name="string"] provider="provider.class"&gt;
- *   &lt;property name="string" value="string"&gt;
+ * &lt;property name="string" value="string"&gt;
  * &lt;/registry&gt;
  */
 public class RegistrySerializer {
@@ -50,7 +50,7 @@ public class RegistrySerializer {
 
         if (registry.getProviderClass() != null) {
             reg.addAttribute(fac.createOMAttribute(
-                "provider", nullNS, registry.getProviderClass()));
+                    "provider", nullNS, registry.getProviderClass()));
         } else {
             handleException("Invalid registry. Provider is required");
         }
@@ -61,7 +61,7 @@ public class RegistrySerializer {
             String value = (String) registry.getConfigurationProperties().get(name);
             OMElement property = fac.createOMElement("parameter", synNS);
             property.addAttribute(fac.createOMAttribute(
-                "name", nullNS, name));
+                    "name", nullNS, name));
             property.setText(value.trim());
             reg.addChild(property);
         }

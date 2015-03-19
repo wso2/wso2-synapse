@@ -21,13 +21,13 @@ package org.apache.synapse.config.xml.endpoints.utils;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.clustering.Member;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 import org.apache.synapse.endpoints.algorithms.RoundRobin;
-import org.apache.axis2.clustering.Member;
 
 import javax.xml.namespace.QName;
 import java.util.List;
@@ -52,7 +52,7 @@ public class LoadbalanceAlgorithmFactory {
 
         if (policyAttribute != null && algoAttribute != null) {
             String msg = "You cannot specify both the 'policy' & 'algorithm' in the configuration. " +
-                         "It is sufficient to provide only the 'algorithm'.";
+                    "It is sufficient to provide only the 'algorithm'.";
             log.fatal(msg); // We cannot continue execution. Hence it is logged at fatal level
             throw new SynapseException(msg);
         }
@@ -64,7 +64,7 @@ public class LoadbalanceAlgorithmFactory {
                 algorithm.setEndpoints(endpoints);
             } catch (Exception e) {
                 String msg = "Cannot instantiate LoadbalanceAlgorithm implementation class " +
-                             algorithmStr;
+                        algorithmStr;
                 log.fatal(msg, e); // We cannot continue execution. Hence it is logged at fatal level
                 throw new SynapseException(msg, e);
             }
@@ -73,13 +73,13 @@ public class LoadbalanceAlgorithmFactory {
             //currently only the roundRobin policy is supported
             if (!policyAttribute.getAttributeValue().trim().equals("roundRobin")) {
                 String msg = "Unsupported algorithm " + policyAttribute.getAttributeValue().trim() +
-                             " specified. Please use the 'algorithm' attribute to specify the " +
-                             "correct loadbalance algorithm implementation.";
+                        " specified. Please use the 'algorithm' attribute to specify the " +
+                        "correct loadbalance algorithm implementation.";
                 log.fatal(msg); // We cannot continue execution. Hence it is logged at fatal level
                 throw new SynapseException(msg);
             }
         }
-        
+
         return algorithm;
     }
 

@@ -68,10 +68,10 @@ public class ServiceDynamicLoadbalanceEndpointSerializer extends EndpointSeriali
 
         fac = OMAbstractFactory.getOMFactory();
         OMElement endpointElement
-          = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
 
         ServiceDynamicLoadbalanceEndpoint dynamicLoadbalanceEndpoint =
-          (ServiceDynamicLoadbalanceEndpoint) endpoint;
+                (ServiceDynamicLoadbalanceEndpoint) endpoint;
 
         // serialize the parameters
         serializeProperties(dynamicLoadbalanceEndpoint, endpointElement);
@@ -95,7 +95,7 @@ public class ServiceDynamicLoadbalanceEndpointSerializer extends EndpointSeriali
             long sessionTimeout = dynamicLoadbalanceEndpoint.getSessionTimeout();
             if (sessionTimeout != -1) {
                 OMElement sessionTimeoutElement = fac.createOMElement("sessionTimeout",
-                                                                      SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 sessionTimeoutElement.setText(String.valueOf(sessionTimeout));
                 sessionElement.addChild(sessionTimeoutElement);
             }
@@ -103,30 +103,30 @@ public class ServiceDynamicLoadbalanceEndpointSerializer extends EndpointSeriali
         }
 
         OMElement dynamicLoadbalanceElement
-          = fac.createOMElement("serviceDynamicLoadbalance", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                = fac.createOMElement("serviceDynamicLoadbalance", SynapseConstants.SYNAPSE_OMNAMESPACE);
         endpointElement.addChild(dynamicLoadbalanceElement);
 
         // Load balance algorithm
         dynamicLoadbalanceElement.addAttribute(XMLConfigConstants.LOADBALANCE_ALGORITHM,
-                                               dynamicLoadbalanceEndpoint.getAlgorithm().getClass().getName(),
-                                               null);
+                dynamicLoadbalanceEndpoint.getAlgorithm().getClass().getName(),
+                null);
 
         // Host-domain map
         OMElement servicesEle
-          = fac.createOMElement("services", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                = fac.createOMElement("services", SynapseConstants.SYNAPSE_OMNAMESPACE);
         dynamicLoadbalanceElement.addChild(servicesEle);
 
         Map<String, String> hostDomainMap = dynamicLoadbalanceEndpoint.getHostDomainMap();
         for (Map.Entry<String, String> entry : hostDomainMap.entrySet()) {
             OMElement serviceEle
-              = fac.createOMElement("service", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                    = fac.createOMElement("service", SynapseConstants.SYNAPSE_OMNAMESPACE);
             servicesEle.addChild(serviceEle);
             OMElement hostEle
-              = fac.createOMElement("host", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                    = fac.createOMElement("host", SynapseConstants.SYNAPSE_OMNAMESPACE);
             hostEle.setText(entry.getKey());
             serviceEle.addChild(hostEle);
             OMElement domainEle
-              = fac.createOMElement("domain", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                    = fac.createOMElement("domain", SynapseConstants.SYNAPSE_OMNAMESPACE);
             domainEle.setText(entry.getValue());
             serviceEle.addChild(domainEle);
         }

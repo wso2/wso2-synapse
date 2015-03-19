@@ -43,26 +43,26 @@ public class EIPUtils {
     /**
      * Return the set of elements specified by the XPath over the given envelope
      *
-     * @param envelope SOAPEnvelope from which the elements will be extracted
+     * @param envelope   SOAPEnvelope from which the elements will be extracted
      * @param expression SynapseXPath expression describing the elements to be extracted
      * @return List OMElements in the envelope matching the expression
      * @throws JaxenException if the XPath expression evaluation fails
      */
     public static List getMatchingElements(SOAPEnvelope envelope, SynapseXPath expression)
-        throws JaxenException {
-        return getMatchingElements(envelope,null,expression);
+            throws JaxenException {
+        return getMatchingElements(envelope, null, expression);
     }
 
     /**
      * Return the set of elements specified by the XPath over the given envelope
      *
-     * @param envelope SOAPEnvelope from which the elements will be extracted
+     * @param envelope   SOAPEnvelope from which the elements will be extracted
      * @param expression SynapseXPath expression describing the elements to be extracted
      * @return List OMElements in the envelope matching the expression
      * @throws JaxenException if the XPath expression evaluation fails
      */
-    public static List getMatchingElements(SOAPEnvelope envelope,MessageContext synCtxt, SynapseXPath expression)
-        throws JaxenException {
+    public static List getMatchingElements(SOAPEnvelope envelope, MessageContext synCtxt, SynapseXPath expression)
+            throws JaxenException {
 
         Object o = expression.evaluate(envelope, synCtxt);
         if (o instanceof OMNode) {
@@ -79,14 +79,14 @@ public class EIPUtils {
     /**
      * Return the set of detached elements specified by the XPath over the given envelope
      *
-     * @param envelope SOAPEnvelope from which the elements will be extracted
+     * @param envelope   SOAPEnvelope from which the elements will be extracted
      * @param expression SynapseXPath expression describing the elements to be extracted
      * @return List detached OMElements in the envelope matching the expression
      * @throws JaxenException if the XPath expression evaluation fails
      */
     public static List<OMNode> getDetachedMatchingElements(SOAPEnvelope envelope, MessageContext synCtxt,
                                                            SynapseXPath expression)
-        throws JaxenException {
+            throws JaxenException {
 
         List<OMNode> elementList = new ArrayList<OMNode>();
         Object o = expression.evaluate(envelope, synCtxt);
@@ -119,14 +119,14 @@ public class EIPUtils {
         List elementList = getMatchingElements(envelope, synCtxt, expression);
         List list = getMatchingElements(enricher, synCtxt, expression);
         if ((checkNotEmpty(elementList) && checkNotEmpty(list))
-            || (!checkNotEmpty(elementList) && checkNotEmpty(list))) {
+                || (!checkNotEmpty(elementList) && checkNotEmpty(list))) {
             if (checkNotEmpty(elementList)) {
                 // attach at parent of the first result from the XPath, or to the SOAPBody
                 Object o = elementList.get(0);
 
                 if (o instanceof OMElement &&
-                    ((OMElement) o).getParent() != null &&
-                    ((OMElement) o).getParent() instanceof OMElement) {
+                        ((OMElement) o).getParent() != null &&
+                        ((OMElement) o).getParent() instanceof OMElement) {
                     enrichingElement = (OMElement) ((OMElement) o).getParent();
                     OMElement body = envelope.getBody();
                     if (!isBody(body, enrichingElement)) {
@@ -182,19 +182,19 @@ public class EIPUtils {
     }
 
     public static void createSynapseEIPTemplateProperty(MessageContext synCtxt, String templateName,
-                                                        String  paramName, Object value) {
-        String targetSynapsePropName = getTemplatePropertyMapping(templateName,paramName);
-        synCtxt.setProperty(targetSynapsePropName,value);
+                                                        String paramName, Object value) {
+        String targetSynapsePropName = getTemplatePropertyMapping(templateName, paramName);
+        synCtxt.setProperty(targetSynapsePropName, value);
     }
 
     /**
      * Enclose children of the soap body with a specific element
      *
-     * @param envelope SOAPEnvelope which is to be enclosed
+     * @param envelope       SOAPEnvelope which is to be enclosed
      * @param encloseElement enclosing element
      * @return modified SOAPEnvelope
      */
-    public static SOAPEnvelope encloseWithElement (SOAPEnvelope envelope, OMElement encloseElement) {
+    public static SOAPEnvelope encloseWithElement(SOAPEnvelope envelope, OMElement encloseElement) {
         Iterator itr = envelope.getBody().getChildElements();
         Object o;
         while (itr.hasNext()) {

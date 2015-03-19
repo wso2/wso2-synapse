@@ -24,7 +24,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This class is responsible for receiving requests from various sources and dispatching
@@ -66,14 +69,14 @@ public class RESTRequestHandler {
     private boolean dispatchToAPI(MessageContext synCtx) {
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
         //Since swapping elements are not possible with sets, Collection is converted to a List
-        List<API> apiList=new ArrayList<API>(apiSet);
+        List<API> apiList = new ArrayList<API>(apiSet);
 
         API defaultAPI = null;
-        int i=0;
-        for(API api : apiList){
-            if(api.getVersion().trim().equals("")){ //caught no version api
+        int i = 0;
+        for (API api : apiList) {
+            if (api.getVersion().trim().equals("")) { //caught no version api
                 //swap the no version api with the last element of the list to give it the lowest priority.
-                Collections.swap(apiList,i,apiList.size()-1);
+                Collections.swap(apiList, i, apiList.size() - 1);
 
                 if (log.isDebugEnabled()) {
                     log.debug("Found API: " + api.getName() + " which has no version. Moved it to the last position.");

@@ -22,11 +22,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * This class will store runtime context of a synapse function template. For each invoked Template
@@ -54,6 +50,7 @@ public class TemplateContext {
 
     /**
      * evaluate raw parameters passed from an invoke medaiator and store them in this context
+     *
      * @param synCtxt Synapse MessageContext
      */
     public void setupParams(MessageContext synCtxt) {
@@ -75,17 +72,18 @@ public class TemplateContext {
      * This method will go through the provided expression and try to evaluate if an xpath expression
      * or would return plain value. special case is present for a expression type plain value .
      * ie:- plain values in an expression format  ie:- {expr} .
+     *
      * @return evaluated value/expression
      */
     private Object getEvaluatedParamValue(MessageContext synCtx, String parameter, Value expression) {
         if (expression != null) {
             if (expression.getExpression() != null) {
-                if(expression.hasExprTypeKey()){
-                	if(expression.hasPropertyEvaluateExpr()){
-                		//TODO:evalute the string expression get the value
-                		//String evaluatedPath ="{//m0:getQuote/m0:request}";
-                		return expression.evalutePropertyExpression(synCtx);
-                	}
+                if (expression.hasExprTypeKey()) {
+                    if (expression.hasPropertyEvaluateExpr()) {
+                        //TODO:evalute the string expression get the value
+                        //String evaluatedPath ="{//m0:getQuote/m0:request}";
+                        return expression.evalutePropertyExpression(synCtx);
+                    }
                     return expression.getExpression();
                 } else {
                     return expression.evaluateValue(synCtx);

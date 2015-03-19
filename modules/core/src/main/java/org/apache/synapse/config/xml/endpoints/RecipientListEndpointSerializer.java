@@ -29,43 +29,41 @@ import org.apache.synapse.endpoints.RecipientListEndpoint;
 
 /**
  * @author nuwan
- * 
- * erializes {@link RecipientListEndpoint} to an XML configuration.
- *
+ *         <p/>
+ *         erializes {@link RecipientListEndpoint} to an XML configuration.
  * @see RecipientListEndpointFactory
- *
  */
 public class RecipientListEndpointSerializer extends EndpointSerializer {
 
-	@Override
-	protected OMElement serializeEndpoint(Endpoint endpoint) {
-		if (!(endpoint instanceof RecipientListEndpoint)) {
+    @Override
+    protected OMElement serializeEndpoint(Endpoint endpoint) {
+        if (!(endpoint instanceof RecipientListEndpoint)) {
             handleException("Invalid endpoint type.");
         }
 
         fac = OMAbstractFactory.getOMFactory();
         OMElement endpointElement
                 = fac.createOMElement("endpoint", SynapseConstants.SYNAPSE_OMNAMESPACE);
-        
+
         RecipientListEndpoint recipientListEndpoint = (RecipientListEndpoint) endpoint;
 
         // serialize the parameters
         serializeProperties(recipientListEndpoint, endpointElement);
 
-        serializeCommonAttributes(endpoint,endpointElement);
+        serializeCommonAttributes(endpoint, endpointElement);
 
         OMElement recipientListElement
                 = fac.createOMElement("recipientlist", SynapseConstants.SYNAPSE_OMNAMESPACE);
         endpointElement.addChild(recipientListElement);
-        
-		// Serialize endpoint elements which are children of the recipientlist
-		// element
-		if (recipientListEndpoint.getChildren() != null) {
-			for (Endpoint childEndpoint : recipientListEndpoint.getChildren()) {
-				recipientListElement.addChild(EndpointSerializer
-						.getElementFromEndpoint(childEndpoint));
-			}
-		} else if (recipientListEndpoint.getMembers() != null) {
+
+        // Serialize endpoint elements which are children of the recipientlist
+        // element
+        if (recipientListEndpoint.getChildren() != null) {
+            for (Endpoint childEndpoint : recipientListEndpoint.getChildren()) {
+                recipientListElement.addChild(EndpointSerializer
+                        .getElementFromEndpoint(childEndpoint));
+            }
+        } else if (recipientListEndpoint.getMembers() != null) {
             for (Member member : recipientListEndpoint.getMembers()) {
                 OMElement memberEle = fac.createOMElement(
                         "member", SynapseConstants.SYNAPSE_OMNAMESPACE, recipientListElement);
@@ -77,12 +75,12 @@ public class RecipientListEndpointSerializer extends EndpointSerializer {
                         "httpsPort", null, String.valueOf(member.getHttpsPort())));
                 recipientListElement.addChild(memberEle);
             }
-        }else{
+        } else {
             OMElement dynamicEpEle = fac.createOMElement(
                     "endpoints", SynapseConstants.SYNAPSE_OMNAMESPACE, recipientListElement);
             new ValueSerializer().serializeValue(recipientListEndpoint.getDynamicEnpointSet(), "value", dynamicEpEle);
             dynamicEpEle.addAttribute(fac.createOMAttribute("max-cache", null,
-                                                            String.valueOf(recipientListEndpoint.getCurrentPoolSize())));
+                    String.valueOf(recipientListEndpoint.getCurrentPoolSize())));
             recipientListElement.addChild(dynamicEpEle);
         }
 

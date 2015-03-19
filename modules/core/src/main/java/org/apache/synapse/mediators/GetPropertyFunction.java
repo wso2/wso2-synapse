@@ -48,14 +48,16 @@ import java.util.Stack;
 /**
  * Implements the XPath extension function synapse:get-property(scope,prop-name)
  */
-public class GetPropertyFunction implements Function , XPathFunction {
+public class GetPropertyFunction implements Function, XPathFunction {
 
     private static final Log log = LogFactory.getLog(GetPropertyFunction.class);
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
     public static final String NULL_STRING = "";
 
-    /** Synapse Message context*/
+    /**
+     * Synapse Message context
+     */
     private final MessageContext synCtx;
 
     public GetPropertyFunction(MessageContext synCtx) {
@@ -71,7 +73,7 @@ public class GetPropertyFunction implements Function , XPathFunction {
      * The default scope is used to get property from the synapse message context
      *
      * @param context the context at the point in the expression when the function is called
-     * @param args  arguments of the functions 
+     * @param args    arguments of the functions
      * @return The string value of a property
      * @throws FunctionCallException
      */
@@ -84,7 +86,7 @@ public class GetPropertyFunction implements Function , XPathFunction {
             }
             return null;
         }
-        
+
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
@@ -98,19 +100,19 @@ public class GetPropertyFunction implements Function , XPathFunction {
             int size = args.size();
             if (size == 1) {
                 return evaluate(
-                    XMLConfigConstants.SCOPE_DEFAULT, args.get(0), null, context.getNavigator());
+                        XMLConfigConstants.SCOPE_DEFAULT, args.get(0), null, context.getNavigator());
 
             } else if (size == 2) {
                 String argOne = StringFunction.evaluate(args.get(0), context.getNavigator());
                 if (argOne != null) {
                     if (!XMLConfigConstants.SCOPE_AXIS2.equals(argOne) && !XMLConfigConstants.SCOPE_OPERATION.equals(argOne) &&
-                        !XMLConfigConstants.SCOPE_DEFAULT.equals(argOne) &&
-                        !XMLConfigConstants.SCOPE_TRANSPORT.equals(argOne) &&
+                            !XMLConfigConstants.SCOPE_DEFAULT.equals(argOne) &&
+                            !XMLConfigConstants.SCOPE_TRANSPORT.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_REGISTRY.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_FUNC.equals(argOne) &&
                             !XMLConfigConstants.SCOPE_SYSTEM.equals(argOne)) {
                         return evaluate(XMLConfigConstants.SCOPE_DEFAULT, args.get(0),
-                            args.get(1), context.getNavigator());
+                                args.get(1), context.getNavigator());
                     } else {
                         return evaluate(args.get(0), args.get(1), null, context.getNavigator());
                     }
@@ -120,7 +122,7 @@ public class GetPropertyFunction implements Function , XPathFunction {
             } else {
 
                 String msg = "Invalid arguments for synapse:get-property(prop-name) 0r  " +
-                    "synapse:get-property(scope, prop-name) XPath function ";
+                        "synapse:get-property(scope, prop-name) XPath function ";
                 if (traceOn) {
                     trace.error(msg);
                 }
@@ -135,13 +137,13 @@ public class GetPropertyFunction implements Function , XPathFunction {
      * Returns the string value of the property using arg one as key and arg two as scope
      *
      * @param scopeObject scope will decide from where property will be picked up from
-     *        i.e. axis2, transport, default/synapse
-     * @param keyObject the key of the property
-     * @param navigator object model which can be used for navigation around
-     * @param dateformat The dateformat that need to convert
+     *                    i.e. axis2, transport, default/synapse
+     * @param keyObject   the key of the property
+     * @param navigator   object model which can be used for navigation around
+     * @param dateformat  The dateformat that need to convert
      * @return The String value of property using arg one as key and arg two as scope
      */
-    public Object evaluate(Object scopeObject, Object keyObject, Object dateformat,Navigator navigator) {
+    public Object evaluate(Object scopeObject, Object keyObject, Object dateformat, Navigator navigator) {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -152,8 +154,8 @@ public class GetPropertyFunction implements Function , XPathFunction {
         if (key == null || "".equals(key)) {
             if (traceOrDebugOn) {
                 traceOrDebug(traceOn,
-                    "property-name should be provided when executing synapse:get-property" +
-                    "(scope,prop-name) or synapse:get-property(prop-name) Xpath function");
+                        "property-name should be provided when executing synapse:get-property" +
+                                "(scope,prop-name) or synapse:get-property(prop-name) Xpath function");
             }
             return NULL_STRING;
         }
@@ -282,7 +284,7 @@ public class GetPropertyFunction implements Function , XPathFunction {
         } else if (XMLConfigConstants.SCOPE_FUNC.equals(scope)) {
             Stack<TemplateContext> functionStack = (Stack) synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
             TemplateContext topCtxt = functionStack.peek();
-            if (topCtxt!=null) {
+            if (topCtxt != null) {
                 return topCtxt.getParameterValue(key);
             }
         } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)
@@ -298,13 +300,13 @@ public class GetPropertyFunction implements Function , XPathFunction {
                 return headersMap.get(key);
             }
 
-        } else if(XMLConfigConstants.SCOPE_OPERATION.equals(scope)
-                && synCtx instanceof Axis2MessageContext){
-        	Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)
+                && synCtx instanceof Axis2MessageContext) {
+            Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
             org.apache.axis2.context.MessageContext axis2MessageCtx =
                     axis2smc.getAxis2MessageContext();
             return axis2smc.getAxis2MessageContext().getOperationContext().getProperty(key);
-        }else if (XMLConfigConstants.SCOPE_REGISTRY.equals(scope)) {
+        } else if (XMLConfigConstants.SCOPE_REGISTRY.equals(scope)) {
             String[] regParam = key.split("@");
             String regPath = null;
             String propName = null;
@@ -369,13 +371,14 @@ public class GetPropertyFunction implements Function , XPathFunction {
 
     /**
      * Wraps jaxon xpath function as a javax.xml.xpath.XPathFunction
-     * @param args  List of argument for custom xpath function
+     *
+     * @param args List of argument for custom xpath function
      * @return result of xpath evaluation
      * @throws XPathFunctionException
      */
     public Object evaluate(List args) throws XPathFunctionException {
         try {
-            return call(new Context(new ContextSupport()) ,args);
+            return call(new Context(new ContextSupport()), args);
         } catch (FunctionCallException e) {
             throw new XPathFunctionException(e);
         }

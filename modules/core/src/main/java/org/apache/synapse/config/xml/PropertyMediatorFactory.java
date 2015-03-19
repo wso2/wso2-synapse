@@ -71,7 +71,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
             log.error(msg);
             throw new SynapseException(msg);
         }
-        
+
         propMediator.setName(name.getAttributeValue());
         String dataType = null;
         if (type != null) {
@@ -85,7 +85,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         } else if (expression != null) {
             try {
                 propMediator.setExpression(SynapsePathFactory.getSynapsePath(elem, ATT_EXPRN),
-                    dataType);
+                        dataType);
             } catch (JaxenException e) {
                 String msg = "Invalid XPath expression for attribute 'expression' : " +
                         expression.getAttributeValue();
@@ -100,7 +100,7 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                 int groupValue = Integer.parseInt(group.getAttributeValue());
                 if (groupValue >= 0) {
                     propMediator.setGroup(groupValue);
-                } else {                    
+                } else {
                     String msg = "group can have a positive value only";
                     log.error(msg);
                     throw new SynapseException(msg);
@@ -117,22 +117,22 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         if (action != null && "remove".equals(action.getAttributeValue())) {
             propMediator.setAction(PropertyMediator.ACTION_REMOVE);
         }
-        
+
         if (scope != null) {
             String valueStr = scope.getAttributeValue();
             if (!XMLConfigConstants.SCOPE_AXIS2.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr)) {
+                    !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
+                    !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr)) {
 
                 String msg = "Only '" + XMLConfigConstants.SCOPE_AXIS2 +
-                             "' or '" + XMLConfigConstants.SCOPE_TRANSPORT +
-                             "' or '" + XMLConfigConstants.SCOPE_CLIENT +
-                             "' or '" + XMLConfigConstants.SCOPE_DEFAULT +
-                             "' or '" + XMLConfigConstants.SCOPE_OPERATION +
-                             "' values are allowed for attribute scope for a property mediator" +
-                             ", Unsupported scope " + valueStr;
+                        "' or '" + XMLConfigConstants.SCOPE_TRANSPORT +
+                        "' or '" + XMLConfigConstants.SCOPE_CLIENT +
+                        "' or '" + XMLConfigConstants.SCOPE_DEFAULT +
+                        "' or '" + XMLConfigConstants.SCOPE_OPERATION +
+                        "' values are allowed for attribute scope for a property mediator" +
+                        ", Unsupported scope " + valueStr;
                 log.error(msg);
                 throw new SynapseException(msg);
             }

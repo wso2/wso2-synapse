@@ -30,14 +30,15 @@ import java.util.Properties;
  * Creates an {@link IndirectEndpoint} using a XML configuration. Key can be a name of an endpoint defined
  * in the same Synapse configuration or a registry key pointing to an endpoint configuration in the
  * registry (e.g. &lt;endpoint key="registry/endpoint1.xml"/&gt;).
- *
+ * <p/>
  * &lt;endpoint key="key"/&gt;
  */
 public class IndirectEndpointFactory extends EndpointFactory {
 
     private static IndirectEndpointFactory instance = new IndirectEndpointFactory();
 
-    private IndirectEndpointFactory() {}
+    private IndirectEndpointFactory() {
+    }
 
     public static IndirectEndpointFactory getInstance() {
         return instance;

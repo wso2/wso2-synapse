@@ -25,7 +25,6 @@ import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseException;
 
 import java.net.URL;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -37,33 +36,52 @@ public class Entry implements SynapseArtifact {
 
     private static final Log log = LogFactory.getLog(Entry.class);
 
-    /** The key of the entry */
+    /**
+     * The key of the entry
+     */
     private String key;
-    /** The type of the entry */
+    /**
+     * The type of the entry
+     */
     private int type;
-    /** Source URL of the entry if it is a URL_SRC */
+    /**
+     * Source URL of the entry if it is a URL_SRC
+     */
     private URL src;
-    /** The value of the entry. This can be either an OMElement or an String */
+    /**
+     * The value of the entry. This can be either an OMElement or an String
+     */
     private Object value;
-    /** An XML to Object mapper - if one is available */
+    /**
+     * An XML to Object mapper - if one is available
+     */
     private XMLToObjectMapper mapper;
-    /** The version of the cached resource */
+    /**
+     * The version of the cached resource
+     */
     private long version;
-    /** The local expiry time for the cached resource */
+    /**
+     * The local expiry time for the cached resource
+     */
     private long expiryTime;
-    /** The name of the file where this entry is defined */
+    /**
+     * The name of the file where this entry is defined
+     */
     private String fileName;
-    /** The description of the local entry */
+    /**
+     * The description of the local entry
+     */
     private String description;
 
     /**
      * Registry resource properties
-    */
+     */
     private Properties entryProperties;
 
 
-    public Entry() {}
-    
+    public Entry() {
+    }
+
     public Entry(String key) {
         this.key = key;
     }
@@ -115,6 +133,7 @@ public class Entry implements SynapseArtifact {
     /**
      * Gets the value of the entry. String if the type is INLINE_TEXT or VALUE_TYPE,
      * OMElement otherwise.
+     *
      * @return Either an OMElement or a String
      */
     public Object getValue() {
@@ -126,7 +145,6 @@ public class Entry implements SynapseArtifact {
     }
 
     /**
-     *
      * @return mapper
      */
     public XMLToObjectMapper getMapper() {

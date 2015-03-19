@@ -37,8 +37,8 @@ public class BlockingMsgSenderUtils {
      * Fill client options extracting properties from the original message context and endpoint
      * definition
      *
-     * @param endpoint endpoint definition
-     * @param clientOptions target client options
+     * @param endpoint        endpoint definition
+     * @param clientOptions   target client options
      * @param synapseInMsgCtx original message context
      */
     public static void fillClientOptions(EndpointDefinition endpoint, Options clientOptions,
@@ -62,13 +62,13 @@ public class BlockingMsgSenderUtils {
                     String outboundWsSecPolicyKey = endpoint.getOutboundWsSecPolicyKey();
                     if (inboundWsSecPolicyKey != null) {
                         clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY,
-                                                  MessageHelper.getPolicy(
-                                                          synapseInMsgCtx, inboundWsSecPolicyKey));
+                                MessageHelper.getPolicy(
+                                        synapseInMsgCtx, inboundWsSecPolicyKey));
                     }
                     if (outboundWsSecPolicyKey != null) {
                         clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY,
-                                                  MessageHelper.getPolicy(
-                                                          synapseInMsgCtx, outboundWsSecPolicyKey));
+                                MessageHelper.getPolicy(
+                                        synapseInMsgCtx, outboundWsSecPolicyKey));
                     }
                 }
             }
@@ -88,8 +88,8 @@ public class BlockingMsgSenderUtils {
      * Fill the target message context extracting the required properties of the original message
      * context and the endpoint
      *
-     * @param endpoint endpoint definition
-     * @param axisOutMsgCtx target message axis2 context
+     * @param endpoint        endpoint definition
+     * @param axisOutMsgCtx   target message axis2 context
      * @param synapseInMsgCtx original synapse message context
      * @throws org.apache.axis2.AxisFault
      */
@@ -124,16 +124,16 @@ public class BlockingMsgSenderUtils {
             } else if (SynapseConstants.FORMAT_GET.equals(format)) {
                 axisOutMsgCtx.setDoingREST(true);
                 axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                                          Constants.Configuration.HTTP_METHOD_GET);
+                        Constants.Configuration.HTTP_METHOD_GET);
                 axisOutMsgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
-                                          org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_X_WWW_FORM);
+                        org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_X_WWW_FORM);
 
             } else if (SynapseConstants.FORMAT_SOAP11.equals(format)) {
                 axisOutMsgCtx.setDoingREST(false);
                 axisOutMsgCtx.removeProperty(Constants.Configuration.MESSAGE_TYPE);
                 // We need to set this explicitly here in case the request was not a POST
                 axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                                          Constants.Configuration.HTTP_METHOD_POST);
+                        Constants.Configuration.HTTP_METHOD_POST);
                 if (axisOutMsgCtx.getSoapAction() == null && axisOutMsgCtx.getWSAAction() != null) {
                     axisOutMsgCtx.setSoapAction(axisOutMsgCtx.getWSAAction());
                 }
@@ -145,7 +145,7 @@ public class BlockingMsgSenderUtils {
                 axisOutMsgCtx.removeProperty(Constants.Configuration.MESSAGE_TYPE);
                 // We need to set this explicitly here in case the request was not a POST
                 axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                                          Constants.Configuration.HTTP_METHOD_POST);
+                        Constants.Configuration.HTTP_METHOD_POST);
                 if (axisOutMsgCtx.getSoapAction() == null && axisOutMsgCtx.getWSAAction() != null) {
                     axisOutMsgCtx.setSoapAction(axisOutMsgCtx.getWSAAction());
                 }
@@ -156,7 +156,7 @@ public class BlockingMsgSenderUtils {
                 if (axisInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD) != null) {
                     if (axisInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD).
                             toString().equals(Constants.Configuration.HTTP_METHOD_GET)
-                        || axisInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD).
+                            || axisInMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD).
                             toString().equals(Constants.Configuration.HTTP_METHOD_DELETE)) {
                         axisOutMsgCtx.removeProperty(Constants.Configuration.MESSAGE_TYPE);
                     }
@@ -185,7 +185,7 @@ public class BlockingMsgSenderUtils {
 
         if (endpoint.getCharSetEncoding() != null) {
             axisOutMsgCtx.setProperty(Constants.Configuration.CHARACTER_SET_ENCODING,
-                                      endpoint.getCharSetEncoding());
+                    endpoint.getCharSetEncoding());
         }
 
         // HTTP Endpoint : use the specified HTTP method TODO: Remove this after refactoring Http Endpoint logic
@@ -196,7 +196,7 @@ public class BlockingMsgSenderUtils {
         }
 
         boolean isRest = SynapseConstants.FORMAT_REST.equals(endpoint.getFormat()) |
-                         axisInMsgCtx.isDoingREST();
+                axisInMsgCtx.isDoingREST();
         if (!isRest && !endpoint.isForceSOAP11() && !endpoint.isForceSOAP12()) {
             isRest = isRequestRest(axisInMsgCtx);
         }
@@ -238,20 +238,21 @@ public class BlockingMsgSenderUtils {
         } else {
             MessageHelper.removeAddressingHeaders(axisOutMsgCtx);
             axisOutMsgCtx.setProperty(
-                                AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.TRUE);
+                    AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.TRUE);
         }
 
     }
 
     /**
      * Get the modified EPR with rest url postfix
+     *
      * @param restURLPostfix Rest URL postfix
-     * @param address original EPR
-    */
+     * @param address        original EPR
+     */
     private static String getEPRWithRestURLPostfix(String restURLPostfix, String address) {
         String url;
         if (!address.endsWith("/") && !restURLPostfix.startsWith("/") &&
-            !restURLPostfix.startsWith("?")) {
+                !restURLPostfix.startsWith("?")) {
             url = address + "/" + restURLPostfix;
         } else if (address.endsWith("/") && restURLPostfix.startsWith("/")) {
             url = address + restURLPostfix.substring(1);
@@ -280,15 +281,15 @@ public class BlockingMsgSenderUtils {
                     Constants.Configuration.HTTP_METHOD);
 
             isRestRequest = Constants.Configuration.HTTP_METHOD_GET.equals(httpMethod)
-                            || Constants.Configuration.HTTP_METHOD_DELETE.equals(httpMethod)
-                            || Constants.Configuration.HTTP_METHOD_PUT.equals(httpMethod)
-                            || RESTConstants.METHOD_OPTIONS.equals(httpMethod)
-                            || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod);
+                    || Constants.Configuration.HTTP_METHOD_DELETE.equals(httpMethod)
+                    || Constants.Configuration.HTTP_METHOD_PUT.equals(httpMethod)
+                    || RESTConstants.METHOD_OPTIONS.equals(httpMethod)
+                    || Constants.Configuration.HTTP_METHOD_HEAD.equals(httpMethod);
 
             if (!isRestRequest) {
 
                 isRestRequest = Constants.Configuration.HTTP_METHOD_POST.equals(httpMethod)
-                                && HTTPTransportUtils.isRESTRequest(
+                        && HTTPTransportUtils.isRESTRequest(
                         String.valueOf(originalInMsgCtx.getProperty(
                                 Constants.Configuration.MESSAGE_TYPE)));
             }
@@ -298,7 +299,8 @@ public class BlockingMsgSenderUtils {
 
     /**
      * Set message context properties extracting from the original message context
-     * @param axisInMsgCtx original message context
+     *
+     * @param axisInMsgCtx  original message context
      * @param axisOutMsgCtx target message context
      */
     private static void setProperties(org.apache.axis2.context.MessageContext axisInMsgCtx,
@@ -312,10 +314,10 @@ public class BlockingMsgSenderUtils {
     }
 
     private static String[] allowedProperties = {"JSON_OBJECT",
-                                                 "JSON_STRING",
-                                                 Constants.Configuration.HTTP_METHOD,
-                                                 Constants.Configuration.MESSAGE_TYPE,
-                                                 Constants.Configuration.CONTENT_TYPE,
-                                                 NhttpConstants.REST_URL_POSTFIX};
+            "JSON_STRING",
+            Constants.Configuration.HTTP_METHOD,
+            Constants.Configuration.MESSAGE_TYPE,
+            Constants.Configuration.CONTENT_TYPE,
+            NhttpConstants.REST_URL_POSTFIX};
 
 }

@@ -29,13 +29,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Properties;
+
 /**
  * Factory class for Template configuration as follows
  * <template name="simple_func">
-	    <parameter name="p1"/>
-        <parameter name="p2"/>*
-        <mediator/>+
-    </template>
+ * <parameter name="p1"/>
+ * <parameter name="p2"/>*
+ * <mediator/>+
+ * </template>
  */
 public class TemplateMediatorFactory extends AbstractListMediatorFactory {
     private static final QName TEMPLATE_Q

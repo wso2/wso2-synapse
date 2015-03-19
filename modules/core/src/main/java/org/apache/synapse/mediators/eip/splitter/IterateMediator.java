@@ -52,9 +52,11 @@ import java.util.List;
  * hands over the newly created messages to a target for processing
  */
 public class IterateMediator extends AbstractMediator implements ManagedLifecycle,
-                                                                 FlowContinuableMediator {
+        FlowContinuableMediator {
 
-    /** Continue mediation on the parent message or not? */
+    /**
+     * Continue mediation on the parent message or not?
+     */
     private boolean continueParent = false;
 
     /**
@@ -64,7 +66,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      */
     private boolean preservePayload = false;
 
-    /** The XPath that will list the elements to be splitted */
+    /**
+     * The XPath that will list the elements to be splitted
+     */
     private SynapseXPath expression = null;
 
     /**
@@ -73,7 +77,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      */
     private SynapseXPath attachPath = null;
 
-    /** The target for the newly splitted messages */
+    /**
+     * The target for the newly splitted messages
+     */
     private Target target = null;
 
     private String id = null;
@@ -110,12 +116,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("Splitting with XPath : " + expression + " resulted in " +
-                    splitElements.size() + " elements");
+                        splitElements.size() + " elements");
             }
 
             // if not preservePayload remove all the child elements
             if (!preservePayload && envelope.getBody() != null) {
-                for (Iterator itr = envelope.getBody().getChildren(); itr.hasNext();) {
+                for (Iterator itr = envelope.getBody().getChildren(); itr.hasNext(); ) {
                     ((OMNode) itr.next()).detach();
                 }
             }
@@ -129,14 +135,14 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                 // for the moment iterator will look for an OMNode as the iteration element
                 if (!(o instanceof OMNode)) {
                     handleException("Error splitting message with XPath : "
-                        + expression + " - result not an OMNode", synCtx);
+                            + expression + " - result not an OMNode", synCtx);
                 }
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug(
-                            "Submitting " + (msgNumber+1) + " of " + msgNumber +
-                            (target.isAsynchronous() ? " messages for processing in parallel" :
-                             " messages for processing in sequentially"));
+                            "Submitting " + (msgNumber + 1) + " of " + msgNumber +
+                                    (target.isAsynchronous() ? " messages for processing in parallel" :
+                                            " messages for processing in sequentially"));
                 }
 
                 MessageContext itereatedMsgCtx =
@@ -155,9 +161,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         // if the continuation of the parent message is stopped from here set the RESPONSE_WRITTEN
         // property to SKIP to skip the blank http response 
         OperationContext opCtx
-            = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
+                = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
         if (!continueParent && opCtx != null) {
-            opCtx.setProperty(Constants.RESPONSE_WRITTEN,"SKIP");
+            opCtx.setProperty(Constants.RESPONSE_WRITTEN, "SKIP");
         }
 
         synLog.traceOrDebug("End : Iterate mediator");
@@ -196,12 +202,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      * @param envelope  - envelope to be used in the iteration
      * @param o         - element which participates in the iteration replacement
      * @return newCtx created by the iteration
-     * @throws AxisFault if there is a message creation failure
+     * @throws AxisFault      if there is a message creation failure
      * @throws JaxenException if the expression evauation failure
      */
     private MessageContext getIteratedMessage(MessageContext synCtx, int msgNumber, int msgCount,
-        SOAPEnvelope envelope, OMNode o) throws AxisFault, JaxenException {
-        
+                                              SOAPEnvelope envelope, OMNode o) throws AxisFault, JaxenException {
+
         // clone the message for the mediation in iteration
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
 
@@ -229,7 +235,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
             Object attachElem = attachPath.evaluate(newEnvelope, synCtx);
             if (attachElem != null &&
-                attachElem instanceof List && !((List) attachElem).isEmpty()) {
+                    attachElem instanceof List && !((List) attachElem).isEmpty()) {
                 attachElem = ((List) attachElem).get(0);
             }
 
@@ -238,15 +244,15 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                 ((OMElement) attachElem).addChild(o);
             } else {
                 handleException("Error in attaching the splitted elements :: " +
-                    "Unable to get the attach path specified by the expression " +
-                    attachPath, synCtx);
+                        "Unable to get the attach path specified by the expression " +
+                        attachPath, synCtx);
             }
 
         } else if (newEnvelope.getBody() != null) {
             // if not preserve payload then attach the iteration element to the body
-        	if(newEnvelope.getBody().getFirstElement() !=null){
-        		newEnvelope.getBody().getFirstElement().detach();
-        	}
+            if (newEnvelope.getBody().getFirstElement() != null) {
+                newEnvelope.getBody().getFirstElement().detach();
+            }
             newEnvelope.getBody().addChild(o);
         }
 

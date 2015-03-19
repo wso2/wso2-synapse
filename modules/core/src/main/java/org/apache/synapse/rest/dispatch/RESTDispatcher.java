@@ -33,7 +33,7 @@ public interface RESTDispatcher {
     /**
      * Find a Resource instance suitable for processing the given message
      *
-     * @param synCtx MessageContext to be processed through a Resource
+     * @param synCtx    MessageContext to be processed through a Resource
      * @param resources Collection of available Resource instances
      * @return A matching Resource instance or null
      */

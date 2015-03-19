@@ -21,12 +21,11 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 
-import java.util.Stack;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.io.PrintWriter;
+import java.util.Stack;
 
 /**
  * This is an abstract class that handles an unexpected error during Synapse mediation, but looking
@@ -64,8 +63,9 @@ public abstract class FaultHandler {
 
     /**
      * Extract and set ERROR_MESSAGE and ERROR_DETAIL to the message context from the Exception
+     *
      * @param synCtx the message context
-     * @param e the exception encountered
+     * @param e      the exception encountered
      */
     public void handleFault(MessageContext synCtx, Exception e) {
 
@@ -82,18 +82,18 @@ public abstract class FaultHandler {
 
         if (traceOrDebugOn) {
             traceOrDebugWarn(traceOn, "ERROR_CODE : " +
-                synCtx.getProperty(SynapseConstants.ERROR_CODE));
+                    synCtx.getProperty(SynapseConstants.ERROR_CODE));
             traceOrDebugWarn(traceOn, "ERROR_MESSAGE : " +
-                synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
+                    synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
             traceOrDebugWarn(traceOn, "ERROR_DETAIL : " +
-                synCtx.getProperty(SynapseConstants.ERROR_DETAIL));
+                    synCtx.getProperty(SynapseConstants.ERROR_DETAIL));
             traceOrDebugWarn(traceOn, "ERROR_EXCEPTION : " +
-                synCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+                    synCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
         }
 
         synCtx.getServiceLog().warn("ERROR_CODE : " +
-            synCtx.getProperty(SynapseConstants.ERROR_CODE) + " ERROR_MESSAGE : " + 
-            synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
+                synCtx.getProperty(SynapseConstants.ERROR_CODE) + " ERROR_MESSAGE : " +
+                synCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
 
         try {
             if (traceOrDebugOn) {
@@ -106,14 +106,15 @@ public abstract class FaultHandler {
             Stack faultStack = synCtx.getFaultStack();
             if (faultStack != null && !faultStack.isEmpty()) {
                 ((FaultHandler) faultStack.pop()).handleFault(synCtx, se);
-            } else{
-            	throw new RuntimeException(se);
+            } else {
+                throw new RuntimeException(se);
             }
         }
     }
 
     /**
      * This will be executed to handle any Exceptions occurred within the Synapse environment.
+     *
      * @param synCtx SynapseMessageContext of which the fault occured message comprises
      * @throws SynapseException in case there is a failure in the fault execution
      */
@@ -121,6 +122,7 @@ public abstract class FaultHandler {
 
     /**
      * Get the stack trace into a String
+     *
      * @param aThrowable
      * @return the stack trace as a string
      */

@@ -19,22 +19,22 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.config.SynapseConfigUtils;
-import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.config.XMLToObjectMapper;
-import org.apache.synapse.config.Entry;
-import org.apache.synapse.SynapseException;
-import org.apache.axiom.om.OMNode;
-import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.Entry;
+import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.config.XMLToObjectMapper;
 
 import javax.xml.namespace.QName;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Properties;
 
 /**
@@ -54,17 +54,17 @@ public class EntryFactory implements XMLToObjectMapper {
                 Class c = Class.forName(customFactory);
                 Object o = c.newInstance();
                 if (o instanceof IEntryFactory) {
-                    return ((IEntryFactory)o).createEntry(elem);
+                    return ((IEntryFactory) o).createEntry(elem);
                 }
             } catch (ClassNotFoundException e) {
-                 handleException("Class specified by the synapse.entry.factory " +
-                         "synapse property not found: " + customFactory, e);
+                handleException("Class specified by the synapse.entry.factory " +
+                        "synapse property not found: " + customFactory, e);
             } catch (InstantiationException e) {
                 handleException("Class specified by the synapse.entry.factory " +
-                         "synapse property cannot be instantiated: " + customFactory, e);
+                        "synapse property cannot be instantiated: " + customFactory, e);
             } catch (IllegalAccessException e) {
                 handleException("Class specified by the synapse.entry.factory " +
-                         "synapse property cannot be accessed: " + customFactory, e);
+                        "synapse property cannot be accessed: " + customFactory, e);
             }
         }
 
@@ -83,7 +83,7 @@ public class EntryFactory implements XMLToObjectMapper {
                 descriptionElem.detach();
             }
 
-            String src  = elem.getAttributeValue(
+            String src = elem.getAttributeValue(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "src"));
 
             // if a src attribute is present, this is a URL source resource,
@@ -99,7 +99,7 @@ public class EntryFactory implements XMLToObjectMapper {
                 }
 
             } else {
-                OMNode    nodeValue = elem.getFirstOMChild();
+                OMNode nodeValue = elem.getFirstOMChild();
                 OMElement elemValue = elem.getFirstElement();
 
                 if (elemValue != null) {
@@ -108,7 +108,7 @@ public class EntryFactory implements XMLToObjectMapper {
                 } else if (nodeValue != null && nodeValue instanceof OMText) {
                     entry.setType(Entry.INLINE_TEXT);
                     entry.setValue(elem.getText().trim());
-				}
+                }
             }
 
             return entry;

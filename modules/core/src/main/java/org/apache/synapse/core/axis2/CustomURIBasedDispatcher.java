@@ -34,13 +34,13 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import java.util.Map;
 
 /**
- * 
+ *
  */
 public class CustomURIBasedDispatcher extends AbstractDispatcher {
 
     private static final Log log = LogFactory.getLog(CustomURIBasedDispatcher.class);
     public static final String NAME = "CustomURIBasedDispatcher";
-    
+
     public AxisOperation findOperation(AxisService axisService, MessageContext messageContext)
             throws AxisFault {
         // no need to do any processing, since this is not for operation dispatching

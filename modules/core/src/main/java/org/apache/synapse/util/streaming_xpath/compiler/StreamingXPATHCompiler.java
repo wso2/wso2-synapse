@@ -46,7 +46,7 @@ public class StreamingXPATHCompiler {
         CommonTreeNodeStream nodes = new CommonTreeNodeStream(t);
         nodes.setTokenStream(tokens);
         XPath1Walker walker = new XPath1Walker(nodes);
-        walker.xpath=source;
+        walker.xpath = source;
         return walker.xpath();
     }
 }

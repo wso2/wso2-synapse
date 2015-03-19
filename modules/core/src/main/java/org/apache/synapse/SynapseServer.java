@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * This is the class invoked by the command line scripts synapse.sh and synapse-daemon.sh to
  * start an instance of Synapse. This class calls on the ServerManager to start up the instance
- *
+ * <p/>
  * TODO Switch to using commons-cli and move all command line parameter processing etc from the
  * .sh and .bat into this.. for 1.3 release :)
  */
@@ -40,7 +40,9 @@ public class SynapseServer {
                     "<resolve_root> <deployment mode>" +
                     "\n Opts: -? this message";
 
-    /** This is the class to control the synapse server */
+    /**
+     * This is the class to control the synapse server
+     */
     private static ServerManager serverManager;
 
     public static void printUsage() {

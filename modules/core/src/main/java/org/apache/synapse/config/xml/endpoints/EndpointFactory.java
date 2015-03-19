@@ -22,23 +22,25 @@ package org.apache.synapse.config.xml.endpoints;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
-import org.apache.axiom.util.UIDGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.XMLToObjectMapper;
-import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.MediatorPropertyFactory;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.IndirectEndpoint;
-import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.PropertyInclude;
-import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.AbstractEndpoint;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.IndirectEndpoint;
+import org.apache.synapse.mediators.MediatorProperty;
 
 import javax.xml.namespace.QName;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * All endpoint factories should extend from this abstract class. Use EndpointFactory to obtain the
@@ -72,7 +74,7 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
      *
      * @param elem        XML from which the endpoint will be built
      * @param isAnonymous whether this is an anonymous endpoint or not
-     * @param properties bag of properties to pass in any information to the factory
+     * @param properties  bag of properties to pass in any information to the factory
      * @return created endpoint
      */
     public static Endpoint getEndpointFromElement(OMElement elem, boolean isAnonymous,
@@ -86,12 +88,12 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
      * definition for this endpoint will be built using a custom Endpoint Defn factory.
      *
      * @param elem        XML from which the endpoint will be built
-     * @param factory    custom definition factory which this endpoint will be used to build
+     * @param factory     custom definition factory which this endpoint will be used to build
      * @param isAnonymous whether this is an anonymous endpoint or not
-     * @param properties bag of properties to pass in any information to the factory
+     * @param properties  bag of properties to pass in any information to the factory
      * @return created endpoint
      */
-    public static Endpoint getEndpointFromElement(OMElement elem,DefinitionFactory factory,
+    public static Endpoint getEndpointFromElement(OMElement elem, DefinitionFactory factory,
                                                   boolean isAnonymous,
                                                   Properties properties) {
         EndpointFactory fac = getEndpointFactory(elem);
@@ -102,7 +104,7 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
     /**
      * Creates the {@link Endpoint} object from the provided {@link OMNode}
      *
-     * @param om XML node from which the endpoint will be built
+     * @param om         XML node from which the endpoint will be built
      * @param properties bag of properties to pass in any information to the factory
      * @return created endpoint as an {@link Object}
      */
@@ -123,23 +125,23 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
      *
      * @param epConfig          OMElement containing the endpoint configuration.
      * @param anonymousEndpoint false if the endpoint has a name. true otherwise.
-     * @param properties bag of properties to pass in any information to the factory
+     * @param properties        bag of properties to pass in any information to the factory
      * @return Endpoint implementation for the given configuration.
      */
     protected abstract Endpoint createEndpoint(OMElement epConfig, boolean anonymousEndpoint,
                                                Properties properties);
 
     /**
-     *  Make sure that the endpoints created by the factory has a name
-     * 
+     * Make sure that the endpoints created by the factory has a name
+     *
      * @param epConfig          OMElement containing the endpoint configuration.
      * @param anonymousEndpoint false if the endpoint has a name. true otherwise.
-     * @param properties bag of properties to pass in any information to the factory
+     * @param properties        bag of properties to pass in any information to the factory
      * @return Endpoint implementation for the given configuration.
      */
     private Endpoint createEndpointWithName(OMElement epConfig, boolean anonymousEndpoint,
                                             Properties properties) {
-        
+
         Endpoint ep = createEndpoint(epConfig, anonymousEndpoint, properties);
         OMElement descriptionElem = epConfig.getFirstChildWithName(DESCRIPTION_Q);
         if (descriptionElem != null) {
@@ -164,7 +166,7 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
     }
 
     protected void extractSpecificEndpointProperties(EndpointDefinition definition,
-        OMElement elem) {
+                                                     OMElement elem) {
 
         // overridden by the Factories which has specific building
     }
@@ -237,11 +239,11 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
         if (foElement != null) {
             return FailoverEndpointFactory.getInstance();
         }
-        
+
         OMElement rcplElement = configElement.getFirstChildWithName
-        		(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "recipientlist"));
-        if(rcplElement != null){
-        	return RecipientListEndpointFactory.getInstance();
+                (new QName(SynapseConstants.SYNAPSE_NAMESPACE, "recipientlist"));
+        if (rcplElement != null) {
+            return RecipientListEndpointFactory.getInstance();
         }
 
         OMElement httpElement = configElement.getFirstChildWithName
@@ -250,13 +252,13 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
             return HTTPEndpointFactory.getInstance();
         }
 
-		OMElement classElement = configElement.getFirstChildWithName
-				(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "class"));
-		if (classElement != null) {
-			return ClassEndpointFactory.getInstance();
-		}
-        
-        
+        OMElement classElement = configElement.getFirstChildWithName
+                (new QName(SynapseConstants.SYNAPSE_NAMESPACE, "class"));
+        if (classElement != null) {
+            return ClassEndpointFactory.getInstance();
+        }
+
+
         handleException("Invalid endpoint configuration.");
         // just to make the compiler happy : never executes
         return null;
@@ -266,8 +268,8 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
      * Helper method to construct children endpoints
      *
      * @param listEndpointElement OMElement representing  the children endpoints
-     * @param parent Parent endpoint
-     * @param properties bag of properties to pass in any information to the factory
+     * @param parent              Parent endpoint
+     * @param properties          bag of properties to pass in any information to the factory
      * @return List of children endpoints
      */
     protected ArrayList<Endpoint> getEndpoints(OMElement listEndpointElement, Endpoint parent,
@@ -296,24 +298,26 @@ public abstract class EndpointFactory implements XMLToObjectMapper {
 
     /**
      * provide a custom Endpoint definition factory
+     *
      * @param factory
      */
-    public void setEndpointDefinitionFactory(DefinitionFactory factory){
+    public void setEndpointDefinitionFactory(DefinitionFactory factory) {
         customDefnFactory = factory;
     }
 
     /**
      * return current factory for building this endpoint definition
+     *
      * @return
      */
-    public DefinitionFactory getEndpointDefinitionFactory(){
+    public DefinitionFactory getEndpointDefinitionFactory() {
         return customDefnFactory;
     }
 
     /**
      * Helper method to extract endpoint properties.
      *
-     * @param endpoint actual endpoint to set the properties
+     * @param endpoint        actual endpoint to set the properties
      * @param endpointElement actual endpoint element
      */
     protected void processProperties(PropertyInclude endpoint, OMElement endpointElement) {

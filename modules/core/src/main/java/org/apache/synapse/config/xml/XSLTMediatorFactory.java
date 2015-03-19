@@ -22,8 +22,8 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
-import org.apache.synapse.mediators.transform.XSLTMediator;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.mediators.transform.XSLTMediator;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -32,7 +32,7 @@ import java.util.Properties;
 
 /**
  * Factory for {@link XSLTMediator} instances.
- * <p>
+ * <p/>
  * Configuration syntax:
  * <pre>
  * &lt;xslt key="property-key" [source="xpath"] [target="string"]&gt;
@@ -46,9 +46,9 @@ import java.util.Properties;
 public class XSLTMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName TAG_NAME
-                = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "xslt");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "xslt");
     private static final QName ATTRIBUTE_Q
-                = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "attribute");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "attribute");
 
     public QName getTagQName() {
         return TAG_NAME;
@@ -58,7 +58,7 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
 
         XSLTMediator transformMediator = new XSLTMediator();
 
-        OMAttribute attXslt   = elem.getAttribute(ATT_KEY);
+        OMAttribute attXslt = elem.getAttribute(ATT_KEY);
         OMAttribute attSource = elem.getAttribute(ATT_SOURCE);
         OMAttribute attTarget = elem.getAttribute(ATT_TARGET);
 
@@ -82,19 +82,19 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
 
             } catch (JaxenException e) {
                 handleException("Invalid XPath specified for the source attribute : " +
-                    attSource.getAttributeValue());
+                        attSource.getAttributeValue());
             }
         }
 
         if (attTarget != null) {
-            transformMediator.setTargetPropertyName(attTarget.getAttributeValue());    
+            transformMediator.setTargetPropertyName(attTarget.getAttributeValue());
         }
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
         processAuditStatus(transformMediator, elem);
         // set the features 
-        for (Map.Entry<String,String> entry : collectNameValuePairs(elem, FEATURE_Q).entrySet()) {
+        for (Map.Entry<String, String> entry : collectNameValuePairs(elem, FEATURE_Q).entrySet()) {
             String value = entry.getValue();
             boolean isFeatureEnabled;
             if ("true".equals(value)) {
@@ -107,11 +107,11 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
             }
             transformMediator.addFeature(entry.getKey(), isFeatureEnabled);
         }
-        for (Map.Entry<String,String> entry : collectNameValuePairs(elem, ATTRIBUTE_Q).entrySet()) {
+        for (Map.Entry<String, String> entry : collectNameValuePairs(elem, ATTRIBUTE_Q).entrySet()) {
             transformMediator.addAttribute(entry.getKey(), entry.getValue());
         }
         transformMediator.addAllProperties(
-            MediatorPropertyFactory.getMediatorProperties(elem));
+                MediatorPropertyFactory.getMediatorProperties(elem));
 
         transformMediator.setResourceMap(ResourceMapFactory.createResourceMap(elem));
 

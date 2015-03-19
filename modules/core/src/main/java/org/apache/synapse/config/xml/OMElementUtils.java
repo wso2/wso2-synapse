@@ -40,8 +40,9 @@ public class OMElementUtils {
 
     /**
      * Return the namespace with the given prefix, using the given element
+     *
      * @param prefix the prefix looked up
-     * @param elem the source element to use
+     * @param elem   the source element to use
      * @return the namespace which maps to the prefix or null
      */
     public static String getNameSpaceWithPrefix(String prefix, OMElement elem) {
@@ -49,19 +50,19 @@ public class OMElementUtils {
             log.warn("Searching for null NS prefix and/or using null OMElement");
             return null;
         }
-        
+
         OMElement currentElem = elem;
         while (true) {
             Iterator iter = currentElem.getAllDeclaredNamespaces();
             while (iter.hasNext()) {
                 OMNamespace ns = (OMNamespace) iter.next();
                 if (prefix.equals(ns.getPrefix())) {
-                    return ns.getNamespaceURI();     
+                    return ns.getNamespaceURI();
                 }
             }
             OMContainer parent = currentElem.getParent();
             if (parent != null && parent instanceof OMElement) {
-                currentElem = (OMElement)parent;
+                currentElem = (OMElement) parent;
             } else {
                 return null;
             }
@@ -72,7 +73,7 @@ public class OMElementUtils {
      * Add the namespace declarations of a given {@link OMElement} to the namespace
      * context of an XPath expression. Typically this method is used with an XPath
      * expression appearing in an attribute of the given element.
-     * <p>
+     * <p/>
      * Note that the default namespace is explicitly excluded and not added to the
      * namespace context. This implies that XPath expressions
      * appearing in Synapse configuration files follow the same rule as in XSL
@@ -83,7 +84,7 @@ public class OMElementUtils {
      * attribute in which the expression occurs; [...] the default namespace
      * (as declared by xmlns) is not part of this set
      * </blockquote>
-     * 
+     *
      * @param xpath
      * @param elem
      * @param log
@@ -104,8 +105,8 @@ public class OMElementUtils {
                         xpath.addNamespace(n.getPrefix(), n.getNamespaceURI());
                     } catch (JaxenException je) {
                         String msg = "Error adding declared name space with prefix : "
-                            + n.getPrefix() + "and uri : " + n.getNamespaceURI()
-                            + " to the XPath : " + xpath;
+                                + n.getPrefix() + "and uri : " + n.getNamespaceURI()
+                                + " to the XPath : " + xpath;
                         log.error(msg);
                         throw new SynapseException(msg, je);
                     }

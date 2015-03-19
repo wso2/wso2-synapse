@@ -34,10 +34,14 @@ import java.io.OutputStream;
  */
 public class SynapseBinaryDataSource implements DataSource {
 
-    /** Content type of the DataSource */
+    /**
+     * Content type of the DataSource
+     */
     private String contentType;
 
-    /** Hessian message is kept inside the DataSource as a byte array */
+    /**
+     * Hessian message is kept inside the DataSource as a byte array
+     */
     private OverflowBlob data;
 
     /**
@@ -59,7 +63,7 @@ public class SynapseBinaryDataSource implements DataSource {
     }
 
     public SynapseBinaryDataSource(InputStream inputstream, String contentType,
-        SynapseEnvironment synEnv) throws IOException {
+                                   SynapseEnvironment synEnv) throws IOException {
 
         this.contentType = contentType;
         this.data = synEnv.createOverflowBlob();

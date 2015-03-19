@@ -25,7 +25,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.libraries.imports.SynapseImport;
 
 import javax.xml.namespace.QName;
-import java.util.Iterator;
 import java.util.Properties;
 
 public class SynapseImportFactory {
@@ -59,9 +58,9 @@ public class SynapseImportFactory {
         } else {
             handleException("Synapse Import Target Library package is not specified");
         }
-        
+
         OMAttribute status = elem.getAttribute(STATUS_Q);
-        
+
         if (status != null && status.getAttributeValue().equals("enabled")) {
             synapseImport.setStatus(true);
         } else {
@@ -71,7 +70,6 @@ public class SynapseImportFactory {
         log.info("Successfully created Synapse Import: " + nameAtt.getAttributeValue());
         return synapseImport;
     }
-
 
 
     private static void handleException(String msg) {

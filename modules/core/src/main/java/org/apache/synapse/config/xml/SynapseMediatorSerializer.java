@@ -40,7 +40,7 @@ public class SynapseMediatorSerializer extends AbstractListMediatorSerializer {
 
         SynapseMediator mediator = (SynapseMediator) m;
         OMElement rules = fac.createOMElement("rules", synNS);
-        saveTracingState(rules,mediator);
+        saveTracingState(rules, mediator);
 
         serializeChildren(rules, mediator.getList());
 

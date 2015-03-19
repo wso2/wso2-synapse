@@ -32,7 +32,7 @@ import java.util.Properties;
 /**
  * Builds the {@link org.apache.synapse.mediators.eip.sample.SamplingThrottleMediator} instance by looking at the
  * following configuration</p>
- *
+ * <p/>
  * <pre>&lt;sampler id="string" rate="int" unitTime="long"&gt;
  *   &lt;messageQueue class="string"/&gt;
  *   &lt;target .../&gt;

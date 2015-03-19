@@ -22,11 +22,10 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.libraries.imports.SynapseImport;
-import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.rest.API;
 
 /**
  * This will serialize the SynapseImport to the xml configuration as specified bellow
@@ -75,11 +74,11 @@ public class SynapseImportSerializer {
         } else {
             handleException("Invalid Synapse Import. Target Library package is required");
         }
-        
-        if(synapseImport.isStatus()){
+
+        if (synapseImport.isStatus()) {
             importElem.addAttribute(fac.createOMAttribute(
                     "status", nullNS, "enabled"));
-        }else{
+        } else {
             importElem.addAttribute(fac.createOMAttribute(
                     "status", nullNS, "disabled"));
         }

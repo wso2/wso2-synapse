@@ -20,20 +20,20 @@
 package org.apache.synapse.deployers;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.eventing.EventSourceFactory;
 import org.apache.synapse.config.xml.eventing.EventSourceSerializer;
 import org.apache.synapse.eventing.SynapseEventSource;
-import org.apache.axis2.deployment.DeploymentException;
-import org.apache.axis2.AxisFault;
 
 import java.io.File;
 import java.util.Properties;
 
 /**
- *  Handles the <code>EventSource</code> deployment and undeployment tasks
+ * Handles the <code>EventSource</code> deployment and undeployment tasks
  *
  * @see org.apache.synapse.deployers.AbstractSynapseArtifactDeployer
  */
@@ -113,7 +113,7 @@ public class EventSourceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("EventSource named '" + es.getName()
                         + "' has been " + (existingArtifactName.equals(es.getName()) ?
-                            "update" : "deployed") + " from file : " + fileName);
+                        "update" : "deployed") + " from file : " + fileName);
                 return es.getName();
             } else {
                 handleSynapseArtifactDeploymentError("EventSource Update Failed. The artifact " +
@@ -136,7 +136,7 @@ public class EventSourceDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("EventSource Undeployment of the event source named : "
                     + artifactName + " : Started");
         }
-        
+
         try {
             SynapseEventSource es = getSynapseConfiguration().getEventSource(artifactName);
             if (es != null) {

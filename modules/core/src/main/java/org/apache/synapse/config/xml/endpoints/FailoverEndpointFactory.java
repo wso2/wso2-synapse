@@ -20,11 +20,11 @@
 package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.util.JavaUtils;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
-import org.apache.axis2.util.JavaUtils;
 
 import javax.xml.namespace.QName;
 import java.util.List;
@@ -32,18 +32,19 @@ import java.util.Properties;
 
 /**
  * Creates {@link FailoverEndpoint} using a XML configuration.
- *
+ * <p/>
  * &lt;endpoint [name="name"]&gt;
- *    &lt;failover&gt;
- *       &lt;endpoint&gt;+
- *    &lt;/failover&gt;
+ * &lt;failover&gt;
+ * &lt;endpoint&gt;+
+ * &lt;/failover&gt;
  * &lt;/endpoint&gt;
  */
 public class FailoverEndpointFactory extends EndpointFactory {
 
     private static FailoverEndpointFactory instance = new FailoverEndpointFactory();
 
-    private FailoverEndpointFactory() {}
+    private FailoverEndpointFactory() {
+    }
 
     public static FailoverEndpointFactory getInstance() {
         return instance;
@@ -65,7 +66,7 @@ public class FailoverEndpointFactory extends EndpointFactory {
 
             List<Endpoint> childEndpoints = getEndpoints(
                     failoverElement, failoverEndpoint, properties);
-            if(childEndpoints == null || childEndpoints.size() == 0){
+            if (childEndpoints == null || childEndpoints.size() == 0) {
                 String msg = "Invalid Synapse configuration.\n"
                         + "A FailOver must have child elements, but the FailOver "
                         + "'" + failoverEndpoint.getName() + "' does not have any child elements.";
@@ -80,7 +81,7 @@ public class FailoverEndpointFactory extends EndpointFactory {
             if (dynamicFO != null && JavaUtils.isFalseExplicitly(dynamicFO)) {
                 failoverEndpoint.setDynamic(false);
             }
-            
+
             // process the parameters
             processProperties(failoverEndpoint, epConfig);
 

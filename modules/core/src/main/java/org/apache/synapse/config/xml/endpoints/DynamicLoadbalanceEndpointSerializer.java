@@ -24,15 +24,15 @@ import org.apache.synapse.core.LoadBalanceMembershipHandler;
 import org.apache.synapse.endpoints.DynamicLoadbalanceEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
-import org.apache.synapse.endpoints.dispatch.SoapSessionDispatcher;
 import org.apache.synapse.endpoints.dispatch.HttpSessionDispatcher;
 import org.apache.synapse.endpoints.dispatch.SimpleClientSessionDispatcher;
+import org.apache.synapse.endpoints.dispatch.SoapSessionDispatcher;
 
 import java.util.Properties;
 
 /**
  * Creates {@link org.apache.synapse.endpoints.DynamicLoadbalanceEndpoint} using an XML configuration.
- *
+ * <p/>
  * <pre>
  * &lt;endpoint>
  *       &lt;dynamicLoadbalance [failover="true|false"] [policy="load balance algorithm"]&gt;
@@ -46,7 +46,7 @@ import java.util.Properties;
  */
 
 public class DynamicLoadbalanceEndpointSerializer extends EndpointSerializer {
-    
+
     protected OMElement serializeEndpoint(Endpoint endpoint) {
 
         if (!(endpoint instanceof DynamicLoadbalanceEndpoint)) {
@@ -62,8 +62,8 @@ public class DynamicLoadbalanceEndpointSerializer extends EndpointSerializer {
         // serialize the parameters
         serializeProperties(dynamicLoadbalanceEndpoint, endpointElement);
 
-        serializeCommonAttributes(endpoint,endpointElement);
-        
+        serializeCommonAttributes(endpoint, endpointElement);
+
 
         Dispatcher dispatcher = dynamicLoadbalanceEndpoint.getDispatcher();
         if (dispatcher != null) {
@@ -108,15 +108,15 @@ public class DynamicLoadbalanceEndpointSerializer extends EndpointSerializer {
                 fac.createOMElement("membershipHandler", SynapseConstants.SYNAPSE_OMNAMESPACE);
         dynamicLoadbalanceElement.addChild(membershipHandlerElement);
 
-        membershipHandlerElement.addAttribute("class",loadBalanceMembershipHandler.getClass().getName(),null);
+        membershipHandlerElement.addAttribute("class", loadBalanceMembershipHandler.getClass().getName(), null);
 
         Properties membershipHandlerProperties = loadBalanceMembershipHandler.getProperties();
         OMElement propertyElement;
-        for (Object property : membershipHandlerProperties.keySet()){
+        for (Object property : membershipHandlerProperties.keySet()) {
             propertyElement = fac.createOMElement("property", SynapseConstants.SYNAPSE_OMNAMESPACE);
             membershipHandlerElement.addChild(propertyElement);
             propertyElement.addAttribute("name", property.toString(), null);
-            propertyElement.addAttribute("value", membershipHandlerProperties.getProperty((String)property), null);
+            propertyElement.addAttribute("value", membershipHandlerProperties.getProperty((String) property), null);
         }
 
         return endpointElement;

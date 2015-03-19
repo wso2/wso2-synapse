@@ -19,8 +19,8 @@
 
 package org.apache.synapse.util.concurrent;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This is the thread factory for Synapse threads which are accessible through the
@@ -28,13 +28,19 @@ import java.util.concurrent.ThreadFactory;
  */
 public class SynapseThreadFactory implements ThreadFactory {
 
-    /** Holds the ThreadGroup under which this factory creates threads */
+    /**
+     * Holds the ThreadGroup under which this factory creates threads
+     */
     private final ThreadGroup group;
 
-    /** Holds the AtomicInteger class instance for the factory */
+    /**
+     * Holds the AtomicInteger class instance for the factory
+     */
     private final AtomicInteger count;
 
-    /** prefix for the thread id, thread number will be followed to construct the id */
+    /**
+     * prefix for the thread id, thread number will be followed to construct the id
+     */
     private final String namePrefix;
 
     /**
@@ -54,7 +60,7 @@ public class SynapseThreadFactory implements ThreadFactory {
      * This method is the implementation of the the newThread method and will
      * create new threads under the group and with the nameprefix followed by the
      * thread number as the id
-     * 
+     *
      * @param runnable - Runnable class to run by the created thread
      * @return a Thread executing the given runnable
      */

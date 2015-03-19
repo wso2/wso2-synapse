@@ -34,7 +34,7 @@ public class RespondMediatorFactory extends AbstractMediatorFactory {
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         Mediator responseMediator = new RespondMediator();
-        processAuditStatus(responseMediator,elem);
+        processAuditStatus(responseMediator, elem);
         return responseMediator;
     }
 

@@ -18,6 +18,7 @@
  */
 
 package org.apache.synapse.util;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -35,7 +36,9 @@ import java.util.Random;
  */
 @Deprecated
 public class UUIDGenerator {
-    /** This class will give UUIDs for axis2. */
+    /**
+     * This class will give UUIDs for axis2.
+     */
 
     private static String baseUUID = null;
     private static long incrementingValue = 0;
@@ -60,11 +63,11 @@ public class UUIDGenerator {
 
         if (useNano) {
             return baseUUID + (System.nanoTime() + incrementingValue) +
-                Integer.toString(myRand.nextInt());
+                    Integer.toString(myRand.nextInt());
         } else {
 
             return baseUUID + (System.currentTimeMillis() + incrementingValue +
-                Integer.toString(myRand.nextInt()));
+                    Integer.toString(myRand.nextInt()));
         }
 
     }
@@ -75,7 +78,8 @@ public class UUIDGenerator {
             if (System.class.getMethod("nanoTime", new Class[0]) != null) {
                 useNano = true;
             }
-        } catch (NoSuchMethodException ignore) {}
+        } catch (NoSuchMethodException ignore) {
+        }
 
         if (myRand == null) {
             myRand = new Random();

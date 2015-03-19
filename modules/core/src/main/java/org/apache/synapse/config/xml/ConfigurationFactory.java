@@ -19,11 +19,10 @@
 
 package org.apache.synapse.config.xml;
 
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.config.SynapseConfiguration;
 
+import javax.xml.namespace.QName;
 import java.util.Properties;
 
 /**

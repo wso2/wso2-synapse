@@ -372,7 +372,7 @@ public class SubscriptionMessageBuilder {
      * date to create dates, so feb-31 is taken as a valid date and converts to march-03,
      * ConverterUtil wont validate.
      *
-     * @param original The original date as a string
+     * @param original  The original date as a string
      * @param converted The Calendar instance to be validated
      * @return true || false
      */

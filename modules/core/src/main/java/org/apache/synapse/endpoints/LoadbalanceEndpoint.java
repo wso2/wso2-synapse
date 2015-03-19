@@ -22,11 +22,7 @@ package org.apache.synapse.endpoints;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.clustering.Member;
 import org.apache.axis2.context.ConfigurationContext;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -34,12 +30,7 @@ import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.URL;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -56,11 +47,17 @@ import java.util.TimerTask;
  */
 public class LoadbalanceEndpoint extends AbstractEndpoint {
 
-    /** Should this load balancer fail over as well? */
+    /**
+     * Should this load balancer fail over as well?
+     */
     private boolean failover = true;
-    /** The algorithm used for selecting the next endpoint */
+    /**
+     * The algorithm used for selecting the next endpoint
+     */
     private LoadbalanceAlgorithm algorithm = null;
-    /** The algorithm context to hold runtime state related to the load balance algorithm */
+    /**
+     * The algorithm context to hold runtime state related to the load balance algorithm
+     */
     private AlgorithmContext algorithmContext = null;
 
     /**
@@ -245,7 +242,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         logOnChildEndpointFail(endpoint, synMessageContext);
         // resend (to a different endpoint) only if we support failover
         if (failover) {
-            if (((AbstractEndpoint)endpoint).isRetry(synMessageContext)) {
+            if (((AbstractEndpoint) endpoint).isRetry(synMessageContext)) {
                 if (log.isDebugEnabled()) {
                     log.debug(this + " Retry Attempt for Request with [Message ID : " +
                             synMessageContext.getMessageID() + "], [To : " +
@@ -287,7 +284,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
     public void setAlgorithm(LoadbalanceAlgorithm algorithm) {
         if (log.isDebugEnabled()) {
             log.debug("Load-balance " + this.toString() + " will be using the algorithm "
-                + algorithm.getName() + " for load distribution");
+                    + algorithm.getName() + " for load distribution");
         }
         this.algorithm = algorithm;
     }
@@ -295,7 +292,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
     protected Endpoint getNextChild(MessageContext synCtx) {
         return algorithm.getNextEndpoint(synCtx, algorithmContext);
     }
-    
+
     /**
      * This FaultHandler will try to resend the message to another member if an error occurs
      * while sending to some member. This is a failover mechanism
@@ -329,11 +326,11 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         this.inactiveMembers = new ArrayList<Member>();
     }
 
-    public List<Member> getMembers(){
+    public List<Member> getMembers() {
         return this.activeMembers;
     }
 
-    public void startApplicationMembershipTimer(){
+    public void startApplicationMembershipTimer() {
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new MemberActivatorTask(), 1000, 500);
     }
@@ -345,8 +342,8 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
 
         public void run() {
             try {
-                for(Member member: inactiveMembers){
-                    if(canConnect(member)){
+                for (Member member : inactiveMembers) {
+                    if (canConnect(member)) {
                         inactiveMembers.remove(member);
                         activeMembers.add(member);
                     }
@@ -363,14 +360,14 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
          * @return true, if the member can be contacted; false, otherwise.
          */
         private boolean canConnect(Member member) {
-            if(log.isDebugEnabled()){
+            if (log.isDebugEnabled()) {
                 log.debug("Trying to connect to member " + member.getHostName() + "...");
             }
             for (int retries = 30; retries > 0; retries--) {
                 try {
                     InetAddress addr = InetAddress.getByName(member.getHostName());
                     int httpPort = member.getHttpPort();
-                    if(log.isDebugEnabled()){
+                    if (log.isDebugEnabled()) {
                         log.debug("HTTP Port=" + httpPort);
                     }
                     if (httpPort != -1) {
@@ -378,7 +375,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                         new Socket().connect(httpSockaddr, 10000);
                     }
                     int httpsPort = member.getHttpsPort();
-                    if(log.isDebugEnabled()){
+                    if (log.isDebugEnabled()) {
                         log.debug("HTTPS Port=" + httpPort);
                     }
                     if (httpsPort != -1) {
@@ -387,12 +384,12 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                     }
                     return true;
                 } catch (IOException e) {
-                    if(log.isDebugEnabled()){
+                    if (log.isDebugEnabled()) {
                         log.debug("", e);
                     }
                     String msg = e.getMessage();
                     if (msg.indexOf("Connection refused") == -1 &&
-                        msg.indexOf("connect timed out") == -1) {
+                            msg.indexOf("connect timed out") == -1) {
                         log.error("Cannot connect to member " + member, e);
                     }
                 }

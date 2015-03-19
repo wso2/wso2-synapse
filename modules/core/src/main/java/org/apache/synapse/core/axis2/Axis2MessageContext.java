@@ -30,25 +30,15 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.*;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * This is the MessageContext implementation that synapse uses almost all the time because Synapse
@@ -186,8 +176,8 @@ public class Axis2MessageContext implements MessageContext {
             return m;
         }
     }
-    
-    public Mediator getDefaultConfiguration(String key){
+
+    public Mediator getDefaultConfiguration(String key) {
         Object o = localEntries.get(key);
         if (o != null && o instanceof Mediator) {
             return (Mediator) o;
@@ -197,7 +187,7 @@ public class Axis2MessageContext implements MessageContext {
             return m;
         }
     }
-    
+
 
     public OMElement getFormat(String key) {
 
@@ -290,7 +280,7 @@ public class Axis2MessageContext implements MessageContext {
 
         // do not commit response by default in the server process
         if (SynapseConstants.RESPONSE.equals(key) &&
-            getAxis2MessageContext().getOperationContext() != null) {
+                getAxis2MessageContext().getOperationContext() != null) {
             getAxis2MessageContext().getOperationContext().setProperty(
                     org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
         }
@@ -424,14 +414,14 @@ public class Axis2MessageContext implements MessageContext {
     public boolean isDoingGET() {
         return Constants.Configuration.HTTP_METHOD_GET.equals(
                 axis2MessageContext.getProperty(Constants.Configuration.HTTP_METHOD))
-               && axis2MessageContext.isDoingREST();
+                && axis2MessageContext.isDoingREST();
     }
 
     public void setDoingGET(boolean b) {
         if (b) {
             axis2MessageContext.setDoingREST(b);
             axis2MessageContext.setProperty(Constants.Configuration.HTTP_METHOD,
-                                            Constants.Configuration.HTTP_METHOD_GET);
+                    Constants.Configuration.HTTP_METHOD_GET);
         } else {
             axis2MessageContext.removeProperty(Constants.Configuration.HTTP_METHOD);
         }
@@ -449,7 +439,7 @@ public class Axis2MessageContext implements MessageContext {
     public boolean isResponse() {
         Object o = properties.get(SynapseConstants.RESPONSE);
         return o != null && o instanceof String &&
-               ((String) o).equalsIgnoreCase("true") || response;
+                ((String) o).equalsIgnoreCase("true") || response;
     }
 
     public void setFaultResponse(boolean b) {
@@ -502,7 +492,7 @@ public class Axis2MessageContext implements MessageContext {
             } else {
                 serviceLog = LogFactory.getLog(
                         SynapseConstants.SERVICE_LOGGER_PREFIX.substring(0,
-                                                                         SynapseConstants.SERVICE_LOGGER_PREFIX.length() - 1));
+                                SynapseConstants.SERVICE_LOGGER_PREFIX.length() - 1));
                 return serviceLog;
             }
         }
@@ -580,7 +570,7 @@ public class Axis2MessageContext implements MessageContext {
         if (soapHeader != null) {
 
             sb.append(separator).append("Headers : ");
-            for (Iterator iter = soapHeader.examineAllHeaderBlocks(); iter.hasNext();) {
+            for (Iterator iter = soapHeader.examineAllHeaderBlocks(); iter.hasNext(); ) {
 
                 Object o = iter.next();
                 if (o instanceof SOAPHeaderBlock) {
@@ -607,7 +597,7 @@ public class Axis2MessageContext implements MessageContext {
     }
 
     public boolean isContinuationEnabled() {
-    	return continuationEnabled ? true : synEnv.isContinuationEnabled();
+        return continuationEnabled ? true : synEnv.isContinuationEnabled();
     }
 
     public void setContinuationEnabled(boolean continuationEnabled) {
@@ -615,7 +605,7 @@ public class Axis2MessageContext implements MessageContext {
     }
 
     public void setMediatorPosition(int mediatorPosition) {
-         this.mediatorPosition = mediatorPosition;
+        this.mediatorPosition = mediatorPosition;
     }
 
     public int getMediatorPosition() {

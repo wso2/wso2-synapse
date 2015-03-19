@@ -78,11 +78,11 @@ public class SynapseMessage implements Serializable {
         return propertyObjects;
     }
 
-    public void addProperty(String key,String value) {
-        properties.put(key,value);
+    public void addProperty(String key, String value) {
+        properties.put(key, value);
     }
 
-    public void addPropertyObject(String key , byte[] value){
+    public void addPropertyObject(String key, byte[] value) {
         propertyObjects.put(key, value);
     }
 

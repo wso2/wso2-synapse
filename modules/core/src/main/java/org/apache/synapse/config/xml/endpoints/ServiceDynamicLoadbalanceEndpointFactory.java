@@ -84,9 +84,9 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
     private static ServiceDynamicLoadbalanceEndpointFactory instance =
             new ServiceDynamicLoadbalanceEndpointFactory();
     public static final QName SERVICES_QNAME = new QName(SynapseConstants.SYNAPSE_NAMESPACE,
-                                                         "services");
+            "services");
     public static final QName LB_CONFIG_QNAME = new QName(SynapseConstants.SYNAPSE_NAMESPACE,
-                                                          "loadBalancerConfig");
+            "loadBalancerConfig");
 
     private ServiceDynamicLoadbalanceEndpointFactory() {
     }
@@ -100,14 +100,14 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
 
         OMElement loadbalanceElement =
                 epConfig.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,
-                                                         "serviceDynamicLoadbalance"));
+                        "serviceDynamicLoadbalance"));
         if (loadbalanceElement == null) {
             return null;
         }
 
         String configuration =
                 loadbalanceElement.getAttributeValue(new QName(XMLConfigConstants.NULL_NAMESPACE,
-                                                               "configuration"));
+                        "configuration"));
         OMElement servicesEle;
         if (configuration != null) {
             if (configuration.startsWith("$system:")) {
@@ -119,14 +119,14 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
                 builder = new StAXOMBuilder(new URL(configuration).openStream());
             } catch (Exception e) {
                 handleException("Could not load ServiceDynamicLoadbalanceEndpoint configuration file " +
-                                configuration);
+                        configuration);
             }
             servicesEle = builder.getDocumentElement().getFirstChildWithName(SERVICES_QNAME);
         } else {
             OMElement lbConfigEle = loadbalanceElement.getFirstChildWithName(LB_CONFIG_QNAME);
             if (lbConfigEle == null) {
                 throw new RuntimeException("loadBalancerConfig element not found as a child of " +
-                                           "serviceDynamicLoadbalance element");
+                        "serviceDynamicLoadbalance element");
             }
             servicesEle = lbConfigEle.getFirstChildWithName(SERVICES_QNAME);
         }
@@ -135,7 +135,7 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
             throw new RuntimeException("services element not found in serviceDynamicLoadbalance configuration");
         }
         Map<String, String> hostDomainMap = new HashMap<String, String>();
-        for (Iterator<OMElement> iter = servicesEle.getChildrenWithLocalName("service"); iter.hasNext();) {
+        for (Iterator<OMElement> iter = servicesEle.getChildrenWithLocalName("service"); iter.hasNext(); ) {
             OMElement serviceEle = iter.next();
             OMElement hostsEle =
                     serviceEle.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "hosts"));
@@ -144,7 +144,7 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
             }
             List<String> hosts = new ArrayList<String>();
             for (Iterator<OMElement> hostIter = hostsEle.getChildrenWithLocalName("host");
-                 hostIter.hasNext();) {
+                 hostIter.hasNext(); ) {
                 OMElement hostEle = hostIter.next();
                 String host = hostEle.getText();
                 if (host.trim().length() == 0) {
@@ -154,7 +154,7 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
             }
             OMElement domainEle =
                     serviceEle.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,
-                                                               "domain"));
+                            "domain"));
             if (domainEle == null) {
                 throw new RuntimeException("domain element not found in as a child of services");
             }
@@ -165,7 +165,7 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
             for (String host : hosts) {
                 if (hostDomainMap.containsKey(host)) {
                     throw new RuntimeException("host " + host + " has been already defined for " +
-                                               "clustering domain " + hostDomainMap.get(host));
+                            "clustering domain " + hostDomainMap.get(host));
                 }
                 hostDomainMap.put(host, domain);
             }

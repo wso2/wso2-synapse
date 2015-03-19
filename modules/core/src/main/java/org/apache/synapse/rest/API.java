@@ -24,6 +24,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
@@ -31,7 +32,6 @@ import org.apache.synapse.rest.dispatch.RESTDispatcher;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 import org.apache.synapse.rest.version.VersionStrategy;
-import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.util.*;
@@ -41,7 +41,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     private String host;
     private int port = -1;
     private String context;
-    private Map<String,Resource> resources = new LinkedHashMap<String,Resource>();
+    private Map<String, Resource> resources = new LinkedHashMap<String, Resource>();
     private List<Handler> handlers = new ArrayList<Handler>();
 
     private int protocol = RESTConstants.PROTOCOL_HTTP_AND_HTTPS;
@@ -65,8 +65,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
      */
     public String getName() {
         // check if a versioning strategy exists
-        if (versionStrategy.getVersion() != null && !"".equals(versionStrategy.getVersion()) ) {
-            return name + ":v" +versionStrategy.getVersion();
+        if (versionStrategy.getVersion() != null && !"".equals(versionStrategy.getVersion())) {
+            return name + ":v" + versionStrategy.getVersion();
         }
         return name;
     }
@@ -83,7 +83,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         return name;
     }
 
-    public String getVersion(){
+    public String getVersion() {
         return versionStrategy.getVersion();
     }
 
@@ -166,7 +166,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         if (synCtx.isResponse()) {
             String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
             String version = synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION) == null ?
-                             "": (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION);
+                    "" : (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION);
             //if api name is not matching OR versions are different
             if (!getName().equals(apiName) || !versionStrategy.getVersion().equals(version)) {
                 return false;
@@ -181,7 +181,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                 return false;
             }
 
-            if(!versionStrategy.isMatchingVersion(synCtx)){
+            if (!versionStrategy.isMatchingVersion(synCtx)) {
                 return false;
             }
 
@@ -219,9 +219,9 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                 if (log.isDebugEnabled()) {
                     log.debug("Protocol information does not match - Expected HTTP");
                 }
-                synCtx.setProperty(SynapseConstants.TRANSPORT_DENIED,new Boolean(true));
-                synCtx.setProperty(SynapseConstants.IN_TRANSPORT,msgCtx.getTransportIn().getName());
-                log.warn("Trying to access API : "+name+" on restricted transport chanel ["+msgCtx.getTransportIn().getName()+"]");
+                synCtx.setProperty(SynapseConstants.TRANSPORT_DENIED, new Boolean(true));
+                synCtx.setProperty(SynapseConstants.IN_TRANSPORT, msgCtx.getTransportIn().getName());
+                log.warn("Trying to access API : " + name + " on restricted transport chanel [" + msgCtx.getTransportIn().getName() + "]");
                 return false;
             }
 
@@ -230,9 +230,9 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                 if (log.isDebugEnabled()) {
                     log.debug("Protocol information does not match - Expected HTTPS");
                 }
-                synCtx.setProperty(SynapseConstants.TRANSPORT_DENIED,new Boolean(true));
-                synCtx.setProperty(SynapseConstants.IN_TRANSPORT,msgCtx.getTransportIn().getName());
-                log.warn("Trying to access API : "+name+" on restricted transport chanel ["+msgCtx.getTransportIn().getName()+"]");
+                synCtx.setProperty(SynapseConstants.TRANSPORT_DENIED, new Boolean(true));
+                synCtx.setProperty(SynapseConstants.IN_TRANSPORT, msgCtx.getTransportIn().getName());
+                log.warn("Trying to access API : " + name + " on restricted transport chanel [" + msgCtx.getTransportIn().getName() + "]");
                 return false;
             }
         }
@@ -254,22 +254,22 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         String restURLPostfix = (String) synCtx.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
         if (!synCtx.isResponse() && restURLPostfix != null) {  // Skip for response path
             if (!restURLPostfix.startsWith("/")) {
-				restURLPostfix = "/" + restURLPostfix;
-			} 
-			if (restURLPostfix.startsWith(context)) {
-				restURLPostfix = restURLPostfix.substring(context.length());				
-			}
-			if (versionStrategy instanceof URLBasedVersionStrategy) {
-				String version = versionStrategy.getVersion();
-				if (restURLPostfix.startsWith(version)) {
-					restURLPostfix = restURLPostfix.substring(version.length());
-				} else if (restURLPostfix.startsWith("/" + version)) {
-					restURLPostfix = restURLPostfix.substring(version.length() + 1);
-				}
-			}
-			((Axis2MessageContext) synCtx).getAxis2MessageContext().
-							setProperty(NhttpConstants.REST_URL_POSTFIX,restURLPostfix);
-		}
+                restURLPostfix = "/" + restURLPostfix;
+            }
+            if (restURLPostfix.startsWith(context)) {
+                restURLPostfix = restURLPostfix.substring(context.length());
+            }
+            if (versionStrategy instanceof URLBasedVersionStrategy) {
+                String version = versionStrategy.getVersion();
+                if (restURLPostfix.startsWith(version)) {
+                    restURLPostfix = restURLPostfix.substring(version.length());
+                } else if (restURLPostfix.startsWith("/" + version)) {
+                    restURLPostfix = restURLPostfix.substring(version.length() + 1);
+                }
+            }
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext().
+                    setProperty(NhttpConstants.REST_URL_POSTFIX, restURLPostfix);
+        }
 
         for (Handler handler : handlers) {
             if (log.isDebugEnabled()) {
@@ -318,7 +318,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.REST_SUB_REQUEST_PATH, subPath);
 
         org.apache.axis2.context.MessageContext msgCtx =
-                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         String hostHeader = getHostHeader(msgCtx);
         if (hostHeader != null) {
             synCtx.setProperty(RESTConstants.REST_URL_PREFIX,
@@ -400,7 +400,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         for (Resource resource : resources.values()) {
             resource.init(se);
         }
-        
+
         for (Handler handler : handlers) {
             if (handler instanceof ManagedLifecycle) {
                 ((ManagedLifecycle) handler).init(se);

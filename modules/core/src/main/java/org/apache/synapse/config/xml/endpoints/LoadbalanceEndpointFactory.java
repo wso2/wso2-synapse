@@ -24,16 +24,16 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.clustering.Member;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.LoadbalanceEndpoint;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 
 import javax.xml.namespace.QName;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -82,11 +82,11 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
 
             // set endpoints or members
             if (loadbalanceElement.getFirstChildWithName(XMLConfigConstants.ENDPOINT_ELT) != null) {
-                if(loadbalanceElement.
-                        getChildrenWithName((MEMBER)).hasNext()){
+                if (loadbalanceElement.
+                        getChildrenWithName((MEMBER)).hasNext()) {
                     String msg =
                             "Invalid Synapse configuration. " +
-                            "child elements";
+                                    "child elements";
                     log.error(msg);
                     throw new SynapseException(msg);
                 }
@@ -98,12 +98,12 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
                                 createLoadbalanceAlgorithm(loadbalanceElement, endpoints);
                 algorithm.setLoadBalanceEndpoint(loadbalanceEndpoint);
             } else if (loadbalanceElement.getFirstChildWithName(MEMBER) != null) {
-                if(loadbalanceElement.
-                        getChildrenWithName((XMLConfigConstants.ENDPOINT_ELT)).hasNext()){
+                if (loadbalanceElement.
+                        getChildrenWithName((XMLConfigConstants.ENDPOINT_ELT)).hasNext()) {
                     String msg =
                             "Invalid Synapse configuration. " +
-                            "loadbalanceEndpoint element cannot have both member & endpoint " +
-                            "child elements";
+                                    "loadbalanceEndpoint element cannot have both member & endpoint " +
+                                    "child elements";
                     log.error(msg);
                     throw new SynapseException(msg);
                 }
@@ -119,12 +119,12 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
             if (loadbalanceEndpoint.getChildren() == null &&
                     loadbalanceEndpoint.getMembers() == null) {
                 String msg = "Invalid Synapse configuration.\n"
-                    + "A LoadbalanceEndpoint must have child elements, but the LoadbalanceEndpoint "
-                    + "'" + loadbalanceEndpoint.getName() + "' does not have any child elements.";
+                        + "A LoadbalanceEndpoint must have child elements, but the LoadbalanceEndpoint "
+                        + "'" + loadbalanceEndpoint.getName() + "' does not have any child elements.";
                 log.error(msg);
                 throw new SynapseException(msg);
             }
-            
+
             // set load balance algorithm
             loadbalanceEndpoint.setAlgorithm(algorithm);
 
@@ -145,8 +145,8 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
 
     private List<Member> getMembers(OMElement loadbalanceElement) {
         List<Member> members = new ArrayList<Member>();
-        for(Iterator memberIter = loadbalanceElement.getChildrenWithName(MEMBER);
-            memberIter.hasNext();){
+        for (Iterator memberIter = loadbalanceElement.getChildrenWithName(MEMBER);
+             memberIter.hasNext(); ) {
             OMElement memberEle = (OMElement) memberIter.next();
             Member member = new Member(memberEle.getAttributeValue(new QName("hostName")), -1);
             String http = memberEle.getAttributeValue(new QName("httpPort"));

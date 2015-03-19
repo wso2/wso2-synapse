@@ -37,14 +37,14 @@ public class GetChildrenByNameParserComponent extends ParserComponent {
     @Override
     public String process(OMElement node) {
         childQName = new QName(prefixNameSpaceMap.get(nameSpacePrefix), localName);
-        try{
+        try {
             Iterator child = node.getChildrenWithName(childQName);
             if (nextParserComponent == null) {
                 return ((OMElement) child.next()).toString();
             } else {
                 return nextParserComponent.process((OMElement) child.next());
             }
-        }catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return "";
         }
     }

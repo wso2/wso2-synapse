@@ -79,7 +79,7 @@ public class StatisticsCleaner {
             if (nextTime == -1) {
                 nextTime = currentTime + cleanInterval;
             }
-            
+
             if (nextTime <= currentTime) {
                 collector.clearStatistics();
                 nextTime = currentTime + cleanInterval;

@@ -37,8 +37,8 @@ public class SoapSessionDispatcher extends AbstractDispatcher {
      *
      * @param synCtx Request MessageContext, possibly containing a service group context ID.
      * @return Endpoint associated with the soap session, if current message is a soap session
-     *         message and if current message is not the first message of the session. Returns null,
-     *         if an Endpoint could not be found for the session.
+     * message and if current message is not the first message of the session. Returns null,
+     * if an Endpoint could not be found for the session.
      */
     public SessionInformation getSession(MessageContext synCtx) {
         return SALSessions.getInstance().getSession(

@@ -43,6 +43,7 @@ public class ReliantContinuationState extends AbstractContinuationState {
 
     /**
      * Get the subBranch of the FlowContinuableMediator.
+     *
      * @return subBranch id
      */
     public int getSubBranch() {
@@ -51,6 +52,7 @@ public class ReliantContinuationState extends AbstractContinuationState {
 
     /**
      * Set the subBranch of the FLowContinuableMediator
+     *
      * @param subBranch subBranch id
      */
     public void setSubBranch(int subBranch) {

@@ -25,35 +25,35 @@ public interface ServerManagerViewMBean {
 
     /**
      * Shows the current state of the server.
-     * 
+     *
      * @return the current state of the server
      */
     String getServerState();
-    
+
     /**
      * Starts the Server.
-     * 
+     *
      * @throws Exception if an error occurs
      */
     void start() throws Exception;
 
     /**
      * Stops the Server without shutting it down.
-     * 
+     *
      * @throws Exception if an error occurs
      */
     void stop() throws Exception;
 
     /**
      * Restart the Server.
-     * 
+     *
      * @throws Exception if an error occurs
      */
     void restart() throws Exception;
 
     /**
      * Shutdown the Server.
-     * 
+     *
      * @throws Exception if an error occurs
      */
     void shutdown() throws Exception;
@@ -61,26 +61,25 @@ public interface ServerManagerViewMBean {
     /**
      * Stops the Server gracefully. This includes putting the server in maintenance and
      * stopping it.
-     * 
+     *
      * @param waitSeconds number of seconds to wait for a graceful stop before initiating
      *                    a hard stop
-     *                    
      * @throws Exception if an error occurs
      */
     void stopGracefully(long waitSeconds) throws Exception;
 
     /**
      * Puts the server into the maintenance mode.
-     * 
+     *
      * @throws Exception if an error occurs
      */
     void startMaintenance() throws Exception;
 
     /**
      * Finishes the maintenance and put the server online.
-     * 
+     *
      * @throws Exception if an error occurs
      */
     void endMaintenance() throws Exception;
-    
+
 }

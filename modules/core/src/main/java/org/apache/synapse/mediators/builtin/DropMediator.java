@@ -37,7 +37,7 @@ public class DropMediator extends AbstractMediator {
      */
     public boolean mediate(MessageContext synCtx) {
 
-         SynapseLog synLog = getLog(synCtx);
+        SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Drop mediator");

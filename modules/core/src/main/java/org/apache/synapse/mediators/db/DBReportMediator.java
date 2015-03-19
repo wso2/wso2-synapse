@@ -22,9 +22,9 @@ package org.apache.synapse.mediators.db;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Connection;
 
 /**
  * A mediator that writes (i.e. inserts one row) to a table using message information
@@ -50,7 +50,7 @@ public class DBReportMediator extends AbstractDBMediator {
 
         Connection con = null;
         try {
-        	con = this.getDataSource().getConnection();
+            con = this.getDataSource().getConnection();
             PreparedStatement ps = getPreparedStatement(stmnt, con, msgCtx);
             int count = ps.executeUpdate();
 

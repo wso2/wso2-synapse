@@ -19,16 +19,26 @@
 package org.apache.synapse.message.store;
 
 public final class Constants {
-    /** Message ID of the Synapse Message Context that is passed in to the message store mediator */
+    /**
+     * Message ID of the Synapse Message Context that is passed in to the message store mediator
+     */
     public static final String OriginalMessageID = "OrigMessageID";
-    /** JMS Message Store */
-    public static final int JMS_MS       = 0;
-    /** JDBC Message Store */
-    public static final int JDBC_MS      = 1;
-    /** In Memory Message Store */
-    public static final int INMEMORY_MS  = 2;
+    /**
+     * JMS Message Store
+     */
+    public static final int JMS_MS = 0;
+    /**
+     * JDBC Message Store
+     */
+    public static final int JDBC_MS = 1;
+    /**
+     * In Memory Message Store
+     */
+    public static final int INMEMORY_MS = 2;
 
-    /** Deprecated message store implementation class names**/
+    /**
+     * Deprecated message store implementation class names*
+     */
     public static final String DEPRECATED_INMEMORY_CLASS = "org.apache.synapse.message.store.InMemoryMessageStore";
     public static final String DEPRECATED_JMS_CLASS = "org.wso2.carbon.message.store.persistence.jms.JMSMessageStore";
 

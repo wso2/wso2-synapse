@@ -25,10 +25,10 @@ public class DOMSynapseXPathVariableResolver implements XPathVariableResolver {
             SynapseXPathVariableContext variableContext = new SynapseXPathVariableContext(
                     parentVariableContext, synCtx);
             return variableContext.getVariableValue(SynapseConstants.SYNAPSE_NAMESPACE.equals(
-                    variable.getNamespaceURI())?null:variable.getNamespaceURI()
+                    variable.getNamespaceURI()) ? null : variable.getNamespaceURI()
                     , variable.getPrefix(), variable.getLocalPart());
         } catch (UnresolvableException e) {
-            throw new SynapseException("DOM Synapse XPATH variable resolution failed",e);
+            throw new SynapseException("DOM Synapse XPATH variable resolution failed", e);
         }
     }
 }

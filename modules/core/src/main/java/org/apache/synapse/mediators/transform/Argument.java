@@ -20,8 +20,6 @@
 package org.apache.synapse.mediators.transform;
 
 import org.apache.synapse.config.xml.SynapsePath;
-import org.apache.synapse.util.xpath.SynapseJsonPath;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 public class Argument {
 

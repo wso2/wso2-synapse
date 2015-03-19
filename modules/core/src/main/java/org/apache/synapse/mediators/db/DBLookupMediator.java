@@ -22,10 +22,10 @@ package org.apache.synapse.mediators.db;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Connection;
 
 /**
  * Simple database table lookup mediator. Designed only for read/lookup
@@ -41,19 +41,19 @@ public class DBLookupMediator extends AbstractDBMediator {
         Connection con = null;
         ResultSet rs = null;
         try {
-        	con = this.getDataSource().getConnection();
+            con = this.getDataSource().getConnection();
             PreparedStatement ps = getPreparedStatement(stmnt, con, msgCtx);
             rs = ps.executeQuery();
 
             if (rs.next()) {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug(
-                        "Processing the first row returned : " + stmnt.getRawStatement());
+                            "Processing the first row returned : " + stmnt.getRawStatement());
                 }
 
                 for (String propName : stmnt.getResultsMap().keySet()) {
 
-                    String columnStr =  stmnt.getResultsMap().get(propName);
+                    String columnStr = stmnt.getResultsMap().get(propName);
                     Object obj;
                     try {
                         int colNum = Integer.parseInt(columnStr);
@@ -79,10 +79,10 @@ public class DBLookupMediator extends AbstractDBMediator {
             } else {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Statement : "
-                        + stmnt.getRawStatement() + " returned 0 rows");
+                            + stmnt.getRawStatement() + " returned 0 rows");
                 }
             }
-            
+
         } catch (SQLException e) {
             handleException("SQL Exception occurred while executing statement : " +
                     stmnt.getRawStatement() +
@@ -94,12 +94,14 @@ public class DBLookupMediator extends AbstractDBMediator {
             if (rs != null) {
                 try {
                     rs.close();
-                } catch (SQLException e) {}
+                } catch (SQLException e) {
+                }
             }
             if (con != null) {
                 try {
                     con.close();
-                } catch (SQLException ignore) {}
+                } catch (SQLException ignore) {
+                }
             }
         }
     }

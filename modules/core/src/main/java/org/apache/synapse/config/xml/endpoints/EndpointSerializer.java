@@ -21,20 +21,15 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.PropertyInclude;
-import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
-import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.xml.MediatorPropertySerializer;
 import org.apache.synapse.endpoints.*;
-import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.mediators.MediatorProperty;
 
-import javax.xml.namespace.QName;
 import java.util.Collection;
 
 /**
@@ -94,7 +89,7 @@ public abstract class EndpointSerializer {
     }
 
     protected void serializeSpecificEndpointProperties(EndpointDefinition endpointDefinition,
-        OMElement element) {
+                                                       OMElement element) {
 
         // overridden by the Serializers which has specific serialization
     }
@@ -126,9 +121,9 @@ public abstract class EndpointSerializer {
             return new ResolvingEndpointSerializer();
         } else if (endpoint instanceof SALoadbalanceEndpoint) {
             return new SALoadbalanceEndpointSerializer();
-        } else if (endpoint instanceof ServiceDynamicLoadbalanceEndpoint){
+        } else if (endpoint instanceof ServiceDynamicLoadbalanceEndpoint) {
             return new ServiceDynamicLoadbalanceEndpointSerializer();
-        } else if (endpoint instanceof DynamicLoadbalanceEndpoint){
+        } else if (endpoint instanceof DynamicLoadbalanceEndpoint) {
             return new DynamicLoadbalanceEndpointSerializer();
         } else if (endpoint instanceof LoadbalanceEndpoint) {
             return new LoadbalanceEndpointSerializer();
@@ -136,8 +131,8 @@ public abstract class EndpointSerializer {
             return new FailoverEndpointSerializer();
         } else if (endpoint instanceof TemplateEndpoint) {
             return new TemplateEndpointSerializer();
-        } else if(endpoint instanceof RecipientListEndpoint){
-        	return new RecipientListEndpointSerializer();
+        } else if (endpoint instanceof RecipientListEndpoint) {
+            return new RecipientListEndpointSerializer();
         } else if (endpoint instanceof HTTPEndpoint) {
             return new HTTPEndpointSerializer();
         } else if (endpoint instanceof ClassEndpoint) {

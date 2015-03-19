@@ -25,7 +25,7 @@ import org.apache.synapse.mediators.db.DBLookupMediator;
 
 /**
  * Serializer for {@link DBLookupMediator} instances.
- * 
+ *
  * @see DBLookupMediatorSerializer
  */
 public class DBLookupMediatorSerializer extends AbstractDBMediatorSerializer {
@@ -38,7 +38,7 @@ public class DBLookupMediatorSerializer extends AbstractDBMediatorSerializer {
 
         DBLookupMediator mediator = (DBLookupMediator) m;
         OMElement dbLookup = fac.createOMElement("dblookup", synNS);
-        saveTracingState(dbLookup,mediator);
+        saveTracingState(dbLookup, mediator);
         serializeDBInformation(mediator, dbLookup);
 
         return dbLookup;

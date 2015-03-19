@@ -25,8 +25,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -71,7 +71,7 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
     /**
      * This method will create the IterateMediator by parsing the given xml configuration
      *
-     * @param elem OMElement describing the configuration of the IterateMediaotr
+     * @param elem       OMElement describing the configuration of the IterateMediaotr
      * @param properties properties passed
      * @return IterateMediator created from the given configuration
      */
@@ -103,29 +103,29 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
                 mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem, ATT_EXPRN));
             } catch (JaxenException e) {
                 handleException("Unable to build the IterateMediator. " + "Invalid XPATH " +
-                    expression.getAttributeValue(), e);
+                        expression.getAttributeValue(), e);
             }
         } else {
             handleException("XPATH expression is required " +
-                "for an IterateMediator under the \"expression\" attribute");
+                    "for an IterateMediator under the \"expression\" attribute");
         }
 
         OMAttribute attachPath = elem.getAttribute(ATT_ATTACHPATH);
         String attachPathValue = ".";
         if (attachPath != null && !mediator.isPreservePayload()) {
             handleException("Wrong configuration for the iterate mediator :: if the iterator " +
-                "should not preserve payload, then attachPath can not be present");
+                    "should not preserve payload, then attachPath can not be present");
         } else if (attachPath != null) {
             attachPathValue = attachPath.getAttributeValue();
         }
-        
+
         try {
             SynapseXPath xp = new SynapseXPath(attachPathValue);
             OMElementUtils.addNameSpaces(xp, elem, log);
             mediator.setAttachPath(xp);
         } catch (JaxenException e) {
             handleException("Unable to build the IterateMediator. Invalid XPATH " +
-                attachPathValue, e);
+                    attachPathValue, e);
         }
 
         boolean asynchronous = true;

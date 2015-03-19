@@ -58,9 +58,10 @@ public class MessageProcessorSerializer {
 
     /**
      * Serialize a give Message processor instance to XML configuration
-     * @param parent parent configuration
+     *
+     * @param parent    parent configuration
      * @param processor message processor instance
-     * @return  created XML configuration
+     * @return created XML configuration
      */
     public static OMElement serializeMessageProcessor(OMElement parent, MessageProcessor processor) {
         OMElement processorElem = fac.createOMElement("messageProcessor", synNS);
@@ -86,9 +87,9 @@ public class MessageProcessorSerializer {
             }
         }
 
-        if(processor.getMessageStoreName() != null) {
+        if (processor.getMessageStoreName() != null) {
             processorElem.addAttribute(fac.createOMAttribute(
-                    "messageStore",nullNS,processor.getMessageStoreName()));
+                    "messageStore", nullNS, processor.getMessageStoreName()));
         }
 
         if (processor.getParameters() != null) {

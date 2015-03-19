@@ -39,11 +39,11 @@ import java.io.OutputStream;
  */
 public class StreamSourceBuilder implements SourceBuilder {
     private static final Log log = LogFactory.getLog(StreamSourceBuilder.class);
-    
+
     private final SynapseEnvironment synEnv;
     private OverflowBlob tmp;
     private InputStream in;
-    
+
     public StreamSourceBuilder(SynapseEnvironment synEnv) {
         this.synEnv = synEnv;
     }

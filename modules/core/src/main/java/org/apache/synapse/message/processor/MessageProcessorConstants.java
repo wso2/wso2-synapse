@@ -28,12 +28,12 @@ public final class MessageProcessorConstants {
     public static final String INTERVAL = "interval";
     public static final String CRON_EXPRESSION = "cronExpression";
 
-	public static final String MEMBER_COUNT = "member.count";
+    public static final String MEMBER_COUNT = "member.count";
 
-	/**
-	 * Threshould interval value is 1000.
-	 */
-	public static final long THRESHOULD_INTERVAL = 1000;
+    /**
+     * Threshould interval value is 1000.
+     */
+    public static final long THRESHOULD_INTERVAL = 1000;
 
     /**
      * Message processor parameters
@@ -52,7 +52,9 @@ public final class MessageProcessorConstants {
     public static final String PROCESSOR_INSTANCE = "processor.instance";
     public static final String PINNED_SERVER = "pinnedServers";
 
-    /** Deprecated message processor implementation class names**/
+    /**
+     * Deprecated message processor implementation class names*
+     */
     public static final String DEPRECATED_SAMPLING_PROCESSOR_CLASS =
             "org.apache.synapse.message.processors.sampler.SamplingProcessor";
     public static final String DEPRECATED_FORWARDING_PROCESSOR_CLASS =

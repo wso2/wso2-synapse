@@ -19,17 +19,17 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.synapse.config.xml.SynapseXPathFactory;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
-import org.apache.synapse.config.xml.SynapseXPathFactory;
-import org.apache.axiom.om.OMElement;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
 
 /**
- * 
+ *
  */
 public class ResolvingEndpointFactory extends EndpointFactory {
 
@@ -37,7 +37,8 @@ public class ResolvingEndpointFactory extends EndpointFactory {
 
     private static final QName ATTR_KEY_EXPRESSION = new QName("key-expression");
 
-    private ResolvingEndpointFactory() {}
+    private ResolvingEndpointFactory() {
+    }
 
     public static ResolvingEndpointFactory getInstance() {
         return instance;
@@ -46,7 +47,7 @@ public class ResolvingEndpointFactory extends EndpointFactory {
     protected Endpoint createEndpoint(OMElement epConfig, boolean anonymousEndpoint,
                                       Properties properties) {
 
-        ResolvingEndpoint resolvingEndpoint = new ResolvingEndpoint();       
+        ResolvingEndpoint resolvingEndpoint = new ResolvingEndpoint();
         String name = epConfig.getAttributeValue(new QName("name"));
         if (name != null) {
             resolvingEndpoint.setName(name);

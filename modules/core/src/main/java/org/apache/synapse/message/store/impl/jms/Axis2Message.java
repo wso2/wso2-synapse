@@ -128,9 +128,13 @@ public class Axis2Message implements Serializable {
         return soapEnvelope;
     }
 
-    public void setJsonStream(byte[] jsonStream) { this.jsonStream = jsonStream; }
+    public void setJsonStream(byte[] jsonStream) {
+        this.jsonStream = jsonStream;
+    }
 
-    public byte[] getJsonStream() { return this.jsonStream; }
+    public byte[] getJsonStream() {
+        return this.jsonStream;
+    }
 
     public void setSoapEnvelope(String soapEnvelope) {
         this.soapEnvelope = soapEnvelope;

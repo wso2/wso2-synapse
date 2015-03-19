@@ -35,9 +35,9 @@ import javax.xml.namespace.QName;
  */
 public class MessageStoreMediatorSerializer extends AbstractMediatorSerializer {
 
-    private static final QName STORE_Q    = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "store");
-    private static final String  ATT_MESSAGE_STORE   = "messageStore";
-    private static final String  ATT_SEQUENCE   = "sequence";
+    private static final QName STORE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "store");
+    private static final String ATT_MESSAGE_STORE = "messageStore";
+    private static final String ATT_SEQUENCE = "sequence";
 
     @Override
     protected OMElement serializeSpecificMediator(Mediator m) {
@@ -47,23 +47,23 @@ public class MessageStoreMediatorSerializer extends AbstractMediatorSerializer {
         }
 
 
-        MessageStoreMediator messageStoreMediator = (MessageStoreMediator)m;
+        MessageStoreMediator messageStoreMediator = (MessageStoreMediator) m;
 
         String messageStoreName = messageStoreMediator.getMessageStoreName();
 
-        OMElement storeElem = fac.createOMElement("store",synNS);
+        OMElement storeElem = fac.createOMElement("store", synNS);
 
         String name = messageStoreMediator.getName();
 
-        if(name != null) {
-            OMAttribute nameAtt = fac.createOMAttribute("name" , nullNS , name);
+        if (name != null) {
+            OMAttribute nameAtt = fac.createOMAttribute("name", nullNS, name);
             storeElem.addAttribute(nameAtt);
         }
 
         //In normal operations messageStoreName can't be null
         //But we do a null check here since in run time there can be manuel modifications
-        if(messageStoreName != null ) {
-            OMAttribute msName = fac.createOMAttribute(ATT_MESSAGE_STORE ,nullNS,messageStoreName);
+        if (messageStoreName != null) {
+            OMAttribute msName = fac.createOMAttribute(ATT_MESSAGE_STORE, nullNS, messageStoreName);
             storeElem.addAttribute(msName);
         } else {
             handleException("Can't serialize MessageStore Mediator message store is null ");
@@ -72,8 +72,8 @@ public class MessageStoreMediatorSerializer extends AbstractMediatorSerializer {
 
         String sequence = messageStoreMediator.getOnStoreSequence();
         // sequence is an optional parameter
-        if(sequence != null) {
-            OMAttribute sequenceAtt = fac.createOMAttribute(ATT_SEQUENCE , nullNS ,sequence);
+        if (sequence != null) {
+            OMAttribute sequenceAtt = fac.createOMAttribute(ATT_SEQUENCE, nullNS, sequence);
             storeElem.addAttribute(sequenceAtt);
         }
 

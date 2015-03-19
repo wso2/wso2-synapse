@@ -24,11 +24,11 @@ import org.apache.axis2.description.Parameter;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.Entry;
+import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
-import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.config.Entry;
 
 import java.util.List;
 
@@ -43,6 +43,7 @@ public class IndirectEndpoint extends AbstractEndpoint {
 
     /**
      * Send by calling to the real endpoint
+     *
      * @param synCtx the message to send
      */
     public void send(MessageContext synCtx) {
@@ -133,7 +134,8 @@ public class IndirectEndpoint extends AbstractEndpoint {
 
 
     /**
-     * Reload as needed , either from registry , local entries or predefined endpoints 
+     * Reload as needed , either from registry , local entries or predefined endpoints
+     *
      * @param cc ConfigurationContext
      */
     private synchronized void reLoadAndInitEndpoint(ConfigurationContext cc) {

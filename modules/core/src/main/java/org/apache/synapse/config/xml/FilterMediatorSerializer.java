@@ -29,10 +29,10 @@ import org.apache.synapse.mediators.filters.FilterMediator;
  *   mediator+
  * &lt;/filter&gt;
  * </pre>
- *
+ * <p/>
  * <p>or if the filter medaitor needs to support the else behavior as well (i.e. a set of mediators
  * to be executed when the filter evaluates to false).</p>
- *
+ * <p/>
  * <pre>
  * &lt;filter (source="xpath" regex="string") | xpath="xpath"&gt;
  *   &lt;then [sequence="string"]&gt;
@@ -60,7 +60,7 @@ public class FilterMediatorSerializer extends AbstractListMediatorSerializer {
             SynapsePathSerializer.serializePath(mediator.getSource(), filter, "source");
 
             filter.addAttribute(fac.createOMAttribute(
-                "regex", nullNS, mediator.getRegex().pattern()));
+                    "regex", nullNS, mediator.getRegex().pattern()));
 
         } else if (mediator.getXpath() != null) {
 
@@ -68,7 +68,7 @@ public class FilterMediatorSerializer extends AbstractListMediatorSerializer {
 
         } else {
             handleException("Invalid filter mediator. " +
-                "Should have either a 'source' and a 'regex' OR an 'xpath' ");
+                    "Should have either a 'source' and a 'regex' OR an 'xpath' ");
         }
 
         saveTracingState(filter, mediator);
@@ -80,7 +80,7 @@ public class FilterMediatorSerializer extends AbstractListMediatorSerializer {
 
             if (mediator.getThenKey() != null) {
                 thenElem.addAttribute(
-                    fac.createOMAttribute("sequence", nullNS, mediator.getThenKey()));
+                        fac.createOMAttribute("sequence", nullNS, mediator.getThenKey()));
             } else {
                 serializeChildren(thenElem, mediator.getList());
             }
@@ -92,12 +92,12 @@ public class FilterMediatorSerializer extends AbstractListMediatorSerializer {
 
                 if (mediator.getElseKey() != null) {
                     elseElem.addAttribute(
-                        fac.createOMAttribute("sequence", nullNS, mediator.getElseKey()));
+                            fac.createOMAttribute("sequence", nullNS, mediator.getElseKey()));
                 } else {
                     serializeChildren(elseElem, mediator.getElseMediator().getList());
                 }
             }
-            
+
         } else {
             serializeChildren(filter, mediator.getList());
         }

@@ -19,9 +19,6 @@
 
 package org.apache.synapse.endpoints;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
@@ -33,6 +30,9 @@ import org.apache.synapse.endpoints.dispatch.HttpSessionDispatcher;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.endpoints.dispatch.SessionInformation;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SALoadbalanceEndpoint supports session affinity based load balancing. Each of this endpoint
@@ -54,7 +54,7 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
  * policy and send to that endpoint.
  */
 public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
-  
+
     /**
      * Dispatcher used for session affinity.
      */
@@ -111,7 +111,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
 
         if (!(dispatcher instanceof HttpSessionDispatcher)) {
             try {
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
             } catch (Exception e) {
                 handleException("Error while building message", e);
             }
@@ -119,7 +119,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
 
         // evaluate the properties
         evaluateProperties(synCtx);
-        
+
         if (sessionInformation == null && endpoints == null) {
 
             sessionInformation = dispatcher.getSession(synCtx);
@@ -151,7 +151,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
             // prepare for a new session 
             sendMessageOnNewSession(synCtx);
         }
-    }  
+    }
 
     public Dispatcher getDispatcher() {
         return dispatcher;
@@ -170,8 +170,8 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
      * But if the session has not started (i.e. first message), the message will be resend by binding
      * it to a different endpoint.
      *
-     * @param endpoint          Failed endpoint.
-     * @param synCtx MessageContext of the failed message.
+     * @param endpoint Failed endpoint.
+     * @param synCtx   MessageContext of the failed message.
      */
     public void onChildEndpointFail(Endpoint endpoint, MessageContext synCtx) {
 
@@ -218,7 +218,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
     * Helper method  that send message on the endpoint sequence on the current session
      */
     private void sendMessageOnCurrentSession(String sessionID, List<Endpoint> endpoints, MessageContext synCtx) {
-                
+
         // get the next endpoint in the endpoint sequence
         Endpoint endpoint = null;
 
@@ -231,7 +231,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
                 //  All the path before this SAL endpoint are ignored.
                 int length = endpoints.size();
                 if (length > 1) {
-                    
+
                     int beginIndex = endpoints.lastIndexOf(this) + 1;
                     if (beginIndex == length) {
                         invalidSequence = true;
@@ -299,7 +299,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
             synCtx.pushFaultHandler(this);
             endpoint.send(synCtx);
         }
-    }  
+    }
 
     /*
     * Preparing the endpoint sequence for a new session establishment request

@@ -19,20 +19,20 @@
 
 package org.apache.synapse.mediators.builtin;
 
-import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.mediators.MediatorWorker;
-import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.MediatorWorker;
+import org.apache.synapse.mediators.base.SequenceMediator;
 
 import java.util.concurrent.RejectedExecutionException;
 
 /**
  * This mediator execute a given sequence with a given priority.
- *
+ * <p/>
  * It accepts the priority as and argument. The executor used for executing this
  * sequence should support this priority. If it doesn't support this priority it
  * executor can throw exceptions.
@@ -75,7 +75,7 @@ public class EnqueueMediator extends AbstractMediator {
             } catch (RejectedExecutionException ex) {
                 //if RejectedExecutionException, jump to fault handler
                 handleException("Unable to process message in priority executor " + executorName + " with priority " +
-                        priority +". Thread pool exhausted.", synCtx);
+                        priority + ". Thread pool exhausted.", synCtx);
             }
 
 
@@ -93,7 +93,7 @@ public class EnqueueMediator extends AbstractMediator {
         } else {
             handleException("Sequence cannot be found : " + sequenceName, synCtx);
             return false;
-        }               
+        }
     }
 
     public String getExecutorName() {

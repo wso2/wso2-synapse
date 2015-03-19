@@ -35,16 +35,20 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     private static final Log log = LogFactory.getLog(EndpointView.class);
     private static final Long ONE = 1L;
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(20,
-        new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "endpoint-jmx-stat-collector");
+            new ThreadFactory() {
+                public Thread newThread(Runnable r) {
+                    return new Thread(r, "endpoint-jmx-stat-collector");
+                }
             }
-        }
     );
 
-    /** The name of the endpoint */
+    /**
+     * The name of the endpoint
+     */
     private String endpointName = null;
-    /** The actual Endpoint implementation we manage */
+    /**
+     * The actual Endpoint implementation we manage
+     */
     private Endpoint endpoint = null;
 
     // metrics collected / maintained
@@ -56,7 +60,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     private long maxSizeReceived;
     private double avgSizeReceived;
     private final Map<Integer, Long> receivingFaultTable =
-        Collections.synchronizedMap(new HashMap<Integer, Long>());
+            Collections.synchronizedMap(new HashMap<Integer, Long>());
 
     private long messagesSent;
     private long faultsSending;
@@ -76,10 +80,10 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     private Date timedoutAt;
 
     private final Map<Integer, Long> sendingFaultTable =
-        Collections.synchronizedMap(new HashMap<Integer, Long>());
+            Collections.synchronizedMap(new HashMap<Integer, Long>());
 
     private final Map<Integer, Long> responseCodeTable =
-        Collections.synchronizedMap(new HashMap<Integer, Long>());
+            Collections.synchronizedMap(new HashMap<Integer, Long>());
 
     private long lastResetTime = System.currentTimeMillis();
 
@@ -90,8 +94,9 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Create a new MBean to manage the given endpoint
+     *
      * @param endpointName the name of the endpoint
-     * @param endpoint the actual endpoint
+     * @param endpoint     the actual endpoint
      */
     public EndpointView(final String endpointName, Endpoint endpoint) {
         this.endpointName = endpointName;
@@ -119,8 +124,10 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     }
 
     // --- endpoint control ---
+
     /**
      * Switch on a leaf endpoint, or all endpoints on a group - from maintenance
+     *
      * @throws Exception
      */
     public void switchOn() throws Exception {
@@ -157,8 +164,10 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     }
 
     // --- endpoint status check ---
+
     /**
      * Is a leaf level endpoint active? For a group endpoint this means at least one is active
+     *
      * @return true if at least one is active in a group endpoint; for a leaf - if it is currently active
      * @throws Exception
      */
@@ -173,6 +182,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Is this leaf level endpoint in timeout state? For a group, has all endpoints timed out?
+     *
      * @return true if a leaf level endpoint has timed out, For a group, has all endpoints timed out?
      * @throws Exception
      */
@@ -182,6 +192,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Is this leaf level endpoint in suspend state?
+     *
      * @return true if a leaf level endpoint is suspended, false for group endpoints and non-suspend
      * @throws Exception
      */
@@ -191,6 +202,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Is this leaf level endpoint switched off?
+     *
      * @return true if a leaf level endpoint is off, false for group endpoints and non-off
      * @throws Exception
      */
@@ -200,6 +212,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Return number of children for this endpoint
+     *
      * @return the number of children for this endpoint
      * @throws Exception
      */
@@ -209,6 +222,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Return the number of active children for this endpoint
+     *
      * @return the number of active children for this endpoint
      * @throws Exception
      */
@@ -228,6 +242,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Return the number of ready children for this endpoint
+     *
      * @return the number of ready children for this endpoint
      * @throws Exception
      */
@@ -246,8 +261,10 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     }
 
     // --- endpoint metrics ---
+
     /**
      * Time when statistics was last reset for this leaf endpoint
+     *
      * @return the time when statistics was last reset for this leaf endpoint, or -1 for group endpoints
      */
     public long getLastResetTime() {
@@ -256,6 +273,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Time since statistics was last reset for this leaf endpoint
+     *
      * @return the time since statistics was last reset for this leaf endpoint, or -1 for group endpoints
      */
     public long getMetricsWindow() {
@@ -264,6 +282,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * A Map of receive faults with the error code and count
+     *
      * @return a Map of receive faults
      */
     public Map<Integer, Long> getReceivingFaultTable() {
@@ -283,6 +302,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * A Map of send faults with the error code and count
+     *
      * @return a Map of send faults
      */
     public Map<Integer, Long> getSendingFaultTable() {
@@ -302,6 +322,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * A Map of response codes and counts
+     *
      * @return a Map of response codes and counts
      */
     public Map<Integer, Long> getResponseCodeTable() {
@@ -400,7 +421,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
         if (count > array.length) {
             for (int i = 0; i < array.length; i++) {
-                sum +=array[i];
+                sum += array[i];
             }
         } else {
             for (int i = 0; i < count; i++) {
@@ -412,6 +433,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of messages (ie replies) received
+     *
      * @return # of messages (replies) received
      */
     public long getMessagesReceived() {
@@ -430,6 +452,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of faults, receiving replies
+     *
      * @return # of faults, receiving replies
      */
     public long getFaultsReceiving() {
@@ -448,6 +471,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of timeouts, receiving replies
+     *
      * @return # of timeouts, receiving replies
      */
     public long getTimeoutsReceiving() {
@@ -466,6 +490,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of bytes received, receiving replies
+     *
      * @return # of bytes received, receiving replies
      */
     public long getBytesReceived() {
@@ -484,6 +509,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of messages sent
+     *
      * @return # of messages sent
      */
     public long getMessagesSent() {
@@ -502,6 +528,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of faults sending
+     *
      * @return # of faults sending
      */
     public long getFaultsSending() {
@@ -520,6 +547,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of timeouts, sending
+     *
      * @return # of timeouts, sending
      */
     public long getTimeoutsSending() {
@@ -538,6 +566,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Number of bytes sent
+     *
      * @return # of bytes sent
      */
     public long getBytesSent() {
@@ -631,10 +660,10 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
             double avgSizeReceived = 0;
             for (Endpoint e : endpoint.getChildren()) {
                 double epValue =
-                    e.getMetricsMBean() == null ? 0 : e.getMetricsMBean().getAvgSizeReceived();
+                        e.getMetricsMBean() == null ? 0 : e.getMetricsMBean().getAvgSizeReceived();
                 if (epValue > 0) {
                     avgSizeReceived =
-                        (avgSizeReceived == 0 ? epValue : (avgSizeReceived + epValue) / 2);
+                            (avgSizeReceived == 0 ? epValue : (avgSizeReceived + epValue) / 2);
                 }
             }
             return avgSizeReceived;
@@ -648,7 +677,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
             double avgSizeSent = 0;
             for (Endpoint e : endpoint.getChildren()) {
                 double epValue =
-                    e.getMetricsMBean() == null ? 0 : e.getMetricsMBean().getAvgSizeSent();
+                        e.getMetricsMBean() == null ? 0 : e.getMetricsMBean().getAvgSizeSent();
                 if (epValue > 0) {
                     avgSizeSent = (avgSizeSent == 0 ? epValue : (avgSizeSent + epValue) / 2);
                 }
@@ -662,22 +691,22 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     // --- MessageLevelMetricsCollector methods ---
     public void resetStatistics() {
 
-        messagesReceived  = 0;
-        faultsReceiving   = 0;
+        messagesReceived = 0;
+        faultsReceiving = 0;
         timeoutsReceiving = 0;
-        bytesReceived     = 0;
-        minSizeReceived   = 0;
-        maxSizeReceived   = 0;
-        avgSizeReceived   = 0;
+        bytesReceived = 0;
+        minSizeReceived = 0;
+        maxSizeReceived = 0;
+        avgSizeReceived = 0;
         receivingFaultTable.clear();
 
-        messagesSent      = 0;
-        faultsSending     = 0;
-        timeoutsSending   = 0;
-        bytesSent         = 0;
-        minSizeSent       = 0;
-        maxSizeSent       = 0;
-        avgSizeSent       = 0;
+        messagesSent = 0;
+        faultsSending = 0;
+        timeoutsSending = 0;
+        bytesSent = 0;
+        minSizeSent = 0;
+        maxSizeSent = 0;
+        avgSizeSent = 0;
         sendingFaultTable.clear();
 
         responseCodeTable.clear();
@@ -760,10 +789,11 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     /**
      * Report a/an [typically non-fatal] error to the sending fault table, without incrementing
      * the sendingFault count e.g. to report a successful fail-over etc
+     *
      * @param errorCode the code to report
      */
     public void reportSendingFault(int errorCode) {
-        synchronized(sendingFaultTable) {
+        synchronized (sendingFaultTable) {
             Object o = sendingFaultTable.get(errorCode);
             if (o == null) {
                 sendingFaultTable.put(errorCode, ONE);
@@ -776,10 +806,11 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
     /**
      * Report a/an [typically non-fatal] error to the receiving fault table, without incrementing
      * the receivingFault count
+     *
      * @param errorCode the code to report
      */
     public void reportReceivingFault(int errorCode) {
-        synchronized(receivingFaultTable) {
+        synchronized (receivingFaultTable) {
             Object o = receivingFaultTable.get(errorCode);
             if (o == null) {
                 receivingFaultTable.put(errorCode, ONE);
@@ -791,10 +822,11 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Collect response code statistics
+     *
      * @param respCode response code
      */
     public void reportResponseCode(int respCode) {
-        synchronized(responseCodeTable) {
+        synchronized (responseCodeTable) {
             Object o = responseCodeTable.get(respCode);
             if (o == null) {
                 responseCodeTable.put(respCode, ONE);
@@ -817,6 +849,7 @@ public class EndpointView implements EndpointViewMBean, MessageLevelMetricsColle
 
     /**
      * Is the endpoint considered to be in the given state?
+     *
      * @param state the state to consider
      * @return true if all endpoints in a group are of the given state, or if a leaf endpoint is in the given state
      */

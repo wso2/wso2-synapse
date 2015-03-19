@@ -35,13 +35,13 @@ public enum ServerState {
             return "INITIALIZABLE";
         }
     },
-    
+
     INITIALIZED {
         public String toString() {
             return "INITIALIZED";
         }
     },
-    
+
     MAINTENANCE {
         public String toString() {
             return "MAINTENANCE";

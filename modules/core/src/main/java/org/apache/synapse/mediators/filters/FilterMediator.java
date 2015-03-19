@@ -32,7 +32,6 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -43,7 +42,7 @@ import java.util.regex.Pattern;
  * is set, it is evaluated; else the given regex is evaluated against the source xpath.
  */
 public class FilterMediator extends AbstractListMediator implements
-    org.apache.synapse.mediators.FilterMediator, FlowContinuableMediator {
+        org.apache.synapse.mediators.FilterMediator, FlowContinuableMediator {
 
     private SynapsePath source = null;
     private Pattern regex = null;
@@ -132,9 +131,9 @@ public class FilterMediator extends AbstractListMediator implements
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
-                        "Source : " + source + " against : " + regex.pattern() + " matches" :
-                        "XPath expression : "  + xpath + " evaluates to true") +
-                        " - executing then sequence with key : " + thenKey);
+                            "Source : " + source + " against : " + regex.pattern() + " matches" :
+                            "XPath expression : " + xpath + " evaluates to true") +
+                            " - executing then sequence with key : " + thenKey);
                 }
 
                 ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
@@ -143,16 +142,16 @@ public class FilterMediator extends AbstractListMediator implements
                     result = seq.mediate(synCtx);
                 } else {
                     handleException("Couldn't find the referred then sequence with key : "
-                        + thenKey, synCtx);
+                            + thenKey, synCtx);
                 }
-                
+
             } else {
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
-                        "Source : " + source + " against : " + regex.pattern() + " matches" :
-                        "XPath expression : "  + xpath + " evaluates to true") +
-                        " - executing child mediators");
+                            "Source : " + source + " against : " + regex.pattern() + " matches" :
+                            "XPath expression : " + xpath + " evaluates to true") +
+                            " - executing child mediators");
                 }
 
                 ContinuationStackManager.
@@ -170,9 +169,9 @@ public class FilterMediator extends AbstractListMediator implements
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
-                        "Source : " + source + " against : " + regex.pattern() + " does not match" :
-                        "XPath expression : "  + xpath + " evaluates to false") +
-                        " - executing the else sequence with key : " + elseKey);
+                            "Source : " + source + " against : " + regex.pattern() + " does not match" :
+                            "XPath expression : " + xpath + " evaluates to false") +
+                            " - executing the else sequence with key : " + elseKey);
                 }
 
                 ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
@@ -182,16 +181,16 @@ public class FilterMediator extends AbstractListMediator implements
                     result = elseSeq.mediate(synCtx);
                 } else {
                     handleException("Couldn't find the referred else sequence with key : "
-                        + elseKey, synCtx);
+                            + elseKey, synCtx);
                 }
-                
+
             } else if (elseMediator != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
-                        "Source : " + source + " against : " + regex.pattern() + " does not match" :
-                        "XPath expression : "  + xpath + " evaluates to false") +
-                        " - executing the else path child mediators");
+                            "Source : " + source + " against : " + regex.pattern() + " does not match" :
+                            "XPath expression : " + xpath + " evaluates to false") +
+                            " - executing the else path child mediators");
                 }
                 ContinuationStackManager.addReliantContinuationState(synCtx, 1, getMediatorPosition());
                 result = elseMediator.mediate(synCtx);
@@ -203,9 +202,9 @@ public class FilterMediator extends AbstractListMediator implements
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug((xpath == null ?
-                        "Source : " + source + " against : " + regex.pattern() + " does not match" :
-                        "XPath expression : "  + xpath + " evaluates to false and no else path") +
-                        " - skipping child mediators");
+                            "Source : " + source + " against : " + regex.pattern() + " does not match" :
+                            "XPath expression : " + xpath + " evaluates to false and no else path") +
+                            " - skipping child mediators");
                 }
                 result = true;
             }
@@ -226,13 +225,13 @@ public class FilterMediator extends AbstractListMediator implements
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
         if (subBranch == 0) {
-           if (!continuationState.hasChild()) {
-               result = super.mediate(synCtx, continuationState.getPosition() + 1);
-           } else {
-               FlowContinuableMediator mediator =
-                       (FlowContinuableMediator) getChild(continuationState.getPosition());
-               result = mediator.mediate(synCtx, continuationState.getChildContState());
-           }
+            if (!continuationState.hasChild()) {
+                result = super.mediate(synCtx, continuationState.getPosition() + 1);
+            } else {
+                FlowContinuableMediator mediator =
+                        (FlowContinuableMediator) getChild(continuationState.getPosition());
+                result = mediator.mediate(synCtx, continuationState.getChildContState());
+            }
         } else {
             if (!continuationState.hasChild()) {
                 result = elseMediator.mediate(synCtx, continuationState.getPosition() + 1);
@@ -279,7 +278,7 @@ public class FilterMediator extends AbstractListMediator implements
             if (matcher == null) {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Regex pattern matcher for : " + regex.pattern() +
-                        "against source : " + sourceString + " is null");
+                            "against source : " + sourceString + " is null");
                 }
                 return false;
             }

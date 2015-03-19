@@ -39,14 +39,14 @@ public interface ResultBuilderFactory {
          * to the {@link javax.xml.transform.Result} object.
          */
         ELEMENT,
-        
+
         /**
          * The expected output is a SOAP envelope.
          * If this output type is used, an invocation of {@link ResultBuilder#getNode()}
          * must return a {@link org.apache.axiom.soap.SOAPEnvelope} object.
          */
         SOAP_ENVELOPE,
-        
+
         /**
          * The expected output is text. If this output type is used,
          * {@link ResultBuilder#getNode(java.nio.charset.Charset)} must return a
@@ -54,15 +54,17 @@ public interface ResultBuilderFactory {
          * object.
          */
         TEXT
-    };
-    
+    }
+
+    ;
+
     /**
      * Create a new {@link ResultBuilder} instance.
-     * 
-     * @param synEnv the Synapse environment
+     *
+     * @param synEnv         the Synapse environment
      * @param expectedOutput specifies the expected type of output that will be written
-     *           to {@link javax.xml.transform.Result} objects produced by {@link ResultBuilder}
-     *           instances returned by this method
+     *                       to {@link javax.xml.transform.Result} objects produced by {@link ResultBuilder}
+     *                       instances returned by this method
      * @return the newly created instance
      */
     ResultBuilder createResultBuilder(SynapseEnvironment synEnv, Output expectedOutput);

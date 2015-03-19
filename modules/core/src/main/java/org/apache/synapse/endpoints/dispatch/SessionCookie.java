@@ -5,30 +5,30 @@ package org.apache.synapse.endpoints.dispatch;
  */
 public class SessionCookie {
 
-	private String sessionId;
-	private String path;
-	
-	public SessionCookie() {
-	}
+    private String sessionId;
+    private String path;
 
-	public String getSessionId() {
-		return sessionId;
-	}
+    public SessionCookie() {
+    }
 
-	public void setSessionId(String sessionId) {
-		this.sessionId = sessionId;
-	}
+    public String getSessionId() {
+        return sessionId;
+    }
 
-	public String getPath() {
-		return path;
-	}
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
+    }
 
-	public void setPath(String path) {
-		this.path = path;
-	}
+    public String getPath() {
+        return path;
+    }
 
-	@Override
-	public String toString() {
-		return "SessionCookie [sessionId=" + sessionId + ", path=" + path + "]";
-	}
+    public void setPath(String path) {
+        this.path = path;
+    }
+
+    @Override
+    public String toString() {
+        return "SessionCookie [sessionId=" + sessionId + ", path=" + path + "]";
+    }
 }

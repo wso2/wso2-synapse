@@ -35,7 +35,7 @@ import java.util.TimerTask;
 /**
  * This implements the well known <code>Sample</code> EIP (Enterprise Integration Pattern), which controls the flow
  * of messages and limit the rate at which the messages are flowing through the sampler</p>
- *
+ * <p/>
  * <p>Please note that the usage of this will require the sampler to be on the out-flow as well to correctly
  * determine & to manage the rate.</p>
  *
@@ -43,16 +43,24 @@ import java.util.TimerTask;
  */
 public class SamplingThrottleMediator extends AbstractMediator implements ManagedLifecycle {
 
-    /** Rate at which this mediator allows the flow in TPS */
+    /**
+     * Rate at which this mediator allows the flow in TPS
+     */
     private int samplingRate = 1;
 
-    /** Unit time in milliseconds applied to the <code>samplingRate</code> */
+    /**
+     * Unit time in milliseconds applied to the <code>samplingRate</code>
+     */
     private long unitTime = 1000;
 
-    /** Identifier is used to co-relate the in and out path samplers */
+    /**
+     * Identifier is used to co-relate the in and out path samplers
+     */
     private String id;
 
-    /** Target to be used for mediation from the sampler */
+    /**
+     * Target to be used for mediation from the sampler
+     */
     private Target target;
 
     /**
@@ -120,7 +128,7 @@ public class SamplingThrottleMediator extends AbstractMediator implements Manage
         }
 
         OperationContext opCtx
-            = ((Axis2MessageContext) messageContext).getAxis2MessageContext().getOperationContext();
+                = ((Axis2MessageContext) messageContext).getAxis2MessageContext().getOperationContext();
         if (opCtx != null) {
             opCtx.setProperty(Constants.RESPONSE_WRITTEN, "SKIP");
         }

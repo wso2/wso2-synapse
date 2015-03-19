@@ -88,7 +88,7 @@ public class JDBCMessageConverter {
         SynapseConfiguration configuration = synapseEnvironment.getSynapseConfiguration();
         MessageContext synCtx = null;
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2SynapseEnvironment)
-                                                                  synapseEnvironment).getAxis2ConfigurationContext().createMessageContext();
+                synapseEnvironment).getAxis2ConfigurationContext().createMessageContext();
         AxisConfiguration axisConfiguration = msgCtx.getConfigurationContext().getAxisConfiguration();
         JDBCAxis2Message jdbcAxis2MessageContext = message.getAxis2Message();
         SOAPEnvelope envelope = getSoapEnvelope(jdbcAxis2MessageContext.getSoapEnvelope());
@@ -114,12 +114,12 @@ public class JDBCMessageConverter {
             msgCtx.setFLOW(jdbcAxis2MessageContext.getFlow());
             ArrayList executionChain = new ArrayList();
             if (jdbcAxis2MessageContext.getFlow() ==
-                org.apache.axis2.context.MessageContext.OUT_FLOW) {
+                    org.apache.axis2.context.MessageContext.OUT_FLOW) {
                 executionChain.addAll(axisOperation.getPhasesOutFlow());
                 executionChain.addAll(axisConfiguration.getOutFlowPhases());
 
             } else if (jdbcAxis2MessageContext.getFlow() ==
-                       org.apache.axis2.context.MessageContext.OUT_FAULT_FLOW) {
+                    org.apache.axis2.context.MessageContext.OUT_FAULT_FLOW) {
                 executionChain.addAll(axisOperation.getPhasesOutFaultFlow());
                 executionChain.addAll(axisConfiguration.getOutFlowPhases());
             }
@@ -161,7 +161,7 @@ public class JDBCMessageConverter {
 
             if (jdbcAxis2MessageContext.getJsonStream() != null) {
                 JsonUtil.newJsonPayload(msgCtx,
-                                        new ByteArrayInputStream(jdbcAxis2MessageContext.getJsonStream()), true, true);
+                        new ByteArrayInputStream(jdbcAxis2MessageContext.getJsonStream()), true, true);
             }
             JDBCSynapseMessage jdbcSynpaseMessageContext = message.getSynapseMessage();
 
@@ -361,7 +361,7 @@ public class JDBCMessageConverter {
             bytes = soapEnvelpe.getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
             log.error("Unable to extract bytes in UTF-8 encoding. "
-                      + "Extracting bytes in the system default encoding", e);
+                    + "Extracting bytes in the system default encoding", e);
             bytes = soapEnvelpe.getBytes();
         }
         return bytes;

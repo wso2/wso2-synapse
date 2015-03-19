@@ -49,7 +49,7 @@ public interface Registry {
      * This is the publicly used interface to the registry. It will fetch
      * the content from the registry and cache if required.
      *
-     * @param entry the registry Entry
+     * @param entry      the registry Entry
      * @param properties
      * @return the value from the registry or local cache
      * @see AbstractRegistry
@@ -64,13 +64,13 @@ public interface Registry {
      */
 
 
-
     public RegistryEntry getRegistryEntry(String key);
 
 
-     public OMElement getFormat(Entry entry);
+    public OMElement getFormat(Entry entry);
 
-   public OMNode lookupFormat(String key);
+    public OMNode lookupFormat(String key);
+
     /**
      * Returns the child elements of a given registry entry
      *

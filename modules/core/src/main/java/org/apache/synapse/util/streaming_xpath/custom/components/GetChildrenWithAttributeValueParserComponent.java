@@ -41,7 +41,7 @@ public class GetChildrenWithAttributeValueParserComponent extends ParserComponen
     @Override
     public String process(OMElement node) {
         this.attributeQName = new QName(prefixNameSpaceMap.get(nameSpacePrefix), localName);
-        try{
+        try {
             Iterator children = node.getChildElements();
             OMElement child = (OMElement) children.next();
             OMAttribute atr = child.getAttribute(attributeQName);
@@ -58,7 +58,7 @@ public class GetChildrenWithAttributeValueParserComponent extends ParserComponen
             } else {
                 return "";
             }
-        }catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return null;
         }
     }

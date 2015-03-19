@@ -50,13 +50,12 @@ public class LibDeployerUtils {
     static {
         String javaTempDir = System.getProperty("java.io.tmpdir");
         APP_UNZIP_DIR = javaTempDir.endsWith(File.separator) ?
-                        javaTempDir + LibDeployerConstants.SYNAPSE_LIBS :
-                        javaTempDir + File.separator + LibDeployerConstants.SYNAPSE_LIBS;
+                javaTempDir + LibDeployerConstants.SYNAPSE_LIBS :
+                javaTempDir + File.separator + LibDeployerConstants.SYNAPSE_LIBS;
         createDir(APP_UNZIP_DIR);
     }
 
     private static final Log log = LogFactory.getLog(LibDeployerUtils.class);
-
 
 
     public static Library createSynapseLibrary(String libPath) {
@@ -65,48 +64,48 @@ public class LibDeployerUtils {
         String extractPath = LibDeployerUtils.extractSynapseLib(libFilePath);
         //create synapse lib metadata
         SynapseLibrary synapseLib = LibDeployerUtils.populateDependencies(extractPath +
-                                                                          LibDeployerConstants.ARTIFACTS_XML);
+                LibDeployerConstants.ARTIFACTS_XML);
 
         //create a ClassLoader for loading this synapse lib classes/resources
         try {
             ClassLoader libLoader = Utils.getClassLoader(LibDeployerUtils.class.getClassLoader(),
-                                                         extractPath, false);
+                    extractPath, false);
             synapseLib.setLibClassLoader(libLoader);
         } catch (DeploymentException e) {
             throw new SynapseArtifactDeploymentException("Error setting up lib classpath for Synapse" +
-                                                         " Library  : " + libFilePath, e);
+                    " Library  : " + libFilePath, e);
         }
         //resolve synapse lib artifacts
         LibDeployerUtils.searchAndResolveDependencies(extractPath, synapseLib);
-        
+
         //TODO:reslove local-entry references
-        LibDeployerUtils.populateLocalEnties(synapseLib,extractPath+LibDeployerConstants.LOCAL_ENTRIES);
-        
+        LibDeployerUtils.populateLocalEnties(synapseLib, extractPath + LibDeployerConstants.LOCAL_ENTRIES);
+
         synapseLib.setFileName(libFilePath);
         return synapseLib;
     }
 
-    private static void populateLocalEnties(SynapseLibrary synapseLibrary,String localEntriesFilePath) {
-		// TODO Auto-generated method stub
-    	  File dir = new File(localEntriesFilePath);
-    	  if(dir.isDirectory()){
-    		  File [] entries = dir.listFiles();
-    		  for(File file :entries){
-    			  synapseLibrary.getLocalEntryArtifacts().put(file.getName(), file);
-    		  }
-    	  }
-		
-	}
+    private static void populateLocalEnties(SynapseLibrary synapseLibrary, String localEntriesFilePath) {
+        // TODO Auto-generated method stub
+        File dir = new File(localEntriesFilePath);
+        if (dir.isDirectory()) {
+            File[] entries = dir.listFiles();
+            for (File file : entries) {
+                synapseLibrary.getLocalEntryArtifacts().put(file.getName(), file);
+            }
+        }
 
-	/**
+    }
+
+    /**
      * populate Dependencies using main root artifacts.xml.. Schema for artifacts.xml is follwing
-     *
-     *<artifacts>
-         <artifact name="SampleLib" package="synapse.sample" >
-                <dependency artifact="templates1" /> +
-                <description>sample synapse library</description> ?
-         </artifact>
-    </artifacts>
+     * <p/>
+     * <artifacts>
+     * <artifact name="SampleLib" package="synapse.sample" >
+     * <dependency artifact="templates1" /> +
+     * <description>sample synapse library</description> ?
+     * </artifact>
+     * </artifacts>
      *
      * @param libXmlPath
      * @return
@@ -122,15 +121,15 @@ public class LibDeployerUtils {
             OMElement documentElement = new StAXOMBuilder(xmlInputStream).getDocumentElement();
             if (documentElement == null) {
                 throw new SynapseArtifactDeploymentException("Document element for artifacts.xml is " +
-                                                             "null. Can't build " +
-                                                             "the synapse library configuration");
+                        "null. Can't build " +
+                        "the synapse library configuration");
             }
             Iterator artifactItr = documentElement.getChildrenWithLocalName(LibDeployerConstants.ARTIFACT);
             SynapseLibrary mainSynLibArtifact = null;
             mainSynLibArtifact = createSynapseLibraryWithDeps(((OMElement) artifactItr.next()));
             if (mainSynLibArtifact == null) {
                 throw new SynapseArtifactDeploymentException("artifacts.xml is invalid. <artifact> element" +
-                                                             " Not Found ");
+                        " Not Found ");
             }
             return mainSynLibArtifact;
         } catch (FileNotFoundException e) {
@@ -160,15 +159,15 @@ public class LibDeployerUtils {
             return null;
         }
         SynapseLibrary synLib = new SynapseLibrary(readAttribute(artifactEle, LibDeployerConstants.NAME),
-                                                   readAttribute(artifactEle, LibDeployerConstants.PACKAGE_ATTR));
-        synLib.setDescription(readChildText(artifactEle,LibDeployerConstants.DESCRIPTION_ELEMENT));
+                readAttribute(artifactEle, LibDeployerConstants.PACKAGE_ATTR));
+        synLib.setDescription(readChildText(artifactEle, LibDeployerConstants.DESCRIPTION_ELEMENT));
         // read the dependencies
         Iterator itr = artifactEle.getChildrenWithLocalName(LibDeployerConstants.DEPENDENCY);
         while (itr.hasNext()) {
             OMElement depElement = (OMElement) itr.next();
             // create a synLib for each dependency and add to the root synLib
             LibraryArtifact.Dependency dep = new LibraryArtifact.Dependency(readAttribute(depElement,
-                                                                     LibDeployerConstants.ARTIFACT));
+                    LibDeployerConstants.ARTIFACT));
             synLib.addDependency(dep);
         }
 
@@ -183,7 +182,7 @@ public class LibDeployerUtils {
      * @param library     - lib instance
      */
     private static void searchAndResolveDependencies(String rootDirPath,
-                                                    SynapseLibrary library) {
+                                                     SynapseLibrary library) {
         List<LibraryArtifact> libraryArtifacts = new ArrayList<LibraryArtifact>();
         File extractedDir = new File(rootDirPath);
         File[] allFiles = extractedDir.listFiles();
@@ -214,13 +213,13 @@ public class LibDeployerUtils {
                 artifact = buildArtifact(library, xmlInputStream, directoryPath);
             } catch (FileNotFoundException e) {
                 log.warn("Error while resolving synapse lib dir :"
-                                                             + artifactDirectory.getName() +
-                                                             " artifacts.xml File cannot be loaded " +
-                                                             "from " + artifactXmlPath, e);
+                        + artifactDirectory.getName() +
+                        " artifacts.xml File cannot be loaded " +
+                        "from " + artifactXmlPath, e);
             } catch (Exception e) {
                 log.warn("Error ocurred while resolving synapse lib dir :"
-                                                             + artifactDirectory.getName() +
-                                                             " for artifacts.xml path" + artifactXmlPath, e);
+                        + artifactDirectory.getName() +
+                        " for artifacts.xml path" + artifactXmlPath, e);
             } finally {
                 if (xmlInputStream != null) {
                     try {
@@ -233,7 +232,7 @@ public class LibDeployerUtils {
 
             if (artifact == null) {
                 log.warn("Could not build lib artifact for path : " + directoryPath + " Synapse Library :" +
-                         library.getQName() + ". Continue searching for other lib artifacts");
+                        library.getQName() + ". Continue searching for other lib artifacts");
                 continue;
 
             }
@@ -247,7 +246,7 @@ public class LibDeployerUtils {
 
     /**
      * Builds the artifact from the given input steam and adds it as a dependency in the provided
-     *  parent Synapse library artifact
+     * parent Synapse library artifact
      *
      * @param library
      * @param artifactXmlStream - xml input stream of the artifact.xml
@@ -263,17 +262,17 @@ public class LibDeployerUtils {
                 artifact = populateLibraryArtifact(artElement, directoryPath, null, library);
             } else {
                 log.error("artifact.xml is invalid. Error occurred while resolving Synapse Library : "
-                          + library.getQName());
+                        + library.getQName());
                 return null;
             }
         } catch (XMLStreamException e) {
             throw new SynapseArtifactDeploymentException("Error parsing artifact.xml for path : " +
-                                                         directoryPath ,e);
+                    directoryPath, e);
         }
 
         if (artifact == null || artifact.getName() == null) {
             log.error("Invalid artifact found in Synapse Library : "
-                      + library.getQName() );
+                    + library.getQName());
             return null;
         }
         return artifact;
@@ -284,23 +283,23 @@ public class LibDeployerUtils {
      * Builds the Artifact object when an root artifact element is given . Schema for artifact.xml
      * is as follows
      * <artifact name="templates1" type="synapse/template" >
-
-        <subArtifacts>
-            <artifact name="greet_func1" >
-                    <file>templ1_ns1.xml</file>
-                    <description>sample synapse library artifact Description</description> ?
-            </artifact> *
-        </subArtifacts> *
-
-        <description>sample synapse library artifact Description</description> ?
-    </artifact>
+     * <p/>
+     * <subArtifacts>
+     * <artifact name="greet_func1" >
+     * <file>templ1_ns1.xml</file>
+     * <description>sample synapse library artifact Description</description> ?
+     * </artifact> *
+     * </subArtifacts> *
+     * <p/>
+     * <description>sample synapse library artifact Description</description> ?
+     * </artifact>
      *
      * @param artifactEle - artifact OMElement
      * @return created Artifact object
      */
     private static LibraryArtifact populateLibraryArtifact(OMElement artifactEle, String artifactPath,
-                                                          LibraryArtifact parent , SynapseLibrary library) {
-        if (artifactEle == null || artifactPath == null ) {
+                                                           LibraryArtifact parent, SynapseLibrary library) {
+        if (artifactEle == null || artifactPath == null) {
             return null;
         }
 
@@ -309,7 +308,7 @@ public class LibDeployerUtils {
         artifact.setType(readAttribute(artifactEle, LibDeployerConstants.TYPE));
         artifact.setPath(artifactPath);
 
-        artifact.setDescription(readChildText(artifactEle,LibDeployerConstants.DESCRIPTION_ELEMENT));
+        artifact.setDescription(readChildText(artifactEle, LibDeployerConstants.DESCRIPTION_ELEMENT));
         //add a description of this artifact(if availalbe) to Synapse Library
         library.addArtifactDescription(artifact);
         // read the subArtifacts
@@ -335,7 +334,7 @@ public class LibDeployerUtils {
 
     public static void loadLibArtifacts(SynapseImport synImport, Library library) {
         if (synImport.getLibName().equals(library.getQName().getLocalPart()) &&
-            synImport.getLibPackage().equals(library.getPackage())) {
+                synImport.getLibPackage().equals(library.getPackage())) {
             library.setLibStatus(synImport.isStatus());
             library.loadLibrary();
         }
@@ -355,13 +354,14 @@ public class LibDeployerUtils {
         return null;
     }
 
-    public static String getQualifiedName(SynapseImport synImport){
-        return new QName(synImport.getLibPackage(),synImport.getLibName()).toString();
+    public static String getQualifiedName(SynapseImport synImport) {
+        return new QName(synImport.getLibPackage(), synImport.getLibName()).toString();
     }
 
 
     ///////////////////////
     ////////////////// Start Common Utility Methods
+
     /**
      * Reads an attribute in the given element and returns the value of that attribute
      *
@@ -417,7 +417,7 @@ public class LibDeployerUtils {
         libPath = formatPath(libPath);
         String fileName = libPath.substring(libPath.lastIndexOf('/') + 1);
         String dest = APP_UNZIP_DIR + File.separator + System.currentTimeMillis() +
-                      fileName + File.separator;
+                fileName + File.separator;
         createDir(dest);
 
         try {
@@ -461,7 +461,7 @@ public class LibDeployerUtils {
             }
             // if the entry is a file, write the file
             copyInputStream(zipFile.getInputStream(entry),
-                            new BufferedOutputStream(new FileOutputStream(destPath + entry.getName())));
+                    new BufferedOutputStream(new FileOutputStream(destPath + entry.getName())));
         }
         zipFile.close();
     }
@@ -473,29 +473,29 @@ public class LibDeployerUtils {
             log.error("Error while creating directory : " + path);
         }
     }
-    
-    
-    public static void deployingLocalEntries(Library library,SynapseConfiguration config) {
-		Properties properties = SynapsePropertiesLoader.loadSynapseProperties();
-		for (Map.Entry<String, Object> libararyEntryMap : library.getLocalEntryArtifacts()
-				.entrySet()) {
-			File localEntryFileObj = (File) libararyEntryMap.getValue();
-			OMElement document = getOMElement(localEntryFileObj);
-			try {
-			     SynapseXMLConfigurationFactory.defineEntry(config,
-						document, properties,library);
-			} catch (Exception ex) {
-				handleDeploymentError("Error while deploying local entries", ex);
-			}
-		}
 
-	}
-    
-    private static void handleDeploymentError(String msg, Exception e){
+
+    public static void deployingLocalEntries(Library library, SynapseConfiguration config) {
+        Properties properties = SynapsePropertiesLoader.loadSynapseProperties();
+        for (Map.Entry<String, Object> libararyEntryMap : library.getLocalEntryArtifacts()
+                .entrySet()) {
+            File localEntryFileObj = (File) libararyEntryMap.getValue();
+            OMElement document = getOMElement(localEntryFileObj);
+            try {
+                SynapseXMLConfigurationFactory.defineEntry(config,
+                        document, properties, library);
+            } catch (Exception ex) {
+                handleDeploymentError("Error while deploying local entries", ex);
+            }
+        }
+
+    }
+
+    private static void handleDeploymentError(String msg, Exception e) {
         log.error(msg, e);
     }
-    
-    
+
+
     private static OMElement getOMElement(File file) {
         FileInputStream is;
         OMElement document = null;
@@ -519,7 +519,7 @@ public class LibDeployerUtils {
 
         return document;
     }
-    
+
     private static void handleException(String msg, Exception e) {
         log.error(msg, e);
         throw new SynapseException(msg, e);

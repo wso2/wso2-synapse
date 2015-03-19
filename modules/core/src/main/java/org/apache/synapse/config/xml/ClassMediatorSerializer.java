@@ -33,7 +33,7 @@ import java.util.Iterator;
  * &lt;/class&gt;
  * </pre>
  */
-public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
+public class ClassMediatorSerializer extends AbstractMediatorSerializer {
 
     public OMElement serializeSpecificMediator(Mediator m) {
 
@@ -46,13 +46,13 @@ public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
 
         if (mediator.getMediator() != null && mediator.getMediator().getClass().getName() != null) {
             clazz.addAttribute(fac.createOMAttribute(
-                "name", nullNS, mediator.getMediator().getClass().getName()));
+                    "name", nullNS, mediator.getMediator().getClass().getName()));
         } else {
             handleException("Invalid class mediator. The class name is required");
         }
 
         Iterator itr = mediator.getProperties().keySet().iterator();
-        while(itr.hasNext()) {
+        while (itr.hasNext()) {
             String propName = (String) itr.next();
             Object o = mediator.getProperties().get(propName);
             OMElement prop = fac.createOMElement(PROP_Q, clazz);

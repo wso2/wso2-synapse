@@ -39,7 +39,7 @@ public class GetChildrenWithChildValueParserComponent extends ParserComponent {
     @Override
     public String process(OMElement node) {
         this.childQName = new QName(prefixNameSpaceMap.get(nameSpacePrefix), localName);
-        try{
+        try {
             Iterator children = node.getChildElements();
             OMElement child = (OMElement) children.next();
             OMElement grandChild = child.getFirstChildWithName(childQName);
@@ -56,7 +56,7 @@ public class GetChildrenWithChildValueParserComponent extends ParserComponent {
             } else {
                 return "";
             }
-        }catch (NoSuchElementException e){
+        } catch (NoSuchElementException e) {
             return "";
         }
     }

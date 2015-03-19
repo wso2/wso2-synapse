@@ -26,27 +26,43 @@ package org.apache.synapse.registry;
  */
 public interface RegistryEntry {
 
-    /** The key for the resource - required */
+    /**
+     * The key for the resource - required
+     */
     public String getKey();
 
-    /** A name for the resource - optional */
+    /**
+     * A name for the resource - optional
+     */
     public String getName();
 
-    /** The version of the resource - required */
+    /**
+     * The version of the resource - required
+     */
     public long getVersion();
 
-    /** The type of the resource - optional */
+    /**
+     * The type of the resource - optional
+     */
     public String getType();
 
-    /** A description for the resource - optional */
+    /**
+     * A description for the resource - optional
+     */
     public String getDescription();
 
-    /** The created time for the resource - optional */
+    /**
+     * The created time for the resource - optional
+     */
     public long getCreated();
 
-    /** The last updated time for the resource - optional */
+    /**
+     * The last updated time for the resource - optional
+     */
     public long getLastModified();
 
-    /** The number of milliseconds this resource could be cached */
+    /**
+     * The number of milliseconds this resource could be cached
+     */
     public long getCachableDuration();
 }

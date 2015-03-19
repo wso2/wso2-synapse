@@ -39,6 +39,7 @@ public class SeqContinuationState extends AbstractContinuationState {
 
     /**
      * Get the sequence type
+     *
      * @return sequence type
      */
     public SequenceType getSeqType() {
@@ -48,6 +49,7 @@ public class SeqContinuationState extends AbstractContinuationState {
     /**
      * Get the sequence name.
      * null returns for all sequence types except named sequences
+     *
      * @return sequence name
      */
     public String getSeqName() {

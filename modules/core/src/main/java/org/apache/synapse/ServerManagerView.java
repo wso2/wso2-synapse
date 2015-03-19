@@ -44,7 +44,7 @@ public class ServerManagerView implements ServerManagerViewMBean {
     /**
      * {@inheritDoc}
      */
-    public void start()  throws Exception {
+    public void start() throws Exception {
         try {
             Thread.currentThread().setContextClassLoader(serverManager.getClassLoader());
             serverManager.start();
@@ -96,7 +96,7 @@ public class ServerManagerView implements ServerManagerViewMBean {
 
     /**
      * {@inheritDoc}
-     * 
+     *
      * @param waitSeconds number of seconds to wait for a graceful stop before initiating
      *                    a hard stop
      */

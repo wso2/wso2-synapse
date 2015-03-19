@@ -33,7 +33,7 @@ import java.util.Properties;
 /**
  * The &lt;clone&gt; element is used to copy messages in Synapse to similar messages but with
  * different message contexts and mediated using the specified targets
- *
+ * <p/>
  * <pre>
  * &lt;clone [continueParent=(true | false)]&gt;
  *   &lt;target [to="uri"] [soapAction="qname"] [sequence="sequence_ref"]
@@ -65,17 +65,17 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
 
     /**
      * This method implements the createMediator method of the MediatorFactory interface
-     * 
-     * @param elem - OMElement describing the element which will be parsed
-     *  to build the CloneMediator
+     *
+     * @param elem       - OMElement describing the element which will be parsed
+     *                   to build the CloneMediator
      * @param properties
      * @return Mediator of the type CloneMediator built from the config element
      */
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
-    	
-    	boolean asynchronousExe = true;
-        
-    	CloneMediator mediator = new CloneMediator();
+
+        boolean asynchronousExe = true;
+
+        CloneMediator mediator = new CloneMediator();
         processAuditStatus(mediator, elem);
 
         OMAttribute id = elem.getAttribute(ID_Q);
@@ -90,20 +90,20 @@ public class CloneMediatorFactory extends AbstractMediatorFactory {
                     continueParent.getAttributeValue()));
         }
 
-        OMAttribute synchronousExeAttr= elem.getAttribute(SEQUENTIAL_Q);
+        OMAttribute synchronousExeAttr = elem.getAttribute(SEQUENTIAL_Q);
         if (synchronousExeAttr != null && synchronousExeAttr.getAttributeValue().equals("true")) {
-        	asynchronousExe = false;
+            asynchronousExe = false;
         }
 
         mediator.setSequential(!asynchronousExe);
-        
+
         Iterator targetElements = elem.getChildrenWithName(TARGET_Q);
         while (targetElements.hasNext()) {
-        	Target target = TargetFactory.createTarget((OMElement)targetElements.next(), properties);
-        	target.setAsynchronous(asynchronousExe);
+            Target target = TargetFactory.createTarget((OMElement) targetElements.next(), properties);
+            target.setAsynchronous(asynchronousExe);
             mediator.addTarget(target);
         }
-    
+
         return mediator;
     }
 

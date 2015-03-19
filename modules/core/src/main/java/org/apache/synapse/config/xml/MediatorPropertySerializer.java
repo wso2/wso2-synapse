@@ -1,14 +1,14 @@
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMNamespace;
-import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.mediators.MediatorProperty;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
@@ -16,7 +16,7 @@ import java.util.Collection;
 /**
  * A utility class for serializing instances of MediatorProperty objects by reading
  * through a given XML configuration
- *
+ * <p/>
  * <pre>
  * &lt;element&gt;
  *    &lt;property name="string" (value="literal" | expression="xpath")/&gt;*
@@ -32,18 +32,18 @@ public class MediatorPropertySerializer {
             = fac.createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
 
     protected static final QName PROP_Q
-        = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
+            = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "property");
 
     /**
      * Serialize all the properties to the given paren element. For each and every
      * property ther will be a seperate property element created inside the parent element.
-     * 
+     *
      * @param parent element to which property elements should be added
-     * @param props <code>Collection</code> of propertis
+     * @param props  <code>Collection</code> of propertis
      */
     public static void serializeMediatorProperties(OMElement parent,
-                                               Collection<MediatorProperty> props) {
-            serializeMediatorProperties(parent, props, PROP_Q);
+                                                   Collection<MediatorProperty> props) {
+        serializeMediatorProperties(parent, props, PROP_Q);
     }
 
     /**
@@ -51,13 +51,13 @@ public class MediatorPropertySerializer {
      * property ther will be a seperate element with the given name created inside the
      * parent element.
      *
-     * @param parent element to which property elements should be added
-     * @param props <code>Collection</code> of propertis
+     * @param parent           element to which property elements should be added
+     * @param props            <code>Collection</code> of propertis
      * @param childElementName <code>QNmae</code> of the property element to be created
      */
     public static void serializeMediatorProperties(OMElement parent,
-                                               Collection<MediatorProperty> props,
-                                               QName childElementName) {
+                                                   Collection<MediatorProperty> props,
+                                                   QName childElementName) {
         for (MediatorProperty mp : props) {
             serializeMediatorProperty(parent, mp, childElementName);
         }
@@ -68,10 +68,10 @@ public class MediatorPropertySerializer {
      * the name property inside the parent element.
      *
      * @param parent element to which property elements should be added
-     * @param mp a property to be serialized
+     * @param mp     a property to be serialized
      */
     public static void serializeMediatorProperty(OMElement parent,
-                                             MediatorProperty mp) {
+                                                 MediatorProperty mp) {
         serializeMediatorProperty(parent, mp, PROP_Q);
     }
 
@@ -79,13 +79,13 @@ public class MediatorPropertySerializer {
      * Serialize the property to the given paren element. There will be a element created with
      * given name inside the parent element.
      *
-     * @param parent element to which property elements should be added
-     * @param mp a property to be serialized
+     * @param parent           element to which property elements should be added
+     * @param mp               a property to be serialized
      * @param childElementName <code>QName</code> of the element to be created
      */
     public static void serializeMediatorProperty(OMElement parent,
-                                             MediatorProperty mp,
-                                             QName childElementName) {
+                                                 MediatorProperty mp,
+                                                 QName childElementName) {
         OMElement prop = fac.createOMElement(childElementName, parent);
         if (mp.getName() != null) {
             prop.addAttribute(fac.createOMAttribute("name", nullNS, mp.getName()));

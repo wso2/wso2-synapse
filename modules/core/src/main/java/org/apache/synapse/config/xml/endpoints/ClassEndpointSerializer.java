@@ -18,81 +18,78 @@
  */
 package org.apache.synapse.config.xml.endpoints;
 
-import java.util.Iterator;
-
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.ClassEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 
+import javax.xml.namespace.QName;
+import java.util.Iterator;
+
 /**
  * Serializer for classEndpoint.
  * eg:
  * <endpoint name="CustomEndpoint">
- * 	<class name="org.apache.synapse.endpoint.CustomEndpoint">
- * 		<parameter name="foo">XYZ</parameter>*
- * 	</class>
+ * <class name="org.apache.synapse.endpoint.CustomEndpoint">
+ * <parameter name="foo">XYZ</parameter>*
+ * </class>
  * </endpoint>
- * 
  */
 public class ClassEndpointSerializer extends EndpointSerializer {
 
-	private static final QName PARAMETER_QNAME = new QName("parameter");	
-	
-	@Override
-	protected OMElement serializeEndpoint(Endpoint endpoint) {
-		if (!(endpoint instanceof ClassEndpoint)) {
-			handleException("Invalid endpoint :" + endpoint.getName());
-		}
+    private static final QName PARAMETER_QNAME = new QName("parameter");
 
-		fac = OMAbstractFactory.getOMFactory();
-		ClassEndpoint classEndpoint = (ClassEndpoint) endpoint;
+    @Override
+    protected OMElement serializeEndpoint(Endpoint endpoint) {
+        if (!(endpoint instanceof ClassEndpoint)) {
+            handleException("Invalid endpoint :" + endpoint.getName());
+        }
 
-		OMElement endpointElement = fac.createOMElement("endpoint",
-		                                                SynapseConstants.SYNAPSE_OMNAMESPACE);
+        fac = OMAbstractFactory.getOMFactory();
+        ClassEndpoint classEndpoint = (ClassEndpoint) endpoint;
 
-		serializeCommonAttributes(classEndpoint, endpointElement);
+        OMElement endpointElement = fac.createOMElement("endpoint",
+                SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-		OMElement clazzElement = fac.createOMElement("class", SynapseConstants.SYNAPSE_OMNAMESPACE);
+        serializeCommonAttributes(classEndpoint, endpointElement);
 
-		
-		if (classEndpoint.getClassEndpoint() != null &&
-		    classEndpoint.getClassEndpoint().getClass().getName() != null) {
-			clazzElement.addAttribute(fac.createOMAttribute("name",SynapseConstants.NULL_NAMESPACE,
-			                                                classEndpoint.getClassEndpoint().
-			                                                getClass().getName()));
-		} else {
-			handleException("Invalid class endpoint. Class name is required");
-		}		
-		
-		serializeParameters(classEndpoint, clazzElement);
-		endpointElement.addChild(clazzElement);
-		return endpointElement;
-	}
+        OMElement clazzElement = fac.createOMElement("class", SynapseConstants.SYNAPSE_OMNAMESPACE);
 
-	/**
-	 * Serialize the classEndpoint parameters
-	 * eg:<parameter name="foo">xyz</parameter>
-	 * 
-	 * @param clazzEndpoint - ClassEndpoint instance
-	 * @param clazzElement - OMElement starts with <class/> tag
-	 * 
-	 */
-	private void serializeParameters(ClassEndpoint clazzEndpoint, OMElement clazzElement) {
-		
-		for (Iterator<String> parameterItr = clazzEndpoint.getParameters().keySet().iterator(); 
-		parameterItr.hasNext();) {
-			String parameterName = (String) parameterItr.next();
-			String value = clazzEndpoint.getParameters().get(parameterName);
-			OMElement paramEle = fac.createOMElement(PARAMETER_QNAME, clazzElement);
-			paramEle.addAttribute(fac.createOMAttribute("name", SynapseConstants.NULL_NAMESPACE, parameterName));
-			paramEle.setText(value);
 
-			clazzElement.addChild(paramEle);
-		}	
-	}
-	
+        if (classEndpoint.getClassEndpoint() != null &&
+                classEndpoint.getClassEndpoint().getClass().getName() != null) {
+            clazzElement.addAttribute(fac.createOMAttribute("name", SynapseConstants.NULL_NAMESPACE,
+                    classEndpoint.getClassEndpoint().
+                            getClass().getName()));
+        } else {
+            handleException("Invalid class endpoint. Class name is required");
+        }
+
+        serializeParameters(classEndpoint, clazzElement);
+        endpointElement.addChild(clazzElement);
+        return endpointElement;
+    }
+
+    /**
+     * Serialize the classEndpoint parameters
+     * eg:<parameter name="foo">xyz</parameter>
+     *
+     * @param clazzEndpoint - ClassEndpoint instance
+     * @param clazzElement  - OMElement starts with <class/> tag
+     */
+    private void serializeParameters(ClassEndpoint clazzEndpoint, OMElement clazzElement) {
+
+        for (Iterator<String> parameterItr = clazzEndpoint.getParameters().keySet().iterator();
+             parameterItr.hasNext(); ) {
+            String parameterName = (String) parameterItr.next();
+            String value = clazzEndpoint.getParameters().get(parameterName);
+            OMElement paramEle = fac.createOMElement(PARAMETER_QNAME, clazzElement);
+            paramEle.addAttribute(fac.createOMAttribute("name", SynapseConstants.NULL_NAMESPACE, parameterName));
+            paramEle.setText(value);
+
+            clazzElement.addChild(paramEle);
+        }
+    }
+
 }

@@ -19,7 +19,9 @@
 package org.apache.synapse.rest.dispatch;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.rest.*;
+import org.apache.synapse.rest.RESTConstants;
+import org.apache.synapse.rest.RESTUtils;
+import org.apache.synapse.rest.Resource;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,9 +35,9 @@ public class URITemplateBasedDispatcher implements RESTDispatcher {
             DispatcherHelper helper = r.getDispatcherHelper();
             if (helper instanceof URITemplateHelper) {
                 URITemplateHelper templateHelper = (URITemplateHelper) helper;
-                Map<String,String> variables = new HashMap<String,String>();
+                Map<String, String> variables = new HashMap<String, String>();
                 if (templateHelper.getUriTemplate().matches(url, variables)) {
-                    for (Map.Entry<String,String> entry : variables.entrySet()) {
+                    for (Map.Entry<String, String> entry : variables.entrySet()) {
                         synCtx.setProperty(RESTConstants.REST_URI_VARIABLE_PREFIX + entry.getKey(),
                                 entry.getValue());
                     }

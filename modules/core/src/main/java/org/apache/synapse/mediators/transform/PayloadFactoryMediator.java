@@ -29,10 +29,10 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.protocol.HTTP;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
@@ -44,7 +44,7 @@ import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,9 +55,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private String formatRaw;
     private String mediaType = XML_TYPE;
     private final static String JSON_CONTENT_TYPE = "application/json";
-    private final static String XML_CONTENT_TYPE  = "application/xml";
-    private final static String SOAP11_CONTENT_TYPE  = "text/xml";
-    private final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
+    private final static String XML_CONTENT_TYPE = "application/xml";
+    private final static String SOAP11_CONTENT_TYPE = "text/xml";
+    private final static String SOAP12_CONTENT_TYPE = "application/soap+xml";
     private final static String JSON_TYPE = "json";
     private final static String XML_TYPE = "xml";
     private final static String STRING_TYPE = "str";
@@ -70,6 +70,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
      * builders (mediatePayload).
+     *
      * @param synCtx the current message for mediation
      * @return
      */
@@ -81,19 +82,20 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Sets the content type based on the request content type and payload factory media type. This should be called
      * at the end before returning from the mediate() function.
+     *
      * @param synCtx
      */
     private void setContentType(MessageContext synCtx) {
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if(mediaType.equals(XML_TYPE)) {
-            if(!XML_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
+        if (mediaType.equals(XML_TYPE)) {
+            if (!XML_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
                     !SOAP11_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
-                    !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) ){
+                    !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE))) {
                 a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, XML_CONTENT_TYPE);
                 a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, XML_CONTENT_TYPE);
                 handleSpecialProperties(XML_CONTENT_TYPE, a2mc);
             }
-        } else if(mediaType.equals(JSON_TYPE)) {
+        } else if (mediaType.equals(JSON_TYPE)) {
             a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, JSON_CONTENT_TYPE);
             a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, JSON_CONTENT_TYPE);
             handleSpecialProperties(JSON_CONTENT_TYPE, a2mc);
@@ -146,6 +148,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Calls the replace function. isFormatDynamic check is used to remove indentations which come from registry based
      * configurations.
+     *
      * @param result
      * @param synCtx
      * @param format
@@ -154,16 +157,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
-            if(entry == null){
-            	handleException("Key " + key + " not found ", synCtx);
-            }            
+            if (entry == null) {
+                handleException("Key " + key + " not found ", synCtx);
+            }
             String text = "";
             if (entry instanceof OMElement) {
                 OMElement e = (OMElement) entry;
                 removeIndentations(e);
                 text = e.toString();
             } else if (entry instanceof OMText) {
-                text =  ((OMText) entry).getText();
+                text = ((OMText) entry).getText();
             } else if (entry instanceof String) {
                 text = (String) entry;
             }
@@ -199,11 +202,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 try {
                     argIndex = Integer.parseInt(matchSeq.substring(1, matchSeq.length()));
                 } catch (NumberFormatException e) {
-                    argIndex = Integer.parseInt(matchSeq.substring(2, matchSeq.length()-1));
+                    argIndex = Integer.parseInt(matchSeq.substring(2, matchSeq.length() - 1));
                 }
-                replacement = argValues[argIndex-1];
-                replacementEntry =  replacement.entrySet().iterator().next();
-                if(mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(XML_TYPE)) {
+                replacement = argValues[argIndex - 1];
+                replacementEntry = replacement.entrySet().iterator().next();
+                if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(XML_TYPE)) {
                     // XML to JSON conversion here
                     try {
                         replacementValue = "<jsonObject>" + replacementEntry.getKey() + "</jsonObject>";
@@ -214,7 +217,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     } catch (AxisFault e) {
                         handleException("Error converting XML to JSON", synCtx);
                     }
-                } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
+                } else if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
                     // JSON to XML conversion here
                     try {
                         OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementEntry.getKey()), false);
@@ -247,7 +250,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Helper function that takes a Map of String, String where key contains the value of an evaluated SynapsePath
      * expression and value contains the type of SynapsePath in use.
-     *
+     * <p/>
      * It returns the type of conversion required (XML | JSON | String) based on the actual returned value and the path
      * type.
      *
@@ -255,13 +258,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private String inferReplacementType(Map.Entry<String, String> entry) {
-        if(entry.getValue().equals(SynapsePath.X_PATH) && isXML(entry.getKey())) {
+        if (entry.getValue().equals(SynapsePath.X_PATH) && isXML(entry.getKey())) {
             return XML_TYPE;
-        } else if(entry.getValue().equals(SynapsePath.X_PATH) && !isXML(entry.getKey())) {
+        } else if (entry.getValue().equals(SynapsePath.X_PATH) && !isXML(entry.getKey())) {
             return STRING_TYPE;
-        } else if(entry.getValue().equals(SynapsePath.JSON_PATH) && isJson(entry.getKey())) {
+        } else if (entry.getValue().equals(SynapsePath.JSON_PATH) && isJson(entry.getKey())) {
             return JSON_TYPE;
-        } else if(entry.getValue().equals(SynapsePath.JSON_PATH) && !isJson((entry.getKey()))) {
+        } else if (entry.getValue().equals(SynapsePath.JSON_PATH) && !isJson((entry.getKey()))) {
             return STRING_TYPE;
         } else {
             return STRING_TYPE;
@@ -291,6 +294,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function that returns true if value passed is of JSON type.
+     *
      * @param value
      * @return
      */
@@ -300,6 +304,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function to remove indentations.
+     *
      * @param element
      */
     private void removeIndentations(OMElement element) {
@@ -312,6 +317,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function to remove indentations.
+     *
      * @param element
      * @param removables
      */
@@ -333,6 +339,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Goes through SynapsePath argument list, evaluating each by calling stringValueOf and returns a HashMap String, String
      * array where each item will contain a hash map with key "evaluated expression" and value "SynapsePath type".
+     *
      * @param synCtx
      * @return
      */
@@ -366,7 +373,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             }
             //value = value.replace(String.valueOf((char) 160), " ").trim();
             valueMap = new HashMap<String, String>();
-            if(null != arg.getExpression()) {
+            if (null != arg.getExpression()) {
                 valueMap.put(value, arg.getExpression().getPathType());
             } else {
                 valueMap.put(value, SynapsePath.X_PATH);
@@ -394,6 +401,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function that returns true if value passed is of XML Type.
+     *
      * @param value
      * @return
      */
@@ -452,13 +460,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
         return !isDoingJson(messageContext);
     }
 
-	public String getInputType() {
-        if(pathArgumentList.size()>0) {
+    public String getInputType() {
+        if (pathArgumentList.size() > 0) {
             Object argument = pathArgumentList.get(0);
             if (argument != null && argument instanceof SynapseXPath) {
                 return XML_TYPE;
-            }
-            else if (argument != null && argument instanceof SynapseJsonPath) {
+            } else if (argument != null && argument instanceof SynapseJsonPath) {
                 return JSON_TYPE;
             }
         }

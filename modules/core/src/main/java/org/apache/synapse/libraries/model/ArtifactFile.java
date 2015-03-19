@@ -22,7 +22,6 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentException;
 
 import javax.xml.stream.XMLStreamException;
@@ -41,7 +40,7 @@ public abstract class ArtifactFile {
 
     protected Properties properties;
 
-    public ArtifactFile(String fileXmlPath){
+    public ArtifactFile(String fileXmlPath) {
         fileName = fileXmlPath;
         File f = new File(fileXmlPath);
         if (!f.exists()) {
@@ -53,9 +52,9 @@ public abstract class ArtifactFile {
             configurationElement = new StAXOMBuilder(xmlInputStream).getDocumentElement();
             configurationElement.build();
         } catch (FileNotFoundException e) {
-               throw new SynapseArtifactDeploymentException("file not found at : " + fileXmlPath);
+            throw new SynapseArtifactDeploymentException("file not found at : " + fileXmlPath);
         } catch (XMLStreamException e) {
-            throw new SynapseArtifactDeploymentException("Error while parsing the artifacts.xml file : " + fileXmlPath , e);
+            throw new SynapseArtifactDeploymentException("Error while parsing the artifacts.xml file : " + fileXmlPath, e);
         } finally {
             if (xmlInputStream != null) {
                 try {
@@ -67,7 +66,7 @@ public abstract class ArtifactFile {
         }
     }
 
-    public OMElement getConfigurationElement(){
+    public OMElement getConfigurationElement() {
         return configurationElement;
     }
 

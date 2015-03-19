@@ -32,9 +32,9 @@ import java.util.Properties;
 
 /**
  * Create an instance of the given registry, and sets properties on it.
- *
+ * <p/>
  * &lt;registry [name="string"] provider="provider.class"&gt;
- *   &lt;property name="string" value="string"&gt;
+ * &lt;property name="string" value="string"&gt;
  * &lt;/registry&gt;
  */
 public class RegistryFactory {
@@ -60,13 +60,13 @@ public class RegistryFactory {
 
             } catch (ClassNotFoundException e) {
                 handleException("Cannot locate registry provider class : " +
-                    prov.getAttributeValue(), e);
+                        prov.getAttributeValue(), e);
             } catch (IllegalAccessException e) {
                 handleException("Error instantiating registry provider : " +
-                    prov.getAttributeValue(), e);
+                        prov.getAttributeValue(), e);
             } catch (InstantiationException e) {
                 handleException("Error instantiating registry provider : " +
-                    prov.getAttributeValue(), e);
+                        prov.getAttributeValue(), e);
             }
         } else {
             handleException("The registry 'provider' " +

@@ -20,20 +20,20 @@
 package org.apache.synapse.endpoints.algorithms;
 
 import org.apache.axis2.clustering.Member;
-import org.apache.synapse.commons.jmx.MBeanRegistrar;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.SynapseException;
-import org.apache.synapse.PropertyInclude;
-import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.PropertyInclude;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.commons.jmx.MBeanRegistrar;
+import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.mediators.MediatorProperty;
 
-import java.util.List;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -48,31 +48,43 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * </ul>
  * <p> This algorithm will send the first 5 messages through Epr1, next 3 messages through
  * Epr2 and next 2 messages with Epr3. Then algorithm moves again to the first endpoint
- * and cycle continues.</p>  
+ * and cycle continues.</p>
  */
 public class WeightedRoundRobin implements LoadbalanceAlgorithm, ManagedLifecycle {
 
     private static final Log log = LogFactory.getLog(WeightedRoundRobin.class);
 
-    /** We keep a sorted array of endpoint states, first state will point to the
-     * endpoint with the highest weight */
+    /**
+     * We keep a sorted array of endpoint states, first state will point to the
+     * endpoint with the highest weight
+     */
     private EndpointState[] endpointStates = null;
 
-    /** Endpoint list */
+    /**
+     * Endpoint list
+     */
     private List<Endpoint> endpoints;
 
     private Endpoint loadBalanceEndpoint;
 
-    /** Keep track of the current poistion we are operating on the endpointStates array */
+    /**
+     * Keep track of the current poistion we are operating on the endpointStates array
+     */
     private int endpointCursor = 0;
 
-    /** If a weight is not specified by the user, we use the default as 1 */
+    /**
+     * If a weight is not specified by the user, we use the default as 1
+     */
     private static final int DEFAULT_WEIGHT = 1;
 
-    /** Configuration key used by the endpoints for indicating their weight */
+    /**
+     * Configuration key used by the endpoints for indicating their weight
+     */
     private static final String LOADBALANCE_WEIGHT = "loadbalance.weight";
 
-    /** Configuration key used by the endpoints for indicating their weight */
+    /**
+     * Configuration key used by the endpoints for indicating their weight
+     */
     private static final String LOADBALANCE_ThEADLOCAL = "loadbalance.threadLocal";
 
     private boolean isThreadLocal = false;
@@ -83,7 +95,9 @@ public class WeightedRoundRobin implements LoadbalanceAlgorithm, ManagedLifecycl
 
     private WeightedRoundRobinViewMBean view;
 
-    /** we are not supporting members */
+    /**
+     * we are not supporting members
+     */
     public void setApplicationMembers(List<Member> members) {
         throw new UnsupportedOperationException("This algorithm doesn't operate on Members");
     }
@@ -93,7 +107,7 @@ public class WeightedRoundRobin implements LoadbalanceAlgorithm, ManagedLifecycl
     }
 
     public void setLoadBalanceEndpoint(Endpoint endpoint) {
-        this.loadBalanceEndpoint = endpoint;   
+        this.loadBalanceEndpoint = endpoint;
     }
 
     public Endpoint getNextEndpoint(MessageContext synapseMessageContext,
@@ -141,7 +155,7 @@ public class WeightedRoundRobin implements LoadbalanceAlgorithm, ManagedLifecycl
         } finally {
             readLock.unlock();
         }
-    }        
+    }
 
     public Member getNextApplicationMember(AlgorithmContext algorithmContext) {
         throw new UnsupportedOperationException("This algorithm doesn't operate on Members");
@@ -214,7 +228,8 @@ public class WeightedRoundRobin implements LoadbalanceAlgorithm, ManagedLifecycl
                 loadBalanceEndpoint.getName() != null ? loadBalanceEndpoint.getName() : "LBEpr");
     }
 
-    public void destroy() {}
+    public void destroy() {
+    }
 
     /**
      * Implementation of the thread local.
@@ -277,16 +292,22 @@ public class WeightedRoundRobin implements LoadbalanceAlgorithm, ManagedLifecycl
 
 
     /**
-     * Simple class for holding the states about the endpoints. 
+     * Simple class for holding the states about the endpoints.
      */
     private static class EndpointState {
-        /** Position of the endpoint, represented by this state */
+        /**
+         * Position of the endpoint, represented by this state
+         */
         private int endpointPosition = 0;
 
-        /** Weight of the endpoint */
+        /**
+         * Weight of the endpoint
+         */
         private int weight = 0;
 
-        /** Current weight of the endpoint */
+        /**
+         * Current weight of the endpoint
+         */
         private int currentWeight = 0;
 
         public EndpointState(int endpointPosition, int weight) {

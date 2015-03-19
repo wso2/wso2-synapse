@@ -22,8 +22,8 @@ import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.securevault.secret.SecretManager;
 import org.wso2.securevault.secret.mbean.SecretManagerAdminMBean;
 
-import javax.management.StandardMBean;
 import javax.management.NotCompliantMBeanException;
+import javax.management.StandardMBean;
 
 
 /**

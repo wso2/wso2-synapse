@@ -19,9 +19,6 @@
 
 package org.apache.synapse.util;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.dom.DOMSource;
-
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
@@ -32,25 +29,29 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
 
+import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMSource;
+
 /**
  * Utility class with AXIOM helper methods.
  */
 public class AXIOMUtils {
-    private AXIOMUtils() {}
-    
+    private AXIOMUtils() {
+    }
+
     /**
      * Get a {@link Source} backed by a given AXIOM node.
-     * 
+     *
      * @param node an AXIOM node
      * @return a {@link Source} object that can be used with XSL transformers,
-     *         schema validators, etc.
+     * schema validators, etc.
      */
     public static Source asSource(OMNode node) {
         // Note: Once we depend on JDK 1.6, we could also use StAXSource from JAXP 1.4.
         if (node instanceof NodeImpl) {
-            return new DOMSource((NodeImpl)node);
+            return new DOMSource((NodeImpl) node);
         } else {
-            return new OMSource((OMElement)node);
+            return new OMSource((OMElement) node);
         }
     }
 

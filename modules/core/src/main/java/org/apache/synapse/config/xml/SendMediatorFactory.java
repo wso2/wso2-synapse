@@ -31,16 +31,16 @@ import java.util.Properties;
 
 /**
  * Factory for {@link SendMediator} instances.
- * <p>
+ * <p/>
  * TODO: document endpoints, failover and load balacing
- * <p>
+ * <p/>
  * The &lt;send&gt; element is used to send messages out of Synapse to some endpoint. In the simplest case,
  * the place to send the message to is implicit in the message (via a property of the message itself)-
  * that is indicated by the following:
  * <pre>
  *  &lt;send/&gt;
  * </pre>
- *
+ * <p/>
  * If the message is to be sent to one or more endpoints, then the following is used:
  * <pre>
  *  &lt;send&gt;
@@ -73,7 +73,7 @@ import java.util.Properties;
  * &lt;/send&gt;
  * </pre>
  */
-public class SendMediatorFactory extends AbstractMediatorFactory  {
+public class SendMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName SEND_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "send");
     private static final QName ENDPOINT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
@@ -82,11 +82,11 @@ public class SendMediatorFactory extends AbstractMediatorFactory  {
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
-        SendMediator sm =  new SendMediator();
+        SendMediator sm = new SendMediator();
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(sm,elem);
+        processAuditStatus(sm, elem);
 
         OMElement epElement = elem.getFirstChildWithName(ENDPOINT_Q);
         if (epElement != null) {

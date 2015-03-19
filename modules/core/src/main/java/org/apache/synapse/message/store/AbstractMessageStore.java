@@ -25,11 +25,7 @@ import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
@@ -66,7 +62,7 @@ public abstract class AbstractMessageStore implements MessageStore {
     /**
      * Message store parameters
      */
-    protected Map<String,Object> parameters;
+    protected Map<String, Object> parameters;
 
     /**
      * Message Store description
@@ -88,9 +84,13 @@ public abstract class AbstractMessageStore implements MessageStore {
 
     /** */
     private MessageStore store;
-    /** Message producer id */
+    /**
+     * Message producer id
+     */
     private AtomicInteger producerId = new AtomicInteger(0);
-    /** Message consumer id */
+    /**
+     * Message consumer id
+     */
     private AtomicInteger consumerId = new AtomicInteger(0);
 
     private int maxProducerId = Integer.MAX_VALUE;
@@ -127,33 +127,35 @@ public abstract class AbstractMessageStore implements MessageStore {
     }
 
     public void registerObserver(MessageStoreObserver observer) {
-        if(observer != null && !messageStoreObservers.contains(observer)) {
+        if (observer != null && !messageStoreObservers.contains(observer)) {
             messageStoreObservers.add(observer);
         }
     }
 
     public void unregisterObserver(MessageStoreObserver observer) {
-        if(observer != null && messageStoreObservers.contains(observer)) {
+        if (observer != null && messageStoreObservers.contains(observer)) {
             messageStoreObservers.remove(observer);
         }
     }
 
     /**
      * Notify Message Addition to the observers
+     *
      * @param messageId of the Message added.
      */
     protected void notifyMessageAddition(String messageId) {
-        for(MessageStoreObserver o : messageStoreObservers) {
+        for (MessageStoreObserver o : messageStoreObservers) {
             o.messageAdded(messageId);
         }
     }
 
     /**
      * Notify Message removal to the observers
+     *
      * @param messageId of the Message added
      */
     protected void notifyMessageRemoval(String messageId) {
-        for(MessageStoreObserver o : messageStoreObservers) {
+        for (MessageStoreObserver o : messageStoreObservers) {
             o.messageRemoved(messageId);
         }
     }

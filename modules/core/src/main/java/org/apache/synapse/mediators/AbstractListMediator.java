@@ -38,13 +38,15 @@ import java.util.List;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
-    /** the list of child mediators held. These are executed sequentially */
+    /**
+     * the list of child mediators held. These are executed sequentially
+     */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
 
     private boolean contentAware = false;
 
     public boolean mediate(MessageContext synCtx) {
-        return  mediate(synCtx,0);
+        return mediate(synCtx, 0);
     }
 
     public boolean mediate(MessageContext synCtx, int mediatorPosition) {
@@ -68,7 +70,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
                     }
-                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
                 } catch (Exception e) {
                     handleException("Error while building message", e, synCtx);
                 }
@@ -115,6 +117,7 @@ public abstract class AbstractListMediator extends AbstractMediator
 
     /**
      * Initialize child mediators recursively
+     *
      * @param se synapse environment
      */
     public void init(SynapseEnvironment se) {

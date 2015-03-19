@@ -44,7 +44,7 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
     protected Map<Method, SynapseXPath> beforeMethods;
     protected Map<Field, SynapseXPath> afterFields;
     protected Map<Method, SynapseXPath> afterMethods;
-    
+
     @Override
     public boolean mediate(MessageContext synCtx) {
         SynapseLog synLog = getLog(synCtx);
@@ -67,19 +67,19 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
             commandObject = getCommand().newInstance();
         } catch (Exception e) {
             handleException("Error creating an instance of the POJO command class : " +
-                            getCommand().getClass(), e, synCtx);
+                    getCommand().getClass(), e, synCtx);
         }
 
         synLog.traceOrDebug("Instance created, setting static and dynamic properties");
 
         // then set the static/constant properties first
-        for (Iterator iter = getStaticSetterProperties().keySet().iterator(); iter.hasNext();) {
+        for (Iterator iter = getStaticSetterProperties().keySet().iterator(); iter.hasNext(); ) {
             String name = (String) iter.next();
             PropertyHelper.setInstanceProperty(name, getStaticSetterProperties().get(name),
                     commandObject);
         }
-        
-        
+
+
         for (Field f : beforeFields.keySet()) {
             SynapseXPath xpath = beforeFields.get(f);
             Object v;
@@ -118,7 +118,7 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
                 ((Command) commandObject).execute();
             } catch (Exception e) {
                 handleException("Error invoking POJO command class : "
-                    + getCommand().getClass(), e, synCtx);
+                        + getCommand().getClass(), e, synCtx);
             }
 
         } else {
@@ -129,19 +129,19 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
                 exeMethod.invoke(commandObject, new Object[]{});
             } catch (NoSuchMethodException e) {
                 handleException("Cannot locate an execute() method on POJO class : " +
-                                getCommand().getClass(), e, synCtx);
+                        getCommand().getClass(), e, synCtx);
             } catch (Exception e) {
                 handleException("Error invoking the execute() method on POJO class : " +
-                                getCommand().getClass(), e, synCtx);
+                        getCommand().getClass(), e, synCtx);
             }
         }
 
         // TODO: now update the MessageContext from the commandObject
-        
+
         synLog.traceOrDebug("End : POJOCommand mediator");
         return true;
     }
-    
+
     @Override
     public void setCommand(Class commandClass) {
         super.setCommand(commandClass);
@@ -201,8 +201,8 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
      * Create an SynapseXPath from an xpath string
      */
     protected SynapseXPath createSynapseXPATH(String xpath, Namespaces nsAnnotation) {
-        
-        Map<String, String> namespaces = getNamespaces(nsAnnotation);     
+
+        Map<String, String> namespaces = getNamespaces(nsAnnotation);
         try {
 
             SynapseXPath axiomXPath = new SynapseXPath(xpath);
@@ -210,7 +210,7 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
             for (Map.Entry<String, String> entry : namespaces.entrySet()) {
                 axiomXPath.addNamespace(entry.getKey(), entry.getValue());
             }
-            
+
             return axiomXPath;
 
         } catch (JaxenException e) {
@@ -224,8 +224,8 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
      */
     protected Map<String, String> getNamespaces(Namespaces namespaces) {
         Map<String, String> allNamespaces = new HashMap<String, String>();
-        
-        Namespaces defaultNamespaces = ((Class<?>)getCommand()).getAnnotation(Namespaces.class);
+
+        Namespaces defaultNamespaces = ((Class<?>) getCommand()).getAnnotation(Namespaces.class);
 
         // First add any default namespaces
         if (defaultNamespaces != null) {
@@ -233,7 +233,7 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
                 int i = namespaceValue.indexOf(':');
                 if (i > 0) {
                     String prefix = namespaceValue.substring(0, i);
-                    String namespace = namespaceValue.substring(i+1);
+                    String namespace = namespaceValue.substring(i + 1);
                     allNamespaces.put(prefix, namespace);
                 }
             }
@@ -245,7 +245,7 @@ public class AnnotatedCommandMediator extends POJOCommandMediator {
                 int i = namespaceValue.indexOf(':');
                 if (i > 0) {
                     String prefix = namespaceValue.substring(0, i);
-                    String namespace = namespaceValue.substring(i+1);
+                    String namespace = namespaceValue.substring(i + 1);
                     allNamespaces.put(prefix, namespace);
                 }
             }

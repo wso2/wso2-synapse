@@ -19,13 +19,7 @@
 
 package org.apache.synapse.mediators.base;
 
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.Nameable;
-import org.apache.synapse.SequenceType;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseLog;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -48,25 +42,43 @@ import java.util.Stack;
  * encountered in the referred sequence, its errorHandler would execute.
  */
 public class SequenceMediator extends AbstractListMediator implements Nameable,
-                                                                      FlowContinuableMediator {
+        FlowContinuableMediator {
 
-    /** The name of the this sequence */
+    /**
+     * The name of the this sequence
+     */
     private String name = null;
-    /** The local registry key which is used to pick a sequence definition*/
+    /**
+     * The local registry key which is used to pick a sequence definition
+     */
     private Value key = null;
-    /** The name of the error handler which is used to handle error during the mediation */
+    /**
+     * The name of the error handler which is used to handle error during the mediation
+     */
     private String errorHandler = null;
-    /** is this definition dynamic */
+    /**
+     * is this definition dynamic
+     */
     private boolean dynamic = false;
-    /** flag to ensure that each and every sequence is initialized and destroyed atmost once */
+    /**
+     * flag to ensure that each and every sequence is initialized and destroyed atmost once
+     */
     private boolean initialized = false;
-    /** the registry key to load this definition if dynamic */
+    /**
+     * the registry key to load this definition if dynamic
+     */
     private String registryKey = null;
-    /** The name of the file where this sequence is defined */
+    /**
+     * The name of the file where this sequence is defined
+     */
     private String fileName;
-    /** type of the sequence*/
+    /**
+     * type of the sequence
+     */
     private SequenceType sequenceType = SequenceType.NAMED;
-    /** Reference to the synapse environment */
+    /**
+     * Reference to the synapse environment
+     */
     private SynapseEnvironment synapseEnv;
 
     /**
@@ -215,9 +227,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Mediating using the SeqContinuationState type : " +
-                                ((SeqContinuationState) continuationState).getSeqType() +
-                                " name : " +
-                                ((SeqContinuationState) continuationState).getSeqName());
+                    ((SeqContinuationState) continuationState).getSeqType() +
+                    " name : " +
+                    ((SeqContinuationState) continuationState).getSeqName());
         }
 
         Mediator errorHandlerMediator = null;
@@ -228,13 +240,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             if (errorHandlerMediator != null) {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Setting the onError handler : " +
-                                        errorHandler + " for the sequence : " + name);
+                            errorHandler + " for the sequence : " + name);
                 }
                 synCtx.pushFaultHandler(
                         new MediatorFaultHandler(errorHandlerMediator));
             } else {
                 synLog.auditWarn("onError handler : " + errorHandler + " for sequence : " +
-                                 name + " cannot be found");
+                        name + " cannot be found");
             }
         }
 
@@ -247,7 +259,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) getChild(continuationState.getPosition());
                 result = mediator.mediate(synCtx,
-                                          continuationState.getChildContState());
+                        continuationState.getChildContState());
                 if (result) {
                     // if flow completed remove leaf child
                     continuationState.removeLeafChild();
@@ -273,8 +285,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 Object o = faultStack.peek();
 
                 if (o instanceof MediatorFaultHandler &&
-                    errorHandlerMediator.equals(
-                            ((MediatorFaultHandler) o).getFaultMediator())) {
+                        errorHandlerMediator.equals(
+                                ((MediatorFaultHandler) o).getFaultMediator())) {
                     faultStack.pop();
                 }
             }
@@ -284,6 +296,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * This method will ensure that each and every sequence wil only be initialized at most once
+     *
      * @param se - environment to be initialized
      */
     @Override
@@ -346,6 +359,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * To get the name of the sequence
+     *
      * @return the name of the sequence
      */
     public String getName() {
@@ -354,6 +368,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * setting the name of the sequence
+     *
      * @param name the name of the this sequence
      */
     public void setName(String name) {
@@ -362,7 +377,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * To get the key which is used to pick the sequence definition from the local registry
-     * @return  return the key which is used to pick the sequence definition from the local registry
+     *
+     * @return return the key which is used to pick the sequence definition from the local registry
      */
     public Value getKey() {
         return key;
@@ -370,6 +386,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * To set the local registry key in order to pick the sequence definition
+     *
      * @param key the local registry key
      */
     public void setKey(Value key) {
@@ -377,8 +394,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     }
 
     /**
-     *
-     * @return  Returns the errorhandler sequence name
+     * @return Returns the errorhandler sequence name
      */
     public String getErrorHandler() {
         return errorHandler;
@@ -386,7 +402,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * @param errorHandler to used handle error will appear during the
-     *        mediation through this sequence
+     *                     mediation through this sequence
      */
     public void setErrorHandler(String errorHandler) {
         this.errorHandler = errorHandler;
@@ -394,6 +410,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * Is this a dynamic sequence?
+     *
      * @return true if dynamic
      */
     public boolean isDynamic() {
@@ -402,6 +419,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * Mark this as a dynamic sequence
+     *
      * @param dynamic true if this is a dynamic sequence
      */
     public void setDynamic(boolean dynamic) {
@@ -410,7 +428,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * Return the registry key used to load this sequence dynamically
-     * @return  registry key
+     *
+     * @return registry key
      */
     public String getRegistryKey() {
         return registryKey;
@@ -418,7 +437,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /**
      * To get the registry key used to load this sequence dynamically
-     * @param registryKey  returns the registry key which point to this sequence
+     *
+     * @param registryKey returns the registry key which point to this sequence
      */
     public void setRegistryKey(String registryKey) {
         this.registryKey = registryKey;

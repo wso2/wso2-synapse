@@ -10,6 +10,7 @@ import javax.xml.xpath.XPathFunctionResolver;
 public class GetPropertyFunctionResolver implements XPathFunctionResolver {
 
     private MessageContext synCtx;
+
     public GetPropertyFunctionResolver(MessageContext synCtx) {
         this.synCtx = synCtx;
     }

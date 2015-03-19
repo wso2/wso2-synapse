@@ -23,14 +23,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.xml.MessageProcessorFactory;
 import org.apache.synapse.config.xml.MessageProcessorSerializer;
-import org.apache.synapse.config.xml.MessageStoreSerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.message.processor.MessageProcessor;
 
 import java.io.File;
 import java.util.Properties;
 
-public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer {
+public class MessageProcessorDeployer extends AbstractSynapseArtifactDeployer {
 
     private static Log log = LogFactory.getLog(MessageProcessorDeployer.class);
 
@@ -40,12 +39,12 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
             log.debug("Message Processor Deployment from file : " + fileName + " : Started");
         }
 
-        try{
+        try {
 
             MessageProcessor mp = MessageProcessorFactory.createMessageProcessor(artifactConfig);
-            if(mp != null) {
+            if (mp != null) {
                 mp.setFileName((new File(fileName)).getName());
-                 if (log.isDebugEnabled()) {
+                if (log.isDebugEnabled()) {
                     log.debug("Message Processor named '" + mp.getName()
                             + "' has been built from the file " + fileName);
                 }
@@ -63,7 +62,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
                 return mp.getName();
             } else {
                 handleSynapseArtifactDeploymentError("Message Processor Deployment from the file : "
-                    + fileName + " : Failed. The artifact " +
+                        + fileName + " : Failed. The artifact " +
                         "described in the file  is not a Message Processor");
             }
 
@@ -78,7 +77,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
-       if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Message Processor update from file : " + fileName + " has started");
         }
 
@@ -124,7 +123,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
 
     @Override
     public void undeploySynapseArtifact(String artifactName) {
-         if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("MessageProcessor Undeployment of the MessageProcessor named : "
                     + artifactName + " : Started");
         }
@@ -149,7 +148,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
         } catch (Exception e) {
             handleSynapseArtifactDeploymentError(
                     "MessageProcessor Undeployement of MessageProcessor named : "
-                    + artifactName + " : Failed", e);
+                            + artifactName + " : Failed", e);
         }
     }
 
@@ -162,7 +161,7 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
         try {
             MessageProcessor mp
                     = getSynapseConfiguration().getMessageProcessors().get(artifactName);
-            OMElement msElem = MessageProcessorSerializer.serializeMessageProcessor(null,mp);
+            OMElement msElem = MessageProcessorSerializer.serializeMessageProcessor(null, mp);
             if (mp.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()
                         + File.separator + MultiXMLConfigurationBuilder.MESSAGE_PROCESSOR_DIR

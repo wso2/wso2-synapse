@@ -34,7 +34,7 @@ import org.apache.synapse.mediators.FlowContinuableMediator;
  * @see org.apache.synapse.MessageContext#isResponse()
  */
 public class OutMediator extends AbstractListMediator implements org.apache.synapse.mediators.FilterMediator,
-                                                                 FlowContinuableMediator {
+        FlowContinuableMediator {
 
     /**
      * Executes the list of sub/child mediators, if the filter condition is satisfied
@@ -43,7 +43,7 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
      * @return true if filter condition fails. else returns as per List mediator semantics
      */
     public boolean mediate(MessageContext synCtx) {
-        
+
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {

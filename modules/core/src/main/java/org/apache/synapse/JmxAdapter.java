@@ -20,11 +20,11 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.securevault.PasswordManager;
-import org.wso2.securevault.secret.SecretInformation;
-import org.apache.synapse.commons.util.RMIRegistryController;
 import org.apache.synapse.commons.jmx.JmxInformation;
 import org.apache.synapse.commons.jmx.JmxSecretAuthenticator;
+import org.apache.synapse.commons.util.RMIRegistryController;
+import org.wso2.securevault.PasswordManager;
+import org.wso2.securevault.secret.SecretInformation;
 
 import javax.management.MBeanServer;
 import javax.management.remote.JMXConnectorServer;
@@ -32,7 +32,6 @@ import javax.management.remote.JMXConnectorServerFactory;
 import javax.management.remote.JMXServiceURL;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
 import javax.rmi.ssl.SslRMIServerSocketFactory;
-
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -71,24 +70,24 @@ public class JmxAdapter {
     private JmxInformation jmxInformation;
 
     /**
-     * @see  JMXConnectorServer
+     * @see JMXConnectorServer
      */
     private JMXConnectorServer connectorServer;
 
     /**
      * Creates a new instance of a JMX Adaptor using the provided JMX information.
      *
-     * @param  jmxInformation  any JMX related information
+     * @param jmxInformation any JMX related information
      */
     public JmxAdapter(JmxInformation jmxInformation) {
         this.jmxInformation = jmxInformation;
     }
 
     /**
-     * Lazily creates the RMI registry and starts the JMX connector server based on the 
+     * Lazily creates the RMI registry and starts the JMX connector server based on the
      *
-     * @throws  SynapseException  if the JMX configuration is erroneous and/or the connector server
-     *                            cannot be started
+     * @throws SynapseException if the JMX configuration is erroneous and/or the connector server
+     *                          cannot be started
      */
     public void start() {
         initConfiguration();
@@ -96,7 +95,7 @@ public class JmxAdapter {
         try {
             boolean registryCreated = false;
             int jndiPort = jmxInformation.getJndiPort();
-            
+
             // automatic detection starting at base port
             if (jndiPort == 0) {
                 jndiPort = JNDI_AUTO_PORT_OFFSET;
@@ -114,7 +113,7 @@ public class JmxAdapter {
                 RMIRegistryController.getInstance().createLocalRegistry(jndiPort);
                 registryCreated = true;
             }
-            
+
             if (registryCreated) {
                 jmxInformation.updateJMXUrl();
                 JMXServiceURL url = new JMXServiceURL(jmxInformation.getJmxUrl());
@@ -152,7 +151,7 @@ public class JmxAdapter {
     /**
      * Initialized the JMX configuration.
      *
-     * @throws  SynapseException  if the port or host configuration is erroneous
+     * @throws SynapseException if the port or host configuration is erroneous
      */
     private void initConfiguration() {
         int jndiPort = jmxInformation.getJndiPort();
@@ -179,7 +178,7 @@ public class JmxAdapter {
 
     /**
      * Determines whether the JMX Connector server has been started and is running.
-     * 
+     *
      * @return true, if the connector server is running, otherwise false
      */
     public boolean isRunning() {
@@ -197,9 +196,9 @@ public class JmxAdapter {
     /**
      * Creates an environment context map containing the configuration used to start the
      * server connector.
-     * 
-     * @return an environment context map containing the configuration used to start the server 
-     *         connector
+     *
+     * @return an environment context map containing the configuration used to start the server
+     * connector
      */
     private Map<String, Object> createContextMap() {
         Map<String, Object> env = new HashMap<String, Object>();
@@ -232,7 +231,7 @@ public class JmxAdapter {
             env.put("jmx.remote.rmi.client.socket.factory", new SslRMIClientSocketFactory());
             env.put("jmx.remote.rmi.server.socket.factory", new SslRMIServerSocketFactory());
         }
-        
+
         return env;
     }
 }
