@@ -21,7 +21,7 @@ package org.apache.synapse.message.store.impl.rabbitmq;
 import java.io.Serializable;
 
 /**
- * This represents the final JMS message that will be saved in the JMS queue.
+ * This represents the final message that will be saved in the queue.
  */
 public class AMQPStorableMessage implements Serializable {
 	private Axis2Message axis2message;
