@@ -149,9 +149,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 transportOutDescription, workerPool, metrics, 
                 proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);
         targetConfiguration.build();
-        if(!scheme.isSSL()){
-            PassThroughSenderManager.registerPassThroughHttpSender(this);
-        }
+
+        PassThroughSenderManager.registerPassThroughHttpSender(this);
+
 
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
