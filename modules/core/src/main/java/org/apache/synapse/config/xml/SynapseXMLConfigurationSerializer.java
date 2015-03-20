@@ -25,25 +25,25 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
-import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
-import org.apache.synapse.config.xml.rest.APISerializer;
-import org.apache.synapse.endpoints.Template;
-import org.apache.synapse.inbound.InboundEndpoint;
-import org.apache.synapse.libraries.imports.SynapseImport;
-import org.apache.synapse.mediators.template.TemplateMediator;
-import org.apache.synapse.message.processor.MessageProcessor;
-import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.commons.executors.config.PriorityExecutorSerializer;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
+import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
 import org.apache.synapse.config.xml.eventing.EventSourceSerializer;
+import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
+import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.eventing.SynapseEventSource;
+import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.rest.API;
 
 import javax.xml.namespace.QName;
@@ -270,7 +270,7 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
 	}
 
     private static void serializeComments(OMElement definitions,
-                                        List<String> commentsList) {
+                                          List<String> commentsList) {
         for (String comment : commentsList) {
             OMComment commentNode = fac.createOMComment(definitions, "");
             commentNode.setValue(comment);

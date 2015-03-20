@@ -34,15 +34,15 @@ import org.apache.axis2.description.AxisService;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.engine.ListenerManager;
 import org.apache.axis2.engine.MessageReceiver;
-import org.apache.synapse.ServerManager;
 import org.apache.synapse.ServerConfigurationInformation;
 import org.apache.synapse.ServerContextInformation;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.ServerManager;
 import org.apache.synapse.util.Services;
+import org.apache.synapse.util.xpath.SynapseXPath;
 
+import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.io.*;
 
 
 public class SynapseCommodityServiceTest extends TestCase {
@@ -62,7 +62,7 @@ public class SynapseCommodityServiceTest extends TestCase {
             new File("./../../repository/conf/axis2_pt_server.xml"),
             new File("./target/test_repos/axis2.xml"),
             "lib/", "./../../modules/distribution/src/main/conf/");
-        
+
         findAndReplace(
                 new File("./../../repository/conf/axis2_be_server.xml"),
                 new File("./target/test_repos/axis2_be_server.xml"),
@@ -86,13 +86,14 @@ public class SynapseCommodityServiceTest extends TestCase {
                 new ServerContextInformation(synapseConfigCtx, information);
         ServerManager serverManager = new ServerManager();
         serverManager.init(information, contextInformation);
+        serverManager.start();
 
         // Initializing Business Endpoint
-        
+
         // Set a different agent name to avoid collisions between the MBeans registered
         // by the two servers.
         System.setProperty("jmx.agent.name", "business");
-        
+
         ConfigurationContext businessConfigCtx = ConfigurationContextFactory
                 .createConfigurationContextFromFileSystem(
                         "./target/test_repos/synapse",
@@ -101,8 +102,8 @@ public class SynapseCommodityServiceTest extends TestCase {
         HashMap messageReciverMap = new HashMap();
         Class inOnlyMessageReceiver = org.apache.axis2.util.Loader.loadClass(
                 "org.apache.axis2.rpc.receivers.RPCInOnlyMessageReceiver");
-        org.apache.axis2.engine.MessageReceiver messageReceiver =
-                (org.apache.axis2.engine.MessageReceiver) inOnlyMessageReceiver.newInstance();
+        MessageReceiver messageReceiver =
+                (MessageReceiver) inOnlyMessageReceiver.newInstance();
         messageReciverMap.put(
                 org.apache.axis2.description.WSDL2Constants.MEP_URI_IN_ONLY,
                 messageReceiver);
