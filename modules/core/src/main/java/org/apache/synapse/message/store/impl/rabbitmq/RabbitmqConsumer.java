@@ -46,10 +46,6 @@ public class RabbitmqConsumer implements MessageConsumer {
 
 	private boolean isInitialized;
 	/**
-	 * Holds the last message read from the message store.
-	 */
-	private CachedMessage cachedMessage;
-	/**
 	 * Did last receive() call cause an error?
 	 */
 	private boolean isReceiveError;
@@ -60,7 +56,6 @@ public class RabbitmqConsumer implements MessageConsumer {
 			return;
 		}
 		this.store = store;
-		cachedMessage = new CachedMessage();
 		isReceiveError = false;
 		isInitialized = true;
 	}
@@ -240,10 +235,6 @@ public class RabbitmqConsumer implements MessageConsumer {
 		}
 		idString = consumer.getId();
 		return true;
-	}
-
-	//Implement cahcedMessage class similar to JMS (requirement is not clear in JMS)
-	private final class CachedMessage {
 	}
 }
 
