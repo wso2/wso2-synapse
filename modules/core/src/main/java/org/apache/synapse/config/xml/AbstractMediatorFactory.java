@@ -20,7 +20,9 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
@@ -31,10 +33,7 @@ import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 
 import javax.xml.namespace.QName;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Parent class for all the {@link MediatorFactory} implementations
@@ -211,5 +210,23 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
     protected void handleException(String message) {
         LogFactory.getLog(this.getClass()).error(message);
         throw new SynapseException(message);
+    }
+
+    /**
+     * Find and add all comment nodes to the mediator as a list
+     * @param el OMElement to extract OMComment Nodes
+     * @param commentList ArrayList to be updated with extracted Comment Strings
+     */
+    protected static void addAllCommentChildrenToList(OMElement el, List<String> commentList) {
+        Iterator it = el.getChildren();
+
+        while (it.hasNext()) {
+            OMNode child = (OMNode) it.next();
+            if (child instanceof OMComment) {
+                if (((OMComment) child).getValue() != null) {
+                    commentList.add(((OMComment) child).getValue());
+                }
+            }
+        }
     }
 }

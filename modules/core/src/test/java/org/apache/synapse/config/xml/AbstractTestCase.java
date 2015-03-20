@@ -20,10 +20,10 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.custommonkey.xmlunit.XMLTestCase;
 import org.xml.sax.SAXException;
 
@@ -59,6 +59,7 @@ public abstract class AbstractTestCase extends XMLTestCase {
         OMElement inputOM = createOMElement(inputXml);
         Mediator mediator = mediatorFactory.createMediator(inputOM, new Properties());
         OMElement resultOM = mediatorSerializer.serializeMediator(null, mediator);
+
         try {
             assertXMLEqual(resultOM.toString(), inputXml);
             return true;

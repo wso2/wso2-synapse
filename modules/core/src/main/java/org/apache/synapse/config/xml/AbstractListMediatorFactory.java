@@ -63,7 +63,12 @@ public abstract class AbstractListMediatorFactory extends AbstractMediatorFactor
         }
     }
 
-    protected static void addCommentChildren(OMElement el, ListMediator m) {
+    /**
+     * Find and add all comment nodes to the mediator as mediators
+     * @param el OMElement to extract OMComment Nodes
+     * @param m Mediator to be updated with extracted OMComment nodes
+     */
+    protected static void addAllCommentChildrenToMediator(OMElement el, ListMediator m) {
         Iterator it = el.getChildren();
 
         while (it.hasNext()) {

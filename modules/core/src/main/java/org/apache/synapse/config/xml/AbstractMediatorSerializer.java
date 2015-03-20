@@ -33,6 +33,7 @@ import org.apache.synapse.mediators.comment.CommentMediator;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Parent class for all the {@link MediatorSerializer} implementations
@@ -86,10 +87,7 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
         } else {
             if(m instanceof CommentMediator){
                 // serialize comment mediator
-                OMComment commendNode = fac.createOMComment(parent,"comment");
-                commendNode.setValue(((CommentMediator) m).getCommentText());
-                parent.addChild(commendNode);
-                serializedElement =  parent;
+                serializedElement = serializeCommentsFromMediator(parent, m);
             } else {
                 // delegate the specific serializations to it's serializer
                 OMElement elem = serializeSpecificMediator(m);
@@ -209,5 +207,30 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
     protected void handleException(String msg, Exception e) {
         LogFactory.getLog(this.getClass()).error(msg, e);
         throw new SynapseException(msg, e);
+    }
+
+    /**
+     * Serialize comment entries from an arrayList
+     * @param parent OMElement to be updated
+     * @param commentList List of comment entries to be serialized
+     */
+    protected void serializeCommentsFromList(OMElement parent, List<String> commentList){
+        for (String comment : commentList){
+            OMComment commendNode = fac.createOMComment(parent,"comment");
+            commendNode.setValue(comment);
+            parent.addChild(commendNode);
+        }
+    }
+
+    /**
+     * Serialize comment entries from an arrayList
+     * @param parent OMElement to be updated
+     * @param m Comment mediator instance which contains comment information
+     */
+    protected OMElement serializeCommentsFromMediator(OMElement parent, Mediator m){
+        OMComment commendNode = fac.createOMComment(parent,"comment");
+        commendNode.setValue(((CommentMediator) m).getCommentText());
+        parent.addChild(commendNode);
+        return parent;
     }
 }

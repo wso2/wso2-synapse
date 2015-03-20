@@ -25,6 +25,9 @@ import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * This is the super class of all mediators, and defines common logging, tracing other aspects
  * for all mediators who extend from this.
@@ -49,6 +52,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     private String shortDescription;
 
     private int mediatorPosition = 0;
+
+    private List<String> commentsList = new ArrayList<String>();
 
     /**
      * A constructor that makes subclasses pick up the correct logger
@@ -366,5 +371,9 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     public String getOutputType() {
         return null;
+    }
+
+    public List<String> getCommentsList() {
+        return commentsList;
     }
 }

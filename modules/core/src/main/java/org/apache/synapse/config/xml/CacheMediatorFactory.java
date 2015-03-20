@@ -19,10 +19,10 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.CacheMediator;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMAttribute;
 import org.wso2.caching.CachingConstants;
 import org.wso2.caching.digest.DigestGenerator;
 
@@ -160,6 +160,8 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
             }
         }
 
+        addAllCommentChildrenToList(elem, cache.getCommentsList());
+
         return cache;
     }
 
@@ -185,4 +187,5 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
     public QName getTagQName() {
         return CACHE_Q;
     }
+
 }
