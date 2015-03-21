@@ -25,6 +25,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
 
+import org.apache.synapse.message.store.impl.jms.MessageConverter;
+import org.apache.synapse.message.store.impl.jms.StorableMessage;
+import org.apache.synapse.message.store.impl.jms.Axis2Message;
+import org.apache.synapse.message.store.impl.jms.SynapseMessage;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
@@ -94,7 +99,7 @@ public class RabbitmqProducer implements MessageProducer {
 			logger.warn(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
 			return false;
 		}
-		AMQPStorableMessage message = MessageConverter.toStorableMessage(synCtx);
+		StorableMessage message = MessageConverter.toStorableMessage(synCtx);
 		boolean error = false;
 		Throwable throwable = null;
 		Channel channel = null;

@@ -26,6 +26,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
 
+import org.apache.synapse.message.store.impl.jms.MessageConverter;
+import org.apache.synapse.message.store.impl.jms.StorableMessage;
+import org.apache.synapse.message.store.impl.jms.Axis2Message;
+import org.apache.synapse.message.store.impl.jms.SynapseMessage;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -108,11 +113,11 @@ public class RabbitmqConsumer implements MessageConsumer {
 			if (delivery != null) {
 				try {
 					//deserilizing message
-					AMQPStorableMessage storableMessage = null;
+					StorableMessage storableMessage = null;
 					ByteArrayInputStream bis = new ByteArrayInputStream(delivery.getBody());
 					ObjectInput in = new ObjectInputStream(bis);
 					try {
-						storableMessage = (AMQPStorableMessage) in.readObject();
+						storableMessage = (StorableMessage) in.readObject();
 					} catch (ClassNotFoundException e) {
 						logger.error(getId() + "unable to read the stored message" + e);
 					}
