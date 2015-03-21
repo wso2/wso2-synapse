@@ -150,7 +150,11 @@ public class RabbitmqProducer implements MessageProducer {
 		return true;
 	}
 
-	//Not useful yet, this should be use to close the session ( channel )
+	/**
+	 * Used to close the channel opened in this object instance.
+	 * This should be called after the end of each call on storeMessage method
+	 * But instead of this, finally block is used in storeMethod to close the channels
+	 */
 	public boolean cleanup() {
 		return store.cleanup(null, false);
 	}
