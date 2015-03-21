@@ -142,8 +142,6 @@ public class RabbitmqProducer implements MessageProducer {
 				logger.debug(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
 			}
 			return false;
-		} else {
-			cleanup();
 		}
 		if (logger.isDebugEnabled()) {
 			logger.debug(getId() + ". Stored MessageID : " + synCtx.getMessageID());

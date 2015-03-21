@@ -34,7 +34,11 @@ import org.apache.synapse.message.store.AbstractMessageStore;
 import org.apache.synapse.message.store.Constants;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Properties;
+import java.util.Set;
+import java.util.List;
 
 public class RabbitmqStore extends AbstractMessageStore {
 	/**
