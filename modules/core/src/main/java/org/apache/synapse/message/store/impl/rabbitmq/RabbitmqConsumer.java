@@ -26,10 +26,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
 
-import org.apache.synapse.message.store.impl.jms.MessageConverter;
-import org.apache.synapse.message.store.impl.jms.StorableMessage;
-import org.apache.synapse.message.store.impl.jms.Axis2Message;
-import org.apache.synapse.message.store.impl.jms.SynapseMessage;
+import org.apache.synapse.message.store.impl.commons.MessageConverter;
+import org.apache.synapse.message.store.impl.commons.StorableMessage;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
