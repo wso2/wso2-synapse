@@ -97,8 +97,15 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
                 if (log.isDebugEnabled()) {
                     log.debug(this + " Send message to the next endpoint");
                 }
-                /**To avoid cloning this message context again*/
-                synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
+
+                /**If next endpoint support http status codes we need to clone the message*/
+                if(((AbstractEndpoint)nextEndpoint).getDefinition().getFailoverHttpstatusCodes()!=null){
+                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
+                }
+                else{
+                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
+                }
+
                 nextEndpoint.send(synCtx);
                 break;
             }
@@ -133,18 +140,25 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
 
             /**Last endpoint*/
             Endpoint lastEndpoint = endpointList.get(index);
-            /**Get http status of the endpoint*/
-            List<String> lastEndpointHttpStatus = lastEndpoint.getHttpStatusCodes();
 
-            for (String endpointHttpStatus : lastEndpointHttpStatus) {
-                /**If msg http status and endpoint http status matching send*/
-                if (msgHttpStatus.equals(endpointHttpStatus)) {
-                    if (log.isDebugEnabled()) {
-                        log.debug(this + " Calling send message");
+            /**Get http status of the endpoint*/
+            List<Integer> lastEndpointHttpStatus = ((AbstractEndpoint)lastEndpoint).getDefinition().getFailoverHttpstatusCodes();
+
+            if(!lastEndpointHttpStatus.isEmpty()) {
+                for (int endpointHttpStatus : lastEndpointHttpStatus) {
+                    /**If msg http status and endpoint http status matching send*/
+                    if (Integer.parseInt(msgHttpStatus) == endpointHttpStatus) {
+                        if (log.isDebugEnabled()) {
+                            log.debug(this + " Calling send message");
+                        }
+                        /**Send message if last endpoint configured for http status codes*/
+                        this.send(synMC);
+                        break;
                     }
-                    /**Send message if last endpoint configured for http status codes*/
-                    this.send(synMC);
-                    break;
+                }
+            }else{
+                if (log.isDebugEnabled()) {
+                    log.debug(this + " No failover status codes for the endpoint");
                 }
             }
         } else {

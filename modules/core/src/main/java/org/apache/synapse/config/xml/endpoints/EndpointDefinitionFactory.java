@@ -301,6 +301,28 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             }
         }
 
+        //###################################################################################################
+
+        OMElement statusCodesElement = elem.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,"failoverHttpStatusCodes"));
+        if(statusCodesElement!=null){
+           // definition.setStatusCodes(statusCodesElement.getText());
+           // definition.setFailoverHttpStatusCodes(statusCodesElement.getText());
+            StringTokenizer st = new StringTokenizer(
+                    statusCodesElement.getText().trim(), ", ");
+            while (st.hasMoreTokens()) {
+                String s = st.nextToken();
+                try {
+                    definition.addFailoverHttpstatusCodes(Integer.parseInt(s));
+                } catch (NumberFormatException e) {
+                    handleException("The suspend error codes should be specified as valid " +
+                            "numbers separated by commas : "
+                            + statusCodesElement.getText(), e);
+                }
+            }
+        }
+
+        //###################################################################################################
+
         OMElement retryConfig = elem.getFirstChildWithName(new QName(
             SynapseConstants.SYNAPSE_NAMESPACE, XMLConfigConstants.RETRY_CONFIG));
 
@@ -345,6 +367,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
 
 
         }
+
 
         return definition;
     }

@@ -43,6 +43,10 @@ public class EndpointDefinition implements AspectConfigurable {
      * The simple address this endpoint resolves to - if explicitly specified
      */
     private String address = null;
+
+    /** A list of http status codes, which supports to failover */
+    private final List<Integer> failoverHttpstatusCodes = new ArrayList<Integer>();
+
     /**
      * Should messages be sent in an WS-RM Sequence ?
      */
@@ -222,6 +226,24 @@ public class EndpointDefinition implements AspectConfigurable {
             return computedAddress.toString();
         }
     }
+
+    //***
+    public void addFailoverHttpstatusCodes(int failoverHttpstatusCodes){
+        this.failoverHttpstatusCodes.add(failoverHttpstatusCodes);
+    }
+
+    public List<Integer> getFailoverHttpstatusCodes(){
+        return failoverHttpstatusCodes;
+    }
+
+//    public void setFailoverHttpStatusCodes(String failoverHttpStatusCodes){
+//        this.failoverHttpStatusCodes = failoverHttpStatusCodes;
+//    }
+//
+//    public String getFailoverHttpStatusCodes(){
+//        return failoverHttpStatusCodes;
+//    }
+    //***
 
     /**
      * Set an absolute URL as the address for this named endpoint

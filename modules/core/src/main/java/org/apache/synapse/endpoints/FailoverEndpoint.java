@@ -100,9 +100,13 @@ public class FailoverEndpoint extends AbstractEndpoint {
                 if (endpoint.readyToSend()) {
 
 
-                    if (endpoint.getHttpStatusCodes() != null) {
+                    if (((AbstractEndpoint)endpoint).getDefinition().getFailoverHttpstatusCodes()!=null) {
                         synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
+                    }else{
+                        synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
                     }
+
+
                     /**This property will use to index the endpoints*/
                     synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, 0);
                     synCtx.setProperty(SynapseConstants.ENDPOINT_LIST, endpoints);

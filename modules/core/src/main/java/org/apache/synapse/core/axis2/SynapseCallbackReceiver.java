@@ -135,10 +135,15 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 AsyncCallback asyncCallback = (AsyncCallback)callbackStore.remove(messageCtx.getMessageID());
                 org.apache.synapse.MessageContext synMsgCtx = ((AsyncCallback) asyncCallback).getSynapseOutMsgCtx();
 
-                FailoverEndpointOnHttpStatusCode failoverEndpointOnHttpStatusCode = new FailoverEndpointOnHttpStatusCode();
-                /**resend wil handle message resending based on the http status code*/
-                failoverEndpointOnHttpStatusCode.resend(Integer.toString((Integer) messageCtx.getProperty(NhttpConstants.HTTP_SC)),(org.apache.synapse.MessageContext)synMsgCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX));
-                return;
+                /**If only cloned message context is available failover happens on http status codes*/
+                if(synMsgCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX)!=null) {
+
+                    FailoverEndpointOnHttpStatusCode failoverEndpointOnHttpStatusCode = new FailoverEndpointOnHttpStatusCode();
+                    /**resend wil handle message resending based on the http status code*/
+                    failoverEndpointOnHttpStatusCode.resend(Integer.toString((Integer)
+                            messageCtx.getProperty(NhttpConstants.HTTP_SC)), (org.apache.synapse.MessageContext) synMsgCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX));
+                    return;
+                }
             }
         }
 
