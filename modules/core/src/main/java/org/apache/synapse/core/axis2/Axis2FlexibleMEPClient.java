@@ -137,13 +137,16 @@ public class Axis2FlexibleMEPClient {
                 SynapseConstants.PRESERVE_WS_ADDRESSING);
         MessageContext axisOutMsgCtx = cloneForSend(originalInMsgCtx, preserveAddressingProperty);
 
-        /**Message will be cloned based on the request*/
-        if ((Integer) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG) == 1) {
-            if (log.isDebugEnabled()) {
-                log.debug("Axis2FlexibleMEPClient Caloning message for resendig purposes in failover endpoint");
+        /**For the failover support on http status codes need to clone request message context*/
+        if(synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG)!=null) {
+            /**Message will be cloned based on the request to support fail-over on http status codes*/
+            if ((Integer) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG) == 1) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Axis2FlexibleMEPClient Cloning message to support fail-over on response http status codes");
+                }
+                org.apache.synapse.MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synapseOutMessageContext);
+                synapseOutMessageContext.setProperty(SynapseConstants.CLONED_SYN_MSG_CTX, cloneMessageContext);
             }
-            org.apache.synapse.MessageContext cloneMessageContext = MessageHelper.cloneMessageContext(synapseOutMessageContext);
-            synapseOutMessageContext.setProperty(SynapseConstants.CLONED_SYN_MSG_CTX, cloneMessageContext);
         }
 
 

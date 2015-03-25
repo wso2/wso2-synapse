@@ -31,7 +31,7 @@ public class EndpointDefinitionSerializer {
     private OMFactory fac = OMAbstractFactory.getOMFactory();
 
     public void serializeEndpointDefinition(EndpointDefinition endpointDefinition,
-                                                 OMElement element) {
+                                            OMElement element) {
         if (endpointDefinition.getTraceState() == SynapseConstants.TRACING_ON) {
             element.addAttribute(fac.createOMAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME,
                     null, XMLConfigConstants.TRACE_ENABLE));
@@ -113,7 +113,7 @@ public class EndpointDefinitionSerializer {
                 if (endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
                     action.setText("discard");
                 } else if (endpointDefinition.getTimeoutAction()
-                           == SynapseConstants.DISCARD_AND_FAULT) {
+                        == SynapseConstants.DISCARD_AND_FAULT) {
                     action.setText("fault");
                 }
                 timeout.addChild(action);
@@ -121,33 +121,33 @@ public class EndpointDefinitionSerializer {
         }
 
         if (endpointDefinition.getInitialSuspendDuration() != -1 ||
-            !endpointDefinition.getSuspendErrorCodes().isEmpty()) {
+                !endpointDefinition.getSuspendErrorCodes().isEmpty()) {
 
             OMElement suspendOnFailure = fac.createOMElement(
-                org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_ON_FAILURE,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
+                    org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_ON_FAILURE,
+                    SynapseConstants.SYNAPSE_OMNAMESPACE);
 
             if (!endpointDefinition.getSuspendErrorCodes().isEmpty()) {
                 OMElement errorCodes = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 errorCodes.setText(endpointDefinition.getSuspendErrorCodes().
-                    toString().replaceAll("[\\[\\] ]", ""));
+                        toString().replaceAll("[\\[\\] ]", ""));
                 suspendOnFailure.addChild(errorCodes);
             }
 
             if (endpointDefinition.getInitialSuspendDuration() != -1) {
                 OMElement initialDuration = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_INITIAL_DURATION,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_INITIAL_DURATION,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 initialDuration.setText(Long.toString(endpointDefinition.getInitialSuspendDuration()));
                 suspendOnFailure.addChild(initialDuration);
             }
 
             if (endpointDefinition.getSuspendProgressionFactor() != -1) {
                 OMElement progressionFactor = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 progressionFactor.setText(Float.toString(endpointDefinition.getSuspendProgressionFactor()));
                 suspendOnFailure.addChild(progressionFactor);
             }
@@ -155,8 +155,8 @@ public class EndpointDefinitionSerializer {
             if (endpointDefinition.getSuspendMaximumDuration() != -1 &&
                     endpointDefinition.getSuspendMaximumDuration() != Long.MAX_VALUE) {
                 OMElement suspendMaximum = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_MAXIMUM_DURATION,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.SUSPEND_MAXIMUM_DURATION,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 suspendMaximum.setText(Long.toString(endpointDefinition.getSuspendMaximumDuration()));
                 suspendOnFailure.addChild(suspendMaximum);
             }
@@ -165,33 +165,33 @@ public class EndpointDefinitionSerializer {
         }
 
         if (endpointDefinition.getRetryDurationOnTimeout() > 0 ||
-            !endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
+                !endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
 
             OMElement markAsTimedout = fac.createOMElement(
-                org.apache.synapse.config.xml.XMLConfigConstants.MARK_FOR_SUSPENSION,
-                SynapseConstants.SYNAPSE_OMNAMESPACE);
+                    org.apache.synapse.config.xml.XMLConfigConstants.MARK_FOR_SUSPENSION,
+                    SynapseConstants.SYNAPSE_OMNAMESPACE);
 
             if (!endpointDefinition.getTimeoutErrorCodes().isEmpty()) {
                 OMElement errorCodes = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.ERROR_CODES,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 errorCodes.setText(endpointDefinition.getTimeoutErrorCodes().
-                    toString().replaceAll("[\\[\\] ]", ""));
+                        toString().replaceAll("[\\[\\] ]", ""));
                 markAsTimedout.addChild(errorCodes);
             }
 
             if (endpointDefinition.getRetriesOnTimeoutBeforeSuspend() > 0) {
                 OMElement retries = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.RETRIES_BEFORE_SUSPENSION,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 retries.setText(Long.toString(endpointDefinition.getRetriesOnTimeoutBeforeSuspend()));
                 markAsTimedout.addChild(retries);
             }
 
             if (endpointDefinition.getRetryDurationOnTimeout() > 0) {
                 OMElement retryDelay = fac.createOMElement(
-                    org.apache.synapse.config.xml.XMLConfigConstants.RETRY_DELAY,
-                    SynapseConstants.SYNAPSE_OMNAMESPACE);
+                        org.apache.synapse.config.xml.XMLConfigConstants.RETRY_DELAY,
+                        SynapseConstants.SYNAPSE_OMNAMESPACE);
                 retryDelay.setText(Long.toString(endpointDefinition.getRetryDurationOnTimeout()));
                 markAsTimedout.addChild(retryDelay);
             }
@@ -199,15 +199,11 @@ public class EndpointDefinitionSerializer {
             element.addChild(markAsTimedout);
         }
 
-        //##########################################################################################
-        if(!endpointDefinition.getFailoverHttpstatusCodes().isEmpty()) {
+        if (!endpointDefinition.getFailoverHttpstatusCodes().isEmpty()) {
             OMElement statusElemtnt = fac.createOMElement("failoverHttpStatusCodes", SynapseConstants.SYNAPSE_OMNAMESPACE);
-           // statusElemtnt.setText(endpointDefinition.getStatusCodes());
             statusElemtnt.setText(endpointDefinition.getFailoverHttpstatusCodes().toString().replaceAll("[\\[\\] ]", ""));
             element.addChild(statusElemtnt);
         }
-        //##########################################################################################
-
 
         if (!endpointDefinition.getRetryDisabledErrorCodes().isEmpty()) {
             OMElement retryConfig = fac.createOMElement(XMLConfigConstants.RETRY_CONFIG,

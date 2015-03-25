@@ -81,17 +81,6 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
             addressEndpoint.setName(name.getAttributeValue());
         }
 
-        //***
-//        OMElement httpStatusElement = epConfig.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE, "httpStatus"));
-//        if(httpStatusElement != null) {
-//            ArrayList<String> l = new ArrayList<String>();
-//            l.add("500");
-//            l.add("501");
-//            l.add("502");
-//            addressEndpoint.setHttpStatusCodes(l);
-//        }
-        //***
-
         OMElement addressElement = epConfig.getFirstChildWithName(
                 new QName(SynapseConstants.SYNAPSE_NAMESPACE, "address"));
         if (addressElement != null) {

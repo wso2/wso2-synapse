@@ -96,19 +96,18 @@ public class FailoverEndpoint extends AbstractEndpoint {
             // active again.
 
             boolean foundEndpoint = false;
+
+            /**Index of the first enpoint in the list is 0*/
+            int endpointIndex = 0;
+
             for (Endpoint endpoint : getChildren()) {
                 if (endpoint.readyToSend()) {
 
-
-                    if (((AbstractEndpoint)endpoint).getDefinition().getFailoverHttpstatusCodes()!=null) {
-                        synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
-                    }else{
-                        synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
-                    }
-
-
+                    /**This request message context will be cloned at Axis2FlexibleMEPClient*/
+                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
                     /**This property will use to index the endpoints*/
-                    synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, 0);
+                    synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, endpointIndex++);
+                    /**List of endpoints*/
                     synCtx.setProperty(SynapseConstants.ENDPOINT_LIST, endpoints);
 
 

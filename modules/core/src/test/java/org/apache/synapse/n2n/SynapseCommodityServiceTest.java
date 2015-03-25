@@ -164,7 +164,7 @@ public class SynapseCommodityServiceTest extends TestCase {
         businessClient.setOptions(options);
 
         OMElement response = null;
-        	
+
         response = businessClient.sendReceive(commodityPayload());
 
         assertNotNull(response);

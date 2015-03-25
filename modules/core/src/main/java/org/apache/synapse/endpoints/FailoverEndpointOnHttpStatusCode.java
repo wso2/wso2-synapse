@@ -62,7 +62,7 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
                     metricsMBean.reportSendingFault(SynapseConstants.ENDPOINT_FO_FAIL_OVER);
                 }
 
-                synCtx.setProperty("INDEX", i);
+                // synCtx.setProperty("INDEX", i);
 
 
                 synCtx.pushFaultHandler(this);
@@ -98,13 +98,15 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
                     log.debug(this + " Send message to the next endpoint");
                 }
 
-                /**If next endpoint support http status codes we need to clone the message*/
-                if(((AbstractEndpoint)nextEndpoint).getDefinition().getFailoverHttpstatusCodes()!=null){
+                /**If this endpoint support http status codes we need to clone the message*/
+                if (((AbstractEndpoint) nextEndpoint).getDefinition().getFailoverHttpstatusCodes() != null) {
                     synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
-                }
-                else{
+                } else {
                     synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
                 }
+
+                /**Set the postion of current endpoint*/
+                synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, i);
 
                 nextEndpoint.send(synCtx);
                 break;
@@ -142,9 +144,9 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
             Endpoint lastEndpoint = endpointList.get(index);
 
             /**Get http status of the endpoint*/
-            List<Integer> lastEndpointHttpStatus = ((AbstractEndpoint)lastEndpoint).getDefinition().getFailoverHttpstatusCodes();
+            List<Integer> lastEndpointHttpStatus = ((AbstractEndpoint) lastEndpoint).getDefinition().getFailoverHttpstatusCodes();
 
-            if(!lastEndpointHttpStatus.isEmpty()) {
+            if (!lastEndpointHttpStatus.isEmpty()) {
                 for (int endpointHttpStatus : lastEndpointHttpStatus) {
                     /**If msg http status and endpoint http status matching send*/
                     if (Integer.parseInt(msgHttpStatus) == endpointHttpStatus) {
@@ -156,7 +158,7 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
                         break;
                     }
                 }
-            }else{
+            } else {
                 if (log.isDebugEnabled()) {
                     log.debug(this + " No failover status codes for the endpoint");
                 }

@@ -37,14 +37,18 @@ import java.util.regex.Pattern;
 public class EndpointDefinition implements AspectConfigurable {
     public static final String DYNAMIC_URL_VALUE = "DYNAMIC_URL_VALUE";
 
-    /** Who is the leaf level Endpoint which uses me? */
+    /**
+     * Who is the leaf level Endpoint which uses me?
+     */
     private Endpoint leafEndpoint = null;
     /**
      * The simple address this endpoint resolves to - if explicitly specified
      */
     private String address = null;
 
-    /** A list of http status codes, which supports to failover */
+    /**
+     * A list of http status codes, which supports to failover
+     */
     private final List<Integer> failoverHttpstatusCodes = new ArrayList<Integer>();
 
     /**
@@ -106,7 +110,7 @@ public class EndpointDefinition implements AspectConfigurable {
      */
     private boolean forceREST = false;
     /**
-     *  HTTP Endpoint
+     * HTTP Endpoint
      */
     private boolean isHTTPEndpoint = false;
     /**
@@ -145,20 +149,34 @@ public class EndpointDefinition implements AspectConfigurable {
      */
     private int timeoutAction = SynapseConstants.NONE;
 
-    /** The initial suspend duration when an endpoint is marked inactive */
+    /**
+     * The initial suspend duration when an endpoint is marked inactive
+     */
     private long initialSuspendDuration = -1;
-    /** The suspend duration ratio for the next duration - this is the geometric series multipler */
+    /**
+     * The suspend duration ratio for the next duration - this is the geometric series multipler
+     */
     private float suspendProgressionFactor = 1;
-    /** This is the maximum duration for which a node will be suspended */
+    /**
+     * This is the maximum duration for which a node will be suspended
+     */
     private long suspendMaximumDuration = Long.MAX_VALUE;
-    /** A list of error codes, which directly puts an endpoint into suspend mode */
+    /**
+     * A list of error codes, which directly puts an endpoint into suspend mode
+     */
     private final List<Integer> suspendErrorCodes = new ArrayList<Integer>();
 
-    /** No of retries to attempt on timeout, before an endpoint is makred inactive */
+    /**
+     * No of retries to attempt on timeout, before an endpoint is makred inactive
+     */
     private int retriesOnTimeoutBeforeSuspend = 0;
-    /** The delay between retries for a timeout out endpoint */
+    /**
+     * The delay between retries for a timeout out endpoint
+     */
     private int retryDurationOnTimeout = 0;
-    /** A list of error codes which puts the endpoint into timeout mode */
+    /**
+     * A list of error codes which puts the endpoint into timeout mode
+     */
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
 
     private AspectConfiguration aspectConfiguration;
@@ -167,11 +185,16 @@ public class EndpointDefinition implements AspectConfigurable {
      */
     private int traceState = SynapseConstants.TRACING_UNSET;
 
-    /** A list of error codes which permit the retries */
+    /**
+     * A list of error codes which permit the retries
+     */
     private final List<Integer> retryDisabledErrorCodes = new ArrayList<Integer>();
 
-    /** A list of error codes which permit the retries for Enabled error Codes */
+    /**
+     * A list of error codes which permit the retries for Enabled error Codes
+     */
     private final List<Integer> retryEnabledErrorCodes = new ArrayList<Integer>();
+
     /**
      * This should return the absolute EPR address referenced by the named endpoint. This may be
      * possibly computed.
@@ -227,23 +250,24 @@ public class EndpointDefinition implements AspectConfigurable {
         }
     }
 
-    //***
-    public void addFailoverHttpstatusCodes(int failoverHttpstatusCodes){
+
+    /**
+     * Add http status code which the endpoint should support
+     *
+     * @param failoverHttpstatusCodes the http status code to be supported
+     */
+    public void addFailoverHttpstatusCodes(int failoverHttpstatusCodes) {
         this.failoverHttpstatusCodes.add(failoverHttpstatusCodes);
     }
 
-    public List<Integer> getFailoverHttpstatusCodes(){
+    /**
+     * Get the list of failover http status codes
+     *
+     * @return failover http status codes list
+     */
+    public List<Integer> getFailoverHttpstatusCodes() {
         return failoverHttpstatusCodes;
     }
-
-//    public void setFailoverHttpStatusCodes(String failoverHttpStatusCodes){
-//        this.failoverHttpStatusCodes = failoverHttpStatusCodes;
-//    }
-//
-//    public String getFailoverHttpStatusCodes(){
-//        return failoverHttpStatusCodes;
-//    }
-    //***
 
     /**
      * Set an absolute URL as the address for this named endpoint
@@ -286,7 +310,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * Request that WS-A be turned on/off on this endpoint
      *
-     * @param addressingOn  a boolean flag indicating addressing is on or not
+     * @param addressingOn a boolean flag indicating addressing is on or not
      */
     public void setAddressingOn(boolean addressingOn) {
         this.addressingOn = addressingOn;
@@ -322,7 +346,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * Request that WS-Sec be turned on/off on this endpoint
      *
-     * @param securityOn  a boolean flag indicating security is on or not
+     * @param securityOn a boolean flag indicating security is on or not
      */
     public void setSecurityOn(boolean securityOn) {
         this.securityOn = securityOn;
@@ -609,6 +633,7 @@ public class EndpointDefinition implements AspectConfigurable {
     public void addRetryDisabledErrorCode(int code) {
         retryDisabledErrorCodes.add(code);
     }
+
     public void addRetryEnabledErrorCode(int code) {
         retryEnabledErrorCodes.add(code);
     }
