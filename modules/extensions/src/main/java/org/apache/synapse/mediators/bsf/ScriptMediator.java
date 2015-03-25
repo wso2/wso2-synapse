@@ -404,7 +404,7 @@ public class ScriptMediator extends AbstractMediator {
                             StringBuilder scriptSB = new StringBuilder();
                             String currentLine;
                             while ((currentLine = reader.readLine()) != null) {
-                                scriptSB.append(currentLine);
+                                scriptSB.append(currentLine).append('\n');
                             }
                             scriptSourceCode = scriptSB.toString();
                             scriptEngine.eval(scriptSourceCode);
@@ -460,7 +460,7 @@ public class ScriptMediator extends AbstractMediator {
                                 StringBuilder scriptSB = new StringBuilder();
                                 String currentLine;
                                 while ((currentLine = reader.readLine()) != null) {
-                                    scriptSB.append(currentLine);
+                                    scriptSB.append(currentLine).append('\n');
                                 }
                                 includeSourceCode = scriptSB.toString();
                                 scriptEngine.eval(includeSourceCode);
