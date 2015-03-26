@@ -19,6 +19,7 @@
 package org.apache.synapse.transport.passthru.core;
 
 import org.apache.log4j.Logger;
+import org.apache.synapse.transport.passthru.PassThroughHttpSSLSender;
 import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 
 
@@ -31,23 +32,25 @@ public class PassThroughSenderManager {
 
     private static PassThroughSenderManager passThroughSenderManager;
 
-    private PassThroughHttpSender SharedPassThroughHttpSender;
+    private PassThroughHttpSender sharedPassThroughHttpSender;
+
 
     private PassThroughSenderManager(PassThroughHttpSender passThroughHttpSender) {
-        this.SharedPassThroughHttpSender = passThroughHttpSender;
+       this.sharedPassThroughHttpSender = passThroughHttpSender;
     }
 
     /**
      * @return Shared PassThroughHttpSender
      */
     public PassThroughHttpSender getSharedPassThroughHttpSender() {
-        return SharedPassThroughHttpSender;
+        return sharedPassThroughHttpSender;
     }
 
+
     /**
-     * @param passThroughHttpSender register shared PassThroughHttpSender
+     * @return return passThroughSenderManager
      */
-    public static void registerPassThroughHttpSender(PassThroughHttpSender passThroughHttpSender) {
+    public static PassThroughSenderManager registerPassThroughHttpSender(PassThroughHttpSender passThroughHttpSender) {
         if (passThroughSenderManager == null) {
             synchronized (PassThroughSenderManager.class) {
                 if (passThroughSenderManager == null) {
@@ -55,18 +58,11 @@ public class PassThroughSenderManager {
                 }
             }
         }
+        return passThroughSenderManager;
     }
 
-    /**
-     * @return return passThroughSenderManager
-     */
-    public static PassThroughSenderManager getInstance() {
-        if (passThroughSenderManager != null) {
-            return passThroughSenderManager;
-        } else {
-            logger.error("PassThroughSenderManager not initialized properly may be " +
-                         "PassThroughHttpSender might not have  started properly so PassThroughSenderManager is null");
-            return null;
-        }
+
+    public static PassThroughSenderManager getInstance(){
+        return passThroughSenderManager;
     }
 }
