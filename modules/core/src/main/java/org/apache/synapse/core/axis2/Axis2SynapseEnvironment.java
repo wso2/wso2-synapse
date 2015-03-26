@@ -220,19 +220,17 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             keySet.remove(SynapseConstants.CONTINUATION_CALL);
         }
 
-        if (isContinuationCall != null && isContinuationCall) {
-            if (log.isDebugEnabled()) {
-                log.debug("Response received for the Continuation Call service invocation");
-            }
-            return mediateFromContinuationStateStack(synCtx);
-        }
-
         // if this is not a response to a proxy service
         String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
         if (proxyName == null || "".equals(proxyName)) {
             // set default fault handler
             synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-            if (receivingSequence != null) {
+            if (isContinuationCall != null && isContinuationCall) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Response received for the Continuation Call service invocation");
+                }
+                return mediateFromContinuationStateStack(synCtx);
+            } else if (receivingSequence != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using Sequence with name: " + receivingSequence
                             + " for injected message");
@@ -280,7 +278,12 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
 
             Mediator outSequence = getProxyOutSequence(synCtx, proxyService);
-            if (receivingSequence != null) {
+            if (isContinuationCall != null && isContinuationCall) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Response received for the Continuation Call service invocation");
+                }
+                return mediateFromContinuationStateStack(synCtx);
+            } else if (receivingSequence != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using Sequence with name: " + receivingSequence
                             + " for injected message");

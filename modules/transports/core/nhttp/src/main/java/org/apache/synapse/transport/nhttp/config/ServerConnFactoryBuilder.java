@@ -57,37 +57,38 @@ import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
 
 public class ServerConnFactoryBuilder {
-    
+
     private final Log log = LogFactory.getLog(ServerConnFactoryBuilder.class);
 
     private final TransportInDescription transportIn;
     private final HttpHost host;
     private final String name;
 
-    private SSLContextDetails ssl;
+    protected SSLContextDetails ssl;
     private Map<InetSocketAddress, SSLContextDetails> sslByIPMap = null;
-    
+
     public ServerConnFactoryBuilder(final TransportInDescription transportIn, final HttpHost host) {
         this.transportIn = transportIn;
         this.host = host;
         this.name = transportIn.getName().toUpperCase(Locale.US);
     }
 
-    private SSLContextDetails createSSLContext(
-        final OMElement keyStoreEl, 
-        final OMElement trustStoreEl,
-        final OMElement cientAuthEl,
-            final OMElement httpsProtocolsEl,
-            final RevocationVerificationManager verificationManager) throws AxisFault {
+    protected SSLContextDetails createSSLContext(
+               final OMElement keyStoreEl,
+               final OMElement trustStoreEl,
+               final OMElement cientAuthEl,
+               final OMElement httpsProtocolsEl,
+               final RevocationVerificationManager verificationManager,
+               final String sslProtocol) throws AxisFault {
 
         KeyManager[] keymanagers  = null;
         TrustManager[] trustManagers = null;
 
         if (keyStoreEl != null) {
-            String location      = keyStoreEl.getFirstChildWithName(new QName("Location")).getText();
-            String type          = keyStoreEl.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = keyStoreEl.getFirstChildWithName(new QName("Password")).getText();
-            String keyPassword   = keyStoreEl.getFirstChildWithName(new QName("KeyPassword")).getText();
+            String location      = getValueOfElementWithLocalName(keyStoreEl,"Location");
+            String type          = getValueOfElementWithLocalName(keyStoreEl,"Type");
+            String storePassword = getValueOfElementWithLocalName(keyStoreEl,"Password");
+            String keyPassword   = getValueOfElementWithLocalName(keyStoreEl, "KeyPassword");
 
             FileInputStream fis = null;
             try {
@@ -100,7 +101,7 @@ public class ServerConnFactoryBuilder {
                 keyStore.load(fis, storePassword.toCharArray());
 
                 KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                    KeyManagerFactory.getDefaultAlgorithm());
+                           KeyManagerFactory.getDefaultAlgorithm());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
                 keymanagers = kmfactory.getKeyManagers();
                 if (log.isInfoEnabled() && keymanagers != null) {
@@ -137,9 +138,9 @@ public class ServerConnFactoryBuilder {
         }
 
         if (trustStoreEl != null) {
-            String location      = trustStoreEl.getFirstChildWithName(new QName("Location")).getText();
-            String type          = trustStoreEl.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = trustStoreEl.getFirstChildWithName(new QName("Password")).getText();
+            String location      = getValueOfElementWithLocalName(trustStoreEl, "Location");
+            String type          = getValueOfElementWithLocalName(trustStoreEl, "Type");
+            String storePassword = getValueOfElementWithLocalName(trustStoreEl, "Password");
 
             FileInputStream fis = null;
             try {
@@ -151,7 +152,7 @@ public class ServerConnFactoryBuilder {
 
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                    TrustManagerFactory.getDefaultAlgorithm());
+                           TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
 
@@ -178,10 +179,10 @@ public class ServerConnFactoryBuilder {
         } else {
             clientAuth = null;
         }
-        
+
         String[] httpsProtocols = null;
         final String configuredHttpsProtocols =
-                                httpsProtocolsEl != null ? httpsProtocolsEl.getText() : null;
+                   httpsProtocolsEl != null ? httpsProtocolsEl.getText() : null;
         if (configuredHttpsProtocols != null && configuredHttpsProtocols.trim().length() != 0) {
             String[] configuredValues = configuredHttpsProtocols.trim().split(",");
             List<String> protocolList = new ArrayList<String>(configuredValues.length);
@@ -193,18 +194,17 @@ public class ServerConnFactoryBuilder {
 
             httpsProtocols = protocolList.toArray(new String[protocolList.size()]);
         }
-        
-        
+
+
         try {
-            final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
-            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
-            SSLContext sslContext = SSLContext.getInstance(sslProtocol);
+            final String sslProtocolValue = sslProtocol != null ? sslProtocol : "TLS";
+            SSLContext sslContext = SSLContext.getInstance(sslProtocolValue);
             sslContext.init(keymanagers, trustManagers, null);
-            
+
             ServerSSLSetupHandler sslSetupHandler =
-                               (clientAuth != null || httpsProtocols != null) ?
-                                         new ServerSSLSetupHandler(clientAuth,httpsProtocols,verificationManager) : null;
-            
+                       (clientAuth != null || httpsProtocols != null) ?
+                       new ServerSSLSetupHandler(clientAuth,httpsProtocols,verificationManager) : null;
+
             return new SSLContextDetails(sslContext, sslSetupHandler);
         } catch (GeneralSecurityException gse) {
             log.error(name + " Unable to create SSL context with the given configuration", gse);
@@ -217,14 +217,16 @@ public class ServerConnFactoryBuilder {
         Parameter trustParam = transportIn.getParameter("truststore");
         Parameter clientAuthParam = transportIn.getParameter("SSLVerifyClient");
         Parameter httpsProtocolsParam = transportIn.getParameter("HttpsProtocols");
+        final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
+        final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
         OMElement keyStoreEl = keyParam != null ? keyParam.getParameterElement().getFirstElement() : null;
         OMElement trustStoreEl = trustParam != null ? trustParam.getParameterElement().getFirstElement() : null;
         OMElement clientAuthEl = clientAuthParam != null ? clientAuthParam.getParameterElement() : null;
         OMElement httpsProtocolsEl = httpsProtocolsParam != null ? httpsProtocolsParam.getParameterElement() : null;
-        
+
         final Parameter cvp = transportIn.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
-                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
+                                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
         RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
@@ -239,11 +241,11 @@ public class ServerConnFactoryBuilder {
             catch (NumberFormatException e) {}
             revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
-        
-        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, revocationVerifier);
+
+        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, revocationVerifier, sslProtocol);
         return this;
     }
-    
+
     public ServerConnFactoryBuilder parseMultiProfileSSL() throws AxisFault {
 
         TransportInDescription loadedTransportIn = loadMultiProfileSSLConfig();
@@ -262,12 +264,14 @@ public class ServerConnFactoryBuilder {
                 throw new AxisFault(msg);
             }
             InetSocketAddress address = new InetSocketAddress(bindAddressEl.getText(), host.getPort());
-            
+
             OMElement keyStoreEl = profileEl.getFirstChildWithName(new QName("KeyStore"));
             OMElement trustStoreEl = profileEl.getFirstChildWithName(new QName("TrustStore"));
             OMElement clientAuthEl = profileEl.getFirstChildWithName(new QName("SSLVerifyClient"));
             OMElement httpsProtocolsEl = profileEl.getFirstChildWithName(new QName("HttpsProtocols"));
-            SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl,httpsProtocolsEl,null);
+            final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
+            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
+            SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, null, sslProtocol);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }
@@ -298,7 +302,7 @@ public class ServerConnFactoryBuilder {
         try {
             if(path!=null) {
                 String separator = path.startsWith(System.getProperty("file.separator"))?
-                        "":System.getProperty("file.separator");
+                                   "":System.getProperty("file.separator");
                 String fullPath = System.getProperty("user.dir")+ separator +path;
                 OMElement profileEl = new StAXOMBuilder(fullPath).getDocumentElement();
                 Parameter profileParam = new Parameter();
@@ -322,6 +326,16 @@ public class ServerConnFactoryBuilder {
         } else {
             return new ServerConnFactory(params);
         }
+    }
+
+    private String getValueOfElementWithLocalName(OMElement element, String localName) {
+        Iterator iterator = element.getChildrenWithLocalName(localName);
+        String value = null;
+        Object obj = iterator.next();
+        if (obj instanceof OMElement) {
+            value = ((OMElement) obj).getText();
+        }
+        return value;
     }
 
 }
