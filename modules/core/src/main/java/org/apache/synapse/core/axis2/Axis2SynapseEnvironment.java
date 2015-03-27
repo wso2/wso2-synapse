@@ -45,12 +45,14 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.FailoverEndpointOnHttpStatusCode;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.RESTRequestHandler;
 import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.concurrent.InboundThreadPool;
 import org.apache.synapse.util.concurrent.SynapseThreadPool;
@@ -83,100 +85,137 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
 
-    /** The StatisticsCollector object */
+    /**
+     * The StatisticsCollector object
+     */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
 
     private ServerContextInformation contextInformation;
 
-    /** Map containing Xpath Function Context Extensions */
+    /**
+     * Map containing Xpath Function Context Extensions
+     */
     Map<QName, SynapseXpathFunctionContextProvider> xpathFunctionExtensions =
             new HashMap<QName, SynapseXpathFunctionContextProvider>();
 
-    /** Map containing Xpath Variable Context Extensions */
+    /**
+     * Map containing Xpath Variable Context Extensions
+     */
     Map<QName, SynapseXpathVariableResolver> xpathVariableExtensions =
             new HashMap<QName, SynapseXpathVariableResolver>();
 
-    /** Tenant info configurator */
+    /**
+     * Tenant info configurator
+     */
     TenantInfoConfigurator tenantInfoConfigurator;
 
-    /** Call mediators count */
+    /**
+     * Call mediators count
+     */
     private int callMediatorCount = 0;
 
-    /** Continuation is enabled/disabled*/
+    /**
+     * Continuation is enabled/disabled
+     */
     private boolean continuation = false;
 
-    /** Unavailable Artifacts referred in the configuration */
+    /**
+     * Unavailable Artifacts referred in the configuration
+     */
     private List<String> unavailableArtifacts = new ArrayList<String>();
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
         int coreThreads = SynapseThreadPool.SYNAPSE_CORE_THREADS;
-        int maxThreads  = SynapseThreadPool.SYNAPSE_MAX_THREADS;
-        long keepAlive  = SynapseThreadPool.SYNAPSE_KEEP_ALIVE;
-        int qLength     = SynapseThreadPool.SYNAPSE_THREAD_QLEN;
+        int maxThreads = SynapseThreadPool.SYNAPSE_MAX_THREADS;
+        long keepAlive = SynapseThreadPool.SYNAPSE_KEEP_ALIVE;
+        int qLength = SynapseThreadPool.SYNAPSE_THREAD_QLEN;
 
         try {
             qLength = Integer.parseInt(synCfg.getProperty(SynapseThreadPool.SYN_THREAD_QLEN));
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         try {
             coreThreads = Integer.parseInt(synCfg.getProperty(SynapseThreadPool.SYN_THREAD_CORE));
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         try {
             maxThreads = Integer.parseInt(synCfg.getProperty(SynapseThreadPool.SYN_THREAD_MAX));
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         try {
             keepAlive = Long.parseLong(synCfg.getProperty(SynapseThreadPool.SYN_THREAD_ALIVE));
-        } catch (Exception ignore) {}
+        } catch (Exception ignore) {
+        }
 
         this.executorService = new SynapseThreadPool(coreThreads, maxThreads, keepAlive, qLength,
-            synCfg.getProperty(SynapseThreadPool.SYN_THREAD_GROUP,
-                SynapseThreadPool.SYNAPSE_THREAD_GROUP),
-            synCfg.getProperty(SynapseThreadPool.SYN_THREAD_IDPREFIX,
-                SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX));
+                synCfg.getProperty(SynapseThreadPool.SYN_THREAD_GROUP,
+                        SynapseThreadPool.SYNAPSE_THREAD_GROUP),
+                synCfg.getProperty(SynapseThreadPool.SYN_THREAD_IDPREFIX,
+                        SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX));
 
-		int ibCoreThreads = InboundThreadPool.INBOUND_CORE_THREADS;
-		int ibMaxThreads = InboundThreadPool.INBOUND_MAX_THREADS;
+        int ibCoreThreads = InboundThreadPool.INBOUND_CORE_THREADS;
+        int ibMaxThreads = InboundThreadPool.INBOUND_MAX_THREADS;
 
-		try {
-			ibCoreThreads = Integer.parseInt(synCfg.getProperty(InboundThreadPool.IB_THREAD_CORE));
-		} catch (Exception ignore) {
-		}
+        try {
+            ibCoreThreads = Integer.parseInt(synCfg.getProperty(InboundThreadPool.IB_THREAD_CORE));
+        } catch (Exception ignore) {
+        }
 
-		try {
-			ibMaxThreads = Integer.parseInt(synCfg.getProperty(InboundThreadPool.IB_THREAD_MAX));
-		} catch (Exception ignore) {
-		}
+        try {
+            ibMaxThreads = Integer.parseInt(synCfg.getProperty(InboundThreadPool.IB_THREAD_MAX));
+        } catch (Exception ignore) {
+        }
 
-		this.executorServiceInbound =
-		                              new InboundThreadPool(
-		                                                    ibCoreThreads,
-		                                                    ibMaxThreads,
-		                                                    InboundThreadPool.INBOUND_KEEP_ALIVE,
-		                                                    InboundThreadPool.INBOUND_THREAD_QLEN,
-		                                                    InboundThreadPool.INBOUND_THREAD_GROUP,
-		                                                    InboundThreadPool.INBOUND_THREAD_ID_PREFIX);
+        this.executorServiceInbound =
+                new InboundThreadPool(
+                        ibCoreThreads,
+                        ibMaxThreads,
+                        InboundThreadPool.INBOUND_KEEP_ALIVE,
+                        InboundThreadPool.INBOUND_THREAD_QLEN,
+                        InboundThreadPool.INBOUND_THREAD_GROUP,
+                        InboundThreadPool.INBOUND_THREAD_ID_PREFIX);
 
         taskManager = new SynapseTaskManager();
         restHandler = new RESTRequestHandler();
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
-        SynapseConfiguration synapseConfig) {
+                                   SynapseConfiguration synapseConfig) {
         this(synapseConfig);
         this.configContext = cfgCtx;
         this.synapseConfig = synapseConfig;
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
-        SynapseConfiguration synapseConfig, ServerContextInformation contextInformation) {
+                                   SynapseConfiguration synapseConfig, ServerContextInformation contextInformation) {
         this(cfgCtx, synapseConfig);
         this.contextInformation = contextInformation;
     }
 
     public boolean injectMessage(final MessageContext synCtx) {
+
+
+        /**Calls registered fault handler on failover situation*/
+        if (synCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX) != null && (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)) != null) {
+
+            if ((Integer) (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)) > 300) {
+
+                MessageContext mc = (MessageContext) synCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX);
+
+                Object o = mc.getFaultStack().pop();
+                if (o != null) {
+                    mc.setProperty(NhttpConstants.HTTP_SC, (Integer) (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)));
+                    ((FaultHandler) o).handleFault(mc);
+                }
+                return false;
+            }
+        }
+
+
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext");
         }
@@ -198,8 +237,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                         "pre-mediate state using the mandatory sequence");
             }
 
-            if(!mandatorySeq.mediate(synCtx)) {
-                if(log.isDebugEnabled()) {
+            if (!mandatorySeq.mediate(synCtx)) {
+                if (log.isDebugEnabled()) {
                     log.debug((synCtx.isResponse() ? "Response" : "Request") + " message for the "
                             + (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null ?
                             "proxy service " + synCtx.getProperty(SynapseConstants.PROXY_SERVICE) :
@@ -266,8 +305,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     synCtx.pushFaultHandler(new MediatorFaultHandler(faultSequence));
                 } else {
                     log.warn("Cloud not find any fault-sequence named :" +
-                                proxyService.getTargetFaultSequence() + "; Setting the default" +
-                                " fault sequence for out path");
+                            proxyService.getTargetFaultSequence() + "; Setting the default" +
+                            " fault sequence for out path");
                     synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
                 }
 
@@ -310,26 +349,23 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
-                + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
+                    + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
         synCtx.setEnvironment(this);
         executorService.execute(new MediatorWorker(seq, synCtx));
     }
 
     /**
-     * 
      * Used by inbound polling endpoints to inject the message to synapse engine
-     * 
+     *
      * @param MessageContext
      * @param SequenceMediator
      * @param sequential
      * @return Boolean - Indicate if were able to inject the message
-     * @throws SynapseException
-     *             - in case error occured during the mediation
-     * 
+     * @throws SynapseException - in case error occured during the mediation
      */
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
-            boolean sequential) throws SynapseException {
+                                 boolean sequential) throws SynapseException {
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
@@ -380,13 +416,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         return false;
     }
-    
+
     /**
      * This will be used for sending the message provided, to the endpoint specified by the
      * EndpointDefinition using the axis2 environment.
      *
      * @param endpoint - EndpointDefinition to be used to find the endpoint information
-     *                      and the properties of the sending process
+     *                 and the properties of the sending process
      * @param synCtx   - Synapse MessageContext to be sent
      */
     public void send(EndpointDefinition endpoint, MessageContext synCtx) {
@@ -460,9 +496,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         MessageContext mc = new Axis2MessageContext(axis2MC, synapseConfig, this);
         mc.setMessageID(UIDGenerator.generateURNString());
         try {
-			mc.setEnvelope(OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope());
-			mc.getEnvelope().addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
-		} catch (Exception e) {
+            mc.setEnvelope(OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope());
+            mc.getEnvelope().addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+        } catch (Exception e) {
             handleException("Unable to attach the SOAP envelope to " +
                     "the created new message context", e);
         }
@@ -570,7 +606,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /**
      * Retrieve the {@link org.apache.synapse.ServerContextInformation} from the <code>environment.
-     * 
+     *
      * @return ServerContextInformation of the environment
      */
     public ServerContextInformation getServerContextInformation() {
@@ -588,6 +624,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /**
      * Returns all declared xpath Function Extensions
+     *
      * @return Hash Map Containing Function Extensions with supported QName keys
      */
     public Map<QName, SynapseXpathFunctionContextProvider> getXpathFunctionExtensions() {
@@ -596,6 +633,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /**
      * Returns all declared xpath Variable Extensions
+     *
      * @return Hash Map Containing Variable Extensions with supported QName keys
      */
     public Map<QName, SynapseXpathVariableResolver> getXpathVariableExtensions() {
@@ -606,17 +644,17 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return tenantInfoConfigurator;
     }
 
-    public void setXpathFunctionExtensions(SynapseXpathFunctionContextProvider functionExt){
-         if(functionExt!=null) {
-             xpathFunctionExtensions.put(functionExt.getResolvingQName(), functionExt);
-         }
+    public void setXpathFunctionExtensions(SynapseXpathFunctionContextProvider functionExt) {
+        if (functionExt != null) {
+            xpathFunctionExtensions.put(functionExt.getResolvingQName(), functionExt);
+        }
     }
 
 
-    public void setXpathVariableExtensions(SynapseXpathVariableResolver variableExt){
-         if(variableExt!=null) {
-             xpathVariableExtensions.put(variableExt.getResolvingQName(), variableExt);
-         }
+    public void setXpathVariableExtensions(SynapseXpathVariableResolver variableExt) {
+        if (variableExt != null) {
+            xpathVariableExtensions.put(variableExt.getResolvingQName(), variableExt);
+        }
     }
 
     public void setTenantInfoConfigurator(TenantInfoConfigurator configurator) {
@@ -625,9 +663,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
     }
 
-     /**
+    /**
      * When request is sent using a Call Mediator, mediate the response message using the
      * ContinuationState Stack
+     *
      * @param synCtx MessageContext
      * @return whether mediation is completed
      */
@@ -798,7 +837,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public synchronized void clearUnavailabilityOfArtifact(String key) {
         if (!unavailableArtifacts.contains(key)) {
-           return;
+            return;
         }
 
         for (Iterator<String> itr = unavailableArtifacts.iterator(); itr.hasNext(); ) {
@@ -812,7 +851,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
-                    + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
+                    + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
         smc.setEnvironment(this);
         try {

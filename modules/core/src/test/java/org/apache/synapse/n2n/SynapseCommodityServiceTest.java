@@ -59,10 +59,10 @@ public class SynapseCommodityServiceTest extends TestCase {
                 "./../../repository/conf/axis2.xml");
 
         findAndReplace(
-            new File("./../../repository/conf/axis2_pt_server.xml"),
-            new File("./target/test_repos/axis2.xml"),
-            "lib/", "./../../modules/distribution/src/main/conf/");
-        
+                new File("./../../repository/conf/axis2_pt_server.xml"),
+                new File("./target/test_repos/axis2.xml"),
+                "lib/", "./../../modules/distribution/src/main/conf/");
+
         findAndReplace(
                 new File("./../../repository/conf/axis2_be_server.xml"),
                 new File("./target/test_repos/axis2_be_server.xml"),
@@ -89,11 +89,11 @@ public class SynapseCommodityServiceTest extends TestCase {
         serverManager.start();
 
         // Initializing Business Endpoint
-        
+
         // Set a different agent name to avoid collisions between the MBeans registered
         // by the two servers.
         System.setProperty("jmx.agent.name", "business");
-        
+
         ConfigurationContext businessConfigCtx = ConfigurationContextFactory
                 .createConfigurationContextFromFileSystem(
                         "./target/test_repos/synapse",
@@ -115,14 +115,14 @@ public class SynapseCommodityServiceTest extends TestCase {
                 org.apache.axis2.description.WSDL2Constants.MEP_URI_IN_OUT,
                 inOutmessageReceiver);
         messageReciverMap.put(org.apache.axis2.description.WSDL2Constants.MEP_URI_ROBUST_IN_ONLY,
-            inOutmessageReceiver);
+                inOutmessageReceiver);
 
         AxisService businessService =
                 AxisService.createService(Services.class.getName(),
-                                          businessConfigCtx.getAxisConfiguration(),
-                                          messageReciverMap,
-                                          "http://business.org", "http://business.org",
-                                          Services.class.getClassLoader());
+                        businessConfigCtx.getAxisConfiguration(),
+                        messageReciverMap,
+                        "http://business.org", "http://business.org",
+                        Services.class.getClassLoader());
         businessConfigCtx.getAxisConfiguration().addService(businessService);
 
         TransportInDescription busTrsIn =
@@ -145,11 +145,11 @@ public class SynapseCommodityServiceTest extends TestCase {
         }
 
         Iterator iter = configctx.getAxisConfiguration().
-            getTransportsIn().keySet().iterator();
+                getTransportsIn().keySet().iterator();
         while (iter.hasNext()) {
             String trp = (String) iter.next();
             TransportInDescription trsIn =
-                configctx.getAxisConfiguration().getTransportsIn().get(trp);
+                    configctx.getAxisConfiguration().getTransportsIn().get(trp);
             listenerManager.addListener(trsIn, false);
         }
     }
@@ -170,12 +170,12 @@ public class SynapseCommodityServiceTest extends TestCase {
         assertNotNull(response);
 
         SynapseXPath xPath = new SynapseXPath("//return");
-        xPath.addNamespace("ns","http://services.samples/xsd");
+        xPath.addNamespace("ns", "http://services.samples/xsd");
         OMElement returnEle = (OMElement) xPath.selectSingleNode(response);
 
         assertNotNull(returnEle);
 
-        assertEquals(returnEle.getText().trim(),"100");
+        assertEquals(returnEle.getText().trim(), "100");
 
 
     }
@@ -203,7 +203,7 @@ public class SynapseCommodityServiceTest extends TestCase {
             StringBuffer buffer = new StringBuffer(1024);
             reader = new BufferedReader(new FileReader(srcFile));
             String line = null;
-            while( (line = reader.readLine()) != null){
+            while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 buffer.append(line + "\n");
             }
@@ -221,7 +221,8 @@ public class SynapseCommodityServiceTest extends TestCase {
                 if (writer != null) {
                     writer.close();
                 }
-            } catch (IOException ignore) {}
+            } catch (IOException ignore) {
+            }
         }
     }
 }

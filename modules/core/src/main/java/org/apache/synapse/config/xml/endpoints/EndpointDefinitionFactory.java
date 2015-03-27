@@ -301,12 +301,8 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             }
         }
 
-        //###################################################################################################
-
         OMElement statusCodesElement = elem.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,"failoverHttpStatusCodes"));
         if(statusCodesElement!=null){
-           // definition.setStatusCodes(statusCodesElement.getText());
-           // definition.setFailoverHttpStatusCodes(statusCodesElement.getText());
             StringTokenizer st = new StringTokenizer(
                     statusCodesElement.getText().trim(), ", ");
             while (st.hasMoreTokens()) {
@@ -320,8 +316,6 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 }
             }
         }
-
-        //###################################################################################################
 
         OMElement retryConfig = elem.getFirstChildWithName(new QName(
             SynapseConstants.SYNAPSE_NAMESPACE, XMLConfigConstants.RETRY_CONFIG));

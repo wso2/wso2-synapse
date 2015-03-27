@@ -5,7 +5,10 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
+import javax.xml.soap.SOAPEnvelope;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,17 +22,19 @@ import java.util.Map;
  */
 public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
 
-
-    /**
-     * All configured endpoints
-     */
-    List<Endpoint> endpointList = null;
     /**
      * Last endpoint index
      */
     int index;
 
     public void send(MessageContext synCtx) {
+
+        List<Endpoint> endpointList = null;
+
+        /**Get endpoint list from MC*/
+        if (synCtx.getProperty(SynapseConstants.ENDPOINT_LIST) != null) {
+            endpointList = (List<Endpoint>) synCtx.getProperty(SynapseConstants.ENDPOINT_LIST);
+        }
 
         Map<String, Integer> mEndpointLog = null;
         if (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) == null) {
@@ -57,13 +62,9 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
 
             if (nextEndpoint.readyToSend()) {
 
-
                 if (metricsMBean != null) {
                     metricsMBean.reportSendingFault(SynapseConstants.ENDPOINT_FO_FAIL_OVER);
                 }
-
-                // synCtx.setProperty("INDEX", i);
-
 
                 synCtx.pushFaultHandler(this);
                 if (nextEndpoint instanceof AbstractEndpoint) {
@@ -98,76 +99,17 @@ public class FailoverEndpointOnHttpStatusCode extends FailoverEndpoint {
                     log.debug(this + " Send message to the next endpoint");
                 }
 
-                /**If this endpoint support http status codes we need to clone the message*/
-                if (((AbstractEndpoint) nextEndpoint).getDefinition().getFailoverHttpstatusCodes() != null) {
-                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
-                } else {
-                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
-                }
+                synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 0);
 
-                /**Set the postion of current endpoint*/
+                /**Set the position of current endpoint*/
                 synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, i);
+
+                synCtx.setProperty(SynapseConstants.CLONED_SYN_MSG_CTX, synCtx);
 
                 nextEndpoint.send(synCtx);
                 break;
             }
             i++;
         }
-    }
-
-    /**
-     * Everytime a response message is received this method gets invoked if the response http status code is
-     * larger than 500 and failover enabled according the http status in the message context.
-     * the incoming Synapse message context for the reply we received, and determine what action
-     * to take according to the synapse configurations of the endpoint and the http status code
-     * of the response
-     *
-     * @param msgHttpStatus the response http status code
-     * @param synMC         response Synapse message context
-     */
-
-    public void resend(String msgHttpStatus, MessageContext synMC) {
-
-        /**Get last endpoint index from MC*/
-        if (synMC.getProperty(SynapseConstants.ENDPOINT_INDEX) != null) {
-            index = (Integer) synMC.getProperty(SynapseConstants.ENDPOINT_INDEX);
-        }
-        /**Get endpoint list from MC*/
-        if (synMC.getProperty(SynapseConstants.ENDPOINT_LIST) != null) {
-            endpointList = (List<Endpoint>) synMC.getProperty(SynapseConstants.ENDPOINT_LIST);
-        }
-
-        /**Check whether there is a next endpoint*/
-        if (endpointList.size() > 1) {
-
-            /**Last endpoint*/
-            Endpoint lastEndpoint = endpointList.get(index);
-
-            /**Get http status of the endpoint*/
-            List<Integer> lastEndpointHttpStatus = ((AbstractEndpoint) lastEndpoint).getDefinition().getFailoverHttpstatusCodes();
-
-            if (!lastEndpointHttpStatus.isEmpty()) {
-                for (int endpointHttpStatus : lastEndpointHttpStatus) {
-                    /**If msg http status and endpoint http status matching send*/
-                    if (Integer.parseInt(msgHttpStatus) == endpointHttpStatus) {
-                        if (log.isDebugEnabled()) {
-                            log.debug(this + " Calling send message");
-                        }
-                        /**Send message if last endpoint configured for http status codes*/
-                        this.send(synMC);
-                        break;
-                    }
-                }
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug(this + " No failover status codes for the endpoint");
-                }
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug(this + " There is no next endpoint");
-            }
-        }
-
     }
 }

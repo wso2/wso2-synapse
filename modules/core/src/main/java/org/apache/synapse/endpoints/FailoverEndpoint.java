@@ -19,9 +19,13 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.axis2.addressing.EndpointReference;
+import org.apache.axis2.clustering.Member;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 
@@ -41,10 +45,14 @@ import java.util.Map;
  */
 public class FailoverEndpoint extends AbstractEndpoint {
 
-    /** Endpoint for which is currently used */
+    /**
+     * Endpoint for which is currently used
+     */
     private Endpoint currentEndpoint = null;
 
-    /** The fail-over mode supported by this endpoint. By default we do dynamic fail-over */
+    /**
+     * The fail-over mode supported by this endpoint. By default we do dynamic fail-over
+     */
     private boolean dynamic = true;
 
     public void send(MessageContext synCtx) {
@@ -52,26 +60,26 @@ public class FailoverEndpoint extends AbstractEndpoint {
         if (log.isDebugEnabled()) {
             log.debug("Failover Endpoint : " + getName());
         }
-        
-       if (getContext().isState(EndpointContext.ST_OFF)) {
+
+        if (getContext().isState(EndpointContext.ST_OFF)) {
             informFailure(synCtx, SynapseConstants.ENDPOINT_FO_NONE_READY,
                     "Failover endpoint : " + getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT + " - is inactive");
             return;
         }
 
         boolean isARetry = false;
-        Map<String,Integer>mEndpointLog = null;
+        Map<String, Integer> mEndpointLog = null;
         if (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) == null) {
             if (log.isDebugEnabled()) {
                 log.debug(this + " Building the SoapEnvelope");
             }
             // If not yet a retry, we have to build the envelope since we need to support failover
             synCtx.getEnvelope().build();
-            mEndpointLog = new HashMap<String,Integer>();
-            synCtx.setProperty(SynapseConstants.ENDPOINT_LOG, mEndpointLog);            
+            mEndpointLog = new HashMap<String, Integer>();
+            synCtx.setProperty(SynapseConstants.ENDPOINT_LOG, mEndpointLog);
         } else {
             isARetry = true;
-            mEndpointLog = (Map<String,Integer>)synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
+            mEndpointLog = (Map<String, Integer>) synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
         }
 
         if (getChildren().isEmpty()) {
@@ -89,7 +97,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
         // evaluate the endpoint properties
         evaluateProperties(synCtx);
-        
+
         if (dynamic) {
             // Dynamic fail-over mode - Switch to a backup endpoint when an error occurs
             // in the primary endpoint. But switch back to the primary as soon as it becomes
@@ -105,38 +113,42 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
                     /**This request message context will be cloned at Axis2FlexibleMEPClient*/
                     synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
+                    //Write entire input stream to MC SoapEnvelop
+                    synCtx.getEnvelope().buildWithAttachments();
                     /**This property will use to index the endpoints*/
                     synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, endpointIndex++);
                     /**List of endpoints*/
                     synCtx.setProperty(SynapseConstants.ENDPOINT_LIST, endpoints);
 
-
                     foundEndpoint = true;
                     if (isARetry && metricsMBean != null) {
                         metricsMBean.reportSendingFault(SynapseConstants.ENDPOINT_FO_FAIL_OVER);
                     }
-                    synCtx.pushFaultHandler(this);
-                    if(endpoint instanceof AbstractEndpoint){
-                    	org.apache.axis2.context.MessageContext axisMC = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-                    	Pipe pipe = (Pipe) axisMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-                    	if(pipe != null){
-                    		 pipe.forceSetSerializationRest();
-                    	}
-                    	//allow the message to be content aware if the given message comes via PT
-						if (axisMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null) {
-							((AbstractEndpoint) endpoint).setContentAware(true);
-							((AbstractEndpoint) endpoint).setForceBuildMC(true);
-							
-							if(endpoint instanceof TemplateEndpoint && ((TemplateEndpoint)endpoint).getRealEndpoint() != null){
-								if(((TemplateEndpoint)endpoint).getRealEndpoint() instanceof AbstractEndpoint){
-									((AbstractEndpoint)((TemplateEndpoint)endpoint).getRealEndpoint()).setContentAware(true);
-									((AbstractEndpoint)((TemplateEndpoint)endpoint).getRealEndpoint()).setForceBuildMC(true);
-								}
-							}
-						}
+
+                    FailoverFaultHandler failoverFaultHandler = new FailoverFaultHandler();
+                    synCtx.pushFaultHandler(failoverFaultHandler);
+
+                    if (endpoint instanceof AbstractEndpoint) {
+                        org.apache.axis2.context.MessageContext axisMC = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                        Pipe pipe = (Pipe) axisMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+                        if (pipe != null) {
+                            pipe.forceSetSerializationRest();
+                        }
+                        //allow the message to be content aware if the given message comes via PT
+                        if (axisMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null) {
+                            ((AbstractEndpoint) endpoint).setContentAware(true);
+                            ((AbstractEndpoint) endpoint).setForceBuildMC(true);
+
+                            if (endpoint instanceof TemplateEndpoint && ((TemplateEndpoint) endpoint).getRealEndpoint() != null) {
+                                if (((TemplateEndpoint) endpoint).getRealEndpoint() instanceof AbstractEndpoint) {
+                                    ((AbstractEndpoint) ((TemplateEndpoint) endpoint).getRealEndpoint()).setContentAware(true);
+                                    ((AbstractEndpoint) ((TemplateEndpoint) endpoint).getRealEndpoint()).setForceBuildMC(true);
+                                }
+                            }
+                        }
                     }
-                    if(endpoint.getName() != null){
-                    	mEndpointLog.put(endpoint.getName(), null);
+                    if (endpoint.getName() != null) {
+                        mEndpointLog.put(endpoint.getName(), null);
                     }
                     endpoint.send(synCtx);
                     break;
@@ -195,7 +207,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
     public void onChildEndpointFail(Endpoint endpoint, MessageContext synMessageContext) {
         logOnChildEndpointFail(endpoint, synMessageContext);
-        if (((AbstractEndpoint)endpoint).isRetry(synMessageContext)) {
+        if (((AbstractEndpoint) endpoint).isRetry(synMessageContext)) {
             if (log.isDebugEnabled()) {
                 log.debug(this + " Retry Attempt for Request with [Message ID : " +
                         synMessageContext.getMessageID() + "], [To : " +
@@ -232,5 +244,61 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
     public void setDynamic(boolean dynamic) {
         this.dynamic = dynamic;
+    }
+
+
+    private class FailoverFaultHandler extends FaultHandler {
+
+
+        public void onFault(MessageContext synCtx) {
+
+            FailoverEndpointOnHttpStatusCode failoverEndpointOnHttpStatusCode = new FailoverEndpointOnHttpStatusCode();
+            List<Endpoint> endpointList = null;
+            int index = 0;
+            /**Get last endpoint index from MC*/
+            if (synCtx.getProperty(SynapseConstants.ENDPOINT_INDEX) != null) {
+                index = (Integer) synCtx.getProperty(SynapseConstants.ENDPOINT_INDEX);
+
+            }
+
+            /**Get endpoint list from MC*/
+            if (synCtx.getProperty(SynapseConstants.ENDPOINT_LIST) != null) {
+                endpointList = (List<Endpoint>) synCtx.getProperty(SynapseConstants.ENDPOINT_LIST);
+            }
+
+            /**Check whether there is a next endpoint*/
+            if (endpointList.size() > 1) {
+
+                /**Last endpoint*/
+                Endpoint lastEndpoint = endpointList.get(index);
+
+                /**Get http status of the endpoint*/
+                List<Integer> lastEndpointHttpStatus = ((AbstractEndpoint) lastEndpoint).getDefinition().getFailoverHttpstatusCodes();
+
+                if (!lastEndpointHttpStatus.isEmpty()) {
+                    for (int endpointHttpStatus : lastEndpointHttpStatus) {
+                        /**If msg http status and endpoint http status matching send*/
+
+                        if ((Integer) synCtx.getProperty(NhttpConstants.HTTP_SC) == endpointHttpStatus) {
+                            if (log.isDebugEnabled()) {
+                                log.debug(this + " Calling send message");
+                            }
+                            /**Send message if last endpoint configured for http status codes*/
+                            failoverEndpointOnHttpStatusCode.send(synCtx);
+                            break;
+                        }
+                    }
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug(this + " No failover status codes for this endpoint");
+                    }
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug(this + " There is no next endpoint");
+                }
+            }
+
+        }
     }
 }
