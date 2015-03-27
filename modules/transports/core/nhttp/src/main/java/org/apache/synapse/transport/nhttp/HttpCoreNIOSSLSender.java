@@ -22,8 +22,9 @@ package org.apache.synapse.transport.nhttp;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
 
-public class HttpCoreNIOSSLSender extends HttpCoreNIOSender{
+public class HttpCoreNIOSSLSender extends HttpCoreNIOSender implements SSLProfileLoader {
 
     @Override
     protected ClientConnFactoryBuilder initConnFactoryBuilder(

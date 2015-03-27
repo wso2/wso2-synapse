@@ -825,4 +825,8 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
         }
         return "";
     }
+
+    //todo-Jagath
+    public void reloadConfig(){
+    }
 }

@@ -26,6 +26,7 @@ import org.apache.http.HttpHost;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 import org.apache.synapse.transport.nhttp.util.MultiSSLProfileReloader;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
 
 public class HttpCoreNIOMultiSSLListener extends HttpCoreNIOListener {
 

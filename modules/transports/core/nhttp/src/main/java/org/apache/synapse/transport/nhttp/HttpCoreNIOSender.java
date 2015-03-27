@@ -39,6 +39,7 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.handlers.AbstractHandler;
 import org.apache.axis2.transport.MessageFormatter;
@@ -81,6 +82,7 @@ import org.apache.synapse.transport.nhttp.debug.ServerConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
 
 
 /**
@@ -955,6 +957,10 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             return System.currentTimeMillis() - metrics.getLastResetTime();
         }
         return -1;
+    }
+
+    //todo-Jagath
+    public void reloadConfig(SSLProfileLoader profileLoader, ParameterInclude transport){
     }
 
 }

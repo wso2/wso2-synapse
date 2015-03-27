@@ -53,6 +53,7 @@ import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
 import org.apache.synapse.transport.nhttp.config.ProxyConfigBuilder;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
@@ -608,6 +609,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     private void handleException(String msg) throws AxisFault {
         log.error(msg);
         throw new AxisFault(msg);
+    }
+
+    //todo-Jagath
+    public void reloadConfig(SSLProfileLoader profileLoader, TransportOutDescription transport){
     }
 
 }
