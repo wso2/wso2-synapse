@@ -112,6 +112,7 @@ public class RabbitmqProducer implements MessageProducer {
 			//building AMQP message
 			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
+			builder.deliveryMode(2);
 			channel = connection.createChannel();
 			if (exchangeName == null) {
 				channel.basicPublish("", queueName, builder.build(), byteForm);
