@@ -160,6 +160,8 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
             }
         }
 
+        addAllCommentChildrenToList(elem, cache.getCommentsList());
+
         return cache;
     }
 

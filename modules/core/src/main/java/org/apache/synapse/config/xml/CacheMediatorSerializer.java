@@ -106,6 +106,8 @@ public class CacheMediatorSerializer extends AbstractMediatorSerializer {
             }
         }
 
+        serializeCommentsFromList(cache, mediator.getCommentsList());
+
         return cache;
     }
 

@@ -19,10 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.*;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,9 +29,11 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.mediators.MediatorProperty;
+import org.apache.synapse.mediators.builtin.CommentMediator;
 
 import javax.xml.namespace.QName;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Parent class for all the {@link MediatorSerializer} implementations
@@ -79,13 +78,16 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
      * @return the serialized Element
      */
     public final OMElement serializeMediator(OMElement parent, Mediator m) {
+        OMElement serializedElement = null;
 
         if (m instanceof AnonymousListMediator) {
             ((AnonymousListMediatorSerializer) this).serializeChildren(parent,
                     ((AnonymousListMediator) m).getList());
-            return parent;
+            serializedElement = parent;
+        } else if(m instanceof CommentMediator) {
+            // serialize comment mediator
+            serializedElement = serializeCommentsFromMediator(parent, m);
         } else {
-
             // delegate the specific serializations to it's serializer
             OMElement elem = serializeSpecificMediator(m);
             if (m.getDescription() != null) {
@@ -102,8 +104,9 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
             if (parent != null) {
                 parent.addChild(elem);
             }
-            return elem;
+            serializedElement = elem;
         }
+        return serializedElement;
 
     }
 
@@ -203,5 +206,32 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
     protected void handleException(String msg, Exception e) {
         LogFactory.getLog(this.getClass()).error(msg, e);
         throw new SynapseException(msg, e);
+    }
+
+    /**
+     * Serialize comment entries from an arrayList
+     *
+     * @param parent      OMElement to be updated
+     * @param commentList List of comment entries to be serialized
+     */
+    protected void serializeCommentsFromList(OMElement parent, List<String> commentList) {
+        for (String comment : commentList) {
+            OMComment commendNode = fac.createOMComment(parent, "comment");
+            commendNode.setValue(comment);
+            parent.addChild(commendNode);
+        }
+    }
+
+    /**
+     * Serialize comment entries from an arrayList
+     *
+     * @param parent OMElement to be updated
+     * @param m      Comment mediator instance which contains comment information
+     */
+    protected OMElement serializeCommentsFromMediator(OMElement parent, Mediator m) {
+        OMComment commendNode = fac.createOMComment(parent, "comment");
+        commendNode.setValue(((CommentMediator) m).getCommentText());
+        parent.addChild(commendNode);
+        return parent;
     }
 }

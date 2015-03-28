@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -99,11 +100,11 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineEventSource(config, elt, properties);
                 } else if (XMLConfigConstants.EXECUTOR_ELT.equals(elt.getQName())) {
                     defineExecutor(config, elt, properties);
-                } else if(XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
+                } else if (XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
                     defineMessageStore(config, elt, properties);
-                } else if(XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
+                } else if (XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
                     defineTaskManager(config, elt, properties);
-                } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())){
+                } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())) {
                     defineMessageProcessor(config, elt, properties);
                 } else if (StartupFinder.getInstance().isStartup(elt.getQName())) {
                     defineStartup(config, elt, properties);
@@ -112,12 +113,15 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                 } else if (XMLConfigConstants.DESCRIPTION_ELT.equals(elt.getQName())) {
                     config.setDescription(elt.getText());
                 } else if (XMLConfigConstants.INBOUND_ENDPOINT_ELT.equals(elt.getQName())) {
-                    defineInboundEndpoint(config, elt, properties);                    
+                    defineInboundEndpoint(config, elt, properties);
                 } else {
                     handleException("Invalid configuration element at the top level, one of \'sequence\', " +
                             "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\'" +
                             ", \'registry\' or \'inboundEndpoint\' is expected");
                 }
+            } else if (o instanceof OMComment) {
+                OMComment commentNode = (OMComment) o;
+                defineComments(config, commentNode);
             }
         }
 
@@ -450,5 +454,15 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             log.error(msg, e);
             throw new SynapseException(msg, e);
         }
+    }
+
+    /**
+     * Add comment node value to the synapse configuration's comments list
+     *
+     * @param config Synapse Configuration instance
+     * @param comm   OMComment Node
+     */
+    private void defineComments(SynapseConfiguration config, OMComment comm) {
+        config.addToCommentedTextList(comm.getValue());
     }
 }
