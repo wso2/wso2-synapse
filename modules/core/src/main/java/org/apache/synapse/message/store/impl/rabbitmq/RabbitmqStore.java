@@ -485,7 +485,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			return true;
 		}
 		try {
-			if (connection != null && error) {
+			if (connection != null && error && connection.isOpen()) {
 				connection.close();
 			}
 		} catch (IOException e) {

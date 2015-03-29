@@ -52,6 +52,10 @@ public class RabbitmqConsumer implements MessageConsumer {
 	 * Did last receive() call cause an error?
 	 */
 	private boolean isReceiveError;
+	/**
+	 * Holds the last message read from the message store.
+	 */
+	private CachedMessage cachedMessage;
 
 	public RabbitmqConsumer(RabbitmqStore store) {
 		if (store == null) {
@@ -59,6 +63,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 			return;
 		}
 		this.store = store;
+		cachedMessage = new CachedMessage();
 		isReceiveError = false;
 		isInitialized = true;
 	}
@@ -94,11 +99,6 @@ public class RabbitmqConsumer implements MessageConsumer {
 		try {
 			QueueingConsumer consumer = new QueueingConsumer(channel);
 			channel.basicConsume(queueName, false, consumer);
-			try {
-				channel.txSelect();
-			} catch (IOException e) {
-				logger.error("Error while starting transaction", e);
-			}
 
 			boolean successful = false;
 			QueueingConsumer.Delivery delivery = null;
@@ -109,47 +109,33 @@ public class RabbitmqConsumer implements MessageConsumer {
 			}
 
 			if (delivery != null) {
+				//deserilizing message
+				StorableMessage storableMessage = null;
+				ByteArrayInputStream bis = new ByteArrayInputStream(delivery.getBody());
+				ObjectInput in = new ObjectInputStream(bis);
 				try {
-					//deserilizing message
-					StorableMessage storableMessage = null;
-					ByteArrayInputStream bis = new ByteArrayInputStream(delivery.getBody());
-					ObjectInput in = new ObjectInputStream(bis);
-					try {
-						storableMessage = (StorableMessage) in.readObject();
-					} catch (ClassNotFoundException e) {
-						logger.error(getId() + "unable to read the stored message" + e);
-					}
-					bis.close();
-					in.close();
-					org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
-					MessageContext synapseMc = store.newSynapseMc(axis2Mc);
-					synapseMc =
-							MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
-					successful = true;
-					if (logger.isDebugEnabled()) {
-						logger.debug(getId() + " Received MessageId:" +
-						             delivery.getProperties().getMessageId());
-					}
-					return synapseMc;
-				} finally {
-					if (successful) {
-						try {
-							channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-							channel.txCommit();
-						} catch (IOException e) {
-							logger.error("Error while committing transaction", e);
-						}
-					} else {
-						try {
-							channel.txRollback();
-						} catch (IOException e) {
-							logger.error("Error while trying to roll back transaction", e);
-						}
-					}
+					storableMessage = (StorableMessage) in.readObject();
+				} catch (ClassNotFoundException e) {
+					logger.error(getId() + "unable to read the stored message" + e);
+					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 				}
-			}
-			if (channel.isOpen())
+
+				bis.close();
+				in.close();
+				org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
+				MessageContext synapseMc = store.newSynapseMc(axis2Mc);
+				synapseMc =
+						MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
+				updateCache(delivery, synapseMc, null, false, channel);
+				successful = true;
+				if (logger.isDebugEnabled()) {
+					logger.debug(getId() + " Received MessageId:" +
+					             delivery.getProperties().getMessageId());
+				}
+				return synapseMc;
+			} else {
 				channel.close();
+			}
 		} catch (ShutdownSignalException sse) {
 			logger.error(getId() + " connection error when receiving messages" + sse);
 		} catch (IOException ioe) {
@@ -159,7 +145,11 @@ public class RabbitmqConsumer implements MessageConsumer {
 	}
 
 	public boolean ack() {
-		return false;
+		boolean result = cachedMessage.ack();
+		if (result) {
+			store.dequeued();
+		}
+		return result;
 	}
 
 	public boolean cleanup() {
@@ -239,6 +229,76 @@ public class RabbitmqConsumer implements MessageConsumer {
 		idString = consumer.getId();
 		return true;
 	}
-}
 
+	private void updateCache(QueueingConsumer.Delivery message, MessageContext synCtx,
+	                         String messageId,
+	                         boolean receiveError, Channel channel) throws IOException {
+		isReceiveError = receiveError;
+		cachedMessage.setMessage(message);
+		cachedMessage.setMc(synCtx);
+		cachedMessage.setId(messageId);
+		cachedMessage.setChannel(channel);
+	}
+
+	/**
+	 * This is used to store the last received message
+	 * if the message is successfully sent to the endpoint, ack will sent to the store
+	 * in order to delete message from the queue
+	 *
+	 * In RabbitMQ message ack should be using the same channel which was consumed the message
+	 * There for the consumed channel will also stored without closing until the message is ackd
+	 */
+	private final class CachedMessage {
+		private QueueingConsumer.Delivery message = null;
+		private MessageContext mc = null;
+		private Channel channel;
+		private String id = "";
+
+		public CachedMessage setMessage(QueueingConsumer.Delivery message) {
+			this.message = message;
+			return this;
+		}
+
+		public boolean ack() {
+			if (message != null && channel != null && channel.isOpen()) {
+				try {
+					this.channel.basicAck(message.getEnvelope().getDeliveryTag(), false);
+					channel.close();
+					return true;
+				} catch (IOException e) {
+					logger.error(getId() + " cannot ack last read message. Error:"
+					             + e.getLocalizedMessage(), e);
+					return false;
+				}
+			}
+			return false;
+		}
+
+		public QueueingConsumer.Delivery getMessage() {
+			return message;
+		}
+
+		public CachedMessage setMc(MessageContext mc) {
+			this.mc = mc;
+			return this;
+		}
+
+		public CachedMessage setId(String id) {
+			this.id = id;
+			return this;
+		}
+
+		public CachedMessage setChannel(Channel channel) throws IOException {
+			if (this.channel != null && this.channel.isOpen()) {
+				this.channel.close();
+			}
+			this.channel = channel;
+			return this;
+		}
+
+		public String getId() {
+			return id;
+		}
+	}
+}
 
