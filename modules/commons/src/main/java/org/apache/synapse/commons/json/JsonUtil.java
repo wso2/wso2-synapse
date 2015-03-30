@@ -42,6 +42,7 @@ public final class JsonUtil {
     private static Log logger = LogFactory.getLog(JsonUtil.class.getName());
 
     private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
+    private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT = "org.apache.synapse.commons.json.JsonInputStream.IsJsonObject";
 
     private static final QName JSON_OBJECT = new QName("jsonObject");
 
@@ -412,9 +413,11 @@ public final class JsonUtil {
             QName jsonElement = null;
             if (isObject) {
                 jsonElement = JSON_OBJECT;
+                messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, true);
             }
             if (isArray) {
                 jsonElement = JSON_ARRAY;
+                messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, false);
             }
             OMElement elem = new OMSourcedElementImpl(jsonElement,
                     OMAbstractFactory.getOMFactory(),
@@ -509,6 +512,7 @@ public final class JsonUtil {
      */
     public static boolean removeJsonPayload(MessageContext messageContext) {
         messageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+        messageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
         boolean removeChildren = true;
         if (!removeChildren) { // don't change this.
             if (logger.isTraceEnabled()) {
@@ -849,6 +853,11 @@ public final class JsonUtil {
             return null;
         }
         return new InputStreamReader(new ByteArrayInputStream(out.toByteArray()));
+    }
+
+    public static boolean hasAJsonObject(MessageContext messageContext) {
+        Object isObject = messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
+        return isObject != null && ((Boolean) isObject);
     }
 
     /**
