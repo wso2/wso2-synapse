@@ -301,7 +301,8 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             }
         }
 
-        OMElement statusCodesElement = elem.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,"failoverHttpStatusCodes"));
+        OMElement statusCodesElement = elem.getFirstChildWithName(new QName(
+                SynapseConstants.SYNAPSE_NAMESPACE,"failoverHttpStatusCodes"));
         if(statusCodesElement!=null){
             StringTokenizer st = new StringTokenizer(
                     statusCodesElement.getText().trim(), ", ");
@@ -310,7 +311,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 try {
                     definition.addFailoverHttpstatusCodes(Integer.parseInt(s));
                 } catch (NumberFormatException e) {
-                    handleException("The suspend error codes should be specified as valid " +
+                    handleException("The failover http status codes should be specified as valid " +
                             "numbers separated by commas : "
                             + statusCodesElement.getText(), e);
                 }

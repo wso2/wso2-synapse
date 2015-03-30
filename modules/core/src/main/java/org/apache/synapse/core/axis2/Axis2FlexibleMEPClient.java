@@ -140,7 +140,7 @@ public class Axis2FlexibleMEPClient {
         /**For the failover support on http status codes need to clone request message context*/
         if (synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG) != null) {
             /**Message will be cloned based on the request to support fail-over on http status codes*/
-            if ((Integer) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG) == 1) {
+            if ((Boolean) synapseOutMessageContext.getProperty(SynapseConstants.CLONE_THIS_MSG)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Axis2FlexibleMEPClient Cloning message to support fail-over on response http status codes");
                 }

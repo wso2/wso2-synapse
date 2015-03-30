@@ -112,8 +112,8 @@ public class FailoverEndpoint extends AbstractEndpoint {
                 if (endpoint.readyToSend()) {
 
                     /**This request message context will be cloned at Axis2FlexibleMEPClient*/
-                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, 1);
-                    //Write entire input stream to MC SoapEnvelop
+                    synCtx.setProperty(SynapseConstants.CLONE_THIS_MSG, true);
+                    /**Write entire input stream to MC SoapEnvelop*/
                     synCtx.getEnvelope().buildWithAttachments();
                     /**This property will use to index the endpoints*/
                     synCtx.setProperty(SynapseConstants.ENDPOINT_INDEX, endpointIndex++);
