@@ -99,7 +99,6 @@ public class RabbitMQConsumer implements MessageConsumer {
 		}
 		//receive messages
 		try {
-			channel.basicConsume(queueName, false, consumer);
 
 			QueueingConsumer.Delivery delivery = null;
 			try { //TODO: find if non-blocking consume is possible
@@ -175,6 +174,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 			try {
 				this.channel = connection.createChannel();
 				consumer = new QueueingConsumer(channel);
+				channel.basicConsume(queueName, false, consumer);
 				return true;
 			} catch (IOException e) {
 				return false;
