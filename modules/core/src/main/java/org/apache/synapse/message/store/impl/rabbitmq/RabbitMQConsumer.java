@@ -41,6 +41,8 @@ public class RabbitMQConsumer implements MessageConsumer {
 
 	private Channel channel;
 
+	private QueueingConsumer consumer;
+
 	private RabbitMQStore store;
 
 	private String queueName;
@@ -88,16 +90,17 @@ public class RabbitMQConsumer implements MessageConsumer {
 					logger.info(getId() + " unable to create the channel.");
 					return null;
 				}
+				consumer = new QueueingConsumer(channel);
 			}
 		} else {
 			if (!setChannel()) {
 				logger.info(getId() + " unable to create the channel.");
 				return null;
 			}
+			consumer = new QueueingConsumer(channel);
 		}
 		//receive messages
 		try {
-			QueueingConsumer consumer = new QueueingConsumer(channel);
 			channel.basicConsume(queueName, false, consumer);
 
 			QueueingConsumer.Delivery delivery = null;
