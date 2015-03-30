@@ -22,6 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageProducer;
+import org.apache.synapse.message.store.impl.commons.MessageConverter;
+import org.apache.synapse.message.store.impl.commons.StorableMessage;
 
 import javax.jms.*;
 import java.util.Set;
