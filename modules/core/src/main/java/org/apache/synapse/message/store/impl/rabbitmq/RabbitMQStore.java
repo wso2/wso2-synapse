@@ -58,6 +58,10 @@ public class RabbitMQStore extends AbstractMessageStore {
 	 */
 	public static final String HOST_PORT = "store.rabbitmq.host.port";
 	/**
+	 * RabbitMQ Server default port
+	 */
+	public static final int DEFAULT_PORT = 5672;
+	/**
 	 * RabbitMQ Server Virtual Host
 	 */
 	public static final String VIRTUAL_HOST = "store.rabbitmq.virtual.host";
@@ -73,10 +77,6 @@ public class RabbitMQStore extends AbstractMessageStore {
 	 * RabbitMQ exchange.
 	 */
 	public static final String EXCHANGE_NAME = "store.rabbitmq.exchange.name";
-	/**
-	 * RabbitMQ exchange.
-	 */
-	public static final String EXCHANGE_TYPE = "store.rabbitmq.exchange.type";
 	/**
 	 * RabbitMQ connection properties
 	 */
@@ -101,10 +101,6 @@ public class RabbitMQStore extends AbstractMessageStore {
 	 * RabbitMQ exchange name
 	 */
 	private String exchangeName;
-	/**
-	 * RabbitMQ exchange type
-	 */
-	private String exchangeType;
 	/**
 	 * RabbitMQ host name
 	 */
@@ -180,8 +176,8 @@ public class RabbitMQStore extends AbstractMessageStore {
 
 		if (port > 0) {
 			connectionFactory.setPort(port);
-		} else {  //TODO: add a constent and say default port
-			connectionFactory.setPort(5672);
+		} else {
+			connectionFactory.setPort(DEFAULT_PORT);
 			logger.info(nameString() + " port is set to default value (5672");
 		}
 
@@ -213,9 +209,7 @@ public class RabbitMQStore extends AbstractMessageStore {
 			            "Setting default destination to [" + defaultQueue + "].");
 			this.queueName = defaultQueue;
 		}
-		//TODO: remove exchange config
 		exchangeName = (String) properties.get(EXCHANGE_NAME);
-		exchangeType = (String) properties.get(EXCHANGE_TYPE);
 		routeKey = (String) properties.get(ROUTE_KEY);
 		if (routeKey == null) {
 			logger.warn(nameString() + ". Routing key is not provided. " +
@@ -239,7 +233,7 @@ public class RabbitMQStore extends AbstractMessageStore {
 	/**
 	 * Create a Queue to store messages, this will used queueName parameter
 	 *
-	 * @throws IOException
+	 * @throws IOException : if its enable to create the queue or exchange
 	 */
 	private void setQueue() throws IOException {
 		Channel channel = null;
@@ -254,10 +248,11 @@ public class RabbitMQStore extends AbstractMessageStore {
 				}
 				//Hashmap with names and parameters can be used in the place of null argument
 				//Eg: adding dead letter exchange to the queue
+				//params: (queueName, durable, exclusive, autoDelete, paramMap)
 				channel.queueDeclare(queueName, true, false, false, null);
 			}
 			//declaring exchange
-			if (exchangeName != null && exchangeType != null) {
+			if (exchangeName != null ) {
 				try {
 					channel.exchangeDeclarePassive(exchangeName);
 				} catch (java.io.IOException e) {
@@ -265,7 +260,8 @@ public class RabbitMQStore extends AbstractMessageStore {
 					if (!channel.isOpen()) {
 						channel = producerConnection.createChannel();
 					}
-					channel.exchangeDeclare(exchangeName, exchangeType, false, false, null);
+					//params : ( exchangeName, exchangeType, durable, autoDelete, paramMap )
+					channel.exchangeDeclare(exchangeName, "direct", true, false, null);
 				}
 				channel.queueBind(queueName, exchangeName, routeKey);
 			}
@@ -348,7 +344,7 @@ public class RabbitMQStore extends AbstractMessageStore {
 	public MessageProducer getProducer() {
 		RabbitMQProducer producer = new RabbitMQProducer(this);
 		producer.setId(nextProducerId());
-		if (exchangeName != null && exchangeType != null) {
+		if (exchangeName != null) {
 			producer.setQueueName(routeKey);
 			producer.setExchangeName(exchangeName);
 		} else {
