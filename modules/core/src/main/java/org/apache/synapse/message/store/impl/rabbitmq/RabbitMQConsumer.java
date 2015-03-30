@@ -17,10 +17,7 @@
  */
 package org.apache.synapse.message.store.impl.rabbitmq;
 
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.QueueingConsumer;
-import com.rabbitmq.client.ShutdownSignalException;
+import com.rabbitmq.client.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -40,8 +37,6 @@ public class RabbitMQConsumer implements MessageConsumer {
 	private Connection connection;
 
 	private Channel channel;
-
-	private QueueingConsumer consumer;
 
 	private RabbitMQStore store;
 
@@ -100,12 +95,8 @@ public class RabbitMQConsumer implements MessageConsumer {
 		//receive messages
 		try {
 
-			QueueingConsumer.Delivery delivery = null;
-			try { //TODO: find if non-blocking consume is possible
-				delivery = consumer.nextDelivery(1);
-			} catch (InterruptedException e) {
-				logger.error("Error while consuming message", e);
-			}
+			GetResponse delivery = null;
+			delivery = channel.basicGet(queueName,false);
 
 			if (delivery != null) {
 				//deserilizing message
@@ -128,7 +119,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 				updateCache(delivery, synapseMc, null, false);
 				if (logger.isDebugEnabled()) {
 					logger.debug(getId() + " Received MessageId:" +
-					             delivery.getProperties().getMessageId());
+					             delivery.getProps().getMessageId());
 				}
 				return synapseMc;
 			}
@@ -173,8 +164,6 @@ public class RabbitMQConsumer implements MessageConsumer {
 		if (connection != null && connection.isOpen()) {
 			try {
 				this.channel = connection.createChannel();
-				consumer = new QueueingConsumer(channel);
-				channel.basicConsume(queueName, false, consumer);
 				return true;
 			} catch (IOException e) {
 				return false;
@@ -228,11 +217,11 @@ public class RabbitMQConsumer implements MessageConsumer {
 		return true;
 	}
 
-	private void updateCache(QueueingConsumer.Delivery message, MessageContext synCtx,
+	private void updateCache(GetResponse delivery, MessageContext synCtx,
 	                         String messageId,
 	                         boolean receiveError) throws IOException {
 		isReceiveError = receiveError;
-		cachedMessage.setMessage(message);
+		cachedMessage.setMessage(delivery);
 		cachedMessage.setMc(synCtx);
 		cachedMessage.setId(messageId);
 	}
@@ -246,11 +235,11 @@ public class RabbitMQConsumer implements MessageConsumer {
 	 * There for the consumed channel will also stored without closing until the message is ackd
 	 */
 	private final class CachedMessage {
-		private QueueingConsumer.Delivery message = null;
+		private GetResponse message = null;
 		private MessageContext mc = null;
 		private String id = "";
 
-		public CachedMessage setMessage(QueueingConsumer.Delivery message) {
+		public CachedMessage setMessage(GetResponse message) {
 			this.message = message;
 			return this;
 		}
@@ -269,7 +258,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 			return false;
 		}
 
-		public QueueingConsumer.Delivery getMessage() {
+		public GetResponse getMessage() {
 			return message;
 		}
 
