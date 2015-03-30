@@ -90,14 +90,12 @@ public class RabbitMQConsumer implements MessageConsumer {
 					logger.info(getId() + " unable to create the channel.");
 					return null;
 				}
-				consumer = new QueueingConsumer(channel);
 			}
 		} else {
 			if (!setChannel()) {
 				logger.info(getId() + " unable to create the channel.");
 				return null;
 			}
-			consumer = new QueueingConsumer(channel);
 		}
 		//receive messages
 		try {
@@ -176,6 +174,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 		if (connection != null && connection.isOpen()) {
 			try {
 				this.channel = connection.createChannel();
+				consumer = new QueueingConsumer(channel);
 				return true;
 			} catch (IOException e) {
 				return false;
