@@ -125,14 +125,12 @@ public class RabbitMQConsumer implements MessageConsumer {
 				MessageContext synapseMc = store.newSynapseMc(axis2Mc);
 				synapseMc =
 						MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
-				updateCache(delivery, synapseMc, null, false, channel);
+				updateCache(delivery, synapseMc, null, false);
 				if (logger.isDebugEnabled()) {
 					logger.debug(getId() + " Received MessageId:" +
 					             delivery.getProperties().getMessageId());
 				}
 				return synapseMc;
-			} else {
-				channel.close();
 			}
 		} catch (ShutdownSignalException sse) {
 			logger.error(getId() + " connection error when receiving messages" + sse);
@@ -230,12 +228,11 @@ public class RabbitMQConsumer implements MessageConsumer {
 
 	private void updateCache(QueueingConsumer.Delivery message, MessageContext synCtx,
 	                         String messageId,
-	                         boolean receiveError, Channel channel) throws IOException {
+	                         boolean receiveError) throws IOException {
 		isReceiveError = receiveError;
 		cachedMessage.setMessage(message);
 		cachedMessage.setMc(synCtx);
 		cachedMessage.setId(messageId);
-		cachedMessage.setChannel(channel);
 	}
 
 	/**
@@ -249,7 +246,6 @@ public class RabbitMQConsumer implements MessageConsumer {
 	private final class CachedMessage {
 		private QueueingConsumer.Delivery message = null;
 		private MessageContext mc = null;
-		private Channel channel;
 		private String id = "";
 
 		public CachedMessage setMessage(QueueingConsumer.Delivery message) {
@@ -260,8 +256,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 		public boolean ack() {
 			if (message != null && channel != null && channel.isOpen()) {
 				try {
-					this.channel.basicAck(message.getEnvelope().getDeliveryTag(), false);
-					channel.close();
+					channel.basicAck(message.getEnvelope().getDeliveryTag(), false);
 					return true;
 				} catch (IOException e) {
 					logger.error(getId() + " cannot ack last read message. Error:"
@@ -283,14 +278,6 @@ public class RabbitMQConsumer implements MessageConsumer {
 
 		public CachedMessage setId(String id) {
 			this.id = id;
-			return this;
-		}
-
-		public CachedMessage setChannel(Channel channel) throws IOException {
-			if (this.channel != null && this.channel.isOpen()) {
-				this.channel.close();
-			}
-			this.channel = channel;
 			return this;
 		}
 
