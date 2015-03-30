@@ -34,14 +34,14 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
-public class RabbitmqConsumer implements MessageConsumer {
-	private static final Log logger = LogFactory.getLog(RabbitmqConsumer.class.getName());
+public class RabbitMQConsumer implements MessageConsumer {
+	private static final Log logger = LogFactory.getLog(RabbitMQConsumer.class.getName());
 
 	private Connection connection;
 
 	private Channel channel;
 
-	private RabbitmqStore store;
+	private RabbitMQStore store;
 
 	private String queueName;
 
@@ -57,7 +57,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 	 */
 	private CachedMessage cachedMessage;
 
-	public RabbitmqConsumer(RabbitmqStore store) {
+	public RabbitMQConsumer(RabbitMQStore store) {
 		if (store == null) {
 			logger.error("Cannot initialize.");
 			return;
@@ -100,9 +100,8 @@ public class RabbitmqConsumer implements MessageConsumer {
 			QueueingConsumer consumer = new QueueingConsumer(channel);
 			channel.basicConsume(queueName, false, consumer);
 
-			boolean successful = false;
 			QueueingConsumer.Delivery delivery = null;
-			try {
+			try { //TODO: find if non-blocking consume is possible
 				delivery = consumer.nextDelivery(1);
 			} catch (InterruptedException e) {
 				logger.error("Error while consuming message", e);
@@ -127,7 +126,6 @@ public class RabbitmqConsumer implements MessageConsumer {
 				synapseMc =
 						MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
 				updateCache(delivery, synapseMc, null, false, channel);
-				successful = true;
 				if (logger.isDebugEnabled()) {
 					logger.debug(getId() + " Received MessageId:" +
 					             delivery.getProperties().getMessageId());
@@ -164,7 +162,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 		return false;
 	}
 
-	public RabbitmqConsumer setConnection(Connection connection) {
+	public RabbitMQConsumer setConnection(Connection connection) {
 		this.connection = connection;
 		return this;
 	}
@@ -214,7 +212,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 	}
 
 	private boolean reconnect() {
-		RabbitmqConsumer consumer = (RabbitmqConsumer) store.getConsumer();
+		RabbitMQConsumer consumer = (RabbitMQConsumer) store.getConsumer();
 
 		if (consumer.getConnection() == null) {
 			if (logger.isDebugEnabled()) {
