@@ -94,5 +94,7 @@ public interface TaskManager {
 	 *         otherwise.
 	 */
 	boolean isTaskRunning(final String taskName);
+	
+	void cleanupResources(final String name);
 
 }

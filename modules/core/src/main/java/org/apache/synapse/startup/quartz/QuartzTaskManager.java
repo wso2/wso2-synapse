@@ -453,4 +453,8 @@ public class QuartzTaskManager implements TaskManager {
 	public boolean isTaskRunning(String taskName) {
 	    return false;
     }
+
+	public void cleanupResources(String arg0) {
+	    
+    }
 }

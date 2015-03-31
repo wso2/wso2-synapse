@@ -260,6 +260,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				if (messageConsumer != null) {
 					messageConsumer.cleanup();
 				}
+				/*
+				 * Cleaning up the resources here.
+				 */
+				taskManager.cleanupResources(name);
 			}
 			return true;
 		} else {
