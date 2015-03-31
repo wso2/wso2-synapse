@@ -17,7 +17,10 @@
  */
 package org.apache.synapse.message.store.impl.rabbitmq;
 
-import com.rabbitmq.client.*;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.GetResponse;
+import com.rabbitmq.client.ShutdownSignalException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -96,7 +99,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 		try {
 
 			GetResponse delivery = null;
-			delivery = channel.basicGet(queueName,false);
+			delivery = channel.basicGet(queueName, false);
 
 			if (delivery != null) {
 				//deserilizing message
@@ -230,7 +233,7 @@ public class RabbitMQConsumer implements MessageConsumer {
 	 * This is used to store the last received message
 	 * if the message is successfully sent to the endpoint, ack will sent to the store
 	 * in order to delete message from the queue
-	 *
+	 * <p/>
 	 * In RabbitMQ message ack should be using the same channel which was consumed the message
 	 * There for the consumed channel will also stored without closing until the message is ackd
 	 */

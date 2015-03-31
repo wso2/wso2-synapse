@@ -252,7 +252,7 @@ public class RabbitMQStore extends AbstractMessageStore {
 				channel.queueDeclare(queueName, true, false, false, null);
 			}
 			//declaring exchange
-			if (exchangeName != null ) {
+			if (exchangeName != null) {
 				try {
 					channel.exchangeDeclarePassive(exchangeName);
 				} catch (java.io.IOException e) {
@@ -265,7 +265,7 @@ public class RabbitMQStore extends AbstractMessageStore {
 				}
 				channel.queueBind(queueName, exchangeName, routeKey);
 			}
-		}  finally {
+		} finally {
 			channel.close();
 		}
 	}
