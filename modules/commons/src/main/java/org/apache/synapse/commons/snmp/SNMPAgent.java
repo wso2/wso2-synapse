@@ -118,7 +118,7 @@ class SNMPAgent extends BaseAgent {
        
     @Override
     protected void registerSnmpMIBs() {
-        this.snmpv2MIB.setContact(new OctetString(getProperty(SNMPConstants.SNMP_CONTEXT_NAME, SNMPConstants.SNMP_DEFAULT_CONTACT_NAME)));
+        this.snmpv2MIB.setContact(new OctetString(getProperty(SNMPConstants.SNMP_CONTACT_NAME, SNMPConstants.SNMP_DEFAULT_CONTACT_NAME)));
         this.snmpv2MIB.setLocation(new OctetString(getProperty(SNMPConstants.SNMP_LOCATION, SNMPConstants.SNMP_DEFAULT_LOCATION)));
         this.snmpv2MIB.setName(new OctetString(getProperty(SNMPConstants.SNMP_HOST, SNMPConstants.SNMP_DEFAULT_HOST)));
 
