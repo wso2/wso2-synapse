@@ -20,6 +20,8 @@ package org.apache.synapse.message.store.impl.rabbitmq;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.impl.AMQBasicProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -36,8 +38,10 @@ import java.io.ObjectOutputStream;
 public class RabbitMQProducer implements MessageProducer {
 
 	private static final Log logger = LogFactory.getLog(RabbitMQProducer.class.getName());
+
+	private static final int DEFAULT_PRIORITY = 0;
 	/**
-	 * Connection to the Rabbitmq broker. Passed reference from Store *
+	 * Connection to the RabbitMQ broker. Passed reference from Store *
 	 */
 	private Connection connection;
 	/**
@@ -112,7 +116,8 @@ public class RabbitMQProducer implements MessageProducer {
 			//building AMQP message
 			AMQP.BasicProperties.Builder builder = new AMQP.BasicProperties().builder();
 			builder.messageId(synCtx.getMessageID());
-			builder.deliveryMode(2);
+			builder.deliveryMode(MessageProperties.MINIMAL_PERSISTENT_BASIC.getDeliveryMode());
+			builder.priority(message.getPriority(DEFAULT_PRIORITY));
 			channel = connection.createChannel();
 			if (exchangeName == null) {
 				channel.basicPublish("", queueName, builder.build(), byteForm);

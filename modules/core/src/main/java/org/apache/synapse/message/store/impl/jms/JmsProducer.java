@@ -34,6 +34,7 @@ public class JmsProducer implements MessageProducer {
     private static final String JMS_PROD_DELIVERY_MODE = "JMS_PROD_DELIVERY_MODE";
     private static final String JMS_PROD_DISABLE_MSG_ID = "JMS_PROD_DISABLE_MSG_ID";
     private static final String JMS_PROD_PRIORITY = "JMS_PROD_PRIORITY";
+    private static final int DEFAULT_PRIORITY = 4;
     // prefix used to set JMS Message level properties. ex: JMS_MSG_P_brokerSpecificProperty
     private static final String JMS_MSG_P = "JMS_MSG_P_";
     private static final Log logger = LogFactory.getLog(JmsProducer.class.getName());
@@ -172,12 +173,12 @@ public class JmsProducer implements MessageProducer {
 
     private void setPriority(javax.jms.MessageProducer producer, ObjectMessage objectMessage,
                              StorableMessage message) {
-        if (message.getPriority() != Message.DEFAULT_PRIORITY) {
+        if (message.getPriority(DEFAULT_PRIORITY) != Message.DEFAULT_PRIORITY) {
             try {
-                producer.setPriority(message.getPriority());
+                producer.setPriority(message.getPriority(DEFAULT_PRIORITY));
             } catch (JMSException e) {
                 logger.warn(getId() + " could not set priority ["
-                            + message.getPriority() + "]");
+                            + message.getPriority(DEFAULT_PRIORITY) + "]");
             }
         }  else {
             try {
