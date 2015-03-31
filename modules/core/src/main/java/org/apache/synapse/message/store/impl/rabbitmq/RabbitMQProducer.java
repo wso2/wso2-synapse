@@ -33,9 +33,9 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 
-public class RabbitmqProducer implements MessageProducer {
+public class RabbitMQProducer implements MessageProducer {
 
-	private static final Log logger = LogFactory.getLog(RabbitmqProducer.class.getName());
+	private static final Log logger = LogFactory.getLog(RabbitMQProducer.class.getName());
 	/**
 	 * Connection to the Rabbitmq broker. Passed reference from Store *
 	 */
@@ -43,7 +43,7 @@ public class RabbitmqProducer implements MessageProducer {
 	/**
 	 * Reference of the store *
 	 */
-	private RabbitmqStore store;
+	private RabbitMQStore store;
 	/**
 	 * Message storing queue name *
 	 */
@@ -61,7 +61,7 @@ public class RabbitmqProducer implements MessageProducer {
 	 */
 	private String idString;
 
-	public RabbitmqProducer(RabbitmqStore store) {
+	public RabbitMQProducer(RabbitMQStore store) {
 		if (store == null) {
 			logger.error("Cannot initialize.");
 			return;
@@ -140,7 +140,7 @@ public class RabbitmqProducer implements MessageProducer {
 			                  + ". Could not store message to store ["
 			                  + store.getName() + "]. Error:" + throwable.getLocalizedMessage();
 			logger.error(errorMsg, throwable);
-			store.closeWriteConnection();
+			store.closeProducerConnection();
 			connection = null;
 			if (logger.isDebugEnabled()) {
 				logger.debug(getId() + ". Ignored MessageID : " + synCtx.getMessageID());

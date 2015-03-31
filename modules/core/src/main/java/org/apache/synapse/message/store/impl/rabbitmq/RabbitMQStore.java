@@ -40,7 +40,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.List;
 
-public class RabbitmqStore extends AbstractMessageStore {
+public class RabbitMQStore extends AbstractMessageStore {
 	/**
 	 * RabbitMQ Broker username
 	 */
@@ -58,6 +58,10 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 */
 	public static final String HOST_PORT = "store.rabbitmq.host.port";
 	/**
+	 * RabbitMQ Server default port
+	 */
+	public static final int DEFAULT_PORT = 5672;
+	/**
 	 * RabbitMQ Server Virtual Host
 	 */
 	public static final String VIRTUAL_HOST = "store.rabbitmq.virtual.host";
@@ -73,10 +77,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 * RabbitMQ exchange.
 	 */
 	public static final String EXCHANGE_NAME = "store.rabbitmq.exchange.name";
-	/**
-	 * RabbitMQ exchange.
-	 */
-	public static final String EXCHANGE_TYPE = "store.rabbitmq.exchange.type";
 	/**
 	 * RabbitMQ connection properties
 	 */
@@ -102,10 +102,6 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 */
 	private String exchangeName;
 	/**
-	 * RabbitMQ exchange type
-	 */
-	private String exchangeType;
-	/**
 	 * RabbitMQ host name
 	 */
 	private String hostName;
@@ -117,7 +113,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 * RabbitMQ virtual host
 	 */
 	private String virtualHost;
-	private static final Log logger = LogFactory.getLog(RabbitmqStore.class.getName());
+	private static final Log logger = LogFactory.getLog(RabbitMQStore.class.getName());
 	/**
 	 * Rabbitmq Connection factory
 	 */
@@ -146,6 +142,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			logger.info(nameString() + ". Initialized... ");
 		} else {
 			logger.info(nameString() + ". Initialization failed...");
+			return;
 		}
 	}
 
@@ -180,7 +177,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 		if (port > 0) {
 			connectionFactory.setPort(port);
 		} else {
-			connectionFactory.setPort(5672);
+			connectionFactory.setPort(DEFAULT_PORT);
 			logger.info(nameString() + " port is set to default value (5672");
 		}
 
@@ -212,9 +209,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			            "Setting default destination to [" + defaultQueue + "].");
 			this.queueName = defaultQueue;
 		}
-
 		exchangeName = (String) properties.get(EXCHANGE_NAME);
-		exchangeType = (String) properties.get(EXCHANGE_TYPE);
 		routeKey = (String) properties.get(ROUTE_KEY);
 		if (routeKey == null) {
 			logger.warn(nameString() + ". Routing key is not provided. " +
@@ -222,7 +217,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			routeKey = this.queueName;
 		}
 
-		if (!newWriteConnection()) {
+		if (!newProducerConnection()) {
 			logger.warn(nameString() + ". Starting with a faulty connection to the broker.");
 			return false;
 		}
@@ -230,6 +225,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 			setQueue();
 		} catch (IOException e) {
 			logger.error(nameString() + " error in storage declaring queue " + queueName);
+			return false;
 		}
 		return true;
 	}
@@ -237,7 +233,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 	/**
 	 * Create a Queue to store messages, this will used queueName parameter
 	 *
-	 * @throws IOException
+	 * @throws IOException : if its enable to create the queue or exchange
 	 */
 	private void setQueue() throws IOException {
 		Channel channel = null;
@@ -252,10 +248,11 @@ public class RabbitmqStore extends AbstractMessageStore {
 				}
 				//Hashmap with names and parameters can be used in the place of null argument
 				//Eg: adding dead letter exchange to the queue
+				//params: (queueName, durable, exclusive, autoDelete, paramMap)
 				channel.queueDeclare(queueName, true, false, false, null);
 			}
 			//declaring exchange
-			if (exchangeName != null && exchangeType != null) {
+			if (exchangeName != null) {
 				try {
 					channel.exchangeDeclarePassive(exchangeName);
 				} catch (java.io.IOException e) {
@@ -263,12 +260,11 @@ public class RabbitmqStore extends AbstractMessageStore {
 					if (!channel.isOpen()) {
 						channel = producerConnection.createChannel();
 					}
-					channel.exchangeDeclare(exchangeName, exchangeType, false, false, null);
+					//params : ( exchangeName, exchangeType, durable, autoDelete, paramMap )
+					channel.exchangeDeclare(exchangeName, "direct", true, false, null);
 				}
 				channel.queueBind(queueName, exchangeName, routeKey);
 			}
-		} catch (IOException e) {
-			logger.error(nameString() + " error in storage declaring queue " + queueName);
 		} finally {
 			channel.close();
 		}
@@ -280,7 +276,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 *
 	 * @return true if a new connection is created successfully
 	 */
-	public boolean newWriteConnection() {
+	public boolean newProducerConnection() {
 		synchronized (producerLock) {
 			if (producerConnection != null) {
 				//if the exiting producer connection not closed successfully, this will return false
@@ -303,7 +299,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Destroying " + nameString() + "...");
 		}
-		closeWriteConnection();
+		closeProducerConnection();
 		super.destroy();
 	}
 
@@ -331,7 +327,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 * @return true if the producer connection was closed without any error, <br/>
 	 * false otherwise.
 	 */
-	public boolean closeWriteConnection() {
+	public boolean closeProducerConnection() {
 		synchronized (producerLock) {
 			if (producerConnection != null) {
 				if (!closeConnection(producerConnection)) {
@@ -346,9 +342,9 @@ public class RabbitmqStore extends AbstractMessageStore {
 	 * @return new MessageProducer
 	 */
 	public MessageProducer getProducer() {
-		RabbitmqProducer producer = new RabbitmqProducer(this);
+		RabbitMQProducer producer = new RabbitMQProducer(this);
 		producer.setId(nextProducerId());
-		if (exchangeName != null && exchangeType != null) {
+		if (exchangeName != null) {
 			producer.setQueueName(routeKey);
 			producer.setExchangeName(exchangeName);
 		} else {
@@ -366,7 +362,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 		try {
 			synchronized (producerLock) {
 				if (producerConnection == null) {
-					boolean ok = newWriteConnection();
+					boolean ok = newProducerConnection();
 					//if its not possible to create a producer connection, return messagePeoducer
 					//without a connection
 					if (!ok) {
@@ -399,7 +395,7 @@ public class RabbitmqStore extends AbstractMessageStore {
 	}
 
 	public MessageConsumer getConsumer() {
-		RabbitmqConsumer consumer = new RabbitmqConsumer(this);
+		RabbitMQConsumer consumer = new RabbitMQConsumer(this);
 		consumer.setId(nextConsumerId());
 		consumer.setQueueName(queueName);
 		Connection connection = null;

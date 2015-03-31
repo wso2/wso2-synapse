@@ -19,7 +19,7 @@ package org.apache.synapse.message.store.impl.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.GetResponse;
 import com.rabbitmq.client.ShutdownSignalException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,14 +34,14 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 
-public class RabbitmqConsumer implements MessageConsumer {
-	private static final Log logger = LogFactory.getLog(RabbitmqConsumer.class.getName());
+public class RabbitMQConsumer implements MessageConsumer {
+	private static final Log logger = LogFactory.getLog(RabbitMQConsumer.class.getName());
 
 	private Connection connection;
 
 	private Channel channel;
 
-	private RabbitmqStore store;
+	private RabbitMQStore store;
 
 	private String queueName;
 
@@ -57,7 +57,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 	 */
 	private CachedMessage cachedMessage;
 
-	public RabbitmqConsumer(RabbitmqStore store) {
+	public RabbitMQConsumer(RabbitMQStore store) {
 		if (store == null) {
 			logger.error("Cannot initialize.");
 			return;
@@ -97,16 +97,9 @@ public class RabbitmqConsumer implements MessageConsumer {
 		}
 		//receive messages
 		try {
-			QueueingConsumer consumer = new QueueingConsumer(channel);
-			channel.basicConsume(queueName, false, consumer);
 
-			boolean successful = false;
-			QueueingConsumer.Delivery delivery = null;
-			try {
-				delivery = consumer.nextDelivery(1);
-			} catch (InterruptedException e) {
-				logger.error("Error while consuming message", e);
-			}
+			GetResponse delivery = null;
+			delivery = channel.basicGet(queueName, false);
 
 			if (delivery != null) {
 				//deserilizing message
@@ -126,15 +119,12 @@ public class RabbitmqConsumer implements MessageConsumer {
 				MessageContext synapseMc = store.newSynapseMc(axis2Mc);
 				synapseMc =
 						MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
-				updateCache(delivery, synapseMc, null, false, channel);
-				successful = true;
+				updateCache(delivery, synapseMc, null, false);
 				if (logger.isDebugEnabled()) {
 					logger.debug(getId() + " Received MessageId:" +
-					             delivery.getProperties().getMessageId());
+					             delivery.getProps().getMessageId());
 				}
 				return synapseMc;
-			} else {
-				channel.close();
 			}
 		} catch (ShutdownSignalException sse) {
 			logger.error(getId() + " connection error when receiving messages" + sse);
@@ -164,7 +154,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 		return false;
 	}
 
-	public RabbitmqConsumer setConnection(Connection connection) {
+	public RabbitMQConsumer setConnection(Connection connection) {
 		this.connection = connection;
 		return this;
 	}
@@ -214,7 +204,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 	}
 
 	private boolean reconnect() {
-		RabbitmqConsumer consumer = (RabbitmqConsumer) store.getConsumer();
+		RabbitMQConsumer consumer = (RabbitMQConsumer) store.getConsumer();
 
 		if (consumer.getConnection() == null) {
 			if (logger.isDebugEnabled()) {
@@ -230,31 +220,29 @@ public class RabbitmqConsumer implements MessageConsumer {
 		return true;
 	}
 
-	private void updateCache(QueueingConsumer.Delivery message, MessageContext synCtx,
+	private void updateCache(GetResponse delivery, MessageContext synCtx,
 	                         String messageId,
-	                         boolean receiveError, Channel channel) throws IOException {
+	                         boolean receiveError) throws IOException {
 		isReceiveError = receiveError;
-		cachedMessage.setMessage(message);
+		cachedMessage.setMessage(delivery);
 		cachedMessage.setMc(synCtx);
 		cachedMessage.setId(messageId);
-		cachedMessage.setChannel(channel);
 	}
 
 	/**
 	 * This is used to store the last received message
 	 * if the message is successfully sent to the endpoint, ack will sent to the store
 	 * in order to delete message from the queue
-	 *
+	 * <p/>
 	 * In RabbitMQ message ack should be using the same channel which was consumed the message
 	 * There for the consumed channel will also stored without closing until the message is ackd
 	 */
 	private final class CachedMessage {
-		private QueueingConsumer.Delivery message = null;
+		private GetResponse message = null;
 		private MessageContext mc = null;
-		private Channel channel;
 		private String id = "";
 
-		public CachedMessage setMessage(QueueingConsumer.Delivery message) {
+		public CachedMessage setMessage(GetResponse message) {
 			this.message = message;
 			return this;
 		}
@@ -262,8 +250,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 		public boolean ack() {
 			if (message != null && channel != null && channel.isOpen()) {
 				try {
-					this.channel.basicAck(message.getEnvelope().getDeliveryTag(), false);
-					channel.close();
+					channel.basicAck(message.getEnvelope().getDeliveryTag(), false);
 					return true;
 				} catch (IOException e) {
 					logger.error(getId() + " cannot ack last read message. Error:"
@@ -274,7 +261,7 @@ public class RabbitmqConsumer implements MessageConsumer {
 			return false;
 		}
 
-		public QueueingConsumer.Delivery getMessage() {
+		public GetResponse getMessage() {
 			return message;
 		}
 
@@ -285,14 +272,6 @@ public class RabbitmqConsumer implements MessageConsumer {
 
 		public CachedMessage setId(String id) {
 			this.id = id;
-			return this;
-		}
-
-		public CachedMessage setChannel(Channel channel) throws IOException {
-			if (this.channel != null && this.channel.isOpen()) {
-				this.channel.close();
-			}
-			this.channel = channel;
 			return this;
 		}
 
