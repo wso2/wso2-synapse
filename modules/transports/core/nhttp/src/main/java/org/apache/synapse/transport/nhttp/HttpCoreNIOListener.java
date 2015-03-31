@@ -18,27 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
@@ -72,19 +51,38 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
-import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 import org.apache.synapse.transport.nhttp.util.ActiveConnectionMonitor;
+import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
+
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * NIO transport listener for Axis2 based on HttpCore and NIO extensions
  */
 public class HttpCoreNIOListener implements TransportListener, ManagementSupport {
 
-    private static final Log log = LogFactory.getLog(HttpCoreNIOListener.class);
+    protected static final Log log = LogFactory.getLog(HttpCoreNIOListener.class);
     /** The Axis2 configuration context */
     private volatile ConfigurationContext cfgCtx;
     /** The IOReactor */
@@ -826,7 +824,23 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
         return "";
     }
 
-    //todo-Jagath
-    public void reloadConfig(){
+    /**
+     * Reload SSL profiles and reset connections
+     * @param transportInDescription TransportInDescription of the configuration
+     * @throws AxisFault
+     */
+    public void reloadDynamicSSLConfig(TransportInDescription transportInDescription) throws AxisFault {
+        Parameter oldParameter = transportInDescription.getParameter("SSLProfiles");
+        Parameter profilePathParam = transportInDescription.getParameter("SSLProfilesConfigPath");
+        if (oldParameter != null && profilePathParam != null) {
+            transportInDescription.removeParameter(oldParameter);
+            ServerConnFactoryBuilder builder = new ServerConnFactoryBuilder(transportInDescription, null);
+            TransportInDescription loadedTransportIn = builder.loadMultiProfileSSLConfig();
+            if (loadedTransportIn != null) {
+                transportInDescription = loadedTransportIn;
+                this.reload(transportInDescription);
+            }
+        }
     }
+
 }

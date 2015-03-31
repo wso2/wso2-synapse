@@ -19,28 +19,6 @@
 
 package org.apache.synapse.transport.nhttp.config;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509KeyManager;
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
@@ -55,6 +33,27 @@ import org.apache.synapse.transport.http.conn.SSLClientAuth;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.xml.namespace.QName;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 public class ServerConnFactoryBuilder {
 
@@ -288,34 +287,42 @@ public class ServerConnFactoryBuilder {
      */
     public TransportInDescription loadMultiProfileSSLConfig () {
 
-        //Already loaded
-        if (transportIn.getParameter("SSLProfiles")!=null) {
-            return transportIn;
-        }
         Parameter profilePathParam = transportIn.getParameter("SSLProfilesConfigPath");
+
+        //Custom SSL Profile configuration file not configured
         if (profilePathParam == null) {
-            return null;
+            //Custom SSL Profiles configured in Axis2 configuration
+            if (transportIn.getParameter("SSLProfiles") != null) {
+                return transportIn;
+            } else {
+                return null;
+            }
         }
 
+        ////Custom SSL Profile configured. Ignore Axis2 configurations
         OMElement pathEl = profilePathParam.getParameterElement();
         String path = pathEl.getFirstChildWithName(new QName("filePath")).getText();
+
         try {
-            if(path!=null) {
-                String separator = path.startsWith(System.getProperty("file.separator"))?
-                                   "":System.getProperty("file.separator");
-                String fullPath = System.getProperty("user.dir")+ separator +path;
+            if (path != null) {
+
+                String separator = path.startsWith(System.getProperty("file.separator")) ?
+                                   "" : System.getProperty("file.separator");
+                String fullPath = System.getProperty("user.dir") + separator + path;
+
                 OMElement profileEl = new StAXOMBuilder(fullPath).getDocumentElement();
                 Parameter profileParam = new Parameter();
                 profileParam.setParameterElement(profileEl);
                 profileParam.setName("SSLProfiles");
                 profileParam.setValue(profileEl);
+
                 transportIn.addParameter(profileParam);
-                log.info("SSLProfile configuration is loaded from path: "+fullPath);
+                log.info("SSLProfile configuration is loaded from path: " + fullPath);
+
                 return transportIn;
             }
-        }
-        catch (Exception e) {
-            log.error("Could not load SSLProfileConfig from file path: "+path, e);
+        } catch (Exception e) {
+            log.error("Could not load SSLProfileConfig from file path: " + path, e);
         }
         return null;
     }

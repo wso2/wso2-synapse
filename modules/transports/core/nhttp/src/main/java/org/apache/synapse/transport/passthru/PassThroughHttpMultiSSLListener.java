@@ -1,12 +1,23 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.http.HttpHost;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.ListenerProfileReloader;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
 
-public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener {
+public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener implements SSLProfileLoader{
+
+    @Override
+    public void init(ConfigurationContext cfgCtx, TransportInDescription transportInDescription)
+            throws AxisFault {
+        super.init(cfgCtx, transportInDescription);
+        new ListenerProfileReloader(this, transportInDescription);
+    }
 
     @Override
     protected Scheme initScheme() {
@@ -20,6 +31,18 @@ public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener {
         return new ServerConnFactoryBuilder(transportIn, host)
             .parseSSL()
             .parseMultiProfileSSL();
+    }
+
+    /**
+     * Reload SSL profiles and reset connections in PassThroughHttpMultiSSLListener
+     *
+     * @param transport TransportInDescription of the configuration
+     *
+     * @throws AxisFault
+     */
+    public void reloadConfig(ParameterInclude transport) throws AxisFault {
+        log.info("PassThroughHttpMultiSSLListener reloading Config..");
+        reloadDynamicSSLConfig((TransportInDescription) transport);
     }
 
 }

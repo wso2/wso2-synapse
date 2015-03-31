@@ -19,23 +19,8 @@
 
 package org.apache.synapse.transport.nhttp.config;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
@@ -49,6 +34,21 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.xml.namespace.QName;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
 
 public class ClientConnFactoryBuilder {
 
@@ -159,7 +159,9 @@ public class ClientConnFactoryBuilder {
     private Map<String, SSLContext> getCustomSSLContexts(TransportOutDescription transportOut)
             throws AxisFault {
 
-        Parameter customProfilesParam = transportOut.getParameter("customSSLProfiles");
+        TransportOutDescription customSSLProfileTransport = loadDynamicSSLConfig(transportOut);
+
+        Parameter customProfilesParam = customSSLProfileTransport.getParameter("customSSLProfiles");
         if (customProfilesParam == null) {
             return null;
         }
@@ -171,6 +173,7 @@ public class ClientConnFactoryBuilder {
         OMElement customProfilesElt = customProfilesParam.getParameterElement();
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
         Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
+
         while (profiles.hasNext()) {
             OMElement profile = (OMElement) profiles.next();
             OMElement serversElt = profile.getFirstChildWithName(new QName("servers"));
@@ -317,5 +320,48 @@ public class ClientConnFactoryBuilder {
             return new ClientConnFactory(params);
         }
     }
-    
+
+    /**
+     *
+     * @return
+     */
+    public TransportOutDescription loadDynamicSSLConfig (TransportOutDescription transportOut) {
+
+        Parameter profilePathParam = transportOut.getParameter("SSLProfilesConfigPath");
+
+        //No Separate configuration file configured. Therefore using Axis2 Configuration
+        if (profilePathParam == null) {
+            return transportOut;
+        }
+
+        //Using separate SSL Profile configuration file, ignore Axis2 configurations
+        OMElement pathEl = profilePathParam.getParameterElement();
+        String path = pathEl.getFirstChildWithName(new QName("filePath")).getText();
+
+        try {
+            if (path != null) {
+
+                String separator = path.startsWith(System.getProperty("file.separator")) ?
+                                   "" : System.getProperty("file.separator");
+                String fullPath = System.getProperty("user.dir") + separator + path;
+
+                OMElement profileEl = new StAXOMBuilder(fullPath).getDocumentElement();
+                Parameter profileParam = new Parameter();
+                profileParam.setParameterElement(profileEl);
+                profileParam.setName("customSSLProfiles");
+                profileParam.setValue(profileEl);
+
+                transportOut.addParameter(profileParam);
+                log.info("customSSLProfiles configuration is loaded from path: " + fullPath);
+
+                return transportOut;
+            }
+
+        } catch (Exception e) {
+            log.error("Could not load customSSLProfiles from file path: " + path, e);
+        }
+        return null;
+
+
+    }
 }
