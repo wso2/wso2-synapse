@@ -56,8 +56,10 @@ public final class VFSConstants {
     public static final String STREAMING = "transport.vfs.Streaming";
     
     public static final String MAX_RETRY_COUNT = "transport.vfs.MaxRetryCount";
+    public static final String FORCE_CREATE_FOLDER = "transport.vfs.CreateFolder";
     public static final String RECONNECT_TIMEOUT = "transport.vfs.ReconnectTimeout";
     public static final String APPEND = "transport.vfs.Append";
+    public static final String SUBFOLDER_TIMESTAMP = "transport.vfs.SubFolderTimestampFormat";
 
     /**
     * If a rename/move operation failed, we'll keep track of a list in a text file and this will

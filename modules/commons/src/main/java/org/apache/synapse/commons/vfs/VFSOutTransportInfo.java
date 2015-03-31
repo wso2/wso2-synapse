@@ -26,6 +26,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.provider.UriParser;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,7 +49,9 @@ public class VFSOutTransportInfo implements OutTransportInfo {
     private boolean append;
     private boolean fileLocking;
     private Map<String, String> fso = null;
-
+    //When the folder structure does not exists forcefully create
+    private boolean forceCreateFolder = false;
+    
     private static final String[] uriParamsToDelete = {VFSConstants.APPEND+"=true", VFSConstants.APPEND+"=false"};
 
     /**
@@ -71,13 +75,28 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         } else {
             this.outFileURI = outFileURI;
         }
-
+     	
         Map<String,String> properties = BaseUtils.getEPRProperties(outFileURI);
 
         String scheme = UriParser.extractScheme(this.outFileURI);
         properties.put(VFSConstants.SCHEME, scheme);
         setOutFileSystemOptionsMap(properties);
 
+        if (properties.containsKey(VFSConstants.SUBFOLDER_TIMESTAMP)) {
+            String strSubfolderFormat = properties.get(VFSConstants.SUBFOLDER_TIMESTAMP);
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(strSubfolderFormat);
+                String strDateformat = sdf.format(new Date());
+                int iIndex = this.outFileURI.indexOf("?");
+                if (iIndex > -1) {
+                    this.outFileURI = this.outFileURI.substring(0, iIndex) + strDateformat
+                            + this.outFileURI.substring(iIndex, this.outFileURI.length());
+                }
+            } catch (Exception e) {
+                log.warn("Error generating subfolder name with date", e);
+            }
+        }       
+        
         if (properties.containsKey(VFSConstants.MAX_RETRY_COUNT)) {
             String strMaxRetryCount = properties.get(VFSConstants.MAX_RETRY_COUNT);
             maxRetryCount = Integer.parseInt(strMaxRetryCount);
@@ -85,6 +104,14 @@ public class VFSOutTransportInfo implements OutTransportInfo {
             maxRetryCount = VFSConstants.DEFAULT_MAX_RETRY_COUNT;
         }
 
+        forceCreateFolder = false;
+        if (properties.containsKey(VFSConstants.FORCE_CREATE_FOLDER)) {
+            String strForceCreateFolder = properties.get(VFSConstants.FORCE_CREATE_FOLDER);
+            if (strForceCreateFolder != null && strForceCreateFolder.toLowerCase().equals("true")) {
+                forceCreateFolder = true;
+            }
+        }
+        
         if (properties.containsKey(VFSConstants.RECONNECT_TIMEOUT)) {
             String strReconnectTimeout = properties.get(VFSConstants.RECONNECT_TIMEOUT);
             reconnectTimeout = Long.parseLong(strReconnectTimeout) * 1000;
@@ -209,4 +236,19 @@ public class VFSOutTransportInfo implements OutTransportInfo {
 
         this.fso = options;
     }
+
+    /**
+     * @return the forceCreateFolder
+     */
+    public boolean isForceCreateFolder() {
+        return forceCreateFolder;
+    }
+
+    /**
+     * @param forceCreateFolder the forceCreateFolder to set
+     */
+    public void setForceCreateFolder(boolean forceCreateFolder) {
+        this.forceCreateFolder = forceCreateFolder;
+    }
+    
 }
