@@ -101,6 +101,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     
     private boolean fileSortAscending;
     
+    private boolean forceCreateFolder;
+    
+    private String subfolderTimestamp;
+    
     private Long distributedLockTimeout;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
@@ -330,6 +334,36 @@ public class PollTableEntry extends AbstractPollTableEntry {
         this.vfsSchemeProperties = vfsSchemeProperties;
     }
 
+    
+    
+    /**
+     * @return the forceCreateFolder
+     */
+    public boolean isForceCreateFolder() {
+        return forceCreateFolder;
+    }
+
+    /**
+     * @param forceCreateFolder the forceCreateFolder to set
+     */
+    public void setForceCreateFolder(boolean forceCreateFolder) {
+        this.forceCreateFolder = forceCreateFolder;
+    }
+
+    /**
+     * @return the subfolderTimestamp
+     */
+    public String getSubfolderTimestamp() {
+        return subfolderTimestamp;
+    }
+
+    /**
+     * @param subfolderTimestamp the subfolderTimestamp to set
+     */
+    public void setSubfolderTimestamp(String subfolderTimestamp) {
+        this.subfolderTimestamp = subfolderTimestamp;
+    }
+
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
         
@@ -538,6 +572,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 }
 
             }
+            
+            String strForceCreateFolder = ParamUtils.getOptionalParam(params, VFSConstants.FORCE_CREATE_FOLDER);
+            forceCreateFolder = false;    
+            if (strForceCreateFolder != null && "true".equals(strForceCreateFolder.toLowerCase())) {
+                forceCreateFolder = true;
+            }            
+            
+            subfolderTimestamp = ParamUtils.getOptionalParam(params, VFSConstants.SUBFOLDER_TIMESTAMP);
             
             return super.loadConfiguration(params);
         }
