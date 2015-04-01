@@ -91,6 +91,8 @@ public class VFSOutTransportInfo implements OutTransportInfo {
                 if (iIndex > -1) {
                     this.outFileURI = this.outFileURI.substring(0, iIndex) + strDateformat
                             + this.outFileURI.substring(iIndex, this.outFileURI.length());
+                }else{
+                    this.outFileURI += strDateformat;
                 }
             } catch (Exception e) {
                 log.warn("Error generating subfolder name with date", e);

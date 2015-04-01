@@ -21,6 +21,7 @@ package org.apache.synapse.transport.vfs;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -513,6 +514,25 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 case PollTableEntry.SUCCSESSFUL:
                     if (entry.getActionAfterProcess() == PollTableEntry.MOVE) {
                         moveToDirectoryURI = entry.getMoveAfterProcess();
+                        //Postfix the date given timestamp format
+                        String strSubfoldertimestamp = entry.getSubfolderTimestamp();
+                        if (strSubfoldertimestamp != null) {
+                            try {
+                                SimpleDateFormat sdf = new SimpleDateFormat(strSubfoldertimestamp);
+                                String strDateformat = sdf.format(new Date());
+                                int iIndex = moveToDirectoryURI.indexOf("?");
+                                if (iIndex > -1) {
+                                    moveToDirectoryURI = moveToDirectoryURI.substring(0, iIndex)
+                                            + strDateformat
+                                            + moveToDirectoryURI.substring(iIndex,
+                                                    moveToDirectoryURI.length());
+                                }else{
+                                    moveToDirectoryURI += strDateformat;
+                                }
+                            } catch (Exception e) {
+                                log.warn("Error generating subfolder name with date", e);
+                            }
+                        }
                     }
                     break;
 
@@ -534,6 +554,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 } else {
                     prefix = "";
                 }
+
+                //Forcefully create the folder(s) if does not exists
+                if(entry.isForceCreateFolder() && !moveToDirectory.exists()){
+                    moveToDirectory.createFolder();
+                }                
                 FileObject dest = moveToDirectory.resolveFile(
                         prefix + fileObject.getName().getBaseName());
                 if (log.isDebugEnabled()) {
