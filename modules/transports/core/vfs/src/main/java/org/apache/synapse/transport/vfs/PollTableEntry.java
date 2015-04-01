@@ -97,6 +97,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     
     private boolean distributedLock;
     
+    private String fileSortParam;
+    
+    private boolean fileSortAscending;
+    
     private Long distributedLockTimeout;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
@@ -279,6 +283,36 @@ public class PollTableEntry extends AbstractPollTableEntry {
      */
     public boolean isDistributedLock() {
         return distributedLock;
+    }
+
+    
+    
+    /**
+     * @return the fileSortParam
+     */
+    public String getFileSortParam() {
+        return fileSortParam;
+    }
+
+    /**
+     * @param fileSortParam the fileSortParam to set
+     */
+    public void setFileSortParam(String fileSortParam) {
+        this.fileSortParam = fileSortParam;
+    }
+
+    /**
+     * @return the fileSortAscending
+     */
+    public boolean isFileSortAscending() {
+        return fileSortAscending;
+    }
+
+    /**
+     * @param fileSortAscending the fileSortAscending to set
+     */
+    public void setFileSortAscending(boolean fileSortAscending) {
+        this.fileSortAscending = fileSortAscending;
     }
 
     /**
@@ -490,7 +524,21 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     }                
                 }
                 
-            }            
+            }  
+
+            fileSortParam = ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_PARAM);
+            fileSortAscending = true;         
+            if (fileSortParam != null
+                    && ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_ORDER) != null) {
+                try {
+                    fileSortAscending = Boolean.parseBoolean(ParamUtils.getOptionalParam(params,
+                            VFSConstants.FILE_SORT_ORDER));
+                } catch (Exception e) {
+                    fileSortAscending = true;
+                }
+
+            }
+            
             return super.loadConfiguration(params);
         }
     }

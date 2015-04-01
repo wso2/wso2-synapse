@@ -18,6 +18,20 @@
 */
 package org.apache.synapse.transport.vfs;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -34,27 +48,22 @@ import org.apache.axis2.transport.base.AbstractPollingTransportListener;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.ManagementSupport;
-import org.apache.commons.vfs2.*;
-import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
-import org.apache.synapse.commons.vfs.VFSConstants;
-import org.apache.synapse.commons.vfs.VFSUtils;
+import org.apache.commons.vfs2.FileContent;
+import org.apache.commons.vfs2.FileNotFolderException;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileSystemOptions;
+import org.apache.commons.vfs2.FileType;
+import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
-import org.apache.synapse.commons.vfs.VFSOutTransportInfo ;
+import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
-
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.io.File;
-import java.util.*;
+import org.apache.synapse.commons.vfs.VFSUtils;
 
 /**
  * The "vfs" transport is a polling based transport - i.e. it gets kicked off at
@@ -315,6 +324,38 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     if (log.isDebugEnabled()) {
                         log.debug("File name pattern : " + entry.getFileNamePattern());
                     }
+                    // Sort the files
+                    String strSortParam = entry.getFileSortParam();
+                    if (strSortParam != null) {
+                        log.debug("Start Sorting the files.");
+                        boolean bSortOrderAsscending = entry.isFileSortAscending();
+                        if (log.isDebugEnabled()) {
+                            log.debug("Sorting the files by : " + strSortParam + ". ("
+                                    + bSortOrderAsscending + ")");
+                        }
+                        if (strSortParam.equals(VFSConstants.FILE_SORT_VALUE_NAME)
+                                && bSortOrderAsscending) {
+                            Arrays.sort(children, new FileNameAscComparator());
+                        } else if (strSortParam.equals(VFSConstants.FILE_SORT_VALUE_NAME)
+                                && !bSortOrderAsscending) {
+                            Arrays.sort(children, new FileNameDesComparator());
+                        } else if (strSortParam.equals(VFSConstants.FILE_SORT_VALUE_SIZE)
+                                && bSortOrderAsscending) {
+                            Arrays.sort(children, new FileSizeAscComparator());
+                        } else if (strSortParam.equals(VFSConstants.FILE_SORT_VALUE_SIZE)
+                                && !bSortOrderAsscending) {
+                            Arrays.sort(children, new FileSizeDesComparator());
+                        } else if (strSortParam
+                                .equals(VFSConstants.FILE_SORT_VALUE_LASTMODIFIEDTIMESTAMP)
+                                && bSortOrderAsscending) {
+                            Arrays.sort(children, new FileLastmodifiedtimestampAscComparator());
+                        } else if (strSortParam
+                                .equals(VFSConstants.FILE_SORT_VALUE_LASTMODIFIEDTIMESTAMP)
+                                && !bSortOrderAsscending) {
+                            Arrays.sort(children, new FileLastmodifiedtimestampDesComparator());
+                        }
+                        log.debug("End Sorting the files.");
+                    }                 
                     for (FileObject child : children) {
                         //skipping *.lock file
                         if(child.getName().getBaseName().endsWith(".lock")){
@@ -825,4 +866,68 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
         }
     }
+    /**
+     * Comparator classed used to sort the files according to user input
+     * */
+    class FileNameAscComparator implements Comparator<FileObject> {
+        public int compare(FileObject o1, FileObject o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    }
+
+    class FileLastmodifiedtimestampAscComparator implements Comparator<FileObject> {
+        public int compare(FileObject o1, FileObject o2) {
+            Long lDiff = 0l;
+            try {
+                lDiff = o1.getContent().getLastModifiedTime()
+                        - o2.getContent().getLastModifiedTime();
+            } catch (FileSystemException e) {
+                log.warn("Unable to compare lastmodified timestamp of the two files.", e);
+            }
+            return lDiff.intValue();
+        }
+    }
+
+    class FileSizeAscComparator implements Comparator<FileObject> {
+        public int compare(FileObject o1, FileObject o2) {
+            Long lDiff = 0l;
+            try {
+                lDiff = o1.getContent().getSize() - o2.getContent().getSize();
+            } catch (FileSystemException e) {
+                log.warn("Unable to compare size of the two files.", e);
+            }
+            return lDiff.intValue();
+        }
+    }
+
+    class FileNameDesComparator implements Comparator<FileObject> {
+        public int compare(FileObject o1, FileObject o2) {
+            return o2.getName().compareTo(o1.getName());
+        }
+    }
+
+    class FileLastmodifiedtimestampDesComparator implements Comparator<FileObject> {
+        public int compare(FileObject o1, FileObject o2) {
+            Long lDiff = 0l;
+            try {
+                lDiff = o2.getContent().getLastModifiedTime()
+                        - o1.getContent().getLastModifiedTime();
+            } catch (FileSystemException e) {
+                log.warn("Unable to compare lastmodified timestamp of the two files.", e);
+            }
+            return lDiff.intValue();
+        }
+    }
+
+    class FileSizeDesComparator implements Comparator<FileObject> {
+        public int compare(FileObject o1, FileObject o2) {
+            Long lDiff = 0l;
+            try {
+                lDiff = o2.getContent().getSize() - o1.getContent().getSize();
+            } catch (FileSystemException e) {
+                log.warn("Unable to compare size of the two files.", e);
+            }
+            return lDiff.intValue();
+        }
+    }  
 }
