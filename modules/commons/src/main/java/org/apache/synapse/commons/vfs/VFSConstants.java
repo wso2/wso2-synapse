@@ -62,6 +62,16 @@ public final class VFSConstants {
     public static final String SUBFOLDER_TIMESTAMP = "transport.vfs.SubFolderTimestampFormat";
 
     /**
+     * File Sorting Parameter and values
+     * */
+    public static final String FILE_SORT_PARAM = "transport.vfs.FileSortAttribute";
+    public static final String FILE_SORT_VALUE_NAME = "Name";
+    public static final String FILE_SORT_VALUE_SIZE = "Size";
+    public static final String FILE_SORT_VALUE_LASTMODIFIEDTIMESTAMP = "Lastmodifiedtimestamp";
+    public static final String FILE_SORT_ORDER = "transport.vfs.FileSortAsscending";
+    
+    
+    /**
     * If a rename/move operation failed, we'll keep track of a list in a text file and this will
      * provide the ability to configure that property file name
      */
