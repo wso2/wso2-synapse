@@ -19,7 +19,11 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.*;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMComment;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,7 +90,7 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
             serializedElement = parent;
         } else if(m instanceof CommentMediator) {
             // serialize comment mediator
-            serializedElement = serializeCommentsFromMediator(parent, m);
+            serializedElement = serializeComments(parent, m);
         } else {
             // delegate the specific serializations to it's serializer
             OMElement elem = serializeSpecificMediator(m);
@@ -209,12 +213,12 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
     }
 
     /**
-     * Serialize comment entries from an arrayList
+     * Serialize String Comment entries from a List
      *
      * @param parent      OMElement to be updated
      * @param commentList List of comment entries to be serialized
      */
-    protected void serializeCommentsFromList(OMElement parent, List<String> commentList) {
+    protected void serializeComments(OMElement parent, List<String> commentList) {
         for (String comment : commentList) {
             OMComment commendNode = fac.createOMComment(parent, "comment");
             commendNode.setValue(comment);
@@ -223,12 +227,12 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
     }
 
     /**
-     * Serialize comment entries from an arrayList
+     * Serialize String  Comment entries from a List
      *
      * @param parent OMElement to be updated
      * @param m      Comment mediator instance which contains comment information
      */
-    protected OMElement serializeCommentsFromMediator(OMElement parent, Mediator m) {
+    protected OMElement serializeComments(OMElement parent, Mediator m) {
         OMComment commendNode = fac.createOMComment(parent, "comment");
         commendNode.setValue(((CommentMediator) m).getCommentText());
         parent.addChild(commendNode);

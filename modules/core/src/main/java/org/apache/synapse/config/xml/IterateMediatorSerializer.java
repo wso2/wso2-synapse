@@ -91,7 +91,7 @@ public class IterateMediatorSerializer extends AbstractMediatorSerializer {
 
         itrElem.addChild(TargetSerializer.serializeTarget(itrMed.getTarget()));
 
-        serializeCommentsFromList(itrElem, itrMed.getCommentsList());
+        serializeComments(itrElem, itrMed.getCommentsList());
 
         return itrElem;
     }

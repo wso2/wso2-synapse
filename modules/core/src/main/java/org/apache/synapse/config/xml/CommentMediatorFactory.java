@@ -26,6 +26,9 @@ import org.apache.synapse.mediators.builtin.CommentMediator;
 import javax.xml.namespace.QName;
 import java.util.Properties;
 
+/**
+ * Factory for Comment Mediators.
+ */
 public class CommentMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName Comment_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "comment");

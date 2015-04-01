@@ -23,11 +23,14 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.CommentMediator;
 
+/**
+ * Serializer for Comment Mediators
+ */
 public class CommentMediatorSerializer extends AbstractListMediatorSerializer {
 
     /**
-     * This is a dummy serializer where it never used. Comment Mediator serialization happens at
-     * AbstractListMediatorSerializer's serializeMediator method.
+     * Comment Mediator serialization happens at AbstractMediatorSerializer's
+     * serializeMediator method.
      *
      * @param m mediator to be serialized     *
      *

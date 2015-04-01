@@ -33,7 +33,11 @@ import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 
 import javax.xml.namespace.QName;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Parent class for all the {@link MediatorFactory} implementations
@@ -223,6 +227,7 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
 
         while (it.hasNext()) {
             OMNode child = (OMNode) it.next();
+
             if (child instanceof OMComment) {
                 if (((OMComment) child).getValue() != null) {
                     commentList.add(((OMComment) child).getValue());

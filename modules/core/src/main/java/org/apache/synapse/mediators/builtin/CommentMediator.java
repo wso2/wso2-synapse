@@ -22,12 +22,15 @@ package org.apache.synapse.mediators.builtin;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 
+/**
+ * Mediator to handle XML comment nodes in Synapse Configurations
+ */
 public class CommentMediator extends AbstractMediator {
 
     private String commentText;
 
     /**
-     * Dummy Mediation method. This will not do any tasks in CommentMediator
+     * Mediation method. This will not do any tasks in CommentMediator
      *
      * @param synCtx the current message for mediation     *
      * @return true since remaining mediators should be executed
