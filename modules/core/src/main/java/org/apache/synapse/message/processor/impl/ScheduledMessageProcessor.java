@@ -406,4 +406,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			start();
 		}
 	}
+
+	public void cleanupLocalResources() {
+	    if (messageConsumer != null) {
+	        messageConsumer.cleanup();
+        }
+	    
+    }
 }

@@ -144,4 +144,10 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * @return returns true on success.
      */
     boolean isPaused();
+    
+	/**
+	 * This method is used to cleanup local resources such as JMS connections
+	 * used by the message processor.
+	 */
+	void cleanupLocalResources();
 }
