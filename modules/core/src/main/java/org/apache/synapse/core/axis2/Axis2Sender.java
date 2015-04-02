@@ -87,8 +87,8 @@ public class Axis2Sender {
         // if this is a dummy 202 Accepted message meant only for the http/s transports
         // prevent it from going into any other transport sender
         if (messageContext.isPropertyTrue(NhttpConstants.SC_ACCEPTED) &&
-                messageContext.getTransportOut() != null &&
-                !messageContext.getTransportOut().getName().startsWith(Constants.TRANSPORT_HTTP)) {
+            messageContext.getTransportOut() != null &&
+            !messageContext.getTransportOut().getName().startsWith(Constants.TRANSPORT_HTTP)) {
             return;
         }
 
@@ -103,7 +103,7 @@ public class Axis2Sender {
             // if engaged we should use the addressing enabled Configuration context.            
 
             if (AddressingHelper.isReplyRedirected(messageContext) &&
-                    !messageContext.getReplyTo().hasNoneAddress()) {
+                !messageContext.getReplyTo().hasNoneAddress()) {
 
                 messageContext.setTo(messageContext.getReplyTo());
                 messageContext.setReplyTo(null);
@@ -116,9 +116,9 @@ public class Axis2Sender {
             }
 
             if (messageContext.getEnvelope().hasFault() &&
-                    AddressingHelper.isFaultRedirected(messageContext) &&
-                    (messageContext.getFaultTo() == null || !messageContext.getFaultTo()
-                            .hasNoneAddress())) {
+                AddressingHelper.isFaultRedirected(messageContext) &&
+                (messageContext.getFaultTo() == null || !messageContext.getFaultTo()
+                        .hasNoneAddress())) {
 
                 messageContext.setTo(messageContext.getFaultTo());
                 messageContext.setFaultTo(null);
@@ -133,7 +133,7 @@ public class Axis2Sender {
             String preserveAddressingProperty = (String) smc.getProperty(
                     SynapseConstants.PRESERVE_WS_ADDRESSING);
             if (preserveAddressingProperty != null &&
-                    Boolean.parseBoolean(preserveAddressingProperty)) {
+                Boolean.parseBoolean(preserveAddressingProperty)) {
                 /*Avoiding duplicate addressing headers*/
                 messageContext.setProperty(AddressingConstants.REPLACE_ADDRESSING_HEADERS, "true");
                 messageContext.setMessageID(smc.getMessageID());
@@ -148,16 +148,16 @@ public class Axis2Sender {
             if (preserveHeaderProperty == null || !Boolean.parseBoolean(preserveHeaderProperty)) {
                 // remove the processed headers
                 MessageHelper.removeProcessedHeaders(messageContext,
-                        (preserveAddressingProperty != null &&
-                                Boolean.parseBoolean(preserveAddressingProperty))
+                                                     (preserveAddressingProperty != null &&
+                                                      Boolean.parseBoolean(preserveAddressingProperty))
                 );
             }
 
             // temporary workaround for https://issues.apache.org/jira/browse/WSCOMMONS-197
             if (messageContext.isEngaged(SynapseConstants.SECURITY_MODULE_NAME) &&
-                    messageContext.getEnvelope().getHeader() == null) {
+                messageContext.getEnvelope().getHeader() == null) {
                 SOAPFactory fac = messageContext.isSOAP11() ?
-                        OMAbstractFactory.getSOAP11Factory() : OMAbstractFactory.getSOAP12Factory();
+                                  OMAbstractFactory.getSOAP11Factory() : OMAbstractFactory.getSOAP12Factory();
                 fac.createSOAPHeader(messageContext.getEnvelope());
             }
 

@@ -199,12 +199,6 @@ public class EndpointDefinitionSerializer {
             element.addChild(markAsTimedout);
         }
 
-        if (!endpointDefinition.getFailoverHttpstatusCodes().isEmpty()) {
-            OMElement statusElemtnt = fac.createOMElement("failoverHttpStatusCodes", SynapseConstants.SYNAPSE_OMNAMESPACE);
-            statusElemtnt.setText(endpointDefinition.getFailoverHttpstatusCodes().toString().replaceAll("[\\[\\] ]", ""));
-            element.addChild(statusElemtnt);
-        }
-
         if (!endpointDefinition.getRetryDisabledErrorCodes().isEmpty()) {
             OMElement retryConfig = fac.createOMElement(XMLConfigConstants.RETRY_CONFIG,
                     SynapseConstants.SYNAPSE_OMNAMESPACE);

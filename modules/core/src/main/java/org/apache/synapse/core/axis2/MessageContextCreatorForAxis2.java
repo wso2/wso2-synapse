@@ -39,7 +39,7 @@ public class MessageContextCreatorForAxis2 {
     private static final Log log = LogFactory.getLog(MessageContextCreatorForAxis2.class);
 
     private static SynapseConfiguration synCfg = null;
-    private static SynapseEnvironment   synEnv = null;
+    private static SynapseEnvironment synEnv = null;
 
     public static MessageContext getSynapseMessageContext(
             org.apache.axis2.context.MessageContext axisMsgCtx) throws AxisFault {

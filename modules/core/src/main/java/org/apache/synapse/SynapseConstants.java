@@ -661,7 +661,7 @@ public final class SynapseConstants {
     /**
      * Synapse message context property that use for index endpoints to implement failover support on http status codes
      */
-    public static final String ENDPOINT_INDEX = "endpointindex";
+    public static final String CURRENT_ENDPOINT_INDEX = "currentendpointindex";
     /**
      * Synapse message context property which holds endpoint list to resend messages based on http status codes
      */
@@ -674,5 +674,8 @@ public final class SynapseConstants {
      * Synapse message context which indicates this message context need to be cloned because of the endpoing configuration
      */
     public static final String CLONE_THIS_MSG = "clonethismessagecontext";
+
+    /**Http status codes configured for the failover group*/
+    public static final String HTTP_STATUS_CODE_LIST = "httpstatuscodelist";
 
 }

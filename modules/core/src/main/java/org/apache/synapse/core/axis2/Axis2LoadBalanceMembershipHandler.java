@@ -46,7 +46,7 @@ public class Axis2LoadBalanceMembershipHandler implements LoadBalanceMembershipH
     public void init(Properties props, LoadbalanceAlgorithm algorithm) {
         this.properties = props;
         this.lbDomain = props.getProperty("applicationDomain");
-        if(lbDomain == null){
+        if (lbDomain == null) {
             String msg = "The applicationDomain property has not been specified in the " +
                          "dynamicLoadbalance configuration in the synapse.xml file. This has " +
                          "to be the same as the applicationDomain entry in the loadBalancer" +
@@ -62,14 +62,14 @@ public class Axis2LoadBalanceMembershipHandler implements LoadBalanceMembershipH
 
         // The following code does the bridging between Axis2 and Synapse load balancing
         ClusteringAgent clusteringAgent = configCtx.getAxisConfiguration().getClusteringAgent();
-        if(clusteringAgent == null){
+        if (clusteringAgent == null) {
             String msg = "In order to enable load balancing across an Axis2 cluster, " +
                          "the cluster entry should be enabled in the axis2.xml file";
             log.error(msg);
             throw new SynapseException(msg);
         }
         groupMgtAgent = clusteringAgent.getGroupManagementAgent(lbDomain);
-        if(groupMgtAgent == null){
+        if (groupMgtAgent == null) {
             String msg =
                     "A LoadBalanceEventHandler has not been specified in the axis2.xml " +
                     "file for the domain " + lbDomain;
@@ -78,7 +78,7 @@ public class Axis2LoadBalanceMembershipHandler implements LoadBalanceMembershipH
         }
     }
 
-    public ConfigurationContext getConfigurationContext(){
+    public ConfigurationContext getConfigurationContext() {
         return configCtx;
     }
 

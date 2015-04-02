@@ -45,7 +45,7 @@ public class ServiceLoadBalanceMembershipHandler implements LoadBalanceMembershi
      * Key - Host, Value - DomainAlgorithmContext
      */
     private Map<String, DomainAlgorithmContext> hostDomainAlgorithmContextMap =
-                                    new HashMap<String, DomainAlgorithmContext>();
+            new HashMap<String, DomainAlgorithmContext>();
     private ClusteringAgent clusteringAgent;
 
     public ServiceLoadBalanceMembershipHandler(Map<String, String> hostDomainMap,
@@ -55,9 +55,9 @@ public class ServiceLoadBalanceMembershipHandler implements LoadBalanceMembershi
                                                String endpointName) {
         for (Map.Entry<String, String> entry : hostDomainMap.entrySet()) {
             AlgorithmContext algorithmContext =
-                new AlgorithmContext(isClusteringEnabled, configCtx, endpointName + "." + entry.getKey());
+                    new AlgorithmContext(isClusteringEnabled, configCtx, endpointName + "." + entry.getKey());
             this.hostDomainAlgorithmContextMap.put(entry.getKey(),
-                                   new DomainAlgorithmContext(entry.getValue(), algorithm.clone(), algorithmContext));
+                                                   new DomainAlgorithmContext(entry.getValue(), algorithm.clone(), algorithmContext));
         }
     }
 
@@ -70,7 +70,7 @@ public class ServiceLoadBalanceMembershipHandler implements LoadBalanceMembershi
 
         // The following code does the bridging between Axis2 and Synapse load balancing
         clusteringAgent = configCtx.getAxisConfiguration().getClusteringAgent();
-        if(clusteringAgent == null){
+        if (clusteringAgent == null) {
             String msg = "In order to enable load balancing across an Axis2 cluster, " +
                          "the cluster entry should be enabled in the axis2.xml file";
             log.error(msg);
@@ -78,7 +78,7 @@ public class ServiceLoadBalanceMembershipHandler implements LoadBalanceMembershi
         }
     }
 
-    public ConfigurationContext getConfigurationContext(){
+    public ConfigurationContext getConfigurationContext() {
         return configCtx;
     }
 
@@ -99,7 +99,7 @@ public class ServiceLoadBalanceMembershipHandler implements LoadBalanceMembershi
         String lbDomain = domainAlgorithmContext.getDomain();
         LoadbalanceAlgorithm algorithm = domainAlgorithmContext.getAlgorithm();
         GroupManagementAgent groupMgtAgent = clusteringAgent.getGroupManagementAgent(lbDomain);
-        if(groupMgtAgent == null){
+        if (groupMgtAgent == null) {
             String msg =
                     "A LoadBalanceEventHandler has not been specified in the axis2.xml " +
                     "file for the domain " + lbDomain + " for host " + host;
@@ -113,7 +113,7 @@ public class ServiceLoadBalanceMembershipHandler implements LoadBalanceMembershi
 
     private DomainAlgorithmContext getDomainAlgorithmContext(String host) {
         DomainAlgorithmContext domainAlgorithmContext = hostDomainAlgorithmContextMap.get(host);
-        if(domainAlgorithmContext == null) {
+        if (domainAlgorithmContext == null) {
             int indexOfDot;
             if ((indexOfDot = host.indexOf(".")) != -1) {
                 domainAlgorithmContext = getDomainAlgorithmContext(host.substring(indexOfDot + 1));

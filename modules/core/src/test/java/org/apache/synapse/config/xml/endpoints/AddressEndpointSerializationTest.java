@@ -27,70 +27,70 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
 
     public void testAddressEndpointScenarioOne() throws Exception {
         String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" />" +
-                "</endpoint>" ;
+                          "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" />" +
+                          "</endpoint>";
 
         OMElement inputElement = createOMElement(inputXML);
         AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
-                inputElement,true,null);
+                inputElement, true, null);
 
         OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
-        assertTrue(compare(serializedOut,inputElement));
+        assertTrue(compare(serializedOut, inputElement));
 
     }
 
     public void testAddressEndpointScenarioTwo() throws Exception {
         String inputXML =
                 "<endpoint name=\"testEndpoint\" onError=\"foo\" xmlns=" +
-                        "\"http://ws.apache.org/ns/synapse\">" +
+                "\"http://ws.apache.org/ns/synapse\">" +
                 "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
-                "</address>"+
-                "</endpoint>" ;
+                "</address>" +
+                "</endpoint>";
 
         OMElement inputElement = createOMElement(inputXML);
         AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
-                inputElement,false,null);
+                inputElement, false, null);
         OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
 
-        assertTrue(compare(serializedOut,inputElement));
+        assertTrue(compare(serializedOut, inputElement));
     }
 
     public void testAddressEndpointScenarioThree() throws Exception {
         String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
-                "<markForSuspension>" +
-                "<errorCodes>101507,101508</errorCodes>" +
-                "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
-                "<retryDelay>1000</retryDelay>" +
-                "</markForSuspension>" +
-                "<suspendOnFailure>" +
-                "<errorCodes>101505,101506</errorCodes>" +
-                "<initialDuration>5000</initialDuration>" +
-                "<progressionFactor>2.0</progressionFactor>" +
-                "<maximumDuration>60000</maximumDuration>" +
-                "</suspendOnFailure>" +
-                "<retryConfig>" +
-                "<disabledErrorCodes>101501,101502</disabledErrorCodes>" +
-                "</retryConfig>" +
-                "</address>" +
-                "</endpoint>" ;
+                          "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
+                          "<markForSuspension>" +
+                          "<errorCodes>101507,101508</errorCodes>" +
+                          "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                          "<retryDelay>1000</retryDelay>" +
+                          "</markForSuspension>" +
+                          "<suspendOnFailure>" +
+                          "<errorCodes>101505,101506</errorCodes>" +
+                          "<initialDuration>5000</initialDuration>" +
+                          "<progressionFactor>2.0</progressionFactor>" +
+                          "<maximumDuration>60000</maximumDuration>" +
+                          "</suspendOnFailure>" +
+                          "<retryConfig>" +
+                          "<disabledErrorCodes>101501,101502</disabledErrorCodes>" +
+                          "</retryConfig>" +
+                          "</address>" +
+                          "</endpoint>";
 
         OMElement inputElement = createOMElement(inputXML);
         AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
-                inputElement,true,null);
+                inputElement, true, null);
 
         OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
-        assertTrue(compare(serializedOut,inputElement));
+        assertTrue(compare(serializedOut, inputElement));
 
     }
 
 
     public void testAddressEndpointScenarioFour() throws Exception {
-         String inputXML =
+        String inputXML =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\">" +
                 "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
-                "</address>"+
-                "</endpoint>" ;
+                "</address>" +
+                "</endpoint>";
 
         OMElement inputElement = createOMElement(inputXML);
         AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
@@ -98,80 +98,35 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
         //assertNotNull(endpoint.getName()); // make sure we generate names for anonymous endpoints
         OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
         // the generated name should not show up in the serialization
-        assertTrue(compare(serializedOut,inputElement));
+        assertTrue(compare(serializedOut, inputElement));
     }
-
-    public void testAddressEndpointScenarioFive() throws Exception{
-        String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
-                "<markForSuspension>" +
-                "<errorCodes>101507,101508</errorCodes>" +
-                "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
-                "<retryDelay>1000</retryDelay>" +
-                "</markForSuspension>" +
-                "<failoverHttpStatusCodes>500,501,502</failoverHttpStatusCodes>"+
-                "<suspendOnFailure>" +
-                "<errorCodes>101505,101506</errorCodes>" +
-                "<initialDuration>5000</initialDuration>" +
-                "<progressionFactor>2.0</progressionFactor>" +
-                "<maximumDuration>60000</maximumDuration>" +
-                "</suspendOnFailure>" +
-                "<retryConfig>" +
-                "<enabledErrorCodes>101501,101502</enabledErrorCodes>" +
-                "</retryConfig>" +
-                "</address>" +
-                "</endpoint>" ;
-
-        OMElement inputElement = createOMElement(inputXML);
-        AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
-                inputElement,true,null);
-
-        OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
-        assertTrue(compare(serializedOut,inputElement));
-    }
-
-    public void testAddressEndpointScenarioSix() throws Exception{
-        String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
-                "<failoverHttpStatusCodes>500,501,502</failoverHttpStatusCodes>"+
-                "</address>" +
-                "</endpoint>" ;
-
-        OMElement inputElement = createOMElement(inputXML);
-        AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
-                inputElement,true,null);
-
-        OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
-        assertTrue(compare(serializedOut,inputElement));
-    }
-
 
     public void testAddressEndpointScenarioDe() throws Exception {
         String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
-                "<markForSuspension>" +
-                "<errorCodes>101507,101508</errorCodes>" +
-                "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
-                "<retryDelay>1000</retryDelay>" +
-                "</markForSuspension>" +
-                "<suspendOnFailure>" +
-                "<errorCodes>101505,101506</errorCodes>" +
-                "<initialDuration>5000</initialDuration>" +
-                "<progressionFactor>2.0</progressionFactor>" +
-                "<maximumDuration>60000</maximumDuration>" +
-                "</suspendOnFailure>" +
-                "<retryConfig>" +
-                "<enabledErrorCodes>101501,101502</enabledErrorCodes>" +
-                "</retryConfig>" +
-                "</address>" +
-                "</endpoint>" ;
+                          "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
+                          "<markForSuspension>" +
+                          "<errorCodes>101507,101508</errorCodes>" +
+                          "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
+                          "<retryDelay>1000</retryDelay>" +
+                          "</markForSuspension>" +
+                          "<suspendOnFailure>" +
+                          "<errorCodes>101505,101506</errorCodes>" +
+                          "<initialDuration>5000</initialDuration>" +
+                          "<progressionFactor>2.0</progressionFactor>" +
+                          "<maximumDuration>60000</maximumDuration>" +
+                          "</suspendOnFailure>" +
+                          "<retryConfig>" +
+                          "<enabledErrorCodes>101501,101502</enabledErrorCodes>" +
+                          "</retryConfig>" +
+                          "</address>" +
+                          "</endpoint>";
 
         OMElement inputElement = createOMElement(inputXML);
         AddressEndpoint endpoint = (AddressEndpoint) AddressEndpointFactory.getEndpointFromElement(
-                inputElement,true,null);
+                inputElement, true, null);
 
         OMElement serializedOut = AddressEndpointSerializer.getElementFromEndpoint(endpoint);
-        assertTrue(compare(serializedOut,inputElement));
+        assertTrue(compare(serializedOut, inputElement));
 
     }
 

@@ -47,8 +47,8 @@ public class SynapseMessageReceiver implements MessageReceiver {
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
         StatisticsReporter.reportForComponent(synCtx,
-                AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
-                ComponentType.PROXYSERVICE);
+                                              AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
+                                              ComponentType.PROXYSERVICE);
 
         boolean traceOn = synCtx.getMainSequence().getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -56,11 +56,11 @@ public class SynapseMessageReceiver implements MessageReceiver {
         if (traceOrDebugOn) {
             traceOrDebug(traceOn, "Synapse received a new message for message mediation...");
             traceOrDebug(traceOn, "Received To: " +
-                (mc.getTo() != null ? mc.getTo().getAddress() : "null"));
+                                  (mc.getTo() != null ? mc.getTo().getAddress() : "null"));
             traceOrDebug(traceOn, "SOAPAction: " +
-                (mc.getSoapAction() != null ? mc.getSoapAction() : "null"));
+                                  (mc.getSoapAction() != null ? mc.getSoapAction() : "null"));
             traceOrDebug(traceOn, "WSA-Action: " +
-                (mc.getWSAAction() != null ? mc.getWSAAction() : "null"));
+                                  (mc.getWSAAction() != null ? mc.getWSAAction() : "null"));
 
             if (traceOn && trace.isTraceEnabled()) {
                 String[] cids = mc.getAttachmentMap().getAllContentIDs();
@@ -75,7 +75,7 @@ public class SynapseMessageReceiver implements MessageReceiver {
 
         // get service log for this message and attach to the message context
         Log serviceLog = LogFactory.getLog(SynapseConstants.SERVICE_LOGGER_PREFIX +
-            SynapseConstants.SYNAPSE_SERVICE_NAME);
+                                           SynapseConstants.SYNAPSE_SERVICE_NAME);
         ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
 
         try {
@@ -90,7 +90,7 @@ public class SynapseMessageReceiver implements MessageReceiver {
 
             } else {
                 warn(traceOn, "Exception encountered but no fault handler found - " +
-                    "message dropped", synCtx);
+                              "message dropped", synCtx);
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);

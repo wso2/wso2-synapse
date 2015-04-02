@@ -152,10 +152,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
 
         this.executorService = new SynapseThreadPool(coreThreads, maxThreads, keepAlive, qLength,
-                synCfg.getProperty(SynapseThreadPool.SYN_THREAD_GROUP,
-                        SynapseThreadPool.SYNAPSE_THREAD_GROUP),
-                synCfg.getProperty(SynapseThreadPool.SYN_THREAD_IDPREFIX,
-                        SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX));
+                                                     synCfg.getProperty(SynapseThreadPool.SYN_THREAD_GROUP,
+                                                                        SynapseThreadPool.SYNAPSE_THREAD_GROUP),
+                                                     synCfg.getProperty(SynapseThreadPool.SYN_THREAD_IDPREFIX,
+                                                                        SynapseThreadPool.SYNAPSE_THREAD_ID_PREFIX));
 
         int ibCoreThreads = InboundThreadPool.INBOUND_CORE_THREADS;
         int ibMaxThreads = InboundThreadPool.INBOUND_MAX_THREADS;
@@ -191,24 +191,23 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
-                                   SynapseConfiguration synapseConfig, ServerContextInformation contextInformation) {
+                                   SynapseConfiguration synapseConfig,
+                                   ServerContextInformation contextInformation) {
         this(cfgCtx, synapseConfig);
         this.contextInformation = contextInformation;
     }
 
     public boolean injectMessage(final MessageContext synCtx) {
 
-
-        /**Calls registered fault handler on failover situation*/
-        if (synCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX) != null && (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)) != null) {
-
+        /**Calls registered fault handler on endpoint failure situation*/
+        if (synCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX) != null &&
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC) != null) {
             if ((Integer) (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)) > 300) {
-
                 MessageContext mc = (MessageContext) synCtx.getProperty(SynapseConstants.CLONED_SYN_MSG_CTX);
-
                 Object o = mc.getFaultStack().pop();
                 if (o != null) {
-                    mc.setProperty(NhttpConstants.HTTP_SC, (Integer) (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)));
+                    mc.setProperty(NhttpConstants.HTTP_SC, (Integer)
+                            (((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(NhttpConstants.HTTP_SC)));
                     ((FaultHandler) o).handleFault(mc);
                 }
                 return false;
@@ -234,16 +233,16 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
             if (log.isDebugEnabled()) {
                 log.debug("Start mediating the message in the " +
-                        "pre-mediate state using the mandatory sequence");
+                          "pre-mediate state using the mandatory sequence");
             }
 
             if (!mandatorySeq.mediate(synCtx)) {
                 if (log.isDebugEnabled()) {
                     log.debug((synCtx.isResponse() ? "Response" : "Request") + " message for the "
-                            + (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null ?
-                            "proxy service " + synCtx.getProperty(SynapseConstants.PROXY_SERVICE) :
-                            "message mediation") + " dropped in the " +
-                            "pre-mediation state by the mandatory sequence : \n" + synCtx);
+                              + (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null ?
+                                 "proxy service " + synCtx.getProperty(SynapseConstants.PROXY_SERVICE) :
+                                 "message mediation") + " dropped in the " +
+                              "pre-mediation state by the mandatory sequence : \n" + synCtx);
                 }
                 return false;
             }
@@ -274,14 +273,14 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (receivingSequence != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using Sequence with name: " + receivingSequence
-                            + " for injected message");
+                              + " for injected message");
                 }
                 Mediator seqMediator = synCtx.getSequence(receivingSequence);
                 if (seqMediator != null) {
                     return seqMediator.mediate(synCtx);
                 } else {
                     log.warn("Cannot find a Sequence with name: " + receivingSequence
-                            + " for injecting the response message");
+                             + " for injecting the response message");
                     return false;
                 }
             } else {
@@ -305,8 +304,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     synCtx.pushFaultHandler(new MediatorFaultHandler(faultSequence));
                 } else {
                     log.warn("Cloud not find any fault-sequence named :" +
-                            proxyService.getTargetFaultSequence() + "; Setting the default" +
-                            " fault sequence for out path");
+                             proxyService.getTargetFaultSequence() + "; Setting the default" +
+                             " fault sequence for out path");
                     synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
                 }
 
@@ -322,14 +321,14 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (receivingSequence != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using Sequence with name: " + receivingSequence
-                            + " for injected message");
+                              + " for injected message");
                 }
                 Mediator seqMediator = synCtx.getSequence(receivingSequence);
                 if (seqMediator != null) {
                     seqMediator.mediate(synCtx);
                 } else {
                     log.warn("Cannot find a Sequence with name: " + receivingSequence
-                            + " for injecting the message");
+                             + " for injecting the message");
                     return false;
                 }
             } else if (outSequence != null) {
@@ -337,7 +336,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug(proxyService
-                            + " does not specifies an out-sequence - sending the response back");
+                              + " does not specifies an out-sequence - sending the response back");
                 }
                 Axis2Sender.sendBack(synCtx);
             }
@@ -349,7 +348,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
-                    + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
+                      + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
         synCtx.setEnvironment(this);
         executorService.execute(new MediatorWorker(seq, synCtx));
@@ -369,7 +368,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
-                    + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
+                      + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
         if (sequential) {
             try {
@@ -500,7 +499,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             mc.getEnvelope().addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
         } catch (Exception e) {
             handleException("Unable to attach the SOAP envelope to " +
-                    "the created new message context", e);
+                            "the created new message context", e);
         }
 
         return mc;
@@ -530,9 +529,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
 
         String tempPrefix = synapseConfig.getProperty(SynapseConstants.TEMP_FILE_PREFIX,
-                SynapseConstants.DEFAULT_TEMPFILE_PREFIX);
+                                                      SynapseConstants.DEFAULT_TEMPFILE_PREFIX);
         String tempSuffix = synapseConfig.getProperty(SynapseConstants.TEMP_FILE_SUFIX,
-                SynapseConstants.DEFAULT_TEMPFILE_SUFIX);
+                                                      SynapseConstants.DEFAULT_TEMPFILE_SUFIX);
 
         return new OverflowBlob(numberOfChunks, chunkSize, tempPrefix, tempSuffix);
     }
@@ -750,23 +749,23 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (outSequence != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using the sequence named " + sequenceName
-                            + " for the outgoing message mediation of the proxy service "
-                            + proxyService);
+                              + " for the outgoing message mediation of the proxy service "
+                              + proxyService);
                 }
                 return outSequence;
             } else {
                 log.error("Unable to find the out-sequence " +
-                        "specified by the name " + sequenceName);
+                          "specified by the name " + sequenceName);
                 throw new SynapseException("Unable to find the " +
-                        "out-sequence specified by the name " + sequenceName);
+                                           "out-sequence specified by the name " + sequenceName);
             }
         } else {
             Mediator outSequence = proxyService.getTargetInLineOutSequence();
             if (outSequence != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Using the anonymous out-sequence specified in the proxy service "
-                            + proxyService
-                            + " for outgoing message mediation");
+                              + proxyService
+                              + " for outgoing message mediation");
                 }
                 return outSequence;
             }
@@ -851,7 +850,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
-                    + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
+                      + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
         smc.setEnvironment(this);
         try {
@@ -864,7 +863,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
             } else {
                 warn(false, "Exception encountered but no fault handler found - " +
-                        "message dropped", smc);
+                            "message dropped", smc);
             }
             return false;
         } catch (Exception e) {
@@ -879,7 +878,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
             } else {
                 warn(false, "Exception encountered but no fault handler found - " +
-                        "message dropped", smc);
+                            "message dropped", smc);
             }
             return false;
         } catch (Throwable e) {

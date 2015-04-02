@@ -131,8 +131,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 callbackStore.remove(messageCtx.getMessageID());
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
-                            " removed from the " +
-                            "callback store since we got an accepted Notification");
+                              " removed from the " +
+                              "callback store since we got an accepted Notification");
                 }
             }
 
@@ -156,7 +156,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageID);
             if (log.isDebugEnabled()) {
                 log.debug("Callback removed for request message id : " + messageID +
-                        ". Pending callbacks count : " + callbackStore.size());
+                          ". Pending callbacks count : " + callbackStore.size());
             }
 
             RelatesTo[] relates = messageCtx.getRelationships();
@@ -169,12 +169,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             if (callback != null) {
                 handleMessage(messageID, messageCtx, ((AsyncCallback) callback).getSynapseOutMsgCtx(),
-                        (AsyncCallback) callback);
+                              (AsyncCallback) callback);
 
             } else {
                 // TODO invoke a generic synapse error handler for this message
                 log.warn("Synapse received a response for the request with message Id : " +
-                        messageID + " But a callback is not registered (anymore) to process this response");
+                         messageID + " But a callback is not registered (anymore) to process this response");
             }
 
         } else if (!messageCtx.isPropertyTrue(NhttpConstants.SC_ACCEPTED)) {
@@ -194,7 +194,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
      * @throws AxisFault if the message cannot be processed
      */
     private void handleMessage(String messageID, MessageContext response,
-                               org.apache.synapse.MessageContext synapseOutMsgCtx, AsyncCallback callback) throws AxisFault {
+                               org.apache.synapse.MessageContext synapseOutMsgCtx,
+                               AsyncCallback callback) throws AxisFault {
         // apply the tenant information to the out message context
         TenantInfoConfigurator configurator = synapseOutMsgCtx.getEnvironment()
                 .getTenantInfoConfigurator();
@@ -205,7 +206,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (o != null && Boolean.TRUE.equals(o)) {
 
             StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                    ErrorLogFactory.createErrorLog(response));
+                                                 ErrorLogFactory.createErrorLog(response));
             // there is a sending fault. propagate the fault to fault handlers.
 
             Stack faultStack = synapseOutMsgCtx.getFaultStack();
@@ -224,11 +225,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        response.getProperty(SynapseConstants.ERROR_CODE));
+                                             response.getProperty(SynapseConstants.ERROR_CODE));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
-                        response.getProperty(SynapseConstants.ERROR_MESSAGE));
+                                             response.getProperty(SynapseConstants.ERROR_MESSAGE));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                        response.getProperty(SynapseConstants.ERROR_DETAIL));
+                                             response.getProperty(SynapseConstants.ERROR_DETAIL));
                 synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, e);
 
                 if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
@@ -238,19 +239,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 if (log.isDebugEnabled()) {
                     log.debug("[Failed Request Message ID : " + messageID + "]" +
-                            " [New to be Retried Request Message ID : " +
-                            synapseOutMsgCtx.getMessageID() + "]");
+                              " [New to be Retried Request Message ID : " +
+                              synapseOutMsgCtx.getMessageID() + "]");
                 }
 
                 int errorCode = (Integer) response.getProperty(SynapseConstants.ERROR_CODE);
 
                 //If a timeout has occured and the timeout action of the callback is to discard the message
                 if (errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT &&
-                        callback.getTimeOutAction() == SynapseConstants.DISCARD) {
+                    callback.getTimeOutAction() == SynapseConstants.DISCARD) {
                     //Do not execute any fault sequences. Discard message
                     if (log.isWarnEnabled()) {
                         log.warn("Synapse timed out for the request with Message ID : " + messageID +
-                                ". Ignoring fault handlers since the timeout action is DISCARD");
+                                 ". Ignoring fault handlers since the timeout action is DISCARD");
                     }
                     faultStack.removeAllElements();
                 } else {
@@ -266,18 +267,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             Endpoint successfulEndpoint = null;
             if (faultStack != null && !faultStack.isEmpty()
-                    && faultStack.peek() instanceof Endpoint) {
+                && faultStack.peek() instanceof Endpoint) {
                 successfulEndpoint = (Endpoint) faultStack.pop();
             }
 
             if (log.isDebugEnabled()) {
                 log.debug("Synapse received an asynchronous response message");
                 log.debug("Received To: " +
-                        (response.getTo() != null ? response.getTo().getAddress() : "null"));
+                          (response.getTo() != null ? response.getTo().getAddress() : "null"));
                 log.debug("SOAPAction: " +
-                        (response.getSoapAction() != null ? response.getSoapAction() : "null"));
+                          (response.getSoapAction() != null ? response.getSoapAction() : "null"));
                 log.debug("WSA-Action: " +
-                        (response.getWSAAction() != null ? response.getWSAAction() : "null"));
+                          (response.getWSAAction() != null ? response.getWSAAction() : "null"));
                 String[] cids = response.getAttachmentMap().getAllContentIDs();
                 if (cids != null && cids.length > 0) {
                     for (String cid : cids) {
@@ -301,9 +302,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             response.setServerSide(true);
             response.setProperty(SynapseConstants.ISRESPONSE_PROPERTY, Boolean.TRUE);
             response.setProperty(MessageContext.TRANSPORT_OUT,
-                    axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_OUT));
+                                 axisOutMsgCtx.getProperty(MessageContext.TRANSPORT_OUT));
             response.setProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO,
-                    axisOutMsgCtx.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
+                                 axisOutMsgCtx.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
             response.setTransportIn(axisOutMsgCtx.getTransportIn());
             response.setTransportOut(axisOutMsgCtx.getTransportOut());
 
@@ -336,8 +337,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES) != null) {
 
                 response.setProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES,
-                        axisOutMsgCtx.getProperty(
-                                AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES));
+                                     axisOutMsgCtx.getProperty(
+                                             AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES));
             } else {
                 response.removeProperty(AddressingConstants.DISABLE_ADDRESSING_FOR_OUT_MESSAGES);
             }
@@ -348,7 +349,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // copy the message type property that's used by the out message to the
                 // response message
                 response.setProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE,
-                        messageType);
+                                     messageType);
             }
 
             // compare original received message (axisOutMsgCtx) soap version with the response
@@ -400,7 +401,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                     if (log.isDebugEnabled()) {
                         log.debug("SOAPFault found in response message, forcing endpoint " +
-                                successfulEndpoint.getName() + " to fail");
+                                  successfulEndpoint.getName() + " to fail");
                     }
 
                     //setup new pipe configuration..if failure happens (this will be setup as the source writer and during the TargetContext
@@ -410,13 +411,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     if (conn != null) {
                         SourceConfiguration sourceConfiguration = (SourceConfiguration) axis2OUTMC.getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
                         Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
-                                sourceConfiguration);
+                                             sourceConfiguration);
                         axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
                     }
 
 
                     StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                            ErrorLogFactory.createErrorLog(response));
+                                                         ErrorLogFactory.createErrorLog(response));
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
 
@@ -444,7 +445,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         if (faultStack != null) {
                             synapseInMessageContext.getFaultStack().addAll(faultStack);
                             ((FaultHandler) successfulEndpoint).handleFault(synapseInMessageContext,
-                                    null);
+                                                                            null);
                         }
                     }
                     return;
@@ -500,11 +501,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             } catch (SynapseException syne) {
                 Stack stack = synapseInMessageContext.getFaultStack();
                 if (stack != null &&
-                        !stack.isEmpty()) {
+                    !stack.isEmpty()) {
                     ((FaultHandler) stack.pop()).handleFault(synapseInMessageContext, syne);
                 } else {
                     log.error("Synapse encountered an exception, " +
-                            "No error handlers found - [Message Dropped]\n" + syne.getMessage());
+                              "No error handlers found - [Message Dropped]\n" + syne.getMessage());
                 }
             }
         }
@@ -528,7 +529,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             boolean found = false;
             for (int j = 0; j < newRelates.length && j < insertPos; j++) {
                 if (newRelates[j].equals(current) ||
-                        newRelates[j].getValue().equals(current.getValue())) {
+                    newRelates[j].getValue().equals(current.getValue())) {
                     found = true;
                     break;
                 }

@@ -47,11 +47,6 @@ public class EndpointDefinition implements AspectConfigurable {
     private String address = null;
 
     /**
-     * A list of http status codes, which supports to failover
-     */
-    private final List<Integer> failoverHttpstatusCodes = new ArrayList<Integer>();
-
-    /**
      * Should messages be sent in an WS-RM Sequence ?
      */
     @Deprecated
@@ -248,25 +243,6 @@ public class EndpointDefinition implements AspectConfigurable {
             computedAddress.append(addressString.substring(s, addressString.length()));
             return computedAddress.toString();
         }
-    }
-
-
-    /**
-     * Add http status code which the endpoint should support
-     *
-     * @param failoverHttpstatusCodes the http status code to be supported
-     */
-    public void addFailoverHttpstatusCodes(int failoverHttpstatusCodes) {
-        this.failoverHttpstatusCodes.add(failoverHttpstatusCodes);
-    }
-
-    /**
-     * Get the list of failover http status codes
-     *
-     * @return failover http status codes list
-     */
-    public List<Integer> getFailoverHttpstatusCodes() {
-        return failoverHttpstatusCodes;
     }
 
     /**
