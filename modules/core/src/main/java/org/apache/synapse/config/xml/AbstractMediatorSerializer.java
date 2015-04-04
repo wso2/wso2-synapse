@@ -86,9 +86,9 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
 
         if (m instanceof AnonymousListMediator) {
             ((AnonymousListMediatorSerializer) this).serializeChildren(parent,
-                    ((AnonymousListMediator) m).getList());
+                                                                       ((AnonymousListMediator) m).getList());
             serializedElement = parent;
-        } else if(m instanceof CommentMediator) {
+        } else if (m instanceof CommentMediator) {
             // serialize comment mediator
             serializedElement = serializeComments(parent, m);
         } else {
