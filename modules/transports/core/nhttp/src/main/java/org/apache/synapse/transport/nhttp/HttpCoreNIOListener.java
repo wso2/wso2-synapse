@@ -826,10 +826,12 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
 
     /**
      * Reload SSL profiles and reset connections
+     *
      * @param transportInDescription TransportInDescription of the configuration
      * @throws AxisFault
      */
-    public void reloadDynamicSSLConfig(TransportInDescription transportInDescription) throws AxisFault {
+    public void reloadDynamicSSLConfig(TransportInDescription transportInDescription)
+            throws AxisFault {
         Parameter oldParameter = transportInDescription.getParameter("SSLProfiles");
         Parameter profilePathParam = transportInDescription.getParameter("SSLProfilesConfigPath");
         if (oldParameter != null && profilePathParam != null) {

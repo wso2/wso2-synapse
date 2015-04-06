@@ -44,10 +44,11 @@ public class HttpCoreNIOSSLSender extends HttpCoreNIOSender implements SSLProfil
 
     /**
      * Reload SSL profiles and reset connections in HttpCoreNIOSSLSender
+     *
      * @param transport TransportOutDescription of the configuration
      * @throws AxisFault
      */
-    public void reloadConfig(ParameterInclude transport) throws AxisFault{
+    public void reloadConfig(ParameterInclude transport) throws AxisFault {
         log.info("HttpCoreNIOSSLSender reloading Config..");
         reload((TransportOutDescription) transport);
     }

@@ -78,7 +78,7 @@ public class ClientConnFactoryBuilder {
         }
 
         boolean novalidatecert = ParamUtils.getOptionalParamBoolean(transportOut,
-                "novalidatecert", false);
+                                                                    "novalidatecert", false);
 
         if (trustParam != null) {
             if (novalidatecert) {
@@ -88,7 +88,7 @@ public class ClientConnFactoryBuilder {
             }
             tsEle = trustParam.getParameterElement().getFirstElement();
         }
-        
+
         SSLContext sslContext = createSSLContext(ksEle, tsEle, novalidatecert);
 
         final Parameter hvp = transportOut.getParameter("HostnameVerifier");
@@ -108,7 +108,7 @@ public class ClientConnFactoryBuilder {
 
         final Parameter cvp = transportOut.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
-                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
+                                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
         RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
@@ -119,8 +119,8 @@ public class ClientConnFactoryBuilder {
             try {
                 cacheSize = new Integer(cacheSizeString);
                 cacheDelay = new Integer(cacheDelayString);
+            } catch (NumberFormatException e) {
             }
-            catch (NumberFormatException e) {}
             revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
 
@@ -169,7 +169,7 @@ public class ClientConnFactoryBuilder {
         if (log.isInfoEnabled()) {
             log.info(name + " Loading custom SSL profiles for the HTTPS sender");
         }
-        
+
         OMElement customProfilesElt = customProfilesParam.getParameterElement();
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
         Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
@@ -179,7 +179,7 @@ public class ClientConnFactoryBuilder {
             OMElement serversElt = profile.getFirstChildWithName(new QName("servers"));
             if (serversElt == null || serversElt.getText() == null) {
                 String msg = "Each custom SSL profile must define at least one host:port " +
-                        "pair under the servers element";
+                             "pair under the servers element";
                 log.error(name + " " + msg);
                 throw new AxisFault(msg);
             }
@@ -192,13 +192,13 @@ public class ClientConnFactoryBuilder {
             SSLContext sslContext = createSSLContext(ksElt, trElt, novalidatecert);
 
             for (String server : servers) {
-                server = server.trim();                
+                server = server.trim();
                 if (!contextMap.containsKey(server)) {
                     contextMap.put(server, sslContext);
                 } else {
                     if (log.isWarnEnabled()) {
-                        log.warn(name + " Multiple SSL profiles were found for the server : " + 
-                            server + ". Ignoring the excessive profiles.");
+                        log.warn(name + " Multiple SSL profiles were found for the server : " +
+                                 server + ". Ignoring the excessive profiles.");
                     }
                 }
             }
@@ -206,8 +206,8 @@ public class ClientConnFactoryBuilder {
 
         if (contextMap.size() > 0) {
             if (log.isInfoEnabled()) {
-                log.info(name + " Custom SSL profiles initialized for " + contextMap.size() + 
-                    " servers");
+                log.info(name + " Custom SSL profiles initialized for " + contextMap.size() +
+                         " servers");
             }
             return contextMap;
         }
@@ -361,7 +361,5 @@ public class ClientConnFactoryBuilder {
             log.error("Could not load customSSLProfiles from file path: " + path, e);
         }
         return null;
-
-
     }
 }
