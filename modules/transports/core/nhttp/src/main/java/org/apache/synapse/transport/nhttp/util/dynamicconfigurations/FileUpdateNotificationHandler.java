@@ -32,7 +32,7 @@ import java.util.TimerTask;
 /**
  * Periodically checks on configuration file updates and notify respective listeners
  */
-public class FileUpdateNotificationHandler extends TimerTask{
+public class FileUpdateNotificationHandler extends TimerTask {
 
     private Log log = LogFactory.getLog(this.getClass());
 
@@ -57,7 +57,7 @@ public class FileUpdateNotificationHandler extends TimerTask{
     }
 
     @Override
-    public void run(){
+    public void run() {
 
         long recordedLastUpdatedTime;
         long latestLastUpdatedTime;

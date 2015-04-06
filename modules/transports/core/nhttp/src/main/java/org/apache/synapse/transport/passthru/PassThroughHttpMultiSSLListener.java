@@ -37,7 +37,6 @@ public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener imp
      * Reload SSL profiles and reset connections in PassThroughHttpMultiSSLListener
      *
      * @param transport TransportInDescription of the configuration
-     *
      * @throws AxisFault
      */
     public void reloadConfig(ParameterInclude transport) throws AxisFault {

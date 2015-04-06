@@ -27,8 +27,6 @@
 
 package org.apache.synapse.transport.passthru;
 
-import java.io.IOException;
-
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
 import org.apache.http.impl.nio.reactor.AbstractIODispatch;
@@ -38,10 +36,12 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingUtils;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 
+import java.io.IOException;
+
 class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> {
 
     private final NHttpClientEventHandler handler;
-    private final ClientConnFactory connFactory;
+    private ClientConnFactory connFactory;
 
     public ClientIODispatch(
             final NHttpClientEventHandler handler,
@@ -97,4 +97,7 @@ class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> 
         }
     }
 
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
 }

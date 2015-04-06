@@ -117,11 +117,10 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     private boolean preserveServerHeader = true;
     /** Proxy config */
     private volatile ProxyConfig proxyConfig;
-
-    /**
-     * Configuration context will be cached to be used ar reload     */
+    /** Http Params **/
+    private volatile HttpParams params;
+    /**Configuration context will be cached to be used ar reload     */
     private volatile ConfigurationContext configurationContext;
-
     /** Socket timeout duration for HTTP connections */
     private int socketTimeout = 0;
 
@@ -140,7 +139,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         this.configurationContext = cfgCtx;
 
         NHttpConfiguration cfg = NHttpConfiguration.getInstance();
-        HttpParams params = new BasicHttpParams();
+        params = new BasicHttpParams();
         params
                 .setIntParameter(CoreConnectionPNames.SO_TIMEOUT,
                         cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, 60000))
@@ -965,98 +964,18 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
     /**
      * Reload SSL configurations and reset all connections
+     *
      * @param transportOut TransportOutDescriptin of the configuration
      * @throws AxisFault
      */
     public void reload(TransportOutDescription transportOut) throws AxisFault {
-
-        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
-        HttpParams params = new BasicHttpParams();
-        params
-                .setIntParameter(CoreConnectionPNames.SO_TIMEOUT,
-                        cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, 60000))
-                .setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT,
-                        cfg.getProperty(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000))
-                .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
-                        cfg.getProperty(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024))
-                .setParameter(CoreProtocolPNames.USER_AGENT, "Synapse-HttpComponents-NIO");
-
+        //create new connection factory
         ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
         connFactory = contextBuilder.createConnFactory(params);
 
-        connpool = new ConnectionPool();
-
-        proxyConfig = new ProxyConfigBuilder().parse(transportOut).build();
-        if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
-            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " +
-                    proxyConfig.getProxyBypass());
-        }
-
-        Parameter param = transportOut.getParameter("warnOnHTTP500");
-        if (param != null) {
-            String[] warnOnHttp500 = ((String) param.getValue()).split("\\|");
-            configurationContext.setNonReplicableProperty("warnOnHTTP500", warnOnHttp500);
-        }
-
-        IOReactorConfig ioReactorConfig = new IOReactorConfig();
-        ioReactorConfig.setIoThreadCount(
-                NHttpConfiguration.getInstance().getClientIOWorkers());
-        ioReactorConfig.setSoTimeout(
-                cfg.getProperty(NhttpConstants.SO_TIMEOUT_RECEIVER, 60000));
-        ioReactorConfig.setConnectTimeout(
-                cfg.getProperty(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000));
-        ioReactorConfig.setTcpNoDelay(cfg.getProperty(CoreConnectionPNames.TCP_NODELAY, 1) == 1);
-        if (cfg.getBooleanValue("http.nio.interest-ops-queueing", false)) {
-            ioReactorConfig.setInterestOpQueued(true);
-        }
-
-        preserveUserAgentHeader = cfg.isPreserveUserAgentHeader();
-        preserveServerHeader = cfg.isPreserveServerHeader();
-
-        try {
-            String prefix = name + " I/O dispatcher";
-            ioReactor = new DefaultConnectingIOReactor(
-                    ioReactorConfig,
-                    new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix));
-            ioReactor.setExceptionHandler(new IOReactorExceptionHandler() {
-                public boolean handle(IOException ioException) {
-                    log.warn("System may be unstable: IOReactor encountered a checked exception : " +
-                            ioException.getMessage(), ioException);
-                    return true;
-                }
-
-                public boolean handle(RuntimeException runtimeException) {
-                    log.warn("System may be unstable: IOReactor encountered a runtime exception : " +
-                            runtimeException.getMessage(), runtimeException);
-                    return true;
-                }
-            });
-        } catch (IOException e) {
-            log.error("Error starting the IOReactor", e);
-            throw new AxisFault(e.getMessage(), e);
-        }
-
-        metrics = new NhttpMetricsCollector(false, transportOut.getName());
-        handler = new ClientHandler(connpool, connFactory, proxyConfig.getCreds(), configurationContext, params, metrics);
-        iodispatch = new ClientIODispatch(handler, connFactory);
-        final IOEventDispatch ioEventDispatch = iodispatch;
-
-        // start the Sender in a new seperate thread
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    ioReactor.execute(ioEventDispatch);
-                } catch (InterruptedIOException ex) {
-                    log.fatal("Reactor Interrupted");
-                } catch (IOException e) {
-                    log.fatal("Encountered an I/O error: " + e.getMessage(), e);
-                }
-                log.info(name + " Shutdown");
-            }
-        }, "HttpCoreNIOSender");
-        t.start();
-        log.info(name + " Sender started from Dynamic SSL Profile Configuration update ...");
-
-        state = BaseConstants.STARTED;
+        //set new connection factory
+        handler.setConnFactory(connFactory);
+        iodispatch.setConnFactory(connFactory);
     }
+
 }
