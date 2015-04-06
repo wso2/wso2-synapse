@@ -25,7 +25,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
@@ -76,15 +75,9 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
 
             for (int i = mediatorPosition; i < mediators.size(); i++) {
-                Mediator mediator = mediators.get(i);
-                // Ignore Comment Mediator's mediation
-                if (mediator instanceof CommentMediator) {
-                    continue;
-                }
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
-
-                if (!mediator.mediate(synCtx)) {
+                if (!mediators.get(i).mediate(synCtx)) {
                     returnVal = false;
                     break;
                 }
