@@ -44,11 +44,11 @@ public class AggregateMediatorSerializationTest extends AbstractTestCase {
 
     public void testAggregateMediatorSerializationWithComments() {
         String inputXml = "<aggregate xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<!--TestComment-->" +
-                "<correlateOn expression=\"get-property('To')\" /><completeCondition timeout=\"10\">" +
-                "<messageCount min=\"1\" max=\"10\" /></completeCondition><onComplete expression=\"get-property('To')\">" +
-                "<!--TestComment--><send />" +
-                "</onComplete></aggregate>";
+                          "<!--TestComment-->" +
+                          "<correlateOn expression=\"get-property('To')\" /><completeCondition timeout=\"10\">" +
+                          "<messageCount min=\"1\" max=\"10\" /></completeCondition><onComplete expression=\"get-property('To')\">" +
+                          "<!--TestComment--><send />" +
+                          "</onComplete></aggregate>";
         assertTrue(serialization(inputXml, aggregateMediatorFactory, aggregateMediatorSerializer));
         assertTrue(serialization(inputXml, aggregateMediatorSerializer));
 

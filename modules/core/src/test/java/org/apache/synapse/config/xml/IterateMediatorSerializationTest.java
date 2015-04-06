@@ -37,18 +37,18 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
 
     public void testIterateMediatorSerializationSenarioOne() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                "continueParent=\"true\" preservePayload=\"true\" expression=\".\" " +
-                "attachPath=\"get-property('to')\"><target sequence=\"sequenceRef1\" " +
-                "endpoint=\"endpointRef1\"/>" + "</iterate>";
+                          "continueParent=\"true\" preservePayload=\"true\" expression=\".\" " +
+                          "attachPath=\"get-property('to')\"><target sequence=\"sequenceRef1\" " +
+                          "endpoint=\"endpointRef1\"/>" + "</iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
     }
 
     public void testIterateMediatorSerializationSenarioOneWithComments() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                "continueParent=\"true\" preservePayload=\"true\" expression=\".\" " +
-                "attachPath=\"get-property('to')\"><!--Test Comment--><target sequence=\"sequenceRef1\" " +
-                "endpoint=\"endpointRef1\"/>" + "</iterate>";
+                          "continueParent=\"true\" preservePayload=\"true\" expression=\".\" " +
+                          "attachPath=\"get-property('to')\"><!--Test Comment--><target sequence=\"sequenceRef1\" " +
+                          "endpoint=\"endpointRef1\"/>" + "</iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
 
@@ -56,48 +56,48 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
 
     public void testIterateMediatorSerializationScenarioTwo() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\">" +
-                "<target endpoint=\"endpointRef1\"><sequence><log/></sequence></target>" + "</iterate>";
+                          "<target endpoint=\"endpointRef1\"><sequence><log/></sequence></target>" + "</iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
     }
 
     public void testIterateMediatorSerializationScenarioTwoWithComments() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\"><!--Test Comment-->" +
-                "<target endpoint=\"endpointRef1\"><sequence><!--Test Comment--><log/></sequence></target>" + "</iterate>";
+                          "<target endpoint=\"endpointRef1\"><sequence><!--Test Comment--><log/></sequence></target>" + "</iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
     }
 
     public void testIterateMediatorSerializationScenarioThree() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\">" +
-                "<target><sequence><send/></sequence><endpoint><address uri=\"http://testURL2\"/>" +
-                "</endpoint></target></iterate>";
+                          "<target><sequence><send/></sequence><endpoint><address uri=\"http://testURL2\"/>" +
+                          "</endpoint></target></iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
     }
 
     public void testIterateMediatorSerializationScenarioThreeWithComments() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\"><!--Test Comment-->" +
-                "<target><sequence><!--Test Comment--><send/></sequence><endpoint><address uri=\"http://testURL2\"/>" +
-                "</endpoint></target></iterate>";
+                          "<target><sequence><!--Test Comment--><send/></sequence><endpoint><address uri=\"http://testURL2\"/>" +
+                          "</endpoint></target></iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
     }
 
     public void testIterateMediatorSerializationScenarioFour() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\">" +
-                "<target soapAction=\"urn:test\" to=\"http://localhost:7777\"><sequence><send/>" +
-                "</sequence><endpoint><address uri=\"http://testURL2\"/></endpoint></target>" +
-                "</iterate>";
+                          "<target soapAction=\"urn:test\" to=\"http://localhost:7777\"><sequence><send/>" +
+                          "</sequence><endpoint><address uri=\"http://testURL2\"/></endpoint></target>" +
+                          "</iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
     }
 
     public void testIterateMediatorSerializationScenarioFourWithComments() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\"><!--Test Comment-->" +
-                "<target soapAction=\"urn:test\" to=\"http://localhost:7777\"><sequence><!--Test Comment--><send/>" +
-                "</sequence><endpoint><address uri=\"http://testURL2\"/></endpoint></target>" +
-                "</iterate>";
+                          "<target soapAction=\"urn:test\" to=\"http://localhost:7777\"><sequence><!--Test Comment--><send/>" +
+                          "</sequence><endpoint><address uri=\"http://testURL2\"/></endpoint></target>" +
+                          "</iterate>";
         assertTrue(serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer));
         assertTrue(serialization(inputXml, iterateMediatorSerializer));
 
@@ -105,9 +105,9 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
 
     public void testIterateMediatorSerializationScenarioFive() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\" " +
-                "attachPath=\".\" preservePayload=\"false\"><target to=\"http://localhost:7777\">" +
-                "<sequence><send/></sequence><endpoint><address uri=\"http://testURL2\"/></endpoint>" +
-                "</target></iterate>";
+                          "attachPath=\".\" preservePayload=\"false\"><target to=\"http://localhost:7777\">" +
+                          "<sequence><send/></sequence><endpoint><address uri=\"http://testURL2\"/></endpoint>" +
+                          "</target></iterate>";
         try {
             serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer);
             serialization(inputXml, iterateMediatorSerializer);
@@ -118,9 +118,9 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
 
     public void testIterateMediatorSerializationScenarioFiveWithComments() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\" " +
-                "attachPath=\".\" preservePayload=\"false\"><!--Test Comment--><target to=\"http://localhost:7777\">" +
-                "<sequence><!--Test Comment--><send/></sequence><endpoint><address uri=\"http://testURL2\"/></endpoint>" +
-                "</target></iterate>";
+                          "attachPath=\".\" preservePayload=\"false\"><!--Test Comment--><target to=\"http://localhost:7777\">" +
+                          "<sequence><!--Test Comment--><send/></sequence><endpoint><address uri=\"http://testURL2\"/></endpoint>" +
+                          "</target></iterate>";
         try {
             serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer);
             serialization(inputXml, iterateMediatorSerializer);
@@ -132,9 +132,9 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
     public void testIterateMediatorSerializationScenarioSix() throws Exception {
         String inputXml =
                 "<clone xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\" attachPath=\".\">" +
-                        "<target to=\"http://localhost:7777\"><sequence><send/></sequence><endpoint>" +
-                        "<address uri=\"http://testURL2\"/></endpoint></target><target soapAction=" +
-                        "\"urn:test\" sequence=\"sequenceRef2\" endpoint=\"endpointRef2\"/></clone> ";
+                "<target to=\"http://localhost:7777\"><sequence><send/></sequence><endpoint>" +
+                "<address uri=\"http://testURL2\"/></endpoint></target><target soapAction=" +
+                "\"urn:test\" sequence=\"sequenceRef2\" endpoint=\"endpointRef2\"/></clone> ";
         try {
             serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer);
             serialization(inputXml, iterateMediatorSerializer);
@@ -146,9 +146,9 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
     public void testIterateMediatorSerializationScenarioSixWithComments() throws Exception {
         String inputXml =
                 "<clone xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\" attachPath=\".\"><!--Test Comment-->" +
-                        "<target to=\"http://localhost:7777\"><sequence><!--Test Comment--><send/></sequence><endpoint>" +
-                        "<address uri=\"http://testURL2\"/></endpoint></target><target soapAction=" +
-                        "\"urn:test\" sequence=\"sequenceRef2\" endpoint=\"endpointRef2\"/></clone> ";
+                "<target to=\"http://localhost:7777\"><sequence><!--Test Comment--><send/></sequence><endpoint>" +
+                "<address uri=\"http://testURL2\"/></endpoint></target><target soapAction=" +
+                "\"urn:test\" sequence=\"sequenceRef2\" endpoint=\"endpointRef2\"/></clone> ";
         try {
             serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer);
             serialization(inputXml, iterateMediatorSerializer);
@@ -159,7 +159,7 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
 
     public void testIterateMediatorSerializationScenarioSeven() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\" sequential=\"true\">" +
-                "<target endpoint=\"endpointRef1\"><sequence><log/></sequence></target>" + "</iterate>";
+                          "<target endpoint=\"endpointRef1\"><sequence><log/></sequence></target>" + "</iterate>";
         try {
             serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer);
             serialization(inputXml, iterateMediatorSerializer);
@@ -170,7 +170,7 @@ public class IterateMediatorSerializationTest extends AbstractTestCase {
 
     public void testIterateMediatorSerializationScenarioSevenWithComments() throws Exception {
         String inputXml = "<iterate xmlns=\"http://ws.apache.org/ns/synapse\" expression=\".\" sequential=\"true\"><!--Test Comment-->" +
-                "<target endpoint=\"endpointRef1\"><sequence><!--Test Comment--><log/></sequence></target>" + "</iterate>";
+                          "<target endpoint=\"endpointRef1\"><sequence><!--Test Comment--><log/></sequence></target>" + "</iterate>";
         try {
             serialization(inputXml, iterateMediatorFactory, iterateMediatorSerializer);
             serialization(inputXml, iterateMediatorSerializer);
