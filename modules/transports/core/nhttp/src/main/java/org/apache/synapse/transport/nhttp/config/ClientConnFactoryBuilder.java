@@ -49,6 +49,7 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
+import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 
 public class ClientConnFactoryBuilder {
 
@@ -125,7 +126,7 @@ public class ClientConnFactoryBuilder {
         }
 
         ssl = new SSLContextDetails(sslContext, new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier));
-        sslByHostMap = getCustomSSLContexts(transportOut);
+        sslByHostMap = getCustomSSLContexts(transportOut,PassThroughTransportUtils.getpSSLParameter(transportOut));
         return this;
     }
 
@@ -156,19 +157,35 @@ public class ClientConnFactoryBuilder {
      * @return a map of server addresses and SSL contexts
      * @throws AxisFault if at least on SSL profile is not properly configured
      */
-    private Map<String, SSLContext> getCustomSSLContexts(TransportOutDescription transportOut)
+    private Map<String, SSLContext> getCustomSSLContexts(TransportOutDescription transportOut,OMElement profElt)
             throws AxisFault {
 
-        Parameter customProfilesParam = transportOut.getParameter("customSSLProfiles");
-        if (customProfilesParam == null) {
-            return null;
+        OMElement customProfilesElt;
+        /*Gives the priority to the custom profile file
+          profElt is the OMElement read from the custom profile config file
+          If such file or configuration is not available, then check the axis2.xml
+          file to read the configuration
+         */
+        if(profElt!=null){
+            customProfilesElt=profElt;
+            log.info("Sender profile configuration loading from the custom config file..");
+        }
+        else{
+
+            log.info("No valid configuration found in the custom profile config File and loading from the axis2.xml..");
+
+            Parameter customProfilesParam = transportOut.getParameter("customSSLProfiles");
+            if (customProfilesParam == null) {
+                return null;
+            }
+
+            if (log.isInfoEnabled()) {
+                log.info(name + " Loading custom SSL profiles for the HTTPS sender");
+            }
+
+            customProfilesElt = customProfilesParam.getParameterElement();
         }
 
-        if (log.isInfoEnabled()) {
-            log.info(name + " Loading custom SSL profiles for the HTTPS sender");
-        }
-        
-        OMElement customProfilesElt = customProfilesParam.getParameterElement();
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
         Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
         while (profiles.hasNext()) {
@@ -317,5 +334,4 @@ public class ClientConnFactoryBuilder {
             return new ClientConnFactory(params);
         }
     }
-    
 }

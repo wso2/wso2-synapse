@@ -169,16 +169,16 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
 
         name = transportIn.getName().toUpperCase(Locale.US) + " Listener";
         scheme = initScheme();
-        
+
         // Setup listener context
         listenerContext = new ListenerContextBuilder(transportIn).parse().build();
 
         System.setProperty(transportIn.getName() + ".nio.port", String.valueOf(listenerContext.getPort()));
-        
+
         // Setup connection factory
         HttpHost host = new HttpHost(
-            listenerContext.getHostname(), 
-            listenerContext.getPort(), 
+            listenerContext.getHostname(),
+            listenerContext.getPort(),
             scheme.getName());
         connFactory = initConnFactoryBuilder(transportIn, host).build(params);
 
@@ -217,10 +217,10 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
         }
 
         metrics = new NhttpMetricsCollector(true, transportIn.getName());
-        
+
         handler = new ServerHandler(cfgCtx, scheme, listenerContext, metrics);
         iodispatch = new ServerIODispatch(handler, connFactory);
-        
+
         Parameter param = transportIn.getParameter(NhttpConstants.WSDL_EPR_PREFIX);
         if (param != null) {
             serviceEPRPrefix = getServiceEPRPrefix(cfgCtx, (String) param.getValue());
@@ -289,7 +289,7 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
         }
 
         state = BaseConstants.STARTED;
-        
+
         // start the IO reactor in a new separate thread
         final IOEventDispatch ioEventDispatch = iodispatch;
         Thread t = new Thread(new Runnable() {
@@ -804,6 +804,18 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
             return System.currentTimeMillis() - metrics.getLastResetTime();
         }
         return -1;
+    }
+
+    public ListenerContext getListenerContext() {
+        return listenerContext;
+    }
+
+    public Scheme getScheme() {
+        return scheme;
+    }
+
+    public ServerConnFactory getConnFactory() {
+        return connFactory;
     }
 
     private String replaceHostname(String url, String hostName) {

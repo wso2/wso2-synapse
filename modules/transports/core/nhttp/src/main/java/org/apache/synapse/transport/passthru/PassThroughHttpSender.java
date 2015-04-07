@@ -158,7 +158,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         
         ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportOutDescription);
         connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
-        
+
         try {
             String prefix = namePrefix + "-Sender I/O dispatcher";
 
@@ -195,11 +195,11 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         // create the delivery agent to hand over messages
         deliveryAgent = new DeliveryAgent(targetConfiguration, targetConnections, proxyConfig);
         // we need to set the delivery agent
-        connectCallback.setDeliveryAgent(deliveryAgent);        
+        connectCallback.setDeliveryAgent(deliveryAgent);
 
         handler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration);
         ioEventDispatch = new ClientIODispatch(handler, connFactory);
-        
+
         // start the sender in a separate thread
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -217,6 +217,67 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         state = BaseConstants.STARTED;
 
         log.info("Pass-through " + namePrefix + " Sender started...");
+    }
+
+    public void startSenderThread(TransportOutDescription transportOutDescription,Thread sender)throws  AxisFault{
+        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportOutDescription);
+        connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
+
+        try {
+            String prefix = namePrefix + "-Sender I/O dispatcher";
+
+            ioReactor = new DefaultConnectingIOReactor(
+                            targetConfiguration.getIOReactorConfig(),
+                            new NativeThreadFactory(new ThreadGroup(prefix + " Thread Group"), prefix));
+
+            ioReactor.setExceptionHandler(new IOReactorExceptionHandler() {
+
+                public boolean handle(IOException ioException) {
+                    log.warn("System may be unstable: " + namePrefix +
+                            " ConnectingIOReactor encountered a checked exception : " +
+                            ioException.getMessage(), ioException);
+                    return true;
+                }
+
+                public boolean handle(RuntimeException runtimeException) {
+                    log.warn("System may be unstable: " + namePrefix +
+                            " ConnectingIOReactor encountered a runtime exception : "
+                            + runtimeException.getMessage(), runtimeException);
+                    return true;
+                }
+            });
+        } catch (IOReactorException e) {
+            handleException("Error starting " + namePrefix + " ConnectingIOReactor", e);
+        }
+
+        ConnectCallback connectCallback = new ConnectCallback();
+        // manage target connections
+        TargetConnections targetConnections =
+                new TargetConnections(ioReactor, targetConfiguration, connectCallback);
+        targetConfiguration.setConnections(targetConnections);
+
+        // create the delivery agent to hand over messages
+        deliveryAgent = new DeliveryAgent(targetConfiguration, targetConnections, proxyConfig);
+        // we need to set the delivery agent
+        connectCallback.setDeliveryAgent(deliveryAgent);
+
+        handler = new TargetHandler(deliveryAgent, connFactory, targetConfiguration);
+        ioEventDispatch = new ClientIODispatch(handler, connFactory);
+
+        // start the sender in a separate thread
+        sender = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    ioReactor.execute(ioEventDispatch);
+                } catch (Exception ex) {
+                   log.fatal("Exception encountered in the " + namePrefix + " Sender. " +
+                            "No more connections will be initiated by this transport", ex);
+                }
+                log.info(namePrefix + " Sender shutdown");
+            }
+        }, "PassThrough" + namePrefix + "Sender");
+        sender.start();
+
     }
 
     public void cleanup(org.apache.axis2.context.MessageContext messageContext) throws AxisFault {
