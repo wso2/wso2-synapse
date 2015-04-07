@@ -40,9 +40,16 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.AXIOMUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -264,9 +271,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private String inferReplacementType(Map.Entry<String, String> entry) {
-        if(entry.getValue().equals(SynapsePath.X_PATH) && isXML(entry.getKey())) {
+        if(entry.getValue().equals(SynapsePath.X_PATH) && isWellFormedXML(entry.getKey())) {
             return XML_TYPE;
-        } else if(entry.getValue().equals(SynapsePath.X_PATH) && !isXML(entry.getKey())) {
+        } else if(entry.getValue().equals(SynapsePath.X_PATH) && !isWellFormedXML(entry.getKey())) {
             return STRING_TYPE;
         } else if(entry.getValue().equals(SynapsePath.JSON_PATH) && isJson(entry.getKey())) {
             return JSON_TYPE;
@@ -353,7 +360,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             Argument arg = pathArgumentList.get(i);
             if (arg.getValue() != null) {
                 value = arg.getValue();
-                if (!isXML(value)) {
+                if (!isWellFormedXML(value)) {
                     value = StringEscapeUtils.escapeXml(value);
                 }
                 value = Matcher.quoteReplacement(value);
@@ -362,7 +369,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 if (value != null) {
                     // XML escape the result of an expression that produces a literal, if the target format
                     // of the payload is XML.
-                    if (!isXML(value) && !arg.getExpression().getPathType().equals(SynapsePath.JSON_PATH)
+                    if (!isWellFormedXML(value) && !arg.getExpression().getPathType().equals(SynapsePath.JSON_PATH)
                             && XML_TYPE.equals(getType())) {
                         value = StringEscapeUtils.escapeXml(value);
                     }
@@ -415,6 +422,20 @@ public class PayloadFactoryMediator extends AbstractMediator {
         } catch (OMException ignore) {
             // means not a xml
             return false;
+        }
+        return true;
+    }
+
+    private boolean isWellFormedXML(String value)  {
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setErrorHandler(null);
+            InputSource source = new InputSource(new ByteArrayInputStream(value.getBytes()));
+            parser.parse(source);
+        } catch (SAXException e) {
+            return  false;
+        } catch (IOException e) {
+           return false;
         }
         return true;
     }
