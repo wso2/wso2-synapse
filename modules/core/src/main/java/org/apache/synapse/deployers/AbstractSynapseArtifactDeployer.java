@@ -174,14 +174,14 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                     try {
                         // When someone deploys either main or fault sequence what actually happens is they simply
                         // update the existing sequences.
-                        if (filename.matches(".*main-\\d+\\.\\d+\\.\\d+\\.xml")) {
+                        if (filename.matches(".*/main-\\d+\\.\\d+\\.\\d+\\.xml")) {
                             artifactName = updateDefaultSequence(filename, element, properties,
                                     deploymentStore.getMainSeqLstUpdatedFile(), deploymentStore);
 
                             String mainSeqFileName = filename.substring(filename.lastIndexOf(File.separator) + 1);
                             deploymentStore.setMainSeqLstUpdatedFile(mainSeqFileName);
 
-                        } else if (filename.matches(".*fault-\\d+\\.\\d+\\.\\d+\\.xml")) {
+                        } else if (filename.matches(".*/fault-\\d+\\.\\d+\\.\\d+\\.xml")) {
                             artifactName = updateDefaultSequence(filename, element, properties,
                                     deploymentStore.getFaultSeqLstUpdatedFile(), deploymentStore);
 
