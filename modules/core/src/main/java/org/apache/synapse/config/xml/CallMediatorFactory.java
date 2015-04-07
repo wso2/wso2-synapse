@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
@@ -30,14 +31,14 @@ import java.util.Properties;
 
 /**
  * Factory for {@link org.apache.synapse.mediators.builtin.CallMediator} instances.
- * <p>
+ * <p/>
  * The &lt;call&gt; element is used to send messages out of Synapse to some endpoint. In the simplest case,
  * the place to send the message to is implicit in the message (via a property of the message itself)-
  * that is indicated by the following:
  * <pre>
  *  &lt;call/&gt;
  * </pre>
- *
+ * <p/>
  * If the message is to be sent to a endpoint, then the following is used:
  * <pre>
  *  &lt;call&gt;
@@ -70,18 +71,19 @@ import java.util.Properties;
  * &lt;/call&gt;
  * </pre>
  */
-public class CallMediatorFactory extends AbstractMediatorFactory  {
+public class CallMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName CALL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "call");
     private static final QName ENDPOINT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
+    private static final QName BLOCKING_Q = new QName("blocking");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
-        CallMediator callMediator =  new CallMediator();
+        CallMediator callMediator = new CallMediator();
 
         // after successfully creating the mediator
         // set its common attributes such as tracing etc
-        processAuditStatus(callMediator,elem);
+        processAuditStatus(callMediator, elem);
 
         OMElement epElement = elem.getFirstChildWithName(ENDPOINT_Q);
         if (epElement != null) {
@@ -91,8 +93,15 @@ public class CallMediatorFactory extends AbstractMediatorFactory  {
                 callMediator.setEndpoint(endpoint);
             }
         }
-
+        // create the blocking attribute and set it in the call mediator
+        OMAttribute blocking = elem.getAttribute(BLOCKING_Q);
+        if (blocking != null) {
+            callMediator.setBlocking(Boolean.parseBoolean(blocking.getAttributeValue()));
+        } else {
+            callMediator.setBlocking(false);
+        }
         return callMediator;
+
     }
 
     public QName getTagQName() {

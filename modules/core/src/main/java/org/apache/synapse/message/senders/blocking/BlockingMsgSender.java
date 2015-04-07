@@ -43,6 +43,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
@@ -77,6 +78,11 @@ public class BlockingMsgSender {
 
         if (log.isDebugEnabled()) {
             log.debug("Start Sending the Message ");
+        }
+
+        if (endpoint instanceof  IndirectEndpoint) {
+            String endpointKey = ((IndirectEndpoint) endpoint).getKey();
+            endpoint = synapseInMsgCtx.getEndpoint(endpointKey);
         }
 
         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
@@ -125,7 +131,7 @@ public class BlockingMsgSender {
         axisOutMsgCtx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,
-                axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));       
+                axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
 		// Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
@@ -155,7 +161,7 @@ public class BlockingMsgSender {
                 sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
             } else {
                 org.apache.axis2.context.MessageContext result =
-                sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);               
+                sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
                 synapseInMsgCtx.setEnvelope(result.getEnvelope());
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
@@ -244,7 +250,7 @@ public class BlockingMsgSender {
             if (JsonUtil.hasAJsonPayload(resultMsgCtx)) {
                JsonUtil.cloneJsonPayload(resultMsgCtx, returnMsgCtx);
             }
-        }        
+        }
         returnMsgCtx.setProperty(SynapseConstants.HTTP_SENDER_STATUSCODE,
                                  resultMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE));
         axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);

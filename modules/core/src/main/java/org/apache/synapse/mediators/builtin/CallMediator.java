@@ -29,6 +29,10 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.util.MessageHelper;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
+import org.apache.synapse.SynapseException;
 
 /**
  * Call Mediator sends a message using specified semantics. If it contains an endpoint it will
@@ -48,12 +52,15 @@ import org.apache.synapse.util.MessageHelper;
  * which resides in the MessageContext.
  * <p/>
  * These ContinuationStates are used to mediate the response message and continue the message flow.
- *
  */
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
+    public final static String DEFAULT_CLIENT_REPO = "./repository/deployment/client";
+    public final static String DEFAULT_AXIS2_XML = "./repository/conf/axis2/axis2_blocking_client.xml";
+    BlockingMsgSender blockingMsgSender = null;
+    private ConfigurationContext configCtx = null;
     private Endpoint endpoint = null;
-
+    private boolean blocking = false;
     private SynapseEnvironment synapseEnv;
 
     /**
@@ -68,55 +75,90 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         SynapseLog synLog = getLog(synInCtx);
 
-        synLog.traceOrDebug("Start : Call mediator");
-        if (synLog.isTraceTraceEnabled()) {
-            synLog.traceTrace("Message : " + synInCtx.getEnvelope());
-        }
-
-        boolean outOnlyMessage = "true".equals(synInCtx.getProperty(
-                SynapseConstants.OUT_ONLY));
-
-        // Prepare the outgoing message context
-        MessageContext synOutCtx = null;
-        if (outOnlyMessage) {
-            try {
-                synOutCtx = MessageHelper.cloneMessageContext(synInCtx);
-            } catch (AxisFault axisFault) {
-                handleException("Error occurred while cloning msg context", axisFault, synInCtx);
-            }
-        } else {
-            synOutCtx = synInCtx;
-        }
-
-        synOutCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
-        ContinuationStackManager.updateSeqContinuationState(synOutCtx, getMediatorPosition());
-
-        // if no endpoints are defined, send where implicitly stated
-        if (endpoint == null) {
-
-            if (synLog.isTraceOrDebugEnabled()) {
-                StringBuffer sb = new StringBuffer();
-                sb.append("Calling ").append(synOutCtx.isResponse() ? "response" : "request")
-                        .append(" message using implicit message properties..");
-                sb.append("\nCalling To: ").append(synOutCtx.getTo() != null ?
-                                                   synOutCtx.getTo().getAddress() : "null");
-                sb.append("\nSOAPAction: ").append(synOutCtx.getWSAAction() != null ?
-                                                   synOutCtx.getWSAAction() : "null");
-                synLog.traceOrDebug(sb.toString());
-            }
-
+        if (!blocking) {
+            synLog.traceOrDebug("Start : Call mediator - Non Blocking Call");
             if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Envelope : " + synOutCtx.getEnvelope());
+                synLog.traceTrace("Message : " + synInCtx.getEnvelope());
             }
-            synOutCtx.getEnvironment().send(null, synOutCtx);
+
+            //If call mediator is a marked as non blocking function
+            boolean outOnlyMessage = "true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY));
+
+            // Prepare the outgoing message context
+            MessageContext synOutCtx = null;
+            if (outOnlyMessage) {
+                try {
+                    synOutCtx = MessageHelper.cloneMessageContext(synInCtx);
+                } catch (AxisFault axisFault) {
+                    handleException("Error occurred while cloning msg context", axisFault, synInCtx);
+                }
+            } else {
+                synOutCtx = synInCtx;
+            }
+
+            synOutCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
+            ContinuationStackManager.updateSeqContinuationState(synOutCtx, getMediatorPosition());
+
+            // If no endpoints are defined, send where implicitly stated
+            if (endpoint == null) {
+
+                if (synLog.isTraceOrDebugEnabled()) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append("Calling ").append(synOutCtx.isResponse() ? "response" : "request")
+                            .append(" message using implicit message properties..");
+                    sb.append("\nCalling To: ").append(synOutCtx.getTo() != null ?
+                            synOutCtx.getTo().getAddress() : "null");
+                    sb.append("\nSOAPAction: ").append(synOutCtx.getWSAAction() != null ?
+                            synOutCtx.getWSAAction() : "null");
+                    synLog.traceOrDebug(sb.toString());
+                }
+
+                if (synLog.isTraceTraceEnabled()) {
+                    synLog.traceTrace("Envelope : " + synOutCtx.getEnvelope());
+                }
+                synOutCtx.getEnvironment().send(null, synOutCtx);
+
+            } else {
+                endpoint.send(synOutCtx);
+            }
+
+            synLog.traceOrDebug("End : Call mediator - Non Blocking Call");
+            if (outOnlyMessage) {
+                return true;
+            } else {
+                return false;
+            }
 
         } else {
-            endpoint.send(synOutCtx);
-        }
+            //If call mediator is a marked as blocking function
+            MessageContext resultMsgCtx = null;
+            try {
+                if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
+                    blockingMsgSender.send(endpoint, synInCtx);
+                } else {
+                    resultMsgCtx = blockingMsgSender.send(endpoint, synInCtx);
+                    if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+                        handleFault(synInCtx, (Exception) synInCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+                    }
+                }
+            } catch (Exception ex) {
+                handleFault(synInCtx, ex);
+            }
 
-        synLog.traceOrDebug("End : Call mediator");
-        if (outOnlyMessage) {
-            return true;
+            if (resultMsgCtx != null) {
+                if (synLog.isTraceTraceEnabled()) {
+                    synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
+                }
+                try {
+                    synInCtx.setEnvelope(resultMsgCtx.getEnvelope());
+                    synLog.traceOrDebug("End : Call mediator - Blocking Call");
+                    return true;
+                } catch (Exception e) {
+                    handleFault(synInCtx, e);
+                }
+            } else {
+                synLog.traceOrDebug("Service returned a null response");
+            }
         }
         return false;
     }
@@ -131,10 +173,24 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public void init(SynapseEnvironment synapseEnvironment) {
         this.synapseEnv = synapseEnvironment;
+
         if (endpoint != null) {
             endpoint.init(synapseEnvironment);
         }
-        synapseEnvironment.updateCallMediatorCount(true);
+        if (blocking == true) {
+            try {
+                configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
+                        DEFAULT_CLIENT_REPO, DEFAULT_AXIS2_XML);
+                blockingMsgSender = new BlockingMsgSender();
+                blockingMsgSender.setConfigurationContext(configCtx);
+                blockingMsgSender.init();
+
+            } catch (AxisFault axisFault) {
+                axisFault.printStackTrace();
+            }
+        } else {
+            synapseEnvironment.updateCallMediatorCount(true);
+        }
     }
 
     public void destroy() {
@@ -147,6 +203,51 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     @Override
     public boolean isContentAware() {
         return false;
+    }
+
+    public boolean getBlocking() {
+        return blocking;
+    }
+
+    public void setBlocking(boolean blocking) {
+        this.blocking = blocking;
+    }
+
+    private void handleFault(MessageContext synCtx, Exception ex) {
+        synCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
+
+        if (ex instanceof AxisFault) {
+            AxisFault axisFault = (AxisFault) ex;
+
+            if (axisFault.getFaultCodeElement() != null) {
+                synCtx.setProperty(SynapseConstants.ERROR_CODE,
+                        axisFault.getFaultCodeElement().getText());
+            } else {
+                synCtx.setProperty(SynapseConstants.ERROR_CODE,
+                        SynapseConstants.CALLOUT_OPERATION_FAILED);
+            }
+
+            if (axisFault.getMessage() != null) {
+                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
+                        axisFault.getMessage());
+            } else {
+                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, "Error while performing " +
+                        "the call operation");
+            }
+
+            if (axisFault.getFaultDetailElement() != null) {
+                if (axisFault.getFaultDetailElement().getFirstElement() != null) {
+                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+                            axisFault.getFaultDetailElement().getFirstElement());
+                } else {
+                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+                            axisFault.getFaultDetailElement().getText());
+                }
+            }
+        }
+
+        synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
+        throw new SynapseException("Error while performing the call operation", ex);
     }
 
 }
