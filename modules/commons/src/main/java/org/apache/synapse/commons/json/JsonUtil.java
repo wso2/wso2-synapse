@@ -247,7 +247,7 @@ public final class JsonUtil {
      * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML element<br/>
      * @param element XML element of which JSON representation is expected.
      * @param outputStream Output Stream to write the JSON representation.<br/>
-     *                     At the end of a successful conversion, its flush method will be called.
+     * At the end of a successful conversion, its flush method will be called.
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
@@ -855,7 +855,27 @@ public final class JsonUtil {
         return new InputStreamReader(new ByteArrayInputStream(out.toByteArray()));
     }
 
+    /**
+     * Returns <tt>true</tt> if the message context contains a JSON payload that is a JSON Object. See {@link #hasAJsonArray(MessageContext)}<br/>
+     * Example : {"a":1, "b":2}
+     * @param messageContext request message context
+     * @return
+     */
     public static boolean hasAJsonObject(MessageContext messageContext) {
+        return hasAJsonPayload(messageContext) && _hasAJsonObject(messageContext);
+    }
+
+    /**
+     * Returns <tt>true</tt> if the message context contains a JSON payload that is a JSON Array. See {@link #hasAJsonObject(MessageContext)}<br/>
+     * Example: [{"a":1}, 2, null]
+     * @param messageContext request message context
+     * @return
+     */
+    public static boolean hasAJsonArray(MessageContext messageContext) {
+        return hasAJsonPayload(messageContext) && !_hasAJsonObject(messageContext);
+    }
+
+    private static boolean _hasAJsonObject(MessageContext messageContext) {
         Object isObject = messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
         return isObject != null && ((Boolean) isObject);
     }
