@@ -29,7 +29,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class ListenerProfileReloader extends DynamicProfileReloader {
 
-    private Log log = LogFactory.getLog(this.getClass());
+    private static final Log LOG = LogFactory.getLog(ListenerProfileReloader.class);
 
     private SSLProfileLoader sslProfileLoader;
     private ParameterInclude transportInDescription;
@@ -41,13 +41,13 @@ public class ListenerProfileReloader extends DynamicProfileReloader {
     }
 
     /**
-     * Notification method triggers by FileUpdateNotifier
+     * Notification method which will be triggered by FileUpdateNotifier
      */
     public void notifyFileUpdate() {
         try {
             sslProfileLoader.reloadConfig(transportInDescription);
         } catch (AxisFault axisFault) {
-            log.error("Error reloading dynamic SSL configurations for Listeners " + axisFault.getMessage());
+            LOG.error("Error reloading dynamic SSL configurations for Listeners : New Configurations will not be applied " + axisFault.getMessage());
         }
     }
 

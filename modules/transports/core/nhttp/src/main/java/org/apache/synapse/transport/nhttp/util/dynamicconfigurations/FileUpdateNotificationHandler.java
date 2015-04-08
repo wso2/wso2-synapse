@@ -34,7 +34,7 @@ import java.util.TimerTask;
  */
 public class FileUpdateNotificationHandler extends TimerTask {
 
-    private Log log = LogFactory.getLog(this.getClass());
+    private static final Log LOG = LogFactory.getLog(FileUpdateNotificationHandler.class);
 
     private long fileReadInterval;
 
@@ -58,7 +58,6 @@ public class FileUpdateNotificationHandler extends TimerTask {
 
     @Override
     public void run() {
-
         long recordedLastUpdatedTime;
         long latestLastUpdatedTime;
         File configFile;
@@ -80,7 +79,7 @@ public class FileUpdateNotificationHandler extends TimerTask {
                         profileLoader.setLastUpdatedtime(latestLastUpdatedTime);
                     }
                 } catch (Exception e) {
-                    log.debug("Error loading last modified time for the SSL config file. Updates will not be loaded from " + filePath);
+                    LOG.debug("Error loading last modified time for the SSL config file. Updates will not be loaded from " + filePath);
                 }
             }
         }
@@ -102,6 +101,6 @@ public class FileUpdateNotificationHandler extends TimerTask {
      */
     private void scheduleTimer(long interval) {
         Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(this, 0, interval);
+        timer.scheduleAtFixedRate(this, interval, interval);
     }
 }

@@ -29,36 +29,51 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import javax.xml.namespace.QName;
 
 /**
- * Abstract class to use as Profile Reloader Observers
+ * Abstract class to use as Profile Reloader Subscribers. FileUpdateNotificationHandler will notify
+ * this once the event is triggered.
  */
 public abstract class DynamicProfileReloader {
 
-    private Log log = LogFactory.getLog(this.getClass());
-
-    private long fileMonitoringInterval = NhttpConstants.DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL;
+    private static final Log LOG = LogFactory.getLog(DynamicProfileReloader.class);
 
     private long lastUpdatedtime;
 
-    private String filePath;
+    private long fileMonitoringInterval = NhttpConstants.DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL;
 
-    protected FileUpdateNotificationHandler fileUpdateNotificationHandler;
+    private String filePath;
 
     protected abstract void notifyFileUpdate();
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
-    }
+    protected FileUpdateNotificationHandler fileUpdateNotificationHandler;
 
-    public void setLastUpdatedtime(long lastUpdatedtime) {
-        this.lastUpdatedtime = lastUpdatedtime;
-    }
-
+    /**
+     * Returns Last Updated Time of the File
+     * @return Long time in milliseconds
+     */
     public long getLastUpdatedtime() {
         return lastUpdatedtime;
     }
 
     public String getFilePath() {
         return filePath;
+    }
+
+    /**
+     * Set file path
+     *
+     * @param filePath String file path
+     */
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    /**
+     * Set Last Updated time of the file
+     *
+     * @param lastUpdatedtime Long time in milliseconds
+     */
+    public void setLastUpdatedtime(long lastUpdatedtime) {
+        this.lastUpdatedtime = lastUpdatedtime;
     }
 
     /**
@@ -80,11 +95,11 @@ public abstract class DynamicProfileReloader {
 
     /**
      * Set SSL Profile configuration loading interval from Axis2 config
+     *
      * @param transportOut TransportOutDescription of the configuration
      * @return Long value of the interval in milliseconds
      */
     protected long extractSleepInterval(ParameterInclude transportOut) {
-
         Parameter profilePathParam = transportOut.getParameter("sslprofilesloadinginterval");
 
         if (profilePathParam != null) {
@@ -109,7 +124,7 @@ public abstract class DynamicProfileReloader {
             setFilePath(filePath);
             fileUpdateNotificationHandler.registerListener(this);
         } else {
-            log.warn("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
+            LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
         }
     }
 }
