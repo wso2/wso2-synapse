@@ -259,6 +259,7 @@ public class MultiXMLConfigurationSerializer {
                 synapseConfig.getMessageProcessors().values();
         Collection<API> apiCollection = synapseConfig.getAPIs();
         Collection<SynapseImport> synapseImportsCollection = synapseConfig.getSynapseImports().values();
+        Collection<InboundEndpoint> inboundEndpoints = synapseConfig.getInboundEndpoints();
 
         for (ProxyService service : proxyServices) {
             if (service.getFileName() == null) {
@@ -342,6 +343,12 @@ public class MultiXMLConfigurationSerializer {
         for (SynapseImport synapseImport : synapseImportsCollection) {
             if (synapseImport.getFileName() == null) {
                 SynapseImportSerializer.serializeImport(definitions, synapseImport);
+            }
+        }
+
+        for(InboundEndpoint inboundEndpoint: inboundEndpoints){
+            if(inboundEndpoint.getFileName() == null) {
+                InboundEndpointSerializer.serializeInboundEndpoint(definitions,inboundEndpoint);
             }
         }
 
