@@ -34,10 +34,10 @@ public class ListenerProfileReloader extends DynamicProfileReloader {
     private SSLProfileLoader sslProfileLoader;
     private ParameterInclude transportInDescription;
 
-    public ListenerProfileReloader(SSLProfileLoader profileLoader, ParameterInclude transportIn) {
-        sslProfileLoader = profileLoader;
-        transportInDescription = transportIn;
-        registerListener(transportInDescription);
+    public ListenerProfileReloader(SSLProfileLoader profileLoader, ParameterInclude transportInDescription) {
+        this.sslProfileLoader = profileLoader;
+        this.transportInDescription = transportInDescription;
+        registerListener(this.transportInDescription);
     }
 
     /**

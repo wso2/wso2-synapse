@@ -51,11 +51,11 @@ public abstract class DynamicProfileReloader {
      * @return Long time in milliseconds
      */
     public long getLastUpdatedtime() {
-        return lastUpdatedtime;
+        return this.lastUpdatedtime;
     }
 
     public String getFilePath() {
-        return filePath;
+        return this.filePath;
     }
 
     /**
@@ -122,6 +122,7 @@ public abstract class DynamicProfileReloader {
 
         if (filePath != null) {
             setFilePath(filePath);
+            setLastUpdatedtime(System.currentTimeMillis());
             fileUpdateNotificationHandler.registerListener(this);
         } else {
             LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
