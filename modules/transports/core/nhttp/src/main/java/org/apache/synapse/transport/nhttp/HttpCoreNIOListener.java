@@ -18,6 +18,26 @@
  */
 package org.apache.synapse.transport.nhttp;
 
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
@@ -54,28 +74,8 @@ import org.apache.http.params.HttpParams;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
-import org.apache.synapse.transport.nhttp.util.ActiveConnectionMonitor;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
-
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import org.apache.synapse.transport.nhttp.util.ActiveConnectionMonitor;
 
 /**
  * NIO transport listener for Axis2 based on HttpCore and NIO extensions

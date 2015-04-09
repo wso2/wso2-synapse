@@ -27,6 +27,8 @@
 
 package org.apache.synapse.transport.nhttp;
 
+import java.io.IOException;
+
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
 import org.apache.http.impl.nio.reactor.AbstractIODispatch;
@@ -34,8 +36,6 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingUtils;
-
-import java.io.IOException;
 
 class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> {
 

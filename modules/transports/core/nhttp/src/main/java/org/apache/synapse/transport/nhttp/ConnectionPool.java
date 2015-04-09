@@ -18,13 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.conn.routing.HttpRoute;
-import org.apache.http.nio.NHttpClientConnection;
-import org.apache.http.protocol.ExecutionContext;
-import org.apache.http.protocol.HttpContext;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +26,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 
 public class ConnectionPool {
 

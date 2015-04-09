@@ -18,6 +18,18 @@
  */
 package org.apache.synapse.transport.nhttp;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+
 import org.apache.axiom.om.OMOutputFormat;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -69,19 +81,6 @@ import org.apache.synapse.transport.nhttp.debug.ServerConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-
 
 /**
  * NIO transport sender for Axis2 based on HttpCore and NIO extensions

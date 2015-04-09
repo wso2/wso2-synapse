@@ -16,6 +16,18 @@
 
 package org.apache.synapse.transport.passthru;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
@@ -50,24 +62,15 @@ import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
-import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
 import org.apache.synapse.transport.passthru.core.PassThroughSharedListenerConfiguration;
+import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
+
 import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.jmx.TransportView;
+
 import org.apache.synapse.transport.passthru.util.ActiveConnectionMonitor;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;

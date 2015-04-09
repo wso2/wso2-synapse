@@ -19,6 +19,22 @@
 
 package org.apache.synapse.transport.nhttp.config;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.xml.namespace.QName;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
@@ -34,21 +50,6 @@ import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.xml.namespace.QName;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
 
 public class ClientConnFactoryBuilder {
 
