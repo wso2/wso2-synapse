@@ -28,9 +28,10 @@ import org.apache.synapse.transport.passthru.TargetContext;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages the connection from transport to the back end servers. It keeps track of the
@@ -42,6 +43,8 @@ public class TargetConnections {
     /** map to hold the ConnectionPools. The key is host:port */
     private final Map<HttpRoute, HostConnections> poolMap =
             new ConcurrentHashMap<HttpRoute, HostConnections>();
+
+    private final String sslSchemaName = "https";
 
     /** max connections per host:port pair. At the moment all the host:ports can
      * have the same max */
@@ -197,6 +200,45 @@ public class TargetConnections {
             }
             return pool;
 
+        }
+    }
+
+    /**
+     * Shutdown the connections of the given host:port list. This will allow to create new connection
+     * at the next request happens.
+     *
+     * @param hostList Set of String which contains entries in hots:port format
+     */
+    public void resetConnectionPool(Set<String> hostList) {
+
+        for (String host : hostList) {
+            String[] params = host.split(":");
+
+            for (Map.Entry<HttpRoute, HostConnections> connectionsEntry : poolMap.entrySet()) {
+                HttpRoute httpRoute = connectionsEntry.getKey();
+
+                if (params.length > 1 && params[0].equalsIgnoreCase(httpRoute.getTargetHost().getHostName())
+                    && (Integer.valueOf(params[1]) == (httpRoute.getTargetHost().getPort())) &&
+                    httpRoute.getTargetHost().getSchemeName().equalsIgnoreCase(sslSchemaName)) {
+
+                    try {
+                        if (connectionsEntry.getValue().getConnection() != null) {
+                            shutdownConnection(connectionsEntry.getValue().getConnection());
+                            log.info("Connection " + httpRoute.getTargetHost().getHostName() + ":"
+                                     + httpRoute.getTargetHost().getPort() + " Successful");
+
+                        } else {
+                            log.debug("Error shutdown connection for " + httpRoute.getTargetHost().getHostName()
+                                      + " " + httpRoute.getTargetHost().getPort() + " - Connection not available");
+                        }
+                    } catch (Exception e) {
+                        log.warn("Error shutdown connection for " + httpRoute.getTargetHost().getHostName()
+                                 + " " + httpRoute.getTargetHost().getPort() + " ", e);
+                    }
+
+                }
+
+            }
         }
     }
 

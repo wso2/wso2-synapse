@@ -17,11 +17,22 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
+import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SenderProfileReloader;
 
-public class PassThroughHttpSSLSender extends PassThroughHttpSender {
+public class PassThroughHttpSSLSender extends PassThroughHttpSender implements SSLProfileLoader {
+
+    @Override
+    public void init(ConfigurationContext configurationContext,
+                     TransportOutDescription transportOutDescription) throws AxisFault {
+        super.init(configurationContext, transportOutDescription);
+        new SenderProfileReloader(this, transportOutDescription);
+    }
 
     @Override
     protected Scheme getScheme() {
@@ -32,6 +43,17 @@ public class PassThroughHttpSSLSender extends PassThroughHttpSender {
     protected ClientConnFactoryBuilder initConnFactoryBuilder(
             final TransportOutDescription transportOut) throws AxisFault {
         return new ClientConnFactoryBuilder(transportOut).parseSSL();
+    }
+
+
+    /**
+     * Reload SSL profiles and reset connections in PassThroughHttpSSLSender
+     * @param transport TransportInDescription of the configuration
+     * @throws AxisFault
+     */
+    public void reloadConfig(ParameterInclude transport) throws AxisFault{
+        log.info("PassThroughHttpSSLSender reloading Config..");
+        reloadDynamicSSLConfig((TransportOutDescription) transport);
     }
 
 }

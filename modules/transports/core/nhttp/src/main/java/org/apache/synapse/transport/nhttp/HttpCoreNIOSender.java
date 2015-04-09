@@ -18,18 +18,6 @@
  */
 package org.apache.synapse.transport.nhttp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Map;
-
 import org.apache.axiom.om.OMOutputFormat;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -82,13 +70,25 @@ import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Map;
+
 
 /**
  * NIO transport sender for Axis2 based on HttpCore and NIO extensions
  */
 public class HttpCoreNIOSender extends AbstractHandler implements TransportSender, ManagementSupport {
 
-    private static final Log log = LogFactory.getLog(HttpCoreNIOSender.class);
+    protected static final Log log = LogFactory.getLog(HttpCoreNIOSender.class);
 
     /** The IOReactor */
     private volatile DefaultConnectingIOReactor ioReactor;
@@ -117,7 +117,10 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     private boolean preserveServerHeader = true;
     /** Proxy config */
     private volatile ProxyConfig proxyConfig;
-
+    /** Http Params **/
+    private volatile HttpParams params;
+    /**Configuration context will be cached to be used ar reload     */
+    private volatile ConfigurationContext configurationContext;
     /** Socket timeout duration for HTTP connections */
     private int socketTimeout = 0;
 
@@ -133,8 +136,10 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * @throws AxisFault thrown on an error
      */
     public void init(ConfigurationContext cfgCtx, TransportOutDescription transportOut) throws AxisFault {
+        this.configurationContext = cfgCtx;
+
         NHttpConfiguration cfg = NHttpConfiguration.getInstance();
-        HttpParams params = new BasicHttpParams();
+        params = new BasicHttpParams();
         params
                 .setIntParameter(CoreConnectionPNames.SO_TIMEOUT,
                         cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, 60000))
@@ -955,6 +960,27 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             return System.currentTimeMillis() - metrics.getLastResetTime();
         }
         return -1;
+    }
+
+    /**
+     * Reload SSL configurations and reset all connections
+     *
+     * @param transportOut TransportOutDescriptin of the configuration
+     * @throws AxisFault
+     */
+    public void reload(TransportOutDescription transportOut) throws AxisFault {
+        //create new connection factory
+        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+        connFactory = contextBuilder.createConnFactory(params);
+
+        //set new connection factory
+        handler.setConnFactory(connFactory);
+        iodispatch.setConnFactory(connFactory);
+
+        //close existing connections to apply new settings
+        handler.resetConnectionPool(connFactory.getHostList());
+
+        log.info("HttpCoreNIO " + name + " Sender updated with Dynamic Configuration Updates ...");
     }
 
 }

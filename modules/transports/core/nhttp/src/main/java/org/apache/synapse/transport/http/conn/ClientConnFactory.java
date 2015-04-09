@@ -18,13 +18,6 @@
  */
 package org.apache.synapse.transport.http.conn;
 
-import java.net.InetSocketAddress;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import javax.net.ssl.SSLContext;
-
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.DefaultHttpResponseFactory;
@@ -37,6 +30,13 @@ import org.apache.http.nio.util.HeapByteBufferAllocator;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+
+import javax.net.ssl.SSLContext;
+import java.net.InetSocketAddress;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * This custom client connection factory can keep a map of SSLContexts and use the correct
@@ -122,6 +122,16 @@ public class ClientConnFactory {
                 conn.bind(ssliosession);
             }
         }
+    }
+
+    /**
+     * Returns Set of Host:Port String entries
+     *
+     * @return String Set
+     */
+    public Set<String> getHostList() {
+        return sslByHostMap.keySet();
+
     }
 
 }

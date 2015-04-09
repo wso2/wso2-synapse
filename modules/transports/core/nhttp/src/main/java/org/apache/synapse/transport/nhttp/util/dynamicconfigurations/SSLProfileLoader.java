@@ -17,25 +17,22 @@
  *  under the License.
  */
 
-package org.apache.synapse.transport.nhttp;
+package org.apache.synapse.transport.nhttp.util.dynamicconfigurations;
 
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.description.TransportInDescription;
-import org.apache.http.HttpHost;
-import org.apache.synapse.transport.http.conn.Scheme;
-import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
+import org.apache.axis2.description.ParameterInclude;
 
-public class HttpCoreNIOSSLListener extends HttpCoreNIOListener {
+/**
+ * Interface to be implemented by all SSL senders and listeners in order to reveieve notifications on config file
+ * changes at runtime
+ */
+public interface SSLProfileLoader {
 
-    @Override
-    protected Scheme initScheme() {
-        return new Scheme("https", 443, true);
-    }
-
-    @Override
-    protected ServerConnFactoryBuilder initConnFactoryBuilder(
-            final TransportInDescription transportIn, final HttpHost host) throws AxisFault {
-        return new ServerConnFactoryBuilder(transportIn, host)
-                .parseSSL();
-    }
+    /**
+     * Reload SSL configurations by each Listener/sender
+     *
+     * @param transport Transport In/Out Description
+     * @throws AxisFault
+     */
+    public void reloadConfig(ParameterInclude transport) throws AxisFault;
 }
