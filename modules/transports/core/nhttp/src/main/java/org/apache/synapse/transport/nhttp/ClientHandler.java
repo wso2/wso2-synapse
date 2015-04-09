@@ -1365,11 +1365,6 @@ public class ClientHandler implements NHttpClientEventHandler {
      * @param hostList Set of String which contains entries in hots:port format
      */
     public void resetConnectionPool(Set<String> hostList) {
-
-        for (String host : hostList) {
-            System.out.println("Host List to be reset : " + host);
-        }
-
         List<NHttpClientConnection> clientConnections = connpool.getSslConnectionsList(hostList);
         for (NHttpClientConnection conn : clientConnections) {
             shutdownConnection(conn, false, " Connection closed to re-loading of Dynamic SSL Configurations ");
