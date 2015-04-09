@@ -1,17 +1,19 @@
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.axis2.AxisFault;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.util.MessageHelper;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.axiom.soap.SOAPEnvelope;
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axis2.AxisFault;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * Helper mediator class to test ForEach mediator
+ *
+ */
 public class ForEachHelperMediator extends AbstractMediator implements ManagedLifecycle {
 
 	private List mediatedContext = new ArrayList();
