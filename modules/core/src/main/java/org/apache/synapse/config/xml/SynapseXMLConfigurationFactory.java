@@ -70,10 +70,6 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         }
         SynapseConfiguration config = SynapseConfigUtils.newConfiguration();               
         config.setDefaultQName(definitions.getQName());
-        SynapseConfiguration synapseConfiguration =  SynapseConfigUtils.getLastRegisteredSynapseConfiguration();
-        if(synapseConfiguration != null){
-            destroyExistingInbounds(synapseConfiguration);
-        }
         Iterator itr = definitions.getChildren();
         while (itr.hasNext()) {
             Object o = itr.next();
@@ -125,7 +121,6 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                 }
             }
         }
-        SynapseConfigUtils.registerSynapseConfiguration(config);
         return config;
     }
 
@@ -424,13 +419,6 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         }
         return inboundEndpoint;
 
-    }
-
-    private static void destroyExistingInbounds(SynapseConfiguration synapseConfiguration){
-      Collection<InboundEndpoint> inboundEndpoints = synapseConfiguration.getInboundEndpoints();
-        for(InboundEndpoint inboundEndpoint : inboundEndpoints){
-            inboundEndpoint.destroy();
-        }
     }
 
     private static void handleException(String msg) {

@@ -55,7 +55,13 @@ public class InboundEndpoint implements ManagedLifecycle {
 
         inboundRequestProcessor = getInboundRequestProcessor();
         if (inboundRequestProcessor != null) {
-            inboundRequestProcessor.init();
+            try {
+                inboundRequestProcessor.init();
+            } catch (Exception e) {
+                String msg = "Error initializing inbound endpoint " + getName();
+                log.error(msg);
+                throw new SynapseException(msg,e);
+            }
         } else {
             String msg = "Inbound Request processor not found for Inbound EP : " + name +
                          " Protocol: " + protocol + " Class" + classImpl;
