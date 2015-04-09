@@ -25,7 +25,7 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
  * <p>Serialize for each mediator as below : </p>
- *
+ * <p/>
  * <pre>
  * &lt;foreach expression="xpath" [sequence="sequence_ref"] &gt;
  *     &lt;sequence&gt;
@@ -36,28 +36,28 @@ import org.apache.synapse.util.xpath.SynapseXPath;
  */
 public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 
-	public String getMediatorClassName() {
-		return ForEachMediator.class.getName();
-	}
+    public String getMediatorClassName() {
+        return ForEachMediator.class.getName();
+    }
 
-	@Override
-	protected OMElement serializeSpecificMediator(Mediator m) {
-		if (!(m instanceof ForEachMediator)) {
-			handleException("Unsupported mediator passed in for serialization : " +
-			                m.getType());
-		}
+    @Override
+    protected OMElement serializeSpecificMediator(Mediator m) {
+        if (!(m instanceof ForEachMediator)) {
+            handleException("Unsupported mediator passed in for serialization : " +
+                    m.getType());
+        }
 
-		OMElement forEachElem = fac.createOMElement("foreach", synNS);
-		saveTracingState(forEachElem, m);
+        OMElement forEachElem = fac.createOMElement("foreach", synNS);
+        saveTracingState(forEachElem, m);
 
-		ForEachMediator forEachMed = (ForEachMediator) m;
+        ForEachMediator forEachMed = (ForEachMediator) m;
 
-		if (forEachMed.getExpression() != null) {
-			SynapseXPathSerializer.serializeXPath(forEachMed.getExpression(),
-			                                    forEachElem, "expression");
-		} else {
-			handleException("Missing expression of the ForEach which is required.");
-		}
+        if (forEachMed.getExpression() != null) {
+            SynapseXPathSerializer.serializeXPath(forEachMed.getExpression(),
+                    forEachElem, "expression");
+        } else {
+            handleException("Missing expression of the ForEach which is required.");
+        }
 
         SequenceMediatorSerializer seqSerializer = new SequenceMediatorSerializer();
         if (forEachMed.getSequenceRef() != null) {
@@ -69,6 +69,6 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
             forEachElem.addChild(seqElement);
         }
 
-		return forEachElem;
-	}
+        return forEachElem;
+    }
 }

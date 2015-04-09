@@ -44,7 +44,7 @@ import org.jaxen.JaxenException;
  * <p></p>The &lt;foreach&gt; element is used to split to messages by the given XPath expression
  * and processed as per the provided sequence.
  * <p/>
- * 
+ * <p/>
  * <pre>
  * &lt;foreach expression="xpath" [sequence="sequence_ref"] &gt;
  *     &lt;sequence&gt;
@@ -55,38 +55,38 @@ import org.jaxen.JaxenException;
  */
 public class ForEachMediatorFactory extends AbstractMediatorFactory {
 
-	private static final Log log =
-	                               LogFactory.getLog(ForEachMediatorFactory.class);
+    private static final Log log =
+            LogFactory.getLog(ForEachMediatorFactory.class);
 
-	private static final QName FOREACH_Q =
-	                                       new QName(
-	                                                 SynapseConstants.SYNAPSE_NAMESPACE,
-	                                                 "foreach");
+    private static final QName FOREACH_Q =
+            new QName(
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    "foreach");
 
-	public QName getTagQName() {
-		return FOREACH_Q;
-	}
+    public QName getTagQName() {
+        return FOREACH_Q;
+    }
 
-	@Override
-	protected Mediator createSpecificMediator(OMElement elem,
-	                                          Properties properties) {
-		ForEachMediator mediator = new ForEachMediator();
-		processAuditStatus(mediator, elem);
-		OMAttribute expression = elem.getAttribute(ATT_EXPRN);
+    @Override
+    protected Mediator createSpecificMediator(OMElement elem,
+                                              Properties properties) {
+        ForEachMediator mediator = new ForEachMediator();
+        processAuditStatus(mediator, elem);
+        OMAttribute expression = elem.getAttribute(ATT_EXPRN);
 
-		if (expression != null) {
-			try {
-				mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem,
-				                                                         ATT_EXPRN));
-			} catch (JaxenException e) {
-				handleException("Unable to build the ForEach Mediator. " +
-				                        "Invalid XPath " +
-				                        expression.getAttributeValue(), e);
-			}
-		} else {
-			handleException("XPath expression is required "
-			                + "for an ForEach Mediator under the \"expression\" attribute");
-		}
+        if (expression != null) {
+            try {
+                mediator.setExpression(SynapseXPathFactory.getSynapseXPath(elem,
+                        ATT_EXPRN));
+            } catch (JaxenException e) {
+                handleException("Unable to build the ForEach Mediator. " +
+                        "Invalid XPath " +
+                        expression.getAttributeValue(), e);
+            }
+        } else {
+            handleException("XPath expression is required "
+                    + "for an ForEach Mediator under the \"expression\" attribute");
+        }
 
         OMAttribute sequenceAttr = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "sequence"));
@@ -98,34 +98,34 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence"));
         if (sequence != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
-	        SequenceMediator sequenceMediator = fac.createAnonymousSequence(sequence, properties);
-	        if (validateSequence(sequenceMediator)){
-		        mediator.setSequence(sequenceMediator);
-	        }else{
-		        handleException("Sequence cannot contain Call, Send or CallOut mediators");
-	        }
+            SequenceMediator sequenceMediator = fac.createAnonymousSequence(sequence, properties);
+            if (validateSequence(sequenceMediator)) {
+                mediator.setSequence(sequenceMediator);
+            } else {
+                handleException("Sequence cannot contain Call, Send or CallOut mediators");
+            }
         }
-		return mediator;
-	}
+        return mediator;
+    }
 
-	private boolean validateSequence(SequenceMediator sequence) {
-		boolean valid = true;
-		if (sequence != null) {
-			List<Mediator> mediators = sequence.getList();
-			for (Mediator m : mediators) {
-				if (m instanceof CallMediator) {
-					valid = false;
-					break;
-				} else if (m instanceof CalloutMediator) {
-					valid = false;
-					break;
-				} else if (m instanceof SendMediator) {
-					valid = false;
-					break;
-				}
-			}
-		}
-		return valid;
-	}
+    private boolean validateSequence(SequenceMediator sequence) {
+        boolean valid = true;
+        if (sequence != null) {
+            List<Mediator> mediators = sequence.getList();
+            for (Mediator m : mediators) {
+                if (m instanceof CallMediator) {
+                    valid = false;
+                    break;
+                } else if (m instanceof CalloutMediator) {
+                    valid = false;
+                    break;
+                } else if (m instanceof SendMediator) {
+                    valid = false;
+                    break;
+                }
+            }
+        }
+        return valid;
+    }
 
 }
