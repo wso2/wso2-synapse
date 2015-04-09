@@ -976,6 +976,11 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         //set new connection factory
         handler.setConnFactory(connFactory);
         iodispatch.setConnFactory(connFactory);
+
+        //close existing connections to apply new settings
+        handler.resetConnectionPool(connFactory.getHostList());
+
+        log.info("HttpCoreNIO " + name + " Sender updated with Dynamic Configuration Updates ...");
     }
 
 }

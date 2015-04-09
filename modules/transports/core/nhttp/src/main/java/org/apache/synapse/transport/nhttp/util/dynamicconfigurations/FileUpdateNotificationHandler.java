@@ -36,7 +36,7 @@ public class FileUpdateNotificationHandler extends TimerTask {
 
     private static final Log LOG = LogFactory.getLog(FileUpdateNotificationHandler.class);
 
-    private long fileReadInterval;
+    private long fileReadInterval = NhttpConstants.DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL;
 
     private List<DynamicProfileReloader> profileReloaders;
 
@@ -47,10 +47,9 @@ public class FileUpdateNotificationHandler extends TimerTask {
      */
     public FileUpdateNotificationHandler(long sleepInterval) {
 
-        fileReadInterval = NhttpConstants.DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL;
         //Cannot configure a value less than the minimum interval
-        if (sleepInterval > NhttpConstants.DYNAMIC_PROFILE_RELOAD_MIN_INTERVAL) {
-            this.fileReadInterval = sleepInterval;
+        if (sleepInterval > fileReadInterval) {
+            fileReadInterval = sleepInterval;
         }
         profileReloaders = new ArrayList<DynamicProfileReloader>();
         scheduleTimer(fileReadInterval);
@@ -60,12 +59,13 @@ public class FileUpdateNotificationHandler extends TimerTask {
     public void run() {
         long recordedLastUpdatedTime;
         long latestLastUpdatedTime;
+        String filePath;
         File configFile;
 
         for (DynamicProfileReloader profileLoader : profileReloaders) {
 
             recordedLastUpdatedTime = profileLoader.getLastUpdatedtime();
-            String filePath = profileLoader.getFilePath();
+            filePath = profileLoader.getFilePath();
 
             if (filePath != null) {
                 configFile = new File(filePath);
@@ -74,9 +74,9 @@ public class FileUpdateNotificationHandler extends TimerTask {
                     latestLastUpdatedTime = configFile.lastModified();
 
                     if (latestLastUpdatedTime > recordedLastUpdatedTime) {
+                        profileLoader.setLastUpdatedtime(latestLastUpdatedTime);
                         //Notify file update to the respective file loader
                         profileLoader.notifyFileUpdate();
-                        profileLoader.setLastUpdatedtime(latestLastUpdatedTime);
                     }
                 } catch (Exception e) {
                     LOG.debug("Error loading last modified time for the SSL config file. Updates will not be loaded from " + filePath);

@@ -88,7 +88,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -1347,7 +1349,31 @@ public class ClientHandler implements NHttpClientEventHandler {
         }
     }
 
+    /**
+     * Set the given Client Connection Factory.
+     *
+     * @param connFactory ClientConnectionFactory instance
+     */
     public void setConnFactory(ClientConnFactory connFactory) {
         this.connFactory = connFactory;
     }
+
+    /**
+     * Shutdown the connections of the given host:port list. This will allow to create new connection
+     * at the next request happens.
+     *
+     * @param hostList Set of String which contains entries in hots:port format
+     */
+    public void resetConnectionPool(Set<String> hostList) {
+
+        for (String host : hostList) {
+            System.out.println("Host List to be reset : " + host);
+        }
+
+        List<NHttpClientConnection> clientConnections = connpool.getSslConnectionsList(hostList);
+        for (NHttpClientConnection conn : clientConnections) {
+            shutdownConnection(conn, false, " Connection closed to re-loading of Dynamic SSL Configurations ");
+        }
+    }
+
 }
