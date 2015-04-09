@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  * 
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -31,7 +31,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -47,10 +46,9 @@ public class ForEachMediator extends AbstractMediator {
 	 */
 	private SynapseXPath expression = null;
 
-	/**
-	 * The target for the newly split messages
-	 */
-	private Target target = null;
+	private SequenceMediator sequence;
+
+	private String sequenceRef;
 
 	public boolean mediate(MessageContext synCtx) {
 		SynapseLog synLog = getLog(synCtx);
@@ -127,7 +125,7 @@ public class ForEachMediator extends AbstractMediator {
 								                   envelope,
 								                   (OMNode) element);
 
-						target.mediate(iteratedMsgCtx);
+						mediateSequence(iteratedMsgCtx);
 
 						//add the mediated element to the parent from original message context
 						((OMElement) parent)
@@ -152,8 +150,29 @@ public class ForEachMediator extends AbstractMediator {
 		}
 	}
 
+	private void mediateSequence(MessageContext synCtx) {
+		if (sequence != null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Synchronously mediating using the in-line anonymous sequence");
+			}
+			sequence.mediate(synCtx);
+		} else if (sequenceRef != null) {
+			SequenceMediator refSequence = (SequenceMediator) synCtx.getSequence(sequenceRef);
+			if (refSequence != null) {
+				if (log.isDebugEnabled()) {
+					log.debug("Synchronously mediating using the sequence " +
+					          "named : " + sequenceRef);
+				}
+				refSequence.mediate(synCtx);
+			}
+		} else {
+			handleException("Couldn't find the sequence named : " + sequenceRef, synCtx);
+		}
+	}
+
 	/**
-	 * Validate at runtime the the Target of the ForEach mediator. The target cannot contain :
+	 * Validate at runtime the the Sequence of the ForEach mediator. The sequence cannot contain :
+	 * Call, CallOut and Send Mediators
 	 * <ul>
 	 * <li>A sequence with Call, CallOut or Send Mediators</li>
 	 * <li>A reference to a sequence that contains Call, CallOut or Send Mediators </li>
@@ -168,7 +187,7 @@ public class ForEachMediator extends AbstractMediator {
 	 * @return validity of the sequence
 	 */
 	private boolean validateSequenceRef(MessageContext synCtx) {
-		String sequenceRef = target.getSequenceRef();
+		//String sequenceRef = target.getSequenceRef();
 		if (sequenceRef != null) {
 			SequenceMediator refSequence =
 					(SequenceMediator) synCtx.getSequence(sequenceRef);
@@ -285,20 +304,28 @@ public class ForEachMediator extends AbstractMediator {
 		return elementList;
 	}
 
-	public Target getTarget() {
-		return target;
-	}
-
-	public void setTarget(Target target) {
-		this.target = target;
-	}
-
 	public SynapseXPath getExpression() {
 		return expression;
 	}
 
 	public void setExpression(SynapseXPath expression) {
 		this.expression = expression;
+	}
+
+	public SequenceMediator getSequence() {
+		return sequence;
+	}
+
+	public void setSequence(SequenceMediator sequence) {
+		this.sequence = sequence;
+	}
+
+	public String getSequenceRef() {
+		return sequenceRef;
+	}
+
+	public void setSequenceRef(String sequenceKey) {
+		this.sequenceRef = sequenceKey;
 	}
 
 }

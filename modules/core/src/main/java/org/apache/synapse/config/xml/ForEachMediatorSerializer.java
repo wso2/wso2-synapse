@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  * 
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -24,7 +24,15 @@ import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
- * <foreach> </foreach>
+ * <p>Serialize for each mediator as below : </p>
+ *
+ * <pre>
+ * &lt;foreach expression="xpath" [sequence="sequence_ref"] &gt;
+ *     &lt;sequence&gt;
+ *       (mediator)+
+ *     &lt;/sequence&gt;?
+ * &lt;/foreach&gt;
+ * </pre>
  */
 public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 
@@ -51,7 +59,15 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 			handleException("Missing expression of the ForEach which is required.");
 		}
 
-		forEachElem.addChild(TargetSerializer.serializeTarget(forEachMed.getTarget()));
+        SequenceMediatorSerializer seqSerializer = new SequenceMediatorSerializer();
+        if (forEachMed.getSequenceRef() != null) {
+            forEachElem.addAttribute("sequence", forEachMed.getSequenceRef(), null);
+        } else if (forEachMed.getSequence() != null) {
+            OMElement seqElement = seqSerializer.serializeAnonymousSequence(
+                    null, forEachMed.getSequence());
+            seqElement.setLocalName("sequence");
+            forEachElem.addChild(seqElement);
+        }
 
 		return forEachElem;
 	}
