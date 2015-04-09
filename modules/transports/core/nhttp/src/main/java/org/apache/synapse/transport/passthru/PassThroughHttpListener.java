@@ -285,6 +285,34 @@ public class PassThroughHttpListener implements TransportListener {
 
     }
 
+    /**
+     * Start specified end points for given set of bind addresses
+     *
+     * @param bindAddresses InetSocketAddress list to be started
+     * @throws AxisFault
+     */
+    private void startSpecificEndpoints(Set<InetSocketAddress> bindAddresses) throws AxisFault {
+
+        if (PassThroughConfiguration.getInstance().getMaxActiveConnections() != -1) {
+            addMaxActiveConnectionCountController(PassThroughConfiguration.getInstance().getMaxActiveConnections());
+        }
+
+        List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(bindAddresses);
+        Collections.sort(addressList, new Comparator<InetSocketAddress>() {
+
+            public int compare(InetSocketAddress a1, InetSocketAddress a2) {
+                String s1 = a1.toString();
+                String s2 = a2.toString();
+                return s1.compareTo(s2);
+            }
+
+        });
+        for (InetSocketAddress address : addressList) {
+            passThroughListeningIOReactorManager.startPTTEndpoint(address, ioReactor, namePrefix);
+        }
+    }
+
+
     private void handleException(String s, Exception e) throws AxisFault {
         log.error(s, e);
         throw new AxisFault(s, e);
@@ -449,6 +477,35 @@ public class PassThroughHttpListener implements TransportListener {
     }
 
     /**
+     * Re-load specific end points given in Transport In Description
+     *
+     * @param transportIn TransportInDescriptions of the new configuration
+     * @throws AxisFault
+     */
+    public void reloadSpecificEndPoints(final TransportInDescription transportIn) throws AxisFault {
+        if (state != BaseConstants.STARTED) {
+            return;
+        }
+
+        HttpHost host = new HttpHost(
+                sourceConfiguration.getHostname(),
+                sourceConfiguration.getPort(),
+                sourceConfiguration.getScheme().getName());
+        // Rebuild connection factory
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
+        connFactory = connFactoryBuilder.build(sourceConfiguration.getHttpParams());
+
+        // Close listener endpoints and stop accepting new connections
+        passThroughListeningIOReactorManager.closeSpecificPTTListenerEndpoints(operatingPort, connFactory.getBindAddresses());
+        passThroughListeningIOReactorManager.getServerIODispatch(operatingPort).update(connFactory);
+
+        //start end points from new configuration
+        startSpecificEndpoints(connFactory.getBindAddresses());
+
+        log.info(namePrefix + " Reloaded");
+    }
+
+    /**
      * Stop accepting new connections, and wait the maximum specified time for in-flight
      * requests to complete before a controlled shutdown for maintenance
      *
@@ -568,22 +625,18 @@ public class PassThroughHttpListener implements TransportListener {
 
     /**
      * Reload SSL configurations from configurations and reset all connections
+     *
      * @param transportInDescription TransportInDescription of the configuration
      * @throws AxisFault
      */
-    public void reloadDynamicSSLConfig(TransportInDescription transportInDescription) throws AxisFault {
+    public void reloadDynamicSSLConfig(TransportInDescription transportInDescription)
+            throws AxisFault {
         Parameter oldParameter = transportInDescription.getParameter("SSLProfiles");
-        Parameter profilePathParam = transportInDescription.getParameter("SSLProfilesConfigPath");
+        Parameter profilePathParam = transportInDescription.getParameter("dynamicSSLProfilesConfig");
 
         if (oldParameter != null && profilePathParam != null) {
             transportInDescription.removeParameter(oldParameter);
-            ServerConnFactoryBuilder builder = new ServerConnFactoryBuilder(transportInDescription, null);
-            TransportInDescription loadedTransportIn = builder.loadMultiProfileSSLConfig();
-
-            if (loadedTransportIn != null) {
-                transportInDescription = loadedTransportIn;
-                this.reload(transportInDescription);
-            }
+            this.reloadSpecificEndPoints(transportInDescription);
         }
     }
 

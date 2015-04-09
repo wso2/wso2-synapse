@@ -57,7 +57,7 @@ public class HttpCoreNIOMultiSSLListener extends HttpCoreNIOListener implements 
      * @throws AxisFault
      */
     public void reloadConfig(ParameterInclude transport) throws AxisFault{
-        log.info("PassThroughHttpMultiSSLListener reloading Config..");
+        log.info("HttpCoreNIOMultiSSLListener reloading Config..");
         reloadDynamicSSLConfig((TransportInDescription)transport);
     }
     

@@ -287,7 +287,7 @@ public class ServerConnFactoryBuilder {
      */
     public TransportInDescription loadMultiProfileSSLConfig () {
 
-        Parameter profilePathParam = transportIn.getParameter("SSLProfilesConfigPath");
+        Parameter profilePathParam = transportIn.getParameter("dynamicSSLProfilesConfig");
 
         //Custom SSL Profile configuration file not configured
         if (profilePathParam == null) {

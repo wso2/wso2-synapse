@@ -327,7 +327,7 @@ public class ClientConnFactoryBuilder {
      */
     public TransportOutDescription loadDynamicSSLConfig (TransportOutDescription transportOut) {
 
-        Parameter profilePathParam = transportOut.getParameter("SSLProfilesConfigPath");
+        Parameter profilePathParam = transportOut.getParameter("dynamicSSLProfilesConfig");
 
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profilePathParam == null) {

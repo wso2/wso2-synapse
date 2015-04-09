@@ -24,7 +24,6 @@ import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.ParameterInclude;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import javax.xml.namespace.QName;
 
@@ -36,9 +35,16 @@ public abstract class DynamicProfileReloader {
 
     private static final Log LOG = LogFactory.getLog(DynamicProfileReloader.class);
 
-    private long lastUpdatedtime;
+    /* XML parameter name for dynamic profiles in Axis2 config */
+    private final String profileConfigName = "dynamicSSLProfilesConfig";
 
-    private long fileMonitoringInterval = NhttpConstants.DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL;
+    /* XML element name for dynamic profiles configuration path in Axis2 config */
+    private final String pathConfigName = "filePath";
+
+    /* XML element name for dynamic profiles file read interval in Axis2 config */
+    private final String intervalConfigName = "fileReadInterval";
+
+    private long lastUpdatedtime;
 
     private String filePath;
 
@@ -54,6 +60,11 @@ public abstract class DynamicProfileReloader {
         return this.lastUpdatedtime;
     }
 
+    /**
+     * Returns File Path of the dynamic SSL profiles
+     *
+     * @return String file path
+     */
     public String getFilePath() {
         return this.filePath;
     }
@@ -84,11 +95,13 @@ public abstract class DynamicProfileReloader {
      */
     protected String extractConfigurationFilePath(ParameterInclude transportOut) {
         String path = null;
-        Parameter profilePathParam = transportOut.getParameter("SSLProfilesConfigPath");
+        Parameter profileParam = transportOut.getParameter(profileConfigName);
 
-        if (profilePathParam != null) {
-            OMElement pathElement = profilePathParam.getParameterElement();
-            path = pathElement.getFirstChildWithName(new QName("filePath")).getText();
+        //No Separate configuration file configured. Therefore using Axis2 Configuration
+        if (profileParam != null) {
+            OMElement profileParamElem = profileParam.getParameterElement();
+            path = profileParamElem.getFirstChildWithName(new QName(pathConfigName)).getText();
+
         }
         return path;
     }
@@ -100,12 +113,19 @@ public abstract class DynamicProfileReloader {
      * @return Long value of the interval in milliseconds
      */
     protected long extractSleepInterval(ParameterInclude transportOut) {
-        Parameter profilePathParam = transportOut.getParameter("sslprofilesloadinginterval");
+        long fileReadInterval = -1;
+        Parameter profileParam = transportOut.getParameter(profileConfigName);
 
-        if (profilePathParam != null) {
-            fileMonitoringInterval = Long.parseLong(profilePathParam.getValue().toString());
+        //No Separate configuration file configured. Therefore using Axis2 Configuration
+        if (profileParam != null) {
+            OMElement profileParamElem = profileParam.getParameterElement();
+            String interval = profileParamElem.getFirstChildWithName(new QName(intervalConfigName)).getText();
+            if (interval != null) {
+                fileReadInterval = Long.valueOf(interval);
+            }
         }
-        return fileMonitoringInterval;
+
+        return fileReadInterval;
     }
 
 
@@ -128,4 +148,6 @@ public abstract class DynamicProfileReloader {
             LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
         }
     }
+
+
 }
