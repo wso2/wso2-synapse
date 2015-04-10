@@ -33,6 +33,7 @@ import org.apache.axis2.transport.TransportSender;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpException;
@@ -69,6 +70,7 @@ import org.wso2.caching.digest.DigestGenerator;
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.Map;
 
@@ -547,8 +549,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                                                      msgContext, format, msgContext.getSoapAction()));
                 }
 
-                formatter.writeTo(msgContext, format, out, false);
-                /*}*/
+                try {
+                    formatter.writeTo(msgContext, format, out, false);
+                }catch (RemoteException fault){
+                    IOUtils.closeQuietly(out);
+                    throw fault;
+                }
                 pipe.setSerializationComplete(true);
                 out.close();
             }
