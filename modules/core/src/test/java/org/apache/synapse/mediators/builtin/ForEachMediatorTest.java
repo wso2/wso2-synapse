@@ -120,7 +120,7 @@ public class ForEachMediatorTest extends AbstractSplitMediatorTestCase {
      *
      * @throws Exception
      */
-    public void testTargetSequenceValidity() throws Exception {
+    public void testSequenceValidity() throws Exception {
         testCtx.getEnvelope()
                 .getBody()
                 .addChild(createOMElement("<original>"

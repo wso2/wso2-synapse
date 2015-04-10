@@ -171,14 +171,9 @@ public class ForEachMediator extends AbstractMediator {
     }
 
     /**
+     * <p>
      * Validate at runtime the the Sequence of the ForEach mediator. The sequence cannot contain :
      * Call, CallOut and Send Mediators
-     * <ul>
-     * <li>A sequence with Call, CallOut or Send Mediators</li>
-     * <li>A reference to a sequence that contains Call, CallOut or Send Mediators </li>
-     * <li>A target endpoint</li>
-     * <li>A reference to a target endpoint</li>
-     * </ul>
      * <p/>
      * This method only validates a sequence reference since other cases are covered during mediator
      * creation.
@@ -187,7 +182,6 @@ public class ForEachMediator extends AbstractMediator {
      * @return validity of the sequence
      */
     private boolean validateSequenceRef(MessageContext synCtx) {
-        //String sequenceRef = target.getSequenceRef();
         if (sequenceRef != null) {
             SequenceMediator refSequence =
                     (SequenceMediator) synCtx.getSequence(sequenceRef);
