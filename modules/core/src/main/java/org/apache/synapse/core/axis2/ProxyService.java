@@ -32,6 +32,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -43,6 +45,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.WSDLEndpoint;
+import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.PolicyInfo;
 import org.apache.synapse.util.resolver.CustomWSDLLocator;
@@ -1176,6 +1179,59 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
           proxyService.addParameter("_default_mediate_operation_", mediateOperation);
           return mediateOperation;
 		
+    }
+
+    /**
+     * Register the fault handler for the message context
+     *
+     * @param synCtx Message Context
+     */
+    public void registerFaultHandler(MessageContext synCtx) {
+
+        boolean traceOn = trace();
+        boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+
+        if (targetFaultSequence != null) {
+
+            Mediator faultSequence = synCtx.getSequence(targetFaultSequence);
+            if (faultSequence != null) {
+                if (traceOrDebugOn) {
+                    traceOrDebug(traceOn,
+                            "Setting the fault-sequence to : " + faultSequence);
+                }
+                synCtx.pushFaultHandler(new MediatorFaultHandler(
+                        synCtx.getSequence(targetFaultSequence)));
+
+            } else {
+                // when we can not find the reference to the fault sequence of the proxy
+                // service we should not throw an exception because still we have the global
+                // fault sequence and the message mediation can still continue
+                if (traceOrDebugOn) {
+                    traceOrDebug(traceOn, "Unable to find fault-sequence : " +
+                            targetFaultSequence + "; using default fault sequence");
+                }
+                synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
+            }
+
+        } else if (targetInLineFaultSequence != null) {
+            if (traceOrDebugOn) {
+                traceOrDebug(traceOn, "Setting specified anonymous fault-sequence for proxy");
+            }
+            synCtx.pushFaultHandler(
+                    new MediatorFaultHandler(targetInLineFaultSequence));
+        }
+    }
+
+    private void traceOrDebug(boolean traceOn, String msg) {
+        if (traceOn) {
+            trace.info(msg);
+            if (log.isDebugEnabled()) {
+                log.debug(msg);
+            }
+        } else {
+            log.debug(msg);
+        }
+
     }
 
     @Override

@@ -21,6 +21,7 @@ package org.apache.synapse.transport.passthru.api;
 import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.core.PassThroughListeningIOReactorManager;
+import org.apache.synapse.transport.passthru.core.ssl.SSLConfiguration;
 
 import java.net.InetSocketAddress;
 
@@ -68,6 +69,20 @@ public class PassThroughInboundEndpointHandler {
     }
 
     /**
+     * @return Pass Through SSL SourceConfiguration registered by shared IO Reactor of  PTT Listener
+     */
+    public static SourceConfiguration getPassThroughSSLSourceConfiguration() throws Exception {
+        SourceConfiguration sourceConfiguration = PassThroughListeningIOReactorManager.getInstance().
+                   getSharedSSLPassThroughSourceConfiguration();
+        if (sourceConfiguration != null) {
+            return sourceConfiguration;
+        } else {
+            throw new Exception("PassThroughSharedListenerConfiguration  is not initiated correctly when  " +
+                                "SSLPassThroughListeners  are starting");
+        }
+    }
+
+    /**
      * Check Whether inbound endpoint is running for a particular port
      * @param port port
      * @return whether inbound endpoint is running
@@ -75,4 +90,21 @@ public class PassThroughInboundEndpointHandler {
     public static boolean isEndpointRunning(int port) {
         return PassThroughListeningIOReactorManager.getInstance().isDynamicEndpointRunning(port);
     }
+
+    /**
+     * Start SSL Endpoint Listen and events related to Endpoint handle by  given NHttpServerEventHandler
+     * @param inetSocketAddress Socket Address of the Endpoint need to be start by underlying IOReactor
+     * @param nHttpServerEventHandler Event Handler for handle events for Endpoint
+     * @param endpointName  Name of the Endpoint
+     * @param sslConfiguration SSL Configuration
+     * @return Started or Not
+     */
+    public static boolean startSSLEndpoint(InetSocketAddress inetSocketAddress,
+                                           NHttpServerEventHandler nHttpServerEventHandler, String endpointName,
+                                            SSLConfiguration sslConfiguration) {
+        return PassThroughListeningIOReactorManager.getInstance().
+                   startDynamicPTTSSLEndpoint(inetSocketAddress, nHttpServerEventHandler,
+                                              endpointName, sslConfiguration);
+    }
+
 }
