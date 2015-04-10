@@ -278,7 +278,9 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean closeDynamicPTTEndpoint(int port) {
         try {
+            log.info("Closing Endpoint Listener for port "+port);
             dynamicPTTListeningEndpointMapper.get(port).close();
+            log.info("Successfully closed Endpoint Listener for port "+port);
         } catch (Exception e) {
             log.error("Cannot close  Endpoint relevant to port " + port, e);
             return false;
@@ -310,12 +312,16 @@ public class PassThroughListeningIOReactorManager {
                             if (dynamicPTTListeningEndpointMapper.containsKey(endPointPort)) {
                                 continue;
                             }
+                            log.info("Closing Endpoint Listener for port "+port);
                             listenerEndpoint.close();
+                            log.info("Successfully closed Endpoint Listener for port "+port);
                         }
                     }
                 } else {
                     for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        log.info("Closing Endpoint Listener for port "+port);
                         listenerEndpoint.close();
+                        log.info("Successfully closed Endpoint Listener for port "+port);
                     }
                 }
             }
