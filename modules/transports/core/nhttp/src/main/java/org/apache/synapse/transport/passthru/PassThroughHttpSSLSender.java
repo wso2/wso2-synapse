@@ -48,10 +48,11 @@ public class PassThroughHttpSSLSender extends PassThroughHttpSender implements S
 
     /**
      * Reload SSL profiles and reset connections in PassThroughHttpSSLSender
+     *
      * @param transport TransportInDescription of the configuration
      * @throws AxisFault
      */
-    public void reloadConfig(ParameterInclude transport) throws AxisFault{
+    public void reloadConfig(ParameterInclude transport) throws AxisFault {
         reloadDynamicSSLConfig((TransportOutDescription) transport);
     }
 

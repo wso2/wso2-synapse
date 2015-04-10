@@ -42,6 +42,7 @@ public class SSLProfileInvoker implements SSLProfileInvokerMBean {
 
     /**
      * Returns configured file path
+     *
      * @return String file path
      */
     public String getConfigFilePath() {
