@@ -133,19 +133,23 @@ public abstract class DynamicProfileReloader {
      *
      * @param transportDescription Transport In/Out Description of the configuration
      */
-    protected void registerListener(ParameterInclude transportDescription) {
+    protected boolean registerListener(ParameterInclude transportDescription) {
+        boolean notificationHandlerStarted = false;
         long configurationLoadingInterval = extractSleepInterval(transportDescription);
         String filePath = extractConfigurationFilePath(transportDescription);
 
-        fileUpdateNotificationHandler = new FileUpdateNotificationHandler(configurationLoadingInterval);
-
+        //Create File Update Notification Handler only if file path is configured
         if (filePath != null) {
+            fileUpdateNotificationHandler = new FileUpdateNotificationHandler(configurationLoadingInterval);
             setFilePath(filePath);
             setLastUpdatedtime(System.currentTimeMillis());
+
             fileUpdateNotificationHandler.registerListener(this);
+            notificationHandlerStarted = true;
         } else {
             LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
         }
+        return notificationHandlerStarted;
     }
 
     /**

@@ -634,6 +634,7 @@ public class PassThroughHttpListener implements TransportListener {
      */
     public void reloadDynamicSSLConfig(TransportInDescription transportInDescription)
             throws AxisFault {
+        log.info("PassThroughHttpListener reloading SSL Config..");
         Parameter oldParameter = transportInDescription.getParameter("SSLProfiles");
         Parameter profilePathParam = transportInDescription.getParameter("dynamicSSLProfilesConfig");
 

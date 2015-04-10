@@ -39,4 +39,12 @@ public class SSLProfileInvoker implements SSLProfileInvokerMBean {
     public void notifyFileUpdate() {
         dynamicProfileReloader.notifyFileUpdate();
     }
+
+    /**
+     * Returns configured file path
+     * @return String file path
+     */
+    public String getConfigFilePath() {
+        return configFilePath;
+    }
 }

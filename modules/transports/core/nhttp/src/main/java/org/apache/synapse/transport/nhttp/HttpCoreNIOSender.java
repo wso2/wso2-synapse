@@ -87,7 +87,7 @@ import org.apache.synapse.transport.nhttp.util.NhttpUtil;
  */
 public class HttpCoreNIOSender extends AbstractHandler implements TransportSender, ManagementSupport {
 
-    protected static final Log log = LogFactory.getLog(HttpCoreNIOSender.class);
+    private static final Log log = LogFactory.getLog(HttpCoreNIOSender.class);
 
     /** The IOReactor */
     private volatile DefaultConnectingIOReactor ioReactor;
@@ -968,6 +968,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * @throws AxisFault
      */
     public void reload(TransportOutDescription transportOut) throws AxisFault {
+        log.info("HttpCoreNIOSender reloading SSL Config..");
         //create new connection factory
         ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
         connFactory = contextBuilder.createConnFactory(params);

@@ -40,7 +40,6 @@ public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener imp
      * @throws AxisFault
      */
     public void reloadConfig(ParameterInclude transport) throws AxisFault {
-        log.info("PassThroughHttpMultiSSLListener reloading Config..");
         reloadDynamicSSLConfig((TransportInDescription) transport);
     }
 

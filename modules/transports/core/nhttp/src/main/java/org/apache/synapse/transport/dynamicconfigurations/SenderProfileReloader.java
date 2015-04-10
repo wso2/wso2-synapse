@@ -36,13 +36,16 @@ public class SenderProfileReloader extends DynamicProfileReloader {
     private ParameterInclude transportOutDescription;
     private SSLProfileInvoker sslProfileInvoker;
 
-    public SenderProfileReloader(SSLProfileLoader profileLoader, ParameterInclude transportOutDescription) {
+    public SenderProfileReloader(SSLProfileLoader profileLoader,
+                                 ParameterInclude transportOutDescription) {
         this.sslProfileLoader = profileLoader;
         this.transportOutDescription = transportOutDescription;
-        this.sslProfileInvoker = new SSLProfileInvoker(this);
-        registerListener(this.transportOutDescription);
-        MBeanRegistrar.getInstance().registerMBean(sslProfileInvoker, "SenderSSLProfileInvoker", getClassName(sslProfileLoader.getClass().getName()));
 
+        if (registerListener(this.transportOutDescription)) {
+            this.sslProfileInvoker = new SSLProfileInvoker(this);
+            MBeanRegistrar.getInstance().registerMBean(sslProfileInvoker, "SenderSSLProfileReloader",
+                                                       getClassName(sslProfileLoader.getClass().getName()));
+        }
     }
 
     /**
@@ -52,7 +55,8 @@ public class SenderProfileReloader extends DynamicProfileReloader {
         try {
             sslProfileLoader.reloadConfig(transportOutDescription);
         } catch (AxisFault axisFault) {
-            LOG.error("Error reloading dynamic SSL configurations for Senders : New Configurations will not be applied  " + axisFault.getMessage());
+            LOG.error("Error reloading dynamic SSL configurations for Senders : New Configurations will not be applied  "
+                      + axisFault.getMessage());
         }
     }
 }

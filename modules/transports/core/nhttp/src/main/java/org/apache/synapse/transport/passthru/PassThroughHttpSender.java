@@ -618,6 +618,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
      * @throws AxisFault
      */
     public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
+        log.info("PassThroughHttpSender reloading SSL Config..");
 
         ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
         connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());

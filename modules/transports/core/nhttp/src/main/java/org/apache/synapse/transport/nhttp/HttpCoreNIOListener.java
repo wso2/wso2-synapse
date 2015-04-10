@@ -82,7 +82,7 @@ import org.apache.synapse.transport.nhttp.util.ActiveConnectionMonitor;
  */
 public class HttpCoreNIOListener implements TransportListener, ManagementSupport {
 
-    protected static final Log log = LogFactory.getLog(HttpCoreNIOListener.class);
+    private static final Log log = LogFactory.getLog(HttpCoreNIOListener.class);
     /** The Axis2 configuration context */
     private volatile ConfigurationContext cfgCtx;
     /** The IOReactor */
@@ -919,6 +919,8 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
      */
     public void reloadDynamicSSLConfig(TransportInDescription transportInDescription)
             throws AxisFault {
+        log.info("HttpCoreNIOListener reloading SSL Config..");
+
         Parameter oldParameter = transportInDescription.getParameter("SSLProfiles");
         Parameter profilePathParam = transportInDescription.getParameter("dynamicSSLProfilesConfig");
 

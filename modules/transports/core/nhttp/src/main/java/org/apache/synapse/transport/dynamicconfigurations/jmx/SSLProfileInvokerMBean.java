@@ -23,8 +23,8 @@ package org.apache.synapse.transport.dynamicconfigurations.jmx;
  */
 public interface SSLProfileInvokerMBean {
 
-    /**
-     * Invoke File update method
-     */
     public void notifyFileUpdate();
+
+    public String getConfigFilePath();
+
 }

@@ -52,7 +52,6 @@ public class PassThroughHttpSSLSender extends PassThroughHttpSender implements S
      * @throws AxisFault
      */
     public void reloadConfig(ParameterInclude transport) throws AxisFault{
-        log.info("PassThroughHttpSSLSender reloading Config..");
         reloadDynamicSSLConfig((TransportOutDescription) transport);
     }
 
