@@ -36,6 +36,7 @@ public class MediatorSerializerFinder {
 
     private static final Class[] mediatorSerializers = {
         SequenceMediatorSerializer.class,
+        ForEachMediatorSerializer.class,
         LogMediatorSerializer.class,
         SendMediatorSerializer.class,
         FilterMediatorSerializer.class,
