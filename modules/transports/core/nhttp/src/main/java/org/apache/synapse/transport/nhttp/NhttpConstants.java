@@ -198,7 +198,5 @@ public class NhttpConstants {
      * Default interval which checks any configuration file updates for Dynamic SSL Profiles
      * Default value is one hour in milliseconds.
      */
-//    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 3600000;
-    //for testing
-    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 15000;
+    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 3600000;
 }

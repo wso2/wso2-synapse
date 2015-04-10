@@ -22,8 +22,8 @@ import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
-import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
-import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SenderProfileReloader;
+import org.apache.synapse.transport.dynamicconfigurations.SSLProfileLoader;
+import org.apache.synapse.transport.dynamicconfigurations.SenderProfileReloader;
 
 public class PassThroughHttpSSLSender extends PassThroughHttpSender implements SSLProfileLoader {
 

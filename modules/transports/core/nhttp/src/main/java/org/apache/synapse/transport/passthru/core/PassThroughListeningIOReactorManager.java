@@ -356,7 +356,6 @@ public class PassThroughListeningIOReactorManager {
 
                             for (InetSocketAddress inetSocketAddress : bindAddresses) {
                                 if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
-                                    System.out.println(" 1  Matching enpoint found to close... " + inetSocketAddress.getHostName());
                                     listenerEndpoint.close();
                                 }
                             }
@@ -366,7 +365,6 @@ public class PassThroughListeningIOReactorManager {
                     for (ListenerEndpoint listenerEndpoint : endpoints) {
                         for (InetSocketAddress inetSocketAddress : bindAddresses) {
                             if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
-                                System.out.println(" 2  Matching enpoint found to close... " + inetSocketAddress.getHostName());
                                 listenerEndpoint.close();
                             }
                         }

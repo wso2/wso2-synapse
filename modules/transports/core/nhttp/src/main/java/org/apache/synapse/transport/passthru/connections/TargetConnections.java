@@ -222,7 +222,9 @@ public class TargetConnections {
                     httpRoute.getTargetHost().getSchemeName().equalsIgnoreCase(sslSchemaName)) {
 
                     try {
-                        if (connectionsEntry.getValue().getConnection() != null) {
+                        NHttpClientConnection connection = connectionsEntry.getValue().getConnection();
+                        if (connection != null && connection.getContext() != null) {
+
                             shutdownConnection(connectionsEntry.getValue().getConnection());
                             log.info("Connection " + httpRoute.getTargetHost().getHostName() + ":"
                                      + httpRoute.getTargetHost().getPort() + " Successful");

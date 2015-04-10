@@ -16,12 +16,14 @@
  * under the License.
  */
 
-package org.apache.synapse.transport.nhttp.util.dynamicconfigurations;
+package org.apache.synapse.transport.dynamicconfigurations;
 
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.ParameterInclude;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.jmx.MBeanRegistrar;
+import org.apache.synapse.transport.dynamicconfigurations.jmx.SSLProfileInvoker;
 
 /**
  * Profile re-loader for nhttp and pass-through SSL senders
@@ -32,11 +34,15 @@ public class SenderProfileReloader extends DynamicProfileReloader {
 
     private SSLProfileLoader sslProfileLoader;
     private ParameterInclude transportOutDescription;
+    private SSLProfileInvoker sslProfileInvoker;
 
     public SenderProfileReloader(SSLProfileLoader profileLoader, ParameterInclude transportOutDescription) {
         this.sslProfileLoader = profileLoader;
         this.transportOutDescription = transportOutDescription;
+        this.sslProfileInvoker = new SSLProfileInvoker(this);
         registerListener(this.transportOutDescription);
+        MBeanRegistrar.getInstance().registerMBean(sslProfileInvoker, "SenderSSLProfileInvoker", getClassName(sslProfileLoader.getClass().getName()));
+
     }
 
     /**

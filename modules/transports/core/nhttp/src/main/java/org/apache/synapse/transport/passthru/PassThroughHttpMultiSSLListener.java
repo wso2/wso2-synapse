@@ -7,8 +7,8 @@ import org.apache.axis2.description.TransportInDescription;
 import org.apache.http.HttpHost;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
-import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.ListenerProfileReloader;
-import org.apache.synapse.transport.nhttp.util.dynamicconfigurations.SSLProfileLoader;
+import org.apache.synapse.transport.dynamicconfigurations.ListenerProfileReloader;
+import org.apache.synapse.transport.dynamicconfigurations.SSLProfileLoader;
 
 public class PassThroughHttpMultiSSLListener extends PassThroughHttpListener implements SSLProfileLoader{
 

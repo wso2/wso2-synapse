@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.transport.nhttp.util.dynamicconfigurations;
+package org.apache.synapse.transport.dynamicconfigurations;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.description.Parameter;
@@ -47,7 +47,7 @@ public abstract class DynamicProfileReloader {
 
     private String filePath;
 
-    protected abstract void notifyFileUpdate();
+    public abstract void notifyFileUpdate();
 
     protected FileUpdateNotificationHandler fileUpdateNotificationHandler;
 
@@ -148,5 +148,17 @@ public abstract class DynamicProfileReloader {
         }
     }
 
-
+    /**
+     * Get actual class name from comprehensive class name
+     *
+     * @param completeClassName complete class name String
+     * @return instance name String
+     */
+    public String getClassName(String completeClassName) {
+        String absoluteClassName = null;
+        if (completeClassName != null) {
+            absoluteClassName = completeClassName.substring(completeClassName.lastIndexOf(".") + 1);
+        }
+        return absoluteClassName;
+    }
 }

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.apache.synapse.transport.nhttp.util.dynamicconfigurations;
+package org.apache.synapse.transport.dynamicconfigurations;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
