@@ -45,8 +45,9 @@
                         <Export-Package>
                             org.apache.synapse.transport.http.*,
                             org.apache.synapse.transport.nhttp.*,
-			    org.apache.synapse.transport.passthru.*,
-			    org.apache.synapse.transport.certificatevalidation.*
+			                org.apache.synapse.transport.passthru.*,
+			                org.apache.synapse.transport.certificatevalidation.*,
+                            org.apache.synapse.transport.dynamicconfigurations.*
                         </Export-Package>
                         <Import-Package>
                             !javax.xml.namespace,

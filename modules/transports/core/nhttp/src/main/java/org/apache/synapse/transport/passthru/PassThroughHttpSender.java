@@ -41,7 +41,6 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.nio.NHttpServerConnection;
-import org.apache.http.nio.reactor.IOEventDispatch;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
@@ -86,7 +85,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     /** Protocol handler */
     private TargetHandler handler;
     /** I/O dispatcher */
-    private IOEventDispatch ioEventDispatch;
+    private ClientIODispatch ioEventDispatch;
     /** The connection factory */
     private ClientConnFactory connFactory;
     
@@ -100,6 +99,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
     /** Proxy config */
     private ProxyConfig proxyConfig;
+
+    // manage target connections
+    private TargetConnections targetConnections;
     
     /** state of the sender */
     private volatile int state = BaseConstants.STOPPED;
@@ -189,9 +191,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
 
         ConnectCallback connectCallback = new ConnectCallback();
-        // manage target connections
-        TargetConnections targetConnections =
-                new TargetConnections(ioReactor, targetConfiguration, connectCallback);
+
+        targetConnections = new TargetConnections(ioReactor, targetConfiguration, connectCallback);
         targetConfiguration.setConnections(targetConnections);
 
         // create the delivery agent to hand over messages
@@ -615,5 +616,28 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         log.error(msg);
         throw new AxisFault(msg);
     }
+
+    /**
+     * Reload SSL configurations from configurations, reset all connections and restart the thread
+     *
+     * @param transport TransportOutDescription of the configuration
+     * @throws AxisFault
+     */
+    public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
+        log.info("PassThroughHttpSender reloading SSL Config..");
+
+        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
+        connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
+
+        //Set new configurations
+        handler.setConnFactory(connFactory);
+        ioEventDispatch.setConnFactory(connFactory);
+
+        //close existing connections to apply new settings
+        targetConnections.resetConnectionPool(connFactory.getHostList());
+
+        log.info("Pass-through " + namePrefix + " Sender updated with Dynamic Configuration Updates ...");
+    }
+
 
 }
