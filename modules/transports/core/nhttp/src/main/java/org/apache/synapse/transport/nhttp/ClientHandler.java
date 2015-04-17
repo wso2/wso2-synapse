@@ -374,12 +374,11 @@ public class ClientHandler implements NHttpClientEventHandler {
         if (log.isTraceEnabled()) {
             log.trace(conn + ": " + message);
         }
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-            conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
 
-	    if(axis2Request == null){
-		    axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
-	    }
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_CLOSED, message, null);
@@ -409,12 +408,11 @@ public class ClientHandler implements NHttpClientEventHandler {
             log.debug(conn + ": " + message);
         }
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-            conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
 
-	    if(axis2Request == null){
-		    axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
-	    }
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_TIMEOUT, message, null);
@@ -512,12 +510,11 @@ public class ClientHandler implements NHttpClientEventHandler {
     private void checkAxisRequestComplete(NHttpClientConnection conn,
         final int errorCode, final String errorMessage, final Exception exceptionToRaise) {
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-                conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
 
-	    if(axis2Request == null){
-		    axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
-	    }
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             markRequestCompletedWithError(axis2Request, errorCode, errorMessage, exceptionToRaise);
