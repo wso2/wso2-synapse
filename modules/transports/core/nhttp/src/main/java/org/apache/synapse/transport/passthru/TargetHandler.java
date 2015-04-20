@@ -646,4 +646,8 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void setConnFactory(ClientConnFactory connFactory) {
         this.connFactory = connFactory;
     }
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
+    }
 }
