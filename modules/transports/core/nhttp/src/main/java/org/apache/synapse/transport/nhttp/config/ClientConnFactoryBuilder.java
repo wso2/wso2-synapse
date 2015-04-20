@@ -23,8 +23,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -70,6 +72,7 @@ public class ClientConnFactoryBuilder {
     public ClientConnFactoryBuilder parseSSL() throws AxisFault {
         Parameter keyParam    = transportOut.getParameter("keystore");
         Parameter trustParam  = transportOut.getParameter("truststore");
+        Parameter httpsProtocolsParam = transportOut.getParameter("HttpsProtocols");
 
         OMElement ksEle = null;
         OMElement tsEle = null;
@@ -125,7 +128,31 @@ public class ClientConnFactoryBuilder {
             revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
 
-        ssl = new SSLContextDetails(sslContext, new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier));
+        // Process HttpProtocols
+        OMElement httpsProtocolsEl = httpsProtocolsParam != null ? httpsProtocolsParam.getParameterElement() : null;
+        String[] httpsProtocols = null;
+        final String configuredHttpsProtocols =
+                httpsProtocolsEl != null ? httpsProtocolsEl.getText() : null;
+        if (configuredHttpsProtocols != null && configuredHttpsProtocols.trim().length() != 0) {
+            String[] configuredValues = configuredHttpsProtocols.trim().split(",");
+            List<String> protocolList = new ArrayList<String>(configuredValues.length);
+            for (String protocol : configuredValues) {
+                if (!protocol.trim().isEmpty()) {
+                    protocolList.add(protocol.trim());
+                }
+            }
+
+            httpsProtocols = protocolList.toArray(new String[protocolList.size()]);
+        }
+
+        // Initiated separately to cater setting https protocols
+        ClientSSLSetupHandler clientSSLSetupHandler = new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier);
+
+        if (null != httpsProtocols) {
+            clientSSLSetupHandler.setHttpsProtocols(httpsProtocols);
+        }
+
+        ssl = new SSLContextDetails(sslContext, clientSSLSetupHandler);
         sslByHostMap = getCustomSSLContexts(transportOut);
         return this;
     }
