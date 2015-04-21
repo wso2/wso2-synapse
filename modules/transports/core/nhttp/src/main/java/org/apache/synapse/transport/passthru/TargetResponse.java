@@ -153,9 +153,7 @@ public class TargetResponse {
             } else {
                 if (conn instanceof LoggingNHttpClientConnection) {
                     ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
-                } else {
-                    targetConfiguration.getConnections().releaseConnection(conn);
-                }
+                } 
             }
         }
         return bytes;
