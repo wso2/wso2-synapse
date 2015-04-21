@@ -39,6 +39,9 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
             "localhost",
             "localhost.localdomain"};
 
+    /** Enabled SSL handshake protocols (e.g. SSLv3, TLSv1) */
+    private String[] httpsProtocols;
+
     static {
         Arrays.sort(LOCALHOSTS);
     }
@@ -138,6 +141,13 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
     }
 
     public void initalize(SSLEngine sslengine) {
+        /*
+            set handshake protocols if they are specified in transport configuration.
+            eg: <parameter name="HttpsProtocols">TLSv1.1,TLSv1.2</parameter>
+        */
+        if(null != httpsProtocols) {
+            sslengine.setEnabledProtocols(httpsProtocols);
+        }
     }
 
     public void verify(IOSession iosession, SSLSession sslsession) throws SSLException {
@@ -159,6 +169,15 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
                 throw new SSLException("Certificate Chain Validation failed for host : " + address, e);
             }
         }
+    }
+
+    /**
+     * Set HTTPS protocols if mentioned in axis2 configuration
+     *
+     * @param httpsProtocols  Array of protocols
+     */
+    public void setHttpsProtocols(String[] httpsProtocols) {
+        this.httpsProtocols = httpsProtocols;
     }
 
 }
