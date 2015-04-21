@@ -184,7 +184,7 @@ public class XQueryMediator extends AbstractMediator {
                 }
 
                 //creating XQueryCompiler
-                if (cachedQueryCompiler == null || cachedQueryCompiler != null) {
+                if (cachedQueryCompiler == null) {
                     synLog.traceOrDebug("Creating a compiler from the Processor ");
                     cachedQueryCompiler = cachedProcessor.newXQueryCompiler();
                 }
@@ -211,7 +211,7 @@ public class XQueryMediator extends AbstractMediator {
                             cachedXQueryEvaluatorMap.put(generatedQueryKey, queryEvaluator);
                         }
 
-                        // need binding because the expression just has recreated
+                        // need set because the expression just has recreated
                         needSet = true;
 
 
@@ -587,10 +587,7 @@ public class XQueryMediator extends AbstractMediator {
                         handleException("Incompatible type for the String");
                     }
 
-                } else if (XdmNodeKind.DOCUMENT == nodeKind) {
-                    setOMNode(name, value, queryEvaluator, cachedProcessor);
-
-                } else if (XdmNodeKind.ELEMENT == nodeKind) {
+                } else if (XdmNodeKind.DOCUMENT == nodeKind || XdmNodeKind.ELEMENT == nodeKind) {
                     setOMNode(name, value, queryEvaluator, cachedProcessor);
 
                 } else {
