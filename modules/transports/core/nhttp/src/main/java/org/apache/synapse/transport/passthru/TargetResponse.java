@@ -151,7 +151,6 @@ public class TargetResponse {
 
                 targetConfiguration.getConnections().shutdownConnection(conn);
             } else {
-                targetConfiguration.getConnections().releaseConnection(conn);
                 if (conn instanceof LoggingNHttpClientConnection) {
                     ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
                 } else {
