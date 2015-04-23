@@ -41,7 +41,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <Bundle-SymbolicName>${pom.artifactId}</Bundle-SymbolicName>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Export-Package>
                             org.apache.synapse.transport.http.*,
                             org.apache.synapse.transport.nhttp.*,
@@ -55,7 +55,7 @@
                             *; resolution:=optional
                         </Import-Package>
                         <Embed-Dependency>
-                            bcprov-jdk16;scope=compile|runtime
+                            bcpkix-jdk15on;scope=compile|runtime
                         </Embed-Dependency>
                     </instructions>
                 </configuration>
@@ -152,7 +152,7 @@
         <!-- BouncyCastle Api which needs when validating Certificates. -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
+            <artifactId>bcpkix-jdk15on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.caching</groupId>
