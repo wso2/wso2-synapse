@@ -57,6 +57,18 @@
                 <artifactId>maven-archetype-plugin</artifactId>
                 <extensions>true</extensions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-remote-resources-plugin</artifactId>
+                <version>1.5</version>
+                <dependencies>
+                    <dependency>
+                    <groupId>org.apache.maven.shared</groupId>
+                    <artifactId>maven-filtering</artifactId>
+                    <version>1.2</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 </project>

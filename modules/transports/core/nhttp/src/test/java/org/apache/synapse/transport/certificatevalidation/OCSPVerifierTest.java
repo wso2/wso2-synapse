@@ -23,20 +23,27 @@ import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPCache;
 import org.apache.synapse.transport.certificatevalidation.ocsp.OCSPVerifier;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.x509.CRLReason;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.ocsp.*;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.ocsp.*;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.*;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.Vector;
 
 public class OCSPVerifierTest extends TestCase {
+
+    private static final String BC = "BC";
 
     /**
      * A fake certificate signed by a fake CA is made as the revoked certificate. The created OCSP response to the
@@ -67,8 +74,17 @@ public class OCSPVerifierTest extends TestCase {
         OCSPReq request = getOCSPRequest(caCert,revokedSerialNumber);
 
         //Create OCSP response saying that certificate with given serialNumber is revoked.
-        CertificateID revokedID = new CertificateID(CertificateID.HASH_SHA1, caCert, revokedSerialNumber);
-        OCSPResp response = generateOCSPResponse(request, caKeyPair.getPrivate(), caKeyPair.getPublic(), revokedID);
+        //CertificateID revokedID = new CertificateID(CertificateID.HASH_SHA1, caCert, revokedSerialNumber);
+
+        byte[] issuerCertEnc = caCert.getEncoded();
+        X509CertificateHolder certificateHolder = new X509CertificateHolder(issuerCertEnc);
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        // CertID structure is used to uniquely identify certificates that are the subject of
+        // an OCSP request or response and has an ASN.1 definition. CertID structure is defined in RFC 2560
+        CertificateID revokedID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), certificateHolder, revokedSerialNumber);
+
+        OCSPResp response = generateOCSPResponse(request, certificateHolder, caKeyPair.getPrivate(), caKeyPair.getPublic(), revokedID);
         SingleResp singleResp = ((BasicOCSPResp)response.getResponseObject()).getResponses()[0];
 
         OCSPCache cache = OCSPCache.getCache();
@@ -115,27 +131,16 @@ public class OCSPVerifierTest extends TestCase {
      * @return the created OCSP response by the fake CA.
      * @throws NoSuchProviderException
      * @throws OCSPException
+     * @throws OperatorCreationException
      */
-    private OCSPResp generateOCSPResponse(OCSPReq request, PrivateKey caPrivateKey, PublicKey caPublicKey,
-                                          CertificateID revokedID) throws NoSuchProviderException, OCSPException {
+    private OCSPResp generateOCSPResponse(OCSPReq request, X509CertificateHolder certificateHolder, PrivateKey caPrivateKey, PublicKey caPublicKey,
+                                          CertificateID revokedID) throws NoSuchProviderException, OCSPException, OperatorCreationException {
 
-        BasicOCSPRespGenerator basicOCSPRespGenerator = new BasicOCSPRespGenerator(caPublicKey);
-        X509Extensions requestExtensions = request.getRequestExtensions();
+        BasicOCSPRespBuilder basicOCSPRespBuilder = new BasicOCSPRespBuilder(new RespID(certificateHolder.getSubject()));
+        Extension extension = request.getExtension(new ASN1ObjectIdentifier(OCSPObjectIdentifiers.id_pkix_ocsp.getId()));
 
-        if (requestExtensions != null) {
-
-            X509Extension extension = requestExtensions.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-
-            if (extension != null) {
-
-                Vector<ASN1ObjectIdentifier> oids = new Vector<ASN1ObjectIdentifier>();
-                Vector<X509Extension> values = new Vector<X509Extension>();
-
-                oids.add(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-                values.add(extension);
-
-                basicOCSPRespGenerator.setResponseExtensions(new X509Extensions(oids, values));
-            }
+        if (extension != null) {
+            basicOCSPRespBuilder.setResponseExtensions(new Extensions(extension));
         }
 
         Req[] requests = request.getRequestList();
@@ -148,17 +153,18 @@ public class OCSPVerifierTest extends TestCase {
 
                 RevokedStatus revokedStatus = new RevokedStatus(new Date(), CRLReason.privilegeWithdrawn);
                 Date nextUpdate = new Date(new Date().getTime() + TestConstants.NEXT_UPDATE_PERIOD);
-                basicOCSPRespGenerator.addResponse(certID, revokedStatus , nextUpdate , null);
-            }
-            else {
-                basicOCSPRespGenerator.addResponse(certID, CertificateStatus.GOOD);
+                basicOCSPRespBuilder.addResponse(certID, revokedStatus, nextUpdate, null);
+            } else {
+                basicOCSPRespBuilder.addResponse(certID, CertificateStatus.GOOD);
             }
         }
 
-        BasicOCSPResp basicResp = basicOCSPRespGenerator.generate("SHA256WithRSA", caPrivateKey, null, new Date(), "BC");
-        OCSPRespGenerator respGen = new OCSPRespGenerator();
+        X509CertificateHolder[] chain = {certificateHolder};
+        ContentSigner signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider("BC").build(caPrivateKey);
+        BasicOCSPResp basicResp = basicOCSPRespBuilder.build(signer, chain, new Date());
+        OCSPRespBuilder builder = new OCSPRespBuilder();
 
-        return respGen.generate(OCSPRespGenerator.SUCCESSFUL, basicResp);
+        return builder.build(OCSPRespBuilder.SUCCESSFUL, basicResp);
     }
 
     private X509Certificate generateFakePeerCert(BigInteger serialNumber, PublicKey entityKey,

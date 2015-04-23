@@ -18,6 +18,8 @@
  */
 package org.apache.synapse.mediators.xquery;
 
+import net.sf.saxon.s9api.ItemType;
+import net.sf.saxon.s9api.XdmNodeKind;
 import org.apache.synapse.MessageContext;
 
 import javax.xml.namespace.QName;
@@ -29,7 +31,8 @@ import javax.xml.namespace.QName;
 public abstract class MediatorVariable {
 
     private QName name;
-    private int type;
+    private ItemType type;
+    private XdmNodeKind nodeKind;
     protected Object value;
 
 
@@ -45,12 +48,20 @@ public abstract class MediatorVariable {
         this.name = name;
     }
 
-    public int getType() {
+    public ItemType getType() {
         return type;
     }
 
-    public void setType(int type) {
+    public void setType(ItemType type) {
         this.type = type;
+    }
+
+    public XdmNodeKind getNodeKind() {
+        return nodeKind;
+    }
+
+    public void setNodeKind(XdmNodeKind nodeKind) {
+        this.nodeKind = nodeKind;
     }
 
     public Object getValue() {
