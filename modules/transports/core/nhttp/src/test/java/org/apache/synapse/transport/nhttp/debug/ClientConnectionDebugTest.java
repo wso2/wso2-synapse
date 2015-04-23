@@ -30,7 +30,7 @@ public class ClientConnectionDebugTest extends TestCase{
     public void testFormat(){
         long unixTimeStamp;
         String formattedTime;
-        //Format to match with HH:mm:ss:SSS
+        //Format to match with HH:mm:ss.SSS
         Pattern timeFormat = Pattern.compile("[0-2][0-9]:[0-5][0-9]:[0-5][0-9].[0-9][0-9][0-9]");
 
         ClientConnectionDebug clientConnectionDebug = new ClientConnectionDebug(null);
