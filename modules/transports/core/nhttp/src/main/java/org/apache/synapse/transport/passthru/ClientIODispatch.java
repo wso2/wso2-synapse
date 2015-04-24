@@ -41,7 +41,7 @@ import org.apache.synapse.transport.passthru.connections.HostConnections;
 class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> {
 
     private final NHttpClientEventHandler handler;
-    private final ClientConnFactory connFactory;
+    private ClientConnFactory connFactory;
 
     public ClientIODispatch(
             final NHttpClientEventHandler handler,
@@ -97,4 +97,7 @@ class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> 
         }
     }
 
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
 }

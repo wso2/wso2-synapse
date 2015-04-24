@@ -32,7 +32,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -72,7 +71,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.CoreProtocolPNames;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.nhttp.config.ServerConnFactoryBuilder;
@@ -363,6 +361,52 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
             }
         }
     }
+
+    /**
+     * Start specific end points given by InetSockeAddress list
+     *
+     * @param endpointsClosed InetSocketAddresses of endpoints to be started
+     * @throws AxisFault
+     */
+    private void startSpecificEndpoints(List<InetSocketAddress> endpointsClosed) throws AxisFault {
+        Queue<ListenerEndpoint> endpoints = new LinkedList<ListenerEndpoint>();
+
+        // Ensure simple but stable order
+        List<InetSocketAddress> addressList = endpointsClosed;
+        Collections.sort(addressList, new Comparator<InetSocketAddress>() {
+
+            public int compare(InetSocketAddress a1, InetSocketAddress a2) {
+                String s1 = a1.toString();
+                String s2 = a2.toString();
+                return s1.compareTo(s2);
+            }
+
+        });
+
+        for (InetSocketAddress address : addressList) {
+            endpoints.add(ioReactor.listen(address));
+        }
+
+        // Wait for the endpoint to become ready, i.e. for the listener to start accepting
+        // requests.
+        while (!endpoints.isEmpty()) {
+            ListenerEndpoint endpoint = endpoints.remove();
+            try {
+                endpoint.waitFor();
+                if (log.isInfoEnabled()) {
+                    InetSocketAddress address = (InetSocketAddress) endpoint.getAddress();
+                    if (!address.isUnresolved()) {
+                        log.info(name + " started on " + address.getHostName() + ":" + address.getPort());
+                    } else {
+                        log.info(name + " started on " + address);
+                    }
+                }
+            } catch (InterruptedException e) {
+                log.warn("Listener startup was interrupted");
+                break;
+            }
+        }
+    }
     
     private void addToServiceURIMap(AxisService service) {
         Parameter param = service.getParameter(NhttpConstants.SERVICE_URI_LOCATION);
@@ -461,6 +505,47 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
         
         startEndpoints();
         
+        log.info(name + " Reloaded");
+    }
+
+    /**
+     * Restart specific endpoints which was updated by new configurations
+     *
+     * @param transportIn TransportInDescription of new configuration
+     * @throws AxisFault
+     */
+    public void reloadSpecificEndpoints(final TransportInDescription transportIn) throws AxisFault {
+        if (state != BaseConstants.STARTED) {
+            return;
+        }
+
+        HttpHost host = new HttpHost(
+                listenerContext.getHostname(),
+                listenerContext.getPort(),
+                scheme.getName());
+
+        // Rebuild connection factory
+        ServerConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportIn, host);
+        connFactory = connFactoryBuilder.build(params);
+        iodispatch.update(connFactory);
+
+        List<InetSocketAddress> endPointsClosed = new ArrayList<InetSocketAddress>();
+
+        //Close endpoints related to new profile's bind addresses
+        Set<InetSocketAddress> endPointsToReload = connFactory.getBindAddresses();
+
+        for (InetSocketAddress inetSocketAddress : endPointsToReload) {
+            for (ListenerEndpoint listenerEndpoint : ioReactor.getEndpoints()) {
+                if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
+                    listenerEndpoint.close();
+                    endPointsClosed.add((InetSocketAddress) listenerEndpoint.getAddress());
+                }
+            }
+        }
+
+        //Start closed inpoints again with new configurations
+        startSpecificEndpoints(endPointsClosed);
+
         log.info(name + " Reloaded");
     }
     
@@ -825,4 +910,24 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
         }
         return "";
     }
+
+    /**
+     * Reload SSL profiles and reset connections
+     *
+     * @param transportInDescription TransportInDescription of the configuration
+     * @throws AxisFault
+     */
+    public void reloadDynamicSSLConfig(TransportInDescription transportInDescription)
+            throws AxisFault {
+        log.info("HttpCoreNIOListener reloading SSL Config..");
+
+        Parameter oldParameter = transportInDescription.getParameter("SSLProfiles");
+        Parameter profilePathParam = transportInDescription.getParameter("dynamicSSLProfilesConfig");
+
+        if (oldParameter != null && profilePathParam != null) {
+            transportInDescription.removeParameter(oldParameter);
+            this.reloadSpecificEndpoints(transportInDescription);
+        }
+    }
+
 }

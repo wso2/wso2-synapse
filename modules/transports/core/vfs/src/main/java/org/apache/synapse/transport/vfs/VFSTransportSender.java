@@ -165,8 +165,24 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     }
                 }
                 
+                //If the reply folder does not exists create the folder structure
+                if (vfsOutInfo.isForceCreateFolder()) {
+                    String strPath = vfsOutInfo.getOutFileURI();
+                    int iIndex = strPath.indexOf("?");
+                    if(iIndex > -1){
+                        strPath = strPath.substring(0, iIndex);
+                    }
+                    //Need to add a slash otherwise vfs consider this as a file
+                    if(!strPath.endsWith("/") || !strPath.endsWith("\\")){
+                        strPath += "/";
+                    }
+                    FileObject replyFolder = fsManager.resolveFile(strPath, fso);
+                    if(!replyFolder.exists()){
+                        replyFile.createFolder();
+                    }
+                }
+                
                 if (replyFile.exists()) {
-
                     if (replyFile.getType() == FileType.FOLDER) {
                         // we need to write a file containing the message to this folder
                         FileObject responseFile = fsManager.resolveFile(replyFile,

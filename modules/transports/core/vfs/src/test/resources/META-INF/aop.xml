@@ -21,5 +21,7 @@
     <weaver options="-showWeaveInfo">
         <include within="org.apache.synapse.transport..*"/>
         <include within="org.apache.axis2.transport.base..*"/>
+        <include within="test.*" />
+        <include within="test.aspect.*" />
     </weaver>
 </aspectj>

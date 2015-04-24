@@ -65,6 +65,8 @@ public class SynapseConfigUtils {
 
     private static final Log log = LogFactory.getLog(SynapseConfigUtils.class);
 
+    private static  SynapseConfiguration lastRegisteredSynapseConfiguration;
+
     /**
      * Return a StreamSource for the given Object
      *
@@ -877,6 +879,14 @@ public class SynapseConfigUtils {
             return true; // Enabled by default
         }
         return false;
+    }
+
+    public static SynapseConfiguration getLastRegisteredSynapseConfiguration() {
+        return lastRegisteredSynapseConfiguration;
+    }
+
+    public static void registerSynapseConfiguration(SynapseConfiguration lastRegisteredSynapseConfiguration) {
+        SynapseConfigUtils.lastRegisteredSynapseConfiguration = lastRegisteredSynapseConfiguration;
     }
 }
 

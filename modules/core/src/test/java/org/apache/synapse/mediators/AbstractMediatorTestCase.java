@@ -34,4 +34,8 @@ public class AbstractMediatorTestCase extends TestCase {
     protected static OMElement createOMElement(String xml) {
         return SynapseConfigUtils.stringToOM(xml);
     }
+
+    public void testBogus() {
+        //This is for avoiding junit.framework.AssertionFailedError: No tests found exception
+    }
 }

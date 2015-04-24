@@ -157,5 +157,7 @@ public class PassThroughConstants {
     public static final String HTTP_ETAG_ENABLED = "HTTP_ETAG";
 
     public static final String ENABLE_WS_ADDRESSING ="enforceWSAddressing";
+    
+    public static final String SERVER_WORKER_THREAD_ID = "SERVER_WORKER_THREAD_ID";
 
 }

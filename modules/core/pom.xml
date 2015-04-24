@@ -16,7 +16,7 @@
 	<parent>
 		<groupId>org.apache.synapse</groupId>
 		<artifactId>Apache-Synapse</artifactId>
-		<version>2.1.3-wso2v3-SNAPSHOT</version>
+		<version>2.1.3-wso2v4-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 
@@ -131,7 +131,7 @@
 				<extensions>true</extensions>
 				<configuration>
 					<instructions>
-						<Bundle-SymbolicName>${pom.artifactId}</Bundle-SymbolicName>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
 						<Export-Package>
 							org.apache.synapse,
 							org.apache.synapse.aspects.*,
@@ -192,6 +192,11 @@
             <groupId>javax.jms</groupId>
             <artifactId>jms</artifactId>
         </dependency>
+	<dependency>
+			<groupId>com.rabbitmq.wso2</groupId>
+			<artifactId>amqp-client</artifactId>
+			<version>${version.orbit.rabbitmq}</version>
+		</dependency>
         <dependency>
             <groupId>org.apache.axis2.transport</groupId>
             <artifactId>axis2-transport-jms</artifactId>
@@ -299,4 +304,7 @@
             <scope>test</scope>
         </dependency>
 	</dependencies>
+<properties>
+		<version.orbit.rabbitmq>3.4.4.wso2v1</version.orbit.rabbitmq>
+	</properties>
 </project>

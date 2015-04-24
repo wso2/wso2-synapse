@@ -334,7 +334,7 @@ public class PropertyMediator extends AbstractMediator {
                 case FLOAT      : return Float.parseFloat(value);
                 case INTEGER    : return Integer.parseInt(value);
                 case LONG       : return Long.parseLong(value);
-                case OM         : return SynapseConfigUtils.stringToOM(value);
+                case OM         : return buildOMElement(value);
                 case SHORT      : return Short.parseShort(value);
                 default         : return value;
             }
@@ -419,5 +419,16 @@ public class PropertyMediator extends AbstractMediator {
 				_headers.put(HTTP.CONTENT_TYPE, resultValue);
 			}
 		}
+    }
+
+
+    private OMElement buildOMElement(String xml) {
+        // intentionally building the resulting OMElement. See ESBJAVA-3478.
+        if (xml == null) {
+            return null;
+        }
+        OMElement result = SynapseConfigUtils.stringToOM(xml);
+        result.buildWithAttachments();
+        return result;
     }
 }

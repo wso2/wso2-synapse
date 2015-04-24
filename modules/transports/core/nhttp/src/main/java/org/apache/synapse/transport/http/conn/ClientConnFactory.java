@@ -20,6 +20,7 @@ package org.apache.synapse.transport.http.conn;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -122,6 +123,16 @@ public class ClientConnFactory {
                 conn.bind(ssliosession);
             }
         }
+    }
+
+    /**
+     * Returns Set of Host:Port String entries
+     *
+     * @return String Set
+     */
+    public Set<String> getHostList() {
+        return sslByHostMap.keySet();
+
     }
 
 }

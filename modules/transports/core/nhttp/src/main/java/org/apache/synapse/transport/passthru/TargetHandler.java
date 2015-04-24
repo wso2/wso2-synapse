@@ -57,7 +57,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     private final DeliveryAgent deliveryAgent;
 
     /** Connection factory */
-    private final ClientConnFactory connFactory;
+    private ClientConnFactory connFactory;
     
     /** Configuration used by the sender */
     private final TargetConfiguration targetConfiguration;
@@ -643,4 +643,11 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().shutdownConnection(conn, true);
     }
 
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
+    }
 }

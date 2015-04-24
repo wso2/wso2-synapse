@@ -36,7 +36,6 @@ public class HttpCoreNIOSSLListener extends HttpCoreNIOListener {
     protected ServerConnFactoryBuilder initConnFactoryBuilder(
             final TransportInDescription transportIn, final HttpHost host) throws AxisFault {
         return new ServerConnFactoryBuilder(transportIn, host)
-            .parseSSL();
+                .parseSSL();
     }
-
 }

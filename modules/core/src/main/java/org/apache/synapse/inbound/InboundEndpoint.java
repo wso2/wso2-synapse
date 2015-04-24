@@ -34,8 +34,7 @@ import java.util.Map;
  * by Clients. InboundEndpoint is an artifact type which can be created/modified dynamically.
  */
 public class InboundEndpoint implements ManagedLifecycle {
-
-    protected Log log = LogFactory.getLog(InboundEndpoint.class);
+    protected static final Log log = LogFactory.getLog(InboundEndpoint.class);
 
     private String name;
     private String protocol;
@@ -52,17 +51,21 @@ public class InboundEndpoint implements ManagedLifecycle {
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
         synapseEnvironment = se;
-
         inboundRequestProcessor = getInboundRequestProcessor();
         if (inboundRequestProcessor != null) {
-            inboundRequestProcessor.init();
+            try {
+                inboundRequestProcessor.init();
+            } catch (Exception e) {
+                String msg = "Error initializing inbound endpoint " + getName();
+                log.error(msg);
+                throw new SynapseException(msg,e);
+            }
         } else {
             String msg = "Inbound Request processor not found for Inbound EP : " + name +
                          " Protocol: " + protocol + " Class" + classImpl;
             log.error(msg);
             throw new SynapseException(msg);
         }
-
     }
 
     /**
@@ -81,7 +84,6 @@ public class InboundEndpoint implements ManagedLifecycle {
         InboundProcessorParams params = populateParams();
         while (it.hasNext()) {
             InboundRequestProcessorFactory factory = it.next();
-
             InboundRequestProcessor inboundRequestProcessor =
                                 factory.createInboundProcessor(params);
             if (inboundRequestProcessor != null) {
