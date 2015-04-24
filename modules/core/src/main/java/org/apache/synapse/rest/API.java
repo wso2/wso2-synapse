@@ -19,8 +19,6 @@
 package org.apache.synapse.rest;
 
 import org.apache.axis2.Constants;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
@@ -52,19 +50,12 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     private String fileName;
 
-    private final Log apiLog;
-    private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
-
-    private int traceState = SynapseConstants.TRACING_UNSET;
-
     public API(String name, String context) {
         super(name);
         if (!context.startsWith("/")) {
             handleException("API context must begin with '/' character");
         }
         this.context = RESTUtils.trimTrailingSlashes(context);
-        apiLog = LogFactory.getLog(SynapseConstants.API_LOGGER_PREFIX + name);
-
     }
 
     /**
@@ -122,14 +113,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
-    }
-
-    public int getTraceState() {
-        return traceState;
-    }
-
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
     }
 
     public void addResource(Resource resource) {
@@ -192,7 +175,9 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             String path = RESTUtils.getFullRequestPath(synCtx);
             if (!path.startsWith(context + "/") && !path.startsWith(context + "?") &&
                     !context.equals(path) && !"/".equals(context)) {
-                auditDebug("API context: " + context + " does not match request URI: " + path);
+                if (log.isDebugEnabled()) {
+                    log.debug("API context: " + context + " does not match request URI: " + path);
+                }
                 return false;
             }
 
@@ -207,19 +192,25 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                 String hostHeader = getHostHeader(msgCtx);
                 if (hostHeader != null) {
                     if (host != null && !host.equals(extractHostName(hostHeader))) {
-                        auditDebug("API host: " + host + " does not match host information " +
+                        if (log.isDebugEnabled()) {
+                            log.debug("API host: " + host + " does not match host information " +
                                     "in the request: " + hostHeader);
+                        }
                         return false;
                     }
 
                     if (port != -1 && port != extractPortNumber(hostHeader,
                             msgCtx.getIncomingTransportName())) {
-                        auditDebug("API port: " + port + " does not match port information " +
+                        if (log.isDebugEnabled()) {
+                            log.debug("API port: " + port + " does not match port information " +
                                     "in the request: " + hostHeader);
+                        }
                         return false;
                     }
                 } else {
-                    auditDebug("Host information not available on the message");
+                    if (log.isDebugEnabled()) {
+                        log.debug("Host information not available on the message");
+                    }
                     return false;
                 }
             }
@@ -250,15 +241,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     }
 
     void process(MessageContext synCtx) {
-        auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
+        if (log.isDebugEnabled()) {
+            log.debug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
+        }
 
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API, getName());
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
-
-        // get API log for this message and attach to the message context
-        ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
 
         // Calculate REST_URL_POSTFIX from full request path
         String restURLPostfix = (String) synCtx.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
@@ -282,8 +272,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 		}
 
         for (Handler handler : handlers) {
-            auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through " +
+            if (log.isDebugEnabled()) {
+                log.debug("Processing message with ID: " + synCtx.getMessageID() + " through " +
                         "handler: " + handler.getClass().getName());
+            }
 
             boolean proceed;
             if (synCtx.isResponse()) {
@@ -305,7 +297,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                     resource.process(synCtx);
                 }
             } else if (log.isDebugEnabled()) {
-                auditDebug("No resource information on the response: " + synCtx.getMessageID());
+                log.debug("No resource information on the response: " + synCtx.getMessageID());
             }
             return;
         }
@@ -353,7 +345,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         }
 
         if (!processed) {
-            auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
+            if (log.isDebugEnabled()) {
+                log.debug("No matching resource was found for the request: " + synCtx.getMessageID());
+            }
+
             Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
             if (sequence != null) {
                 sequence.mediate(synCtx);
@@ -401,7 +396,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                     "any resource definitions");
         }
 
-        auditInfo("Initializing API: " + getName());
+        log.info("Initializing API: " + getName());
         for (Resource resource : resources.values()) {
             resource.init(se);
         }
@@ -414,7 +409,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     }
 
     public void destroy() {
-        auditInfo("Destroying API: " + getName());
+        log.info("Destroying API: " + getName());
         for (Resource resource : resources.values()) {
             resource.destroy();
         }
@@ -436,42 +431,5 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     public Resource getResource(String resourceName) {
         return resources.get(resourceName);
-    }
-
-
-    private boolean trace() {
-        return traceState == SynapseConstants.TRACING_ON;
-    }
-
-    /**
-     * Write to the general log, as well as any API specific logs the audit message at INFO
-     * @param message the INFO level audit message
-     */
-    private void auditInfo(String message) {
-        log.info(message);
-        apiLog.info(message);
-
-        //TODO - Implement 'trace' attribute support in API configuration.
-        if (trace()) {
-            trace.info(message);
-        }
-    }
-
-    /**
-     * Write to the general log, as well as any API specific logs the audit message at DEBUG
-     * @param message the DEBUG level audit message
-     */
-    private void auditDebug(String message) {
-        if (log.isDebugEnabled()){
-            log.debug(message);
-            apiLog.debug(message);
-
-            //TODO - Implement 'trace' attribute support in API configuration.
-            if (trace()) {
-               trace.debug(message);
-            }
-
-        }
-
     }
 }
