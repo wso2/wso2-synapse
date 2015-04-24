@@ -311,7 +311,9 @@ public class RabbitMQStore extends AbstractMessageStore {
 	 */
 	public boolean closeConnection(Connection connection) {
 		try {
-			connection.close();
+			if (connection.isOpen()) {
+				connection.close();
+			}
 			if (logger.isDebugEnabled()) {
 				logger.debug(nameString() + " closed connection to RabbitMQ broker.");
 			}
