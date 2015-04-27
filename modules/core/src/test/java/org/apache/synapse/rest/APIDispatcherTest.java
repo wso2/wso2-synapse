@@ -21,6 +21,7 @@ package org.apache.synapse.rest;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.rest.version.ContextVersionStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 
@@ -201,7 +202,7 @@ public class APIDispatcherTest extends RESTMediationTestCase {
         synCtx = getMessageContext(synapseConfig, false, "/test?a=5", "GET");
         handler.process(synCtx);
         assertEquals(TEST_API, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-        assertEquals("",synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+        assertEquals("", synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
 
         // Messages WITHOUT the '/test' context should NOT be dispatched
         synCtx = getMessageContext(synapseConfig, false, "/foo/test/bar?a=5", "GET");
@@ -278,4 +279,227 @@ public class APIDispatcherTest extends RESTMediationTestCase {
         assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
     }
 
+    public void testAPIContextVersionBasedDispatchEndingWithVersion() throws Exception {
+        API api = new API(TEST_API, "/test/{version}");
+        api.setVersionStrategy(new ContextVersionStrategy(api, TEST_API_VERSION, null));
+        SynapseConfiguration synapseConfig = new SynapseConfiguration();
+        synapseConfig.addAPI(api.getName(), api);
+
+        RESTRequestHandler handler = new RESTRequestHandler();
+
+        // Messages with '/test' context should NOT be dispatched
+        MessageContext synCtx = getMessageContext(synapseConfig, false, "/test/", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        //Message with '/test' context & URL as a Query Parameter should be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0?a=http://localhost.com", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        // Messages WITHOUT the '/test' context should NOT be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/foo/test/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        // Messages WITHOUT the '/test' context and proper version should NOT be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.1/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/2.0/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/2.0.0.0/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+    }
+
+    public void testAPIContextVersionBasedDispatchStartingWithVersion() throws Exception {
+        API api = new API(TEST_API, "/{version}/test");
+        api.setVersionStrategy(new ContextVersionStrategy(api, TEST_API_VERSION, null));
+        SynapseConfiguration synapseConfig = new SynapseConfiguration();
+        synapseConfig.addAPI(api.getName(), api);
+
+        RESTRequestHandler handler = new RESTRequestHandler();
+
+        // Messages with '/test' context should NOT be dispatched
+        MessageContext synCtx = getMessageContext(synapseConfig, false, "/test/", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/1.0.0/test", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/1.0.0/test/", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/1.0.0/test/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/1.0.0/test?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        //Message with '/test' context & URL as a Query Parameter should be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/1.0.0/test?a=http://localhost.com", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        // Messages WITHOUT the '/test' context should NOT be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/foo/test/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        // Messages WITHOUT the '/test' context and proper version should NOT be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/1.0.1/test/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/2.0/test/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/2.0.0.0/test/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+    }
+
+    public void testAPIContextVersionBasedDispatchVersionInMiddle() throws Exception {
+        API api = new API(TEST_API, "/test/{version}/bar");
+        api.setVersionStrategy(new ContextVersionStrategy(api, TEST_API_VERSION, null));
+        SynapseConfiguration synapseConfig = new SynapseConfiguration();
+        synapseConfig.addAPI(api.getName(), api);
+
+        RESTRequestHandler handler = new RESTRequestHandler();
+
+        // Messages with '/test' context should NOT be dispatched
+        MessageContext synCtx = getMessageContext(synapseConfig, false, "/test/", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/bar", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/bar/", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/bar/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        //Message with '/test' context & URL as a Query Parameter should be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.0/bar?a=http://localhost.com", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        // Messages WITHOUT the '/test' context should NOT be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/foo/test/1.0.0/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        // Messages WITHOUT the '/test' context and proper version should NOT be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/test/1.0.1/bar/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/2.0/bar/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/2.0.0.0/bar/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertNull(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+    }
+
+    public void testAPIContextVersionBasedDispatchWithNoVersion() throws Exception {
+        API api = new API(TEST_API, "/test");
+        api.setVersionStrategy(new ContextVersionStrategy(api, TEST_API_VERSION, null));
+        SynapseConfiguration synapseConfig = new SynapseConfiguration();
+        synapseConfig.addAPI(api.getName(), api);
+
+        RESTRequestHandler handler = new RESTRequestHandler();
+
+        MessageContext synCtx = getMessageContext(synapseConfig, false, "/test", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test/foo/bar?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        synCtx = getMessageContext(synapseConfig, false, "/test?a=5", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+
+        //Message with '/test' context & URL as a Query Parameter should be dispatched
+        synCtx = getMessageContext(synapseConfig, false, "/test?a=http://localhost.com", "GET");
+        handler.process(synCtx);
+        assertEquals(api.getName(), synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+        assertEquals(TEST_API_VERSION, synCtx.getProperty(RESTConstants.SYNAPSE_REST_API_VERSION));
+    }
 }
