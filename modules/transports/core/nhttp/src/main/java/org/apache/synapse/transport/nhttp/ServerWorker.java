@@ -246,7 +246,7 @@ public class ServerWorker implements Runnable {
     public void run() {
 
         conn.getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
-
+        conn.getContext().setAttribute(NhttpConstants.SERVER_WORKER_THREAD_ID, Thread.currentThread().getId());
         String method = request.getRequestLine().getMethod().toUpperCase();
         msgContext.setProperty(Constants.Configuration.HTTP_METHOD,
             request.getRequestLine().getMethod());

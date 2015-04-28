@@ -18,7 +18,7 @@
  */
 package org.apache.synapse.mediators.xquery;
 
-import javax.xml.xquery.XQItemType;
+import net.sf.saxon.s9api.XdmNodeKind;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
@@ -118,9 +118,8 @@ public class MediatorCustomVariable extends MediatorVariable {
             }
             if (result instanceof OMNode) {
                 //if the type is not document-node(), then get the text value of the node
-                if (this.getType() != XQItemType.XQITEMKIND_DOCUMENT
-                        && this.getType() != XQItemType.XQITEMKIND_DOCUMENT_ELEMENT
-                        && this.getType() != XQItemType.XQITEMKIND_ELEMENT) {
+                if (this.getNodeKind() != XdmNodeKind.DOCUMENT
+                        && this.getNodeKind() != XdmNodeKind.ELEMENT) {
 
                     int nodeType = ((OMNode) result).getType();
                     if (nodeType == OMNode.TEXT_NODE) {

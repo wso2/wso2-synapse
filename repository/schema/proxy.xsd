@@ -60,7 +60,6 @@
             </xs:element>
             <xs:element name="enableAddressing" minOccurs="0" maxOccurs="1"/>
             <xs:element name="enableSec" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="enableRM" minOccurs="0" maxOccurs="1"/>
             <xs:element name="policy" minOccurs="0" maxOccurs="unbounded">
                 <xs:complexType>
                     <xs:attribute name="key" type="xs:string" use="required"/>

@@ -53,7 +53,7 @@ public class ValueSerializer {
                     endChar = endChar + "}";
                 }
                 //dynamic key
-                SynapseXPathSerializer.serializeXPath(key.getExpression(), startChar +
+                SynapsePathSerializer.serializePath(key.getExpression(), startChar +
                         key.getExpression().toString() + endChar, elem, name);
             }
         }
@@ -81,7 +81,7 @@ public class ValueSerializer {
 					endChar = endChar + "}";
 				}
 				// dynamic key
-				SynapseXPathSerializer.serializeTextXPath(key.getExpression(), startChar
+				SynapsePathSerializer.serializeTextPath(key.getExpression(), startChar
 						+ key.getExpression().toString() + endChar, elem, name);
 			}
 		}

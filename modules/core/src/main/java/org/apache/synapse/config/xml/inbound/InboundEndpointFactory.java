@@ -97,7 +97,11 @@ public class InboundEndpointFactory {
                 OMElement parameter = (OMElement) parameters.next();
                 String paramName = parameter.getAttributeValue
                         (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
-                inboundEndpoint.addParameter(paramName, parameter.getText());
+                if(parameter.getFirstElement() != null){
+                    inboundEndpoint.addParameter(paramName,parameter.getFirstElement().toString());
+                }else {
+                    inboundEndpoint.addParameter(paramName, parameter.getText());
+                }
             }
         }
         inboundEndpoint.setFileName(inboundEndpointElem.getAttributeValue(new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME))+".xml");

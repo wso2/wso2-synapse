@@ -42,6 +42,7 @@ public final class JsonUtil {
     private static Log logger = LogFactory.getLog(JsonUtil.class.getName());
 
     private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM = "org.apache.synapse.commons.json.JsonInputStream";
+    private static final String ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT = "org.apache.synapse.commons.json.JsonInputStream.IsJsonObject";
 
     private static final QName JSON_OBJECT = new QName("jsonObject");
 
@@ -160,16 +161,22 @@ public final class JsonUtil {
             jsonStr = (String) o;
         }
         if (json != null) { // there is a JSON stream
-            if (element instanceof OMSourcedElementImpl) {
-                if (isAJsonPayloadElement(element)) {
-                    writeJsonStream(json, messageContext, out);
-                } else { // Ignore the JSON stream
+            try {
+                if (element instanceof OMSourcedElementImpl) {
+                    if (isAJsonPayloadElement(element)) {
+                        writeJsonStream(json, messageContext, out);
+                    } else { // Ignore the JSON stream
+                        writeAsJson(element, out);
+                    }
+                } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
                     writeAsJson(element, out);
+                } else { // element == null.
+                    writeJsonStream(json, messageContext, out);
                 }
-            } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
-                writeAsJson(element, out);
-            } else { // element == null.
-                writeJsonStream(json, messageContext, out);
+            } catch (Exception e) {
+                //Close the stream
+                IOUtils.closeQuietly(json);
+                throw new AxisFault("Could not write JSON stream.", e);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
             writeAsJson(element, out);
@@ -246,10 +253,12 @@ public final class JsonUtil {
      * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML element<br/>
      * @param element XML element of which JSON representation is expected.
      * @param outputStream Output Stream to write the JSON representation.<br/>
-     *                     At the end of a successful conversion, its flush method will be called.
+     * At the end of a successful conversion, its flush method will be called.
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
+        XMLEventReader xmlEventReader = null;
+        XMLEventWriter jsonWriter = null;
         if (element == null) {
             logger.error("#writeAsJson. OMElement is null. Cannot convert to JSON.");
             throw new AxisFault("OMElement is null. Cannot convert to JSON.");
@@ -263,15 +272,13 @@ public final class JsonUtil {
                     new org.apache.commons.io.output.ByteArrayOutputStream();
             element.serialize(xmlStream);
             xmlStream.flush();
-            XMLEventReader xmlEventReader = xmlInputFactory.createXMLEventReader(
+            xmlEventReader = xmlInputFactory.createXMLEventReader(
                     new XmlReaderDelegate(xmlInputFactory.createXMLStreamReader(
                             new ByteArrayInputStream(xmlStream.toByteArray())
                     ), processNCNames)
             );
-            XMLEventWriter jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
+            jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
             jsonWriter.add(xmlEventReader);
-            xmlEventReader.close();
-            jsonWriter.close();
             outputStream.flush();
         } catch (XMLStreamException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Invalid XML payload. Error>>> " + e.getLocalizedMessage());
@@ -279,6 +286,21 @@ public final class JsonUtil {
         } catch (IOException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Error>>> " + e.getLocalizedMessage());
             throw new AxisFault("Could not convert OMElement to JSON.", e);
+        }finally {
+            if (xmlEventReader != null) {
+                try {
+                    xmlEventReader.close();
+                } catch (XMLStreamException ex) {
+                    //ignore
+                }
+            }
+            if (jsonWriter != null) {
+                try {
+                    jsonWriter.close();
+                } catch (XMLStreamException ex) {
+                    //ignore
+                }
+            }
         }
     }
 
@@ -412,9 +434,11 @@ public final class JsonUtil {
             QName jsonElement = null;
             if (isObject) {
                 jsonElement = JSON_OBJECT;
+                messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, true);
             }
             if (isArray) {
                 jsonElement = JSON_ARRAY;
+                messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, false);
             }
             OMElement elem = new OMSourcedElementImpl(jsonElement,
                     OMAbstractFactory.getOMFactory(),
@@ -509,6 +533,7 @@ public final class JsonUtil {
      */
     public static boolean removeJsonPayload(MessageContext messageContext) {
         messageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM);
+        messageContext.removeProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
         boolean removeChildren = true;
         if (!removeChildren) { // don't change this.
             if (logger.isTraceEnabled()) {
@@ -849,6 +874,31 @@ public final class JsonUtil {
             return null;
         }
         return new InputStreamReader(new ByteArrayInputStream(out.toByteArray()));
+    }
+
+    /**
+     * Returns <tt>true</tt> if the message context contains a JSON payload that is a JSON Object. See {@link #hasAJsonArray(MessageContext)}<br/>
+     * Example : {"a":1, "b":2}
+     * @param messageContext request message context
+     * @return
+     */
+    public static boolean hasAJsonObject(MessageContext messageContext) {
+        return hasAJsonPayload(messageContext) && _hasAJsonObject(messageContext);
+    }
+
+    /**
+     * Returns <tt>true</tt> if the message context contains a JSON payload that is a JSON Array. See {@link #hasAJsonObject(MessageContext)}<br/>
+     * Example: [{"a":1}, 2, null]
+     * @param messageContext request message context
+     * @return
+     */
+    public static boolean hasAJsonArray(MessageContext messageContext) {
+        return hasAJsonPayload(messageContext) && !_hasAJsonObject(messageContext);
+    }
+
+    private static boolean _hasAJsonObject(MessageContext messageContext) {
+        Object isObject = messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT);
+        return isObject != null && ((Boolean) isObject);
     }
 
     /**

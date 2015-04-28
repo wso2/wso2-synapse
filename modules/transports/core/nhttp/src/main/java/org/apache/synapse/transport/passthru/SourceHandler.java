@@ -21,6 +21,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -37,6 +38,7 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
@@ -160,6 +162,22 @@ public class SourceHandler implements NHttpServerEventHandler {
             // because the duplex nature of http core we can reach hear without a actual response
             SourceResponse response = SourceContext.getResponse(conn);
             if (response != null) {
+
+                // Handle Http ETag
+                String ifNoneMatchHeader =
+                        SourceContext.getRequest(conn).getHeaders().get(HttpHeaders.IF_NONE_MATCH);
+                if (ifNoneMatchHeader != null) {
+                    String eTagHeader = response.getHeader(HttpHeaders.ETAG);
+                    if (eTagHeader != null) {
+                        for (String hashValue : ifNoneMatchHeader.split(",")) {
+                            if (hashValue.trim().equals(eTagHeader)) {
+                                response.setStatus(HttpStatus.SC_NOT_MODIFIED);
+                                break;
+                            }
+                        }
+                    }
+                }
+            
                 response.start(conn);
 
                 metrics.incrementMessagesSent();
@@ -205,7 +223,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                   if(outBuf instanceof SimpleOutputBuffer && !((SimpleOutputBuffer)outBuf).hasData()){
                 	  sourceConfiguration.getSourceConnections().releaseConnection(conn);
                   }
-                  
+                  endTransaction(conn);
             	return;
             }
             
@@ -217,6 +235,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                         "are happening for the same request");
 
                 handleInvalidState(conn, "Trying to write response body");
+                endTransaction(conn);
                 return;
             }
 
@@ -229,7 +248,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 			if (encoder.isCompleted()) {
                 updateStatistics(conn);
 			}
-            
+			endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);
         } catch (IOException e) {
             logIOException(conn, e);
@@ -238,7 +257,7 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-        } 
+        }
     }
 
     private void updateStatistics(NHttpServerConnection conn) {
@@ -295,6 +314,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     public void timeout(NHttpServerConnection conn) {
+    	boolean isTimeoutOccurred = false;
         ProtocolState state = SourceContext.getState(conn);
 
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
@@ -307,18 +327,24 @@ public class SourceHandler implements NHttpServerEventHandler {
             metrics.incrementTimeoutsReceiving();
 
             informReaderError(conn);
+            isTimeoutOccurred = true;
             log.warn("Connection time out while reading the request: " + conn);
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
             informWriterError(conn);
+            isTimeoutOccurred = true;
             log.warn("Connection time out while writing the response: " + conn);
         } else if (state == ProtocolState.REQUEST_DONE){
+        	isTimeoutOccurred = true;
             log.warn("Connection time out after request is read: " + conn);
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-       
+   
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+		if (isTimeoutOccurred) {
+			rollbackTransaction(conn);
+		}        
     }
 
     public void closed(NHttpServerConnection conn) {
@@ -347,6 +373,9 @@ public class SourceHandler implements NHttpServerEventHandler {
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, isFault);
+		if (isFault) {
+			rollbackTransaction(conn);
+		}        
     }
 
     public void endOfInput(NHttpServerConnection conn) throws IOException {
@@ -354,6 +383,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     public void exception(NHttpServerConnection conn, Exception ex) {
+    	boolean isFault = false;
         if (ex instanceof IOException) {
             logIOException(conn, (IOException) ex);
 
@@ -371,7 +401,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             } else if (state == ProtocolState.RESPONSE_DONE) {
                 informWriterError(conn);
             }
-            
+            isFault = true;
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } else if (ex instanceof HttpException) {
@@ -403,12 +433,18 @@ public class SourceHandler implements NHttpServerEventHandler {
                 log.error(ex.getMessage(), ex);
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
                 sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+                isFault = true;
             }
         } else {
             log.error("Unexpected error: " + ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+            isFault = true;
         }
+        
+		if (isFault) {
+			rollbackTransaction(conn);
+		}     
     }
 
     private void handleInvalidState(NHttpServerConnection conn, String action) {
@@ -515,4 +551,30 @@ public class SourceHandler implements NHttpServerEventHandler {
         return request;
     }
     
+	private void rollbackTransaction(NHttpServerConnection conn) {
+		try {
+			Long serverWorkerThreadId = (Long) conn.getContext().getAttribute(
+					PassThroughConstants.SERVER_WORKER_THREAD_ID);
+			if (serverWorkerThreadId != null) {
+				TranscationManger.rollbackTransaction(false,
+						serverWorkerThreadId);
+			}
+		} catch (Exception ex) {
+			log.warn("Transaction rollback error after Connection closed "
+					+ ex.getMessage() + conn);
+		}
+	}
+
+	private void endTransaction(NHttpServerConnection conn) {
+		try {
+			Long serverWorkerThreadId = (Long) conn.getContext().getAttribute(
+					PassThroughConstants.SERVER_WORKER_THREAD_ID);
+			if (serverWorkerThreadId != null) {
+				TranscationManger.endTransaction(false, serverWorkerThreadId);
+			}
+		} catch (Exception ex) {
+			log.warn("Transaction rollback error after Connection closed "
+					+ ex.getMessage() + conn);
+		}
+	}
 }

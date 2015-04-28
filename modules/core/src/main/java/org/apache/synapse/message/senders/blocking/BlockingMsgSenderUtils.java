@@ -49,17 +49,6 @@ public class BlockingMsgSenderUtils {
 
         if (endpoint != null) {
 
-            // if RM is enabled
-            boolean wsRMEnabled = endpoint.isReliableMessagingOn();
-            if (wsRMEnabled) {
-                String wsRMPolicyKey = endpoint.getWsRMPolicyKey();
-                if (wsRMPolicyKey != null) {
-                    clientOptions.setProperty(
-                            SynapseConstants.SANDESHA_POLICY,
-                            MessageHelper.getPolicy(synapseInMsgCtx, wsRMPolicyKey));
-                }
-            }
-
             // if security is enabled
             boolean wsSecurityEnabled = endpoint.isSecurityOn();
             if (wsSecurityEnabled) {

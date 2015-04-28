@@ -22,6 +22,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
@@ -150,7 +151,9 @@ public class TargetResponse {
 
                 targetConfiguration.getConnections().shutdownConnection(conn);
             } else {
-                targetConfiguration.getConnections().releaseConnection(conn);
+                if (conn instanceof LoggingNHttpClientConnection) {
+                    ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
+                } 
             }
         }
         return bytes;
