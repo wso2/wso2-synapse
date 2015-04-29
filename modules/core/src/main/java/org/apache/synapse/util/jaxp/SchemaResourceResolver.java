@@ -51,6 +51,9 @@ public class SchemaResourceResolver implements LSResourceResolver {
         }
         SchemaResourceLSInput schemaResourceLSInput = new SchemaResourceLSInput();
         schemaResourceLSInput.setByteStream(inputSource.getByteStream());
+        schemaResourceLSInput.setSystemId(systemId);
+        schemaResourceLSInput.setPublicId(publicId);
+        schemaResourceLSInput.setBaseURI(baseURI);
         return schemaResourceLSInput;
     }
 }

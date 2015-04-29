@@ -28,11 +28,13 @@ import sun.misc.Service;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 
+/**
+ * Entity which is responsible for exposing ESB message flow as an endpoint which can be invoked
+ * by Clients. InboundEndpoint is an artifact type which can be created/modified dynamically.
+ */
 public class InboundEndpoint implements ManagedLifecycle {
-
-    protected Log log = LogFactory.getLog(InboundEndpoint.class);
+    protected static final Log log = LogFactory.getLog(InboundEndpoint.class);
 
     private String name;
     private String protocol;
@@ -40,7 +42,6 @@ public class InboundEndpoint implements ManagedLifecycle {
     private boolean isSuspend;
     private String injectingSeq;
     private String onErrorSeq;
-    private String outSequence;
     private Map<String, String> parametersMap = new LinkedHashMap<String, String>();
     private String fileName;
     private SynapseEnvironment synapseEnvironment;
@@ -52,22 +53,19 @@ public class InboundEndpoint implements ManagedLifecycle {
         synapseEnvironment = se;
         inboundRequestProcessor = getInboundRequestProcessor();
         if (inboundRequestProcessor != null) {
-            inboundRequestProcessor.init();
+            try {
+                inboundRequestProcessor.init();
+            } catch (Exception e) {
+                String msg = "Error initializing inbound endpoint " + getName();
+                log.error(msg);
+                throw new SynapseException(msg,e);
+            }
         } else {
             String msg = "Inbound Request processor not found for Inbound EP : " + name +
                          " Protocol: " + protocol + " Class" + classImpl;
             log.error(msg);
             throw new SynapseException(msg);
         }
-
-        if (protocol != null) {
-            // ResponseSenders available only for protocol inbound endpoints
-            InboundResponseSender inboundResponseSender = getInboundResponseSender();
-            if (inboundResponseSender != null) {
-                registerResponseSenders(inboundResponseSender, inboundResponseSender.getType());
-            }
-        }
-
     }
 
     /**
@@ -75,45 +73,45 @@ public class InboundEndpoint implements ManagedLifecycle {
      * <p/>
      * This looks for JAR files containing a META-INF/services that adheres to the following
      * http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html
+     *
+     * @return InboundRequest processor
      */
     private InboundRequestProcessor getInboundRequestProcessor() {
         if (log.isDebugEnabled()) {
             log.debug("Trying to fetch InboundRequestProcessor from classpath.. ");
         }
         Iterator<InboundRequestProcessorFactory> it = Service.providers(InboundRequestProcessorFactory.class);
+        InboundProcessorParams params = populateParams();
         while (it.hasNext()) {
             InboundRequestProcessorFactory factory = it.next();
-            Properties properties = Utils.paramsToProperties(parametersMap);
-
             InboundRequestProcessor inboundRequestProcessor =
-                                factory.createInboundProcessor(protocol, classImpl, name, properties,
-                                                               injectingSeq, onErrorSeq,
-                                                               synapseEnvironment);
+                                factory.createInboundProcessor(params);
             if (inboundRequestProcessor != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Inbound Request Processor found in factory : " +
+                              factory.getClass().getName());
+                }
                 return inboundRequestProcessor;
             }
         }
         return null;
     }
 
-    private InboundResponseSender getInboundResponseSender() {
-        if (log.isDebugEnabled()) {
-            log.debug("Trying to fetch InboundResponseProcessor from classpath.. ");
-        }
-        Iterator<InboundResponseSenderFactory> it = Service.providers(InboundResponseSenderFactory.class);
-        while (it.hasNext()) {
-            InboundResponseSenderFactory factory = it.next();
-            InboundResponseSender inboundResponseSender = factory.getInboundResponseSender(protocol);
-            if (inboundResponseSender != null) {
-                return inboundResponseSender;
-            }
-        }
-        return null;
-    }
-
-    private void registerResponseSenders(InboundResponseSender inboundResponseSender, String type) {
-        // TODO: Place response senders somewhere else other than utils
-        InboundEndpointUtils.addResponseSender(type, inboundResponseSender);
+    /**
+     * Populate inbound processor parameters and create object which holds parameters
+     *
+     * @return entity holding InboundProcessorParams
+     */
+    private InboundProcessorParams populateParams() {
+        InboundProcessorParams inboundProcessorParams = new InboundProcessorParams();
+        inboundProcessorParams.setProtocol(protocol);
+        inboundProcessorParams.setClassImpl(classImpl);
+        inboundProcessorParams.setName(name);
+        inboundProcessorParams.setProperties(Utils.paramsToProperties(parametersMap));
+        inboundProcessorParams.setInjectingSeq(injectingSeq);
+        inboundProcessorParams.setOnErrorSeq(onErrorSeq);
+        inboundProcessorParams.setSynapseEnvironment(synapseEnvironment);
+        return inboundProcessorParams;
     }
 
     public void destroy() {
@@ -183,14 +181,6 @@ public class InboundEndpoint implements ManagedLifecycle {
         return parametersMap.get(name);
     }
 
-    public String getOutSequence() {
-        return outSequence;
-    }
-
-    public void setOutSequence(String outSequence) {
-        this.outSequence = outSequence;
-    }
-
     public String getClassImpl() {
         return classImpl;
     }
@@ -199,10 +189,4 @@ public class InboundEndpoint implements ManagedLifecycle {
         this.classImpl = classImpl;
     }
 
-    public long getInterval(){
-        return 0;
-    }
-
-    public void setInterval(long value){
-     }
 }

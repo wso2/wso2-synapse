@@ -57,7 +57,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     private final DeliveryAgent deliveryAgent;
 
     /** Connection factory */
-    private final ClientConnFactory connFactory;
+    private ClientConnFactory connFactory;
     
     /** Configuration used by the sender */
     private final TargetConfiguration targetConfiguration;
@@ -261,19 +261,29 @@ public class TargetHandler implements NHttpClientEventHandler {
                 // Ignore 1xx response
                 return;
             }
-
+            boolean isError = false;
         	context.setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME, System.currentTimeMillis());
             connState = TargetContext.getState(conn);
+            MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+            NHttpServerConnection sourceConn =
+                    (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+
             if (connState != ProtocolState.REQUEST_DONE) {
+                isError = true;
                 StatusLine errorStatus = response.getStatusLine();
                 /* We might receive a 404 or a similar type, even before we write the request body. */
-                if (errorStatus != null &&
-                        errorStatus.getStatusCode() >= HttpStatus.SC_NOT_FOUND) {
-                    TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
-                    conn.resetOutput();
-                    if (log.isDebugEnabled()) {
-                        log.debug(conn + ": Received response with status code : " +
-                                response.getStatusLine().getStatusCode() + " in invalid state : " + connState.name());
+                if (errorStatus != null) {
+                    if (errorStatus.getStatusCode() >= HttpStatus.SC_BAD_REQUEST) {
+                        TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
+                        conn.resetOutput();
+                        if (sourceConn != null) {
+                            SourceContext.updateState(sourceConn, ProtocolState.REQUEST_DONE);
+                            SourceContext.get(sourceConn).setShutDown(true);
+                        }
+                        if (log.isDebugEnabled()) {
+                            log.debug(conn + ": Received response with status code : " +
+                                    response.getStatusLine().getStatusCode() + " in invalid state : " + connState.name());
+                        }
                     }
                 } else {
                     handleInvalidState(conn, "Receiving response");
@@ -298,11 +308,10 @@ public class TargetHandler implements NHttpClientEventHandler {
                 conn.resetInput();
             }
             TargetResponse targetResponse = new TargetResponse(
-                    targetConfiguration, response, conn, canResponseHaveBody);
+                    targetConfiguration, response, conn, canResponseHaveBody, isError);
             TargetContext.setResponse(conn, targetResponse);
             targetResponse.start(conn);
 
-            MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
             if (statusCode == HttpStatus.SC_ACCEPTED && handle202(requestMsgContext)) {
                 return;
             }
@@ -313,8 +322,6 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 
-			NHttpServerConnection sourceConn =
-			                                   (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
 			if (sourceConn != null) {
 				sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
 				                                     conn.getContext()
@@ -415,6 +422,9 @@ public class TargetHandler implements NHttpClientEventHandler {
         ProtocolState state = TargetContext.getState(conn);
 
         boolean isFault = false;
+        if (log.isDebugEnabled()) {
+            log.debug("Connection closed by target host while in state " + state.name() + ". Response code : " + conn.getStatus());
+        }
 
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
@@ -633,4 +643,11 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().shutdownConnection(conn, true);
     }
 
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
+    }
 }

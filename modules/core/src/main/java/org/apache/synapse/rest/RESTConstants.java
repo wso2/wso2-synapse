@@ -21,7 +21,7 @@ package org.apache.synapse.rest;
 public class RESTConstants {
 
     public static enum METHODS {
-        GET, POST, PUT, DELETE, OPTIONS, HEAD
+        GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH
     }
 
     public static final int PROTOCOL_HTTP_AND_HTTPS = 0;

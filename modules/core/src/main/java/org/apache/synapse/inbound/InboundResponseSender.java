@@ -24,6 +24,7 @@ import org.apache.synapse.MessageContext;
  * Interface for receive Synapse Message Context from Axis2Sender
  */
 public interface InboundResponseSender {
+
     public void sendBack(MessageContext messageContext);
-    public String getType();
+
 }

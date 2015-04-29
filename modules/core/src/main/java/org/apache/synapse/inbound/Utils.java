@@ -29,8 +29,4 @@ public class Utils {
         return props;
     }
 
-    public static boolean injectToSequence() {
-        return false;
-    }
-
 }

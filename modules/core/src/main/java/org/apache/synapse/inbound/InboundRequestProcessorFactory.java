@@ -17,13 +17,10 @@
 */
 package org.apache.synapse.inbound;
 
-import org.apache.synapse.core.SynapseEnvironment;
-
-import java.util.Properties;
-
+/**
+ * Implementation of this Interface is responsible for creating the InboundEndpoint
+ */
 public interface InboundRequestProcessorFactory {
 
-    // TODO: Refactor parameters with a wrapper class - too many parameters
-    public InboundRequestProcessor createInboundProcessor(String protocol, String classImpl, String name,
-                                                          Properties vfsProperties, String injectingSeq, String onErrorSeq, SynapseEnvironment synapseEnvironment);
+    public InboundRequestProcessor createInboundProcessor(InboundProcessorParams inboundProcessorParams);
 }

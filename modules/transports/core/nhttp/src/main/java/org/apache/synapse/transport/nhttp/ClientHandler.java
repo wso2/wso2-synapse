@@ -39,7 +39,15 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.*;
+import org.apache.http.ConnectionClosedException;
+import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.HttpInetConnection;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.auth.Credentials;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.BasicHttpEntity;
@@ -50,10 +58,24 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.entity.ContentInputStream;
-import org.apache.http.nio.util.*;
+import org.apache.http.nio.util.ByteBufferAllocator;
+import org.apache.http.nio.util.ContentInputBuffer;
+import org.apache.http.nio.util.ContentOutputBuffer;
+import org.apache.http.nio.util.HeapByteBufferAllocator;
+import org.apache.http.nio.util.SharedInputBuffer;
+import org.apache.http.nio.util.SharedOutputBuffer;
 import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.*;
+import org.apache.http.protocol.BasicHttpProcessor;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.protocol.RequestConnControl;
+import org.apache.http.protocol.RequestContent;
+import org.apache.http.protocol.RequestExpectContinue;
+import org.apache.http.protocol.RequestTargetHost;
+import org.apache.http.protocol.RequestUserAgent;
 import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
@@ -66,7 +88,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -350,19 +374,23 @@ public class ClientHandler implements NHttpClientEventHandler {
         if (log.isTraceEnabled()) {
             log.trace(conn + ": " + message);
         }
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-            conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_CLOSED, message, null);
+            shutdownConnection(conn, true, "Connection closed before response is received");
         } else {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": " + getErrorMessage("Keep-alive connection closed", conn));
             }
+            shutdownConnection(conn, false, null);
         }
 
         HttpContext context = conn.getContext();
-        shutdownConnection(conn);
         context.removeAttribute(RESPONSE_SINK_BUFFER);
         context.removeAttribute(REQUEST_SOURCE_BUFFER);
         metrics.disconnected();
@@ -380,19 +408,23 @@ public class ClientHandler implements NHttpClientEventHandler {
             log.debug(conn + ": " + message);
         }
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-            conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_TIMEOUT, message, null);
+            shutdownConnection(conn, true, "Connection timeout before response is received");
         } else {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": " + getErrorMessage("Keep-alive connection timed out", conn));
             }
+            shutdownConnection(conn, false, null);
         }
 
         HttpContext context = conn.getContext();
-        shutdownConnection(conn);
         context.removeAttribute(RESPONSE_SINK_BUFFER);
         context.removeAttribute(REQUEST_SOURCE_BUFFER);
     }
@@ -407,7 +439,7 @@ public class ClientHandler implements NHttpClientEventHandler {
         String message = getErrorMessage("HTTP protocol violation : " + e.getMessage(), conn);
         log.error(message, e);
     	checkAxisRequestComplete(conn, NhttpConstants.PROTOCOL_VIOLATION, message, e);
-        shutdownConnection(conn);
+        shutdownConnection(conn, true, "HTTP protocol violation : " + e.getMessage());
     }
 
     /**
@@ -422,6 +454,7 @@ public class ClientHandler implements NHttpClientEventHandler {
             String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
             log.error(message, ex);
             checkAxisRequestComplete(conn, NhttpConstants.PROTOCOL_VIOLATION, message, ex);
+            shutdownConnection(conn, true, "HTTP protocol violation : " + ex.getMessage());
         } if (ex instanceof IOException) {
             String message = getErrorMessage("I/O error : " + ex.getMessage(), conn);
             if (message.toLowerCase().indexOf("reset") != -1) {
@@ -430,20 +463,13 @@ public class ClientHandler implements NHttpClientEventHandler {
                 log.error(message, ex);
             }
             checkAxisRequestComplete(conn, NhttpConstants.SND_IO_ERROR_SENDING, message, ex);
+            shutdownConnection(conn, true, "I/O error : " + ex.getMessage());
+
         } else {
             log.error(ex.getMessage(), ex);
+            shutdownConnection(conn, true, "Error occurred : " + ex.getMessage());
         }
-        shutdownConnection(conn);
 
-
-        String message = getErrorMessage("I/O error : " + ex.getMessage(), conn);
-        if (message.toLowerCase().indexOf("reset") != -1) {
-            log.warn(message);
-        } else {
-            log.error(message, ex);
-        }
-        checkAxisRequestComplete(conn, NhttpConstants.SND_IO_ERROR_SENDING, message, ex);
-        shutdownConnection(conn);
     }
 
     public void endOfInput(NHttpClientConnection conn) throws IOException {
@@ -484,8 +510,12 @@ public class ClientHandler implements NHttpClientEventHandler {
     private void checkAxisRequestComplete(NHttpClientConnection conn,
         final int errorCode, final String errorMessage, final Exception exceptionToRaise) {
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-                conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
+
         if (axis2Request != null && !axis2Request.isCompleted()) {
             markRequestCompletedWithError(axis2Request, errorCode, errorMessage, exceptionToRaise);
         }
@@ -643,12 +673,12 @@ public class ClientHandler implements NHttpClientEventHandler {
                     try {
                         // this is a connection we should not re-use
                         connpool.forget(conn);
-                        shutdownConnection(conn);
+                        shutdownConnection(conn, false, null);
                         context.removeAttribute(RESPONSE_SINK_BUFFER);
                         context.removeAttribute(REQUEST_SOURCE_BUFFER);
                     } catch (Exception ignore) {}
                 } else if (!connStrategy.keepAlive(response, context)) {
-                    shutdownConnection(conn);
+                    shutdownConnection(conn, false, null);
                     context.removeAttribute(RESPONSE_SINK_BUFFER);
                     context.removeAttribute(REQUEST_SOURCE_BUFFER);
                 } else {
@@ -1126,7 +1156,7 @@ public class ClientHandler implements NHttpClientEventHandler {
                 try {
                     // this is a connection we should not re-use
                     connpool.forget(conn);
-                    shutdownConnection(conn);
+                    shutdownConnection(conn, false, null);
                     context.removeAttribute(RESPONSE_SINK_BUFFER);
                     context.removeAttribute(REQUEST_SOURCE_BUFFER);
                 } catch (Exception ignore) {}
@@ -1147,19 +1177,30 @@ public class ClientHandler implements NHttpClientEventHandler {
 
     /**
      * Shutdown the connection ignoring any IO errors during the process
-     * 
-     * @param conn the connection to be shutdown
+     *
+     * @param conn     the connection to be shutdown
+     * @param isError  whether shutdown is due to an error
+     * @param errorMsg error message if shutdown happens on error
      */
-    private void shutdownConnection(final NHttpClientConnection conn) {
+    private void shutdownConnection(final NHttpClientConnection conn, boolean isError, String errorMsg) {
         if (conn instanceof HttpInetConnection) {
             HttpInetConnection inetConnection = (HttpInetConnection) conn;
-            if (log.isDebugEnabled()) {
-                log.debug(conn + ": Connection to remote address : " + inetConnection.getRemoteAddress()
-                        + ":" + inetConnection.getRemotePort() + " from local address : "
-                        + inetConnection.getLocalAddress() + ":" + inetConnection.getLocalPort() +
-                        " is closed!");
+
+            if (log.isWarnEnabled() && (isError || log.isDebugEnabled())) {
+                String msg = "Connection from local address : "
+                        + inetConnection.getLocalAddress() + ":" + inetConnection.getLocalPort()
+                        + " to remote address : "
+                        + inetConnection.getRemoteAddress() + ":" + inetConnection.getRemotePort() +
+                        " is closed!"
+                        + (errorMsg != null ? " - On error : " + errorMsg : "");
+
+                if (isError) {
+                    log.warn(msg);
+                } else {
+                    log.debug(msg);
+                }
             }
-            
+
             if (countConnections) {
                 removeConnectionRecord(inetConnection);
             }
@@ -1172,7 +1213,7 @@ public class ClientHandler implements NHttpClientEventHandler {
             outputBuffer.close();
         }
         SharedInputBuffer inputBuffer = (SharedInputBuffer)
-            context.getAttribute(RESPONSE_SINK_BUFFER);
+                context.getAttribute(RESPONSE_SINK_BUFFER);
         if (inputBuffer != null) {
             inputBuffer.close();
         }
@@ -1302,7 +1343,7 @@ public class ClientHandler implements NHttpClientEventHandler {
             log.error(msg, e);
         }
         if (conn != null) {
-            shutdownConnection(conn);
+            shutdownConnection(conn, true, msg);
         }
     }
 
@@ -1325,4 +1366,27 @@ public class ClientHandler implements NHttpClientEventHandler {
             }
         }
     }
+
+    /**
+     * Set the given Client Connection Factory.
+     *
+     * @param connFactory ClientConnectionFactory instance
+     */
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
+
+    /**
+     * Shutdown the connections of the given host:port list. This will allow to create new connection
+     * at the next request happens.
+     *
+     * @param hostList Set of String which contains entries in hots:port format
+     */
+    public void resetConnectionPool(Set<String> hostList) {
+        List<NHttpClientConnection> clientConnections = connpool.getSslConnectionsList(hostList);
+        for (NHttpClientConnection conn : clientConnections) {
+            shutdownConnection(conn, false, " Connection closed to re-loading of Dynamic SSL Configurations ");
+        }
+    }
+
 }

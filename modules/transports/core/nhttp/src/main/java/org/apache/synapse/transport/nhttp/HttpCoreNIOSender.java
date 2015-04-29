@@ -82,7 +82,6 @@ import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 
-
 /**
  * NIO transport sender for Axis2 based on HttpCore and NIO extensions
  */
@@ -117,7 +116,10 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     private boolean preserveServerHeader = true;
     /** Proxy config */
     private volatile ProxyConfig proxyConfig;
-
+    /** Http Params **/
+    private volatile HttpParams params;
+    /**Configuration context will be cached to be used ar reload     */
+    private volatile ConfigurationContext configurationContext;
     /** Socket timeout duration for HTTP connections */
     private int socketTimeout = 0;
 
@@ -133,8 +135,10 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * @throws AxisFault thrown on an error
      */
     public void init(ConfigurationContext cfgCtx, TransportOutDescription transportOut) throws AxisFault {
+        this.configurationContext = cfgCtx;
+
         NHttpConfiguration cfg = NHttpConfiguration.getInstance();
-        HttpParams params = new BasicHttpParams();
+        params = new BasicHttpParams();
         params
                 .setIntParameter(CoreConnectionPNames.SO_TIMEOUT,
                         cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, 60000))
@@ -142,9 +146,9 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
                         cfg.getProperty(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000))
                 .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE,
                         cfg.getProperty(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024))
-                .setParameter(CoreProtocolPNames.USER_AGENT, "Synapse-HttpComponents-NIO")
-                .setParameter(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,
-                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
+                .setParameter(CoreProtocolPNames.USER_AGENT, "Synapse-HttpComponents-NIO");
+//                .setParameter(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,
+//                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
 
         name = transportOut.getName().toUpperCase(Locale.US) + " Sender";
         
@@ -955,6 +959,28 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             return System.currentTimeMillis() - metrics.getLastResetTime();
         }
         return -1;
+    }
+
+    /**
+     * Reload SSL configurations and reset all connections
+     *
+     * @param transportOut TransportOutDescriptin of the configuration
+     * @throws AxisFault
+     */
+    public void reload(TransportOutDescription transportOut) throws AxisFault {
+        log.info("HttpCoreNIOSender reloading SSL Config..");
+        //create new connection factory
+        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+        connFactory = contextBuilder.createConnFactory(params);
+
+        //set new connection factory
+        handler.setConnFactory(connFactory);
+        iodispatch.setConnFactory(connFactory);
+
+        //close existing connections to apply new settings
+        handler.resetConnectionPool(connFactory.getHostList());
+
+        log.info("HttpCoreNIO " + name + " Sender updated with Dynamic Configuration Updates ...");
     }
 
 }

@@ -47,7 +47,6 @@ public class MediatorSerializerFinder {
         SwitchMediatorSerializer.class,
         InMediatorSerializer.class,
         OutMediatorSerializer.class,
-        RMSequenceMediatorSerializer.class,     
         ClassMediatorSerializer.class,
         ValidateMediatorSerializer.class,
         XSLTMediatorSerializer.class,

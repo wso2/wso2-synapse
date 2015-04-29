@@ -19,9 +19,13 @@
 
 package org.apache.synapse.mediators.eip;
 
+import junit.framework.Assert;
+import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.xml.CloneMediatorFactory;
+import org.apache.synapse.mediators.TestUtils;
+import org.apache.synapse.mediators.builtin.PropertyMediator;
 
 import java.util.Properties;
 
@@ -81,5 +85,37 @@ public class CloneMediatorTest extends AbstractSplitMediatorTestCase {
         }
         assertEquals(testCtx.getSoapAction(), "urn:test");
         assertEquals(testCtx.getTo(), null);
+    }
+
+    public void testDeepClonedOMTypeProperty() throws InterruptedException {
+        String propName = "testProp";
+        Mediator clone = fac.createMediator
+                   (createOMElement("<clone " +
+                                    "xmlns=\"http://ws.apache.org/ns/synapse\"><target soapAction=\"urn:clone\" " +
+                                    "sequence=\"seqRef\"/><target to=\"http://test\"><sequence><sequence " +
+                                    "key=\"seqRef\"/></sequence></target></clone>"), new Properties());
+
+        PropertyMediator propertyMediator = new PropertyMediator();
+        propertyMediator.setName(propName);
+        propertyMediator.setValueElement(TestUtils.createOMElement("<a><b>asdf</b></a>"));
+        propertyMediator.setScope("default");
+
+
+        propertyMediator.mediate(testCtx);
+        clone.mediate(testCtx);
+        while (helperMediator.getMediatedContext(1) == null) {
+            Thread.sleep(100);
+        }
+        MessageContext mediatedCtx = helperMediator.getMediatedContext(0);
+        Object obj = mediatedCtx.getProperty(propName);
+        Assert.assertNotNull(obj);
+        Assert.assertTrue(obj instanceof OMElement);
+        OMElement omElement = (OMElement) obj;
+        String cloneStr = omElement.getParent().toString();
+        OMElement omElement1 = (OMElement) testCtx.getProperty(propName);
+        String parentID = omElement1.getParent().toString();
+
+        Assert.assertTrue(!cloneStr.equals(parentID));
+
     }
 }
