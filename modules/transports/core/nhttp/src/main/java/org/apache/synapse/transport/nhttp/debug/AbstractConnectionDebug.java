@@ -31,8 +31,6 @@ import java.util.List;
  */
 public abstract class AbstractConnectionDebug {
 
-    protected final DateFormat formatter = new SimpleDateFormat("HH:mm:ss.SSS");
-
     protected String keyValueSeparator;
     protected String fieldSeparator;
     protected String statementSeparator;
@@ -55,9 +53,17 @@ public abstract class AbstractConnectionDebug {
             this.printHeaderNames = connDebugConfig.getHeaders();
         }
     }
-
+    
+	// SimpleDateFormat is not thread-safe
+	private static final ThreadLocal<SimpleDateFormat> formatter = new ThreadLocal<SimpleDateFormat>() {
+		@Override
+		protected SimpleDateFormat initialValue() {
+			return new SimpleDateFormat("HH:mm:ss.SSS");
+		}
+	};
+    
     protected String format(long ms) {
-        return formatter.format(new Date(ms));
+    	return formatter.get().format(new Date(ms));
     }
 
     public abstract String dump();

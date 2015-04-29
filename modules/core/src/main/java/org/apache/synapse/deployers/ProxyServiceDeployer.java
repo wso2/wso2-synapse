@@ -42,14 +42,14 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     public static String failSafeStr = "";
 
     @Override
-    public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
+    public String deploySynapseArtifact(OMElement artifactConfig, String filePath,
                                         Properties properties) {
 
         /*boolean failSafeProxyEnabled = SynapseConfigUtils.isFailSafeEnabled(
                 SynapseConstants.FAIL_SAFE_MODE_PROXY_SERVICES);*/
 
         if (log.isDebugEnabled()) {
-            log.debug("ProxyService Deployment from file : " + fileName + " : Started");
+            log.debug("ProxyService Deployment from file : " + filePath + " : Started");
         }
 
         try {
@@ -60,10 +60,13 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     return proxy.getName();
                 }
 
-                proxy.setFileName((new File(fileName)).getName());
+                File proxyFile = new File(filePath);
+                proxy.setFileName(proxyFile.getName());
+                proxy.setFilePath(proxyFile.toURI().toURL());
+
                 if (log.isDebugEnabled()) {
                     log.debug("ProxyService named '" + proxy.getName()
-                            + "' has been built from the file " + fileName);
+                            + "' has been built from the file " + filePath);
                 }
                 initializeProxy(proxy);
                 if (log.isDebugEnabled()) {
@@ -77,25 +80,33 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
                 if (log.isDebugEnabled()) {
-                    log.debug("ProxyService Deployment from file : " + fileName + " : Completed");
+                    log.debug("ProxyService Deployment from file : " + filePath + " : Completed");
                 }
                 log.info("ProxyService named '" + proxy.getName()
-                        + "' has been deployed from file : " + fileName);
+                        + "' has been deployed from file : " + filePath);
+
+                if (!proxy.isStartOnLoad()) {
+                    proxy.stop(getSynapseConfiguration());
+                    log.info("ProxyService named '" + proxy.getName()
+                             + "' has been stopped as startOnLoad parameter is set to false");
+                }
+
                 return proxy.getName();
+
             } else {
                 handleSynapseArtifactDeploymentError("ProxyService Deployment Failed. The " +
-                        "artifact described in the file " + fileName + " is not a ProxyService");
+                        "artifact described in the file " + filePath + " is not a ProxyService");
             }
         } catch (Exception e) {
             /*if (failSafeProxyEnabled) {
-                log.warn("Proxy service hot deployment from file: " + fileName + " failed - " +
+                log.warn("Proxy service hot deployment from file: " + filePath + " failed - " +
                         "Continue in fail-safe mode", e);
             } else {
                 handleSynapseArtifactDeploymentError(
-                        "ProxyService Deployment from the file : " + fileName + " : Failed.", e);
+                        "ProxyService Deployment from the file : " + filePath + " : Failed.", e);
             }*/
             handleSynapseArtifactDeploymentError(
-                    "ProxyService Deployment from the file : " + fileName + " : Failed.", e);
+                    "ProxyService Deployment from the file : " + filePath + " : Failed.", e);
         }
         return null;
     }

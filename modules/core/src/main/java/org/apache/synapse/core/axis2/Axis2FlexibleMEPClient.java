@@ -46,11 +46,6 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
-import org.apache.sandesha2.Sandesha2Constants;
-import org.apache.sandesha2.client.SandeshaClient;
-import org.apache.sandesha2.client.SandeshaClientConstants;
-import org.apache.sandesha2.policy.SandeshaPolicyBean;
-import org.apache.sandesha2.policy.builders.RMAssertionBuilder;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.rest.RESTConstants;
@@ -59,6 +54,7 @@ import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -89,7 +85,6 @@ public class Axis2FlexibleMEPClient {
         String inboundWsSecPolicyKey = null;
         String outboundWsSecPolicyKey = null;
         boolean wsRMEnabled = false;
-        String wsRMPolicyKey = null;
         boolean wsAddressingEnabled = false;
         String wsAddressingVersion = null;
 
@@ -99,9 +94,7 @@ public class Axis2FlexibleMEPClient {
             wsSecPolicyKey = endpoint.getWsSecPolicyKey();
             inboundWsSecPolicyKey = endpoint.getInboundWsSecPolicyKey();
             outboundWsSecPolicyKey = endpoint.getOutboundWsSecPolicyKey();
-            wsRMEnabled = endpoint.isReliableMessagingOn();
-            wsRMPolicyKey = endpoint.getWsRMPolicyKey();
-            wsAddressingEnabled = endpoint.isAddressingOn() || wsRMEnabled;
+            wsAddressingEnabled = endpoint.isAddressingOn();
             wsAddressingVersion = endpoint.getAddressingVersion();
         }
 
@@ -116,7 +109,6 @@ public class Axis2FlexibleMEPClient {
             log.debug(
                     "Sending [add = " + wsAddressingEnabled +
                             "] [sec = " + wsSecurityEnabled +
-                            "] [rm = " + wsRMEnabled +
                             (endpoint != null ?
                                     "] [mtom = " + endpoint.isUseMTOM() +
                                             "] [swa = " + endpoint.isUseSwa() +
@@ -407,20 +399,6 @@ public class Axis2FlexibleMEPClient {
 
         Options clientOptions = MessageHelper.cloneOptions(originalInMsgCtx.getOptions());
         clientOptions.setUseSeparateListener(separateListener);
-        // if RM is requested,
-        if (wsRMEnabled) {
-            // if a WS-RM policy is specified, use it
-            if (wsRMPolicyKey != null) {
-                Object property = synapseOutMessageContext.getEntry(wsRMPolicyKey);
-                if (property instanceof OMElement) {
-                    OMElement policyOMElement = (OMElement) property;
-                    RMAssertionBuilder builder = new RMAssertionBuilder();
-                    SandeshaPolicyBean sandeshaPolicyBean = (SandeshaPolicyBean) builder.build(policyOMElement, null);
-                    Parameter policyParam = new Parameter(Sandesha2Constants.SANDESHA_PROPERTY_BEAN, sandeshaPolicyBean);
-                    anoymousService.addParameter(policyParam);
-                }
-            }
-        }
 
         // if security is enabled,
         if (wsSecurityEnabled) {
@@ -504,20 +482,13 @@ public class Axis2FlexibleMEPClient {
             clientOptions.setProperty("TRANSPORT_OUT_DESCRIPTION", o);
         }
 
-        mepClient.execute(true);
-        if (wsRMEnabled) {
-            Object rm11 = clientOptions.getProperty(SandeshaClientConstants.RM_SPEC_VERSION);
-            if ((rm11 != null) && rm11.equals(Sandesha2Constants.SPEC_VERSIONS.v1_1)) {
-                ServiceClient serviceClient = new ServiceClient(
-                        axisOutMsgCtx.getConfigurationContext(), axisOutMsgCtx.getAxisService());
-                serviceClient.setTargetEPR(
-                        new EndpointReference(endpoint.getAddress(synapseOutMessageContext)));
-                serviceClient.setOptions(clientOptions);
-                serviceClient.getOptions().setTo(
-                        new EndpointReference(endpoint.getAddress(synapseOutMessageContext)));
-                SandeshaClient.terminateSequence(serviceClient);
-            }
+        // clear the message context properties related to endpoint in last service invocation
+        Set keySet = synapseOutMessageContext.getPropertyKeySet();
+        if (keySet != null) {
+            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
         }
+
+        mepClient.execute(true);
     }
 
     private static MessageContext cloneForSend(MessageContext ori, String preserveAddressing)

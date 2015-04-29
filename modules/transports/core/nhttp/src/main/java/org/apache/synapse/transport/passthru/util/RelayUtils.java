@@ -133,6 +133,11 @@ public class RelayUtils {
             element = messageBuilder.getDocument(messageContext,
                     bufferedInputStream != null ? bufferedInputStream : in);
         } catch (Exception e) {
+            /*
+            Remove bufferedinputstream content & continue: (for large payloads)
+            reset bufferedInputStream can't be done in this situation
+            */
+            while ((bufferedInputStream.read()) > 0);
             messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
             handleException("Error while building Passthrough stream", e);
         }

@@ -178,9 +178,7 @@ public class TargetRequest {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
 			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)
-						&& !trpContentType
-								.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA)) {
+				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
 
@@ -432,6 +430,9 @@ public class TargetRequest {
 	public HttpRequest getRequest() {
 		return request;
 	}
-    
+
+    public HttpRoute getRoute(){
+        return route;
+    }
     
 }

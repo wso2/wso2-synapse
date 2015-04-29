@@ -33,13 +33,14 @@ import org.apache.axis2.transport.TransportSender;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpException;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.nio.NHttpServerConnection;
-import org.apache.http.nio.reactor.IOEventDispatch;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
@@ -55,16 +56,22 @@ import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
+import org.apache.synapse.transport.passthru.core.PassThroughSenderManager;
 import org.apache.synapse.transport.passthru.jmx.MBeanRegistrar;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.jmx.TransportView;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
+import org.wso2.caching.CachingConstants;
+import org.wso2.caching.digest.DigestGenerator;
 
-import java.io.ByteArrayOutputStream;
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.rmi.RemoteException;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * PassThroughHttpSender for Synapse based on HttpCore and NIO extensions
@@ -78,7 +85,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     /** Protocol handler */
     private TargetHandler handler;
     /** I/O dispatcher */
-    private IOEventDispatch ioEventDispatch;
+    private ClientIODispatch ioEventDispatch;
     /** The connection factory */
     private ClientConnFactory connFactory;
     
@@ -92,11 +99,16 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
     /** Proxy config */
     private ProxyConfig proxyConfig;
+
+    // manage target connections
+    private TargetConnections targetConnections;
     
     /** state of the sender */
     private volatile int state = BaseConstants.STOPPED;
 
     private String namePrefix;
+
+    private DigestGenerator digestGenerator  = CachingConstants.DEFAULT_XML_IDENTIFIER;
 
     public PassThroughHttpSender() {
         log = LogFactory.getLog(this.getClass().getName());
@@ -141,6 +153,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 transportOutDescription, workerPool, metrics, 
                 proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);
         targetConfiguration.build();
+
+        PassThroughSenderManager.registerPassThroughHttpSender(this);
+
+
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
         
@@ -175,9 +191,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
 
         ConnectCallback connectCallback = new ConnectCallback();
-        // manage target connections
-        TargetConnections targetConnections =
-                new TargetConnections(ioReactor, targetConfiguration, connectCallback);
+
+        targetConnections = new TargetConnections(ioReactor, targetConfiguration, connectCallback);
         targetConfiguration.setConnections(targetConnections);
 
         // create the delivery agent to hand over messages
@@ -427,6 +442,23 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             }
         }
 
+        // Handle ETag caching
+        if (msgContext.getProperty(PassThroughConstants.HTTP_ETAG_ENABLED) != null
+            && (Boolean) msgContext.getProperty(PassThroughConstants.HTTP_ETAG_ENABLED)) {
+
+            try {
+                RelayUtils.buildMessage(msgContext);
+            } catch (IOException e) {
+                handleException("IO Error occurred while building the message", e);
+            } catch (XMLStreamException e) {
+                handleException("XML Error occurred while building the message", e);
+            }
+
+            String hash = digestGenerator.getDigest(msgContext);
+            Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+            headers.put(HttpHeaders.ETAG,"\""+hash+"\"");
+        }
+
         SourceRequest sourceRequest = SourceContext.getRequest(conn);
 
         SourceResponse sourceResponse = SourceResponseFactory.create(msgContext,
@@ -518,8 +550,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                                                      msgContext, format, msgContext.getSoapAction()));
                 }
 
-                formatter.writeTo(msgContext, format, out, false);
-                /*}*/
+                try {
+                    formatter.writeTo(msgContext, format, out, false);
+                }catch (RemoteException fault){
+                    IOUtils.closeQuietly(out);
+                    throw fault;
+                }
                 pipe.setSerializationComplete(true);
                 out.close();
             }
@@ -580,5 +616,28 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         log.error(msg);
         throw new AxisFault(msg);
     }
+
+    /**
+     * Reload SSL configurations from configurations, reset all connections and restart the thread
+     *
+     * @param transport TransportOutDescription of the configuration
+     * @throws AxisFault
+     */
+    public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
+        log.info("PassThroughHttpSender reloading SSL Config..");
+
+        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
+        connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
+
+        //Set new configurations
+        handler.setConnFactory(connFactory);
+        ioEventDispatch.setConnFactory(connFactory);
+
+        //close existing connections to apply new settings
+        targetConnections.resetConnectionPool(connFactory.getHostList());
+
+        log.info("Pass-through " + namePrefix + " Sender updated with Dynamic Configuration Updates ...");
+    }
+
 
 }
