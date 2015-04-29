@@ -178,9 +178,7 @@ public class TargetRequest {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
 			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)
-						&& !trpContentType
-								.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA)) {
+				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
 
@@ -265,7 +263,8 @@ public class TargetRequest {
                 targetConfiguration.getHttpParams()));
 
         //Chucking is not performed for request has "http 1.0" and "GET" http method
-        if (!(request.getProtocolVersion().equals(HttpVersion.HTTP_1_0) && ("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))) {
+       if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
+                              (("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
@@ -433,6 +432,9 @@ public class TargetRequest {
 	public HttpRequest getRequest() {
 		return request;
 	}
-    
+
+    public HttpRoute getRoute(){
+        return route;
+    }
     
 }

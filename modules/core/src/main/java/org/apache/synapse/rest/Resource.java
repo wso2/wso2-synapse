@@ -324,7 +324,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         }
     }
 
-    private void registerFaultHandler(MessageContext synCtx) {
+    public void registerFaultHandler(MessageContext synCtx) {
         if (faultSequence != null) {
             synCtx.pushFaultHandler(new MediatorFaultHandler(faultSequence));
         } else if (faultSequenceKey != null) {

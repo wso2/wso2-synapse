@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.db;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.transaction.TranscationManger;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -47,10 +48,27 @@ public class DBReportMediator extends AbstractDBMediator {
 
 
         SynapseLog synLog = getLog(msgCtx);
-
         Connection con = null;
+        boolean threadInTx = false;
         try {
-        	con = this.getDataSource().getConnection();
+        	if(TranscationManger.isThreadHasEnlistment() || useTransaction){
+        		threadInTx = true;
+        		try {            	
+                 	con = TranscationManger.addConnection(this.getDataSource());
+                 	if(useTransaction){
+                 		TranscationManger.bindConnection(con);
+                 	}
+                 }catch (Exception e)
+                 {
+                	 handleException("SQL Error while bind connection to tx : " +
+                             stmnt.getRawStatement() +
+                             " against DataSource : " + getDSName(), e, msgCtx);
+                 }
+        	}else{
+        		con = this.getDataSource().getConnection();
+        	}
+           
+
             PreparedStatement ps = getPreparedStatement(stmnt, con, msgCtx);
             int count = ps.executeUpdate();
 
@@ -66,17 +84,21 @@ public class DBReportMediator extends AbstractDBMediator {
                 }
             }
 
-            if (!useTransaction) {
+            if (!(threadInTx || useTransaction)) {
                 if (!con.getAutoCommit()) {
                     con.commit();
                 }
             }
 
         } catch (SQLException e) {
-            handleException("Error execuring insert statement : " + stmnt.getRawStatement() +
-                    " against DataSource : " + getDSName(), e, msgCtx);
+            handleException("SQL Error while executing insert statement : " +
+                            stmnt.getRawStatement() +
+                            " against DataSource : " + getDSName(), e, msgCtx);
+        } catch (Exception e) {
+            handleException("Error while executing insert statement : " + stmnt.getRawStatement() +
+                            " against DataSource : " + getDSName(), e, msgCtx);
         } finally {
-            if (con != null) {
+            if (con != null && !(threadInTx || useTransaction)) {
                 try {
                     con.close();
                 } catch (SQLException ignore) {

@@ -18,7 +18,8 @@
  */
 package org.apache.synapse.mediators.xquery;
 
-import javax.xml.xquery.XQItemType;
+import net.sf.saxon.s9api.ItemType;
+import net.sf.saxon.s9api.XdmNodeKind;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
@@ -83,7 +84,7 @@ public class XQueryMediatorFactory extends AbstractMediatorFactory {
         if (attrTarget != null) {
             String targetValue = attrTarget.getAttributeValue();
             if (targetValue != null && !"".equals(targetValue)) {
-                try {                             
+                try {
                     xQueryMediator.setTarget(SynapseXPathFactory.getSynapseXPath(elem, ATT_TARGET));
                 } catch (JaxenException e) {
                     handleException("Invalid XPath specified for the target attribute : " +
@@ -136,29 +137,27 @@ public class XQueryMediatorFactory extends AbstractMediatorFactory {
                         }
                     }
                     if ("INT".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_INT);
+                        variable.setType(ItemType.INT);
                     } else if ("INTEGER".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_INTEGER);
+                        variable.setType(ItemType.INTEGER);
                     } else if ("BOOLEAN".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_BOOLEAN);
+                        variable.setType(ItemType.BOOLEAN);
                     } else if ("BYTE".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_BYTE);
+                        variable.setType(ItemType.BYTE);
                     } else if ("DOUBLE".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_DOUBLE);
+                        variable.setType(ItemType.DOUBLE);
                     } else if ("SHORT".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_SHORT);
+                        variable.setType(ItemType.SHORT);
                     } else if ("LONG".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_LONG);
+                        variable.setType(ItemType.LONG);
                     } else if ("FLOAT".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_FLOAT);
+                        variable.setType(ItemType.FLOAT);
                     } else if ("STRING".equals(type.trim())) {
-                        variable.setType(XQItemType.XQBASETYPE_STRING);
+                        variable.setType(ItemType.STRING);
                     } else if ("DOCUMENT".equals(type.trim())) {
-                        variable.setType(XQItemType.XQITEMKIND_DOCUMENT);
-                    } else if ("DOCUMENT_ELEMENT".equals(type.trim())) {
-                        variable.setType(XQItemType.XQITEMKIND_DOCUMENT_ELEMENT);
+                        variable.setNodeKind(XdmNodeKind.DOCUMENT);
                     } else if ("ELEMENT".equals(type.trim())) {
-                        variable.setType(XQItemType.XQITEMKIND_ELEMENT);
+                        variable.setNodeKind(XdmNodeKind.ELEMENT);
                     } else {
                         handleException("Unsupported Type");
                     }

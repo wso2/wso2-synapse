@@ -201,9 +201,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
      */
     private MessageContext getIteratedMessage(MessageContext synCtx, int msgNumber, int msgCount,
         SOAPEnvelope envelope, OMNode o) throws AxisFault, JaxenException {
-        
-        // clone the message for the mediation in iteration
-        MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
+
+        // clone the message context without cloning the SOAP envelope, for the mediation in iteration.
+        MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false);
 
         if (id != null) {
             // set the parent correlation details to the cloned MC -

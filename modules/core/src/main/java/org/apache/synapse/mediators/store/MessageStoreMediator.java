@@ -17,6 +17,7 @@
 */
 package org.apache.synapse.mediators.store;
 
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.synapse.Mediator;
@@ -26,6 +27,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.util.MessageHelper;
 
 /**
  * <code>MessageStoreMediator</code> will store the incoming Messages in associated MessageStore
@@ -81,7 +83,15 @@ public class MessageStoreMediator extends AbstractMediator{
 
                 // Ensure that the message is fully read
                 synCtx.getEnvelope().buildWithAttachments();
-                boolean result = messageStore.getProducer().storeMessage(synCtx);
+                //Clone the message before sending to the producer
+                //Fix ESBJAVA-3650
+                MessageContext newCtx = null;
+                try {
+                    newCtx = MessageHelper.cloneMessageContext(synCtx);
+                } catch (AxisFault af) {
+                    handleException("Error when cloning the message context", af, synCtx);
+                }
+                boolean result = messageStore.getProducer().storeMessage(newCtx);
                 if (!result) {
                     synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
                     synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");

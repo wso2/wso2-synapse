@@ -16,17 +16,18 @@
 
 package org.apache.synapse.transport.passthru;
 
+import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.http.*;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.commons.collections.map.MultiValueMap;
 
 /**
  * This class represents a response coming from the target server.
@@ -56,11 +57,14 @@ public class TargetResponse {
     private NHttpClientConnection connection;
     /** Weather this response has a body */
     private boolean expectResponseBody = true;
+    /** Whether to shutdown connection after response completion*/
+    private boolean forceShutdownConnectionOnComplete = false;
 
     public TargetResponse(TargetConfiguration targetConfiguration,
                           HttpResponse response,
                           NHttpClientConnection conn,
-                          boolean expectResponseBody) {
+                          boolean expectResponseBody,
+                          boolean forceShutdownConnectionOnComplete) {
         this.targetConfiguration = targetConfiguration;
         this.response = response;
         this.connection = conn;
@@ -82,6 +86,7 @@ public class TargetResponse {
         }   
 
         this.expectResponseBody = expectResponseBody;
+        this.forceShutdownConnectionOnComplete = forceShutdownConnectionOnComplete;
     }    
 
     /**
@@ -103,7 +108,7 @@ public class TargetResponse {
             }
             response.setEntity(entity);
         } else {            
-            if (!connStrategy.keepAlive(response, conn.getContext())) {
+            if (!connStrategy.keepAlive(response, conn.getContext()) || forceShutdownConnectionOnComplete) {
                 try {
                     // this is a connection we should not re-use
                     TargetContext.updateState(conn, ProtocolState.CLOSING);
@@ -143,12 +148,14 @@ public class TargetResponse {
             targetConfiguration.getMetrics().notifyReceivedMessageSize(
                     conn.getMetrics().getReceivedBytesCount());
 
-            if (!this.connStrategy.keepAlive(response, conn.getContext())) {
+            if (!this.connStrategy.keepAlive(response, conn.getContext())  || forceShutdownConnectionOnComplete) {
                 TargetContext.updateState(conn, ProtocolState.CLOSED);
 
                 targetConfiguration.getConnections().shutdownConnection(conn);
             } else {
-                targetConfiguration.getConnections().releaseConnection(conn);
+                if (conn instanceof LoggingNHttpClientConnection) {
+                    ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
+                } 
             }
         }
         return bytes;

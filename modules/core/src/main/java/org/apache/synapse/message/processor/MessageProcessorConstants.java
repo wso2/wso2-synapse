@@ -25,9 +25,15 @@ public final class MessageProcessorConstants {
     /**
      * Scheduled Message Processor parameters
      */
-    public static final String QUARTZ_CONF = "quartz.conf";
     public static final String INTERVAL = "interval";
     public static final String CRON_EXPRESSION = "cronExpression";
+
+	public static final String MEMBER_COUNT = "member.count";
+
+	/**
+	 * Threshould interval value is 1000.
+	 */
+	public static final long THRESHOULD_INTERVAL = 1000;
 
     /**
      * Message processor parameters
@@ -40,32 +46,6 @@ public final class MessageProcessorConstants {
     public static final String RETRY_INTERVAL = "client.retry.interval";
 
     public static final String IS_ACTIVATED = "is.active";
-
-    /**
-     * These configurations are belong to quartz scheduler. More information about these scheduler parameters
-     * can be found in http://quartz-scheduler.org/
-     */
-    public static final String SCHEDULER_INSTANCE_NAME = "org.quartz.scheduler.instanceName";
-
-    public static final String SCHEDULER_RMI_EXPORT = "org.quartz.scheduler.rmi.export";
-
-    public static final String SCHEDULER_RMI_PROXY = "org.quartz.scheduler.rmi.proxy";
-
-    public static final String SCHEDULER_WRAP_JOB_EXE_IN_USER_TRANSACTION =
-                                                              "org.quartz.scheduler.wrapJobExecutionInUserTransaction";
-
-    public static final String THREAD_POOL_CLASS = "org.quartz.threadPool.class";
-
-    public static final String THREAD_POOL_THREAD_COUNT = "org.quartz.threadPool.threadCount";
-
-    public static final String THREAD_POOL_THREAD_PRIORITY = "org.quartz.threadPool.threadPriority";
-
-    public static final String JOB_STORE_MISFIRE_THRESHOLD = "org.quartz.jobStore.misfireThreshold";
-
-    public static final String THREAD_INHERIT_CONTEXT_CLASSLOADER_OF_INIT_THREAD =
-            "org.quartz.threadPool.threadsInheritContextClassLoaderOfInitializingThread";
-
-    public static final String JOB_STORE_CLASS = "org.quartz.jobStore.class";
 
     public static final String SCHEDULED_MESSAGE_PROCESSOR_GROUP =
             "synapse.message.processor.quartz";

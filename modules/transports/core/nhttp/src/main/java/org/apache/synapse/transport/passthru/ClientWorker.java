@@ -76,17 +76,22 @@ public class ClientWorker implements Runnable {
 		(response.getStatus() != HttpStatus.SC_SEE_OTHER) &&
 		(response.getStatus() != HttpStatus.SC_TEMPORARY_REDIRECT) )) {
             URL url;
+            String urlContext = null;
             try {
                 url = new URL(oriURL);
+                urlContext = url.getFile();
             } catch (MalformedURLException e) {
-                log.error("Invalid URL received", e);
-                return;
+                //Fix ESBJAVA-3461 - In the case when relative path is sent should be handled
+                if(log.isDebugEnabled()){
+                    log.debug("Relative URL received for Location : " + oriURL, e);
+                }
+                urlContext = oriURL;
             }
 
             headers.remove(PassThroughConstants.LOCATION);
             String prfix = (String) outMsgCtx.getProperty(PassThroughConstants.SERVICE_PREFIX);
             if (prfix != null) {
-                headers.put(PassThroughConstants.LOCATION, prfix + url.getFile());
+                headers.put(PassThroughConstants.LOCATION, prfix + urlContext);
             }
 
         }
@@ -272,14 +277,9 @@ public class ClientWorker implements Runnable {
 
         // When the response from backend does not have the body(Content-Length is 0 )
         // and Content-Type is not set; ESB should not do any modification to the response and pass-through as it is.
-
-        if (headers != null && headers.get(PassThroughConstants.HTTP_CONTENT_LENGTH).toString().equals("0") &&
-            response.getHeader(PassThroughConstants.HTTP_CONTENT_TYPE) == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("Content-Length is Zero and Content-type is not available in the response ");
-            }
-            return null;
-        }
+        if (headers.get(HTTP.CONTENT_LEN) == null || "0".equals(headers.get(HTTP.CONTENT_LEN))) {
+             return null;
+         }
 
         // Unable to determine the content type - Return default value
         return PassThroughConstants.DEFAULT_CONTENT_TYPE;

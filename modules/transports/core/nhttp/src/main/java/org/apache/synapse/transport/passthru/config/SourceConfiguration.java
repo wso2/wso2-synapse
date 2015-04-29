@@ -21,6 +21,7 @@ import java.net.UnknownHostException;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.transport.TransportListener;
 import org.apache.axis2.transport.base.ParamUtils;
@@ -95,6 +96,11 @@ public class SourceConfiguration extends BaseConfiguration {
         responseFactory = new DefaultHttpResponseFactory();
 
         sourceConnections = new SourceConnections();
+    }
+
+
+    public SourceConfiguration(WorkerPool pool,PassThroughTransportMetricsCollector metrics) {
+        super(null, null, pool, metrics);
     }
 
     public void build() throws AxisFault {

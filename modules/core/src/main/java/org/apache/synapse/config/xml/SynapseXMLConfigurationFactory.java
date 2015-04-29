@@ -53,12 +53,14 @@ import org.apache.synapse.rest.API;
 import org.apache.synapse.task.TaskManager;
 
 import javax.xml.namespace.QName;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Properties;
 
 public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
 
     private static Log log = LogFactory.getLog(SynapseXMLConfigurationFactory.class);
+
 
     public SynapseConfiguration getConfiguration(OMElement definitions, Properties properties) {
 
@@ -68,7 +70,6 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         }
         SynapseConfiguration config = SynapseConfigUtils.newConfiguration();               
         config.setDefaultQName(definitions.getQName());
-
         Iterator itr = definitions.getChildren();
         while (itr.hasNext()) {
             Object o = itr.next();
@@ -111,14 +112,15 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineAPI(config, elt, properties);
                 } else if (XMLConfigConstants.DESCRIPTION_ELT.equals(elt.getQName())) {
                     config.setDescription(elt.getText());
+                } else if (XMLConfigConstants.INBOUND_ENDPOINT_ELT.equals(elt.getQName())) {
+                    defineInboundEndpoint(config, elt, properties);
                 } else {
                     handleException("Invalid configuration element at the top level, one of \'sequence\', " +
-                            "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\' " +
-                            "or \'registry\' is expected");
+                            "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\'" +
+                            ", \'registry\' or \'inboundEndpoint\' is expected");
                 }
             }
         }
-
         return config;
     }
 
