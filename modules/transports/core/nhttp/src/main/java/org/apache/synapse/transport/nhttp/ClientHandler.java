@@ -449,6 +449,9 @@ public class ClientHandler implements NHttpClientEventHandler {
      * @param ex the exception encountered
      */
     public void exception(final NHttpClientConnection conn, final Exception ex) {
+        HttpContext context = conn.getContext();
+        Axis2HttpRequest axis2Req = (Axis2HttpRequest) context.getAttribute(ATTACHMENT_KEY);
+        context.setAttribute(AXIS2_HTTP_REQUEST, axis2Req);
 
         if (ex instanceof HttpException) {
             String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
@@ -845,6 +848,14 @@ public class ClientHandler implements NHttpClientEventHandler {
             case HttpStatus.SC_ACCEPTED : {
                 if (log.isDebugEnabled()) {
                     log.debug(conn + ": Received a 202 Accepted response");
+                }
+
+                // Process response body if Content-Type header is present in the response
+                // If Content-Type header is null, We will ignore entity body
+                Header contentType = response.getFirstHeader(HTTP.CONTENT_TYPE);
+                if (contentType != null) {
+                    processResponse(conn, context, response);
+                    return;
                 }
 
                 // sometimes, some http clients sends an "\r\n" as the content body with a

@@ -18,7 +18,8 @@
  */
 package org.apache.synapse.mediators.xquery;
 
-import javax.xml.xquery.XQItemType;
+import net.sf.saxon.s9api.ItemType;
+import net.sf.saxon.s9api.XdmNodeKind;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.xml.AbstractMediatorSerializer;
@@ -56,7 +57,7 @@ public class XQueryMediatorSerializer extends AbstractMediatorSerializer {
         Value key = queryMediator.getQueryKey();
         if (key != null) {
             // Serialize Key using KeySerializer
-            ValueSerializer keySerializer =  new ValueSerializer();
+            ValueSerializer keySerializer = new ValueSerializer();
             keySerializer.serializeValue(key, XMLConfigConstants.KEY, xquery);
 
         }
@@ -69,7 +70,7 @@ public class XQueryMediatorSerializer extends AbstractMediatorSerializer {
             SynapseXPathSerializer.serializeXPath(targetXPath, xquery, "target");
         }
 
-        List<MediatorProperty> pros = queryMediator.getDataSourceProperties();
+        List<MediatorProperty> pros = queryMediator.getProcessorProperties();
         if (pros != null && !pros.isEmpty()) {
             OMElement dataSource = fac.createOMElement("dataSource", synNS);
             serializeProperties(dataSource, pros);
@@ -90,33 +91,33 @@ public class XQueryMediatorSerializer extends AbstractMediatorSerializer {
                         baseElement.addAttribute(fac.createOMAttribute(
                                 "value", nullNS, (String) value));
                         String type = null;
-                        int varibelType = variable.getType();
-                        if (XQItemType.XQBASETYPE_INT == varibelType) {
+                        ItemType variableType = variable.getType();
+                        XdmNodeKind nodeKind = variable.getNodeKind();
+
+                        if (ItemType.INT == variableType) {
                             type = "INT";
-                        } else if (XQItemType.XQBASETYPE_INTEGER == varibelType) {
+                        } else if (ItemType.INTEGER == variableType) {
                             type = "INTEGER";
-                        } else if (XQItemType.XQBASETYPE_BOOLEAN == varibelType) {
+                        } else if (ItemType.BOOLEAN == variableType) {
                             type = "BOOLEAN";
-                        } else if (XQItemType.XQBASETYPE_BYTE == varibelType) {
+                        } else if (ItemType.BYTE == variableType) {
                             type = "BYTE";
-                        } else if (XQItemType.XQBASETYPE_DOUBLE == varibelType) {
+                        } else if (ItemType.DOUBLE == variableType) {
                             type = "DOUBLE";
-                        } else if (XQItemType.XQBASETYPE_SHORT == varibelType) {
+                        } else if (ItemType.SHORT == variableType) {
                             type = "SHORT";
-                        } else if (XQItemType.XQBASETYPE_LONG == varibelType) {
+                        } else if (ItemType.LONG == variableType) {
                             type = "LONG";
-                        } else if (XQItemType.XQBASETYPE_FLOAT == varibelType) {
+                        } else if (ItemType.FLOAT == variableType) {
                             type = "FLOAT";
-                        } else if (XQItemType.XQBASETYPE_STRING == varibelType) {
+                        } else if (ItemType.STRING == variableType) {
                             type = "STRING";
-                        } else if (XQItemType.XQITEMKIND_DOCUMENT == varibelType) {
+                        } else if (XdmNodeKind.DOCUMENT == nodeKind) {
                             type = "DOCUMENT";
-                        } else if (XQItemType.XQITEMKIND_DOCUMENT_ELEMENT == varibelType) {
-                            type = "DOCUMENT_ELEMENT";
-                        } else if (XQItemType.XQITEMKIND_ELEMENT == varibelType) {
+                        } else if (XdmNodeKind.ELEMENT == nodeKind) {
                             type = "ELEMENT";
                         } else {
-                            handleException("Unknown Type " + varibelType);
+                            handleException("Unknown Type " + variableType);
                         }
                         if (type != null) {
                             baseElement.addAttribute(fac.createOMAttribute(
@@ -144,33 +145,33 @@ public class XQueryMediatorSerializer extends AbstractMediatorSerializer {
                                     customElement, "expression");
                         }
                         String type = null;
-                        int varibelType = variable.getType();
-                        if (XQItemType.XQITEMKIND_DOCUMENT == varibelType) {
+                        ItemType variableType = variable.getType();
+                        XdmNodeKind nodeKind = variable.getNodeKind();
+
+                        if (XdmNodeKind.DOCUMENT == nodeKind) {
                             type = "DOCUMENT";
-                        } else if (XQItemType.XQITEMKIND_DOCUMENT_ELEMENT == varibelType) {
-                            type = "DOCUMENT_ELEMENT";
-                        } else if (XQItemType.XQITEMKIND_ELEMENT == varibelType) {
+                        } else if (XdmNodeKind.ELEMENT == nodeKind) {
                             type = "ELEMENT";
-                        } else if (XQItemType.XQBASETYPE_INT == varibelType) {
+                        } else if (ItemType.INT == variableType) {
                             type = "INT";
-                        } else if (XQItemType.XQBASETYPE_INTEGER == varibelType) {
+                        } else if (ItemType.INTEGER == variableType) {
                             type = "INTEGER";
-                        } else if (XQItemType.XQBASETYPE_BOOLEAN == varibelType) {
+                        } else if (ItemType.BOOLEAN == variableType) {
                             type = "BOOLEAN";
-                        } else if (XQItemType.XQBASETYPE_BYTE == varibelType) {
+                        } else if (ItemType.BYTE == variableType) {
                             type = "BYTE";
-                        } else if (XQItemType.XQBASETYPE_DOUBLE == varibelType) {
+                        } else if (ItemType.DOUBLE == variableType) {
                             type = "DOUBLE";
-                        } else if (XQItemType.XQBASETYPE_SHORT == varibelType) {
+                        } else if (ItemType.SHORT == variableType) {
                             type = "SHORT";
-                        } else if (XQItemType.XQBASETYPE_LONG == varibelType) {
+                        } else if (ItemType.LONG == variableType) {
                             type = "LONG";
-                        } else if (XQItemType.XQBASETYPE_FLOAT == varibelType) {
+                        } else if (ItemType.FLOAT == variableType) {
                             type = "FLOAT";
-                        } else if (XQItemType.XQBASETYPE_STRING == varibelType) {
+                        } else if (ItemType.STRING == variableType) {
                             type = "STRING";
                         } else {
-                            handleException("Unknown Type " + varibelType);
+                            handleException("Unknown Type " + variableType);
                         }
                         if (type != null) {
                             customElement.addAttribute(fac.createOMAttribute(
