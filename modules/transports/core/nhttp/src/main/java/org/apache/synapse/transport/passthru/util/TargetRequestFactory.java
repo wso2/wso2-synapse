@@ -140,11 +140,16 @@ public class TargetRequestFactory {
                 request.setVersion(HttpVersion.HTTP_1_0);
             }
 
-            // keep alive
-            String noKeepAlie = (String) msgContext.getProperty(PassThroughConstants.NO_KEEPALIVE);
-            if ("true".equals(noKeepAlie)) {
-                request.setKeepAlive(false);
-            }
+			// keep alive in synapse config
+			final String noKeepAlive =
+			                           (String) msgContext.getProperty(PassThroughConstants.NO_KEEPALIVE);
+
+			// Global Keep Alive settings in passthru props.
+			final boolean noGlobalKeepalive = configuration.isDisableGlobalKeepalive();
+
+			if (("true".equals(noKeepAlive) || noGlobalKeepalive) && (!"false".equals(noKeepAlive))) {
+				request.setKeepAlive(false);
+			}
 
             // port
             int port = url.getPort();
