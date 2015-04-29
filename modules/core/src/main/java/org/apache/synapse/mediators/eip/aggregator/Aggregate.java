@@ -235,6 +235,19 @@ public class Aggregate extends TimerTask {
         }
     }
 
+    /**
+     * Clear references in Aggregate Timer Task
+     *
+     * This need to be called when aggregation is completed.
+     * Task is not eligible for gc until it reach the execution time,
+     * even though it is cancelled. So we need to remove references from task to other objects to
+     * allow them to be garbage collected
+     *
+     */
+    public void clear() {
+        messages = null;
+    }
+
     private class AggregateTimeout implements Runnable {
         private Aggregate aggregate = null;
         AggregateTimeout(Aggregate aggregate) {

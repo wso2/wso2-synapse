@@ -47,6 +47,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
     private final String JSON_TYPE="json";
     private final String XML_TYPE="xml";
+    private final String TEXT_TYPE="text";
 
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
@@ -68,7 +69,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement copy = formatElem.cloneOMElement();
                 removeIndentations(copy);
 
-                if(mediaTypeValue != null && mediaTypeValue.contains(JSON_TYPE))  {
+                if(mediaTypeValue != null && (mediaTypeValue.contains(JSON_TYPE) || mediaTypeValue.contains(TEXT_TYPE)))  {
                     payloadFactoryMediator.setFormat(copy.getText());
                 } else {
                     payloadFactoryMediator.setFormat(copy.getFirstElement().toString());

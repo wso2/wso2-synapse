@@ -62,7 +62,6 @@ import java.util.StringTokenizer;
  *    &lt;/publishWSDL&gt;?
  *    &lt;enableAddressing/&gt;?
  *    &lt;enableSec/&gt;?
- *    &lt;enableRM/&gt;?
  *    &lt;policy key="string"/&gt;?
  *    &lt;policy key="string" type=(in | out)/&gt;?
  *       // optional service parameters
@@ -365,11 +364,6 @@ public class ProxyServiceFactory {
         if (elem.getFirstChildWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableAddressing")) != null) {
             proxy.setWsAddrEnabled(true);
-        }
-
-        if (elem.getFirstChildWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableRM")) != null) {
-            proxy.setWsRMEnabled(true);
         }
 
         if (elem.getFirstChildWithName(

@@ -297,8 +297,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             for (Object o : localRegistry.values()) {
                 if (o instanceof SequenceMediator) {
                     SequenceMediator seq = (SequenceMediator) o;
-                    if(!seq.getName().startsWith("_Recipe_Sequence_")) {
-                    definedSequences.put(seq.getName(), seq);
+                    if(!seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY)) {
+                        definedSequences.put(seq.getName(), seq);
                     }
                 }
             }
@@ -1434,6 +1434,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @param se SynapseEnvironment specifying the env to be initialized
      */
     public synchronized void init(SynapseEnvironment se) {
+        SynapseConfiguration previouseConfiguration = SynapseConfigUtils.getLastRegisteredSynapseConfiguration();
+        SynapseConfigUtils.registerSynapseConfiguration(this);
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing the Synapse Configuration using the SynapseEnvironment");
@@ -1469,11 +1471,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			}
         }
 
+        if(previouseConfiguration != null) {
+            destroyExistingInbounds(previouseConfiguration);
+        }
 
 		for (InboundEndpoint endpoint : getInboundEndpoints()) {
 			try {
 				endpoint.init(se);
 			} catch (Exception e) {
+                inboundEndpointMap.remove(endpoint.getName());
 				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
 				          e.getMessage());
 			}
@@ -2097,7 +2103,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
     }
 
-
-
+    private  void destroyExistingInbounds(SynapseConfiguration synapseConfiguration){
+        Collection<InboundEndpoint> inboundEndpoints = synapseConfiguration.getInboundEndpoints();
+        for(InboundEndpoint inboundEndpoint : inboundEndpoints){
+            inboundEndpoint.destroy();
+        }
+    }
 
 }

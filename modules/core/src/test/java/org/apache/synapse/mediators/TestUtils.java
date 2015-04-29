@@ -52,6 +52,18 @@ public class TestUtils {
         return builder.build();
     }
 
+    public static MessageContext getTestContextJson(String bodyText, Map<String,Entry> props) throws Exception {
+        TestMessageContextBuilder builder = new TestMessageContextBuilder();
+        builder.setRequireAxis2MessageContext(true);
+        builder.setJsonBodyFromString(bodyText);
+        if (props != null) {
+            for (Map.Entry<String,Entry> mapEntry : props.entrySet()) {
+                builder.addEntry(mapEntry.getKey(), mapEntry.getValue());
+            }
+        }
+        return builder.build();
+    }
+
     public static Axis2MessageContext getAxis2MessageContext(String bodyText,
                                                              Map<String,Entry> props) throws Exception {
         TestMessageContextBuilder builder = new TestMessageContextBuilder();

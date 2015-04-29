@@ -216,7 +216,7 @@ public abstract class AbstractXarMojo extends AbstractMojo implements LogEnabled
         });
         filter.add(new TypeArtifactFilter("jar"));
         filter.add(buildSynapseRuntimeArtifactFilter());
-        for (Artifact artifact : filterArtifacts(project.getArtifacts(), filter)) {
+        for (Artifact artifact : filterArtifacts((Set<Artifact>)project.getArtifacts(), filter)) {
             String targetFileName = artifact.getArtifactId() + "-" + artifact.getVersion() + "." +
                     artifact.getArtifactHandler().getExtension();
             log.info("Adding " + targetFileName + " (scope " + artifact.getScope() + ")");
@@ -237,7 +237,7 @@ public abstract class AbstractXarMojo extends AbstractMojo implements LogEnabled
         
         log.debug("Initializing class scanner ...");
         ClassScanner scanner = new ClassScanner(buildOutputDirectory);
-        for (Artifact artifact : filterArtifacts(project.getArtifacts(),
+        for (Artifact artifact : filterArtifacts((Set<Artifact>)project.getArtifacts(),
                 new ScopeArtifactFilter(Artifact.SCOPE_COMPILE))) {
             scanner.addToClasspath(artifact.getFile());
         }

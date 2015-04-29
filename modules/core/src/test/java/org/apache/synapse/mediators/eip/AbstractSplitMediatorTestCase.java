@@ -47,4 +47,8 @@ public class AbstractSplitMediatorTestCase extends AbstractMediatorTestCase {
         helperMediator = null;
         testCtx = null;
     }
+
+    public void testBogus() {
+        //This is for avoiding junit.framework.AssertionFailedError: No tests found exception
+    }
 }

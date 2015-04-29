@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -58,8 +59,17 @@ public class ValueFactory {
             boolean hasEscape = isEscapedExpression(attributeValue);
             if (!hasEscape && isDynamicKey(attributeValue)) {
                 /** dynamic key */
-                SynapseXPath synXpath = createSynXpath(elem, attributeValue);
-                key = new Value(synXpath);
+
+                // Filter json-eval expressions
+                if (attributeValue.startsWith("{json-eval(")) {
+                    // Get the expression in-between "{}"
+                    attributeValue = attributeValue.substring(1, attributeValue.length() - 1);
+                    SynapseJsonPath synJsonPath = createSynJsonPath(attributeValue);
+                    key = new Value(synJsonPath);
+                } else {
+                    SynapseXPath synXpath = createSynXpath(elem, attributeValue);
+                    key = new Value(synXpath);
+                }
             } else if (hasEscape) {
                 /** escaped expr */
                 key = new Value(getEscapedExpression(attributeValue));
@@ -90,8 +100,17 @@ public class ValueFactory {
             boolean hasEscape = isEscapedExpression(textValue);
             if (!hasEscape && isDynamicKey(textValue)) {
                 /** dynamic key */
-                SynapseXPath synXpath = createSynXpath(elem, textValue);
-                key = new Value(synXpath);
+
+                // Filter json-eval expressions
+                if (textValue.startsWith("{json-eval(")) {
+                    // Get the JSON expression in-between "{}"
+                    textValue = textValue.substring(1, textValue.length() - 1);
+                    SynapseJsonPath synJsonPath = createSynJsonPath(textValue);
+                    key = new Value(synJsonPath);
+                } else {
+                    SynapseXPath synXpath = createSynXpath(elem, textValue);
+                    key = new Value(synXpath);
+                }
             } else if (hasEscape) {
                 /** escaped expr */
                 key = new Value(getEscapedExpression(textValue));
@@ -178,6 +197,27 @@ public class ValueFactory {
         }
 
         return synapseXPath;
+    }
+
+    /**
+     * Create synapse jsonpath expression
+     *
+     * @param key jsonpath expression eg: json-eval($.info)
+     * @return SynapseJsonPath
+     */
+    public SynapseJsonPath createSynJsonPath(String key) {
+        // Derive JsonPath Expression from key removing "json-eval(" & ")"
+        String jsonPathExpr = key.trim().substring(10, key.length() - 1);
+
+        SynapseJsonPath synapseJsonPath = null;
+
+        try {
+            synapseJsonPath = SynapseJsonPathFactory.getSynapseJsonPath(jsonPathExpr);
+        } catch (JaxenException e) {
+            handleException("Can not create SynapseJsonPath from given: " + key);
+        }
+
+        return synapseJsonPath;
     }
 
     /**
