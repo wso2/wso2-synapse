@@ -362,6 +362,8 @@ public class TargetRequest {
         }
 
         if (encoder.isCompleted()) {
+          conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
+          conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 

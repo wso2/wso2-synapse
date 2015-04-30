@@ -125,7 +125,31 @@ public class PassThroughConstants {
 	public static final String RES_HEADER_ARRIVAL_TIME = "RES_HEADER_ARRIVAL_TIME";
 	public static final String RES_DEPARTURE_TIME = "RES_DEPARTURE_TIME";
 
-	public static final String MESSAGE_OUTPUT_FORMAT = "MESSAGE_OUTPUT_FORMAT";
+    public static final String REQ_FROM_CLIENT_READ_START_TIME = "REQ_FROM_CLIENT_READ_START_TIME";
+    public static final String REQ_FROM_CLIENT_READ_END_TIME = "REQ_FROM_CLIENT_READ_END_TIME";
+
+    public static final String REQ_TO_BACKEND_WRITE_START_TIME = "REQ_TO_BACKEND_WRITE_START_TIME";
+    public static final String REQ_TO_BACKEND_WRITE_END_TIME = "REQ_TO_BACKEND_WRITE_END_TIME";
+
+    public static final String RES_FROM_BACKEND_READ_START_TIME = "RES_FROM_BACKEND_READ_START_TIME";
+    public static final String RES_FROM_BACKEND_READ_END_TIME = "RES_FROM_BACKEND_READ_END_TIME";
+
+    public static final String RES_TO_CLIENT_WRITE_START_TIME = "RES_TO_CLIENT_WRITE_START_TIME";
+    public static final String RES_TO_CLIENT_WRITE_END_TIME = "RES_TO_CLIENT_WRITE_END_TIME";
+
+    public static final String SERVER_WORKER_INIT_TIME = "SERVER_WORKER_INIT_TIME";
+    public static final String SERVER_WORKER_START_TIME = "SERVER_WORKER_START_TIME";
+
+    public static final String CLIENT_WORKER_INIT_TIME = "CLIENT_WORKER_INIT_TIME";
+    public static final String CLIENT_WORKER_START_TIME = "CLIENT_WORKER_START_TIME";
+
+    public static final String SYNAPSE_PASSTHROUGH_LATENCY_ADVANCE_VIEW = "synapse.passthrough.latency_view.enable_advanced_view";
+    public static final String SYNAPSE_PASSTHROUGH_S2SLATENCY_ADVANCE_VIEW = "synapse.passthrough.s2slatency_view.enable_advanced_view";
+    public static final String PASSTHROUGH_LATENCY_VIEW = "PassthroughLatencyView";
+    public static final String PASSTHROUGH_S2SLATENCY_VIEW = "PassthroughS2SLatencyView";
+    public static final String PASSTHOUGH_HTTP_SERVER_WORKER = "PassthroughHttpServerWorker";
+
+    public static final String MESSAGE_OUTPUT_FORMAT = "MESSAGE_OUTPUT_FORMAT";
 	
 	public static final String FORCE_SOAP_FAULT = "FORCE_SOAP_FAULT";
 	
