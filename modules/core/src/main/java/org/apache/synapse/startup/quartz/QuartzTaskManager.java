@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
@@ -455,6 +456,14 @@ public class QuartzTaskManager implements TaskManager {
     }
 
 	public void cleanupResources(String arg0) {
+	    
+    }
+
+	public void sendClusterMessage(Callable<Void> callable) {
+	    
+    }
+
+	public void sendClusterMessage(String name) {
 	    
     }
 }

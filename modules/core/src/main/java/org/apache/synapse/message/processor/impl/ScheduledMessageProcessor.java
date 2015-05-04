@@ -24,6 +24,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
@@ -226,14 +227,19 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 
 		finally {
-			if (getMessageConsumer() != null) {
-				boolean success = getMessageConsumer().cleanup();
+			if (getMessageConsumer() != null && messageConsumers.size() > 0) {
+				boolean success = getMessageConsumer().get(0).cleanup();
 				if (!success) {
 					logger.error("[" + getName() + "] Could not cleanup message consumer.");
 				}
 			} else {
 				logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
 			}
+			
+			/*
+			 * Cleaning up the resources in the cluster mode here.
+			 */
+			taskManager.sendClusterMessage(name);
 		}
 
 		if (logger.isDebugEnabled()) {
@@ -257,13 +263,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				 * This will close the connection with the JMS Provider/message
 				 * store.
 				 */ 
-				if (messageConsumer != null) {
-					messageConsumer.cleanup();
+				if (messageConsumers != null && messageConsumers.size() > 0) {
+					messageConsumers.get(0).cleanup();
 				}
 				/*
-				 * Cleaning up the resources here.
+				 * Cleaning up the resources in the cluster mode here.
 				 */
-				taskManager.cleanupResources(name);
+				taskManager.sendClusterMessage(name);
 			}
 			return true;
 		} else {
@@ -408,9 +414,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public void cleanupLocalResources() {
-	    if (messageConsumer != null) {
-	        messageConsumer.cleanup();
-        }
-	    
-    }
+		if (messageConsumers != null) {
+			for (MessageConsumer messageConsumer : messageConsumers) {
+				messageConsumer.cleanup();
+			}
+		}
+	}
 }

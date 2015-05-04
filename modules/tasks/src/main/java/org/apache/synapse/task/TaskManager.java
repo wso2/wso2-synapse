@@ -2,6 +2,7 @@ package org.apache.synapse.task;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 public interface TaskManager {
     /**
@@ -95,6 +96,7 @@ public interface TaskManager {
 	 */
 	boolean isTaskRunning(final String taskName);
 	
-	void cleanupResources(final String name);
-
+	void sendClusterMessage(Callable<Void> task);
+	
+	void sendClusterMessage(String name);
 }
