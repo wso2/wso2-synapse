@@ -20,12 +20,10 @@ package org.apache.synapse.task;
 /**
  * An Observer which is used to subscribe to the NTaskTaskManager
  * initialization completion event.
- *
  */
 public interface TaskManagerObserver {
 	/**
-	 * Notifies all the <code>Subscribers</code> when the
-	 * link NTaskTaskManager is
+	 * Notifies all the <code>Subscribers</code> when the NTaskTaskManager is
 	 * successfully initialized.
 	 */
 	void update();

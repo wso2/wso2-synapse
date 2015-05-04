@@ -102,8 +102,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/*
 	 * Number of retries before shutting-down the processor. -1 default value
-	 * indicates that
-	 * retry should happen forever
+	 * indicates that retry should happen forever
 	 */
 	private int maxDeliverAttempts = -1;
 	private int attemptCount = 0;
@@ -120,7 +119,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/*
 	 * Configuration to continue the message processor even without stopping
-	 * the message processor after maximum number of delivery
+	 * the message processor after maximum number of retry attempts.
 	 */
 	private boolean isMaxDeliveryAttemptDropEnabled = false;
 	

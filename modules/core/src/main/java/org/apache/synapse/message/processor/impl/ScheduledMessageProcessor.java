@@ -155,27 +155,27 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		super.setParameters(parameters);
 
 		if (parameters != null && !parameters.isEmpty()) {
-			Object o = parameters.get(MessageProcessorConstants.CRON_EXPRESSION);
-			if (o != null) {
-				cronExpression = o.toString();
+			Object param = parameters.get(MessageProcessorConstants.CRON_EXPRESSION);
+			if (param != null) {
+				cronExpression = param.toString();
 			}
-			o = parameters.get(MessageProcessorConstants.INTERVAL);
-			if (o != null) {
-				interval = Integer.parseInt(o.toString());
+			param = parameters.get(MessageProcessorConstants.INTERVAL);
+			if (param != null) {
+				interval = Integer.parseInt(param.toString());
 			}
-			o = parameters.get(MessageProcessorConstants.MEMBER_COUNT);
-			if (o != null) {
-				memberCount = Integer.parseInt(o.toString());
+			param = parameters.get(MessageProcessorConstants.MEMBER_COUNT);
+			if (param != null) {
+				memberCount = Integer.parseInt(param.toString());
 			}
-			o = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
-			if (o != null) {
-				setActivated(Boolean.valueOf(o.toString()));
+			param = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
+			if (param != null) {
+				setActivated(Boolean.valueOf(param.toString()));
 			}
-			o = parameters.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
-			if (o != null) {
+			param = parameters.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
+			if (param != null) {
 				// we take it out of param set and send it because we need split
 				// the array.
-				nonRetryStatusCodes = o.toString().split(",");
+				nonRetryStatusCodes = param.toString().split(",");
 			}
 		}
 	}
