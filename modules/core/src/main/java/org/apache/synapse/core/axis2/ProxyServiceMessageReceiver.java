@@ -52,6 +52,23 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
+        Object inboundServiceParam = proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
+        Object inboundMsgCtxParam =  mc.getProperty(SynapseConstants.IS_INBOUND);
+
+        //check whether the message is from Inbound EP and service parameter is set
+        if(((inboundMsgCtxParam == null || !(boolean)inboundMsgCtxParam)) &&
+                inboundServiceParam != null) {
+            /*
+            return because same proxy is exposed via InboundEP and service parameter is set to
+            disable normal http transport proxy
+            */
+            if (log.isDebugEnabled()) {
+                log.debug("Proxy Service " + name + " message discarded due to the proxy is assigned to " +
+                          "an InboundEP");
+            }
+            return;
+        }
+
         String remoteAddr = (String) mc.getProperty(
             org.apache.axis2.context.MessageContext.REMOTE_ADDR);
 
