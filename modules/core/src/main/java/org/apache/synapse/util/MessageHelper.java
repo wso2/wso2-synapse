@@ -446,7 +446,7 @@ public class MessageHelper {
      * @param oriRecord original statistic record
      * @return clone of Statistic Record
      */
-    private static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
+    public static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
 
         StatisticsRecord clonedRecord = new StatisticsRecord(oriRecord.getId(),
                                                              oriRecord.getClientIP(),
@@ -462,6 +462,7 @@ public class MessageHelper {
             clonedLog.setResponse(oriLog.isResponse());
             clonedLog.setFault(oriLog.isFault());
             clonedLog.setEndAnyLog(oriLog.isEndAnyLog());
+            clonedLog.setCollectedByRequestFlow(oriLog.isCollectedByRequestFlow());
             // Error Log
             ErrorLog oriErrorLog = oriLog.getErrorLog();
             if (oriErrorLog != null) {

@@ -28,7 +28,10 @@ import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.statistics.StatisticsLog;
+import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -204,6 +207,19 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         // clone the message context without cloning the SOAP envelope, for the mediation in iteration.
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false);
+        
+        
+		StatisticsRecord statRecord =
+		                              (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
+		if (statRecord != null) {
+			for (StatisticsLog statLog : statRecord.getAllStatisticsLogs()) {
+				/*
+				 * Marks that this statistics log is collected by the request
+				 * flow.
+				 */
+				statLog.setCollectedByRequestFlow(true);
+			}
+		}
 
         if (id != null) {
             // set the parent correlation details to the cloned MC -
