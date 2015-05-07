@@ -29,6 +29,7 @@ import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskBasedArtifactType;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
@@ -239,7 +240,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			/*
 			 * Cleaning up the resources in the cluster mode here.
 			 */
-			taskManager.sendClusterMessage(name);
+			taskManager.cleanupResources(name, TaskBasedArtifactType.MESSAGEPROCESSOR);
 		}
 
 		if (logger.isDebugEnabled()) {
@@ -269,7 +270,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				/*
 				 * Cleaning up the resources in the cluster mode here.
 				 */
-				taskManager.sendClusterMessage(name);
+				taskManager.cleanupResources(name, TaskBasedArtifactType.MESSAGEPROCESSOR);
 			}
 			return true;
 		} else {

@@ -96,7 +96,28 @@ public interface TaskManager {
 	 */
 	boolean isTaskRunning(final String taskName);
 	
+	/**
+	 * Sends a cluster message, with the given {@link Callable} task in this
+	 * cluster. The given {@link Callable} task is executed by all the nodes in
+	 * the cluster
+	 * 
+	 * @param task
+	 *            {@link Callable} task to be executed by members in the
+	 *            cluster.
+	 */
 	void sendClusterMessage(Callable<Void> task);
 	
-	void sendClusterMessage(String name);
+	
+	/**
+	 * This method can be used to cleanup the resources consumed by a synapse
+	 * artifact in a clustered setup. For an instance this can be used to
+	 * cleanup JMSConsumers used by a message processor, when it is deactivated.
+	 * Writing of resource cleanup logic is the responsibility of the caller
+	 * 
+	 * @param name
+	 *            artifact name.
+	 * @param taskArtifactType
+	 *            artifact type
+	 */
+	void cleanupResources(String name, TaskBasedArtifactType taskArtifactType);
 }

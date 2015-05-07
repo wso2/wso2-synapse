@@ -35,6 +35,7 @@ import org.apache.synapse.task.DefaultTaskJobDetailFactory;
 import org.apache.synapse.task.DefaultTaskTriggerFactory;
 import org.apache.synapse.task.SynapseTaskException;
 import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskBasedArtifactType;
 import org.apache.synapse.task.TaskConstants;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskJobDetailFactory;
@@ -459,11 +460,11 @@ public class QuartzTaskManager implements TaskManager {
 	    
     }
 
-	public void sendClusterMessage(Callable<Void> callable) {
+	public void sendClusterMessage(Callable<Void> task) {
 	    
     }
 
-	public void sendClusterMessage(String name) {
+	public void cleanupResources(String name, TaskBasedArtifactType taskArtifactType) {
 	    
     }
 }
