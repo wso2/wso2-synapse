@@ -118,10 +118,6 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
             return false;
         }
 
-		// if (messageConsumers != null) {
-		// messageConsumers.cleanup();
-		// }
-
         messageConsumers.add(consumer);
 
         return true;

@@ -456,10 +456,6 @@ public class QuartzTaskManager implements TaskManager {
 	    return false;
     }
 
-	public void cleanupResources(String arg0) {
-	    
-    }
-
 	public void sendClusterMessage(Callable<Void> task) {
 	    
     }
