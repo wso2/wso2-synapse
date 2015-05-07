@@ -329,6 +329,12 @@ public class SynapseXPath extends SynapsePath {
                     } else if (o instanceof OMAttribute) {
                         textValue.append(
                                 ((OMAttribute) o).getAttributeValue());
+                    } else if (o instanceof SynapseXPath) {
+                        textValue.append(
+                                ((SynapseXPath) o).stringValueOf(synCtx));
+                    } else if (o instanceof SynapseJsonPath) {
+                        textValue.append(
+                                ((SynapseJsonPath) o).stringValueOf(synCtx));
                     }
                 }
 
