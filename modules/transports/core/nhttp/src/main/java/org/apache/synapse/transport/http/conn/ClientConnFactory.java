@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.net.ssl.SSLContext;
 
+import org.apache.commons.httpclient.HttpHost;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.DefaultHttpResponseFactory;
@@ -94,19 +95,41 @@ public class ClientConnFactory {
     }
 
     public DefaultNHttpClientConnection createConnection(
-            final IOSession iosession, final HttpRoute route) {
+               final IOSession iosession, final HttpRoute route) {
         IOSession customSession;
         if (ssl != null && route.isSecure() && !route.isTunnelled()) {
             SSLContext customContext = getSSLContext(iosession);
             SSLIOSession ssliosession = new SSLIOSession(
-                iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
+                       iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
             iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
             customSession = ssliosession;
         } else {
+            if (route != null && route.isTunnelled()) {
+                org.apache.http.HttpHost httpHost = route.getTargetHost();
+                String beAddress = null;
+                String proxyAdd = null;
+                if (httpHost != null) {
+                    String hostname = httpHost.getHostName();
+                    int port = httpHost.getPort();
+                    beAddress = hostname + ":" + port;
+                }
+
+                org.apache.http.HttpHost proxyHost = route.getProxyHost();
+                if (proxyHost != null) {
+                    String proxyHostName = proxyHost.getHostName();
+                    int proxyPort = proxyHost.getPort();
+                    proxyAdd = proxyHostName + ":" + proxyPort;
+                }
+
+                if (sslByHostMap != null &&  sslByHostMap.containsKey(beAddress)) {
+                    SSLContext beCtx = sslByHostMap.get(beAddress);
+                    sslByHostMap.put(proxyAdd, beCtx);
+                }
+            }
             customSession = iosession;
         }
         DefaultNHttpClientConnection conn = LoggingUtils.createClientConnection(
-                customSession, responseFactory, allocator, params);
+                   customSession, responseFactory, allocator, params);
         int timeout = HttpConnectionParams.getSoTimeout(params);
         conn.setSocketTimeout(timeout);
         return conn;
