@@ -47,7 +47,7 @@ public class XQueryMediatorSerializationTest extends AbstractTestCase {
                           "<variable name=\"b1\" value=\"23\" type=\"BYTE\" />" +
                           "<variable name=\"b1\" value=\"synapse\" type=\"STRING\" />" +
                           "<variable name=\"b1\" key=\"xmlkey\" type=\"DOCUMENT\" />" +
-                          "<variable name=\"b1\" key=\"xmlkey\" type=\"DOCUMENT_ELEMENT\" />" +
+                          /*"<variable name=\"b1\" key=\"xmlkey\" type=\"DOCUMENT_ELEMENT\" />" +*/
                           "<variable name=\"b1\" key=\"xmlkey\" type=\"ELEMENT\" />" +
                           "</xquery>";
         assertTrue(serialization(inputXml, factory, serializer));
