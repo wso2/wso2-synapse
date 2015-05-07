@@ -50,9 +50,17 @@ public class MediatorLog implements SynapseLog {
     }
 
     public boolean isTraceOrDebugEnabled() {
-        return traceOn || defaultLog.isDebugEnabled();
+        return isTraceEnabled() || isDebugEnabled();
     }
 
+    public boolean isDebugEnabled() {
+        return defaultLog.isDebugEnabled();
+    }    
+
+    public boolean isTraceEnabled() {
+        return traceOn;
+    }    
+    
     /**
      * Log a message to the default log at level DEBUG and and to the trace log
      * at level INFO if trace is enabled for the mediator.
