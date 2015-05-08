@@ -22,6 +22,7 @@ package org.apache.synapse.startup.tasks;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.ValueFactory;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -32,30 +33,28 @@ import org.apache.synapse.task.Task;
 
 import java.util.Iterator;
 
-public class RecipeMessageExecutor implements Task, ManagedLifecycle {
+public class TemplateMessageExecutor implements Task, ManagedLifecycle {
 
-    private static final String RECIPE_SEQUENCE = "_Recipe_Sequence";
     private SynapseEnvironment synapseEnvironment;
     private SequenceMediator seqMed;
-    private String recipeKey;
-    private OMElement recipeParams;
+    private String templateKey;
+    private OMElement templateParams;
     private InvokeMediator invoker;
 
     public void init(SynapseEnvironment se) {
         //Initialize the template and populate the parameters
         synapseEnvironment = se;
         invoker = new InvokeMediator();
-        invoker.setTargetTemplate(recipeKey);
-        buildParameters(recipeParams);
-        if (se.getSynapseConfiguration().getSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode()) == null) {
-            seqMed = new SequenceMediator();
-            seqMed.setName(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
-            seqMed.addChild(invoker);
-            se.getSynapseConfiguration().addSequence(seqMed.getName(), seqMed);
-        } else {
-            seqMed = (SequenceMediator) se.getSynapseConfiguration().getSequence(RECIPE_SEQUENCE + "_" + recipeKey.hashCode());
+        invoker.setTargetTemplate(templateKey);
+        buildParameters(templateParams);
+        // Remove if there's a sequence already exists
+        if (se.getSynapseConfiguration().getSequence(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY + templateKey.hashCode()) != null) {
+            se.getSynapseConfiguration().removeSequence(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY + templateKey.hashCode());
         }
-
+        seqMed = new SequenceMediator();
+        seqMed.setName(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY + templateKey.hashCode());
+        seqMed.addChild(invoker);
+        se.getSynapseConfiguration().addSequence(seqMed.getName(), seqMed);
     }
 
     public void destroy() {
@@ -69,21 +68,21 @@ public class RecipeMessageExecutor implements Task, ManagedLifecycle {
         synapseEnvironment.injectAsync(mc, seqMed);
     }
 
-    public String getRecipeKey() {
-        return recipeKey;
+    public String getTemplateKey() {
+        return templateKey;
     }
 
-    public void setRecipeKey(String recipeKey) {
-        this.recipeKey = recipeKey;
+    public void setTemplateKey(String templateKey) {
+        this.templateKey = templateKey;
     }
 
 
-    public OMElement getRecipeParams() {
-        return recipeParams;
+    public OMElement getTemplateParams() {
+        return templateParams;
     }
 
-    public void setRecipeParams(OMElement recipeParams) {
-        this.recipeParams = recipeParams;
+    public void setTemplateParams(OMElement templateParams) {
+        this.templateParams = templateParams;
     }
 
     private void buildParameters(OMElement elem) {

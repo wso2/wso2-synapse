@@ -40,6 +40,7 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -53,6 +54,7 @@ public class TestMessageContextBuilder {
     private final Map<String,Entry> entries = new HashMap<String,Entry>();
     private boolean requireAxis2MessageContext;
     private String contentString;
+    private String contentStringJson;
     private String contentFile;
     private boolean contentIsEnvelope;
     private boolean addTextAroundBody;
@@ -64,6 +66,12 @@ public class TestMessageContextBuilder {
 
     public TestMessageContextBuilder setBodyFromString(String string) {
         this.contentString = string;
+        contentIsEnvelope = false;
+        return this;
+    }
+
+    public TestMessageContextBuilder setJsonBodyFromString(String string) {
+        this.contentStringJson = string;
         contentIsEnvelope = false;
         return this;
     }
@@ -134,6 +142,12 @@ public class TestMessageContextBuilder {
             parser = StAXUtils.createXMLStreamReader(new StringReader(contentString));
         } else if (contentFile != null) {
             parser = StAXUtils.createXMLStreamReader(new FileInputStream(contentFile));
+        } else if (contentStringJson != null) {
+            //synCtx = new Axis2MessageContext(null, testConfig, synEnv);
+            SOAPEnvelope envelope = OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
+            synCtx.setEnvelope(envelope);
+            JsonUtil.newJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), contentStringJson, true, true);
+            return synCtx;
         }
         
         SOAPEnvelope envelope;

@@ -16,14 +16,9 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.HttpException;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.HttpVersion;
+import org.apache.http.*;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
@@ -37,11 +32,15 @@ import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.commons.jmx.ThreadingView;
+import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.jmx.LatencyCollector;
 import org.apache.synapse.transport.passthru.jmx.LatencyView;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
+import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -60,21 +59,28 @@ public class SourceHandler implements NHttpServerEventHandler {
     private LatencyView latencyView = null;
     
     private LatencyView s2sLatencyView = null;
+    private  ThreadingView threadingView;
 
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
         this.metrics = sourceConfiguration.getMetrics();
-        
-		try {
-		    Scheme scheme = sourceConfiguration.getScheme();
-			if (!scheme.isSSL()) {
-				this.latencyView = new LatencyView(scheme.isSSL());
-			} else {
-				this.s2sLatencyView = new LatencyView(scheme.isSSL());
-			}
-		} catch (AxisFault e) {
-			log.error(e.getMessage(), e);
-		}
+
+        String strNamePostfix = "";
+        if (sourceConfiguration.getInDescription() != null &&
+            sourceConfiguration.getInDescription().getName() != null) {
+            strNamePostfix = "-" + sourceConfiguration.getInDescription().getName();
+            Scheme scheme = sourceConfiguration.getScheme();
+            boolean enableAdvancedForLatencyView = sourceConfiguration.getBooleanValue(
+                    PassThroughConstants.SYNAPSE_PASSTHROUGH_LATENCY_ADVANCE_VIEW, false);
+            boolean enableAdvancedForS2SView = sourceConfiguration.getBooleanValue(
+                    PassThroughConstants.SYNAPSE_PASSTHROUGH_S2SLATENCY_ADVANCE_VIEW, false);
+            this.latencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_LATENCY_VIEW,
+                                               scheme.isSSL(), strNamePostfix, enableAdvancedForLatencyView);
+            this.s2sLatencyView = new LatencyView(PassThroughConstants.PASSTHROUGH_S2SLATENCY_VIEW, scheme.isSSL(),
+                                                  strNamePostfix, enableAdvancedForS2SView);
+            this.threadingView = new ThreadingView(PassThroughConstants.PASSTHOUGH_HTTP_SERVER_WORKER, true, 50);
+        }
+
     }
 
     public void connected(NHttpServerConnection conn) {
@@ -87,46 +93,24 @@ public class SourceHandler implements NHttpServerEventHandler {
 
     public void requestReceived(NHttpServerConnection conn) {
         try {
-        	
-        	HttpContext _context = conn.getContext();
-        	_context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
-        	 
-            if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
-                handleInvalidState(conn, "Request received");
+            HttpContext httpContext = conn.getContext();
+            httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+            httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
+
+            SourceRequest request = getSourceRequest(conn);
+            if (request == null) {
                 return;
             }
-            // we have received a message over this connection. So we must inform the pool
-            sourceConfiguration.getSourceConnections().useConnection(conn);
 
-            // at this point we have read the HTTP Headers
-            SourceContext.updateState(conn, ProtocolState.REQUEST_HEAD);
+            String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
 
-            SourceRequest request = new SourceRequest(
-                    sourceConfiguration, conn.getHttpRequest(), conn);
-
-            SourceContext.setRequest(conn, request);
-
-            request.start(conn);
-
-            metrics.incrementMessagesReceived();
-            
-            /******/
-            String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
-            OutputStream os = null;
-            if ("GET".equals(method) || "HEAD".equals(method)) {
-				HttpContext context = request.getConnection().getContext();
-				ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(8192,	new HeapByteBufferAllocator());
-				// ContentOutputBuffer outputBuffer
-				// = new SharedOutputBuffer(8192, conn, new
-				// HeapByteBufferAllocator());
-				context.setAttribute("synapse.response-source-buffer",outputBuffer);
-				os = new ContentOutputStream(outputBuffer);
-			} 
-
-            sourceConfiguration.getWorkerPool().execute(
-                    new ServerWorker(request, sourceConfiguration,os));
+            if (!request.isEntityEnclosing()) {
+                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME, System.currentTimeMillis());
+            }
+            OutputStream os = getOutputStream(method, request);
+            sourceConfiguration.getWorkerPool().execute(new ServerWorker(request, sourceConfiguration, os));
         } catch (HttpException e) {
-            log.error(e.getMessage(), e);
+            log.error("HttpException occurred when request is processing probably when creating SourceRequest", e);
 
             informReaderError(conn);
 
@@ -190,12 +174,30 @@ public class SourceHandler implements NHttpServerEventHandler {
             // because the duplex nature of http core we can reach hear without a actual response
             SourceResponse response = SourceContext.getResponse(conn);
             if (response != null) {
-                response.start(conn);
 
+                // Handle Http ETag
+                String ifNoneMatchHeader =
+                        SourceContext.getRequest(conn).getHeaders().get(HttpHeaders.IF_NONE_MATCH);
+                if (ifNoneMatchHeader != null) {
+                    String eTagHeader = response.getHeader(HttpHeaders.ETAG);
+                    if (eTagHeader != null) {
+                        for (String hashValue : ifNoneMatchHeader.split(",")) {
+                            if (hashValue.trim().equals(eTagHeader)) {
+                                response.setStatus(HttpStatus.SC_NOT_MODIFIED);
+                                break;
+                            }
+                        }
+                    }
+                }
+            
+                response.start(conn);
+                conn.getContext().setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_START_TIME,
+                        System.currentTimeMillis());
                 metrics.incrementMessagesSent();
                 if (!response.hasEntity()) {
                    // Update stats as outputReady will not be triggered for no entity responses
-                   updateStatistics(conn);
+                    HttpContext context = conn.getContext();
+                    updateLatencyView(context);
                 }
             }
         } catch (IOException e) {
@@ -235,7 +237,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                   if(outBuf instanceof SimpleOutputBuffer && !((SimpleOutputBuffer)outBuf).hasData()){
                 	  sourceConfiguration.getSourceConnections().releaseConnection(conn);
                   }
-                  
+                  endTransaction(conn);
             	return;
             }
             
@@ -247,6 +249,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                         "are happening for the same request");
 
                 handleInvalidState(conn, "Trying to write response body");
+                endTransaction(conn);
                 return;
             }
 
@@ -257,9 +260,13 @@ public class SourceHandler implements NHttpServerEventHandler {
             int bytesSent = response.write(conn, encoder);
             
 			if (encoder.isCompleted()) {
-                updateStatistics(conn);
+                HttpContext context = conn.getContext();
+                long departure = System.currentTimeMillis();
+                context.setAttribute(PassThroughConstants.RES_TO_CLIENT_WRITE_END_TIME,departure);
+                context.setAttribute(PassThroughConstants.RES_DEPARTURE_TIME,departure);
+                updateLatencyView(context);
 			}
-            
+			endTransaction(conn);
             metrics.incrementBytesSent(bytesSent);
         } catch (IOException e) {
             logIOException(conn, e);
@@ -268,34 +275,12 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             SourceContext.updateState(conn, ProtocolState.CLOSING);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
-        } 
-    }
-
-    private void updateStatistics(NHttpServerConnection conn) {
-        HttpContext context = conn.getContext();
-        if (context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME) != null &&
-            context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME) != null &&
-            context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME) != null) {
-
-            if (latencyView != null) {
-                latencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-                                        (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-                                        (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-                                        System.currentTimeMillis());
-            } else if (s2sLatencyView != null) {
-                s2sLatencyView.notifyTimes((Long) context.getAttribute(PassThroughConstants.REQ_ARRIVAL_TIME),
-                                           (Long) context.getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME),
-                                           (Long) context.getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME),
-                                           System.currentTimeMillis());
-            }
         }
-
-        context.removeAttribute(PassThroughConstants.REQ_ARRIVAL_TIME);
-        context.removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
-        context.removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
     }
 
-    private void logIOException(NHttpServerConnection conn, IOException e) {
+
+
+    public void logIOException(NHttpServerConnection conn, IOException e) {
         // this check feels like crazy! But weird things happened, when load testing.
         if (e == null) {
             return;
@@ -325,6 +310,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     public void timeout(NHttpServerConnection conn) {
+    	boolean isTimeoutOccurred = false;
         ProtocolState state = SourceContext.getState(conn);
 
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
@@ -337,18 +323,24 @@ public class SourceHandler implements NHttpServerEventHandler {
             metrics.incrementTimeoutsReceiving();
 
             informReaderError(conn);
+            isTimeoutOccurred = true;
             log.warn("Connection time out while reading the request: " + conn);
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
             informWriterError(conn);
+            isTimeoutOccurred = true;
             log.warn("Connection time out while writing the response: " + conn);
         } else if (state == ProtocolState.REQUEST_DONE){
+        	isTimeoutOccurred = true;
             log.warn("Connection time out after request is read: " + conn);
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
-       
+   
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+		if (isTimeoutOccurred) {
+			rollbackTransaction(conn);
+		}        
     }
 
     public void closed(NHttpServerConnection conn) {
@@ -377,6 +369,9 @@ public class SourceHandler implements NHttpServerEventHandler {
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, isFault);
+		if (isFault) {
+			rollbackTransaction(conn);
+		}        
     }
 
     public void endOfInput(NHttpServerConnection conn) throws IOException {
@@ -384,6 +379,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     }
 
     public void exception(NHttpServerConnection conn, Exception ex) {
+    	boolean isFault = false;
         if (ex instanceof IOException) {
             logIOException(conn, (IOException) ex);
 
@@ -401,7 +397,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             } else if (state == ProtocolState.RESPONSE_DONE) {
                 informWriterError(conn);
             }
-            
+            isFault = true;
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } else if (ex instanceof HttpException) {
@@ -433,12 +429,18 @@ public class SourceHandler implements NHttpServerEventHandler {
                 log.error(ex.getMessage(), ex);
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
                 sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+                isFault = true;
             }
         } else {
             log.error("Unexpected error: " + ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+            isFault = true;
         }
+        
+		if (isFault) {
+			rollbackTransaction(conn);
+		}     
     }
 
     private void handleInvalidState(NHttpServerConnection conn, String action) {
@@ -448,7 +450,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
     }
 
-    private void informReaderError(NHttpServerConnection conn) {
+    public void informReaderError(NHttpServerConnection conn) {
         Pipe reader = SourceContext.get(conn).getReader();
 
         metrics.incrementFaultsReceiving();
@@ -458,7 +460,7 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
-    private void informWriterError(NHttpServerConnection conn) {
+    public void informWriterError(NHttpServerConnection conn) {
         Pipe writer = SourceContext.get(conn).getWriter();
 
         metrics.incrementFaultsSending();
@@ -497,7 +499,89 @@ public class SourceHandler implements NHttpServerEventHandler {
             //shutdownConnection(conn);
         }
     }
+
+
+    private void updateLatencyView(HttpContext context) {
+        if (context == null) {
+            return;
+        }
+        latencyView.notifyTimes(new LatencyCollector(context, false));
+        s2sLatencyView.notifyTimes(new LatencyCollector(context, true));
+        LatencyCollector.clearTimestamps(context);
+    }
     
+
+    /**
+     * Create synapse.response-source-buffer for GET and HEAD Http methods
+     * @param method  Http Method
+     * @param request Source Request
+     * @return OutputStream
+     */
+    public OutputStream getOutputStream(String method,SourceRequest request){
+        OutputStream os=null;
+        if (HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)) {
+            HttpContext context = request.getConnection().getContext();
+            ContentOutputBuffer outputBuffer = new SimpleOutputBuffer(
+                    sourceConfiguration.getIOBufferSize(), new HeapByteBufferAllocator());
+            context.setAttribute("synapse.response-source-buffer",outputBuffer);
+            os = new ContentOutputStream(outputBuffer);
+        }
+        return os;
+    }
+
+    /**
+     * Create SourceRequest from NHttpServerConnection conn
+     * @param conn the connection being processed
+     * @return SourceRequest
+     * @throws IOException
+     * @throws HttpException
+     */
+    public SourceRequest getSourceRequest(NHttpServerConnection conn) throws IOException, HttpException {
+        HttpContext context = conn.getContext();
+        context.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
+
+        if (!SourceContext.assertState(conn, ProtocolState.REQUEST_READY) && !SourceContext.assertState(conn, ProtocolState.WSDL_RESPONSE_DONE)) {
+            handleInvalidState(conn, "Request received");
+            return null;
+        }
+        // we have received a message over this connection. So we must inform the pool
+        sourceConfiguration.getSourceConnections().useConnection(conn);
+
+        // at this point we have read the HTTP Headers
+        SourceContext.updateState(conn, ProtocolState.REQUEST_HEAD);
+
+        SourceRequest request = new SourceRequest(
+                sourceConfiguration, conn.getHttpRequest(), conn);
+        SourceContext.setRequest(conn, request);
+        request.start(conn);
+        metrics.incrementMessagesReceived();
+        return request;
+    }
     
-    
+	private void rollbackTransaction(NHttpServerConnection conn) {
+		try {
+			Long serverWorkerThreadId = (Long) conn.getContext().getAttribute(
+					PassThroughConstants.SERVER_WORKER_THREAD_ID);
+			if (serverWorkerThreadId != null) {
+				TranscationManger.rollbackTransaction(false,
+						serverWorkerThreadId);
+			}
+		} catch (Exception ex) {
+			log.warn("Transaction rollback error after Connection closed "
+					+ ex.getMessage() + conn);
+		}
+	}
+
+	private void endTransaction(NHttpServerConnection conn) {
+		try {
+			Long serverWorkerThreadId = (Long) conn.getContext().getAttribute(
+					PassThroughConstants.SERVER_WORKER_THREAD_ID);
+			if (serverWorkerThreadId != null) {
+				TranscationManger.endTransaction(false, serverWorkerThreadId);
+			}
+		} catch (Exception ex) {
+			log.warn("Transaction rollback error after Connection closed "
+					+ ex.getMessage() + conn);
+		}
+	}
 }

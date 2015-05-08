@@ -20,12 +20,10 @@ package org.apache.synapse.transport.certificatevalidation.crl;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.apache.synapse.transport.certificatevalidation.*;
+import org.bouncycastle.asn1.x509.Extension;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,7 +132,7 @@ public class CRLVerifier implements RevocationVerifier {
             throws CertificateVerificationException {
 
         //Gets the DER-encoded OCTET string for the extension value for CRLDistributionPoints
-        byte[] crlDPExtensionValue = cert.getExtensionValue(X509Extensions.CRLDistributionPoints.getId());
+        byte[] crlDPExtensionValue = cert.getExtensionValue(Extension.cRLDistributionPoints.getId());
         if (crlDPExtensionValue == null)
             throw new CertificateVerificationException("Certificate doesn't have CRL Distribution points");
         //crlDPExtensionValue is encoded in ASN.1 format.
@@ -146,7 +144,7 @@ public class CRLVerifier implements RevocationVerifier {
             DEROctetString crlDEROctetString = (DEROctetString) asn1In.readObject();
             //Get Input stream in octets
             ASN1InputStream asn1InOctets = new ASN1InputStream(crlDEROctetString.getOctets());
-            DERObject crlDERObject = asn1InOctets.readObject();
+            ASN1Primitive crlDERObject = asn1InOctets.readObject();
             distPoint = CRLDistPoint.getInstance(crlDERObject);
         } catch (IOException e) {
             throw new CertificateVerificationException("Cannot read certificate to get CRL urls", e);

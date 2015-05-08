@@ -1,12 +1,12 @@
 /**
- *  Copyright (c) 2005-2010, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
@@ -15,31 +15,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package org.apache.synapse.message.store.impl.jms;
+package org.apache.synapse.message.store.impl.jdbc.message;
 
 import org.apache.synapse.SynapseConstants;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * This class serves as a container for the Synapse Message Context parameters/properties
- * , and it will be saved as a JMS message in the JMS Store.
+ * , and it will be saved as a JDBC message in the JDBC Database.
  */
-public class SynapseMessage implements Serializable {
-    private ArrayList<String> localEntries = new ArrayList<String>();
-
+public class JDBCSynapseMessage implements Serializable {
     private HashMap<String, String> properties = new HashMap<String, String>();
-
     private HashMap<String, byte[]> propertyObjects = new HashMap<String, byte[]>();
-
     private boolean response = false;
-
     private boolean faultResponse = false;
-
     private int tracingState = SynapseConstants.TRACING_UNSET;
 
     public boolean isResponse() {
@@ -66,10 +57,6 @@ public class SynapseMessage implements Serializable {
         this.tracingState = tracingState;
     }
 
-    public List<String> getLocalEntries() {
-        return localEntries;
-    }
-
     public HashMap<String, String> getProperties() {
         return properties;
     }
@@ -78,15 +65,11 @@ public class SynapseMessage implements Serializable {
         return propertyObjects;
     }
 
-    public void addProperty(String key,String value) {
-        properties.put(key,value);
+    public void addProperty(String key, String value) {
+        properties.put(key, value);
     }
 
-    public void addPropertyObject(String key , byte[] value){
+    public void addPropertyObject(String key, byte[] value) {
         propertyObjects.put(key, value);
-    }
-
-    public void addLocalEntry(String key) {
-        localEntries.add(key);
     }
 }

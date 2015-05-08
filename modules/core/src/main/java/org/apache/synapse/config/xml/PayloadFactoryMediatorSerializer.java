@@ -43,6 +43,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
 
     private final String XML = "xml";
     private final String JSON = "json";
+    private final String TEXT = "text";
 
     private String getEvaluator(String pathType) {
         if(pathType == SynapsePath.JSON_PATH) {
@@ -75,7 +76,7 @@ public class PayloadFactoryMediatorSerializer extends AbstractMediatorSerializer
                 try {
                     OMElement formatElem = fac.createOMElement(FORMAT, synNS);
                 String type = mediator.getType();
-                if(type!=null && type.contains(JSON_TYPE)) {
+                if(type!=null && (type.contains(JSON_TYPE) || type.contains(TEXT))) {
                      formatElem.setText(mediator.getFormat());
                 } else{
                     formatElem.addChild(AXIOMUtil.stringToOM(mediator.getFormat()));

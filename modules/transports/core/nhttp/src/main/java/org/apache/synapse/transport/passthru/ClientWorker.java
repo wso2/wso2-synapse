@@ -33,6 +33,7 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
+import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
@@ -65,7 +66,8 @@ public class ClientWorker implements Runnable {
         Map excessHeaders = response.getExcessHeaders();
 
 		String oriURL = headers.get(PassThroughConstants.LOCATION);
-
+        ((NHttpServerConnection)outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_INIT_TIME,System.currentTimeMillis());
 		// Special casing 301, 302, 303 and 307 scenario in following section. Not sure whether it's the correct fix,
 		// but this fix makes it possible to do http --> https redirection.
         if (oriURL != null && ((response.getStatus() != HttpStatus.SC_MOVED_TEMPORARILY) &&
@@ -74,17 +76,22 @@ public class ClientWorker implements Runnable {
 		(response.getStatus() != HttpStatus.SC_SEE_OTHER) &&
 		(response.getStatus() != HttpStatus.SC_TEMPORARY_REDIRECT) )) {
             URL url;
+            String urlContext = null;
             try {
                 url = new URL(oriURL);
+                urlContext = url.getFile();
             } catch (MalformedURLException e) {
-                log.error("Invalid URL received", e);
-                return;
+                //Fix ESBJAVA-3461 - In the case when relative path is sent should be handled
+                if(log.isDebugEnabled()){
+                    log.debug("Relative URL received for Location : " + oriURL, e);
+                }
+                urlContext = oriURL;
             }
 
             headers.remove(PassThroughConstants.LOCATION);
             String prfix = (String) outMsgCtx.getProperty(PassThroughConstants.SERVICE_PREFIX);
             if (prfix != null) {
-                headers.put(PassThroughConstants.LOCATION, prfix + url.getFile());
+                headers.put(PassThroughConstants.LOCATION, prfix + urlContext);
             }
 
         }
@@ -163,10 +170,12 @@ public class ClientWorker implements Runnable {
     }
 
     public void run() {
+
         if (responseMsgCtx == null) {
             return;
         }
-
+        ((NHttpServerConnection)responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME,System.currentTimeMillis());
         try {
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);

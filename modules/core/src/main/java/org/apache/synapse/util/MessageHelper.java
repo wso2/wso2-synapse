@@ -132,7 +132,12 @@ public class MessageHelper {
                         log.debug("Deep clone for Statistic Record");
                     }
                     obj = getClonedStatisticRecord((StatisticsRecord) obj);
-                } else {
+                } else if (obj instanceof OMElement) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deep clone for OMElement");
+                    }
+                    obj = (OMElement) ((OMElement) obj).cloneOMElement();
+                } else{
                     /**
                      * Need to add conditions according to type if found in
                      * future
@@ -187,8 +192,113 @@ public class MessageHelper {
 
         return newCtx;
     }
-    
 
+    /**
+     * This method does exactly what {@link MessageHelper#cloneMessageContext(MessageContext)} does,
+     * other than cloning the SOAP envelop based on the {@code cloneSOAPEnvelope} argument.
+     *
+     * @param synCtx Synapse message context to be cloned.
+     * @param cloneSOAPEnvelope The flag to say whether to clone the SOAP envelope or not.
+     * @return The cloned Synapse Message Context.
+     * @throws AxisFault If something goes wrong with message cloning.
+     */
+    public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSOAPEnvelope) throws AxisFault {
+
+        MessageContext newMessageContext = null;
+
+        if(cloneSOAPEnvelope){
+            newMessageContext = cloneMessageContext(synCtx);
+        }else{
+            // creates the new MessageContext and clone the internal axis2 MessageContext
+            // inside the synapse message context and place that in the new one
+            newMessageContext = synCtx.getEnvironment().createMessageContext();
+            Axis2MessageContext axis2MC = (Axis2MessageContext) newMessageContext;
+
+            // Clone the Axis2 message without cloning the SOAP envelope,
+            // and set the cloned Axis2 message to the cloned Synapse context.
+            axis2MC.setAxis2MessageContext(
+                       cloneAxis2MessageContext(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false));
+
+            newMessageContext.setConfiguration(synCtx.getConfiguration());
+            newMessageContext.setEnvironment(synCtx.getEnvironment());
+            newMessageContext.setContextEntries(synCtx.getContextEntries());
+
+            // set the parent correlation details to the cloned MC -
+            //                              for the use of aggregation like tasks
+            newMessageContext.setProperty(EIPConstants.AGGREGATE_CORRELATION, synCtx.getMessageID());
+
+            // copying the core parameters of the synapse MC
+            newMessageContext.setTo(synCtx.getTo());
+            newMessageContext.setReplyTo(synCtx.getReplyTo());
+            newMessageContext.setSoapAction(synCtx.getSoapAction());
+            newMessageContext.setWSAAction(synCtx.getWSAAction());
+            newMessageContext.setResponse(synCtx.isResponse());
+
+            // copy all the synapse level properties to the newCtx
+            for (Object o : synCtx.getPropertyKeySet()) {
+                // If there are non String keyed properties neglect them rather than
+                // throw exception
+                if (o instanceof String) {
+                    if (synCtx.getProperty((String) o) != null &&
+                        synCtx.getProperty((String) o) instanceof StatisticsRecord) {
+                        StatisticsRecord record = StatisticsRecordFactory.getStatisticsRecord(synCtx);
+                        newMessageContext.setProperty(SynapseConstants.STATISTICS_STACK, record);
+
+                    } else {
+                        /**
+                         * Clone the properties and add to new context
+                         * If not cloned can give errors in target configuration
+                         */
+                        String strkey = (String) o;
+                        Object obj = synCtx.getProperty(strkey);
+                        if (obj instanceof String) {
+                            // No need to do anything since Strings are immutable
+                        } else if (obj instanceof ArrayList) {
+                            if (log.isDebugEnabled()) {
+                                log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
+                            }
+                            // Call this method to deep clone ArrayList
+                            obj = cloneArrayList((ArrayList) obj);
+                            if (log.isDebugEnabled()) {
+                                log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
+                            }
+                        } else {
+                            /**
+                             * Need to add conditions according to type if found in
+                             * future
+                             */
+                            if (log.isDebugEnabled()) {
+                                log.warn("Deep clone not happened for property : " + strkey +
+                                         ". Class type : " + obj.getClass().getName());
+                            }
+                        }
+                        newMessageContext.setProperty(strkey, obj);
+                    }
+                }
+            }
+
+            // Make deep copy of fault stack so that parent will not be lost it's fault stack
+            Stack<FaultHandler> faultStack = synCtx.getFaultStack();
+            if (!faultStack.isEmpty()) {
+
+                List<FaultHandler> newFaultStack = new ArrayList<FaultHandler>();
+                newFaultStack.addAll(faultStack);
+
+                for (FaultHandler faultHandler : newFaultStack) {
+                    if (faultHandler != null) {
+                        newMessageContext.pushFaultHandler(faultHandler);
+                    }
+                }
+            }
+
+            if (log.isDebugEnabled()) {
+                log.info("Parent's Fault Stack : " + faultStack
+                         + " : Child's Fault Stack :" + newMessageContext.getFaultStack());
+            }
+        }
+
+        return newMessageContext;
+    }
 
     public static MessageContext cloneMessageContextForAggregateMediator(MessageContext synCtx) throws AxisFault {
     	
@@ -336,7 +446,7 @@ public class MessageHelper {
      * @param oriRecord original statistic record
      * @return clone of Statistic Record
      */
-    private static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
+    public static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
 
         StatisticsRecord clonedRecord = new StatisticsRecord(oriRecord.getId(),
                                                              oriRecord.getClientIP(),
@@ -352,6 +462,7 @@ public class MessageHelper {
             clonedLog.setResponse(oriLog.isResponse());
             clonedLog.setFault(oriLog.isFault());
             clonedLog.setEndAnyLog(oriLog.isEndAnyLog());
+            clonedLog.setCollectedByRequestFlow(oriLog.isCollectedByRequestFlow());
             // Error Log
             ErrorLog oriErrorLog = oriLog.getErrorLog();
             if (oriErrorLog != null) {
@@ -459,6 +570,56 @@ public class MessageHelper {
         return newMC;
     }
 
+    /**
+     * This method does exactly what {@link MessageHelper#cloneAxis2MessageContext(org.apache.axis2.context.MessageContext)} does,
+     * other than cloning the SOAP envelop based on the {@code cloneSOAPEnvelope} argument.
+     *
+     * @param mc Axis2 message context
+     * @param cloneSOAPEnvelope The flag to say whether to clone the SOAP envelope or not.
+     * @return The cloned Axis2 message context.
+     * @throws AxisFault If something goes wrong during cloning.
+     */
+    public static org.apache.axis2.context.MessageContext cloneAxis2MessageContext(
+               org.apache.axis2.context.MessageContext mc, boolean cloneSOAPEnvelope) throws AxisFault {
+
+        org.apache.axis2.context.MessageContext newMC = clonePartially(mc);
+
+        if(cloneSOAPEnvelope){
+            newMC.setEnvelope(cloneSOAPEnvelope(mc.getEnvelope()));
+        }
+
+        newMC.setOptions(cloneOptions(mc.getOptions()));
+        newMC.setServiceContext(mc.getServiceContext());
+        newMC.setOperationContext(mc.getOperationContext());
+        newMC.setAxisMessage(mc.getAxisMessage());
+        if (newMC.getAxisMessage() != null) {
+            newMC.getAxisMessage().setParent(mc.getAxisOperation());
+        }
+        newMC.setAxisService(mc.getAxisService());
+
+        // copying transport related parts from the original
+        newMC.setTransportIn(mc.getTransportIn());
+        newMC.setTransportOut(mc.getTransportOut());
+        newMC.setProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO,
+                          mc.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
+
+        newMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                          getClonedTransportHeaders(mc));
+
+        if(newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null){
+            //clone passthrough pipe here..writer...
+            //newMC.setProperty(PassThroughConstants.CLONE_PASS_THROUGH_PIPE_REQUEST,true);
+            NHttpServerConnection conn = (NHttpServerConnection) newMC.getProperty("pass-through.Source-Connection");
+            if(conn != null){
+                SourceConfiguration sourceConfiguration = (SourceConfiguration) newMC.getProperty(
+                           "PASS_THROUGH_SOURCE_CONFIGURATION");
+                Pipe pipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source", sourceConfiguration);
+                newMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE,pipe);
+            }
+        }
+
+        return newMC;
+    }
     
     private static org.apache.axis2.context.MessageContext cloneAxis2MessageContextForAggregate(
 			org.apache.axis2.context.MessageContext mc) throws AxisFault {

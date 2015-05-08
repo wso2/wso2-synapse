@@ -35,6 +35,7 @@ import org.apache.http.nio.reactor.SessionOutputBuffer;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
 import org.apache.synapse.transport.http.access.AccessHandler;
+import org.apache.synapse.transport.passthru.TargetHandler;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -55,6 +56,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
     private final String id;
 
     private IOSession original;
+    private boolean releaseConn = false;
 
     public LoggingNHttpClientConnection(
             final IOSession session,
@@ -104,6 +106,12 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             this.log.debug(this.id + ": Consume input");
         }
         super.consumeInput(handler);
+        if (isReleaseConn()) {
+            if (handler instanceof TargetHandler) {
+                ((TargetHandler) handler).getTargetConfiguration().getConnections().releaseConnection(this);
+                this.setReleaseConn(false);
+            }
+        }
     }
 
     @Override
@@ -231,6 +239,14 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             return message;
         }
 
+    }
+
+    public boolean isReleaseConn() {
+        return releaseConn;
+    }
+
+    public void setReleaseConn(boolean releaseConn) {
+        this.releaseConn = releaseConn;
     }
 
 }

@@ -86,8 +86,11 @@ public class TimeoutHandler extends TimerTask {
             alreadyExecuting = true;
             try {
                 processCallbacks();
-            } catch (Exception ignore) {
-            } finally {
+            } catch (Exception ex) {
+                log.warn("Exception occurred while processing callbacks", ex);
+            } catch (Error ex) {
+                log.warn("Error occurred while processing callbacks", ex);
+            }finally {
                 alreadyExecuting = false;
             }
         }
@@ -168,14 +171,22 @@ public class TimeoutHandler extends TimerTask {
                                  }
                                 try {
                                     msgContext.setEnvelope(soapEnvelope);
-                                } catch (Exception ex) {
-                                    log.error("Error resetting SOAP Envelope",ex);
+                                } catch (Throwable ex) {
+                                    log.error("Exception or Error occurred resetting SOAP Envelope",ex);
+                                    continue;
                                 }
  
                                 Stack<FaultHandler> faultStack = msgContext.getFaultStack();
-                                FaultHandler f = faultStack.pop();
-                                if(f != null){
-                                	f.handleFault(msgContext);
+                                if (!faultStack.isEmpty()) {
+                                    FaultHandler faultHandler = faultStack.pop();
+                                    if (faultHandler != null) {
+                                        try {
+                                            faultHandler.handleFault(msgContext);
+                                        } catch (Throwable ex) {
+                                            log.warn("Exception or Error occurred while executing the fault handler", ex);
+                                            continue;
+                                        }
+                                    }
                                 }
 
                             }
@@ -187,7 +198,14 @@ public class TimeoutHandler extends TimerTask {
                 }
 
                 for(Object key : toRemove) {
-                    if (!"true".equals(((AsyncCallback) callbackStore.get(key)).getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
+
+                    AsyncCallback callback = (AsyncCallback) callbackStore.get(key);
+                    if (callback == null) {
+                        // we will get here if we get a response from the Backend while clearing callbacks
+                        continue;
+                    }
+
+                    if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
                         log.warn("Expiring message ID : " + key + "; dropping message after " +
                                 "global timeout of : " + (globalTimeout / 1000) + " seconds");
                     }

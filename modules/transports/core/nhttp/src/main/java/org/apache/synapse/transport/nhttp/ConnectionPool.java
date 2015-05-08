@@ -19,11 +19,13 @@
 package org.apache.synapse.transport.nhttp;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,6 +37,9 @@ import org.apache.http.protocol.HttpContext;
 public class ConnectionPool {
 
     private static final Log log = LogFactory.getLog(ConnectionPool.class);
+
+    /** Schema name foe SSL connections */
+    private final String sslSchemaName = "https";
 
     /** A map of available connections for reuse. The key selects the host+port of the
      * connection and the value contains a List of available connections to destination
@@ -148,5 +153,42 @@ public class ConnectionPool {
                 }
             }
         }
+    }
+
+    /**
+     * Returns SSL Connections List for the given list host:port combinations
+     *
+     * @param hostList String List in Host:Port format
+     * @return List of NHttpClientConnection
+     */
+    public List<NHttpClientConnection> getSslConnectionsList(Set<String> hostList) {
+        List<NHttpClientConnection> selectedConnections = new ArrayList<NHttpClientConnection>();
+
+        for (String host : hostList) {
+            try {
+                String[] params = host.split(":");
+
+                for (HttpRoute httpRoute : connMap.keySet()) {
+                    if (params.length > 1 && params[0].equalsIgnoreCase(httpRoute.getTargetHost().getHostName())
+                        && (Integer.valueOf(params[1]) == (httpRoute.getTargetHost().getPort())) &&
+                        httpRoute.getTargetHost().getSchemeName().equalsIgnoreCase(sslSchemaName)) {
+
+                        List<NHttpClientConnection> clientConnections = connMap.get(httpRoute);
+
+                        if (clientConnections != null) {
+                            int count = 0;
+                            for (NHttpClientConnection nHttpClientConnection : clientConnections) {
+                                selectedConnections.add(clientConnections.get(count));
+                                count++;
+                            }
+                        }
+                    }
+                }
+            } catch (NumberFormatException e) {
+                log.debug("Error in port number in host:port - " + host + " discard connection loading ", e);
+            }
+        }
+
+        return selectedConnections;
     }
 }

@@ -62,8 +62,6 @@ import org.wso2.caching.RequestHash;
 import org.wso2.caching.ServiceName;
 import org.wso2.caching.digest.DigestGenerator;
 import org.wso2.caching.util.SOAPMessageHelper;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * CacheMediator will cache the response messages indexed using the hash value of the
@@ -91,9 +89,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
     private static final String CACHE_KEY_PREFIX = "synapse.cache_key_";
 
     private String cacheKey = "synapse.cache_key";
-
-    final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private boolean isResponseSOAP11 =false;
 
     public void init(SynapseEnvironment se) {
         if (onCacheHitSequence != null) {
@@ -227,10 +222,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
 
         org.apache.axis2.context.MessageContext msgCtx =
                 ((Axis2MessageContext)synCtx).getAxis2MessageContext();
-        // Setting the response Content-Type
-        synchronized (this) {
-            this.isResponseSOAP11 = msgCtx.isSOAP11();
-        }
         OperationContext operationContext = msgCtx.getOperationContext();
 
         CachableResponse response =
@@ -258,22 +249,7 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                     headerProperties.put(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headers);
                     headerProperties.put(Constants.Configuration.MESSAGE_TYPE, messageType);
                     response.setHeaderProperties(headerProperties);
-
-                    ServiceName service;
-                    if (id != null) {
-                        service = new ServiceName(id);
-                    } else {
-                        service = new ServiceName(cacheKey);
                     }
-                    RequestHash hash = new RequestHash(response.getRequestHash());
-
-                    try {
-                        cacheLock.writeLock().lock();
-                        cacheManager.cacheResponse(service, hash, response);
-                    }   finally {
-                        cacheLock.writeLock().unlock();
-                    }
-                }
             } catch (XMLStreamException e) {
                 handleException("Unable to set the response to the Cache", e, synCtx);
             }
@@ -352,20 +328,18 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
 
         RequestHash hash = new RequestHash(requestHash);
         CachableResponse cachedResponse =
-                getCachedResponse(cacheManager, service, hash);
+                cacheManager.getCachedResponse(service, hash);
 
         org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext)synCtx).getAxis2MessageContext();
         opCtx.setNonReplicableProperty(CachingConstants.REQUEST_HASH, requestHash);
         CacheReplicationCommand cacheReplicationCommand = new CacheReplicationCommand();
 
-        cacheLock.readLock().lock();
-
-        if (cachedResponse != null) {
+        byte[] responseEnvelop;
+        Map<String, Object> headerProperties;
+        if (cachedResponse != null && (responseEnvelop = cachedResponse.getResponseEnvelope()) != null) {
             // get the response from the cache and attach to the context and change the
             // direction of the message
             if (!cachedResponse.isExpired()) {
-
-                try {
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Cache-hit for message ID : " + synCtx.getMessageID());
                     }
@@ -378,18 +352,22 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
 
                     try {
                         if (msgCtx.isDoingREST()) {
-                            omSOAPEnv = SOAPMessageHelper.buildSOAPEnvelopeFromBytes(
-                                    cachedResponse.getResponseEnvelope(), cachedResponse.isSOAP11());
-                            msgCtx.removeProperty("NO_ENTITY_BODY");
-                            msgCtx.removeProperty(Constants.Configuration.CONTENT_TYPE);
-                            Map<String, Object> headerProperties = cachedResponse.getHeaderProperties();
-                            msgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                                    headerProperties.get(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
-                            msgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
-                                    headerProperties.get(Constants.Configuration.MESSAGE_TYPE));
+                            if ((headerProperties = cachedResponse.getHeaderProperties()) != null) {
+                                omSOAPEnv = SOAPMessageHelper.buildSOAPEnvelopeFromBytes(
+                                        responseEnvelop, cachedResponse.isSOAP11());
+                                msgCtx.removeProperty("NO_ENTITY_BODY");
+                                msgCtx.removeProperty(Constants.Configuration.CONTENT_TYPE);
+                                msgCtx.setProperty(
+                                        org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                                        headerProperties
+                                                .get(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                                msgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                                                   headerProperties
+                                                           .get(Constants.Configuration.MESSAGE_TYPE));
+                            }
                         } else {
                             omSOAPEnv = SOAPMessageHelper.buildSOAPEnvelopeFromBytes(
-                                    cachedResponse.getResponseEnvelope(),this.isResponseSOAP11);
+                                responseEnvelop, msgCtx.isSOAP11());
                         }
                         if (omSOAPEnv != null) {
                             synCtx.setEnvelope(omSOAPEnv);
@@ -435,34 +413,22 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                         synCtx.setTo(null);
                         Axis2Sender.sendBack(synCtx);
                     }
-                }  finally {
-                    cacheLock.readLock().unlock();
-                }
                 // stop any following mediators from executing
                 return false;
 
             } else {
-                cacheLock.readLock().unlock();
-                cacheLock.writeLock().lock();
-                try {
-                    // Recheck state because another thread might have
-                    // acquired write lock and changed state before we did.
-                    if(cachedResponse.isExpired()) {
+                cachedResponse.reincarnate(timeout);
                         if (synLog.isTraceOrDebugEnabled()) {
                             synLog.traceOrDebug("Existing cached response has expired. Resetting cache element");
                         }
-                        reincarnateResponse(cachedResponse,service,hash,cacheManager,opCtx,cacheReplicationCommand);
+                cacheManager.cacheResponse(service, hash, cachedResponse, cacheReplicationCommand);
+                opCtx.setNonReplicableProperty(CachingConstants.CACHED_OBJECT, cachedResponse);
+                opCtx.setNonReplicableProperty(CachingConstants.STATE_REPLICATION_OBJECT,
+                        cacheReplicationCommand);
+
+                Replicator.replicate(opCtx);
                     }
-                }  finally {
-                    cacheLock.writeLock().unlock();
-                }
-            }
         } else {
-            cacheLock.readLock().unlock();
-            cacheLock.writeLock().lock();
-            //check state again
-            if(cachedResponse == null) {
-                try {
                     // if not found in cache, check if we can cache this request
                     if (cacheManager.getCacheSize(service) >= inMemoryCacheSize) { // If cache is full
                         cacheManager.removeExpiredResponses(service, cacheReplicationCommand); // try to remove expired responses
@@ -478,11 +444,7 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                         cacheNewResponse(msgCtx, service, hash, cacheManager,
                                 cacheReplicationCommand);
                     }
-                }  finally {
-                    cacheLock.writeLock().unlock();
                 }
-            }
-        }
 
         return true;
     }
@@ -495,6 +457,7 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         CachableResponse response = new CachableResponse();
         response.setRequestHash(requestHash.getRequestHash());
         response.setTimeout(timeout);
+        cacheManager.cacheResponse(serviceName, requestHash, response, cacheReplicationCommand);
         opCtx.setNonReplicableProperty(CachingConstants.CACHED_OBJECT, response);
         opCtx.setNonReplicableProperty(CachingConstants.STATE_REPLICATION_OBJECT,
                 cacheReplicationCommand);
@@ -618,23 +581,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         } else {
             throw new AxisFault(Messages.getMessage("invalidSOAPversion"));
         }
-    }
-
-    private void reincarnateResponse(CachableResponse cachedResponse, ServiceName service, RequestHash hash,
-                                     CacheManager cacheManager, OperationContext opCtx,
-                                     CacheReplicationCommand cacheReplicationCommand) throws ClusteringFault {
-        cachedResponse.reincarnate(timeout);
-        cacheManager.removeExpiredResponse(service,hash);
-        opCtx.setNonReplicableProperty(CachingConstants.CACHED_OBJECT, cachedResponse);
-        opCtx.setNonReplicableProperty(CachingConstants.STATE_REPLICATION_OBJECT,
-                cacheReplicationCommand);
-
-        Replicator.replicate(opCtx);
-
-    }
-
-    private CachableResponse getCachedResponse(CacheManager cacheManager, ServiceName serviceName, RequestHash hash) {
-        return cacheManager.getCachedResponse(serviceName,hash);
     }
 
 }

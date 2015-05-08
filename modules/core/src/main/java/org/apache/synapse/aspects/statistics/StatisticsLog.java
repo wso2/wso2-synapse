@@ -38,6 +38,13 @@ public class StatisticsLog {
     private boolean isEndAnyLog = false;
 
     private ErrorLog errorLog;
+    /*
+	 * A flag which tells whether the statistics log is collected by the request
+	 * flow or not. This is important when we have clone/aggregate mediators.
+	 * This prevents the same statistic log being collected by both the request
+	 * and response flows.
+	 */
+	private boolean collectedByRequestFlow = false;
 
     public StatisticsLog(String id, ComponentType componentType) {
         this(id, System.currentTimeMillis(), componentType);
@@ -104,4 +111,27 @@ public class StatisticsLog {
                 ", componentType=" + componentType +
                 '}';
     }
+    
+	/**
+	 * Tells whether this statistic log is collected via the request flow or
+	 * not.
+	 * 
+	 * @return <code>true</code> if the statistics log is collected by the
+	 *         request flow, <code>false</code> otherwise
+	 */
+	public boolean isCollectedByRequestFlow() {
+		return collectedByRequestFlow;
+	}
+
+	/**
+	 * Flags whether this statistics log is collected by the request flow or
+	 * not.
+	 * 
+	 * @param collectedByProxy
+	 *            <code>true</code> if this statistic log is collected by the
+	 *            request flow, <code>false</code> otherwise
+	 */
+	public void setCollectedByRequestFlow(boolean collectedByRequestFlow) {
+		this.collectedByRequestFlow = collectedByRequestFlow;
+	}
 }

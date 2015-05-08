@@ -178,9 +178,7 @@ public class TargetRequest {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
 			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)
-						&& !trpContentType
-								.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA)) {
+				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
 
@@ -364,6 +362,8 @@ public class TargetRequest {
         }
 
         if (encoder.isCompleted()) {
+          conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
+          conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
             targetConfiguration.getMetrics().
                     notifySentMessageSize(conn.getMetrics().getSentBytesCount());
 
@@ -432,6 +432,9 @@ public class TargetRequest {
 	public HttpRequest getRequest() {
 		return request;
 	}
-    
+
+    public HttpRoute getRoute(){
+        return route;
+    }
     
 }

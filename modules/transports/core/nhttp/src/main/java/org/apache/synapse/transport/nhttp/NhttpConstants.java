@@ -142,6 +142,9 @@ public class NhttpConstants {
     public static final String CLIENT_WORKER_INIT_TIME = "CLIENT_WORKER_INIT_TIME";
     public static final String CLIENT_WORKER_START_TIME = "CLIENT_WORKER_START_TIME";
 
+    public static final String CLIENT_REMOTE_ADDR = "CLIENT_REMOTE_ADDR";
+    public static final String CLIENT_REMOTE_PORT = "CLIENT_REMOTE_PORT";
+
     /**
      * This is a name of a parameter in transportReceiver. If set it will disable service
      * dispatching inside the transport for rest messages
@@ -190,4 +193,11 @@ public class NhttpConstants {
      */
     public static final String SO_TIMEOUT_RECEIVER = "http.socket.timeout.receiver";
     public static final String SO_TIMEOUT_SENDER = "http.socket.timeout.sender";
+    public static final String SERVER_WORKER_THREAD_ID = "SERVER_WORKER_THREAD_ID";
+
+    /**
+     * Default interval which checks any configuration file updates for Dynamic SSL Profiles
+     * Default value is one hour in milliseconds.
+     */
+    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 3600000;
 }
