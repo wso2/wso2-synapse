@@ -224,7 +224,7 @@ public class LogMediator extends AbstractMediator {
     }
 
     public void setSeparator(String separator) {
-        if (separator.contains("\\n")) {
+        if (separator.equals("\\n")) {
             this.separator = "\n";
         } else {
             this.separator = separator;
