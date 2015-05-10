@@ -70,7 +70,7 @@ public class MessageBuilderTest extends TestCase {
             MessageContext msgCtx = TestUtils.getAxis2MessageContext(message, null).
                     getAxis2MessageContext();
             msgCtx.setTo(new EndpointReference(subManUrl));
-
+             SubscriptionMessageBuilder.resetErrorInfo();
             SynapseSubscription sub = SubscriptionMessageBuilder.createSubscription(msgCtx);
             assertEquals(subManUrl, sub.getSubManUrl());
             assertEquals(addressUrl, sub.getAddressUrl());
@@ -95,7 +95,7 @@ public class MessageBuilderTest extends TestCase {
                         getAxis2MessageContext();
             msgCtx.setTo(new EndpointReference(addressUrl));
             String id = addIdentifierHeader(msgCtx);
-
+            SubscriptionMessageBuilder.resetErrorInfo();
             SynapseSubscription sub = SubscriptionMessageBuilder.createUnSubscribeMessage(msgCtx);
             assertEquals(id, sub.getId());
             assertEquals(addressUrl, sub.getAddressUrl());
@@ -124,7 +124,7 @@ public class MessageBuilderTest extends TestCase {
                         getAxis2MessageContext();
             msgCtx.setTo(new EndpointReference(addressUrl));
             String id = addIdentifierHeader(msgCtx);
-
+            SubscriptionMessageBuilder.resetErrorInfo();
             SynapseSubscription sub = SubscriptionMessageBuilder.
                     createRenewSubscribeMessage(msgCtx);
             assertEquals(id, sub.getId());
@@ -150,7 +150,7 @@ public class MessageBuilderTest extends TestCase {
                         getAxis2MessageContext();
             msgCtx.setTo(new EndpointReference(addressUrl));
             String id = addIdentifierHeader(msgCtx);
-
+            SubscriptionMessageBuilder.resetErrorInfo();
             SynapseSubscription sub = SubscriptionMessageBuilder.createGetStatusMessage(msgCtx);
             assertEquals(id, sub.getId());
             assertEquals(addressUrl, sub.getAddressUrl());
@@ -176,7 +176,7 @@ public class MessageBuilderTest extends TestCase {
                         getAxis2MessageContext();
             msgCtx.setTo(new EndpointReference(addressUrl));
             String id = addIdentifierHeader(msgCtx);
-
+             SubscriptionMessageBuilder.resetErrorInfo();
             SynapseSubscription sub = SubscriptionMessageBuilder.
                     createRenewSubscribeMessage(msgCtx);
             assertNull(id, sub.getId());

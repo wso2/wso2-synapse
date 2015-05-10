@@ -161,16 +161,22 @@ public final class JsonUtil {
             jsonStr = (String) o;
         }
         if (json != null) { // there is a JSON stream
-            if (element instanceof OMSourcedElementImpl) {
-                if (isAJsonPayloadElement(element)) {
-                    writeJsonStream(json, messageContext, out);
-                } else { // Ignore the JSON stream
+            try {
+                if (element instanceof OMSourcedElementImpl) {
+                    if (isAJsonPayloadElement(element)) {
+                        writeJsonStream(json, messageContext, out);
+                    } else { // Ignore the JSON stream
+                        writeAsJson(element, out);
+                    }
+                } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
                     writeAsJson(element, out);
+                } else { // element == null.
+                    writeJsonStream(json, messageContext, out);
                 }
-            } else if (element != null) { // element is not an OMSourcedElementImpl. But we ignore the JSON stream.
-                writeAsJson(element, out);
-            } else { // element == null.
-                writeJsonStream(json, messageContext, out);
+            } catch (Exception e) {
+                //Close the stream
+                IOUtils.closeQuietly(json);
+                throw new AxisFault("Could not write JSON stream.", e);
             }
         } else if (element != null) { // No JSON stream found. Convert the existing element to JSON.
             writeAsJson(element, out);
@@ -251,6 +257,8 @@ public final class JsonUtil {
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
+        XMLEventReader xmlEventReader = null;
+        XMLEventWriter jsonWriter = null;
         if (element == null) {
             logger.error("#writeAsJson. OMElement is null. Cannot convert to JSON.");
             throw new AxisFault("OMElement is null. Cannot convert to JSON.");
@@ -264,15 +272,13 @@ public final class JsonUtil {
                     new org.apache.commons.io.output.ByteArrayOutputStream();
             element.serialize(xmlStream);
             xmlStream.flush();
-            XMLEventReader xmlEventReader = xmlInputFactory.createXMLEventReader(
+            xmlEventReader = xmlInputFactory.createXMLEventReader(
                     new XmlReaderDelegate(xmlInputFactory.createXMLStreamReader(
                             new ByteArrayInputStream(xmlStream.toByteArray())
                     ), processNCNames)
             );
-            XMLEventWriter jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
+            jsonWriter = jsonOutputFactory.createXMLEventWriter(outputStream);
             jsonWriter.add(xmlEventReader);
-            xmlEventReader.close();
-            jsonWriter.close();
             outputStream.flush();
         } catch (XMLStreamException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Invalid XML payload. Error>>> " + e.getLocalizedMessage());
@@ -280,6 +286,21 @@ public final class JsonUtil {
         } catch (IOException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Error>>> " + e.getLocalizedMessage());
             throw new AxisFault("Could not convert OMElement to JSON.", e);
+        }finally {
+            if (xmlEventReader != null) {
+                try {
+                    xmlEventReader.close();
+                } catch (XMLStreamException ex) {
+                    //ignore
+                }
+            }
+            if (jsonWriter != null) {
+                try {
+                    jsonWriter.close();
+                } catch (XMLStreamException ex) {
+                    //ignore
+                }
+            }
         }
     }
 

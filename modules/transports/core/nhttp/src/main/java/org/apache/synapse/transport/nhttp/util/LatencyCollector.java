@@ -54,7 +54,7 @@ public class LatencyCollector {
         o1 = context.getAttribute(NhttpConstants.REQ_TO_BACKEND_WRITE_START_TIME);
         o2 = context.getAttribute(NhttpConstants.REQ_TO_BACKEND_WRITE_END_TIME);
         if (o1 != null && o2 != null) {
-           clientEncodeLatency = (Long) o2 - (Long) o1;
+            clientEncodeLatency = (Long) o2 - (Long) o1;
         }
         o1 = context.getAttribute(NhttpConstants.RES_FROM_BACKEND_READ_START_TIME);
         o2 = context.getAttribute(NhttpConstants.RES_FROM_BACKEND_READ_END_TIME);

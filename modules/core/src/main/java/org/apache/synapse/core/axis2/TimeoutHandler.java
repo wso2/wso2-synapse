@@ -82,13 +82,15 @@ public class TimeoutHandler extends TimerTask {
     public void run() {
         if (alreadyExecuting) return;
 
-        synchronized(lock) {
+        synchronized (lock) {
             alreadyExecuting = true;
             try {
                 processCallbacks();
             } catch (Exception ex) {
                 log.warn("Exception occurred while processing callbacks", ex);
-            } finally {
+            } catch (Error ex) {
+                log.warn("Error occurred while processing callbacks", ex);
+            }finally {
                 alreadyExecuting = false;
             }
         }
@@ -169,8 +171,8 @@ public class TimeoutHandler extends TimerTask {
                                  }
                                 try {
                                     msgContext.setEnvelope(soapEnvelope);
-                                } catch (Exception ex) {
-                                    log.error("Error resetting SOAP Envelope",ex);
+                                } catch (Throwable ex) {
+                                    log.error("Exception or Error occurred resetting SOAP Envelope",ex);
                                     continue;
                                 }
  
@@ -180,8 +182,8 @@ public class TimeoutHandler extends TimerTask {
                                     if (faultHandler != null) {
                                         try {
                                             faultHandler.handleFault(msgContext);
-                                        } catch (Exception ex) {
-                                            log.warn("Exception occurred while executing the fault handler", ex);
+                                        } catch (Throwable ex) {
+                                            log.warn("Exception or Error occurred while executing the fault handler", ex);
                                             continue;
                                         }
                                     }

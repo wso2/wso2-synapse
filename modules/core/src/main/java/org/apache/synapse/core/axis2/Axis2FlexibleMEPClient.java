@@ -50,10 +50,12 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This is a simple client that handles both in only and in out
@@ -187,11 +189,19 @@ public class Axis2FlexibleMEPClient {
                     SOAPUtils.convertSOAP12toSOAP11(axisOutMsgCtx);
                 }
                 Object o = axisOutMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-    			Map _headers = (Map) o;
-    			if (_headers != null) {
-    				_headers.remove(HTTP.CONTENT_TYPE);
-    				_headers.put(HTTP.CONTENT_TYPE,  org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML + strCharSetEncoding);
-    			}
+                Map transportHeaders = (Map) o;
+                if (transportHeaders != null) {
+                    // Fix ESBJAVA-3645 Should not do this for multipart/related
+                    String trpContentType = (String) transportHeaders.get(HTTP.CONTENT_TYPE);
+                    if (trpContentType != null
+                            && !trpContentType
+                                    .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                        transportHeaders.remove(HTTP.CONTENT_TYPE);
+                        transportHeaders.put(HTTP.CONTENT_TYPE,
+                                org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML
+                                        + strCharSetEncoding);
+                    }
+                }
 
             } else if (SynapseConstants.FORMAT_SOAP12.equals(endpoint.getFormat())) {
                 axisOutMsgCtx.setDoingREST(false);
@@ -206,25 +216,35 @@ public class Axis2FlexibleMEPClient {
                     SOAPUtils.convertSOAP11toSOAP12(axisOutMsgCtx);
                 }
                 Object o = axisOutMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-                Map _headers = (Map) o;
-                if (_headers != null) {
-                    _headers.remove(HTTP.CONTENT_TYPE);
+                Map transportHeaders = (Map) o;
+                if (transportHeaders != null) {
+                    // Fix ESBJAVA-3645 Should not do this for multipart/related
+                    String trpContentType = (String) transportHeaders.get(HTTP.CONTENT_TYPE);
+                    if (trpContentType != null
+                            && !trpContentType
+                                    .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                        transportHeaders.remove(HTTP.CONTENT_TYPE);
 
-                if ( axisOutMsgCtx.getSoapAction() != null){
-                         String actionHeaderPrefix = ";action=\"";
-                         String contentTypeWithAction =
-                                            new StringBuilder(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML.length()
-                                            + axisOutMsgCtx.getSoapAction().length() + actionHeaderPrefix.length() + 1)
-                                              .append(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML)
-                                              .append(actionHeaderPrefix)
-                                              .append(axisOutMsgCtx.getSoapAction())
-                                              .append('\"')
-                                              .toString();
-                         _headers.put(HTTP.CONTENT_TYPE, contentTypeWithAction + strCharSetEncoding);
-                     }else{
-                         _headers.put(HTTP.CONTENT_TYPE, org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML + strCharSetEncoding);
-                     }
-               }
+                        if (axisOutMsgCtx.getSoapAction() != null) {
+                            String actionHeaderPrefix = ";action=\"";
+                            String contentTypeWithAction = new StringBuilder(
+                                    org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML
+                                            .length()
+                                            + axisOutMsgCtx.getSoapAction().length()
+                                            + actionHeaderPrefix.length() + 1)
+                                    .append(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML)
+                                    .append(actionHeaderPrefix)
+                                    .append(axisOutMsgCtx.getSoapAction()).append('\"').toString();
+                            transportHeaders.put(HTTP.CONTENT_TYPE, contentTypeWithAction
+                                    + strCharSetEncoding);
+                        } else {
+                            transportHeaders
+                                    .put(HTTP.CONTENT_TYPE,
+                                            org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML
+                                                    + strCharSetEncoding);
+                        }
+                    }
+                }
             } else if (SynapseConstants.FORMAT_REST.equals(endpoint.getFormat())) {
                 /*format=rest is kept only backword compatibility. We no longer needed that.*/
                 /* Remove Message Type  for GET and DELETE Request */
@@ -479,6 +499,12 @@ public class Axis2FlexibleMEPClient {
             axisOutMsgCtx.setTransportOut((TransportOutDescription) o);
             clientOptions.setTransportOut((TransportOutDescription) o);
             clientOptions.setProperty("TRANSPORT_OUT_DESCRIPTION", o);
+        }
+
+        // clear the message context properties related to endpoint in last service invocation
+        Set keySet = synapseOutMessageContext.getPropertyKeySet();
+        if (keySet != null) {
+            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
         }
 
         mepClient.execute(true);
