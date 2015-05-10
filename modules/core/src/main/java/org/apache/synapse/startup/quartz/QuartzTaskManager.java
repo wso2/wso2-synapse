@@ -441,7 +441,7 @@ public class QuartzTaskManager implements TaskManager {
     }
 
 	public void addObserver(TaskManagerObserver o) {
-	    
+
     }
 
 	public boolean isTaskDeactivated(String taskName) {
@@ -456,11 +456,11 @@ public class QuartzTaskManager implements TaskManager {
 	    return false;
     }
 
-	public void sendClusterMessage(Callable<Void> task) {
-	    
+    public void sendClusterMessage(Callable<Void> task) {
+
     }
 
-	public void cleanupResources(String name, TaskBasedArtifactType taskArtifactType) {
-	    
+    public void cleanupResources(String name, TaskBasedArtifactType taskArtifactType) {
+
     }
 }

@@ -22,6 +22,6 @@ package org.apache.synapse.task;
  * {@link Task}. For an example MessageProcessor, tasks etc.
  */
 public enum TaskBasedArtifactType {
-	MESSAGEPROCESSOR, TASK;
+    MESSAGEPROCESSOR, TASK;
 
 }

@@ -18,13 +18,13 @@
 
 package org.apache.synapse.message.processor;
 
+import java.util.List;
+import java.util.Map;
+
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Nameable;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.message.MessageConsumer;
-
-import java.util.List;
-import java.util.Map;
 
 public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArtifact {
     /**
@@ -145,10 +145,10 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * @return returns true on success.
      */
     boolean isPaused();
-    
-	/**
-	 * This method is used to cleanup local resources such as JMS connections
-	 * used by the message processor.
-	 */
-	void cleanupLocalResources();
+
+    /**
+     * This method is used to cleanup local resources such as JMS connections
+     * used by the message processor.
+     */
+    void cleanupLocalResources();
 }
