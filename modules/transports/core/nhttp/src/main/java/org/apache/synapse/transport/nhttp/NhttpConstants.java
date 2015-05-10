@@ -193,4 +193,11 @@ public class NhttpConstants {
      */
     public static final String SO_TIMEOUT_RECEIVER = "http.socket.timeout.receiver";
     public static final String SO_TIMEOUT_SENDER = "http.socket.timeout.sender";
+    public static final String SERVER_WORKER_THREAD_ID = "SERVER_WORKER_THREAD_ID";
+
+    /**
+     * Default interval which checks any configuration file updates for Dynamic SSL Profiles
+     * Default value is one hour in milliseconds.
+     */
+    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 3600000;
 }

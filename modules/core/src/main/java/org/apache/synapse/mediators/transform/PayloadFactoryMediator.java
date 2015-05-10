@@ -141,7 +141,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             try {
                 JsonUtil.removeJsonPayload(axis2MessageContext);
                 OMElement omXML = AXIOMUtil.stringToOM(out);
-                if (!checkAndReplaceEnvelop(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
+                if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
                     axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement());
                 }
             } catch (XMLStreamException e) {
@@ -284,7 +284,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
     }
 
-    private boolean checkAndReplaceEnvelop(OMElement resultElement, MessageContext synCtx) {
+    private boolean checkAndReplaceEnvelope(OMElement resultElement, MessageContext synCtx) {
         OMElement firstChild = resultElement.getFirstElement();
         QName resultQName = firstChild.getQName();
         if (resultQName.getLocalPart().equals("Envelope") && (
@@ -294,6 +294,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             SOAPEnvelope soapEnvelope = AXIOMUtils.getSOAPEnvFromOM(resultElement.getFirstElement());
             if (soapEnvelope != null) {
                 try {
+                    soapEnvelope.buildWithAttachments();
                     synCtx.setEnvelope(soapEnvelope);
                 } catch (AxisFault axisFault) {
                     handleException("Unable to attach SOAPEnvelope", axisFault, synCtx);

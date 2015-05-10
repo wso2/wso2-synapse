@@ -57,7 +57,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     private final DeliveryAgent deliveryAgent;
 
     /** Connection factory */
-    private final ClientConnFactory connFactory;
+    private ClientConnFactory connFactory;
     
     /** Configuration used by the sender */
     private final TargetConfiguration targetConfiguration;
@@ -141,6 +141,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                 request.start(conn);
                 targetConfiguration.getMetrics().incrementMessagesSent();
             }
+            context.setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME, System.currentTimeMillis());
             context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
         } catch (IOException e) {
             logIOException(conn, e);
@@ -290,6 +291,7 @@ public class TargetHandler implements NHttpClientEventHandler {
                     return;
                 }
             }
+            context.setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME,System.currentTimeMillis());
             TargetRequest targetRequest = TargetContext.getRequest(conn);
 
             if (targetRequest != null) {
@@ -322,18 +324,41 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 
-			if (sourceConn != null) {
-				sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
-				                                     conn.getContext()
-				                                         .getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME));
-				sourceConn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME,
-				                                     conn.getContext()
-				                                         .getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME));
+                sourceConn = (NHttpServerConnection) requestMsgContext.getProperty
+                           (PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+            if (sourceConn != null) {
+                sourceConn.getContext().setAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME,
+                        conn.getContext()
+                                .getAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME)
+                );
+                conn.getContext().removeAttribute(PassThroughConstants.RES_HEADER_ARRIVAL_TIME);
 
-			}
+                sourceConn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME,
+                        conn.getContext()
+                                .getAttribute(PassThroughConstants.REQ_DEPARTURE_TIME)
+                );
+                conn.getContext().removeAttribute(PassThroughConstants.REQ_DEPARTURE_TIME);
+                sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME,
+                        conn.getContext()
+                                .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME)
+                );
+
+                conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_START_TIME);
+                sourceConn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,
+                        conn.getContext()
+                                .getAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME)
+                );
+                conn.getContext().removeAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME);
+                sourceConn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME,
+                        conn.getContext()
+                                .getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME)
+                );
+                conn.getContext().removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_START_TIME);
+
+            }
 
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+            log.error("Exception occurred while processing response", ex);
 
             informReaderError(conn);
 
@@ -401,6 +426,24 @@ public class TargetHandler implements NHttpClientEventHandler {
                             conn.getMetrics().getReceivedBytesCount());
                     metrics.notifySentMessageSize(conn.getMetrics().getSentBytesCount());
                 }
+                MessageContext requestMsgContext = TargetContext.get(conn).getRequestMsgCtx();
+                NHttpServerConnection sourceConn =
+                        (NHttpServerConnection) requestMsgContext.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION);
+                if (sourceConn != null) {
+                    if (conn.getContext().getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME) != null) {
+                        sourceConn.getContext().setAttribute(
+                                PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,
+                                conn.getContext().getAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME)
+                        );
+                        conn.getContext().removeAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME);
+
+                    }
+                    sourceConn.getContext().setAttribute(
+                            PassThroughConstants.RES_ARRIVAL_TIME,
+                            conn.getContext().getAttribute(PassThroughConstants.RES_ARRIVAL_TIME)
+                    );
+                    conn.getContext().removeAttribute(PassThroughConstants.RES_ARRIVAL_TIME);
+                }
             }
         } catch (IOException e) {
             logIOException(conn, e);
@@ -409,7 +452,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetContext.updateState(conn, ProtocolState.CLOSED);
             targetConfiguration.getConnections().shutdownConnection(conn, true);
         } catch (Exception ex) {
-            log.error(ex.getMessage(), ex);
+            log.error("Exception occurred while reading request body", ex);
 
             informReaderError(conn);
 
@@ -643,4 +686,11 @@ public class TargetHandler implements NHttpClientEventHandler {
         targetConfiguration.getConnections().shutdownConnection(conn, true);
     }
 
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
+
+    public TargetConfiguration getTargetConfiguration() {
+        return targetConfiguration;
+    }
 }
