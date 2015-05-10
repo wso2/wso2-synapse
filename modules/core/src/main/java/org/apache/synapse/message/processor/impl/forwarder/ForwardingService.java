@@ -45,16 +45,12 @@ import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.UnableToInterruptJobException;
 
 /**
  * This task is responsible for forwarding a request to a given endpoint. This
  * is based on a blocking implementation and can send only one message at a
  * time. Also this supports Throttling and reliable messaging.
- * 
+ *
  */
 public class ForwardingService implements Task, ManagedLifecycle {
     private static final Log log = LogFactory.getLog(ForwardingService.class);
@@ -68,30 +64,30 @@ public class ForwardingService implements Task, ManagedLifecycle {
     // This is the client which sends messages to the end point
     private BlockingMsgSender sender;
 
-	/*
-	 * Interval between two retries to the client. This only come to affect only
-	 * if the client is un-reachable
-	 */
-	private int retryInterval = 1000;
+    /*
+     * Interval between two retries to the client. This only come to affect only
+     * if the client is un-reachable
+     */
+    private int retryInterval = 1000;
 
     // Sequence to invoke in a failure
     private String faultSeq = null;
 
-    // Sequence to reply on success 
+    // Sequence to reply on success
     private String replySeq = null;
 
     private String targetEndpoint = null;
-    
-	/*
-	 * The cron expression under which the message processor runs.
-	 */
-	private String cronExpression = null;
 
-	/*
-	 * This is specially used for REST scenarios where http status codes can
-	 * take semantics in a RESTful architecture.
-	 */
-	private String[] nonRetryStatusCodes = null;
+    /*
+     * The cron expression under which the message processor runs.
+     */
+    private String cronExpression = null;
+
+    /*
+     * This is specially used for REST scenarios where http status codes can
+     * take semantics in a RESTful architecture.
+     */
+    private String[] nonRetryStatusCodes = null;
 
 	/*
 	 * These two maintain the state of service. For each iteration these should
@@ -100,12 +96,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
     private boolean isSuccessful = false;
     private volatile boolean isTerminated = false;
 
-	/*
-	 * Number of retries before shutting-down the processor. -1 default value
-	 * indicates that retry should happen forever
-	 */
-	private int maxDeliverAttempts = -1;
-	private int attemptCount = 0;
+    /*
+     * Number of retries before shutting-down the processor. -1 default value
+     * indicates that retry should happen forever
+     */
+    private int maxDeliverAttempts = -1;
+    private int attemptCount = 0;
 
     private boolean isThrottling = true;
 
@@ -113,154 +109,154 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * Throttling-interval is the forwarding interval when cron scheduling is enabled.
      */
     private long throttlingInterval = -1;
-    
-	// Message Queue polling interval value.
-	private long interval;
 
-	/*
-	 * Configuration to continue the message processor even without stopping
-	 * the message processor after maximum number of retry attempts.
-	 */
-	private boolean isMaxDeliveryAttemptDropEnabled = false;
-	
-	private SynapseEnvironment synapseEnvironment;
+    // Message Queue polling interval value.
+    private long interval;
 
-	private boolean initialized = false;
-	
-	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
-	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
-		this.messageProcessor = messageProcessor;
-		this.sender = sender;
-		this.synapseEnvironment = synapseEnvironment;
-		// Initializes the interval to the Threshould interval value.
-		this.interval = threshouldInterval;
-	}
+    /*
+     * Configuration to continue the message processor even without stopping
+     * the message processor after maximum number of retry attempts.
+     */
+    private boolean isMaxDeliveryAttemptDropEnabled = false;
 
-	/**
-	 * Starts the execution of this task which grabs a message from the message
-	 * queue and dispatch it to a given endpoint.
-	 */
-	public void execute() {
-		final long startTime = new Date().getTime();
-		/*
-		 * Initialize only if it is NOT already done. This will make sure that
-		 * the initialization is done only once.
-		 */
-		if (!initialized) {
-			this.init(synapseEnvironment);
-		}
-		do {
-			resetService();
-			try {
-				if (!this.messageProcessor.isDeactivated()) {
-					MessageContext messageContext = fetch(messageConsumer);
-					if (messageContext != null) {
-						String serverName =
-						                    (String) messageContext.getProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-						if (serverName != null && messageContext instanceof Axis2MessageContext) {
-							AxisConfiguration configuration =
-							                                  ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-							                                                                        .getConfigurationContext()
-							                                                                        .getAxisConfiguration();
-							String myServerName =
-							                      getAxis2ParameterValue(configuration,
-							                                             SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-							if (!serverName.equals(myServerName)) {
-								return;
-							}
-						}
-						Set proSet = messageContext.getPropertyKeySet();
-						if (proSet != null) {
-							if (proSet.contains(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR)) {
-								proSet.remove(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR);
-							}
-						}
-						// Now it is NOT terminated anymore.
-						isTerminated = messageProcessor.isDeactivated();
-						dispatch(messageContext);
-					} else {
-						// either the connection is broken or there are no new
-						// massages.
-						if (log.isDebugEnabled()) {
-							log.debug("No messages were received for message processor [" +
-							          messageProcessor.getName() + "]");
-						}
+    private SynapseEnvironment synapseEnvironment;
 
-						// this means we have consumed all the messages
-						if (isRunningUnderCronExpression()) {
-							break;
-						}
-					}
-				} else {
-					/*
-					 * we need this because when start the server while the
-					 * processors in deactivated mode
-					 * the deactivation may not come in to play because the
-					 * service may not be running.
-					 */
-					isTerminated = true;
+    private boolean initialized = false;
 
-					if (log.isDebugEnabled()) {
-						log.debug("Exiting service since the message processor is deactivated");
-					}
-				}
-			} catch (Throwable e) {
-				/*
-				 * All the possible recoverable exceptions are handles case by
-				 * case and yet if it comes this
-				 * we have to shutdown the processor
-				 */
-				log.fatal("Deactivating the message processor [" + this.messageProcessor.getName() +
-				          "]", e);
-				this.messageProcessor.deactivate();
-			}
+    public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
+                             SynapseEnvironment synapseEnvironment, long threshouldInterval) {
+        this.messageProcessor = messageProcessor;
+        this.sender = sender;
+        this.synapseEnvironment = synapseEnvironment;
+        // Initializes the interval to the Threshould interval value.
+        this.interval = threshouldInterval;
+    }
 
-			if (log.isDebugEnabled()) {
-				log.debug("Exiting the iteration of message processor [" +
-				          this.messageProcessor.getName() + "]");
-			}
-			/*
-			 * This code wrote handle scenarios in which cron expressions are
-			 * used for scheduling task
-			 */
-			if (isRunningUnderCronExpression()) {
-				try {
-					Thread.sleep(throttlingInterval);
-				} catch (InterruptedException e) {
-					// no need to worry. it does have any serious consequences
-					log.debug("Current Thread was interrupted while it is sleeping.");
-				}
-			}
-			/*
-			 * If the interval is less than 1000 ms, then the scheduling is done
-			 * using the while loop since ntask rejects any intervals whose
-			 * value is less then 1000 ms.
-			 */
-			if (interval > 0 && interval < MessageProcessorConstants.THRESHOULD_INTERVAL) {
-				try {
-					Thread.sleep(interval);
-				} catch (InterruptedException e) {
-					log.debug("Current Thread was interrupted while it is sleeping.");
-				}
-			}
-			/*
-			 * Gives the control back to Quartz scheduler. This needs to be done
-			 * only if the interval value is less than the Threshould interval
-			 * value of 1000 ms, where the scheduling is done outside of Quartz
-			 * via the while loop. Otherwise the schedular will get blocked.
-			 * For cron expressions this scenario is already
-			 * handled above.
-			 */
-			if (isThrottling && new Date().getTime() - startTime > 1000) {
-				break;
-			}
-		} while ((isThrottling || isRunningUnderCronExpression()) && !isTerminated);
+    /**
+     * Starts the execution of this task which grabs a message from the message
+     * queue and dispatch it to a given endpoint.
+     */
+    public void execute() {
+        final long startTime = new Date().getTime();
+        /*
+         * Initialize only if it is NOT already done. This will make sure that
+         * the initialization is done only once.
+         */
+        if (!initialized) {
+            this.init(synapseEnvironment);
+        }
+        do {
+            resetService();
+            try {
+                if (!this.messageProcessor.isDeactivated()) {
+                    MessageContext messageContext = fetch(messageConsumer);
+                    if (messageContext != null) {
+                        String serverName =
+                                            (String) messageContext.getProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
+                        if (serverName != null && messageContext instanceof Axis2MessageContext) {
+                            AxisConfiguration configuration =
+                                                              ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                                                                                                    .getConfigurationContext()
+                                                                                                    .getAxisConfiguration();
+                            String myServerName =
+                                                  getAxis2ParameterValue(configuration,
+                                                                         SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
+                            if (!serverName.equals(myServerName)) {
+                                return;
+                            }
+                        }
+                        Set proSet = messageContext.getPropertyKeySet();
+                        if (proSet != null) {
+                            if (proSet.contains(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR)) {
+                                proSet.remove(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR);
+                            }
+                        }
+                        // Now it is NOT terminated anymore.
+                        isTerminated = messageProcessor.isDeactivated();
+                        dispatch(messageContext);
+                    } else {
+                        // either the connection is broken or there are no new
+                        // massages.
+                        if (log.isDebugEnabled()) {
+                            log.debug("No messages were received for message processor [" +
+                                      messageProcessor.getName() + "]");
+                        }
 
-		if (log.isDebugEnabled()) {
-			log.debug("Exiting service thread of message processor [" +
-			          this.messageProcessor.getName() + "]");
-		}
-	}
+                        // this means we have consumed all the messages
+                        if (isRunningUnderCronExpression()) {
+                            break;
+                        }
+                    }
+                } else {
+                    /*
+                     * we need this because when start the server while the
+                     * processors in deactivated mode
+                     * the deactivation may not come in to play because the
+                     * service may not be running.
+                     */
+                    isTerminated = true;
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Exiting service since the message processor is deactivated");
+                    }
+                }
+            } catch (Throwable e) {
+                /*
+                 * All the possible recoverable exceptions are handles case by
+                 * case and yet if it comes this
+                 * we have to shutdown the processor
+                 */
+                log.fatal("Deactivating the message processor [" + this.messageProcessor.getName() +
+                          "]", e);
+                this.messageProcessor.deactivate();
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Exiting the iteration of message processor [" +
+                          this.messageProcessor.getName() + "]");
+            }
+            /*
+             * This code wrote handle scenarios in which cron expressions are
+             * used for scheduling task
+             */
+            if (isRunningUnderCronExpression()) {
+                try {
+                    Thread.sleep(throttlingInterval);
+                } catch (InterruptedException e) {
+                    // no need to worry. it does have any serious consequences
+                    log.debug("Current Thread was interrupted while it is sleeping.");
+                }
+            }
+            /*
+             * If the interval is less than 1000 ms, then the scheduling is done
+             * using the while loop since ntask rejects any intervals whose
+             * value is less then 1000 ms.
+             */
+            if (interval > 0 && interval < MessageProcessorConstants.THRESHOULD_INTERVAL) {
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    log.debug("Current Thread was interrupted while it is sleeping.");
+                }
+            }
+            /*
+             * Gives the control back to Quartz scheduler. This needs to be done
+             * only if the interval value is less than the Threshould interval
+             * value of 1000 ms, where the scheduling is done outside of Quartz
+             * via the while loop. Otherwise the schedular will get blocked.
+             * For cron expressions this scenario is already
+             * handled above.
+             */
+            if (isThrottling && new Date().getTime() - startTime > 1000) {
+                break;
+            }
+        } while ((isThrottling || isRunningUnderCronExpression()) && !isTerminated);
+
+        if (log.isDebugEnabled()) {
+            log.debug("Exiting service thread of message processor [" +
+                      this.messageProcessor.getName() + "]");
+        }
+    }
 
     /**
      * Helper method to get a value of a parameters in the AxisConfiguration
@@ -284,66 +280,66 @@ public class ForwardingService implements Task, ManagedLifecycle {
         }
     }
 
-	public void init(SynapseEnvironment se) {
-		// Setting up the JMS consumer here.
-		setMessageConsumer();
+    public void init(SynapseEnvironment se) {
+        // Setting up the JMS consumer here.
+        setMessageConsumer();
 
-		// Defaults to -1.
-		Map<String, Object> parametersMap = messageProcessor.getParameters();
-		if (parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS) != null) {
-			maxDeliverAttempts =
-			                     Integer.parseInt((String) parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS));
-		}
+        // Defaults to -1.
+        Map<String, Object> parametersMap = messageProcessor.getParameters();
+        if (parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS) != null) {
+            maxDeliverAttempts =
+                                 Integer.parseInt((String) parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS));
+        }
 
-		if (parametersMap.get(MessageProcessorConstants.RETRY_INTERVAL) != null) {
-			retryInterval =
-			                Integer.parseInt((String) parametersMap.get(MessageProcessorConstants.RETRY_INTERVAL));
-		}
+        if (parametersMap.get(MessageProcessorConstants.RETRY_INTERVAL) != null) {
+            retryInterval =
+                            Integer.parseInt((String) parametersMap.get(MessageProcessorConstants.RETRY_INTERVAL));
+        }
 
-		replySeq = (String) parametersMap.get(ForwardingProcessorConstants.REPLY_SEQUENCE);
+        replySeq = (String) parametersMap.get(ForwardingProcessorConstants.REPLY_SEQUENCE);
 
-		faultSeq = (String) parametersMap.get(ForwardingProcessorConstants.FAULT_SEQUENCE);
+        faultSeq = (String) parametersMap.get(ForwardingProcessorConstants.FAULT_SEQUENCE);
 
-		targetEndpoint = (String) parametersMap.get(ForwardingProcessorConstants.TARGET_ENDPOINT);
+        targetEndpoint = (String) parametersMap.get(ForwardingProcessorConstants.TARGET_ENDPOINT);
 
-		// Default value should be true.
-		if (parametersMap.get(ForwardingProcessorConstants.THROTTLE) != null) {
-			isThrottling =
-			               Boolean.parseBoolean((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE));
-		}
+        // Default value should be true.
+        if (parametersMap.get(ForwardingProcessorConstants.THROTTLE) != null) {
+            isThrottling =
+                           Boolean.parseBoolean((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE));
+        }
 
-		if (parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION) != null) {
-			cronExpression =
-			                 String.valueOf(parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION));
-		}
+        if (parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION) != null) {
+            cronExpression =
+                             String.valueOf(parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION));
+        }
 
-		// Default Value should be -1.
-		if (cronExpression != null &&
-		    parametersMap.get(ForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
-			throttlingInterval =
-			                     Long.parseLong((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE_INTERVAL));
-		}
+        // Default Value should be -1.
+        if (cronExpression != null &&
+            parametersMap.get(ForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
+            throttlingInterval =
+                                 Long.parseLong((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE_INTERVAL));
+        }
 
-		nonRetryStatusCodes =
-		                      (String[]) parametersMap.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
+        nonRetryStatusCodes =
+                              (String[]) parametersMap.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
 
-		// Default to FALSE.
-		if (parametersMap.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP) != null &&
-		    parametersMap.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP).toString()
-		                 .equals("Enabled") && maxDeliverAttempts > 0) {
-			isMaxDeliveryAttemptDropEnabled = true;
-		}
+        // Default to FALSE.
+        if (parametersMap.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP) != null &&
+            parametersMap.get(ForwardingProcessorConstants.MAX_DELIVERY_DROP).toString()
+                         .equals("Enabled") && maxDeliverAttempts > 0) {
+            isMaxDeliveryAttemptDropEnabled = true;
+        }
 
-		// Setting the interval value.
-		interval = Long.parseLong((String) parametersMap.get(MessageProcessorConstants.INTERVAL));
+        // Setting the interval value.
+        interval = Long.parseLong((String) parametersMap.get(MessageProcessorConstants.INTERVAL));
 
-		/*
-		 * Make sure to set the isInitialized flag to TRUE in order to avoid
-		 * re-initialization.
-		 */
-		initialized = true;
-	}
-    
+        /*
+         * Make sure to set the isInitialized flag to TRUE in order to avoid
+         * re-initialization.
+         */
+        initialized = true;
+    }
+
     private Set<Integer> getNonRetryStatusCodes() {
         Set<Integer>nonRetryCodes = new HashSet<Integer>();
         if (nonRetryStatusCodes != null) {
@@ -357,25 +353,25 @@ public class ForwardingService implements Task, ManagedLifecycle {
         }
          return nonRetryCodes;
     }
-    
-	/**
-	 * Receives the next message from the message store.
-	 * 
-	 * @param msgConsumer
-	 *            message consumer
-	 * @return {@link MessageContext} of the last message received from the
-	 *         store.
-	 */
+
+    /**
+     * Receives the next message from the message store.
+     *
+     * @param msgConsumer
+     *            message consumer
+     * @return {@link MessageContext} of the last message received from the
+     *         store.
+     */
     public MessageContext fetch(MessageConsumer msgConsumer) {
         return messageConsumer.receive();
     }
 
-	/**
-	 * Sends the mesage to a given endpoint.
-	 * 
-	 * @param messageContext
-	 *            synapse {@link MessageContext} to be sent
-	 */
+    /**
+     * Sends the mesage to a given endpoint.
+     *
+     * @param messageContext
+     *            synapse {@link MessageContext} to be sent
+     */
     public boolean dispatch(MessageContext messageContext) {
 
         if (log.isDebugEnabled()) {
@@ -511,13 +507,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
         return true;
     }
 
-	/**
-	 * Sending the out message through the fault sequence.
-	 * 
-	 * @param msgCtx
-	 *            Synapse {@link MessageContext} to be sent through the fault
-	 *            sequence.
-	 */
+    /**
+     * Sending the out message through the fault sequence.
+     *
+     * @param msgCtx
+     *            Synapse {@link MessageContext} to be sent through the fault
+     *            sequence.
+     */
     public void sendThroughFaultSeq(MessageContext msgCtx) {
         if (faultSeq == null) {
             log.warn("Failed to send the message through the fault sequence. Sequence name does not Exist.");
@@ -533,13 +529,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
         mediator.mediate(msgCtx);
     }
 
-	/**
-	 * Sending the out message through the reply sequence.
-	 * 
-	 * @param outCtx
-	 *            Synapse out {@link MessageContext} to be sent through the
-	 *            reply sequence.
-	 */
+    /**
+     * Sending the out message through the reply sequence.
+     *
+     * @param outCtx
+     *            Synapse out {@link MessageContext} to be sent through the
+     *            reply sequence.
+     */
     public void sendThroughReplySeq(MessageContext outCtx) {
         if (replySeq == null) {
             this.messageProcessor.deactivate();
@@ -557,12 +553,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
         mediator.mediate(outCtx);
     }
 
-	/**
-	 * Terminates the job of the message processor.
-	 * 
-	 * @return <code>true</code> if the job is terminated successfully,
-	 *         <code>false</code> otherwise.
-	 */
+    /**
+     * Terminates the job of the message processor.
+     *
+     * @return <code>true</code> if the job is terminated successfully,
+     *         <code>false</code> otherwise.
+     */
     public boolean terminate() {
         try {
             isTerminated = true;
@@ -578,67 +574,67 @@ public class ForwardingService implements Task, ManagedLifecycle {
         }
     }
 
-	/*
-	 * If the max delivery attempt is reached, this will deactivate the message
-	 * processor. If the MaxDeliveryAttemptDrop is Enabled, then the message is
-	 * dropped and the message processor continues.
-	 */
-	private void checkAndDeactivateProcessor() {
-		if (maxDeliverAttempts > 0) {
-			this.attemptCount++;
-			if (attemptCount >= maxDeliverAttempts) {
+    /*
+     * If the max delivery attempt is reached, this will deactivate the message
+     * processor. If the MaxDeliveryAttemptDrop is Enabled, then the message is
+     * dropped and the message processor continues.
+     */
+    private void checkAndDeactivateProcessor() {
+        if (maxDeliverAttempts > 0) {
+            this.attemptCount++;
+            if (attemptCount >= maxDeliverAttempts) {
 
-				if (this.isMaxDeliveryAttemptDropEnabled) {
-					dropMessageAndContinueMessageProcessor();
-					if (log.isDebugEnabled()) {
-						log.debug("Message processor [" + messageProcessor.getName() +
-						          "] Dropped the failed message and continue due to reach of max attempts");
-					}
-				} else {
-					terminate();
-					this.messageProcessor.deactivate();
+                if (this.isMaxDeliveryAttemptDropEnabled) {
+                    dropMessageAndContinueMessageProcessor();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Message processor [" + messageProcessor.getName() +
+                                  "] Dropped the failed message and continue due to reach of max attempts");
+                    }
+                } else {
+                    terminate();
+                    this.messageProcessor.deactivate();
 
-					if (log.isDebugEnabled()) {
-						log.debug("Message processor [" + messageProcessor.getName() +
-						          "] stopped due to reach of max attempts");
-					}
-				}
-			}
-		}
-	}
+                    if (log.isDebugEnabled()) {
+                        log.debug("Message processor [" + messageProcessor.getName() +
+                                  "] stopped due to reach of max attempts");
+                    }
+                }
+            }
+        }
+    }
 
-	/*
-	 * Prepares the message processor for the next retry of delivery.
-	 */
-	private void prepareToRetry() {
-		if (!isTerminated) {
-			/*
-			 * First stop the processor since no point in re-triggering jobs if
-			 * the we can't send
-			 * it to the client
-			 */
-			if (!messageProcessor.isPaused()) {
-				this.messageProcessor.pauseService();
+    /*
+     * Prepares the message processor for the next retry of delivery.
+     */
+    private void prepareToRetry() {
+        if (!isTerminated) {
+            /*
+             * First stop the processor since no point in re-triggering jobs if
+             * the we can't send
+             * it to the client
+             */
+            if (!messageProcessor.isPaused()) {
+                this.messageProcessor.pauseService();
 
-				log.info("Pausing the service of message processor [" + messageProcessor.getName() +
-				         "]");
-			}
+                log.info("Pausing the service of message processor [" + messageProcessor.getName() +
+                         "]");
+            }
 
-			checkAndDeactivateProcessor();
+            checkAndDeactivateProcessor();
 
-			if (log.isDebugEnabled()) {
-				log.debug("Failed to send to client retrying after " + retryInterval +
-				          "s with attempt count - " + attemptCount);
-			}
+            if (log.isDebugEnabled()) {
+                log.debug("Failed to send to client retrying after " + retryInterval +
+                          "s with attempt count - " + attemptCount);
+            }
 
-			try {
-				// wait for some time before retrying
-				Thread.sleep(retryInterval);
-			} catch (InterruptedException ignore) {
-				// No harm even it gets interrupted. So nothing to handle.
-			}
-		}
-	}
+            try {
+                // wait for some time before retrying
+                Thread.sleep(retryInterval);
+            } catch (InterruptedException ignore) {
+                // No harm even it gets interrupted. So nothing to handle.
+            }
+        }
+    }
 
     private void resetService() {
         isSuccessful = false;
@@ -676,32 +672,32 @@ public class ForwardingService implements Task, ManagedLifecycle {
         log.info("Removed failed message and continue the message processor [" + this.messageProcessor.getName() + "]");
     }
 
-	private boolean setMessageConsumer() {
-		final String messageStore = messageProcessor.getMessageStoreName();
-		messageConsumer =
-		                  synapseEnvironment.getSynapseConfiguration()
-		                                    .getMessageStore(messageStore).getConsumer();
-		/*
-		 * Make sure to set the same message consumer in the message processor
-		 * since it is used by life-cycle management methods. Specially by the
-		 * deactivate method to cleanup the connection before the deactivation.
-		 */
-		return messageProcessor.setMessageConsumer(messageConsumer);
+    private boolean setMessageConsumer() {
+        final String messageStore = messageProcessor.getMessageStoreName();
+        messageConsumer =
+                          synapseEnvironment.getSynapseConfiguration()
+                                            .getMessageStore(messageStore).getConsumer();
+        /*
+         * Make sure to set the same message consumer in the message processor
+         * since it is used by life-cycle management methods. Specially by the
+         * deactivate method to cleanup the connection before the deactivation.
+         */
+        return messageProcessor.setMessageConsumer(messageConsumer);
 
-	}
+    }
 
-	/**
-	 * Checks whether this TaskService is properly initialized or not.
-	 * 
-	 * @return <code>true</code> if this TaskService is properly initialized.
-	 *         <code>false</code> otherwise.
-	 */
-	public boolean isInitialized() {
-		return initialized;
-	}
+    /**
+     * Checks whether this TaskService is properly initialized or not.
+     *
+     * @return <code>true</code> if this TaskService is properly initialized.
+     *         <code>false</code> otherwise.
+     */
+    public boolean isInitialized() {
+        return initialized;
+    }
 
-	public void destroy() {
-		terminate();
+    public void destroy() {
+        terminate();
 
-	}
+    }
 }

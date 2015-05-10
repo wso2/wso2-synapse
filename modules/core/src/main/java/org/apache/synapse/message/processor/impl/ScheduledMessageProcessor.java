@@ -43,10 +43,10 @@ import org.apache.synapse.task.TaskManagerObserver;
 public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor implements TaskManagerObserver {
     private static final Log logger = LogFactory.getLog(ScheduledMessageProcessor.class.getName());
 
-	/**
-	 * The interval at which this processor runs , default value is 1000ms
-	 */
-	protected long interval = MessageProcessorConstants.THRESHOULD_INTERVAL;
+    /**
+     * The interval at which this processor runs , default value is 1000ms
+     */
+    protected long interval = MessageProcessorConstants.THRESHOULD_INTERVAL;
 
     /**
      * A cron expression to run the sampler
@@ -57,269 +57,271 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
      * This is specially used for REST scenarios where http status codes can take semantics in a RESTful architecture.
      */
     protected String[] nonRetryStatusCodes = null;
-    
-	protected BlockingMsgSender sender;
 
-	protected SynapseEnvironment synapseEnvironment;
+    protected BlockingMsgSender sender;
 
-	private TaskManager taskManager = null;
+    protected SynapseEnvironment synapseEnvironment;
 
-	private int memberCount = 1;
+    private TaskManager taskManager = null;
 
-	private static final String TASK_PREFIX = "MSMP_";
+    private int memberCount = 1;
 
-	private static final String DEFAULT_TASK_SUFFIX = "0";
+    private static final String TASK_PREFIX = "MSMP_";
 
-	public void init(SynapseEnvironment se) {
-		this.synapseEnvironment = se;
-		initMessageSender(parameters);
-		if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
-		                      .getServerName())) {
-			/*
-			 * If it is not a pinned server we do not start the message
-			 * processor. In that server.
-			 */
-			setActivated(false);
-		}
-		super.init(se);
-		/*
-		 * initialize the task manager only once to alleviate complexities
-		 * related to the pending tasks.
-		 */
-		if (taskManager == null) {
-			taskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
-		}
+    private static final String DEFAULT_TASK_SUFFIX = "0";
 
-		/*
-		 * If the task manager is not initialized yet, subscribe to
-		 * initialization completion event here.
-		 */
-		if (!taskManager.isInitialized()) {
-			taskManager.addObserver(this);
-			return;
-		}
+    @Override
+    public void init(SynapseEnvironment se) {
+        this.synapseEnvironment = se;
+        initMessageSender(parameters);
+        if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
+                              .getServerName())) {
+            /*
+             * If it is not a pinned server we do not start the message
+             * processor. In that server.
+             */
+            setActivated(false);
+        }
+        super.init(se);
+        /*
+         * initialize the task manager only once to alleviate complexities
+         * related to the pending tasks.
+         */
+        if (taskManager == null) {
+            taskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
+        }
 
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) &&
-		    !isDeactivated()) {
-			this.start();
-		}
+        /*
+         * If the task manager is not initialized yet, subscribe to
+         * initialization completion event here.
+         */
+        if (!taskManager.isInitialized()) {
+            taskManager.addObserver(this);
+            return;
+        }
 
-	}
+        if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) &&
+            !isDeactivated()) {
+            this.start();
+        }
 
-	public boolean start() {
-		for (int i = 0; i < memberCount; i++) {
-			/*
-			 * Make sure to fetch the task after initializing the message sender
-			 * and consumer properly. Otherwise you may get NullPointer
-			 * exceptions.
-			 */
-			Task task = this.getTask();
-			TaskDescription taskDescription = new TaskDescription();
-			taskDescription.setName(TASK_PREFIX + name + i);
-			taskDescription.setTaskGroup(MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
-			/*
-			 * If this interval value is less than 1000 ms, ntask will throw an
-			 * exception while building the task. So to get around that we are
-			 * setting threshold interval value of 1000 ms to the task
-			 * description here. But actual interval value may be less than 1000
-			 * ms, and hence isThrotling is set to TRUE.
-			 */
-			if (interval < MessageProcessorConstants.THRESHOULD_INTERVAL) {
-				taskDescription.setInterval(MessageProcessorConstants.THRESHOULD_INTERVAL);
-			} else {
-				taskDescription.setInterval(interval);
-			}
-			taskDescription.setIntervalInMs(true);
-			taskDescription.addResource(TaskDescription.INSTANCE, task);
-			taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+    }
 
-			/*
-			 * If there is a Cron Expression we need to set it into the
-			 * TaskDescription so that the framework will take care of it.
-			 */
-			if (cronExpression != null) {
-				taskDescription.setCronExpression(cronExpression);
-			}
-			taskManager.schedule(taskDescription);
-		}
-		logger.info("Started message processor. [" + getName() + "].");
+    public boolean start() {
+        for (int i = 0; i < memberCount; i++) {
+            /*
+             * Make sure to fetch the task after initializing the message sender
+             * and consumer properly. Otherwise you may get NullPointer
+             * exceptions.
+             */
+            Task task = this.getTask();
+            TaskDescription taskDescription = new TaskDescription();
+            taskDescription.setName(TASK_PREFIX + name + i);
+            taskDescription.setTaskGroup(MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
+            /*
+             * If this interval value is less than 1000 ms, ntask will throw an
+             * exception while building the task. So to get around that we are
+             * setting threshold interval value of 1000 ms to the task
+             * description here. But actual interval value may be less than 1000
+             * ms, and hence isThrotling is set to TRUE.
+             */
+            if (interval < MessageProcessorConstants.THRESHOULD_INTERVAL) {
+                taskDescription.setInterval(MessageProcessorConstants.THRESHOULD_INTERVAL);
+            } else {
+                taskDescription.setInterval(interval);
+            }
+            taskDescription.setIntervalInMs(true);
+            taskDescription.addResource(TaskDescription.INSTANCE, task);
+            taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
 
-		return true;
-	}
+            /*
+             * If there is a Cron Expression we need to set it into the
+             * TaskDescription so that the framework will take care of it.
+             */
+            if (cronExpression != null) {
+                taskDescription.setCronExpression(cronExpression);
+            }
+            taskManager.schedule(taskDescription);
+        }
+        logger.info("Started message processor. [" + getName() + "].");
 
-	public boolean isDeactivated() {
-		return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-	}
+        return true;
+    }
 
-	public void setParameters(Map<String, Object> parameters) {
-		super.setParameters(parameters);
+    public boolean isDeactivated() {
+        return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+    }
 
-		if (parameters != null && !parameters.isEmpty()) {
-			Object param = parameters.get(MessageProcessorConstants.CRON_EXPRESSION);
-			if (param != null) {
-				cronExpression = param.toString();
-			}
-			param = parameters.get(MessageProcessorConstants.INTERVAL);
-			if (param != null) {
-				interval = Integer.parseInt(param.toString());
-			}
-			param = parameters.get(MessageProcessorConstants.MEMBER_COUNT);
-			if (param != null) {
-				memberCount = Integer.parseInt(param.toString());
-			}
-			param = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
-			if (param != null) {
-				setActivated(Boolean.valueOf(param.toString()));
-			}
-			param = parameters.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
-			if (param != null) {
-				// we take it out of param set and send it because we need split
-				// the array.
-				nonRetryStatusCodes = param.toString().split(",");
-			}
-		}
-	}
+    @Override
+    public void setParameters(Map<String, Object> parameters) {
+        super.setParameters(parameters);
 
-	public boolean stop() {
-		/*
-		 * There could be servers that are disabled at startup time.
-		 * therefore not started but initiated.
-		 */
-		if (taskManager != null && taskManager.isInitialized()) {
-			for (int i = 0; i < memberCount; i++) {
-				/*
-				 * This is to immediately stop the scheduler to avoid firing new
-				 * services
-				 */
-				taskManager.pause(TASK_PREFIX + name + i);
-				if (logger.isDebugEnabled()) {
-					logger.debug("ShuttingDown Message Processor Scheduler : " +
-					             taskManager.getName());
-				}
-				/*
-				 * This value should be given in the format -->
-				 * taskname::taskgroup.
-				 * Otherwise a default group is assigned by the ntask task
-				 * manager.
-				 */
-				taskManager.delete(TASK_PREFIX + name + i + "::" +
-				                   MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
-			}
+        if (parameters != null && !parameters.isEmpty()) {
+            Object param = parameters.get(MessageProcessorConstants.CRON_EXPRESSION);
+            if (param != null) {
+                cronExpression = param.toString();
+            }
+            param = parameters.get(MessageProcessorConstants.INTERVAL);
+            if (param != null) {
+                interval = Integer.parseInt(param.toString());
+            }
+            param = parameters.get(MessageProcessorConstants.MEMBER_COUNT);
+            if (param != null) {
+                memberCount = Integer.parseInt(param.toString());
+            }
+            param = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
+            if (param != null) {
+                setActivated(Boolean.valueOf(param.toString()));
+            }
+            param = parameters.get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
+            if (param != null) {
+                // we take it out of param set and send it because we need split
+                // the array.
+                nonRetryStatusCodes = param.toString().split(",");
+            }
+        }
+    }
 
-			if (logger.isDebugEnabled()) {
-				logger.debug("Stopped message processor [" + getName() + "].");
-			}
+    public boolean stop() {
+        /*
+         * There could be servers that are disabled at startup time.
+         * therefore not started but initiated.
+         */
+        if (taskManager != null && taskManager.isInitialized()) {
+            for (int i = 0; i < memberCount; i++) {
+                /*
+                 * This is to immediately stop the scheduler to avoid firing new
+                 * services
+                 */
+                taskManager.pause(TASK_PREFIX + name + i);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("ShuttingDown Message Processor Scheduler : " +
+                                 taskManager.getName());
+                }
+                /*
+                 * This value should be given in the format -->
+                 * taskname::taskgroup.
+                 * Otherwise a default group is assigned by the ntask task
+                 * manager.
+                 */
+                taskManager.delete(TASK_PREFIX + name + i + "::" +
+                                   MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
+            }
 
-			return true;
-		}
+            if (logger.isDebugEnabled()) {
+                logger.debug("Stopped message processor [" + getName() + "].");
+            }
 
-		return false;
-	}
+            return true;
+        }
 
-	public void destroy() {
-		try {
-			stop();
-		}
+        return false;
+    }
 
-		finally {
-			if (getMessageConsumer() != null) {
-				boolean success = getMessageConsumer().cleanup();
-				if (!success) {
-					logger.error("[" + getName() + "] Could not cleanup message consumer.");
-				}
-			} else {
-				logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
-			}
-		}
+    public void destroy() {
+        try {
+            stop();
+        }
 
-		if (logger.isDebugEnabled()) {
-			logger.info("Successfully destroyed message processor [" + getName() + "].");
-		}
-	}
+        finally {
+            if (getMessageConsumer() != null) {
+                boolean success = getMessageConsumer().cleanup();
+                if (!success) {
+                    logger.error("[" + getName() + "] Could not cleanup message consumer.");
+                }
+            } else {
+                logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
+            }
+        }
 
-	public boolean deactivate() {
-		if (taskManager != null && taskManager.isInitialized()) {
-			try {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Deactivating message processor [" + getName() + "]");
-				}
+        if (logger.isDebugEnabled()) {
+            logger.info("Successfully destroyed message processor [" + getName() + "].");
+        }
+    }
 
-				pauseService();
+    public boolean deactivate() {
+        if (taskManager != null && taskManager.isInitialized()) {
+            try {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Deactivating message processor [" + getName() + "]");
+                }
 
-				logger.info("Successfully deactivated the message processor [" + getName() + "]");
+                pauseService();
 
-			} finally {
-				/*
-				 * This will close the connection with the JMS Provider/message
-				 * store.
-				 */
-				if (messageConsumer != null) {
-					messageConsumer.cleanup();
-				}
-			}
-			return true;
-		} else {
-			return false;
-		}
-	}
+                logger.info("Successfully deactivated the message processor [" + getName() + "]");
 
-	public boolean activate() {
-		/*
-		 * Checking whether it is already deactivated. If it is deactivated only
-		 * we can activate again.
-		 */
-		if (taskManager != null && isDeactivated()) {
-			if (logger.isDebugEnabled()) {
-				logger.debug("Starting Message Processor Scheduler : " + taskManager.getName());
-			}
+            } finally {
+                /*
+                 * This will close the connection with the JMS Provider/message
+                 * store.
+                 */
+                if (messageConsumer != null) {
+                    messageConsumer.cleanup();
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-			resumeService();
+    public boolean activate() {
+        /*
+         * Checking whether it is already deactivated. If it is deactivated only
+         * we can activate again.
+         */
+        if (taskManager != null && isDeactivated()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Starting Message Processor Scheduler : " + taskManager.getName());
+            }
 
-			logger.info("Successfully re-activated the message processor [" + getName() + "]");
+            resumeService();
 
-			return true;
-		} else {
-			return false;
-		}
-	}
+            logger.info("Successfully re-activated the message processor [" + getName() + "]");
 
-	public void pauseService() {
-		for (int i = 0; i < memberCount; i++) {
-			taskManager.pause(TASK_PREFIX + name + i);
-		}
-	}
+            return true;
+        } else {
+            return false;
+        }
+    }
 
-	public void resumeService() {
-		for (int i = 0; i < memberCount; i++) {
-			taskManager.resume(TASK_PREFIX + name + i);
-		}
-	}
+    public void pauseService() {
+        for (int i = 0; i < memberCount; i++) {
+            taskManager.pause(TASK_PREFIX + name + i);
+        }
+    }
 
-	public boolean isActive() {
-		/*
-		 * If the interval value is less than 1000 ms, then the task is run
-		 * inside the while loop. Due to that control is not returned back to
-		 * the taskmanager and hence the task is in BLOCKED state. This
-		 * situation is handled separately.
-		 */
-		if (isThrottling(interval)) {
-			return taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
-			       taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-		}
-		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-	}
+    public void resumeService() {
+        for (int i = 0; i < memberCount; i++) {
+            taskManager.resume(TASK_PREFIX + name + i);
+        }
+    }
 
-	public boolean isPaused() {
-		return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-	}
+    public boolean isActive() {
+        /*
+         * If the interval value is less than 1000 ms, then the task is run
+         * inside the while loop. Due to that control is not returned back to
+         * the taskmanager and hence the task is in BLOCKED state. This
+         * situation is handled separately.
+         */
+        if (isThrottling(interval)) {
+            return taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
+                   taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        }
+        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+    }
 
-	public boolean getActivated() {
-		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-	}
+    public boolean isPaused() {
+        return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+    }
 
-	private void setActivated(boolean activated) {
-		parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(activated));
-	}
+    public boolean getActivated() {
+        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+    }
+
+    private void setActivated(boolean activated) {
+        parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(activated));
+    }
 
     private boolean isPinnedServer(String serverName) {
         boolean pinned = false;
@@ -362,34 +364,34 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     protected boolean isThrottling(String cronExpression) {
         return cronExpression != null;
     }
-    
-	private BlockingMsgSender initMessageSender(Map<String, Object> params) {
 
-		String axis2repo = (String) params.get(ForwardingProcessorConstants.AXIS2_REPO);
-		String axis2Config = (String) params.get(ForwardingProcessorConstants.AXIS2_CONFIG);
+    private BlockingMsgSender initMessageSender(Map<String, Object> params) {
 
-		sender = new BlockingMsgSender();
-		if (axis2repo != null) {
-			sender.setClientRepository(axis2repo);
-		}
-		if (axis2Config != null) {
-			sender.setAxis2xml(axis2Config);
-		}
-		sender.init();
+        String axis2repo = (String) params.get(ForwardingProcessorConstants.AXIS2_REPO);
+        String axis2Config = (String) params.get(ForwardingProcessorConstants.AXIS2_CONFIG);
 
-		return sender;
-	}
+        sender = new BlockingMsgSender();
+        if (axis2repo != null) {
+            sender.setClientRepository(axis2repo);
+        }
+        if (axis2Config != null) {
+            sender.setAxis2xml(axis2Config);
+        }
+        sender.init();
 
-	/**
-	 * Gives the {@link Task} instance associated with this processor.
-	 * 
-	 * @return {@link Task} associated with this processor.
-	 */
-	protected abstract Task getTask();
+        return sender;
+    }
 
-	public void update() {
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
-			start();
-		}
-	}
+    /**
+     * Gives the {@link Task} instance associated with this processor.
+     *
+     * @return {@link Task} associated with this processor.
+     */
+    protected abstract Task getTask();
+
+    public void update() {
+        if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
+            start();
+        }
+    }
 }
