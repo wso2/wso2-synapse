@@ -46,9 +46,16 @@ public class FailoverEndpointSerializer extends EndpointSerializer {
 
         OMElement failoverElement
                 = fac.createOMElement("failover", SynapseConstants.SYNAPSE_OMNAMESPACE);
+
+        if (!failoverEndpoint.getFailoverHttpStatusCodes().isEmpty()) {
+            OMElement failoverHttpStatusElement = fac.createOMElement("failoverHttpStatusCodes", SynapseConstants.SYNAPSE_OMNAMESPACE);
+            failoverHttpStatusElement.setText(failoverEndpoint.getFailoverHttpStatusCodes().toString().replaceAll("[\\[\\] ]", ""));
+            failoverElement.addChild(failoverHttpStatusElement);
+        }
+
         endpointElement.addChild(failoverElement);
 
-        serializeCommonAttributes(endpoint,endpointElement);
+        serializeCommonAttributes(endpoint, endpointElement);
 
         for (Endpoint childEndpoint : failoverEndpoint.getChildren()) {
             failoverElement.addChild(EndpointSerializer.getElementFromEndpoint(childEndpoint));

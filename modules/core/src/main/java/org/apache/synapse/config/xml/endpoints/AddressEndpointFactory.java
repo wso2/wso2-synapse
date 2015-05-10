@@ -28,6 +28,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 
 import javax.xml.namespace.QName;
+import java.util.ArrayList;
 import java.util.Properties;
 
 /**

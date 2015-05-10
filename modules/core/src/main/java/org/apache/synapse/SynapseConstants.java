@@ -21,6 +21,7 @@ package org.apache.synapse;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMNamespace;
+
 import javax.xml.namespace.QName;
 
 /**
@@ -28,72 +29,127 @@ import javax.xml.namespace.QName;
  */
 public final class SynapseConstants {
 
-    /** Keyword synapse */
+    /**
+     * Keyword synapse
+     */
     public static final String SYNAPSE = "synapse";
     public static final String TRUE = "TRUE";
-    /** The Synapse namespace */
+    /**
+     * The Synapse namespace
+     */
     public static final String SYNAPSE_NAMESPACE = "http://ws.apache.org/ns/synapse";
-    /** An OMNamespace object for the Synapse NS */
+    /**
+     * An OMNamespace object for the Synapse NS
+     */
     public static final OMNamespace SYNAPSE_OMNAMESPACE =
             OMAbstractFactory.getOMFactory().createOMNamespace(SYNAPSE_NAMESPACE, "");
-    /** An OMNamespace object for the Empty Namespace */
-    public static final OMNamespace NULL_NAMESPACE = 
-    	OMAbstractFactory.getOMFactory().createOMNamespace("", "");
-    /** The name of the main sequence for message mediation */
-    public static final String MAIN_SEQUENCE_KEY  = "main";
-    /** The associated xml file of the default main sequence */
+    /**
+     * An OMNamespace object for the Empty Namespace
+     */
+    public static final OMNamespace NULL_NAMESPACE =
+            OMAbstractFactory.getOMFactory().createOMNamespace("", "");
+    /**
+     * The name of the main sequence for message mediation
+     */
+    public static final String MAIN_SEQUENCE_KEY = "main";
+    /**
+     * The associated xml file of the default main sequence
+     */
     public static final String MAIN_SEQUENCE_XML = "main.xml";
-    /** The name of the fault sequence to execute on failures during mediation */
+    /**
+     * The name of the fault sequence to execute on failures during mediation
+     */
     public static final String FAULT_SEQUENCE_KEY = "fault";
-    /** The associated xml file of the default fault sequence */
+    /**
+     * The associated xml file of the default fault sequence
+     */
     public static final String FAULT_SEQUENCE_XML = "fault.xml";
-    /** The name of the mandatory sequence to execute before the begining of the actual mediation */
+    /**
+     * The name of the mandatory sequence to execute before the begining of the actual mediation
+     */
     public static final String MANDATORY_SEQUENCE_KEY = "pre-mediate";
-    /** The name prefix of the hidden sequence */
+    /**
+     * The name prefix of the hidden sequence
+     */
     public static final String PREFIX_HIDDEN_SEQUENCE_KEY = "_Hidden_Sequence_";
 
-    /** The name of the Synapse service (used for message mediation) */
-    public static final String SYNAPSE_SERVICE_NAME ="__SynapseService";
-    /** The operation name used by the Synapse service (for message mediation) */
+    /**
+     * The name of the Synapse service (used for message mediation)
+     */
+    public static final String SYNAPSE_SERVICE_NAME = "__SynapseService";
+    /**
+     * The operation name used by the Synapse service (for message mediation)
+     */
     public static final QName SYNAPSE_OPERATION_NAME = new QName("mediate");
 
     //- names of modules to be engaged at runtime -
-    /** The Name of the WS-RM module */
+    /**
+     * The Name of the WS-RM module
+     */
     @Deprecated
     public static final String RM_MODULE_NAME = "sandesha2";
-    /** The Name of the WS-A Addressing module */
+    /**
+     * The Name of the WS-A Addressing module
+     */
     public static final String ADDRESSING_MODULE_NAME = "addressing";
-    /** The Name of the WS-Security module */
+    /**
+     * The Name of the WS-Security module
+     */
     public static final String SECURITY_MODULE_NAME = "rampart";
 
     //- Standard headers that can be read as get-property('header')-
-    /** Refers to the To header */
+    /**
+     * Refers to the To header
+     */
     public static final String HEADER_TO = "To";
-    /** Refers to the From header */
+    /**
+     * Refers to the From header
+     */
     public static final String HEADER_FROM = "From";
-    /** Refers to the FaultTo header */
+    /**
+     * Refers to the FaultTo header
+     */
     public static final String HEADER_FAULT = "FaultTo";
-    /** Refers to the Action header */
+    /**
+     * Refers to the Action header
+     */
     public static final String HEADER_ACTION = "Action";
-    /** Refers to the ReplyTo header */
+    /**
+     * Refers to the ReplyTo header
+     */
     public static final String HEADER_REPLY_TO = "ReplyTo";
-    /** Refers to the RelatesTo header */
+    /**
+     * Refers to the RelatesTo header
+     */
     public static final String HEADER_RELATES_TO = "RelatesTo";
-    /** Refers to the MessageID header */
+    /**
+     * Refers to the MessageID header
+     */
     public static final String HEADER_MESSAGE_ID = "MessageID";
-    /** Refers to the property name for which the get-property function would return
+    /**
+     * Refers to the property name for which the get-property function would return
      * true, if the message is a fault
      */
     public static final String PROPERTY_FAULT = "FAULT";
-    /** Message format: pox, soap11, soap12 */
+    /**
+     * Message format: pox, soap11, soap12
+     */
     public static final String PROPERTY_MESSAGE_FORMAT = "MESSAGE_FORMAT";
-    /** WSDL operation name **/
+    /**
+     * WSDL operation name *
+     */
     public static final String PROPERTY_OPERATION_NAME = "OperationName";
-    /** WSDL operation namespace **/
+    /**
+     * WSDL operation namespace *
+     */
     public static final String PROPERTY_OPERATION_NAMESPACE = "OperationNamespace";
-    /** System time in milliseconds - the offset from epoch (i.e. System.currentTimeMillis) */
+    /**
+     * System time in milliseconds - the offset from epoch (i.e. System.currentTimeMillis)
+     */
     public static final String SYSTEM_TIME = "SYSTEM_TIME";
-    /** System date */
+    /**
+     * System date
+     */
     public static final String SYSTEM_DATE = "SYSTEM_DATE";
 
     public static final String ADDRESSING_VERSION_FINAL = "final";
@@ -101,196 +157,294 @@ public final class SynapseConstants {
 
     public static final String ADDRESSING_ADDED_BY_SYNAPSE = "AddressingAddedBySynapse";
 
-    /** The Axis2 client options property name for the Rampart service policy */
+    /**
+     * The Axis2 client options property name for the Rampart service policy
+     */
     public static final String RAMPART_POLICY = "rampartPolicy";
-    /** The Axis2 client options property name for the Rampart in message policy */
+    /**
+     * The Axis2 client options property name for the Rampart in message policy
+     */
     public static final String RAMPART_IN_POLICY = "rampartInPolicy";
-    /** The Axis2 client options property name for the Rampart out messsage policy */
+    /**
+     * The Axis2 client options property name for the Rampart out messsage policy
+     */
     public static final String RAMPART_OUT_POLICY = "rampartOutPolicy";
-    /** The Axis2 client options property name for the Sandesha policy */
-	public static final String SANDESHA_POLICY = "sandeshaPolicy";
-    /** ServerManager MBean category and id */
+    /**
+     * The Axis2 client options property name for the Sandesha policy
+     */
+    public static final String SANDESHA_POLICY = "sandeshaPolicy";
+    /**
+     * ServerManager MBean category and id
+     */
     public static final String SERVER_MANAGER_MBEAN = "ServerManager";
     public static final String RECEIVING_SEQUENCE = "RECEIVING_SEQUENCE";
 
-    /** Service invoked by Call mediator */
+    /**
+     * Service invoked by Call mediator
+     */
     public static final String CONTINUATION_CALL = "continuation.call";
 
     public static final String SYNAPSE__FUNCTION__STACK = "_SYNAPSE_FUNCTION_STACK";
     public static final String SYNAPSE_WSDL_RESOLVER = "synapse.wsdl.resolver";
     public static final String SYNAPSE_SCHEMA_RESOLVER = "synapse.schema.resolver";
 
-    /** Parameter names in the axis2.xml that can be used to configure the synapse */
+    /**
+     * Parameter names in the axis2.xml that can be used to configure the synapse
+     */
     public static final class Axis2Param {
-        /** Synapse Configuration file location */
+        /**
+         * Synapse Configuration file location
+         */
         public static final String SYNAPSE_CONFIG_LOCATION = "SynapseConfig.ConfigurationFile";
-        /** Synapse Home directory */
+        /**
+         * Synapse Home directory
+         */
         public static final String SYNAPSE_HOME = "SynapseConfig.HomeDirectory";
-        /** Synapse resolve root */
+        /**
+         * Synapse resolve root
+         */
         public static final String SYNAPSE_RESOLVE_ROOT = "SynapseConfig.ResolveRoot";
-        /** Synapse server name */
+        /**
+         * Synapse server name
+         */
         public static final String SYNAPSE_SERVER_NAME = "SynapseConfig.ServerName";
     }
-    
-    /** The name of the Parameter set on the Axis2Configuration to hold the Synapse Configuration */
+
+    /**
+     * The name of the Parameter set on the Axis2Configuration to hold the Synapse Configuration
+     */
     public static final String SYNAPSE_CONFIG = "synapse.config";
-    /** The name of the Parameter set on the Axis2Configuration to hold the Synapse Environment */
+    /**
+     * The name of the Parameter set on the Axis2Configuration to hold the Synapse Environment
+     */
     public static final String SYNAPSE_ENV = "synapse.env";
-    /** The name of the Parameter set on AxisConfiguration to hold the ServerContextInformation */
+    /**
+     * The name of the Parameter set on AxisConfiguration to hold the ServerContextInformation
+     */
     public static final String SYNAPSE_SERVER_CTX_INFO = "synapse.server.context.info";
-    /** The name of the Parameter set on AxisConfiguration to hold the ServerContextInformation */
+    /**
+     * The name of the Parameter set on AxisConfiguration to hold the ServerContextInformation
+     */
     public static final String SYNAPSE_SERVER_CONFIG_INFO = "synapse.server.config.info";
 
-    /** The name of the system property that will hold the Synapse home directory */
+    /**
+     * The name of the system property that will hold the Synapse home directory
+     */
     public static final String SYNAPSE_HOME = "synapse.home";
-    /** The name of the system property used to specify/override the Synapse config XML location */
+    /**
+     * The name of the system property used to specify/override the Synapse config XML location
+     */
     public static final String SYNAPSE_XML = "synapse.xml";
-    /** The name of the system property used to specify/override the Synapse properties location */
+    /**
+     * The name of the system property used to specify/override the Synapse properties location
+     */
     public static final String SYNAPSE_PROPERTIES = "synapse.properties";
 
-    /** the name of the property used for synapse library based class loading */
+    /**
+     * the name of the property used for synapse library based class loading
+     */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
-    /** conf directory name **/
+    /**
+     * conf directory name *
+     */
     public static final String CONF_DIRECTORY = "conf";
 
     // hidden service parameter
     public static final String HIDDEN_SERVICE_PARAM = "hiddenService";
 
     // proxy services servicetype parameter
-        /** service type parameter name */
-        public static final String SERVICE_TYPE_PARAM_NAME = "serviceType";
-        /** service type param value for the proxy services */
-        public static final String PROXY_SERVICE_TYPE = "proxy";
+    /**
+     * service type parameter name
+     */
+    public static final String SERVICE_TYPE_PARAM_NAME = "serviceType";
+    /**
+     * service type param value for the proxy services
+     */
+    public static final String PROXY_SERVICE_TYPE = "proxy";
 
     //- Synapse Message Context Properties -
-        /** The Synapse MC property name that holds the name of the Proxy service thats handling it */
-        public static final String PROXY_SERVICE = "proxy.name";
-        /** The Synapse MC property that marks it as a RESPONSE */
-        public static final String RESPONSE = "RESPONSE";
-        /** The Synapse MC property that indicates the in-transport */
-        public static final String IN_TRANSPORT = "IN_TRANSPORT";
-        /** The Synapse MC property that marks if the message was denied on the accessed transport */
-        public static final String TRANSPORT_DENIED = "TRANSPORT_DENIED";
-        /** The Synapse MC property that marks the message as a OUT_ONLY message */
-        public static final String OUT_ONLY = "OUT_ONLY";
-        /** The Synapse MC property that states that existing WS-A headers in the envelope should
-        * be preserved */
-        public static final String PRESERVE_WS_ADDRESSING = "PRESERVE_WS_ADDRESSING";
-        /** The Synapse MC property that marks to Exception to be thrown on SOAPFault(Retry on SOAPFault)*/
-        public static final String RETRY_ON_SOAPFAULT = "RETRY_ON_SOAPFAULT";
+    /**
+     * The Synapse MC property name that holds the name of the Proxy service thats handling it
+     */
+    public static final String PROXY_SERVICE = "proxy.name";
+    /**
+     * The Synapse MC property that marks it as a RESPONSE
+     */
+    public static final String RESPONSE = "RESPONSE";
+    /**
+     * The Synapse MC property that indicates the in-transport
+     */
+    public static final String IN_TRANSPORT = "IN_TRANSPORT";
+    /**
+     * The Synapse MC property that marks if the message was denied on the accessed transport
+     */
+    public static final String TRANSPORT_DENIED = "TRANSPORT_DENIED";
+    /**
+     * The Synapse MC property that marks the message as a OUT_ONLY message
+     */
+    public static final String OUT_ONLY = "OUT_ONLY";
+    /**
+     * The Synapse MC property that states that existing WS-A headers in the envelope should
+     * be preserved
+     */
+    public static final String PRESERVE_WS_ADDRESSING = "PRESERVE_WS_ADDRESSING";
+    /**
+     * The Synapse MC property that marks to Exception to be thrown on SOAPFault(Retry on SOAPFault)
+     */
+    public static final String RETRY_ON_SOAPFAULT = "RETRY_ON_SOAPFAULT";
 
-        /**
-         * The name of the property which specifies the operation name that is
-         * invoked by an endpoint
-        */
-        public static final String ENDPOINT_OPERATION = "endpoint.operation";
-        /** Synapse MC property that holds the url of the named endpoint which message is sent out **/
-        public static final String ENDPOINT_PREFIX = "ENDPOINT_PREFIX";
+    /**
+     * The name of the property which specifies the operation name that is
+     * invoked by an endpoint
+     */
+    public static final String ENDPOINT_OPERATION = "endpoint.operation";
+    /**
+     * Synapse MC property that holds the url of the named endpoint which message is sent out *
+     */
+    public static final String ENDPOINT_PREFIX = "ENDPOINT_PREFIX";
 
-        //-- error handling --
-        /** An Axis2 message context property indicating a transport send failure */
-        public static final String SENDING_FAULT = "SENDING_FAULT";
-        /** The message context property name which holds the error code for the last encountered exception */
-        public static final String ERROR_CODE = "ERROR_CODE";
-        /** The MC property name which holds the error message for the last encountered exception */
-        public static final String ERROR_MESSAGE = "ERROR_MESSAGE";
-        /** The message context property name which holds the error detail (stack trace) for the last encountered exception */
-        public static final String ERROR_DETAIL = "ERROR_DETAIL";
-        /** The message context property name which holds the exception (if any) for the last encountered exception */
-        public static final String ERROR_EXCEPTION = "ERROR_EXCEPTION";
-        /** The default/generic error code */
-        public static final int DEFAULT_ERROR= 0;
+    //-- error handling --
+    /**
+     * An Axis2 message context property indicating a transport send failure
+     */
+    public static final String SENDING_FAULT = "SENDING_FAULT";
+    /**
+     * The message context property name which holds the error code for the last encountered exception
+     */
+    public static final String ERROR_CODE = "ERROR_CODE";
+    /**
+     * The MC property name which holds the error message for the last encountered exception
+     */
+    public static final String ERROR_MESSAGE = "ERROR_MESSAGE";
+    /**
+     * The message context property name which holds the error detail (stack trace) for the last encountered exception
+     */
+    public static final String ERROR_DETAIL = "ERROR_DETAIL";
+    /**
+     * The message context property name which holds the exception (if any) for the last encountered exception
+     */
+    public static final String ERROR_EXCEPTION = "ERROR_EXCEPTION";
+    /**
+     * The default/generic error code
+     */
+    public static final int DEFAULT_ERROR = 0;
 
-    /** An Axis2 message context property that indicates the maximum time to spend on sending the message */
+    /**
+     * An Axis2 message context property that indicates the maximum time to spend on sending the message
+     */
     public static final String SEND_TIMEOUT = "SEND_TIMEOUT";
 
     //- Axis2 Message Context Properties used by Synapse -
-    /** an axis2 message context property set to hold the relates to for POX responses */
+    /**
+     * an axis2 message context property set to hold the relates to for POX responses
+     */
     public static final String RELATES_TO_FOR_POX = "synapse.RelatesToForPox";
 
-    /** an axis2 message context property set to indicate this is a response message for Synapse */
+    /**
+     * an axis2 message context property set to indicate this is a response message for Synapse
+     */
     public static final String ISRESPONSE_PROPERTY = "synapse.isresponse";
 
 
     //- aspects constants -
-        /** Tracing logger name */
-        public static final String TRACE_LOGGER ="TRACE_LOGGER";
-        public static final String SERVICE_LOGGER_PREFIX ="SERVICE_LOGGER.";
+    /**
+     * Tracing logger name
+     */
+    public static final String TRACE_LOGGER = "TRACE_LOGGER";
+    public static final String SERVICE_LOGGER_PREFIX = "SERVICE_LOGGER.";
 
-        /** The tracing state -off */
-        public static final int TRACING_OFF =0;
-        /** The tracing state-on */
-        public static final int TRACING_ON =1;
-        /** The tracing state-unset */
-        public static final int TRACING_UNSET=2;
+    /**
+     * The tracing state -off
+     */
+    public static final int TRACING_OFF = 0;
+    /**
+     * The tracing state-on
+     */
+    public static final int TRACING_ON = 1;
+    /**
+     * The tracing state-unset
+     */
+    public static final int TRACING_UNSET = 2;
 
-        public static final String STATISTICS_STACK ="synapse.statistics.stack";     
-        
-        public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
-    
-        public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
+    public static final String STATISTICS_STACK = "synapse.statistics.stack";
 
-        public static final String SYNAPSE_ASPECTS ="synapse.aspects";
+    public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
+
+    public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
+
+    public static final String SYNAPSE_ASPECTS = "synapse.aspects";
 
     //- handling of timed out events from the callbacks -
-        /** The System property that states the duration at which the timeout handler runs */
-        public static final String TIMEOUT_HANDLER_INTERVAL = "synapse.timeout_handler_interval";
+    /**
+     * The System property that states the duration at which the timeout handler runs
+     */
+    public static final String TIMEOUT_HANDLER_INTERVAL = "synapse.timeout_handler_interval";
 
-        /**
-         * Interval for activating the timeout handler for cleaning up expired requests. Note that
-         * there can be an error as large as the value of the interval. But for smaller intervals
-         * and larger timeouts this error is negligilble.
-         */
-        public static final long DEFAULT_TIMEOUT_HANDLER_INTERVAL = 15000;
+    /**
+     * Interval for activating the timeout handler for cleaning up expired requests. Note that
+     * there can be an error as large as the value of the interval. But for smaller intervals
+     * and larger timeouts this error is negligilble.
+     */
+    public static final long DEFAULT_TIMEOUT_HANDLER_INTERVAL = 15000;
 
-        /**
-         * The default endpoint suspend duration on failure (i hour)
-         */
-        public static final long DEFAULT_ENDPOINT_SUSPEND_TIME = 30 * 1000;
+    /**
+     * The default endpoint suspend duration on failure (i hour)
+     */
+    public static final long DEFAULT_ENDPOINT_SUSPEND_TIME = 30 * 1000;
 
-        /**
-         * This is a system wide interval for handling otherwise non-expiring callbacks to
-         * ensure system stability over a period of time 
-         */
-        public static final String GLOBAL_TIMEOUT_INTERVAL = "synapse.global_timeout_interval";
+    /**
+     * This is a system wide interval for handling otherwise non-expiring callbacks to
+     * ensure system stability over a period of time
+     */
+    public static final String GLOBAL_TIMEOUT_INTERVAL = "synapse.global_timeout_interval";
 
-        /**
-         * this is the timeout for otherwise non-expiring callbacks
-         * to ensure system stability over time
-         */
-        public static final long DEFAULT_GLOBAL_TIMEOUT = 24 * 60 * 60 * 1000;
+    /**
+     * this is the timeout for otherwise non-expiring callbacks
+     * to ensure system stability over time
+     */
+    public static final long DEFAULT_GLOBAL_TIMEOUT = 24 * 60 * 60 * 1000;
 
-        /**
-         * don't do anything for response timeouts. this means infinite timeout. this is the default
-         * action, if the timeout configuration is not explicitly set.
-         */
-        public static final int NONE = 100;
+    /**
+     * don't do anything for response timeouts. this means infinite timeout. this is the default
+     * action, if the timeout configuration is not explicitly set.
+     */
+    public static final int NONE = 100;
 
-        /** Discard the callback if the timeout for the response is expired */
-        public static final int DISCARD = 101;
+    /**
+     * Discard the callback if the timeout for the response is expired
+     */
+    public static final int DISCARD = 101;
 
-        /**
-         * Discard the callback and activate specified fault sequence if the timeout for the response
-         * is expired
-         */
-        public static final int DISCARD_AND_FAULT = 102;
+    /**
+     * Discard the callback and activate specified fault sequence if the timeout for the response
+     * is expired
+     */
+    public static final int DISCARD_AND_FAULT = 102;
 
-        /**
-         * Error codes for message sending. We go with closest HTTP fault codes.
-         */
-        public static final int HANDLER_TIME_OUT = 101504;
+    /**
+     * Error codes for message sending. We go with closest HTTP fault codes.
+     */
+    public static final int HANDLER_TIME_OUT = 101504;
 
     //- Endpoints processing constants -
-    /** Property name to store the last endpoint through which the message has flowed */
+    /**
+     * Property name to store the last endpoint through which the message has flowed
+     */
     public static final String LAST_ENDPOINT = "last_endpoint";
 
-    /** Property name to store the endpoint_log that stores the history */
-    public static final String ENDPOINT_LOG = "endpoint_log";     
-    
-    /** A name to use for anonymous endpoints */
+    /**
+     * Property name to store the endpoint_log that stores the history
+     */
+    public static final String ENDPOINT_LOG = "endpoint_log";
+
+    /**
+     * A name to use for anonymous endpoints
+     */
     public static final String ANONYMOUS_ENDPOINT = "AnonymousEndpoint";
 
-    /**A name to use for anonymous proxyservice  */
+    /**
+     * A name to use for anonymous proxyservice
+     */
     public static final String ANONYMOUS_PROXYSERVICE = "AnonymousProxyService";
 
     /* Constants related to the SAL endpoints */
@@ -300,7 +454,7 @@ public final class SynapseConstants {
 
     public static final String PROP_SAL_ENDPOINT_ENDPOINT_LIST
             = "synapse.sal.endpoint.list";
-    
+
     public static final String PROP_SAL_CURRENT_SESSION_INFORMATION
             = "synapse.sal.endpoint.current.sessioninformation";
 
@@ -311,25 +465,31 @@ public final class SynapseConstants {
             = "synapse.sal.current.member";
 
     public static final String PROP_SAL_ENDPOINT_CURRENT_DISPATCHER
-            = "synape.sal.endpoints.dispatcher";   
+            = "synape.sal.endpoints.dispatcher";
 
     public static final String PROP_SAL_ENDPOINT_DEFAULT_SESSION_TIMEOUT
-            = "synapse.sal.endpoints.sesssion.timeout.default";    
+            = "synapse.sal.endpoints.sesssion.timeout.default";
 
     public static final long SAL_ENDPOINTS_DEFAULT_SESSION_TIMEOUT = 120000;
-    
 
-    /** A name to use for anonymous sequences in the sequence stack */
+
+    /**
+     * A name to use for anonymous sequences in the sequence stack
+     */
     public static final String ANONYMOUS_SEQUENCE = "AnonymousSequence";
 
-    /** String to be used as the separator when defining resource IDs for statistics */
+    /**
+     * String to be used as the separator when defining resource IDs for statistics
+     */
     public static final String STATISTICS_KEY_SEPARATOR = "__";
 
-    /** Message format values in EndpointDefinition. Used by address, wsdl endpoints */
+    /**
+     * Message format values in EndpointDefinition. Used by address, wsdl endpoints
+     */
     public static final String FORMAT_POX = "pox";
     public static final String FORMAT_GET = "get";
     public static final String FORMAT_SOAP11 = "soap11";
-    public static final String FORMAT_SOAP12 = "soap12";    
+    public static final String FORMAT_SOAP12 = "soap12";
     public static final String FORMAT_REST = "rest";
 
     // - Blocking Message Sender Constants
@@ -339,10 +499,14 @@ public final class SynapseConstants {
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =
             "BLOCKING_SENDER_PRESERVE_REQ_HEADERS";
 
-    /** Synapse server instance name */
+    /**
+     * Synapse server instance name
+     */
     public static final String SERVER_NAME = "serverName";
 
-    /** Root for relative path */
+    /**
+     * Root for relative path
+     */
     public static final String RESOLVE_ROOT = "resolve.root";
 
     public static final String CLASS_MEDIATOR_LOADERS = "CLASS_MEDIATOR_LOADERS";
@@ -360,7 +524,9 @@ public final class SynapseConstants {
 
     public static final String CONNECTTIMEOUT = "synapse.connection.connect_timeout";
 
-    /** chunk size and chunk length configuration parameters */
+    /**
+     * chunk size and chunk length configuration parameters
+     */
     public static final int DEFAULT_THRESHOLD_CHUNKS = 8;
 
     public static final int DEFAULT_CHUNK_SIZE = 1024;
@@ -370,11 +536,11 @@ public final class SynapseConstants {
     public static final String DEFAULT_TEMPFILE_SUFIX = ".dat";
 
     public static final String THRESHOLD_CHUNKS = "synapse.temp_data.chunk.threshold";
-    
+
     public static final String CHUNK_SIZE = "synapse.temp_data.chunk.size";
 
     public static final String TEMP_FILE_PREFIX = "synapse.tempfile.prefix";
-    
+
     public static final String TEMP_FILE_SUFIX = "synapse.tempfile.sufix";
 
     public static final String DOING_FAIL_OVER = "synapse.doing.failover";
@@ -387,7 +553,9 @@ public final class SynapseConstants {
     public static final String SYNAPSE_STARTUP_TASK_DESCRIPTIONS_REPOSITORY =
             "synapse.startup.taskdescriptions.repository";
 
-    /** proxy server configurations used for retrieving configuration resources over a HTTP proxy */
+    /**
+     * proxy server configurations used for retrieving configuration resources over a HTTP proxy
+     */
     public static final String SYNPASE_HTTP_PROXY_HOST = "synapse.http.proxy.host";
     public static final String SYNPASE_HTTP_PROXY_PORT = "synapse.http.proxy.port";
     public static final String SYNPASE_HTTP_PROXY_USER = "synapse.http.proxy.user";
@@ -406,24 +574,24 @@ public final class SynapseConstants {
     public static final String PRESERVE_ENVELOPE = "PRESERVE_ENVELOPE";
 
     // Known transport error codes
-    public static final int RCV_IO_ERROR_SENDING     = 101000;
-    public static final int RCV_IO_ERROR_RECEIVING   = 101001;
+    public static final int RCV_IO_ERROR_SENDING = 101000;
+    public static final int RCV_IO_ERROR_RECEIVING = 101001;
 
-    public static final int SND_IO_ERROR_SENDING     = 101500;
-    public static final int SND_IO_ERROR_RECEIVING   = 101501;
+    public static final int SND_IO_ERROR_SENDING = 101500;
+    public static final int SND_IO_ERROR_RECEIVING = 101501;
 
-    public static final int NHTTP_CONNECTION_FAILED           = 101503;
-    public static final int NHTTP_CONNECTION_TIMEOUT          = 101504;
-    public static final int NHTTP_CONNECTION_CLOSED           = 101505;
-    public static final int NHTTP_PROTOCOL_VIOLATION          = 101506;
-    public static final int NHTTP_CONNECT_CANCEL              = 101507;
-    public static final int NHTTP_CONNECT_TIMEOUT             = 101508;
+    public static final int NHTTP_CONNECTION_FAILED = 101503;
+    public static final int NHTTP_CONNECTION_TIMEOUT = 101504;
+    public static final int NHTTP_CONNECTION_CLOSED = 101505;
+    public static final int NHTTP_PROTOCOL_VIOLATION = 101506;
+    public static final int NHTTP_CONNECT_CANCEL = 101507;
+    public static final int NHTTP_CONNECT_TIMEOUT = 101508;
     public static final int NHTTP_RESPONSE_PROCESSING_FAILURE = 101510;
 
     // Endpoint failures
-    public static final int ENDPOINT_LB_NONE_READY   = 303000;
-    public static final int ENDPOINT_RL_NONE_READY   = 303000;
-    public static final int ENDPOINT_FO_NONE_READY   = 303000;
+    public static final int ENDPOINT_LB_NONE_READY = 303000;
+    public static final int ENDPOINT_RL_NONE_READY = 303000;
+    public static final int ENDPOINT_FO_NONE_READY = 303000;
     public static final int ENDPOINT_ADDRESS_NONE_READY = 303001;
     public static final int ENDPOINT_WSDL_NONE_READY = 303002;
     // Failure on endpoint in the session 
@@ -432,14 +600,14 @@ public final class SynapseConstants {
     public static final int ENDPOINT_SAL_FAILED_SESSION = 309003;
 
     // endpoints, non fatal warnings etc
-    public static final int ENDPOINT_LB_FAIL_OVER    = 303100;
-    public static final int ENDPOINT_FO_FAIL_OVER    = 304100;
+    public static final int ENDPOINT_LB_FAIL_OVER = 303100;
+    public static final int ENDPOINT_FO_FAIL_OVER = 304100;
 
     // referring real endpoint is null
     public static final int ENDPOINT_IN_DIRECT_NOT_READY = 305100;
 
     // callout operation failed
-    public static final int CALLOUT_OPERATION_FAILED    = 401000;
+    public static final int CALLOUT_OPERATION_FAILED = 401000;
 
     public static final String FORCE_ERROR_PROPERTY = "FORCE_ERROR_ON_SOAP_FAULT";
     public static final int ENDPOINT_CUSTOM_ERROR = 500000;
@@ -477,7 +645,7 @@ public final class SynapseConstants {
      * Message content property of incoming transport-in name
      */
     public static final String TRANSPORT_IN_NAME = "TRANSPORT_IN_NAME";
-    
+
     // Synapse config path
     public static final String SYNAPSE_CONFIGS = "synapse-configs";
     public static final String DEFAULT_DIR = "default";
@@ -485,9 +653,29 @@ public final class SynapseConstants {
 
     //Inbound endpoint
     public static final String IS_INBOUND = "isInbound";
-    public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
+    public static final String IS_CXF_WS_RM = "is_cxf_ws_rm";
 
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
+
+    /**
+     * Synapse message context property that use for index endpoints to implement failover support on http status codes
+     */
+    public static final String CURRENT_ENDPOINT_INDEX = "currentendpointindex";
+    /**
+     * Synapse message context property which holds endpoint list to resend messages based on http status codes
+     */
+    public static final String ENDPOINT_LIST = "endpointlist";
+    /**
+     * Synapse message context property which holds cloned synapse message context to resend messages based on http status codes
+     */
+    public static final String CLONED_SYN_MSG_CTX = "clonedsynapsemessagecontext";
+    /**
+     * Synapse message context which indicates this message context need to be cloned because of the endpoing configuration
+     */
+    public static final String CLONE_THIS_MSG = "clonethismessagecontext";
+
+    /**Http status codes configured for the failover group*/
+    public static final String HTTP_STATUS_CODE_LIST = "httpstatuscodelist";
 
 }

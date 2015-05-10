@@ -49,7 +49,7 @@ public class SOAPUtils {
      * @throws AxisFault in case of an error in conversion
      */
     public static void convertSoapVersion(org.apache.axis2.context.MessageContext axisOutMsgCtx,
-        String soapVersionURI) throws AxisFault {
+                                          String soapVersionURI) throws AxisFault {
 
         if (org.apache.axis2.namespace.Constants.URI_SOAP12_ENV.equals(soapVersionURI)) {
             convertSOAP11toSOAP12(axisOutMsgCtx);
@@ -69,33 +69,33 @@ public class SOAPUtils {
      * <br />
      * <b>Message Changes:</b>
      * <ol>
-     *     <li>Convert envelope, header elements</li>
-     *     <li>For each header block convert attribute actor to role</li>
-     *     <li>For each header block convert mustUnderstand value type</li>
-     *     <li>For each header block remove 1.1 namespaced other attributes</li>
+     * <li>Convert envelope, header elements</li>
+     * <li>For each header block convert attribute actor to role</li>
+     * <li>For each header block convert mustUnderstand value type</li>
+     * <li>For each header block remove 1.1 namespaced other attributes</li>
      * </ol>
-     *
+     * <p/>
      * <b>Fault Changes:</b>
      * <ol>
-     *     <li>Convert fault element</li>
-     *     <li>faultcode to Fault/Code</li>
-     *     <li>faultstring to First Fault/Reason/Text with lang=en</li>
+     * <li>Convert fault element</li>
+     * <li>faultcode to Fault/Code</li>
+     * <li>faultstring to First Fault/Reason/Text with lang=en</li>
      * </ol>
      *
      * @param axisOutMsgCtx message context to be converted
      * @throws AxisFault incase conversion process fails
      */
     public static void convertSOAP11toSOAP12(
-        org.apache.axis2.context.MessageContext axisOutMsgCtx) throws AxisFault {
+            org.apache.axis2.context.MessageContext axisOutMsgCtx) throws AxisFault {
 
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("convert SOAP11 to SOAP12");
         }
 
         SOAPEnvelope clonedOldEnv = MessageHelper.cloneSOAPEnvelope(axisOutMsgCtx.getEnvelope());
 
         SOAPFactory soap12Factory = OMAbstractFactory.getSOAP12Factory();
-        SOAPEnvelope newEnvelope  = soap12Factory.getDefaultEnvelope();
+        SOAPEnvelope newEnvelope = soap12Factory.getDefaultEnvelope();
 
         if (clonedOldEnv.getHeader() != null) {
             Iterator itr = clonedOldEnv.getHeader().getChildren();
@@ -105,29 +105,29 @@ public class SOAPUtils {
                 if (omNode instanceof SOAPHeaderBlock) {
                     SOAPHeaderBlock soapHeader = (SOAPHeaderBlock) omNode;
                     SOAPHeaderBlock newSOAPHeader = soap12Factory.createSOAPHeaderBlock(
-                        soapHeader.getLocalName(), soapHeader.getNamespace());
+                            soapHeader.getLocalName(), soapHeader.getNamespace());
                     Iterator allAttributes = soapHeader.getAllAttributes();
 
-                    while(allAttributes.hasNext()) {
+                    while (allAttributes.hasNext()) {
                         OMAttribute attr = (OMAttribute) allAttributes.next();
-                        if(attr.getNamespace() != null
+                        if (attr.getNamespace() != null
                             && SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(
-                            attr.getNamespace().getNamespaceURI())) {
+                                attr.getNamespace().getNamespaceURI())) {
                             String attrName = attr.getLocalName();
 
-                            if(SOAP_ATR_ACTOR.equals(attrName)) {
+                            if (SOAP_ATR_ACTOR.equals(attrName)) {
                                 OMAttribute newAtr = omNode.getOMFactory().createOMAttribute(
-                                    SOAP_ATR_ROLE, newEnvelope.getNamespace(),
-                                    attr.getAttributeValue());
+                                        SOAP_ATR_ROLE, newEnvelope.getNamespace(),
+                                        attr.getAttributeValue());
                                 newSOAPHeader.addAttribute(newAtr);
 
-                            } else if(SOAP_ATR_MUST_UNDERSTAND.equals(attrName)) {
+                            } else if (SOAP_ATR_MUST_UNDERSTAND.equals(attrName)) {
                                 boolean isMustUnderstand = soapHeader.getMustUnderstand();
                                 newSOAPHeader.setMustUnderstand(isMustUnderstand);
 
                             } else {
                                 log.warn("removed unsupported attribute from SOAP 1.1 " +
-                                    "namespace when converting to SOAP 1.2:" + attrName);
+                                         "namespace when converting to SOAP 1.2:" + attrName);
                             }
 
                         } else {
@@ -166,7 +166,7 @@ public class SOAPUtils {
                     newEnvelope.getBody().addChild(newSOAPFault);
                     // get the existing envelope
                     SOAPFaultCode code = soapFault.getCode();
-                    if(code != null) {
+                    if (code != null) {
                         SOAPFaultCode newSOAPFaultCode = soap12Factory.createSOAPFaultCode();
                         newSOAPFault.setCode(newSOAPFaultCode);
 
@@ -182,11 +182,11 @@ public class SOAPUtils {
                     }
 
                     SOAPFaultReason reason = soapFault.getReason();
-                    if(reason != null) {
+                    if (reason != null) {
                         SOAPFaultReason newSOAPFaultReason
                                 = soap12Factory.createSOAPFaultReason(newSOAPFault);
                         String reasonText = reason.getText();
-                        if(reasonText != null) {
+                        if (reasonText != null) {
                             SOAPFaultText newSOAPFaultText
                                     = soap12Factory.createSOAPFaultText(newSOAPFaultReason);
                             newSOAPFaultText.setLang("en"); // hard coded
@@ -196,7 +196,7 @@ public class SOAPUtils {
                     }
 
                     SOAPFaultDetail detail = soapFault.getDetail();
-                    if(detail != null) {
+                    if (detail != null) {
                         SOAPFaultDetail newSOAPFaultDetail
                                 = soap12Factory.createSOAPFaultDetail(newSOAPFault);
                         Iterator<OMElement> iter = detail.getAllDetailEntries();
@@ -205,7 +205,7 @@ public class SOAPUtils {
                             iter.remove();
                             newSOAPFaultDetail.addDetailEntry(detailEntry);
                         }
-                         newSOAPFault.setDetail(newSOAPFaultDetail);
+                        newSOAPFault.setDetail(newSOAPFaultDetail);
                     }
 
                 } else {
@@ -226,23 +226,24 @@ public class SOAPUtils {
      * <br />
      * <b>Message Changes:</b>
      * <ol>
-     *     <li>Convert envelope, header elements</li>
-     *     <li>For each header block convert attribute role to actor</li>
-     *     <li>For each header block convert mustUnderstand value type</li>
-     *     <li>For each header block remove 1.2 namespaced other attributes</li>
+     * <li>Convert envelope, header elements</li>
+     * <li>For each header block convert attribute role to actor</li>
+     * <li>For each header block convert mustUnderstand value type</li>
+     * <li>For each header block remove 1.2 namespaced other attributes</li>
      * </ol>
-     *
+     * <p/>
      * <b>Fault Changes:</b>
      * <ol>
-     *     <li>Convert fault element</li>
-     *     <li>Fault/Code to faultcode</li>
-     *     <li>First Fault/Reason/Text to faultstring</li>
+     * <li>Convert fault element</li>
+     * <li>Fault/Code to faultcode</li>
+     * <li>First Fault/Reason/Text to faultstring</li>
      * </ol>
+     *
      * @param axisOutMsgCtx message context to be converted
      * @throws AxisFault in case of an error in conversion
      */
     public static void convertSOAP12toSOAP11(
-        org.apache.axis2.context.MessageContext axisOutMsgCtx) throws AxisFault {
+            org.apache.axis2.context.MessageContext axisOutMsgCtx) throws AxisFault {
 
         if (log.isDebugEnabled()) {
             log.debug("convert SOAP12 to SOAP11");
@@ -251,7 +252,7 @@ public class SOAPUtils {
         SOAPEnvelope clonedOldEnv = MessageHelper.cloneSOAPEnvelope(axisOutMsgCtx.getEnvelope());
 
         SOAPFactory soap11Factory = OMAbstractFactory.getSOAP11Factory();
-        SOAPEnvelope newEnvelope  = soap11Factory.getDefaultEnvelope();
+        SOAPEnvelope newEnvelope = soap11Factory.getDefaultEnvelope();
         if (clonedOldEnv.getHeader() != null) {
             Iterator itr = clonedOldEnv.getHeader().getChildren();
             while (itr.hasNext()) {
@@ -260,30 +261,30 @@ public class SOAPUtils {
                 if (omNode instanceof SOAPHeaderBlock) {
                     SOAPHeaderBlock soapHeaderBlock = (SOAPHeaderBlock) omNode;
                     SOAPHeaderBlock newSOAPHeader = soap11Factory.createSOAPHeaderBlock(
-                        soapHeaderBlock.getLocalName(), soapHeaderBlock.getNamespace());
+                            soapHeaderBlock.getLocalName(), soapHeaderBlock.getNamespace());
 
                     Iterator allAttributes = soapHeaderBlock.getAllAttributes();
 
-                    while(allAttributes.hasNext()) {
+                    while (allAttributes.hasNext()) {
                         OMAttribute attr = (OMAttribute) allAttributes.next();
                         if (attr.getNamespace() != null
                             && SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(
-                            attr.getNamespace().getNamespaceURI())) {
+                                attr.getNamespace().getNamespaceURI())) {
                             String attrName = attr.getLocalName();
 
                             if (SOAP_ATR_ROLE.equals(attrName)) {
                                 OMAttribute newAtr = omNode.getOMFactory().createOMAttribute(
-                                    SOAP_ATR_ACTOR, newEnvelope.getNamespace(),
-                                    attr.getAttributeValue());
+                                        SOAP_ATR_ACTOR, newEnvelope.getNamespace(),
+                                        attr.getAttributeValue());
                                 newSOAPHeader.addAttribute(newAtr);
 
-                            } else if(SOAP_ATR_MUST_UNDERSTAND.equals(attrName)) {
+                            } else if (SOAP_ATR_MUST_UNDERSTAND.equals(attrName)) {
                                 boolean isMustUnderstand = soapHeaderBlock.getMustUnderstand();
                                 newSOAPHeader.setMustUnderstand(isMustUnderstand);
 
                             } else {
                                 log.warn("removed unsupported attribute from SOAP 1.2 " +
-                                    "namespace when converting to SOAP 1.1:" + attrName);
+                                         "namespace when converting to SOAP 1.1:" + attrName);
                             }
 
                         } else {
@@ -314,16 +315,16 @@ public class SOAPUtils {
                 newEnvelope.getBody().addChild(newSOAPFault);
 
                 SOAPFaultCode code = soapFault.getCode();
-                if(code != null) {
+                if (code != null) {
                     SOAPFaultCode newSOAPFaultCode
                             = soap11Factory.createSOAPFaultCode(newSOAPFault);
 
                     SOAPFaultValue value = code.getValue();
-                    if(value != null) {
+                    if (value != null) {
                         // get the corresponding SOAP12 fault code
                         // for the provided SOAP11 fault code
                         soap11Factory.createSOAPFaultValue(newSOAPFaultCode);
-                        if(value.getTextAsQName() != null) {
+                        if (value.getTextAsQName() != null) {
                             newSOAPFaultCode.setText(
                                     getMappingSOAP11Code(value.getTextAsQName()));
                         }
@@ -331,7 +332,7 @@ public class SOAPUtils {
                 }
 
                 SOAPFaultReason reason = soapFault.getReason();
-                if(reason != null) {
+                if (reason != null) {
                     SOAPFaultReason newSOAPFaultReason
                             = soap11Factory.createSOAPFaultReason(newSOAPFault);
 
@@ -345,7 +346,7 @@ public class SOAPUtils {
                 }
 
                 SOAPFaultDetail detail = soapFault.getDetail();
-                if(detail != null) {
+                if (detail != null) {
                     SOAPFaultDetail newSOAPFaultDetail
                             = soap11Factory.createSOAPFaultDetail(newSOAPFault);
                     Iterator<OMElement> iter = detail.getAllDetailEntries();
@@ -369,13 +370,15 @@ public class SOAPUtils {
             }
 
         }
-        
+
         axisOutMsgCtx.setEnvelope(newEnvelope);
     }
 
-    /**********************************************************************
-     *                     Fault code conversions                         *
-     **********************************************************************/
+    /**
+     * *******************************************************************
+     * Fault code conversions                         *
+     * ********************************************************************
+     */
 
     private static final QName S11_FAULTCODE_VERSIONMISMATCH = new QName(
             SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI, "VersionMismatch",
@@ -435,7 +438,7 @@ public class SOAPUtils {
             return S11_FAULTCODE_SERVER;
         } else if (S12_FAULTCODE_DATAENCODINGUNKNOWN.equals(soap12Code)) {
             log.debug("There is no matching SOAP11 code value for SOAP12 fault code " +
-                    "DataEncodingUnknown, returning a blank QName");
+                      "DataEncodingUnknown, returning a blank QName");
             return new QName("");
         } else {
             log.warn("An unidentified SOAP11 FaultCode encountered, returning a blank QName");

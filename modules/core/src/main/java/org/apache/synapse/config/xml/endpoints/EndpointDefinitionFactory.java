@@ -31,7 +31,7 @@ import org.apache.synapse.endpoints.EndpointDefinition;
 import javax.xml.namespace.QName;
 import java.util.StringTokenizer;
 
-public class EndpointDefinitionFactory implements DefinitionFactory{
+public class EndpointDefinitionFactory implements DefinitionFactory {
     public static final Log log = LogFactory.getLog(EndpointDefinitionFactory.class);
 
     /**
@@ -107,9 +107,9 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
 
             definition.setSecurityOn(true);
 
-            OMAttribute policyKey      = wsSec.getAttribute(
+            OMAttribute policyKey = wsSec.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "policy"));
-            OMAttribute inboundPolicyKey  = wsSec.getAttribute(
+            OMAttribute inboundPolicyKey = wsSec.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "inboundPolicy"));
             OMAttribute outboundPolicyKey = wsSec.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "outboundPolicy"));
@@ -174,14 +174,14 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
         }
 
         OMElement markAsTimedOut = elem.getFirstChildWithName(new QName(
-            SynapseConstants.SYNAPSE_NAMESPACE,
-            XMLConfigConstants.MARK_FOR_SUSPENSION));
+                SynapseConstants.SYNAPSE_NAMESPACE,
+                XMLConfigConstants.MARK_FOR_SUSPENSION));
 
         if (markAsTimedOut != null) {
 
             OMElement timeoutCodes = markAsTimedOut.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.ERROR_CODES));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.ERROR_CODES));
             if (timeoutCodes != null && timeoutCodes.getText() != null) {
                 StringTokenizer st = new StringTokenizer(timeoutCodes.getText().trim(), ", ");
                 while (st.hasMoreTokens()) {
@@ -190,41 +190,41 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                         definition.addTimeoutErrorCode(Integer.parseInt(s));
                     } catch (NumberFormatException e) {
                         handleException("The timeout error codes should be specified " +
-                            "as valid numbers separated by commas : " + timeoutCodes.getText(), e);
+                                "as valid numbers separated by commas : " + timeoutCodes.getText(), e);
                     }
                 }
             }
 
             OMElement retriesBeforeSuspend = markAsTimedOut.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.RETRIES_BEFORE_SUSPENSION));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.RETRIES_BEFORE_SUSPENSION));
             if (retriesBeforeSuspend != null && retriesBeforeSuspend.getText() != null) {
                 try {
                     definition.setRetriesOnTimeoutBeforeSuspend(
-                        Integer.parseInt(retriesBeforeSuspend.getText().trim()));
+                            Integer.parseInt(retriesBeforeSuspend.getText().trim()));
                 } catch (NumberFormatException e) {
                     handleException("The retries before suspend [for timeouts] should be " +
-                        "specified as a valid number : " + retriesBeforeSuspend.getText(), e);
+                            "specified as a valid number : " + retriesBeforeSuspend.getText(), e);
                 }
             }
 
             OMElement retryDelay = markAsTimedOut.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.RETRY_DELAY));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.RETRY_DELAY));
             if (retryDelay != null && retryDelay.getText() != null) {
                 try {
                     definition.setRetryDurationOnTimeout(
-                        Integer.parseInt(retryDelay.getText().trim()));
+                            Integer.parseInt(retryDelay.getText().trim()));
                 } catch (NumberFormatException e) {
                     handleException("The retry delay for timeouts should be specified " +
-                        "as a valid number : " + retryDelay.getText(), e);
+                            "as a valid number : " + retryDelay.getText(), e);
                 }
             }
         }
 
         // support backwards compatibility with Synapse 1.2 - for suspendDurationOnFailure
         OMElement suspendDurationOnFailure = elem.getFirstChildWithName(new QName(
-            SynapseConstants.SYNAPSE_NAMESPACE, "suspendDurationOnFailure"));
+                SynapseConstants.SYNAPSE_NAMESPACE, "suspendDurationOnFailure"));
         if (suspendDurationOnFailure != null && suspendDurationOnFailure.getText() != null) {
 
             log.warn("Configuration uses deprecated style for endpoint 'suspendDurationOnFailure'");
@@ -234,19 +234,19 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 definition.setSuspendProgressionFactor((float) 1.0);
             } catch (NumberFormatException e) {
                 handleException("The initial suspend duration should be specified " +
-                    "as a valid number : " + suspendDurationOnFailure.getText(), e);
+                        "as a valid number : " + suspendDurationOnFailure.getText(), e);
             }
         }
 
         OMElement suspendOnFailure = elem.getFirstChildWithName(new QName(
-            SynapseConstants.SYNAPSE_NAMESPACE,
-            XMLConfigConstants.SUSPEND_ON_FAILURE));
+                SynapseConstants.SYNAPSE_NAMESPACE,
+                XMLConfigConstants.SUSPEND_ON_FAILURE));
 
         if (suspendOnFailure != null) {
 
             OMElement suspendCodes = suspendOnFailure.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.ERROR_CODES));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.ERROR_CODES));
             if (suspendCodes != null && suspendCodes.getText() != null) {
 
                 StringTokenizer st = new StringTokenizer(suspendCodes.getText().trim(), ", ");
@@ -256,58 +256,58 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                         definition.addSuspendErrorCode(Integer.parseInt(s));
                     } catch (NumberFormatException e) {
                         handleException("The suspend error codes should be specified " +
-                            "as valid numbers separated by commas : " + suspendCodes.getText(), e);
+                                "as valid numbers separated by commas : " + suspendCodes.getText(), e);
                     }
                 }
             }
 
             OMElement initialDuration = suspendOnFailure.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.SUSPEND_INITIAL_DURATION));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.SUSPEND_INITIAL_DURATION));
             if (initialDuration != null && initialDuration.getText() != null) {
                 try {
                     definition.setInitialSuspendDuration(
-                        Integer.parseInt(initialDuration.getText().trim()));
+                            Integer.parseInt(initialDuration.getText().trim()));
                 } catch (NumberFormatException e) {
                     handleException("The initial suspend duration should be specified " +
-                        "as a valid number : " + initialDuration.getText(), e);
+                            "as a valid number : " + initialDuration.getText(), e);
                 }
             }
 
             OMElement progressionFactor = suspendOnFailure.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.SUSPEND_PROGRESSION_FACTOR));
             if (progressionFactor != null && progressionFactor.getText() != null) {
                 try {
                     definition.setSuspendProgressionFactor(
-                        Float.parseFloat(progressionFactor.getText().trim()));
+                            Float.parseFloat(progressionFactor.getText().trim()));
                 } catch (NumberFormatException e) {
                     handleException("The suspend duration progression factor should be specified " +
-                        "as a valid float : " + progressionFactor.getText(), e);
+                            "as a valid float : " + progressionFactor.getText(), e);
                 }
             }
 
             OMElement maximumDuration = suspendOnFailure.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE,
-                XMLConfigConstants.SUSPEND_MAXIMUM_DURATION));
+                    SynapseConstants.SYNAPSE_NAMESPACE,
+                    XMLConfigConstants.SUSPEND_MAXIMUM_DURATION));
             if (maximumDuration != null && maximumDuration.getText() != null) {
                 try {
                     definition.setSuspendMaximumDuration(
-                        Long.parseLong(maximumDuration.getText().trim()));
+                            Long.parseLong(maximumDuration.getText().trim()));
                 } catch (NumberFormatException e) {
                     handleException("The maximum suspend duration should be specified " +
-                        "as a valid number : " + maximumDuration.getText(), e);
+                            "as a valid number : " + maximumDuration.getText(), e);
                 }
             }
         }
 
         OMElement retryConfig = elem.getFirstChildWithName(new QName(
-            SynapseConstants.SYNAPSE_NAMESPACE, XMLConfigConstants.RETRY_CONFIG));
+                SynapseConstants.SYNAPSE_NAMESPACE, XMLConfigConstants.RETRY_CONFIG));
 
         if (retryConfig != null) {
 
             OMElement retryDisabledErrorCodes = retryConfig.getFirstChildWithName(new QName(
-                SynapseConstants.SYNAPSE_NAMESPACE, "disabledErrorCodes"));
+                    SynapseConstants.SYNAPSE_NAMESPACE, "disabledErrorCodes"));
             if (retryDisabledErrorCodes != null && retryDisabledErrorCodes.getText() != null) {
 
                 StringTokenizer st = new StringTokenizer(
@@ -343,8 +343,8 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             }
 
 
-
         }
+
 
         return definition;
     }
