@@ -22,9 +22,10 @@ package org.apache.synapse.task;
  * initialization completion event.
  */
 public interface TaskManagerObserver {
-	/**
-	 * Notifies all the <code>Subscribers</code> when the NTaskTaskManager is
-	 * successfully initialized.
-	 */
-	void update();
+    /**
+     * . * Notifies all the <code>Subscribers</code> when the NTaskTaskManager
+     * is
+     * successfully initialized.
+     */
+    void update();
 }
