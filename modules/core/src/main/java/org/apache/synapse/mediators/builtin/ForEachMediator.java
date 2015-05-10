@@ -40,7 +40,7 @@ import java.util.List;
 
 public class ForEachMediator extends AbstractMediator {
 
-    private static OMContainer parent;
+    private OMContainer parent;
     /**
      * The xpath that will list the elements to be split
      */
@@ -272,7 +272,7 @@ public class ForEachMediator extends AbstractMediator {
      * @return List detached OMElements in the envelope matching the expression
      * @throws JaxenException if the XPath expression evaluation fails
      */
-    public static List<OMNode> getDetachedMatchingElements(SOAPEnvelope envelope,
+    public List<OMNode> getDetachedMatchingElements(SOAPEnvelope envelope,
                                                            MessageContext synCtx,
                                                            SynapseXPath expression)
             throws JaxenException {
