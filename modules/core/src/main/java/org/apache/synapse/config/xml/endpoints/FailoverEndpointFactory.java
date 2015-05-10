@@ -29,6 +29,7 @@ import org.apache.axis2.util.JavaUtils;
 import javax.xml.namespace.QName;
 import java.util.List;
 import java.util.Properties;
+import java.util.StringTokenizer;
 
 /**
  * Creates {@link FailoverEndpoint} using a XML configuration.
@@ -57,6 +58,23 @@ public class FailoverEndpointFactory extends EndpointFactory {
         if (failoverElement != null) {
 
             FailoverEndpoint failoverEndpoint = new FailoverEndpoint();
+
+            OMElement failoverHttpStatusCodesElem = failoverElement.getFirstChildWithName(new QName(SynapseConstants.SYNAPSE_NAMESPACE,"failoverHttpStatusCodes"));
+            if(failoverHttpStatusCodesElem!=null) {
+                StringTokenizer st = new StringTokenizer(
+                        failoverHttpStatusCodesElem.getText().trim(), ", ");
+                while (st.hasMoreTokens()) {
+                    String s = st.nextToken();
+                    try {
+                        failoverEndpoint.addFailoverHttpStatusCodes(Integer.parseInt(s));
+                    } catch (NumberFormatException e) {
+                        handleException("The failover http status codes should be specified as valid " +
+                                "numbers separated by commas : "
+                                + failoverHttpStatusCodesElem.getText(), e);
+                    }
+                }
+            }
+
             // set endpoint name
             String name = epConfig.getAttributeValue(new QName("name"));
             if (name != null) {

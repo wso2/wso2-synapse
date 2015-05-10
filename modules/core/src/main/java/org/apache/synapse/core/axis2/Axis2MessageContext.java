@@ -186,8 +186,8 @@ public class Axis2MessageContext implements MessageContext {
             return m;
         }
     }
-    
-    public Mediator getDefaultConfiguration(String key){
+
+    public Mediator getDefaultConfiguration(String key) {
         Object o = localEntries.get(key);
         if (o != null && o instanceof Mediator) {
             return (Mediator) o;
@@ -197,7 +197,7 @@ public class Axis2MessageContext implements MessageContext {
             return m;
         }
     }
-    
+
 
     public OMElement getFormat(String key) {
 
@@ -580,7 +580,7 @@ public class Axis2MessageContext implements MessageContext {
         if (soapHeader != null) {
 
             sb.append(separator).append("Headers : ");
-            for (Iterator iter = soapHeader.examineAllHeaderBlocks(); iter.hasNext();) {
+            for (Iterator iter = soapHeader.examineAllHeaderBlocks(); iter.hasNext(); ) {
 
                 Object o = iter.next();
                 if (o instanceof SOAPHeaderBlock) {
@@ -607,7 +607,7 @@ public class Axis2MessageContext implements MessageContext {
     }
 
     public boolean isContinuationEnabled() {
-    	return continuationEnabled ? true : synEnv.isContinuationEnabled();
+        return continuationEnabled ? true : synEnv.isContinuationEnabled();
     }
 
     public void setContinuationEnabled(boolean continuationEnabled) {
@@ -615,7 +615,7 @@ public class Axis2MessageContext implements MessageContext {
     }
 
     public void setMediatorPosition(int mediatorPosition) {
-         this.mediatorPosition = mediatorPosition;
+        this.mediatorPosition = mediatorPosition;
     }
 
     public int getMediatorPosition() {

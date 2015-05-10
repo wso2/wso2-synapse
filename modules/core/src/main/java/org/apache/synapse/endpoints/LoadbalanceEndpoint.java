@@ -157,6 +157,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
             // if this is not a retry
             informFailure(synCtx, SynapseConstants.ENDPOINT_LB_NONE_READY, msg);
         }
+
     }
 
     private void sendToApplicationMember(MessageContext synCtx,

@@ -33,7 +33,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 
 public class SynapseAxisServlet extends AxisServlet {
-    
+
     /**
      * Overrides init method so that avoid  starting listeners again
      *
