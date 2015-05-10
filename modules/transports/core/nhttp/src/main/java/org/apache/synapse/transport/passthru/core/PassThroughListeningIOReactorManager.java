@@ -278,7 +278,9 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean closeDynamicPTTEndpoint(int port) {
         try {
+            log.info("Closing Endpoint Listener for port "+port);
             dynamicPTTListeningEndpointMapper.get(port).close();
+            log.info("Successfully closed Endpoint Listener for port "+port);
         } catch (Exception e) {
             log.error("Cannot close  Endpoint relevant to port " + port, e);
             return false;
@@ -310,12 +312,62 @@ public class PassThroughListeningIOReactorManager {
                             if (dynamicPTTListeningEndpointMapper.containsKey(endPointPort)) {
                                 continue;
                             }
+                            log.info("Closing Endpoint Listener for port "+port);
                             listenerEndpoint.close();
+                            log.info("Successfully closed Endpoint Listener for port "+port);
                         }
                     }
                 } else {
                     for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        log.info("Closing Endpoint Listener for port "+port);
                         listenerEndpoint.close();
+                        log.info("Successfully closed Endpoint Listener for port "+port);
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Error occurred when closing Endpoint in PassThrough Transport Related to port " + port, e);
+            return false;
+        }
+    }
+
+    /**
+     * Close specific endpoints started by PTT Listeners using give set of bind addresses.
+     *
+     * @param port          Port of the listener
+     * @param bindAddresses bind address list of endpoints to be closed
+     * @return true if successfully closed, false if any error
+     */
+    public boolean closeSpecificPTTListenerEndpoints(int port,
+                                                     Set<InetSocketAddress> bindAddresses) {
+        try {
+            ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
+            if (listeningIOReactor != null) {
+                Set<ListenerEndpoint> endpoints = listeningIOReactor.getEndpoints();
+                // If it is shared IO Reactor then only close endpoints related to PTT Listener
+                if (passThroughListenerServerIODispatchMapper.get(port) instanceof MultiListenerServerIODispatch) {
+                    for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        if (listenerEndpoint.getAddress() instanceof InetSocketAddress) {
+                            int endPointPort = ((InetSocketAddress) listenerEndpoint.getAddress()).getPort();
+                            if (dynamicPTTListeningEndpointMapper.containsKey(endPointPort)) {
+                                continue;
+                            }
+
+                            for (InetSocketAddress inetSocketAddress : bindAddresses) {
+                                if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
+                                    listenerEndpoint.close();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        for (InetSocketAddress inetSocketAddress : bindAddresses) {
+                            if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
+                                listenerEndpoint.close();
+                            }
+                        }
                     }
                 }
             }

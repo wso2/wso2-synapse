@@ -21,6 +21,7 @@ package org.apache.synapse.mediators.db;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.transaction.TranscationManger;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,7 +32,7 @@ import java.sql.Connection;
  * Simple database table lookup mediator. Designed only for read/lookup
  */
 public class DBLookupMediator extends AbstractDBMediator {
-
+	
     protected void processStatement(Statement stmnt, MessageContext msgCtx) {
 
         SynapseLog synLog = getLog(msgCtx);
@@ -40,8 +41,23 @@ public class DBLookupMediator extends AbstractDBMediator {
         // set as message context properties, any results that have been specified
         Connection con = null;
         ResultSet rs = null;
+        boolean threadInTx = false;
         try {
-        	con = this.getDataSource().getConnection();
+        	if(TranscationManger.isThreadHasEnlistment()){
+        		threadInTx = true;
+        		try {            	
+                 	con = TranscationManger.addConnection(this.getDataSource());
+                 }catch (Exception e)
+                 {
+                 	handleException("SQL Error while adding/getting connection to/from cache : " +
+                             stmnt.getRawStatement() +
+                             " against DataSource : " + getDSName(), e, msgCtx);
+                 }
+        	}else{
+        		con = this.getDataSource().getConnection();
+        	}
+        	
+        	 
             PreparedStatement ps = getPreparedStatement(stmnt, con, msgCtx);
             rs = ps.executeQuery();
 
@@ -85,18 +101,18 @@ public class DBLookupMediator extends AbstractDBMediator {
             
         } catch (SQLException e) {
             handleException("SQL Exception occurred while executing statement : " +
-                    stmnt.getRawStatement() +
-                    " against DataSource : " + getDSName(), e, msgCtx);
+                            stmnt.getRawStatement() +
+                            " against DataSource : " + getDSName(), e, msgCtx);
         } catch (Exception e) {
             handleException("Error executing statement : " + stmnt.getRawStatement() +
-                    " against DataSource : " + getDSName(), e, msgCtx);
+                            " against DataSource : " + getDSName(), e, msgCtx);
         } finally {
             if (rs != null) {
                 try {
                     rs.close();
                 } catch (SQLException e) {}
             }
-            if (con != null) {
+            if (con != null && !threadInTx) {
                 try {
                     con.close();
                 } catch (SQLException ignore) {}

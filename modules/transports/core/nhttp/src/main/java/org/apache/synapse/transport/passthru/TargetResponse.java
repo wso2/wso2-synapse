@@ -22,6 +22,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
@@ -140,6 +141,8 @@ public class TargetResponse {
 
         // Update connection state
         if (decoder.isCompleted()) {
+            conn.getContext().setAttribute(PassThroughConstants.RES_FROM_BACKEND_READ_END_TIME,System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.RES_ARRIVAL_TIME,System.currentTimeMillis());
             TargetContext.updateState(conn, ProtocolState.RESPONSE_DONE);
 
             targetConfiguration.getMetrics().notifyReceivedMessageSize(
@@ -150,7 +153,9 @@ public class TargetResponse {
 
                 targetConfiguration.getConnections().shutdownConnection(conn);
             } else {
-                targetConfiguration.getConnections().releaseConnection(conn);
+                if (conn instanceof LoggingNHttpClientConnection) {
+                    ((LoggingNHttpClientConnection) conn).setReleaseConn(true);
+                } 
             }
         }
         return bytes;

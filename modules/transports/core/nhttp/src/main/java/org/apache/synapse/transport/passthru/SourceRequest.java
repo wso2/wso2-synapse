@@ -132,6 +132,7 @@ public class SourceRequest {
             int bytes = pipe.produce(decoder);
 
             if (decoder.isCompleted()) {
+                conn.getContext().setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_END_TIME,System.currentTimeMillis());
                 sourceConfiguration.getMetrics().
                         notifyReceivedMessageSize(conn.getMetrics().getReceivedBytesCount());
 

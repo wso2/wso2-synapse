@@ -215,11 +215,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     private boolean allowHotUpdate = true;
 
     /**
-     * List of commented text segments within the Synapse Configuration
-     */
-    private List<String> commentedTextList = new ArrayList<String>();
-
-    /**
      * Add a named sequence into the local registry. If a sequence already exists by the specified
      * key a runtime exception is thrown.
      *
@@ -1439,6 +1434,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @param se SynapseEnvironment specifying the env to be initialized
      */
     public synchronized void init(SynapseEnvironment se) {
+        SynapseConfiguration previouseConfiguration = SynapseConfigUtils.getLastRegisteredSynapseConfiguration();
+        SynapseConfigUtils.registerSynapseConfiguration(this);
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing the Synapse Configuration using the SynapseEnvironment");
@@ -1474,11 +1471,15 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			}
         }
 
+        if(previouseConfiguration != null) {
+            destroyExistingInbounds(previouseConfiguration);
+        }
 
 		for (InboundEndpoint endpoint : getInboundEndpoints()) {
 			try {
 				endpoint.init(se);
 			} catch (Exception e) {
+                inboundEndpointMap.remove(endpoint.getName());
 				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
 				          e.getMessage());
 			}
@@ -2102,23 +2103,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
     }
 
-    /**
-     * Returns CommentedText List
-     *
-     * @return ArrayList of String contains commented text segments
-     */
-    public List<String> getCommentedTextList() {
-        return commentedTextList;
-    }
-
-    /**
-     * Add new comment text entry to the existing list
-     *
-     * @param comment String comment
-     */
-    public void addToCommentedTextList(String comment) {
-        if (comment != null && comment.length() > 0) {
-            this.commentedTextList.add(comment);
+    private  void destroyExistingInbounds(SynapseConfiguration synapseConfiguration){
+        Collection<InboundEndpoint> inboundEndpoints = synapseConfiguration.getInboundEndpoints();
+        for(InboundEndpoint inboundEndpoint : inboundEndpoints){
+            inboundEndpoint.destroy();
         }
     }
+
 }

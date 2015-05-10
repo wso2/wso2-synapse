@@ -288,34 +288,42 @@ public class ServerConnFactoryBuilder {
      */
     public TransportInDescription loadMultiProfileSSLConfig () {
 
-        //Already loaded
-        if (transportIn.getParameter("SSLProfiles")!=null) {
-            return transportIn;
-        }
-        Parameter profilePathParam = transportIn.getParameter("SSLProfilesConfigPath");
+        Parameter profilePathParam = transportIn.getParameter("dynamicSSLProfilesConfig");
+
+        //Custom SSL Profile configuration file not configured
         if (profilePathParam == null) {
-            return null;
+            //Custom SSL Profiles configured in Axis2 configuration
+            if (transportIn.getParameter("SSLProfiles") != null) {
+                return transportIn;
+            } else {
+                return null;
+            }
         }
 
+        ////Custom SSL Profile configured. Ignore Axis2 configurations
         OMElement pathEl = profilePathParam.getParameterElement();
         String path = pathEl.getFirstChildWithName(new QName("filePath")).getText();
+
         try {
-            if(path!=null) {
-                String separator = path.startsWith(System.getProperty("file.separator"))?
-                                   "":System.getProperty("file.separator");
-                String fullPath = System.getProperty("user.dir")+ separator +path;
+            if (path != null) {
+
+                String separator = path.startsWith(System.getProperty("file.separator")) ?
+                                   "" : System.getProperty("file.separator");
+                String fullPath = System.getProperty("user.dir") + separator + path;
+
                 OMElement profileEl = new StAXOMBuilder(fullPath).getDocumentElement();
                 Parameter profileParam = new Parameter();
                 profileParam.setParameterElement(profileEl);
                 profileParam.setName("SSLProfiles");
                 profileParam.setValue(profileEl);
+
                 transportIn.addParameter(profileParam);
-                log.info("SSLProfile configuration is loaded from path: "+fullPath);
+                log.info("SSLProfile configuration is loaded from path: " + fullPath);
+
                 return transportIn;
             }
-        }
-        catch (Exception e) {
-            log.error("Could not load SSLProfileConfig from file path: "+path, e);
+        } catch (Exception e) {
+            log.error("Could not load SSLProfileConfig from file path: " + path, e);
         }
         return null;
     }

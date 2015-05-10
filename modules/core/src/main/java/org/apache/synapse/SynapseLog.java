@@ -39,6 +39,22 @@ public interface SynapseLog {
      * @return <code>true</code> if trace or debug is enabled
      */
     boolean isTraceOrDebugEnabled();
+
+    /**
+     * Check whether a call to {@link #debug(Object)} would actually cause a log
+     * message to be written to the logs.
+     *
+     * @return <code>true</code> if trace or debug is enabled
+     */
+    boolean isDebugEnabled();
+
+    /**
+     * Check whether a call to {@link #trace(Object)} would actually cause a log
+     * message to be written to the logs.
+     *
+     * @return <code>true</code> if trace or debug is enabled
+     */
+    boolean isTraceEnabled();
     
     /**
      * Log a message at level 'traceOrDebug'.
