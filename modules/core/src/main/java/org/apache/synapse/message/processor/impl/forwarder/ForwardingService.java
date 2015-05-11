@@ -43,6 +43,7 @@ import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
+import org.apache.synapse.message.store.impl.jms.JmsConsumer;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
 
@@ -419,8 +420,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						 // OMSourcedElemImpl correctly.
 						origAxis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
 						                         getNonRetryStatusCodes());
-						outCtx = sender.send(ep, messageContext);
-						isSuccessful = true;
+
+						if(messageConsumer != null && ((JmsConsumer)messageConsumer).isSessionAvailable()) {
+							outCtx = sender.send(ep, messageContext);
+						}
+						isSuccessful = true;//isSuccessfull is true even session is not available because of avoiding the unwanted retries
+
 					} catch (Exception e) {
 						// this means send has failed due to some reason so we
 						// have to retry it
