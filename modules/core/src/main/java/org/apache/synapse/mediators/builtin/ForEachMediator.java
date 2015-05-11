@@ -50,6 +50,12 @@ public class ForEachMediator extends AbstractMediator {
 
     private String sequenceRef;
 
+    private String id;
+
+    private static final String FOREACH_ORIGINAL_MESSAGE = "FOREACH_ORIGINAL_MESSAGE";
+
+    private static final String FOREACH_COUNTER = "FOREACH_COUNTER";
+
     public boolean mediate(MessageContext synCtx) {
         SynapseLog synLog = getLog(synCtx);
 
@@ -76,7 +82,23 @@ public class ForEachMediator extends AbstractMediator {
                             expression);
 
                 }
+
                 try {
+
+                    String idStr = (getId() == null) ? "" : getId() + "_";
+                    String originalMessagePropertyName = idStr + FOREACH_ORIGINAL_MESSAGE;
+                    String counterPropertyName = idStr + FOREACH_COUNTER;
+
+                    //set the counter and original message properties
+                    SOAPEnvelope originalEnvelop = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+                    int msgCounter = 0;
+                    synCtx.setProperty(originalMessagePropertyName, originalEnvelop);
+                    synCtx.setProperty(counterPropertyName, msgCounter);
+
+                    if(synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Saved original envelop, " + originalMessagePropertyName + " = " + originalEnvelop);
+                        synLog.traceOrDebug("Initialized foreach counter, " + counterPropertyName + " = " + msgCounter);
+                    }
 
                     SOAPEnvelope envelope = synCtx.getEnvelope();
                     // get the iteration elements and iterate through the list, this call
@@ -87,23 +109,25 @@ public class ForEachMediator extends AbstractMediator {
                                     synCtx,
                                     (SynapseXPath) expression);
 
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        if (parent != null) {
+
+                    if (parent != null) {
+                        if (synLog.isTraceOrDebugEnabled()) {
                             synLog.traceOrDebug(
                                     "Parent node for merging is : " + parent.toString());
-                        } else {
-                            synLog.traceOrDebugWarn("Error detecting parent element to merge");
                         }
+                    } else {
+                        synLog.traceOrDebugWarn("Error detecting parent element to merge");
                     }
 
+
                     int msgCount = splitElements.size();
-                    int msgNumber = 0;
 
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Splitting with XPath : " +
                                 expression + " resulted in " +
                                 msgCount + " elements");
                     }
+
 
                     // iterate through the list
                     for (Object element : splitElements) {
@@ -115,7 +139,7 @@ public class ForEachMediator extends AbstractMediator {
                         }
 
                         if (synLog.isTraceOrDebugEnabled()) {
-                            synLog.traceOrDebug("Submitting " + msgNumber +
+                            synLog.traceOrDebug("Submitting " + msgCounter +
                                     " of " + msgCount +
                                     " messages for processing in sequentially, in a general loop");
                         }
@@ -132,6 +156,16 @@ public class ForEachMediator extends AbstractMediator {
                                 .addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
 
                         synCtx.setEnvelope(envelope);
+
+                        msgCounter ++;
+                        if (synLog.isTraceOrDebugEnabled()) {
+                            synLog.traceOrDebug("Incrementing foreach counter , " + counterPropertyName + " = " + msgCounter);
+                        }
+                        synCtx.setProperty(counterPropertyName, msgCounter);
+                    }
+
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("After mediation foreach counter, " + counterPropertyName + " = " + msgCounter);
                     }
 
                 } catch (JaxenException e) {
@@ -322,4 +356,11 @@ public class ForEachMediator extends AbstractMediator {
         this.sequenceRef = sequenceKey;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

@@ -55,9 +55,10 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
             LogFactory.getLog(ForEachMediatorFactory.class);
 
     private static final QName FOREACH_Q =
-            new QName(
-                    SynapseConstants.SYNAPSE_NAMESPACE,
-                    "foreach");
+            new QName(SynapseConstants.SYNAPSE_NAMESPACE, "foreach");
+
+    private static final QName ID_Q
+            = new QName(XMLConfigConstants.NULL_NAMESPACE, "id");
 
     public QName getTagQName() {
         return FOREACH_Q;
@@ -69,6 +70,11 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         ForEachMediator mediator = new ForEachMediator();
         processAuditStatus(mediator, elem);
         OMAttribute expression = elem.getAttribute(ATT_EXPRN);
+
+        OMAttribute id = elem.getAttribute(ID_Q);
+        if (id != null) {
+            mediator.setId(id.getAttributeValue());
+        }
 
         if (expression != null) {
             try {
