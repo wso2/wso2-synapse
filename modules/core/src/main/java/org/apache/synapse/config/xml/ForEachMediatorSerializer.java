@@ -21,13 +21,12 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
  * <p>Serialize for each mediator as below : </p>
  * <p/>
  * <pre>
- * &lt;foreach expression="xpath" [sequence="sequence_ref"] &gt;
+ * &lt;foreach expression="xpath" [sequence="sequence_ref"] [id="foreach_id"] &gt;
  *     &lt;sequence&gt;
  *       (mediator)+
  *     &lt;/sequence&gt;?

@@ -20,7 +20,6 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMContainer;
-import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -33,7 +32,6 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
-import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,8 +65,10 @@ public class ForEachMediator extends AbstractMediator {
             synLog.error("ForEach: expression is null");
             return false;
         } else {
-            synLog.traceOrDebug("ForEach: expression = " +
-                    expression.toString());
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("ForEach: expression = " +
+                        expression.toString());
+            }
 
             if (!validateSequenceRef(synCtx)) {
                 synLog.error(
@@ -80,35 +80,31 @@ public class ForEachMediator extends AbstractMediator {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Splitting with Xpath : " +
                             expression);
-
                 }
 
                 try {
 
+                    //set the counter and original message properties
                     String idStr = (getId() == null) ? "" : getId() + "_";
                     String originalMessagePropertyName = idStr + FOREACH_ORIGINAL_MESSAGE;
                     String counterPropertyName = idStr + FOREACH_COUNTER;
 
-                    //set the counter and original message properties
-                    SOAPEnvelope originalEnvelop = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+                    SOAPEnvelope originalEnvelopProperty = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
                     int msgCounter = 0;
-                    synCtx.setProperty(originalMessagePropertyName, originalEnvelop);
+                    synCtx.setProperty(originalMessagePropertyName, originalEnvelopProperty);
                     synCtx.setProperty(counterPropertyName, msgCounter);
 
-                    if(synLog.isTraceOrDebugEnabled()) {
-                        synLog.traceOrDebug("Saved original envelop, " + originalMessagePropertyName + " = " + originalEnvelop);
-                        synLog.traceOrDebug("Initialized foreach counter, " + counterPropertyName + " = " + msgCounter);
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Saved original message property, " + originalMessagePropertyName + " = " + originalEnvelopProperty);
+                        synLog.traceOrDebug("Initialized foreach counter property, " + counterPropertyName + " = " + msgCounter);
                     }
 
-                    SOAPEnvelope envelope = synCtx.getEnvelope();
+                    SOAPEnvelope originalEnvelope = synCtx.getEnvelope();
+
                     // get the iteration elements and iterate through the list, this call
                     // will also detach all the iteration elements from the message and deduce the
                     // parent node to merge back the mediated content
-                    List<?> splitElements =
-                            getDetachedMatchingElements(envelope,
-                                    synCtx,
-                                    (SynapseXPath) expression);
-
+                    List<?> splitElements = getDetachedMatchingElements(originalEnvelope, synCtx, expression);
 
                     if (parent != null) {
                         if (synLog.isTraceOrDebugEnabled()) {
@@ -119,7 +115,6 @@ public class ForEachMediator extends AbstractMediator {
                         synLog.traceOrDebugWarn("Error detecting parent element to merge");
                     }
 
-
                     int msgCount = splitElements.size();
 
                     if (synLog.isTraceOrDebugEnabled()) {
@@ -127,7 +122,6 @@ public class ForEachMediator extends AbstractMediator {
                                 expression + " resulted in " +
                                 msgCount + " elements");
                     }
-
 
                     // iterate through the list
                     for (Object element : splitElements) {
@@ -144,33 +138,27 @@ public class ForEachMediator extends AbstractMediator {
                                     " messages for processing in sequentially, in a general loop");
                         }
 
-                        MessageContext iteratedMsgCtx =
-                                getIteratedMessage(synCtx,
-                                        envelope,
-                                        (OMNode) element);
+                        MessageContext iteratedMsgCtx = getIteratedMessage(synCtx, originalEnvelope, (OMNode) element);
 
                         mediateSequence(iteratedMsgCtx);
 
                         //add the mediated element to the parent from original message context
-                        ((OMElement) parent)
-                                .addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
+                        parent.addChild(iteratedMsgCtx.getEnvelope().getBody().getFirstElement());
 
-                        synCtx.setEnvelope(envelope);
-
-                        msgCounter ++;
+                        msgCounter++;
                         if (synLog.isTraceOrDebugEnabled()) {
                             synLog.traceOrDebug("Incrementing foreach counter , " + counterPropertyName + " = " + msgCounter);
                         }
                         synCtx.setProperty(counterPropertyName, msgCounter);
                     }
 
+                    //set the modified original envelop to message context
+                    synCtx.setEnvelope(originalEnvelope);
+
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("After mediation foreach counter, " + counterPropertyName + " = " + msgCounter);
                     }
 
-                } catch (JaxenException e) {
-                    handleException("Error evaluating split XPath expression : " +
-                            expression, e, synCtx);
                 } catch (AxisFault af) {
                     handleException("Error creating an iterated copy of the message",
                             af, synCtx);
@@ -198,9 +186,11 @@ public class ForEachMediator extends AbstractMediator {
                             "named : " + sequenceRef);
                 }
                 refSequence.mediate(synCtx);
+            } else {
+                handleException("Couldn't find the sequence named : " + sequenceRef, synCtx);
             }
         } else {
-            handleException("Couldn't find the sequence named : " + sequenceRef, synCtx);
+            handleException("Couldn't find sequence information", synCtx);
         }
     }
 
@@ -208,9 +198,9 @@ public class ForEachMediator extends AbstractMediator {
      * <p>
      * Validate at runtime the the Sequence of the ForEach mediator. The sequence cannot contain :
      * Call, CallOut and Send Mediators
-     * <p/>
      * This method only validates a sequence reference since other cases are covered during mediator
      * creation.
+     * </p>
      *
      * @param synCtx Message Context being mediated
      * @return validity of the sequence
@@ -219,14 +209,9 @@ public class ForEachMediator extends AbstractMediator {
         if (sequenceRef != null) {
             SequenceMediator refSequence =
                     (SequenceMediator) synCtx.getSequence(sequenceRef);
-            if (refSequence != null) {
-                return validateSequenceMediatorList(refSequence);
-            } else {
-                return false;
-            }
+            return ((refSequence != null) && (validateSequenceMediatorList(refSequence)));
         }
-        return true;
-
+        return true; //if sequenceRef is null, it will be an inline sequence
     }
 
     /**
@@ -258,32 +243,25 @@ public class ForEachMediator extends AbstractMediator {
      * the envelope
      * and the split result element.
      *
-     * @param synCtx   - original message context
-     * @param envelope - envelope to be used in the iteration
-     * @param omNode   - element which participates in the iteration replacement
-     * @return new Message Context created by the iteration
-     * @throws AxisFault      if there is a message creation failure
-     * @throws JaxenException if the expression evaluation failure
+     * @param synCtx           - original message context
+     * @param omNode           - element which participates in the iteration replacement
+     * @param originalEnvelope - original envelope when reaching foreach
+     * @return modified message context with new envelope created with omNode
+     * @throws AxisFault if there is a message creation failure
      */
-    private MessageContext getIteratedMessage(MessageContext synCtx,
-                                              SOAPEnvelope envelope, OMNode omNode)
-            throws AxisFault,
-            JaxenException {
-        MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx);
+    private MessageContext getIteratedMessage(MessageContext synCtx, SOAPEnvelope originalEnvelope,
+                                              OMNode omNode) throws AxisFault {
 
-        SOAPEnvelope newEnvelope = createNewSoapEnvelope(envelope);
+        SOAPEnvelope newEnvelope = createNewSoapEnvelope(originalEnvelope);
 
         if (newEnvelope.getBody() != null) {
-
-            if (newEnvelope.getBody().getFirstElement() != null) {
-                newEnvelope.getBody().getFirstElement().detach();
-            }
             newEnvelope.getBody().addChild(omNode);
         }
 
-        newCtx.setEnvelope(newEnvelope);
+        //set the new envelop to original message context
+        synCtx.setEnvelope(newEnvelope);
 
-        return newCtx;
+        return synCtx;
     }
 
     private SOAPEnvelope createNewSoapEnvelope(SOAPEnvelope envelope) {
@@ -304,14 +282,11 @@ public class ForEachMediator extends AbstractMediator {
      * @param synCtx     Message context from which to extract the elements
      * @param expression SynapseXPath expression describing the elements to be extracted
      * @return List detached OMElements in the envelope matching the expression
-     * @throws JaxenException if the XPath expression evaluation fails
      */
-    public List<OMNode> getDetachedMatchingElements(SOAPEnvelope envelope,
-                                                           MessageContext synCtx,
-                                                           SynapseXPath expression)
-            throws JaxenException {
+    private List<OMNode> getDetachedMatchingElements(SOAPEnvelope envelope,
+                                                     MessageContext synCtx, SynapseXPath expression) {
 
-        List<OMNode> elementList = new ArrayList<OMNode>();
+        List<OMNode> elementList = new ArrayList<>();
         Object o = expression.evaluate(envelope, synCtx);
         if (o instanceof OMNode) {
             parent = ((OMNode) o).getParent();

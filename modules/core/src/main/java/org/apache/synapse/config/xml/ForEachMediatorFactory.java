@@ -42,7 +42,7 @@ import org.jaxen.JaxenException;
  * <p/>
  * <p/>
  * <pre>
- * &lt;foreach expression="xpath" [sequence="sequence_ref"] &gt;
+ * &lt;foreach expression="xpath" [sequence="sequence_ref"] [id="foreach_id"] &gt;
  *     &lt;sequence&gt;
  *       (mediator)+
  *     &lt;/sequence&gt;?
@@ -50,9 +50,6 @@ import org.jaxen.JaxenException;
  * </pre>
  */
 public class ForEachMediatorFactory extends AbstractMediatorFactory {
-
-    private static final Log log =
-            LogFactory.getLog(ForEachMediatorFactory.class);
 
     private static final QName FOREACH_Q =
             new QName(SynapseConstants.SYNAPSE_NAMESPACE, "foreach");

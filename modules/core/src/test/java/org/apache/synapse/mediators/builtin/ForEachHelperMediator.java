@@ -33,7 +33,7 @@ import java.util.List;
 public class ForEachHelperMediator extends AbstractMediator implements ManagedLifecycle {
 
     private List mediatedContext = new ArrayList();
-    private int msgcount;
+    private int msgCount;
 
     public boolean mediate(MessageContext synCtx) {
 
@@ -42,7 +42,7 @@ public class ForEachHelperMediator extends AbstractMediator implements ManagedLi
         } catch (AxisFault e) {
             e.printStackTrace();
         }
-        msgcount++;
+        msgCount++;
         return false;
     }
 
@@ -56,20 +56,20 @@ public class ForEachHelperMediator extends AbstractMediator implements ManagedLi
 
     public void clearMediatedContexts() {
         mediatedContext.clear();
-        msgcount = 0;
+        msgCount = 0;
     }
 
 
     public void init(SynapseEnvironment se) {
-        msgcount = 0;
+        msgCount = 0;
     }
 
     public int getMsgCount() {
-        return msgcount;
+        return msgCount;
     }
 
     public void destroy() {
         clearMediatedContexts();
-        msgcount = 0;
+        msgCount = 0;
     }
 }
