@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
@@ -35,7 +34,6 @@ import org.apache.synapse.task.DefaultTaskJobDetailFactory;
 import org.apache.synapse.task.DefaultTaskTriggerFactory;
 import org.apache.synapse.task.SynapseTaskException;
 import org.apache.synapse.task.Task;
-import org.apache.synapse.task.TaskBasedArtifactType;
 import org.apache.synapse.task.TaskConstants;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskJobDetailFactory;
@@ -441,7 +439,7 @@ public class QuartzTaskManager implements TaskManager {
     }
 
 	public void addObserver(TaskManagerObserver o) {
-
+	    
     }
 
 	public boolean isTaskDeactivated(String taskName) {
@@ -454,13 +452,5 @@ public class QuartzTaskManager implements TaskManager {
 
 	public boolean isTaskRunning(String taskName) {
 	    return false;
-    }
-
-    public void sendClusterMessage(Callable<Void> task) {
-
-    }
-
-    public void cleanupResources(String name, TaskBasedArtifactType taskArtifactType) {
-
     }
 }
