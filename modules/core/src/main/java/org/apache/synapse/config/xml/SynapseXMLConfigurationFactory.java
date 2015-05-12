@@ -411,7 +411,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
     public static InboundEndpoint defineInboundEndpoint(SynapseConfiguration config, OMElement elem, Properties properties) {
         InboundEndpoint inboundEndpoint = null;
         try {
-            inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(elem);
+            inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(elem, config);
             config.addInboundEndpoint(inboundEndpoint.getName(), inboundEndpoint);
         } catch (Exception e) {
             String msg = "Inbound Endpoint configuration cannot be built";

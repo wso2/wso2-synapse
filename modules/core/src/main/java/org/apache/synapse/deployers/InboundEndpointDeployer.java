@@ -44,7 +44,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         /*properties are ignored @ToDo */
 
         try {
-            InboundEndpoint inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(artifactConfig);
+            InboundEndpoint inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(artifactConfig, getSynapseConfiguration());
             if (inboundEndpoint != null) {
                 inboundEndpoint.setFileName(new File(fileName).getName());
                 if (log.isDebugEnabled()) {
@@ -81,7 +81,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             /*properties are ignored*/
-            InboundEndpoint inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(artifactConfig);
+            InboundEndpoint inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(artifactConfig, getSynapseConfiguration());
 
             if (inboundEndpoint == null) {
                 handleSynapseArtifactDeploymentError("Inbound Endpoint update failed. The artifact " +

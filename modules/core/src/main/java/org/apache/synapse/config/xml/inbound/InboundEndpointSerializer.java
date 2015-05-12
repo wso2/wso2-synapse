@@ -70,12 +70,16 @@ public class InboundEndpointSerializer {
 		                                              SynapseConstants.SYNAPSE_OMNAMESPACE);
 
 		for (Map.Entry<String, String> paramEntry : inboundEndpoint.getParametersMap().entrySet()) {
+			String strKey = paramEntry.getKey();
 			OMElement parameter = fac.createOMElement(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER,
 			                                          SynapseConstants.SYNAPSE_OMNAMESPACE);
 			parameter.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME,
-			                       paramEntry.getKey(), null);
+			                       strKey, null);
 
-			if (isWellFormedXML(paramEntry.getValue())) {
+		if(inboundEndpoint.getParameterKey(strKey) != null){
+         parameter.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_KEY,
+                                inboundEndpoint.getParameterKey(strKey), null);
+		}else if (isWellFormedXML(paramEntry.getValue())) {
 				try {
 					OMElement omElement = AXIOMUtil.stringToOM(paramEntry.getValue());
 					parameter.addChild(omElement);
