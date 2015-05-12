@@ -68,7 +68,7 @@ public class CallMediatorSerializationTest extends AbstractTestCase {
                 call1.getEndpoint() instanceof AddressEndpoint);
         AddressEndpoint ep1 = (AddressEndpoint) call1.getEndpoint();
 
-        assertTrue("Top level endpoint should be a WSDL endpoint.",
+        assertTrue("Top level endpoint should be a address endpoint.",
                 call2.getEndpoint() instanceof AddressEndpoint);
         AddressEndpoint ep2 = (AddressEndpoint) call2.getEndpoint();
 
@@ -272,6 +272,33 @@ public class CallMediatorSerializationTest extends AbstractTestCase {
                 children2.get(0) instanceof AddressEndpoint);
         assertTrue("Children of the fail over endpoint should be address endpoints.",
                 children2.get(1) instanceof AddressEndpoint);
+    }
+
+    public void testBlockingAttributeSerialization() {
+
+        String callConfig = "<call xmlns=\"http://ws.apache.org/ns/synapse\" blocking=\"true\">" +
+                            "<endpoint>" +
+                            "<address uri='http://localhost:9000/services/MyService1'>" +
+                            "<enableAddressing/>" +
+                            "<timeout>" +
+                            "<duration>60</duration>" +
+                            "<responseAction>discard</responseAction>" +
+                            "</timeout>" +
+                            "</address>" +
+                            "</endpoint>" +
+                            "</call>";
+
+        OMElement config1 = createOMElement(callConfig);
+        CallMediator call1 = (CallMediator) factory.createMediator(config1, new Properties());
+
+        OMElement config2 = serializer.serializeMediator(null, call1);
+        CallMediator call2 = (CallMediator) factory.createMediator(config2, new Properties());
+
+        assertTrue("blocking attribute is not serialized properly - probably an issue in factory",
+                   call1.isBlocking());
+
+        assertTrue("blocking attribute is not serialized properly",
+                   call2.isBlocking());
     }
 
     protected OMElement createOMElement(String xml) {

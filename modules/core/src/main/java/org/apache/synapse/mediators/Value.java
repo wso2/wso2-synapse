@@ -90,13 +90,24 @@ public class Value {
      * @return SynapsePath
      */
     public SynapsePath getExpression() {
-        if(expression == null && keyValue != null && hasExprTypeKey()){
+        if (expression == null && keyValue != null && hasExprTypeKey()) {
             try {
-                SynapseXPath expressionTypeKey = new SynapseXPath(keyValue.substring(1, keyValue.length() - 1));
-                for (OMNamespace aNamespaceList : namespaceList) {
-                    expressionTypeKey.addNamespace(aNamespaceList);
+                String expressionString = keyValue.substring(1, keyValue.length() - 1);
+
+                if ("json-eval".equals(keyValue.substring(1, 10))) {
+
+                    // Remove "json-eval" and extract the json expression
+                    SynapseJsonPath expressionTypeKey = new SynapseJsonPath(keyValue.substring(11, keyValue.length() - 2));
+                    expression = expressionTypeKey;
+
+                } else {
+                    SynapseXPath expressionTypeKey = new SynapseXPath(expressionString);
+                    for (OMNamespace aNamespaceList : namespaceList) {
+                        expressionTypeKey.addNamespace(aNamespaceList);
+                    }
+                    expression = expressionTypeKey;
                 }
-                expression = expressionTypeKey;
+
             } catch (JaxenException e) {
                 expression = null;
                 handleException("Can not evaluate escaped expression..");
