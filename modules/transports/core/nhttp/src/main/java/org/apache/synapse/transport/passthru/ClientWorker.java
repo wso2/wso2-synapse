@@ -66,9 +66,11 @@ public class ClientWorker implements Runnable {
         Map excessHeaders = response.getExcessHeaders();
 
 		String oriURL = headers.get(PassThroughConstants.LOCATION);
-        ((NHttpServerConnection)outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
-                getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_INIT_TIME,System.currentTimeMillis());
-		// Special casing 301, 302, 303 and 307 scenario in following section. Not sure whether it's the correct fix,
+        if (outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
+            ((NHttpServerConnection) outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                       getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_INIT_TIME, System.currentTimeMillis());
+        }
+        // Special casing 301, 302, 303 and 307 scenario in following section. Not sure whether it's the correct fix,
 		// but this fix makes it possible to do http --> https redirection.
         if (oriURL != null && ((response.getStatus() != HttpStatus.SC_MOVED_TEMPORARILY) &&
                 (response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY) &&
@@ -174,8 +176,10 @@ public class ClientWorker implements Runnable {
         if (responseMsgCtx == null) {
             return;
         }
-        ((NHttpServerConnection)responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
-                getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME,System.currentTimeMillis());
+        if (responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
+            ((NHttpServerConnection) responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                       getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
+        }
         try {
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);

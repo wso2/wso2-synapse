@@ -43,6 +43,7 @@ public class InboundEndpoint implements ManagedLifecycle {
     private String injectingSeq;
     private String onErrorSeq;
     private Map<String, String> parametersMap = new LinkedHashMap<String, String>();
+    private Map<String, String> parameterKeyMap = new LinkedHashMap<String, String>();
     private String fileName;
     private SynapseEnvironment synapseEnvironment;
     private InboundRequestProcessor inboundRequestProcessor;
@@ -177,10 +178,19 @@ public class InboundEndpoint implements ManagedLifecycle {
         parametersMap.put(name, value);
     }
 
+    public void addParameter(String name, String value, String key) {
+        addParameter(name, value);
+        parameterKeyMap.put(name, key);
+    }    
+    
     public String getParameter(String name) {
         return parametersMap.get(name);
     }
 
+    public String getParameterKey(String name) {
+        return parameterKeyMap.get(name);
+    }
+    
     public String getClassImpl() {
         return classImpl;
     }

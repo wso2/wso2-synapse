@@ -335,50 +335,52 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
-        if (sequential) {
-            try {
-                seq.mediate(synCtx);
-                return true;
-            } catch (SynapseException syne) {
-                if (!synCtx.getFaultStack().isEmpty()) {
-                    log.warn("Executing fault handler due to exception encountered");
-                    ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
-                } else {
-                    log.warn("Exception encountered but no fault handler found - message dropped");
-                }
-                throw syne;
-            } catch (Exception e) {
-                String msg = "Unexpected error executing task/async inject";
-                log.error(msg, e);
-                if (synCtx.getServiceLog() != null) {
-                    synCtx.getServiceLog().error(msg, e);
-                }
-                if (!synCtx.getFaultStack().isEmpty()) {
-                    log.warn("Executing fault handler due to exception encountered");
-                    ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
-                } else {
-                    log.warn("Exception encountered but no fault handler found - message dropped");
-                }
-                throw new SynapseException(
-                        "Exception encountered but no fault handler found - message dropped", e);
-            } catch (Throwable e) {
-                String msg = "Unexpected error executing inbound/async inject, message dropped";
-                log.error(msg, e);
-                if (synCtx.getServiceLog() != null) {
-                    synCtx.getServiceLog().error(msg, e);
-                }
-                throw new SynapseException(msg, e);
-            }
-        } else {
+        if (!sequential) {
             try {
                 synCtx.setEnvironment(this);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
                 return true;
             } catch (RejectedExecutionException re) {
-                log.warn("Inbound worker pool has reached the maximum capacity and will be ignorning the processing.");
+                // If the pool is full complete the execution with the same thread
+                log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
             }
         }
-        return false;
+        
+        // Following code is reached if the sequential==true or inbound is
+        // reached max level
+        try {
+            seq.mediate(synCtx);
+            return true;
+        } catch (SynapseException syne) {
+            if (!synCtx.getFaultStack().isEmpty()) {
+                log.warn("Executing fault handler due to exception encountered");
+                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+            } else {
+                log.warn("Exception encountered but no fault handler found - message dropped");
+            }
+            throw syne;
+        } catch (Exception e) {
+            String msg = "Unexpected error executing task/async inject";
+            log.error(msg, e);
+            if (synCtx.getServiceLog() != null) {
+                synCtx.getServiceLog().error(msg, e);
+            }
+            if (!synCtx.getFaultStack().isEmpty()) {
+                log.warn("Executing fault handler due to exception encountered");
+                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+            } else {
+                log.warn("Exception encountered but no fault handler found - message dropped");
+            }
+            throw new SynapseException(
+                    "Exception encountered but no fault handler found - message dropped", e);
+        } catch (Throwable e) {
+            String msg = "Unexpected error executing inbound/async inject, message dropped";
+            log.error(msg, e);
+            if (synCtx.getServiceLog() != null) {
+                synCtx.getServiceLog().error(msg, e);
+            }
+            throw new SynapseException(msg, e);
+        }     
     }
     
     /**
