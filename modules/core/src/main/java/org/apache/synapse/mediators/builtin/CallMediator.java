@@ -208,8 +208,12 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             synLog.traceOrDebug("End : Call mediator - Non Blocking Call");
         }
 
-        return outOnlyMessage; // For out only invocations request flow should continue
-                               // otherwise flow should stop from here
+        if (outOnlyMessage) {
+            // For out only invocations request flow should continue
+            // otherwise flow should stop from here
+            return true;
+        }
+        return false;
     }
 
     public Endpoint getEndpoint() {
