@@ -27,8 +27,6 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -51,7 +49,7 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     protected SynapseConfiguration configuration;
 
-    protected List<MessageConsumer> messageConsumers = new ArrayList<MessageConsumer>();
+    protected MessageConsumer messageConsumer;
 
     /** This attribute is only need for forwarding message processor. However, it here because
      * then we don't need to implement this in sampling processor with nothing */
@@ -108,8 +106,8 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
         return fileName;
     }
 
-    public List<MessageConsumer> getMessageConsumer() {
-        return messageConsumers;
+    public MessageConsumer getMessageConsumer() {
+        return messageConsumer;
     }
 
     public boolean setMessageConsumer(MessageConsumer consumer) {
@@ -118,7 +116,11 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
             return false;
         }
 
-        messageConsumers.add(consumer);
+        if (messageConsumer != null) {
+            messageConsumer.cleanup();
+        }
+
+        messageConsumer = consumer;
 
         return true;
     }
