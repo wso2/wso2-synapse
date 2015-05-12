@@ -60,7 +60,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 inboundServiceParam != null) {
             /*
             return because same proxy is exposed via InboundEP and service parameter is set to
-            disable normal http transport proxy
+            true, which disable normal http transport proxy
             */
             if (log.isDebugEnabled()) {
                 log.debug("Proxy Service " + name + " message discarded due to the proxy is assigned to " +
