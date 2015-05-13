@@ -22,15 +22,12 @@ package org.apache.synapse.config;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.*;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.Startup;
-import org.apache.synapse.SynapseArtifact;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -41,6 +38,7 @@ import org.apache.synapse.config.xml.XMLToTemplateMapper;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
 import org.apache.synapse.config.xml.endpoints.XMLToEndpointMapper;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentStore;
@@ -1434,8 +1432,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @param se SynapseEnvironment specifying the env to be initialized
      */
     public synchronized void init(SynapseEnvironment se) {
-        SynapseConfiguration previouseConfiguration = SynapseConfigUtils.getLastRegisteredSynapseConfiguration();
-        SynapseConfigUtils.registerSynapseConfiguration(this);
+        SynapseConfiguration previouseConfiguration = null;
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing the Synapse Configuration using the SynapseEnvironment");
@@ -1469,6 +1466,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 				log.error(" Error in initializing Sequence Template ["
 						+ seqTemplate.getName() + "] " + e.getMessage());
 			}
+        }
+
+        String tenantDomain = getTenantDomain(se);
+        if (tenantDomain != null) {
+            previouseConfiguration = SynapseConfigUtils.getSynapseConfiguration(tenantDomain);
+            SynapseConfigUtils.addSynapseConfiguration(tenantDomain, this);
         }
 
         if(previouseConfiguration != null) {
@@ -2108,6 +2111,20 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         for(InboundEndpoint inboundEndpoint : inboundEndpoints){
             inboundEndpoint.destroy();
         }
+    }
+
+    private String getTenantDomain(SynapseEnvironment synapseEnvironment) {
+        TenantInfoConfigurator configurator = synapseEnvironment.getTenantInfoConfigurator();
+        if (configurator != null) {
+            org.apache.axis2.context.MessageContext axisMessageContext = new org.apache.axis2.context.MessageContext();
+            MessageContext messageContext = new Axis2MessageContext(axisMessageContext, this, synapseEnvironment);
+            configurator.extractTenantInfo(messageContext);
+            if (messageContext.getProperty("tenant.info.domain") != null) {
+                return (String) messageContext.getProperty("tenant.info.domain");
+            }
+
+        }
+        return null;
     }
 
 }
