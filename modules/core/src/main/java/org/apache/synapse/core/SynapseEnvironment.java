@@ -226,5 +226,17 @@ public interface SynapseEnvironment {
      */
     public boolean injectMessage(MessageContext smc,SequenceMediator seq);
 
+    /**
+     * Get all synapse handlers
+     *
+     * @return list of synapse handlers
+     */
     public List<SynapseHandler> getSynapseHandlers();
+
+    /**
+     * Register a synapse handler to the synapse environment
+     *
+     * @param handler synapse handler
+     */
+    public void registerSynapseHandler(SynapseHandler handler);
 }
