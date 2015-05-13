@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 
 
 import org.apache.synapse.FaultHandler;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
@@ -41,6 +42,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.SynapseHandlersLoader;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -82,6 +84,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private boolean initialized = false;
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
+    private List<SynapseHandler> synapseHandlers;
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
@@ -161,6 +164,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         taskManager = new SynapseTaskManager();
         restHandler = new RESTRequestHandler();
+
+        synapseHandlers = SynapseHandlersLoader.loadHandlers();
+
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
@@ -189,6 +195,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
 
         synCtx.setEnvironment(this);
+
+        if (!invokeHandlers(synCtx)) {
+            return false;
+        }
+
         Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
         // the mandatory sequence is optional and hence check for the existence before mediation
         if (mandatorySeq != null) {
@@ -319,10 +330,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /**
      * 
      * Used by inbound polling endpoints to inject the message to synapse engine
-     * 
-     * @param MessageContext
-     * @param SequenceMediator
-     * @param sequential
+     *
+     * @param synCtx message context
+     * @param sequential whether message should be injected in sequential manner
+     *                   without spawning new threads
      * @return Boolean - Indicate if were able to inject the message
      * @throws SynapseException
      *             - in case error occured during the mediation
@@ -335,9 +346,14 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
+
+        synCtx.setEnvironment(this);
+        if (!invokeHandlers(synCtx)) {
+            return false;
+        }
+
         if (!sequential) {
             try {
-                synCtx.setEnvironment(this);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
                 return true;
             } catch (RejectedExecutionException re) {
@@ -811,12 +827,19 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
     }
 
+    public List<SynapseHandler> getSynapseHandlers() {
+        return synapseHandlers;
+    }
+
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                     + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
         smc.setEnvironment(this);
+        if (!invokeHandlers(smc)) {
+            return false;
+        }
         try {
             seq.mediate(smc);
             return true;
@@ -863,5 +886,41 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }
+    }
+
+
+    /**
+     * Invoke Synapse Handlers
+     *
+     * @param synCtx synapse message context
+     * @return whether flow should continue further
+     */
+    private boolean invokeHandlers(MessageContext synCtx) {
+
+        Iterator<SynapseHandler> iterator =
+                synCtx.getEnvironment().getSynapseHandlers().iterator();
+
+        if (iterator.hasNext()) {
+
+            Boolean isContinuationCall =
+                    (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+
+            if (synCtx.isResponse() || (isContinuationCall != null && isContinuationCall)) {
+                while (iterator.hasNext()) {
+                    SynapseHandler handler = iterator.next();
+                    if (!handler.handleResponseInFlow(synCtx)) {
+                        return false;
+                    }
+                }
+            } else {
+                while (iterator.hasNext()) {
+                    SynapseHandler handler = iterator.next();
+                    if (!handler.handleRequestInFlow(synCtx)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 }

@@ -22,6 +22,7 @@ package org.apache.synapse.core;
 import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -32,6 +33,7 @@ import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 
 import javax.xml.namespace.QName;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -224,4 +226,5 @@ public interface SynapseEnvironment {
      */
     public boolean injectMessage(MessageContext smc,SequenceMediator seq);
 
+    public List<SynapseHandler> getSynapseHandlers();
 }
