@@ -19,12 +19,12 @@
 
 package org.apache.synapse.mediators.eip;
 
-import org.apache.synapse.config.xml.IterateMediatorFactory;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.config.xml.IterateMediatorFactory;
 
 import java.util.Properties;
 
@@ -37,8 +37,8 @@ public class IterateMediatorTest extends AbstractSplitMediatorTestCase {
         super.setUp();
         SOAPEnvelope envelope = OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
         envelope.getBody().addChild(createOMElement("<original>" +
-            "<itr>test-split-context-itr1-body</itr>" + "<itr>test-split-context-itr2-body</itr>" +
-            "</original>"));
+                                                    "<itr>test-split-context-itr1-body</itr>" + "<itr>test-split-context-itr2-body</itr>" +
+                                                    "</original>"));
         testCtx.setEnvelope(envelope);
         fac = new IterateMediatorFactory();
     }
@@ -50,11 +50,11 @@ public class IterateMediatorTest extends AbstractSplitMediatorTestCase {
 
     public void testIterationScenarioOne() throws Exception {
         Mediator iterate = fac.createMediator(createOMElement("<iterate " +
-            "expression=\"//original/itr\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
-            "<target soapAction=\"urn:iterate\" sequence=\"seqRef\"/></iterate>"), new Properties());
+                                                              "expression=\"//original/itr\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                                                              "<target soapAction=\"urn:iterate\" sequence=\"seqRef\"/></iterate>"), new Properties());
         helperMediator.clearMediatedContexts();
         iterate.mediate(testCtx);
-        while(helperMediator.getMediatedContext(1) == null) {
+        while (helperMediator.getMediatedContext(1) == null) {
             Thread.sleep(100);
         }
         MessageContext mediatedCtx = helperMediator.getMediatedContext(0);
@@ -64,17 +64,17 @@ public class IterateMediatorTest extends AbstractSplitMediatorTestCase {
         assertEquals(mediatedCtx.getSoapAction(), "urn:iterate");
         if (formerBody == null) {
             assertEquals(mediatedCtx.getEnvelope()
-                .getBody().getFirstElement().getText(), helperMediator.getCheckString());
+                                 .getBody().getFirstElement().getText(), helperMediator.getCheckString());
         }
     }
 
     public void testIterationWithPreservePayload() throws Exception {
         Mediator iterate = fac.createMediator(createOMElement("<iterate " +
-            "expression=\"//original/itr\" preservePayload=\"true\" attachPath=\"//original\" " +
-            "xmlns=\"http://ws.apache.org/ns/synapse\"><target soapAction=\"urn:iterate\" " +
-            "sequence=\"seqRef\"/></iterate>"), new Properties());
+                                                              "expression=\"//original/itr\" preservePayload=\"true\" attachPath=\"//original\" " +
+                                                              "xmlns=\"http://ws.apache.org/ns/synapse\"><target soapAction=\"urn:iterate\" " +
+                                                              "sequence=\"seqRef\"/></iterate>"), new Properties());
         iterate.mediate(testCtx);
-        while(helperMediator.getMediatedContext(1) == null) {
+        while (helperMediator.getMediatedContext(1) == null) {
             Thread.sleep(100);
         }
         MessageContext mediatedCtx = helperMediator.getMediatedContext(0);
@@ -84,7 +84,7 @@ public class IterateMediatorTest extends AbstractSplitMediatorTestCase {
         assertEquals(mediatedCtx.getSoapAction(), "urn:iterate");
         if (formerBody == null) {
             assertEquals(mediatedCtx.getEnvelope().getBody()
-                .getFirstElement().getFirstElement().getText(), helperMediator.getCheckString());
+                                 .getFirstElement().getFirstElement().getText(), helperMediator.getCheckString());
         }
     }
 }

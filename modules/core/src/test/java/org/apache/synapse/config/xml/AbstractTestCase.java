@@ -24,6 +24,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.mediators.template.TemplateMediator;
 import org.custommonkey.xmlunit.XMLTestCase;
 import org.xml.sax.SAXException;
 
@@ -55,7 +56,6 @@ public abstract class AbstractTestCase extends XMLTestCase {
     }
 
     protected boolean serialization(String inputXml, MediatorFactory mediatorFactory, MediatorSerializer mediatorSerializer) {
-
         OMElement inputOM = createOMElement(inputXml);
         Mediator mediator = mediatorFactory.createMediator(inputOM, new Properties());
         OMElement resultOM = mediatorSerializer.serializeMediator(null, mediator);
@@ -92,7 +92,6 @@ public abstract class AbstractTestCase extends XMLTestCase {
 
     protected boolean compare(OMElement inputElement, OMElement serializedElement)  {
         try {
-            
             assertXMLEqual(inputElement.toString(), serializedElement.toString());
             return true;
         } catch (SAXException e) {
