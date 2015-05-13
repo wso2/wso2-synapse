@@ -837,11 +837,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     /**
-     * Add a synapse handler to the synapse environment
+     * Register a synapse handler to the synapse environment
      *
      * @param handler synapse handler
      */
-    public void addSynapseHandler(SynapseHandler handler) {
+    public void registerSynapseHandler(SynapseHandler handler) {
         synapseHandlers.add(handler);
     }
 

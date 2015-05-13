@@ -81,6 +81,7 @@ public class SynapseHandlersLoader {
                         SynapseHandler handler = createHandler(className);
                         if (handler != null) {
                             handlers.add(handler);
+                            handler.setName(name);
                             populateParameters(handlerElem, handler);
                         }
                     } else {
