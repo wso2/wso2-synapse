@@ -59,6 +59,7 @@ public class MediatorFactoryFinder implements XMLToObjectMapper {
 
 	private static final Class[] mediatorFactories = {
         SequenceMediatorFactory.class,
+        ForEachMediatorFactory.class,
         LogMediatorFactory.class,
         SendMediatorFactory.class,
         FilterMediatorFactory.class,
