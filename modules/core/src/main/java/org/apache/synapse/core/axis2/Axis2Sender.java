@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
@@ -40,6 +41,8 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,6 +62,17 @@ public class Axis2Sender {
                               org.apache.synapse.MessageContext synapseInMessageContext) {
 
         try {
+
+            // Invoke Synapse Handlers
+            Iterator<SynapseHandler> iterator =
+                    synapseInMessageContext.getEnvironment().getSynapseHandlers().iterator();
+            while (iterator.hasNext()) {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleRequestOutFlow(synapseInMessageContext)) {
+                    return;
+                }
+            }
+
             Axis2FlexibleMEPClient.send(
                     // The endpoint where we are sending to
                     endpoint,
@@ -162,6 +176,15 @@ public class Axis2Sender {
             }
 
             Axis2FlexibleMEPClient.clearSecurtityProperties(messageContext.getOptions());
+
+            // Invoke Synapse Handlers
+            Iterator<SynapseHandler> iterator = smc.getEnvironment().getSynapseHandlers().iterator();
+            while (iterator.hasNext()) {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleResponseOutFlow(smc)) {
+                    return;
+                }
+            }
 
             // report stats for any component at response sending check point
             StatisticsReporter.reportForAllOnResponseSent(smc);
