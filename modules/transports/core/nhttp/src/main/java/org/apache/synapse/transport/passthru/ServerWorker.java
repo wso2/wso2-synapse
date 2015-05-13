@@ -568,7 +568,7 @@ public class ServerWorker implements Runnable {
         return null;
     }
 
-    public MessageContext getRequestContext() {
+    protected MessageContext getRequestContext() {
         return msgContext;
     }
 
