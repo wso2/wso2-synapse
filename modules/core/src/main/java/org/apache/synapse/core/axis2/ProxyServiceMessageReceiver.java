@@ -52,23 +52,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
-        Object inboundServiceParam = proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
-        Object inboundMsgCtxParam =  mc.getProperty(SynapseConstants.IS_INBOUND);
-
-        //check whether the message is from Inbound EP and service parameter is set
-        if(((inboundMsgCtxParam == null || !(boolean)inboundMsgCtxParam)) &&
-                inboundServiceParam != null) {
-            /*
-            return because same proxy is exposed via InboundEP and service parameter is set to
-            true, which disable normal http transport proxy
-            */
-            if (log.isDebugEnabled()) {
-                log.debug("Proxy Service " + name + " message discarded due to the proxy is assigned to " +
-                          "an InboundEP");
-            }
-            return;
-        }
-
         String remoteAddr = (String) mc.getProperty(
             org.apache.axis2.context.MessageContext.REMOTE_ADDR);
 
@@ -94,6 +77,35 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+
+        Object inboundServiceParam =
+                proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
+        Object inboundMsgCtxParam = mc.getProperty(SynapseConstants.IS_INBOUND);
+
+        //check whether the message is from Inbound EP
+        if (inboundMsgCtxParam == null || !(boolean) inboundMsgCtxParam) {
+            //check whether service parameter is set to true or null, then block this request
+            if (inboundServiceParam != null && (Boolean.valueOf((String) inboundServiceParam))) {
+                /*
+                return because same proxy is exposed via InboundEP and service parameter is set to
+                true, which disable normal http transport proxy
+                */
+
+                if (!synCtx.getFaultStack().isEmpty()) {
+                    warn(traceOn, "Executing fault handler due to exception encountered", synCtx);
+                    (synCtx.getFaultStack().pop()).
+                            handleFault(synCtx, new Exception("Proxy Service " + name +
+                                                              " message discarded due to the proxy is assigned to an InboundEP"));
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Proxy Service " + name + " message discarded due to the proxy is " +
+                                  "assigned to an InboundEP");
+                    }
+                }
+                return;
+            }
+        }
+
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
         if (configurator != null) {
             configurator.extractTenantInfo(synCtx);
