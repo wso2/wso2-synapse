@@ -82,4 +82,18 @@ public interface SynapseHandler {
      */
     public Map getProperties();
 
+    /**
+     * Get the name of the handler
+     *
+     * @return handler name
+     */
+    public String getName();
+
+    /**
+     * Set the handler name
+     *
+     * @param name handler name
+     */
+    public void setName(String name);
+
 }

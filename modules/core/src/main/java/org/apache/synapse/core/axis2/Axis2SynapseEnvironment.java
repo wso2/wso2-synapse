@@ -827,8 +827,22 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
     }
 
+    /**
+     * Get all synapse handlers
+     *
+     * @return list of synapse handlers
+     */
     public List<SynapseHandler> getSynapseHandlers() {
         return synapseHandlers;
+    }
+
+    /**
+     * Add a synapse handler to the synapse environment
+     *
+     * @param handler synapse handler
+     */
+    public void addSynapseHandler(SynapseHandler handler) {
+        synapseHandlers.add(handler);
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
