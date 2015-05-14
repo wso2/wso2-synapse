@@ -462,24 +462,24 @@ public class QuartzTaskManager implements TaskManager {
         }
     }
 
-	@Override
+    @Override
     public void addObserver(TaskManagerObserver o) {
 
     }
 
-	@Override
+    @Override
     public boolean isTaskDeactivated(String taskName) {
-	    return false;
+        return false;
     }
 
-	@Override
+    @Override
     public boolean isTaskBlocked(String taskName) {
-	    return false;
+        return false;
     }
 
-	@Override
+    @Override
     public boolean isTaskRunning(String taskName) {
-	    return false;
+        return false;
     }
 
     @Override

@@ -115,7 +115,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	}
 
-	@Override
+    @Override
     public boolean start() {
 		for (int i = 0; i < memberCount; i++) {
 			/*
@@ -157,13 +157,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return true;
 	}
 
-	@Override
+    @Override
     public boolean isDeactivated() {
 		return taskManager.isTaskDeactivated(TASK_PREFIX + name +
 		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
-	@Override
+    @Override
     public void setParameters(Map<String, Object> parameters) {
 		super.setParameters(parameters);
 
@@ -194,7 +194,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 
-	@Override
+    @Override
     public boolean stop() {
 		/*
 		 * There could be servers that are disabled at startup time.
@@ -258,39 +258,39 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     }
 
-	@Override
+    @Override
     public boolean deactivate() {
-		if (taskManager != null && taskManager.isInitialized()) {
-			try {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Deactivating message processor [" + getName() + "]");
-				}
+        if (taskManager != null && taskManager.isInitialized()) {
+            try {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Deactivating message processor [" + getName() + "]");
+                }
 
-				pauseService();
+                pauseService();
 
-				logger.info("Successfully deactivated the message processor [" + getName() + "]");
+                logger.info("Successfully deactivated the message processor [" + getName() + "]");
 
-			} finally {
-				/*
-				 * This will close the connection with the JMS Provider/message
-				 * store.
-				 */
-				if (messageConsumers != null && messageConsumers.size() > 0) {
-				    messageConsumers.get(0).cleanup();
-				}
+            } finally {
+                /*
+                 * This will close the connection with the JMS Provider/message
+                 * store.
+                 */
+                if (messageConsumers != null && messageConsumers.size() > 0) {
+                    messageConsumers.get(0).cleanup();
+                }
 
-				/*
-				 * Cleaning up the resources in the cluster mode here.
-				 */
-				taskManager.sendClusterMessage(getMessageProcessorCleanupTask());
-			}
-			return true;
-		} else {
-			return false;
-		}
+                /*
+                 * Cleaning up the resources in the cluster mode here.
+                 */
+                taskManager.sendClusterMessage(getMessageProcessorCleanupTask());
+            }
+            return true;
+        } else {
+            return false;
+        }
 	}
 
-	@Override
+    @Override
     public boolean activate() {
 		/*
 		 * Checking whether it is already deactivated. If it is deactivated only
@@ -311,14 +311,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 	}
 
-	@Override
+    @Override
     public void pauseService() {
 		for (int i = 0; i < memberCount; i++) {
 			taskManager.pause(TASK_PREFIX + name + i);
 		}
 	}
 
-	@Override
+    @Override
     public void resumeService() {
 		for (int i = 0; i < memberCount; i++) {
 			taskManager.resume(TASK_PREFIX + name + i);
@@ -339,7 +339,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
-	@Override
+    @Override
     public boolean isPaused() {
 		return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
@@ -424,7 +424,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	 */
 	protected abstract Task getTask();
 
-	@Override
+    @Override
     public void update() {
 		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
 			start();
