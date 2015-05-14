@@ -43,7 +43,6 @@ import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
-import org.apache.synapse.message.store.impl.jms.JmsConsumer;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
 
