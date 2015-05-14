@@ -28,11 +28,15 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This is the MessageReceiver set to act on behalf of Proxy services.
@@ -126,7 +130,16 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
         synCtx.setTracingState(proxy.getTraceState());
 
-        try {            
+        try {
+
+            List handlers = synCtx.getEnvironment().getSynapseHandlers();
+            Iterator<SynapseHandler> iterator = handlers.iterator();
+            while (iterator.hasNext()) {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleRequestInFlow(synCtx)) {
+                    return;
+                }
+            }
 
             Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
             if (mandatorySeq != null) {

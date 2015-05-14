@@ -147,6 +147,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_XML = "synapse.xml";
     /** The name of the system property used to specify/override the Synapse properties location */
     public static final String SYNAPSE_PROPERTIES = "synapse.properties";
+    /** The name of the synapse handlers file */
+    public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
 
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
