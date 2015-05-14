@@ -94,7 +94,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 return because same proxy is exposed via InboundEP and service parameter(inbound.only) is set to
                 true, which disable normal http transport proxy
                 */
-
                 if (!synCtx.getFaultStack().isEmpty()) {
                     warn(traceOn, "Executing fault handler - message discarded due to the proxy is assigned to an InboundEP", synCtx);
                     (synCtx.getFaultStack().pop()).
