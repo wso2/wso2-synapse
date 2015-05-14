@@ -23,6 +23,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.message.MessageConsumer;
 
+import java.util.List;
 import java.util.Map;
 
 public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArtifact {
@@ -111,7 +112,7 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * This method retrieves the message consumer of message processor.
      * @return the message consumer
      */
-    MessageConsumer getMessageConsumer();
+    List<MessageConsumer> getMessageConsumer();
 
     /**
      * This method set the target endpoint associated with the message processor. Without a target endpoint
@@ -144,4 +145,10 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * @return returns true on success.
      */
     boolean isPaused();
+    
+    /**
+     * This method is used to cleanup local resources such as JMS connections
+     * used by the message processor.
+     */
+    void cleanupLocalResources();
 }

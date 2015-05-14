@@ -18,12 +18,16 @@
  */
 package org.apache.synapse.message.processor.impl;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.message.MessageConsumer;
+import org.apache.synapse.message.processor.MessageProcessorCleanupService;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
@@ -32,6 +36,8 @@ import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
 
+import sun.misc.Service;
+
 /**
  * Implements the common message processor infrastructure which is used by the
  * both <code>Forwarding</code> and <code>Sampling</code> message Processors.
@@ -39,7 +45,7 @@ import org.apache.synapse.task.TaskManagerObserver;
  * responsible for handling life cycle states of the message processors. Some of
  * the well known life cycle states are <code>start</code>, <code>pause</code> ,
  * <code>destroy</code>, <code>deactivate</code> etc.
- * 
+ *
  *
  */
 public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor implements TaskManagerObserver{
@@ -59,7 +65,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
      * This is specially used for REST scenarios where http status codes can take semantics in a RESTful architecture.
      */
     protected String[] nonRetryStatusCodes = null;
-    
+
 	protected BlockingMsgSender sender;
 
 	protected SynapseEnvironment synapseEnvironment;
@@ -67,12 +73,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	private TaskManager taskManager = null;
 
 	private int memberCount = 1;
-    
+
     private static final String TASK_PREFIX = "MSMP_";
-    
+
     private static final String DEFAULT_TASK_SUFFIX = "0";
 
-	public void init(SynapseEnvironment se) {
+    @Override
+    public void init(SynapseEnvironment se) {
 		this.synapseEnvironment = se;
 		initMessageSender(parameters);
 		if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
@@ -108,7 +115,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	}
 
-	public boolean start() {
+    @Override
+    public boolean start() {
 		for (int i = 0; i < memberCount; i++) {
 			/*
 			 * Make sure to fetch the task after initializing the message sender
@@ -149,12 +157,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return true;
 	}
 
-	public boolean isDeactivated() {
+    @Override
+    public boolean isDeactivated() {
 		return taskManager.isTaskDeactivated(TASK_PREFIX + name +
 		                                                           DEFAULT_TASK_SUFFIX);
 	}
 
-	public void setParameters(Map<String, Object> parameters) {
+    @Override
+    public void setParameters(Map<String, Object> parameters) {
 		super.setParameters(parameters);
 
 		if (parameters != null && !parameters.isEmpty()) {
@@ -184,7 +194,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 
-	public boolean stop() {
+    @Override
+    public boolean stop() {
 		/*
 		 * There could be servers that are disabled at startup time.
 		 * therefore not started but initiated.
@@ -220,54 +231,67 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return false;
 	}
 
-	public void destroy() {
-		try {
-			stop();
-		}
+    @Override
+    public void destroy() {
+        try {
+            stop();
+        }
 
-		finally {
-			if (getMessageConsumer() != null) {
-				boolean success = getMessageConsumer().cleanup();
-				if (!success) {
-					logger.error("[" + getName() + "] Could not cleanup message consumer.");
-				}
-			} else {
-				logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
-			}
-		}
+        finally {
+            if (getMessageConsumer() != null && messageConsumers.size() > 0) {
+                boolean success = getMessageConsumer().get(0).cleanup();
+                if (!success) {
+                    logger.error("[" + getName() + "] Could not cleanup message consumer.");
+                }
+            } else {
+                logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
+            }
+            /*
+             * Cleaning up the resources in the cluster mode here.
+             */
+            taskManager.sendClusterMessage(getMessageProcessorCleanupTask());
+        }
 
-		if (logger.isDebugEnabled()) {
-			logger.info("Successfully destroyed message processor [" + getName() + "].");
-		}
+        if (logger.isDebugEnabled()) {
+            logger.info("Successfully destroyed message processor [" + getName() + "].");
+        }
+
+    }
+
+    @Override
+    public boolean deactivate() {
+        if (taskManager != null && taskManager.isInitialized()) {
+            try {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Deactivating message processor [" + getName() + "]");
+                }
+
+                pauseService();
+
+                logger.info("Successfully deactivated the message processor [" + getName() + "]");
+
+            } finally {
+                /*
+                 * This will close the connection with the JMS Provider/message
+                 * store.
+                 */
+                if (messageConsumers != null && messageConsumers.size() > 0) {
+                    messageConsumers.get(0).cleanup();
+                }
+
+                /*
+                 * Cleaning up the resources in the cluster mode here.
+                 */
+                taskManager.sendClusterMessage(getMessageProcessorCleanupTask());
+            }
+            return true;
+        } else {
+            return false;
+        }
 	}
 
-	public boolean deactivate() {
-		if (taskManager != null && taskManager.isInitialized()) {
-			try {
-				if (logger.isDebugEnabled()) {
-					logger.debug("Deactivating message processor [" + getName() + "]");
-				}
-
-				pauseService();
-
-				logger.info("Successfully deactivated the message processor [" + getName() + "]");
-
-			} finally {
-				/*
-				 * This will close the connection with the JMS Provider/message
-				 * store.
-				 */ 
-				if (messageConsumer != null) {
-					messageConsumer.cleanup();
-				}
-			}
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	public boolean activate() {
+    @Override
+    public boolean activate() {
 		/*
 		 * Checking whether it is already deactivated. If it is deactivated only
 		 * we can activate again.
@@ -287,13 +311,15 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		}
 	}
 
-	public void pauseService() {
+    @Override
+    public void pauseService() {
 		for (int i = 0; i < memberCount; i++) {
 			taskManager.pause(TASK_PREFIX + name + i);
 		}
 	}
 
-	public void resumeService() {
+    @Override
+    public void resumeService() {
 		for (int i = 0; i < memberCount; i++) {
 			taskManager.resume(TASK_PREFIX + name + i);
 		}
@@ -313,7 +339,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
-	public boolean isPaused() {
+    @Override
+    public boolean isPaused() {
 		return taskManager.isTaskDeactivated(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
@@ -358,7 +385,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	 * Therefore when the
 	 * interval is less than 1000 ms we have
 	 * to handle it as a separate case.
-	 * 
+	 *
 	 * @param interval
 	 *            in which scheduler triggers its job.
 	 * @return true if it needs to run on throttle mode, <code>false</code>
@@ -371,7 +398,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	public boolean isThrottling(final String cronExpression) {
 		return cronExpression != null;
 	}
-	
+
 	private BlockingMsgSender initMessageSender(Map<String, Object> params) {
 
 		String axis2repo = (String) params.get(ForwardingProcessorConstants.AXIS2_REPO);
@@ -388,18 +415,49 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 		return sender;
 	}
-	
+
 
 	/**
 	 * Gives the {@link Task} instance associated with this processor.
-	 * 
+	 *
 	 * @return {@link Task} associated with this processor.
 	 */
 	protected abstract Task getTask();
 
-	public void update() {
+    @Override
+    public void update() {
 		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
 			start();
 		}
 	}
+
+    @Override
+    public void cleanupLocalResources() {
+        if (messageConsumers != null) {
+            for (MessageConsumer messageConsumer : messageConsumers) {
+                messageConsumer.cleanup();
+            }
+        }
+    }
+
+    private Callable<Void> getMessageProcessorCleanupTask() {
+        MessageProcessorCleanupService cleanupTask = null;
+        if (logger.isDebugEnabled()) {
+            logger.debug("Trying to fetch InboundRequestProcessor from classpath.. ");
+        }
+        Iterator<MessageProcessorCleanupService> it =
+                                                      Service.providers(MessageProcessorCleanupService.class);
+        while (it.hasNext()) {
+            cleanupTask = it.next();
+            cleanupTask.setName(name);
+            if (cleanupTask != null) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Message Processor Cleanup Service found  : " +
+                                 cleanupTask.getClass().getName());
+                }
+            }
+            return cleanupTask;
+        }
+        return null;
+    }
 }
