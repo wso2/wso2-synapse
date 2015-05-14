@@ -156,17 +156,6 @@ public class JmsConsumer implements MessageConsumer {
         return true;
     }
 
-    /** No straight forward way to check session availability hence use this workaround */
-    public boolean isSessionAvailable() {
-        try {
-            session.getAcknowledgeMode();
-        } catch (JMSException e) {
-            return false;
-        }
-
-        return true;
-    }
-
     public Connection getConnection() {
         return connection;
     }
