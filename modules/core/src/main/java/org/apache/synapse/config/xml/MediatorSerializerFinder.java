@@ -35,7 +35,7 @@ public class MediatorSerializerFinder {
     private static final Log log = LogFactory.getLog(MediatorSerializerFinder.class);
 
     private static final Class[] mediatorSerializers = {
-            SequenceMediatorSerializer.class,
+        SequenceMediatorSerializer.class,
             LogMediatorSerializer.class,
             SendMediatorSerializer.class,
             FilterMediatorSerializer.class,
@@ -74,7 +74,8 @@ public class MediatorSerializerFinder {
             CallMediatorSerializer.class,
             LoopBackMediatorSerializer.class,
             RespondMediatorSerializer.class,
-            CommentMediatorSerializer.class
+            CommentMediatorSerializer.class,
+            ForEachMediatorSerializer.class,
     };
 
     private final static MediatorSerializerFinder instance = new MediatorSerializerFinder();
