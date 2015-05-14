@@ -70,10 +70,10 @@ public class TargetRequestFactory {
             TargetRequest request = new TargetRequest(configuration, route, url, httpMethod,
                     noEntityBody == null || !noEntityBody);
 
-            // headers
-            PassThroughTransportUtils.removeUnwantedHeaders(msgContext,
-                    configuration.isPreserveServerHeader(),
-                    configuration.isPreserveUserAgentHeader());
+            // remove unwanted headers
+            PassThroughTransportUtils.removeUnwantedFieldsFromTransportAndExcessHeaders(msgContext,
+                                                                                        configuration.isPreserveServerHeader(),
+                                                                                        configuration.isPreserveUserAgentHeader());
 
 
             Object o = msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);

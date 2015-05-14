@@ -431,8 +431,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						 // OMSourcedElemImpl correctly.
 						origAxis2Ctx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
 						                         getNonRetryStatusCodes());
-						outCtx = sender.send(ep, messageContext);
-						isSuccessful = true;
+
+						if (messageConsumer != null && messageConsumer.isAlive()) {
+							outCtx = sender.send(ep, messageContext);
+						}
+
+						isSuccessful = true; //isSuccessfull is true even session is not available because of avoiding the unwanted retries
 					} catch (Exception e) {
 						// this means send has failed due to some reason so we
 						// have to retry it

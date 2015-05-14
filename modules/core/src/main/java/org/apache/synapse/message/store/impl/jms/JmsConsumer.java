@@ -148,6 +148,16 @@ public class JmsConsumer implements MessageConsumer {
         return false;
     }
 
+    public boolean isAlive() {
+        try {
+            session.getAcknowledgeMode(); /** No straight forward way to check session availability */
+        } catch (JMSException e) {
+            return false;
+        }
+
+        return true;
+    }
+
     public Connection getConnection() {
         return connection;
     }
