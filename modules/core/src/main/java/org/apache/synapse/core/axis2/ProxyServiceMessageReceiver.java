@@ -91,12 +91,12 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             //check whether service parameter is set to true or null, then block this request
             if (inboundServiceParam != null && (Boolean.valueOf((String) inboundServiceParam))) {
                 /*
-                return because same proxy is exposed via InboundEP and service parameter is set to
+                return because same proxy is exposed via InboundEP and service parameter(inbound.only) is set to
                 true, which disable normal http transport proxy
                 */
 
                 if (!synCtx.getFaultStack().isEmpty()) {
-                    warn(traceOn, "Executing fault handler due to exception encountered", synCtx);
+                    warn(traceOn, "Executing fault handler - message discarded due to the proxy is assigned to an InboundEP", synCtx);
                     (synCtx.getFaultStack().pop()).
                             handleFault(synCtx, new Exception("Proxy Service " + name +
                                                               " message discarded due to the proxy is assigned to an InboundEP"));
