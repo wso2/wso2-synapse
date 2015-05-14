@@ -21,9 +21,16 @@ package org.apache.synapse.mediators;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This is the super class of all mediators, and defines common logging, tracing other aspects
@@ -56,6 +63,11 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     protected AbstractMediator() {
         log = LogFactory.getLog(this.getClass());
     }
+
+    /**
+     * Comment Texts List associated with the mediator
+     */
+    private List<String> commentsList = new ArrayList<String>();
 
     /**
      * Returns the class name of the mediator
@@ -366,5 +378,23 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     public String getOutputType() {
         return null;
+    }
+
+    /**
+     * Returns Comment List
+     *
+     * @return String List of comments
+     */
+    public List<String> getCommentsList() {
+        return commentsList;
+    }
+
+    /**
+     * Sets comment list for the mediator
+     *
+     * @param commentsList String List of comments
+     */
+    public void setCommentsList(List<String> commentsList) {
+        this.commentsList = commentsList;
     }
 }

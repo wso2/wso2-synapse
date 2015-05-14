@@ -150,6 +150,9 @@ public class AggregateMediatorFactory extends AbstractMediatorFactory {
                 mediator.setOnCompleteSequence(sequence);
             }
         }
+
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

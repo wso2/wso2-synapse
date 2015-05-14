@@ -82,4 +82,28 @@ public class SequenceMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
+
+    public void testSequenceMediatorSerializationSenarioOneWithComments() throws Exception {
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><!--Test Comment--><send/></sequence>";
+        assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
+        assertTrue(serialization(xml, sequenceMediatorSerializer));
+    }
+
+    public void testSequenceMediatorSerializationSenarioTwoWithComments() throws Exception {
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"  onError=\"ErrorHandler\"><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><!--Test Comment--><send/></sequence>";
+        assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
+        assertTrue(serialization(xml, sequenceMediatorSerializer));
+    }
+
+    public void testSequenceMediatorSerializationSenarioFourWithComments() throws Exception {
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" onError=\"ErrorHandler\"><!--Test Comment--></sequence>";
+        assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
+        assertTrue(serialization(xml, sequenceMediatorSerializer));
+    }
+
+    public void testSequenceMediatorSerializationSenarioSixWithComments() throws Exception {
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" description=\"short description\"><!--Test Comment--></sequence>";
+        assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
+        assertTrue(serialization(xml, sequenceMediatorSerializer));
+    }
 }
