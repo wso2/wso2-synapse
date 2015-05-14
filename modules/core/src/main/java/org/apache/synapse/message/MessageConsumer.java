@@ -40,6 +40,12 @@ public interface MessageConsumer {
     boolean cleanup();
 
     /**
+     * Check availability of connectivity with the message store
+     * @return {@code true} if connection available, {@code false} otherwise.
+     */
+    boolean isAlive();
+
+    /**
      * Sets the ID of this message consumer.
      * @param i ID
      */
