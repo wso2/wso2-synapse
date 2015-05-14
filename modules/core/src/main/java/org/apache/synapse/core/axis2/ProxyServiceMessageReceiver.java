@@ -95,14 +95,16 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 true, which disable normal http transport proxy
                 */
                 if (!synCtx.getFaultStack().isEmpty()) {
-                    warn(traceOn, "Executing fault handler - message discarded due to the proxy is assigned to an InboundEP", synCtx);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Executing fault handler - message discarded due to the proxy is allowed only via InboundEP");
+                    }
                     (synCtx.getFaultStack().pop()).
                             handleFault(synCtx, new Exception("Proxy Service " + name +
-                                                              " message discarded due to the proxy is assigned to an InboundEP"));
+                                                              " message discarded due to the proxy is allowed only via InboundEP"));
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Proxy Service " + name + " message discarded due to the proxy is " +
-                                  "assigned to an InboundEP");
+                                  "allowed only via InboundEP");
                     }
                 }
                 return;
