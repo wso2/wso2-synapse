@@ -47,6 +47,7 @@ import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -1491,7 +1492,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
 				          e.getMessage());
 			}
-		}      
+		}
         
         // initialize managed mediators
         for (ManagedLifecycle seq : getDefinedSequences().values()) {
@@ -2111,10 +2112,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
     }
 
-    private  void destroyExistingInbounds(SynapseConfiguration synapseConfiguration){
+    private void destroyExistingInbounds(SynapseConfiguration synapseConfiguration) {
         Collection<InboundEndpoint> inboundEndpoints = synapseConfiguration.getInboundEndpoints();
-        for(InboundEndpoint inboundEndpoint : inboundEndpoints){
-            inboundEndpoint.destroy();
+        for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
+            if (!InboundEndpointConstants.CXF_WS_RM.equals(inboundEndpoint.getProtocol())) {
+                inboundEndpoint.destroy();
+            }
         }
     }
 
