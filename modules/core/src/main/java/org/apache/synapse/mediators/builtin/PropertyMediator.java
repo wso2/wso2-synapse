@@ -419,6 +419,10 @@ public class PropertyMediator extends AbstractMediator {
 				_headers.put(HTTP.CONTENT_TYPE, resultValue);
 			}
 		}
+        if (PassThroughConstants.FAULTS_AS_HTTP_200.equals(name) && axis2MessageCtx.getProperty(PassThroughConstants
+                .FAULTS_AS_HTTP_200).toString().toLowerCase().equals("true")) {
+            axis2MessageCtx.setProperty(PassThroughConstants.HTTP_SC, 200);
+        }
     }
 
 
