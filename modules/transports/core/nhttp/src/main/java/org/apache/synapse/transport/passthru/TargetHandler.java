@@ -649,6 +649,18 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void exception(NHttpClientConnection conn, Exception ex) {
         ProtocolState state = TargetContext.getState(conn);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
+        
+        if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
+            informWriterError(conn);
+            log.warn("Exception occured while sending the request");
+        } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
+            informReaderError(conn);
+            log.warn("Exception occured while reading the response");
+        } else if (state == ProtocolState.REQUEST_DONE) {
+            informWriterError(conn);
+            log.warn("Exception occured while before reading the response");
+        }
+        
         if (ex instanceof IOException) {
 
             logIOException(conn, (IOException) ex);
