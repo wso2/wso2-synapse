@@ -456,7 +456,7 @@ public class Pipe {
             try {
                 setInputMode(outputBuffer, outBufferInputMode);
                 int remaining = len;
-                while (remaining > 0) {
+                while (remaining > 0 && !consumerError) {
                     if (!outputBuffer.hasRemaining()) {
                         flushContent();
                         if(consumerError){
@@ -484,7 +484,7 @@ public class Pipe {
             
             try {
                 try {
-					while (hasData(outputBuffer, outBufferInputMode)) {
+					while (hasData(outputBuffer, outBufferInputMode) && !consumerError) {
                         if(consumerError){
                             break;
                         }
