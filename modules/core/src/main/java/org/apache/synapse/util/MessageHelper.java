@@ -72,7 +72,6 @@ public class MessageHelper {
      * most of the attributes of the MC like opCtx and so on are still kept as references inside
      * the axis2 MessageContext for performance improvements. (Note: U dont have to worrie
      * about the SOAPEnvelope, it is a cloned copy and not a reference from any other MC)
-     *
      * @param synCtx - this will be cloned
      * @param cloneSoapEnvelope whether to clone the soap envelope
      * @return cloned Synapse MessageContext
@@ -197,7 +196,6 @@ public class MessageHelper {
     /**
      * This method does exactly what {@link MessageHelper#cloneMessageContext(MessageContext)} does,
      * other than cloning the SOAP envelop based on the {@code cloneSOAPEnvelope} argument.
-     *
      * @param synCtx Synapse message context to be cloned.
      * @return The cloned Synapse Message Context.
      * @throws AxisFault If something goes wrong with message cloning.
