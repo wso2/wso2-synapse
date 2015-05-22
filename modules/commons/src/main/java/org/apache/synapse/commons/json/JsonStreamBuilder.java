@@ -43,12 +43,15 @@ public final class JsonStreamBuilder implements Builder {
 
         if (inputStream != null) {
             OMElement element = JsonUtil.newJsonPayload(messageContext, inputStream, false, false);
-            if (element != null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("#processDocument. Built JSON payload from JSON stream. MessageID: " + messageContext.getMessageID());
-                }
-                return element;
-            }
+			if (element != null) {
+				if (logger.isDebugEnabled()) {
+					logger.debug("#processDocument. Built JSON payload from JSON stream. MessageID: " +
+					             messageContext.getMessageID());
+				}
+				return element;
+			} else {
+				throw new AxisFault("No JSON payload provided.");
+			}
         } else {
             EndpointReference endpointReference = messageContext.getTo();
             if (endpointReference == null) {
