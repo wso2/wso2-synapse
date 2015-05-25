@@ -22,15 +22,12 @@ package org.apache.synapse.config;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.*;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.Startup;
-import org.apache.synapse.SynapseArtifact;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -41,6 +38,7 @@ import org.apache.synapse.config.xml.XMLToTemplateMapper;
 import org.apache.synapse.config.xml.endpoints.TemplateFactory;
 import org.apache.synapse.config.xml.endpoints.XMLToEndpointMapper;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.deployers.SynapseArtifactDeploymentStore;
@@ -49,6 +47,7 @@ import org.apache.synapse.endpoints.Template;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
@@ -215,6 +214,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     private boolean allowHotUpdate = true;
 
     /**
+     * List of commented text segments within the Synapse Configuration
+     */
+    private List<String> commentedTextList = new ArrayList<String>();
+
+    /**
      * Add a named sequence into the local registry. If a sequence already exists by the specified
      * key a runtime exception is thrown.
      *
@@ -297,8 +301,8 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             for (Object o : localRegistry.values()) {
                 if (o instanceof SequenceMediator) {
                     SequenceMediator seq = (SequenceMediator) o;
-                    if(!seq.getName().startsWith("_Recipe_Sequence_")) {
-                    definedSequences.put(seq.getName(), seq);
+                    if(!seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY)) {
+                        definedSequences.put(seq.getName(), seq);
                     }
                 }
             }
@@ -1434,6 +1438,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @param se SynapseEnvironment specifying the env to be initialized
      */
     public synchronized void init(SynapseEnvironment se) {
+        SynapseConfiguration previouseConfiguration = null;
 
         if (log.isDebugEnabled()) {
             log.debug("Initializing the Synapse Configuration using the SynapseEnvironment");
@@ -1469,15 +1474,25 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			}
         }
 
+        String tenantDomain = getTenantDomain(se);
+        if (tenantDomain != null) {
+            previouseConfiguration = SynapseConfigUtils.getSynapseConfiguration(tenantDomain);
+            SynapseConfigUtils.addSynapseConfiguration(tenantDomain, this);
+        }
+
+        if(previouseConfiguration != null) {
+            destroyExistingInbounds(previouseConfiguration);
+        }
 
 		for (InboundEndpoint endpoint : getInboundEndpoints()) {
 			try {
 				endpoint.init(se);
 			} catch (Exception e) {
+                inboundEndpointMap.remove(endpoint.getName());
 				log.error(" Error in initializing inbound endpoint [" + endpoint.getName() + "] " +
 				          e.getMessage());
 			}
-		}      
+		}
         
         // initialize managed mediators
         for (ManagedLifecycle seq : getDefinedSequences().values()) {
@@ -2097,7 +2112,48 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
     }
 
+    private void destroyExistingInbounds(SynapseConfiguration synapseConfiguration) {
+        Collection<InboundEndpoint> inboundEndpoints = synapseConfiguration.getInboundEndpoints();
+        for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
+            if (!InboundEndpointConstants.CXF_WS_RM.equals(inboundEndpoint.getProtocol())) {
+                inboundEndpoint.destroy();
+            }
+        }
+    }
 
+    private String getTenantDomain(SynapseEnvironment synapseEnvironment) {
+        TenantInfoConfigurator configurator = synapseEnvironment.getTenantInfoConfigurator();
+        if (configurator != null) {
+            org.apache.axis2.context.MessageContext axisMessageContext = new org.apache.axis2.context.MessageContext();
+            MessageContext messageContext = new Axis2MessageContext(axisMessageContext, this, synapseEnvironment);
+            configurator.extractTenantInfo(messageContext);
+            if (messageContext.getProperty("tenant.info.domain") != null) {
+                return (String) messageContext.getProperty("tenant.info.domain");
+            }
 
+        }
+        return null;
+    }
+
+    /**
+     * Returns CommentedText List
+     *
+     * @return ArrayList of String contains commented text segments
+     */
+    public List<String> getCommentedTextList() {
+        return commentedTextList;
+    }
+
+    /**
+     * Add new comment text entry to the existing list*
+     *
+     * @param comment String comment
+     */
+    public void addToCommentedTextList(String comment) {
+        if (comment != null && comment.length() > 0) {
+            this.commentedTextList.add(comment);
+        }
+
+    }
 
 }

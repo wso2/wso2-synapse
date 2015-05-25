@@ -89,6 +89,8 @@ public class AggregateMediatorSerializer extends AbstractMediatorSerializer {
         }
         aggregator.addChild(onCompleteElem);
 
+        serializeComments(aggregator, mediator.getCommentsList());
+
         return aggregator;
     }
 

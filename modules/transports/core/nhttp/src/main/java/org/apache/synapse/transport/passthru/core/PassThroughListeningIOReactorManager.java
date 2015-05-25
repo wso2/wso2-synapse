@@ -24,9 +24,13 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.ListenerEndpoint;
 import org.apache.http.nio.reactor.ListeningIOReactor;
 import org.apache.log4j.Logger;
+import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.passthru.ServerIODispatch;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.core.ssl.MultiListenerSSLServerIODispatch;
+import org.apache.synapse.transport.passthru.core.ssl.SSLConfiguration;
+import org.apache.synapse.transport.passthru.core.ssl.SSLConnectionUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -50,9 +54,19 @@ public class PassThroughListeningIOReactorManager {
     private ListeningIOReactor sharedListeningIOReactor;
 
     /**
+     * Reference for shared SSL ListeningIOReactor which can be used by external SSL configured endpoints
+     */
+    private ListeningIOReactor sharedSSLListeningIOReactor;
+
+    /**
      * Configuration used in shared IO Reactor
      */
     private PassThroughSharedListenerConfiguration passThroughListenerConfiguration;
+
+    /**
+     * Configuration used in shared SSL IO Reactor
+     */
+    private  PassThroughSharedListenerConfiguration sslPassThroughListenerConfiguration;
 
     /**
      * Map keeps EventHandler and port mapping
@@ -74,16 +88,26 @@ public class PassThroughListeningIOReactorManager {
      */
     private Map<Integer, ServerIODispatch> passThroughListenerServerIODispatchMapper;
 
+    /**
+     * keep map between port , tenant and serverConnectionFactory used in Inbound Endpoints with SSL
+     */
+    private Map<Integer, ServerConnFactory> serverConnectionFactoryMapper;
+
     private AtomicBoolean isSharedIOReactorInitiated;
     private IOReactorSharingMode ioReactorSharingMode;
+
+    private AtomicBoolean isSharedSSLIOReactorInitiated;
+
 
     private PassThroughListeningIOReactorManager() {
         portServerHandlerMapper = new ConcurrentHashMap<Integer, NHttpServerEventHandler>();
         dynamicPTTListeningEndpointMapper = new ConcurrentHashMap<Integer, ListenerEndpoint>();
         passThroughListenerIOReactorMapper = new ConcurrentHashMap<Integer, ListeningIOReactor>();
         passThroughListenerServerIODispatchMapper = new ConcurrentHashMap<Integer, ServerIODispatch>();
+        serverConnectionFactoryMapper = new ConcurrentHashMap<Integer, ServerConnFactory>();
 
         isSharedIOReactorInitiated = new AtomicBoolean(false);
+        isSharedSSLIOReactorInitiated = new AtomicBoolean(false);
         ioReactorSharingMode = PassThroughConfiguration.getInstance().isListeningIOReactorShared() ?
                                IOReactorSharingMode.SHARED : IOReactorSharingMode.UNSHARED;
     }
@@ -143,6 +167,36 @@ public class PassThroughListeningIOReactorManager {
     }
 
     /**
+     * Start SSL endpoint in IO reactor which is external to PTT Axis Listeners started at server startup
+     * @param inetSocketAddress InetSocketAddress
+     * @param nHttpServerEventHandler  ServerHandler responsible for handle events of port
+     * @param endpointName   Endpoint Name
+     * @param sslConfiguration SSL information for create secure connection
+     * @return
+     */
+    public boolean startDynamicPTTSSLEndpoint(InetSocketAddress inetSocketAddress,
+                                              NHttpServerEventHandler nHttpServerEventHandler, String endpointName,
+                                              SSLConfiguration sslConfiguration) {
+        try {
+            // get Shared IO Reactor and Start Endpoint
+            ListenerEndpoint endpoint = startEndpoint(inetSocketAddress,
+                                                      getSharedSSLIOReactor(nHttpServerEventHandler, endpointName,
+                                                                             inetSocketAddress.getPort(),
+                                                                            sslConfiguration), endpointName);
+            if (endpoint != null) {
+                portServerHandlerMapper.put(inetSocketAddress.getPort(), nHttpServerEventHandler);
+                dynamicPTTListeningEndpointMapper.put(inetSocketAddress.getPort(), endpoint);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("Cannot Start Endpoint for " + endpointName, e);
+            return false;
+        }
+    }
+
+    /**
      * Create IOReactor with given configuration
      *
      * @param port                                   Port of the Endpoint for axis2 Listener
@@ -163,6 +217,11 @@ public class PassThroughListeningIOReactorManager {
                     !passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
                     this.passThroughListenerConfiguration = passThroughSharedListenerConfiguration;
                 }
+
+                if (this.sslPassThroughListenerConfiguration == null &&
+                    passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
+                    this.sslPassThroughListenerConfiguration = passThroughSharedListenerConfiguration;
+                }
             }
 
             //If IOReactor is in shared mode and if it is  not initialized, initialize it for HTTP Protocol
@@ -181,7 +240,21 @@ public class PassThroughListeningIOReactorManager {
                     isSharedIOReactorInitiated.compareAndSet(false, true);
                 }
 
-            } else {
+            } else if(ioReactorSharingMode == IOReactorSharingMode.SHARED && !isSharedSSLIOReactorInitiated.get()
+                      && passThroughSharedListenerConfiguration.getSourceConfiguration().getScheme().isSSL()) {
+                synchronized (this) {
+                    serverConnectionFactoryMapper.put(port,passThroughSharedListenerConfiguration.getServerConnFactory());
+                    portServerHandlerMapper.put(port, nHttpServerEventHandler);
+                    serverIODispatch = new MultiListenerSSLServerIODispatch(
+                               portServerHandlerMapper , nHttpServerEventHandler, serverConnectionFactoryMapper);
+                    // Create IOReactor for Listener make it shareable with Inbounds
+                    defaultListeningIOReactor = createListeningIOReactor(passThroughSharedListenerConfiguration);
+                    log.info("IO Reactor for port " + port + " initiated on shared mode which will be used by non axis2 " +
+                             "Transport SSL Listeners ");
+                    sharedSSLListeningIOReactor = defaultListeningIOReactor;
+                    isSharedSSLIOReactorInitiated.compareAndSet(false, true);
+                  }
+                }else {
                 // Create un shareable IOReactors for axis2 Listeners and assign IOReactor Config for later
                 // create IOReactor for Inbounds
                 serverIODispatch = new ServerIODispatch(nHttpServerEventHandler,
@@ -205,11 +278,16 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean closeDynamicPTTEndpoint(int port) {
         try {
+            log.info("Closing Endpoint Listener for port "+port);
             dynamicPTTListeningEndpointMapper.get(port).close();
+            log.info("Successfully closed Endpoint Listener for port "+port);
         } catch (Exception e) {
             log.error("Cannot close  Endpoint relevant to port " + port, e);
             return false;
         } finally {
+            if(serverConnectionFactoryMapper.containsKey(port)){
+                serverConnectionFactoryMapper.remove(port);
+            }
                 dynamicPTTListeningEndpointMapper.remove(port);
         }
         return true;
@@ -234,12 +312,62 @@ public class PassThroughListeningIOReactorManager {
                             if (dynamicPTTListeningEndpointMapper.containsKey(endPointPort)) {
                                 continue;
                             }
+                            log.info("Closing Endpoint Listener for port "+port);
                             listenerEndpoint.close();
+                            log.info("Successfully closed Endpoint Listener for port "+port);
                         }
                     }
                 } else {
                     for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        log.info("Closing Endpoint Listener for port "+port);
                         listenerEndpoint.close();
+                        log.info("Successfully closed Endpoint Listener for port "+port);
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Error occurred when closing Endpoint in PassThrough Transport Related to port " + port, e);
+            return false;
+        }
+    }
+
+    /**
+     * Close specific endpoints started by PTT Listeners using give set of bind addresses.
+     *
+     * @param port          Port of the listener
+     * @param bindAddresses bind address list of endpoints to be closed
+     * @return true if successfully closed, false if any error
+     */
+    public boolean closeSpecificPTTListenerEndpoints(int port,
+                                                     Set<InetSocketAddress> bindAddresses) {
+        try {
+            ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
+            if (listeningIOReactor != null) {
+                Set<ListenerEndpoint> endpoints = listeningIOReactor.getEndpoints();
+                // If it is shared IO Reactor then only close endpoints related to PTT Listener
+                if (passThroughListenerServerIODispatchMapper.get(port) instanceof MultiListenerServerIODispatch) {
+                    for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        if (listenerEndpoint.getAddress() instanceof InetSocketAddress) {
+                            int endPointPort = ((InetSocketAddress) listenerEndpoint.getAddress()).getPort();
+                            if (dynamicPTTListeningEndpointMapper.containsKey(endPointPort)) {
+                                continue;
+                            }
+
+                            for (InetSocketAddress inetSocketAddress : bindAddresses) {
+                                if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
+                                    listenerEndpoint.close();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    for (ListenerEndpoint listenerEndpoint : endpoints) {
+                        for (InetSocketAddress inetSocketAddress : bindAddresses) {
+                            if (inetSocketAddress.getHostName().equalsIgnoreCase(((InetSocketAddress) listenerEndpoint.getAddress()).getHostName())) {
+                                listenerEndpoint.close();
+                            }
+                        }
                     }
                 }
             }
@@ -270,6 +398,18 @@ public class PassThroughListeningIOReactorManager {
         }
         return null;
     }
+
+    /**
+     * @return source configuration used by shared SSL IO Reactor
+     */
+    public SourceConfiguration getSharedSSLPassThroughSourceConfiguration() {
+        if (sslPassThroughListenerConfiguration != null) {
+            return sslPassThroughListenerConfiguration.getSourceConfiguration();
+        }
+        return null;
+    }
+
+
 
     /**
      * ShutdownIOReactor which is registered by HTTPListener running on given port
@@ -323,7 +463,8 @@ public class PassThroughListeningIOReactorManager {
         ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
         ServerIODispatch serverIODispatch = passThroughListenerServerIODispatchMapper.get(port);
         if (listeningIOReactor != null) {
-            if (serverIODispatch instanceof MultiListenerServerIODispatch) {
+            if (serverIODispatch instanceof MultiListenerServerIODispatch ||
+                serverIODispatch instanceof  MultiListenerSSLServerIODispatch) {
                 log.info("Pausing shared IO Reactor bind for port " + port + " will be caused for pausing non " +
                          "axis2 Listeners ");
             } else {
@@ -409,6 +550,47 @@ public class PassThroughListeningIOReactorManager {
         return sharedListeningIOReactor;
     }
 
+    private ListeningIOReactor getSharedSSLIOReactor(NHttpServerEventHandler nHttpServerEventHandler,
+                                                     String endpointName, int port,
+                                                     SSLConfiguration sslConfiguration) throws Exception {
+
+        if (!isSharedSSLIOReactorInitiated.get()) {
+
+            if (sslPassThroughListenerConfiguration != null) {
+                //create separate IO Reactor for external non axis2 transports and share among them
+
+                try {
+                    synchronized (this) {
+                        sharedSSLListeningIOReactor = createListeningIOReactor(sslPassThroughListenerConfiguration);
+                        ServerIODispatch serverIODispatch = new MultiListenerSSLServerIODispatch(portServerHandlerMapper,
+                                                                                                 nHttpServerEventHandler,
+                                                                                                 serverConnectionFactoryMapper);
+                        startIOReactor(sharedSSLListeningIOReactor, serverIODispatch, "HTTPS");
+                        isSharedSSLIOReactorInitiated.compareAndSet(false, true);
+                    }
+
+                } catch (IOReactorException e) {
+                    throw new IOReactorException("Error occurred when creating shared IO Reactor for non axis2 Listener "
+                                                 + endpointName, e);
+                }
+            } else {
+                throw new Exception("Cannot start Endpoint for" + endpointName +
+                                    "Axis2 SSL Transport Listeners for PassThrough transport" + " not started correctly or not created the " +
+                                    "IOReactor Configuration");
+            }
+        }
+        ServerConnFactory serverConnFactory = SSLConnectionUtils.
+                   getServerConnectionFactory(endpointName, sslPassThroughListenerConfiguration,
+                                              sslConfiguration);
+        if (serverConnectionFactoryMapper.get(port) != null) {
+            throw new Exception("Cannot create ServerConnectionFactory for " + endpointName + "in port " + port +
+                                "already registered a server connection factory ");
+        } else {
+            serverConnectionFactoryMapper.put(port, serverConnFactory);
+        }
+        return sharedSSLListeningIOReactor;
+    }
+
 
     private ListeningIOReactor createListeningIOReactor(
             PassThroughSharedListenerConfiguration passThroughSharedListenerConfiguration) throws IOReactorException {
@@ -449,7 +631,8 @@ public class PassThroughListeningIOReactorManager {
         ListeningIOReactor listeningIOReactor = passThroughListenerIOReactorMapper.get(port);
         ServerIODispatch serverIODispatch = passThroughListenerServerIODispatchMapper.get(port);
         if (listeningIOReactor != null) {
-            if (serverIODispatch instanceof MultiListenerServerIODispatch) {
+            if (serverIODispatch instanceof MultiListenerServerIODispatch ||
+                serverIODispatch instanceof  MultiListenerSSLServerIODispatch) {
                 log.info("Shutting down shared IO Reactor bind for port " + port + " will be caused for shutdown non " +
                          "axis2 Listeners ");
             } else {
@@ -468,6 +651,6 @@ public class PassThroughListeningIOReactorManager {
      * @return whether dynamic endpoint is running for a particular port
      */
     public boolean isDynamicEndpointRunning(int port) {
-        return dynamicPTTListeningEndpointMapper.get(port) != null ? true : false;
+        return dynamicPTTListeningEndpointMapper.get(port) != null ;
     }
 }

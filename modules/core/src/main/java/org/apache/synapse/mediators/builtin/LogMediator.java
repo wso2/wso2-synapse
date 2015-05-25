@@ -26,6 +26,8 @@ import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 
@@ -93,10 +95,14 @@ public class LogMediator extends AbstractMediator {
                 synLog.auditLog(getLogMessage(synCtx));
                 break;
             case CATEGORY_TRACE :
-                synLog.auditTrace(getLogMessage(synCtx));
+            	if(synLog.isTraceEnabled()){
+            		synLog.auditTrace(getLogMessage(synCtx));
+            	}
                 break;
             case CATEGORY_DEBUG :
-                synLog.auditDebug(getLogMessage(synCtx));
+            	if(synLog.isDebugEnabled()){
+            		synLog.auditDebug(getLogMessage(synCtx));
+            	}
                 break;
             case CATEGORY_WARN :
                 synLog.auditWarn(getLogMessage(synCtx));
@@ -183,8 +189,12 @@ public class LogMediator extends AbstractMediator {
         StringBuffer sb = new StringBuffer();
         sb.append(getSimpleLogMessage(synCtx));
         try {
-            if (synCtx.getEnvelope() != null)
+            org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            if (JsonUtil.hasAJsonPayload(a2mc)) {
+                sb.append(separator).append("Payload: ").append(JsonUtil.jsonPayloadToString(a2mc));
+            } else if (synCtx.getEnvelope() != null) {
                 sb.append(separator).append("Envelope: ").append(synCtx.getEnvelope());
+            }
         } catch (Exception e) {
             SOAPEnvelope envelope = synCtx.isSOAP11() ? OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope()
                     :OMAbstractFactory.getSOAP12Factory().getDefaultEnvelope();
@@ -224,9 +234,13 @@ public class LogMediator extends AbstractMediator {
     }
 
     public void setSeparator(String separator) {
-        this.separator = separator;
+        if (separator.equals("\\n")) {
+            this.separator = "\n";
+        } else {
+            this.separator = separator;
+        }
     }
-
+        
     public void addProperty(MediatorProperty p) {
         properties.add(p);
     }

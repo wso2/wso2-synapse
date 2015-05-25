@@ -27,9 +27,12 @@ public final class Constants {
     public static final int JDBC_MS      = 1;
     /** In Memory Message Store */
     public static final int INMEMORY_MS  = 2;
+    /** RabbitMQ Message Store */
+    public static final int RABBIT_MS  = 3;
 
     /** Deprecated message store implementation class names**/
     public static final String DEPRECATED_INMEMORY_CLASS = "org.apache.synapse.message.store.InMemoryMessageStore";
     public static final String DEPRECATED_JMS_CLASS = "org.wso2.carbon.message.store.persistence.jms.JMSMessageStore";
 
 }
+

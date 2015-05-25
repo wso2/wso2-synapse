@@ -46,6 +46,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * Should messages be sent in an WS-RM Sequence ?
      */
+    @Deprecated
     private boolean reliableMessagingOn = false;
     /**
      * Should messages be sent using WS-A?
@@ -62,6 +63,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * The "key" for any WS-RM Policy overrides to be used
      */
+    @Deprecated
     private String wsRMPolicyKey = null;
     /**
      * The "key" for any Rampart Security Policy to be used
@@ -235,6 +237,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @return true if on
      */
+    @Deprecated
     public boolean isReliableMessagingOn() {
         return reliableMessagingOn;
     }
@@ -244,6 +247,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @param reliableMessagingOn a boolean flag indicating RM is on or not
      */
+    @Deprecated
     public void setReliableMessagingOn(boolean reliableMessagingOn) {
         this.reliableMessagingOn = reliableMessagingOn;
     }
@@ -364,6 +368,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @return the WS-RM configuration policys' 'key' to be used
      */
+    @Deprecated
     public String getWsRMPolicyKey() {
         return wsRMPolicyKey;
     }
@@ -373,6 +378,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @param wsRMPolicyKey the WS-RM configuration policys' 'key' to be used
      */
+    @Deprecated
     public void setWsRMPolicyKey(String wsRMPolicyKey) {
         this.wsRMPolicyKey = wsRMPolicyKey;
     }

@@ -20,16 +20,36 @@
 package org.apache.synapse.transport.nhttp;
 
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.description.ParameterInclude;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.synapse.transport.nhttp.config.ClientConnFactoryBuilder;
+import org.apache.synapse.transport.dynamicconfigurations.SSLProfileLoader;
+import org.apache.synapse.transport.dynamicconfigurations.SenderProfileReloader;
 
-public class HttpCoreNIOSSLSender extends HttpCoreNIOSender{
+public class HttpCoreNIOSSLSender extends HttpCoreNIOSender implements SSLProfileLoader {
+
+    @Override
+    public void init(ConfigurationContext cfgCtx, TransportOutDescription transportOut) throws AxisFault {
+        super.init(cfgCtx, transportOut);
+        new SenderProfileReloader(this, transportOut);
+    }
 
     @Override
     protected ClientConnFactoryBuilder initConnFactoryBuilder(
             final TransportOutDescription transportOut) throws AxisFault {
         return new ClientConnFactoryBuilder(transportOut)
             .parseSSL();
+    }
+
+    /**
+     * Reload SSL profiles and reset connections in HttpCoreNIOSSLSender
+     *
+     * @param transport TransportOutDescription of the configuration
+     * @throws AxisFault
+     */
+    public void reloadConfig(ParameterInclude transport) throws AxisFault {
+        reload((TransportOutDescription) transport);
     }
     
 }

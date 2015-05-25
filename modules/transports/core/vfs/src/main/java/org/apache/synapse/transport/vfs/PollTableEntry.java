@@ -97,6 +97,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
     
     private boolean distributedLock;
     
+    private String fileSortParam;
+    
+    private boolean fileSortAscending;
+    
+    private boolean forceCreateFolder;
+    
+    private String subfolderTimestamp;
+    
     private Long distributedLockTimeout;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
@@ -281,6 +289,36 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return distributedLock;
     }
 
+    
+    
+    /**
+     * @return the fileSortParam
+     */
+    public String getFileSortParam() {
+        return fileSortParam;
+    }
+
+    /**
+     * @param fileSortParam the fileSortParam to set
+     */
+    public void setFileSortParam(String fileSortParam) {
+        this.fileSortParam = fileSortParam;
+    }
+
+    /**
+     * @return the fileSortAscending
+     */
+    public boolean isFileSortAscending() {
+        return fileSortAscending;
+    }
+
+    /**
+     * @param fileSortAscending the fileSortAscending to set
+     */
+    public void setFileSortAscending(boolean fileSortAscending) {
+        this.fileSortAscending = fileSortAscending;
+    }
+
     /**
      * @return the distributedLockTimeout
      */
@@ -294,6 +332,36 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     public void setVfsSchemeProperties(Map<String, String> vfsSchemeProperties) {
         this.vfsSchemeProperties = vfsSchemeProperties;
+    }
+
+    
+    
+    /**
+     * @return the forceCreateFolder
+     */
+    public boolean isForceCreateFolder() {
+        return forceCreateFolder;
+    }
+
+    /**
+     * @param forceCreateFolder the forceCreateFolder to set
+     */
+    public void setForceCreateFolder(boolean forceCreateFolder) {
+        this.forceCreateFolder = forceCreateFolder;
+    }
+
+    /**
+     * @return the subfolderTimestamp
+     */
+    public String getSubfolderTimestamp() {
+        return subfolderTimestamp;
+    }
+
+    /**
+     * @param subfolderTimestamp the subfolderTimestamp to set
+     */
+    public void setSubfolderTimestamp(String subfolderTimestamp) {
+        this.subfolderTimestamp = subfolderTimestamp;
     }
 
     @Override
@@ -490,7 +558,29 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     }                
                 }
                 
+            }  
+
+            fileSortParam = ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_PARAM);
+            fileSortAscending = true;         
+            if (fileSortParam != null
+                    && ParamUtils.getOptionalParam(params, VFSConstants.FILE_SORT_ORDER) != null) {
+                try {
+                    fileSortAscending = Boolean.parseBoolean(ParamUtils.getOptionalParam(params,
+                            VFSConstants.FILE_SORT_ORDER));
+                } catch (Exception e) {
+                    fileSortAscending = true;
+                }
+
+            }
+            
+            String strForceCreateFolder = ParamUtils.getOptionalParam(params, VFSConstants.FORCE_CREATE_FOLDER);
+            forceCreateFolder = false;    
+            if (strForceCreateFolder != null && "true".equals(strForceCreateFolder.toLowerCase())) {
+                forceCreateFolder = true;
             }            
+            
+            subfolderTimestamp = ParamUtils.getOptionalParam(params, VFSConstants.SUBFOLDER_TIMESTAMP);
+            
             return super.loadConfiguration(params);
         }
     }

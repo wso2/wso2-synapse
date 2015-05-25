@@ -24,6 +24,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -52,7 +54,7 @@ public class Value {
     /**
      * the dynamic key
      */
-    private SynapseXPath expression = null;
+    private SynapsePath expression = null;
 
     private List<OMNamespace> namespaceList = new ArrayList<OMNamespace>();
     /**
@@ -65,11 +67,11 @@ public class Value {
     }
 
     /**
-     * Create a key instance using a dynamic key (Xpath Expression)
+     * Create a key instance using a dynamic key (Xpath or JsonPath Expression)
      *
-     * @param expression SynapseXpath for dynamic key
+     * @param expression SynapsePath for dynamic key
      */
-    public Value(SynapseXPath expression) {
+    public Value(SynapsePath expression) {
         this.expression = expression;
     }
 
@@ -85,15 +87,27 @@ public class Value {
     /**
      * Retrieving dynamic key
      *
-     * @return SynapseXpath
+     * @return SynapsePath
      */
-    public SynapseXPath getExpression() {
-        if(expression == null && keyValue != null && hasExprTypeKey()){
+    public SynapsePath getExpression() {
+        if (expression == null && keyValue != null && hasExprTypeKey()) {
             try {
-                expression = new SynapseXPath (keyValue.substring(1, keyValue.length()-1));
-                for (OMNamespace aNamespaceList : namespaceList) {
-                    expression.addNamespace(aNamespaceList);
+                String expressionString = keyValue.substring(1, keyValue.length() - 1);
+
+                if ("json-eval".equals(keyValue.substring(1, 10))) {
+
+                    // Remove "json-eval" and extract the json expression
+                    SynapseJsonPath expressionTypeKey = new SynapseJsonPath(keyValue.substring(11, keyValue.length() - 2));
+                    expression = expressionTypeKey;
+
+                } else {
+                    SynapseXPath expressionTypeKey = new SynapseXPath(expressionString);
+                    for (OMNamespace aNamespaceList : namespaceList) {
+                        expressionTypeKey.addNamespace(aNamespaceList);
+                    }
+                    expression = expressionTypeKey;
                 }
+
             } catch (JaxenException e) {
                 expression = null;
                 handleException("Can not evaluate escaped expression..");

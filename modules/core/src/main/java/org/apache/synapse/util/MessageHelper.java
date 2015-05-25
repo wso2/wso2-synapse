@@ -72,22 +72,22 @@ public class MessageHelper {
      * most of the attributes of the MC like opCtx and so on are still kept as references inside
      * the axis2 MessageContext for performance improvements. (Note: U dont have to worrie
      * about the SOAPEnvelope, it is a cloned copy and not a reference from any other MC)
-     *
-     * @param synCtx - this will be cloned 
+     * @param synCtx - this will be cloned
+     * @param cloneSoapEnvelope whether to clone the soap envelope
      * @return cloned Synapse MessageContext
      * @throws AxisFault if there is a failure in creating the new Synapse MC or in a failure in
      *          clonning the underlying axis2 MessageContext
      * 
      * @see MessageHelper#cloneAxis2MessageContext 
      */
-    public static MessageContext cloneMessageContext(MessageContext synCtx) throws AxisFault {
+    public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope) throws AxisFault {
 
         // creates the new MessageContext and clone the internal axis2 MessageContext
         // inside the synapse message context and place that in the new one
         MessageContext newCtx = synCtx.getEnvironment().createMessageContext();
         Axis2MessageContext axis2MC = (Axis2MessageContext) newCtx;
         axis2MC.setAxis2MessageContext(
-            cloneAxis2MessageContext(((Axis2MessageContext) synCtx).getAxis2MessageContext()));
+            cloneAxis2MessageContext(((Axis2MessageContext) synCtx).getAxis2MessageContext(), cloneSoapEnvelope));
 
         newCtx.setConfiguration(synCtx.getConfiguration());
         newCtx.setEnvironment(synCtx.getEnvironment());
@@ -192,8 +192,18 @@ public class MessageHelper {
 
         return newCtx;
     }
-    
 
+    /**
+     * This method does exactly what {@link MessageHelper#cloneMessageContext(MessageContext)} does,
+     * other than cloning the SOAP envelop based on the {@code cloneSOAPEnvelope} argument.
+     * @param synCtx Synapse message context to be cloned.
+     * @return The cloned Synapse Message Context.
+     * @throws AxisFault If something goes wrong with message cloning.
+     */
+    public static MessageContext cloneMessageContext(MessageContext synCtx) throws AxisFault {
+
+        return cloneMessageContext(synCtx, true);
+    }
 
     public static MessageContext cloneMessageContextForAggregateMediator(MessageContext synCtx) throws AxisFault {
     	
@@ -341,7 +351,7 @@ public class MessageHelper {
      * @param oriRecord original statistic record
      * @return clone of Statistic Record
      */
-    private static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
+    public static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
 
         StatisticsRecord clonedRecord = new StatisticsRecord(oriRecord.getId(),
                                                              oriRecord.getClientIP(),
@@ -357,6 +367,7 @@ public class MessageHelper {
             clonedLog.setResponse(oriLog.isResponse());
             clonedLog.setFault(oriLog.isFault());
             clonedLog.setEndAnyLog(oriLog.isEndAnyLog());
+            clonedLog.setCollectedByRequestFlow(oriLog.isCollectedByRequestFlow());
             // Error Log
             ErrorLog oriErrorLog = oriLog.getErrorLog();
             if (oriErrorLog != null) {
@@ -416,15 +427,18 @@ public class MessageHelper {
      * about the SOAPEnvelope, it is a cloned copy and not a reference from any other MC)
      *
      * @param mc - this will be cloned for getting an exact copy
+     * @param cloneSoapEnvelope The flag to say whether to clone the SOAP envelope or not.
      * @return cloned MessageContext from the given mc
      * @throws AxisFault if there is a failure in copying the certain attributes of the
      *          provided message context
      */
     public static org.apache.axis2.context.MessageContext cloneAxis2MessageContext(
-        org.apache.axis2.context.MessageContext mc) throws AxisFault {
+        org.apache.axis2.context.MessageContext mc, boolean cloneSoapEnvelope) throws AxisFault {
 
         org.apache.axis2.context.MessageContext newMC = clonePartially(mc);
-        newMC.setEnvelope(cloneSOAPEnvelope(mc.getEnvelope()));
+        if (cloneSoapEnvelope) {
+            newMC.setEnvelope(cloneSOAPEnvelope(mc.getEnvelope()));
+        }
         // XXX: always this section must come after the above step. ie. after applying Envelope.
         // That is to get the existing headers into the new envelope.
         JsonUtil.cloneJsonPayload(mc, newMC);
@@ -464,6 +478,18 @@ public class MessageHelper {
         return newMC;
     }
 
+    /**
+     * This method does exactly what {@link MessageHelper#cloneAxis2MessageContext(org.apache.axis2.context.MessageContext)} does,
+     * other than cloning the SOAP envelop based on the {@code cloneSOAPEnvelope} argument.
+     *
+     * @param mc Axis2 message context
+     * @return The cloned Axis2 message context.
+     * @throws AxisFault If something goes wrong during cloning.
+     */
+    public static org.apache.axis2.context.MessageContext cloneAxis2MessageContext(
+               org.apache.axis2.context.MessageContext mc) throws AxisFault {
+        return cloneAxis2MessageContext(mc, true);
+    }
     
     private static org.apache.axis2.context.MessageContext cloneAxis2MessageContextForAggregate(
 			org.apache.axis2.context.MessageContext mc) throws AxisFault {

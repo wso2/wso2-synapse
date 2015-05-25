@@ -389,4 +389,13 @@ public class SubscriptionMessageBuilder {
             return false;
         }
     }
+
+    /**
+     * Reset Error Information
+     */
+    public static void resetErrorInfo(){
+        errorCode=null;
+        errorReason=null;
+        errorSubCode = null;
+    }
 }

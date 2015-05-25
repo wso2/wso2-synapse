@@ -49,6 +49,8 @@ public final class SynapseConstants {
     public static final String FAULT_SEQUENCE_XML = "fault.xml";
     /** The name of the mandatory sequence to execute before the begining of the actual mediation */
     public static final String MANDATORY_SEQUENCE_KEY = "pre-mediate";
+    /** The name prefix of the hidden sequence */
+    public static final String PREFIX_HIDDEN_SEQUENCE_KEY = "_Hidden_Sequence_";
 
     /** The name of the Synapse service (used for message mediation) */
     public static final String SYNAPSE_SERVICE_NAME ="__SynapseService";
@@ -57,6 +59,7 @@ public final class SynapseConstants {
 
     //- names of modules to be engaged at runtime -
     /** The Name of the WS-RM module */
+    @Deprecated
     public static final String RM_MODULE_NAME = "sandesha2";
     /** The Name of the WS-A Addressing module */
     public static final String ADDRESSING_MODULE_NAME = "addressing";
@@ -144,6 +147,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_XML = "synapse.xml";
     /** The name of the system property used to specify/override the Synapse properties location */
     public static final String SYNAPSE_PROPERTIES = "synapse.properties";
+    /** The name of the synapse handlers file */
+    public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
 
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
@@ -483,5 +488,9 @@ public final class SynapseConstants {
     //Inbound endpoint
     public static final String IS_INBOUND = "isInbound";
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
+    public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
+
+    //Sandesha
+    public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 
 }

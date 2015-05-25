@@ -18,8 +18,7 @@
  */
 package org.apache.synapse.mediators.xquery;
 
-import javax.xml.xquery.*;
-import net.sf.saxon.xqj.SaxonXQDataSource;
+import net.sf.saxon.s9api.*;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
@@ -37,13 +36,12 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.xpath.SourceXPathSupport;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -64,8 +62,8 @@ import java.util.*;
 
 public class XQueryMediator extends AbstractMediator {
 
-    /* Properties that must set to the XQDataSource  */
-    private final List<MediatorProperty> dataSourceProperties = new ArrayList<MediatorProperty>();
+    /* Properties that must set to the Processor  */
+    private final List<MediatorProperty> processorProperties = new ArrayList<MediatorProperty>();
 
     /* The key for lookup the xquery (Supports both static and dynamic keys)*/
     private Value queryKey;
@@ -85,14 +83,14 @@ public class XQueryMediator extends AbstractMediator {
     /* Is it need to use DOMSource and DOMResult? */
     private boolean useDOMSource = false;
 
-    /*The DataSource which use to create a connection to XML database */
-    private XQDataSource cachedXQDataSource = null;
+    /*The Processor allows global Saxon configuration options to be set &  it acts as a factory for generating XQuery compiler */
+    private Processor cachedProcessor = null;
 
-    /* connection with a specific XQuery engine.Connection will live as long as synapse live */
-    private XQConnection cachedConnection = null;
+    /* XQueryCompiler allows to compile XQuery 1.0 queries */
+    private XQueryCompiler cachedQueryCompiler = null;
 
-    /* An expression that use for multiple  executions.Expression will recreate if query has changed */
-    private Map<String, XQPreparedExpression> cachedPreparedExpressionMap = new Hashtable<String, XQPreparedExpression>();
+    /* An XQueryEvaluator that use for represents a compiled and loaded query ready for execution. XQueryEvaluator will recreate if query has changed */
+    private Map<String, XQueryEvaluator> cachedXQueryEvaluatorMap = new Hashtable<String, XQueryEvaluator>();
 
     public XQueryMediator() {
     }
@@ -141,9 +139,11 @@ public class XQueryMediator extends AbstractMediator {
     private void performQuery(MessageContext synCtx, SynapseLog synLog) {
 
         boolean reLoad = false;
-        boolean needBind = false;
-        XQResultSequence resultSequence;
+        boolean needSet = false;
+        XQueryEvaluator queryEvaluator = null;
         String generatedQueryKey = null;
+        XQueryExecutable xQueryExecutable = null;
+        XdmValue xdmValue;
         boolean isQueryKeyGenerated = false;
 
         if (queryKey != null) {
@@ -154,9 +154,6 @@ public class XQueryMediator extends AbstractMediator {
         if (generatedQueryKey != null) {
             isQueryKeyGenerated = true;
         }
-
-        // get expression from generatedQueryKey
-        XQPreparedExpression cachedPreparedExpression = null;
 
         if (generatedQueryKey != null && !"".equals(generatedQueryKey)) {
 
@@ -171,62 +168,52 @@ public class XQueryMediator extends AbstractMediator {
 
         try {
             synchronized (resourceLock) {
-
-                //creating data source
-                if (cachedXQDataSource == null) {
-                    // A factory for XQConnection  objects
-                    cachedXQDataSource = new SaxonXQDataSource();
-                    //setting up the properties to the XQDataSource
-                    if (dataSourceProperties != null && !dataSourceProperties.isEmpty()) {
+                //creating processor
+                if (cachedProcessor == null) {
+                    cachedProcessor = new Processor(false);
+                    //setting up the properties to the Processor
+                    if (processorProperties != null && !processorProperties.isEmpty()) {
                         synLog.traceOrDebug("Setting up properties to the XQDataSource");
-                        for (MediatorProperty dataSourceProperty : dataSourceProperties) {
-                            if (dataSourceProperty != null) {
-                                cachedXQDataSource.setProperty(dataSourceProperty.getName(),
-                                        dataSourceProperty.getValue());
+                        for (MediatorProperty processorProperty : processorProperties) {
+                            if (processorProperty != null) {
+                                cachedProcessor.setConfigurationProperty(processorProperty.getName(),
+                                        processorProperty.getValue());
                             }
                         }
                     }
                 }
 
-                //creating connection
-                if (cachedConnection == null
-                        || (cachedConnection != null && cachedConnection.isClosed())) {
-                    //get the Connection to XML DataBase
-                    synLog.traceOrDebug("Creating a connection from the XQDataSource ");
-                    cachedConnection = cachedXQDataSource.getConnection();
+                //creating XQueryCompiler
+                if (cachedQueryCompiler == null) {
+                    synLog.traceOrDebug("Creating a compiler from the Processor ");
+                    cachedQueryCompiler = cachedProcessor.newXQueryCompiler();
                 }
 
-                //If already cached expression then load it from cachedPreparedExpressionMap
+                //If already cached evaluator then load it from cachedXQueryEvaluatorMap
                 if (isQueryKeyGenerated) {
-                    cachedPreparedExpression = cachedPreparedExpressionMap.get(generatedQueryKey);
+                    queryEvaluator = cachedXQueryEvaluatorMap.get(generatedQueryKey);
                 }
 
-                // prepare the expression to execute query
-                if (reLoad || cachedPreparedExpression == null
-                        || (cachedPreparedExpression != null
-                        && cachedPreparedExpression.isClosed())) {
+                if (reLoad || queryEvaluator == null) {
 
                     if (querySource != null && !"".equals(querySource)) {
 
-                        if (cachedPreparedExpression == null) {
-
-                            if (synLog.isTraceOrDebugEnabled()) {
-                                synLog.traceOrDebug("Using in-lined query source - " + querySource);
-                                synLog.traceOrDebug("Prepare an expression for the query ");
-                            }
-
-                            //create an XQPreparedExpression using the query source
-                            cachedPreparedExpression =
-                                    cachedConnection.prepareExpression(querySource);
-
-                            // if cachedPreparedExpression is created then put it in to cachedPreparedExpressionMap
-                            if (isQueryKeyGenerated) {
-                                cachedPreparedExpressionMap.put(generatedQueryKey, cachedPreparedExpression);
-                            }
-
-                            // need binding because the expression just has recreated
-                            needBind = true;
+                        if (synLog.isTraceOrDebugEnabled()) {
+                            synLog.traceOrDebug("Using in-lined query source - " + querySource);
+                            synLog.traceOrDebug("Prepare an expression for the query ");
                         }
+
+                        xQueryExecutable = cachedQueryCompiler.compile(querySource);
+                        queryEvaluator = xQueryExecutable.load();
+
+                        // if queryEvaluator is created then put it in to cachedXQueryEvaluatorMap
+                        if (isQueryKeyGenerated) {
+                            cachedXQueryEvaluatorMap.put(generatedQueryKey, queryEvaluator);
+                        }
+
+                        // need set because the expression just has recreated
+                        needSet = true;
+
 
                     } else {
 
@@ -236,7 +223,7 @@ public class XQueryMediator extends AbstractMediator {
                                 synLog.traceOrDebug("Couldn't find the xquery source with a key "
                                         + queryKey);
                             }
-                             throw new SynapseException("No object found for the key '" + generatedQueryKey + "'");
+                            throw new SynapseException("No object found for the key '" + generatedQueryKey + "'");
                         }
 
                         String sourceCode = null;
@@ -279,66 +266,80 @@ public class XQueryMediator extends AbstractMediator {
                             synLog.traceOrDebug("Prepare an expression for the query ");
                         }
 
-                        if (sourceCode != null) {
-                            //create an XQPreparedExpression using the query source
-                            cachedPreparedExpression =
-                                    cachedConnection.prepareExpression(sourceCode);
-                        } else {
-                            //create an XQPreparedExpression using the query source stream
-                            cachedPreparedExpression =
-                                    cachedConnection.prepareExpression(inputStream);
+                        try {
+
+                            if (sourceCode != null) {
+                                //create an xQueryExecutable using the query source
+                                xQueryExecutable = cachedQueryCompiler.compile(sourceCode);
+                            } else {
+                                xQueryExecutable = cachedQueryCompiler.compile(inputStream);
+                            }
+
+                        } catch (IOException e) {
+                            handleException("Error during the query inputStream compilation");
                         }
 
-                        // if cachedPreparedExpression is created then put it in to cachedPreparedExpressionMap
+                        queryEvaluator = xQueryExecutable.load();
+
+
+                        // if queryEvaluator is created then put it in to cachedXQueryEvaluatorMap
                         if (isQueryKeyGenerated) {
-                            cachedPreparedExpressionMap.put(generatedQueryKey, cachedPreparedExpression);
+                            cachedXQueryEvaluatorMap.put(generatedQueryKey, queryEvaluator);
                         }
 
-                        // need binding because the expression just has recreated
-                        needBind = true;
+                        // need set because the evaluator just has recreated
+                        needSet = true;
                     }
                 }
 
-                //Bind the external variables to the DynamicContext
+                //Set the external variables to the queryEvaluator
                 if (variables != null && !variables.isEmpty()) {
                     synLog.traceOrDebug("Binding  external variables to the DynamicContext");
                     for (MediatorVariable variable : variables) {
                         if (variable != null) {
                             boolean hasValueChanged = variable.evaluateValue(synCtx);
-                            //if the value has changed or need binding because the expression has recreated
-                            if (hasValueChanged || needBind) {
-                                //Binds the external variable to the DynamicContext
-                                bindVariable(cachedPreparedExpression, variable, synLog);
+                            //if the value has changed or need set because the evaluator has recreated
+                            if (hasValueChanged || needSet) {
+                                //Set the external variable to the queryEvaluator
+                                setVariable(queryEvaluator, variable, synLog);
                             }
                         }
                     }
                 }
 
                 //executing the query
-                resultSequence = cachedPreparedExpression.executeQuery();
+                xdmValue = queryEvaluator.evaluate();
 
             }
 
-            if (resultSequence == null) {
+            if (queryEvaluator == null) {
                 synLog.traceOrDebug("Result Sequence is null");
                 return;
             }
 
-            //processing the result 
-            while (resultSequence.next()) {
+            //processing the result
+            for (XdmItem xdmItem : xdmValue) {
 
-                XQItem xqItem = resultSequence.getItem();
-                if (xqItem == null) {
+                if (xdmItem == null) {
                     return;
                 }
-                XQItemType itemType = xqItem.getItemType();
-                if (itemType == null) {
-                    return;
+
+                XdmNodeKind xdmNodeKind = null;
+                ItemType itemType = null;
+
+                if (xdmItem.isAtomicValue()) {
+                    itemType = getItemType(xdmItem, cachedProcessor);
+
+                    if (itemType == null) {
+                        return;
+                    }
+
+                } else {
+                    xdmNodeKind = ((XdmNode) xdmItem).getNodeKind();
                 }
-                int itemKind = itemType.getItemKind();
-                int baseType = itemType.getBaseType();
+
                 if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("The XQuery Result " + xqItem.getItemAsString(null));
+                    synLog.traceOrDebug("The XQuery Result " + xdmItem.toString());
                 }
 
                 //The target node that is going to modify
@@ -349,59 +350,55 @@ public class XQueryMediator extends AbstractMediator {
                     }
 
                     //If the result is XML
-                    if (XQItemType.XQITEMKIND_DOCUMENT_ELEMENT == itemKind ||
-                            XQItemType.XQITEMKIND_ELEMENT == itemKind ||
-                            XQItemType.XQITEMKIND_DOCUMENT == itemKind) {
-                        StAXOMBuilder builder = new StAXOMBuilder(
-                                XMLInputFactory.newInstance().createXMLStreamReader(
-                                        new StringReader(xqItem.getItemAsString(null))));
+                    if (XdmNodeKind.DOCUMENT == xdmNodeKind || XdmNodeKind.ELEMENT == xdmNodeKind) {
+
+                        StAXOMBuilder builder = new StAXOMBuilder(XMLInputFactory.newInstance().createXMLStreamReader(
+                                new StringReader(xdmItem.toString())));
                         OMElement resultOM = builder.getDocumentElement();
+
                         if (resultOM != null) {
                             //replace the target node from the result
                             destination.insertSiblingAfter(resultOM);
                             destination.detach();
                         }
-                    } else if (XQItemType.XQBASETYPE_INTEGER == baseType ||
-                            XQItemType.XQBASETYPE_INT == baseType) {
+
+                    } else if (ItemType.INTEGER == itemType || ItemType.INT == itemType) {
                         //replace the text value of the target node by the result ,If the result is
                         // a basic type
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getInt()));
-                    } else if (XQItemType.XQBASETYPE_BOOLEAN == baseType) {
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getBoolean()));
-                    } else if (XQItemType.XQBASETYPE_DOUBLE == baseType) {
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getDouble()));
-                    } else if (XQItemType.XQBASETYPE_FLOAT == baseType) {
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getFloat()));
-                    } else if (XQItemType.XQBASETYPE_LONG == baseType) {
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getLong()));
-                    } else if (XQItemType.XQBASETYPE_SHORT == baseType) {
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getShort()));
-                    } else if (XQItemType.XQBASETYPE_BYTE == baseType) {
-                        ((OMElement) destination).setText(String.valueOf(xqItem.getByte()));
-                    } else if (XQItemType.XQBASETYPE_STRING == baseType) {
-                        ((OMElement) destination).setText(
-                                String.valueOf(xqItem.getItemAsString(null)));
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getDecimalValue().intValue()));
+                    } else if (ItemType.BOOLEAN == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getBooleanValue()));
+                    } else if (ItemType.DOUBLE == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getDoubleValue()));
+                    } else if (ItemType.FLOAT == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getDecimalValue().floatValue()));
+                    } else if (ItemType.LONG == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getLongValue()));
+                    } else if (ItemType.SHORT == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getDecimalValue().shortValue()));
+                    } else if (ItemType.BYTE == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getDecimalValue().byteValue()));
+                    } else if (ItemType.STRING == itemType) {
+                        ((OMElement) destination).setText(String.valueOf(((XdmAtomicValue) xdmItem).getValue()));
                     }
-                }
-                else if(null == target.getXPath() && null == destination){
-                //In the case soap body doesn't have the first element --> Empty soap body
 
-                     destination = synCtx.getEnvelope().getBody();
+                } else if (null == target.getXPath() && null == destination) {
+                    //In the case soap body doesn't have the first element --> Empty soap body
+
+                    destination = synCtx.getEnvelope().getBody();
 
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("The target node " + destination);
                     }
 
                     //If the result is XML
-                    if (XQItemType.XQITEMKIND_DOCUMENT_ELEMENT == itemKind ||
-                            XQItemType.XQITEMKIND_ELEMENT == itemKind ||
-                            XQItemType.XQITEMKIND_DOCUMENT == itemKind) {
+                    if (XdmNodeKind.ELEMENT == xdmNodeKind || XdmNodeKind.DOCUMENT == xdmNodeKind) {
                         StAXOMBuilder builder = new StAXOMBuilder(
                                 XMLInputFactory.newInstance().createXMLStreamReader(
-                                        new StringReader(xqItem.getItemAsString(null))));
+                                        new StringReader(xdmItem.toString())));
                         OMElement resultOM = builder.getDocumentElement();
                         if (resultOM != null) {
-                           ((OMElement)destination).addChild(resultOM);
+                            ((OMElement) destination).addChild(resultOM);
                         }
                     }
                     //No else part since soap body could have only XML part not text values
@@ -409,11 +406,12 @@ public class XQueryMediator extends AbstractMediator {
                 }
                 break;   // Only take the *first* value of the result sequence
             }
-            resultSequence.close();  // closing the result sequence
-        } catch (XQException e) {
+            queryEvaluator.close();  // closing the result sequence
+
+        } catch (SaxonApiException e) {
             handleException("Error during the querying " + e.getMessage(), e);
         } catch (XMLStreamException e) {
-            handleException("Error during retrieving  the Doument Node as  the result "
+            handleException("Error during retrieving  the Document Node as  the result "
                     + e.getMessage(), e);
         }
     }
@@ -421,201 +419,184 @@ public class XQueryMediator extends AbstractMediator {
     /**
      * Binding a variable to the Dynamic Context in order to available during doing the querying
      *
-     * @param xqDynamicContext The Dynamic Context  to which the variable will be binded
-     * @param variable         The variable which contains the name and vaule for binding
+     * @param queryEvaluator   The XQuery evaluator to which the variable will be added
+     * @param variable         The variable which contains the name and vaule for adding
      * @param synLog           the Synapse log to use
-     * @throws XQException throws if any error occurs when binding the variable
+     * @throws SaxonApiException throws if any error occurs when adding the variable
      */
-    private void bindVariable(XQDynamicContext xqDynamicContext, MediatorVariable variable,
-                              SynapseLog synLog) throws XQException {
+    private void setVariable(XQueryEvaluator queryEvaluator, MediatorVariable variable,
+                             SynapseLog synLog) throws SaxonApiException {
+
+        QName name = new QName(variable.getName().getLocalPart());
 
         if (variable != null) {
 
-            QName name = variable.getName();
-            int type = variable.getType();
+            ItemType type = variable.getType();
+            XdmNodeKind nodeKind = variable.getNodeKind();
             Object value = variable.getValue();
 
-            if (value != null && type != -1) {
+            if (value != null && (type != null || nodeKind != null)) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Binding a variable to the DynamicContext with a name : "
                             + name + " and a value : " + value);
                 }
 
-                switch (type) {
-                    //Binding the basic type As-Is and XML element as an InputSource
-                    case (XQItemType.XQBASETYPE_BOOLEAN): {
-                        boolean booleanValue = false;
-                        if (value instanceof String) {
-                            booleanValue = Boolean.parseBoolean((String) value);
-                        } else if (value instanceof Boolean) {
-                            booleanValue = (Boolean) value;
-                        } else {
-                            handleException("Incompatible type for the Boolean");
-                        }
-                        xqDynamicContext.bindBoolean(name, booleanValue, null);
-                        break;
+                //Binding the basic type As-Is and XML element as an InputSource
+                if (ItemType.BOOLEAN == type) {
+                    boolean booleanValue = false;
+                    if (value instanceof String) {
+                        booleanValue = Boolean.parseBoolean((String) value);
+                    } else if (value instanceof Boolean) {
+                        booleanValue = (Boolean) value;
+                    } else {
+                        handleException("Incompatible type for the Boolean");
                     }
-                    case (XQItemType.XQBASETYPE_INTEGER): {
-                        int intValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                intValue = Integer.parseInt((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value + "' " +
-                                        "for the Integer", e);
-                            }
-                        } else if (value instanceof Integer) {
-                            intValue = (Integer) value;
-                        } else {
-                            handleException("Incompatible type for the Integer");
+                    queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(booleanValue), ItemType.BOOLEAN));
+                } else if (ItemType.INTEGER == type) {
+                    int intValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            intValue = Integer.parseInt((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value + "' " +
+                                    "for the Integer", e);
                         }
-                        if (intValue != -1) {
-                            xqDynamicContext.bindInt(name, intValue, null);
-                        }
-                        break;
+                    } else if (value instanceof Integer) {
+                        intValue = (Integer) value;
+                    } else {
+                        handleException("Incompatible type for the Integer");
                     }
-                    case (XQItemType.XQBASETYPE_INT): {
-                        int intValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                intValue = Integer.parseInt((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value +
-                                        "' for the Int", e);
-                            }
-                        } else if (value instanceof Integer) {
-                            intValue = (Integer) value;
-                        } else {
-                            handleException("Incompatible type for the Int");
-                        }
-                        if (intValue != -1) {
-                            xqDynamicContext.bindInt(name, intValue, null);
-                        }
-                        break;
+                    if (intValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(intValue), ItemType.INTEGER));
                     }
-                    case (XQItemType.XQBASETYPE_LONG): {
-                        long longValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                longValue = Long.parseLong((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value + "' " +
-                                        "for the long ", e);
-                            }
-                        } else if (value instanceof Long) {
-                            longValue = (Long) value;
-                        } else {
-                            handleException("Incompatible type for the Long");
+
+                } else if (ItemType.INT == type) {
+                    int intValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            intValue = Integer.parseInt((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value +
+                                    "' for the Int", e);
                         }
-                        if (longValue != -1) {
-                            xqDynamicContext.bindLong(name, longValue, null);
-                        }
-                        break;
+                    } else if (value instanceof Integer) {
+                        intValue = (Integer) value;
+                    } else {
+                        handleException("Incompatible type for the Int");
                     }
-                    case (XQItemType.XQBASETYPE_SHORT): {
-                        short shortValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                shortValue = Short.parseShort((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value + "' " +
-                                        "for the short ", e);
-                            }
-                        } else if (value instanceof Short) {
-                            shortValue = (Short) value;
-                        } else {
-                            handleException("Incompatible type for the Short");
-                        }
-                        if (shortValue != -1) {
-                            xqDynamicContext.bindShort(name, shortValue, null);
-                        }
-                        break;
+                    if (intValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(intValue), ItemType.INT));
                     }
-                    case (XQItemType.XQBASETYPE_DOUBLE): {
-                        double doubleValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                doubleValue = Double.parseDouble((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value + "' " +
-                                        "for the double ", e);
-                            }
-                        } else if (value instanceof Double) {
-                            doubleValue = (Double) value;
-                        } else {
-                            handleException("Incompatible type for the Double");
+
+                } else if (ItemType.LONG == type) {
+                    long longValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            longValue = Long.parseLong((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value + "' " +
+                                    "for the long ", e);
                         }
-                        if (doubleValue != -1) {
-                            xqDynamicContext.bindDouble(name, doubleValue, null);
+                    } else if (value instanceof Long) {
+                        longValue = (Long) value;
+                    } else {
+                        handleException("Incompatible type for the Long");
+                    }
+                    if (longValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(longValue), ItemType.LONG));
+                    }
+
+                } else if (ItemType.SHORT == type) {
+                    short shortValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            shortValue = Short.parseShort((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value + "' " +
+                                    "for the short ", e);
                         }
-                        break;
+                    } else if (value instanceof Short) {
+                        shortValue = (Short) value;
+                    } else {
+                        handleException("Incompatible type for the Short");
                     }
-                    case (XQItemType.XQBASETYPE_FLOAT): {
-                        float floatValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                floatValue = Float.parseFloat((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value + "' " +
-                                        "for the float ", e);
-                            }
-                        } else if (value instanceof Float) {
-                            floatValue = (Float) value;
-                        } else {
-                            handleException("Incompatible type for the Float");
+                    if (shortValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(shortValue), ItemType.SHORT));
+                    }
+
+                } else if (ItemType.DOUBLE == type) {
+                    double doubleValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            doubleValue = Double.parseDouble((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value + "' " +
+                                    "for the double ", e);
                         }
-                        if (floatValue != -1) {
-                            xqDynamicContext.bindFloat(name, floatValue, null);
+                    } else if (value instanceof Double) {
+                        doubleValue = (Double) value;
+                    } else {
+                        handleException("Incompatible type for the Double");
+                    }
+                    if (doubleValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(doubleValue), ItemType.DOUBLE));
+                    }
+
+                } else if (ItemType.FLOAT == type) {
+                    float floatValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            floatValue = Float.parseFloat((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value + "' " +
+                                    "for the float ", e);
                         }
-                        break;
+                    } else if (value instanceof Float) {
+                        floatValue = (Float) value;
+                    } else {
+                        handleException("Incompatible type for the Float");
                     }
-                    case (XQItemType.XQBASETYPE_BYTE): {
-                        byte byteValue = -1;
-                        if (value instanceof String) {
-                            try {
-                                byteValue = Byte.parseByte((String) value);
-                            } catch (NumberFormatException e) {
-                                handleException("Incompatible value '" + value + "' " +
-                                        "for the byte ", e);
-                            }
-                        } else if (value instanceof Byte) {
-                            byteValue = (Byte) value;
-                        } else {
-                            handleException("Incompatible type for the Byte");
+                    if (floatValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(floatValue), ItemType.FLOAT));
+                    }
+
+                } else if (ItemType.BYTE == type) {
+                    byte byteValue = -1;
+                    if (value instanceof String) {
+                        try {
+                            byteValue = Byte.parseByte((String) value);
+                        } catch (NumberFormatException e) {
+                            handleException("Incompatible value '" + value + "' " +
+                                    "for the byte ", e);
                         }
-                        if (byteValue != -1) {
-                            xqDynamicContext.bindByte(name, byteValue, null);
-                        }
-                        break;
+                    } else if (value instanceof Byte) {
+                        byteValue = (Byte) value;
+                    } else {
+                        handleException("Incompatible type for the Byte");
                     }
-                    case (XQItemType.XQBASETYPE_STRING): {
-                        if (value instanceof String) {
-                            xqDynamicContext.bindObject(name, value, null);
-                        } else {
-                            handleException("Incompatible type for the String");
-                        }
-                        break;
+                    if (byteValue != -1) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(byteValue), ItemType.BYTE));
                     }
-                    case (XQItemType.XQITEMKIND_DOCUMENT): {
-                        bindOMNode(name, value, xqDynamicContext);
-                        break;
+
+                } else if (ItemType.STRING == type) {
+
+                    if (value instanceof String) {
+                        queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(value), ItemType.STRING));
+                    } else {
+                        handleException("Incompatible type for the String");
                     }
-                    case (XQItemType.XQITEMKIND_ELEMENT): {
-                        bindOMNode(name, value, xqDynamicContext);
-                        break;
-                    }
-                    case (XQItemType.XQITEMKIND_DOCUMENT_ELEMENT): {
-                        bindOMNode(name, value, xqDynamicContext);
-                        break;
-                    }
-                    default: {
-                        handleException("Unsupported  type for the binding type" + type +
-                                " in the variable name " + name);
-                        break;
-                    }
+
+                } else if (XdmNodeKind.DOCUMENT == nodeKind || XdmNodeKind.ELEMENT == nodeKind) {
+                    setOMNode(name, value, queryEvaluator, cachedProcessor);
+
+                } else {
+                    handleException("Unsupported  type for the binding type" + type +
+                            " in the variable name " + name);
                 }
-            }else{
+            }
+
+        } else {
                 /*
                 The following block will invariably result in  "javax.xml.xquery.XQException: Argument value is null",
                     which is the proper behaviour for this case.
@@ -623,18 +604,18 @@ public class XQueryMediator extends AbstractMediator {
                     and if the subsequent request has a null value for the same variable (i.e. with the same name), the
                     previous non-null value is given out instead of considering the null-case.
                 */
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("Null variable value encountered for variable name: " + name);
-                }
-
-                xqDynamicContext.bindObject(name, null, null);
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("Null variable value encountered for variable name: " + name);
             }
+
+            queryEvaluator.setExternalVariable(name, null);
+
         }
 
     }
 
-    private void bindOMNode(QName name, Object value,
-                            XQDynamicContext xqDynamicContext) throws XQException {
+    private void setOMNode(QName name, Object value,
+                           XQueryEvaluator queryEvaluator, Processor processor) throws SaxonApiException{
 
         OMElement variableValue = null;
         if (value instanceof String) {
@@ -644,18 +625,29 @@ public class XQueryMediator extends AbstractMediator {
         }
 
         if (variableValue != null) {
+            DocumentBuilder documentBuilder = processor.newDocumentBuilder();
             if (useDOMSource) {
-                xqDynamicContext.
-                        bindObject(name,
-                                new DOMSource(((Element) ElementHelper.
-                                        importOMElement(variableValue,
-                                                DOOMAbstractFactory.getOMFactory())).
-                                        getOwnerDocument()), null);
+
+
+                XdmNode xdmNode = documentBuilder.build(new DOMSource(((Element) ElementHelper.
+                        importOMElement(variableValue,
+                                DOOMAbstractFactory.getOMFactory())).
+                        getOwnerDocument()));
+
+                queryEvaluator.setExternalVariable(name, xdmNode);
+
             } else {
-                xqDynamicContext.bindDocument(name,SynapseConfigUtils.getInputStream(variableValue),null,null);
+                StreamSource streamSource = new StreamSource(SynapseConfigUtils.getInputStream(variableValue));
+                XdmNode xdmNode = documentBuilder.build(streamSource);
+                queryEvaluator.setExternalVariable(name, xdmNode);
             }
         }
     }
+
+    private static ItemType getItemType(XdmItem item, Processor process)throws SaxonApiException{
+        return new ItemTypeFactory(process).getAtomicType(((XdmAtomicValue) item).getPrimitiveTypeName());
+    }
+
 
     private void handleException(String msg, Exception e) {
         log.error(msg, e);
@@ -691,8 +683,8 @@ public class XQueryMediator extends AbstractMediator {
         this.variables.add(variable);
     }
 
-    public List<MediatorProperty> getDataSourceProperties() {
-        return dataSourceProperties;
+    public List<MediatorProperty> getProcessorProperties() {
+        return processorProperties;
     }
 
     public List<MediatorVariable> getVariables() {
@@ -708,7 +700,7 @@ public class XQueryMediator extends AbstractMediator {
     }
 
     public void addAllDataSourceProperties(List<MediatorProperty> list) {
-        this.dataSourceProperties.addAll(list);
+        this.processorProperties.addAll(list);
     }
 
     public boolean isUseDOMSource() {

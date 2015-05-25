@@ -57,9 +57,9 @@ public class Target {
      */
     public void insert(MessageContext synCtx, Object object) {
 
-        if (value.getExpression() != null) {
+        if (value.getExpression() != null && value.getExpression() instanceof SynapseXPath) {
 
-            SynapseXPath expression = value.getExpression();
+            SynapseXPath expression = (SynapseXPath)value.getExpression();
             Object targetObj = null;
 
             try {

@@ -22,11 +22,20 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
+import javax.xml.stream.XMLStreamException;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.Map;
 
 public class InboundEndpointSerializer {
@@ -61,11 +70,26 @@ public class InboundEndpointSerializer {
 		                                              SynapseConstants.SYNAPSE_OMNAMESPACE);
 
 		for (Map.Entry<String, String> paramEntry : inboundEndpoint.getParametersMap().entrySet()) {
+			String strKey = paramEntry.getKey();
 			OMElement parameter = fac.createOMElement(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER,
 			                                          SynapseConstants.SYNAPSE_OMNAMESPACE);
 			parameter.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME,
-			                       paramEntry.getKey(), null);
-			parameter.setText(paramEntry.getValue());
+			                       strKey, null);
+
+		if(inboundEndpoint.getParameterKey(strKey) != null){
+         parameter.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_KEY,
+                                inboundEndpoint.getParameterKey(strKey), null);
+		}else if (isWellFormedXML(paramEntry.getValue())) {
+				try {
+					OMElement omElement = AXIOMUtil.stringToOM(paramEntry.getValue());
+					parameter.addChild(omElement);
+				} catch (XMLStreamException e) {
+					String msg = "Error Parsing OMElement for value of " + paramEntry.getKey();
+					throw new SynapseException(msg, e);
+				}
+			}else {
+				parameter.setText(paramEntry.getValue());
+			}
 			parametersElt.addChild(parameter);
 		}
 
@@ -82,4 +106,20 @@ public class InboundEndpointSerializer {
 		}
 		return inboundEndpointElt;
 	}
+
+	private static  boolean isWellFormedXML(String value) {
+		try {
+			 XMLReader parser = XMLReaderFactory.createXMLReader();
+			 parser.setErrorHandler(null);
+			 InputSource source = new InputSource(new ByteArrayInputStream(value.getBytes()));
+			 parser.parse(source);
+			 } catch (SAXException e) {
+			 return false;
+			 } catch (IOException e) {
+			return false;
+			}
+		 return true;
+		 }
+
+
 }

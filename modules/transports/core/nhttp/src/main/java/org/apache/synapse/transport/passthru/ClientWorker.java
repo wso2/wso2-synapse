@@ -33,6 +33,7 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
+import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
@@ -65,8 +66,11 @@ public class ClientWorker implements Runnable {
         Map excessHeaders = response.getExcessHeaders();
 
 		String oriURL = headers.get(PassThroughConstants.LOCATION);
-
-		// Special casing 301, 302, 303 and 307 scenario in following section. Not sure whether it's the correct fix,
+        if (outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
+            ((NHttpServerConnection) outMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                       getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_INIT_TIME, System.currentTimeMillis());
+        }
+        // Special casing 301, 302, 303 and 307 scenario in following section. Not sure whether it's the correct fix,
 		// but this fix makes it possible to do http --> https redirection.
         if (oriURL != null && ((response.getStatus() != HttpStatus.SC_MOVED_TEMPORARILY) &&
                 (response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY) &&
@@ -168,10 +172,14 @@ public class ClientWorker implements Runnable {
     }
 
     public void run() {
+
         if (responseMsgCtx == null) {
             return;
         }
-
+        if (responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
+            ((NHttpServerConnection) responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION)).
+                       getContext().setAttribute(PassThroughConstants.CLIENT_WORKER_START_TIME, System.currentTimeMillis());
+        }
         try {
             if (expectEntityBody) {
             	  String cType = response.getHeader(HTTP.CONTENT_TYPE);

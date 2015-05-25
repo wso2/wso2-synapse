@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2010, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -16,19 +16,21 @@
  * under the License.
  */
 
-package org.apache.synapse.message.store.impl.jms;
+package org.apache.synapse.message.store.impl.commons;
 
 import java.io.Serializable;
 
 /**
- * This represents the final JMS message that will be saved in the JMS queue.
+ * This represents the final message that will be saved in the storage queue.
  */
 public class StorableMessage implements Serializable {
+    private static final int PRIORITY_UNSET = -999;
+
     private Axis2Message axis2message;
 
     private SynapseMessage synapseMessage;
 
-    private int priority = 4;
+    private int priority = PRIORITY_UNSET;
 
     public Axis2Message getAxis2message() {
         return axis2message;
@@ -46,6 +48,17 @@ public class StorableMessage implements Serializable {
         this.synapseMessage = synapseMessage;
     }
 
+    public int getPriority(int defaultValue) {
+        if (priority == PRIORITY_UNSET) {
+            return defaultValue;
+        }
+        return priority;
+    }
+
+    /**
+     * @Depricated
+     * @return
+     */
     public int getPriority() {
         return priority;
     }
