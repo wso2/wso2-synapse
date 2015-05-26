@@ -18,15 +18,8 @@
 
 package org.apache.synapse.config.xml;
 
-import java.util.List;
-import java.util.Properties;
-
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -35,6 +28,10 @@ import org.apache.synapse.mediators.builtin.CalloutMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.SendMediator;
 import org.jaxen.JaxenException;
+
+import javax.xml.namespace.QName;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * <p></p>The &lt;foreach&gt; element is used to split to messages by the given XPath expression
@@ -112,13 +109,8 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
         if (sequence != null) {
             List<Mediator> mediators = sequence.getList();
             for (Mediator m : mediators) {
-                if (m instanceof CallMediator) {
-                    valid = false;
-                    break;
-                } else if (m instanceof CalloutMediator) {
-                    valid = false;
-                    break;
-                } else if (m instanceof SendMediator) {
+                if ((m instanceof CallMediator) || (m instanceof CalloutMediator)
+                        || (m instanceof SendMediator)) {
                     valid = false;
                     break;
                 }
