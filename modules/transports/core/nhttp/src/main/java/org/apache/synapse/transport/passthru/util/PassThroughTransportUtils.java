@@ -173,7 +173,7 @@ public class PassThroughTransportUtils {
             // shall faults be transmitted with HTTP 200
             boolean faultsAsHttp200 =
                 PassThroughConstants.TRUE.equals(
-                    msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200));
+                    msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200).toUpperCase());
 
             // Set HTTP status code to 500 if this is a fault case and we shall not use HTTP 200
             if (handleFault && !faultsAsHttp200) {
