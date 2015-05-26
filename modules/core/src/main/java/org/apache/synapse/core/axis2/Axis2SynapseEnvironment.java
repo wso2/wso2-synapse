@@ -271,24 +271,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
         if (proxyService != null) {
-            if (proxyService.getTargetFaultSequence() != null) {
-                Mediator faultSequence = synCtx.getSequence(proxyService.getTargetFaultSequence());
-                if (faultSequence != null) {
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(faultSequence));
-                } else {
-                    log.warn("Cloud not find any fault-sequence named :" +
-                                proxyService.getTargetFaultSequence() + "; Setting the default" +
-                                " fault sequence for out path");
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-                }
-
-            } else if (proxyService.getTargetInLineFaultSequence() != null) {
-                synCtx.pushFaultHandler(
-                        new MediatorFaultHandler(proxyService.getTargetInLineFaultSequence()));
-
-            } else {
-                synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-            }
+            proxyService.registerFaultHandler(synCtx);
 
             Mediator outSequence = getProxyOutSequence(synCtx, proxyService);
             if (receivingSequence != null) {
