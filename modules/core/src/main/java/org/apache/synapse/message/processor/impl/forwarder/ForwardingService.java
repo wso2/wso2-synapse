@@ -89,10 +89,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
      */
     private String[] nonRetryStatusCodes = null;
 
-	/*
-	 * These two maintain the state of service. For each iteration these should
-	 * be reset
-	 */
+    /*
+     * These two maintain the state of service. For each iteration these should
+     * be reset
+     */
     private boolean isSuccessful = false;
     private volatile boolean isTerminated = false;
 
