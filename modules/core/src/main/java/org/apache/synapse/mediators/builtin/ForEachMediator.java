@@ -224,13 +224,8 @@ public class ForEachMediator extends AbstractMediator {
         boolean valid = true;
         List<Mediator> mediators = seqMediator.getList();
         for (Mediator m : mediators) {
-            if (m instanceof CallMediator) {
-                valid = false;
-                break;
-            } else if (m instanceof CalloutMediator) {
-                valid = false;
-                break;
-            } else if (m instanceof SendMediator) {
+            if ((m instanceof CallMediator) || (m instanceof CalloutMediator)
+                    || (m instanceof SendMediator)) {
                 valid = false;
                 break;
             }
