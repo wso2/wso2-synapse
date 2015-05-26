@@ -159,33 +159,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
 
             // setup fault sequence - i.e. what happens when something goes wrong with this message
-            if (proxy.getTargetFaultSequence() != null) {
-
-                Mediator faultSequence = synCtx.getSequence(proxy.getTargetFaultSequence());
-                if (faultSequence != null) {
-                    if (traceOrDebugOn) {
-                        traceOrDebug(traceOn,
-                            "Setting the fault-sequence to : " + faultSequence);
-                    }
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(
-                        synCtx.getSequence(proxy.getTargetFaultSequence())));
-
-                } else {
-                    // when we can not find the reference to the fault sequence of the proxy
-                    // service we should not throw an exception because still we have the global
-                    // fault sequence and the message mediation can still continue
-                    traceOrDebug(traceOn, "Unable to find fault-sequence : " +
-                        proxy.getTargetFaultSequence() + "; using default fault sequence");
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-                }
-
-            } else if (proxy.getTargetInLineFaultSequence() != null) {
-                if (traceOrDebugOn) {
-                    traceOrDebug(traceOn, "Setting specified anonymous fault-sequence for proxy");
-                }
-                synCtx.pushFaultHandler(
-                    new MediatorFaultHandler(proxy.getTargetInLineFaultSequence()));
-            }
+            proxy.registerFaultHandler(synCtx);
 
             boolean inSequenceResult = true;
 

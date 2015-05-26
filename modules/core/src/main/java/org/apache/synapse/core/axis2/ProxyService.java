@@ -1219,6 +1219,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             }
             synCtx.pushFaultHandler(
                     new MediatorFaultHandler(targetInLineFaultSequence));
+        } else {
+            if (traceOrDebugOn) {
+                traceOrDebug(traceOn, "Setting default fault-sequence for proxy");
+            }
+            synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
         }
     }
 
