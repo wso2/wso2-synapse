@@ -169,17 +169,24 @@ public class PassThroughTransportUtils {
             // is this a fault message
             boolean handleFault = msgContext.getEnvelope() != null ?
                 (msgContext.getEnvelope().getBody().hasFault() || msgContext.isProcessingFault()):false;
-
-            // shall faults be transmitted with HTTP 200
-            boolean faultsAsHttp200 =
-                PassThroughConstants.TRUE.equals(
+            try {
+                // shall faults be transmitted with HTTP 200
+                boolean faultsAsHttp200 =
+                    PassThroughConstants.TRUE.equals(
                     msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200).toString().toUpperCase());
 
-            // Set HTTP status code to 500 if this is a fault case and we shall not use HTTP 200
-            if (handleFault && !faultsAsHttp200) {
-                httpStatus = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                // Set HTTP status code to 500 if this is a fault case and we shall not use HTTP 200
+                if (handleFault && !faultsAsHttp200) {
+                    httpStatus = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                }
             }
-
+            catch (NullPointerException e)
+            {
+                if (handleFault) {
+                httpStatus = HttpStatus.SC_INTERNAL_SERVER_ERROR;
+                }
+                log.info("FAULTS_AS_HTTP_200 Property is missing...");
+            }
             // Any status code previously set shall be overwritten with the value of the following
             // message context property if it is set.
             Object statusCode = msgContext.getProperty(PassThroughConstants.HTTP_SC);
