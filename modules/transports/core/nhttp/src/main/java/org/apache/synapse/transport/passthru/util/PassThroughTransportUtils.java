@@ -185,7 +185,7 @@ public class PassThroughTransportUtils {
                 if (handleFault) {
                 httpStatus = HttpStatus.SC_INTERNAL_SERVER_ERROR;
                 }
-                log.info("FAULTS_AS_HTTP_200 Property is missing...");
+                log.warn("FAULTS_AS_HTTP_200 Property is missing...");
             }
             // Any status code previously set shall be overwritten with the value of the following
             // message context property if it is set.
