@@ -170,7 +170,6 @@ public class PassThroughTransportUtils {
             boolean handleFault = msgContext.getEnvelope() != null ?
                 (msgContext.getEnvelope().getBody().hasFault() || msgContext.isProcessingFault()):false;
             if(handleFault && msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200) != null) {
-
             // shall faults be transmitted with HTTP 200
             boolean faultsAsHttp200 =
             PassThroughConstants.TRUE.equals(
