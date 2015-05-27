@@ -41,6 +41,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.SynapseHandlersLoader;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -85,6 +86,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
     private List<SynapseHandler> synapseHandlers;
+    private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
@@ -166,6 +168,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         restHandler = new RESTRequestHandler();
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
+
+        this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
     }
 
@@ -826,6 +830,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public void registerSynapseHandler(SynapseHandler handler) {
         synapseHandlers.add(handler);
+    }
+
+    @Override
+    public long getGlobalTimeout() {
+        return globalTimeout;
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {

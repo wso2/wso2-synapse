@@ -452,8 +452,8 @@ public class Axis2FlexibleMEPClient {
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
 
         // set the SEND_TIMEOUT for transport sender
-        if (endpoint != null && endpoint.getTimeoutDuration() > 0) {
-            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getTimeoutDuration());
+        if (endpoint != null && endpoint.getEffectiveTimeout() > 0) {
+            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
         }
 
 
@@ -465,11 +465,15 @@ public class Axis2FlexibleMEPClient {
         if (!outOnlyMessage) {
             if (endpoint != null) {
                 // set the timeout time and the timeout action to the callback, so that the
-                // TimeoutHandler can detect timed out callbacks and take approprite action.
-                callback.setTimeOutOn(System.currentTimeMillis() + endpoint.getTimeoutDuration());
+                // TimeoutHandler can detect timed out callbacks and take appropriate action.
+                long endpointTimeout =  endpoint.getEffectiveTimeout();
+                callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
                 callback.setTimeOutAction(endpoint.getTimeoutAction());
+                callback.setTimeoutDuration(endpointTimeout);
             } else {
-                callback.setTimeOutOn(System.currentTimeMillis());
+                long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
+                callback.setTimeOutOn(System.currentTimeMillis() + globalTimeout);
+                callback.setTimeoutDuration(globalTimeout);
             }
 
         }
