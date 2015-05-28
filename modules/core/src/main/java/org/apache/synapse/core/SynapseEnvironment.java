@@ -239,4 +239,11 @@ public interface SynapseEnvironment {
      * @param handler synapse handler
      */
     public void registerSynapseHandler(SynapseHandler handler);
+
+    /**
+     * Get the global timeout interval for callbacks
+     *
+     * @return global timeout interval
+     */
+    public long getGlobalTimeout();
 }

@@ -46,6 +46,8 @@ public class AsyncCallback implements AxisCallback {
     /** Action to perform when timeout occurs */
     private int timeOutAction = SynapseConstants.NONE;
 
+    private long timeoutDuration;
+
     public AsyncCallback( org.apache.axis2.context.MessageContext messageContext,MessageContext synapseOutMsgCtx) {
         this.synapseOutMsgCtx = synapseOutMsgCtx;
         this.axis2OutMsgCtx = messageContext;
@@ -90,6 +92,14 @@ public class AsyncCallback implements AxisCallback {
 
     public void setTimeOutOn(long timeOutOn) {
         this.timeOutOn = timeOutOn;
+    }
+
+    public long getTimeoutDuration() {
+        return timeoutDuration;
+    }
+
+    public void setTimeoutDuration(long timeoutDuration) {
+        this.timeoutDuration = timeoutDuration;
     }
 
     public int getTimeOutAction() {
