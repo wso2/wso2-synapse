@@ -23,11 +23,14 @@ import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.registry.Registry;
+import org.apache.synapse.rest.Resource;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
@@ -35,6 +38,7 @@ import org.apache.http.protocol.HTTP;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -93,7 +97,27 @@ public class PropertyMediator extends AbstractMediator {
             }
         }
 
-        if (action == ACTION_SET) {
+        // Check whether the property is to set a persistent property in the registry
+        if (XMLConfigConstants.SCOPE_REGISTRY.equals(scope)) {
+
+            String[] args = name.split("@");
+            StringBuffer path = new StringBuffer("");
+            StringBuffer propertyName = new StringBuffer("");
+
+            // If the name argument consistent with a @ separated property name then an empty resource is added
+            // with the property mentioned and the value as its value
+            if (args.length == 1){
+                path.append(args[0]);
+            } else if (args.length == 2) {
+                path.append(args[0]);
+                propertyName.append(args[1]);
+            }
+
+            Registry registry = synCtx.getConfiguration().getRegistry();
+            registry.newNonEmptyResource(path.toString(), false, "text/plain", value.toString(), propertyName.toString());
+        }
+
+        else if (action == ACTION_SET) {
 
             Object resultValue = getResultValue(synCtx);
 
