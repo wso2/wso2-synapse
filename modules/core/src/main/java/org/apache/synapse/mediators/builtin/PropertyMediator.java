@@ -97,27 +97,7 @@ public class PropertyMediator extends AbstractMediator {
             }
         }
 
-        // Check whether the property is to set a persistent property in the registry
-        if (XMLConfigConstants.SCOPE_REGISTRY.equals(scope)) {
-
-            String[] args = name.split("@");
-            StringBuffer path = new StringBuffer("");
-            StringBuffer propertyName = new StringBuffer("");
-
-            // If the name argument consistent with a @ separated property name then an empty resource is added
-            // with the property mentioned and the value as its value
-            if (args.length == 1){
-                path.append(args[0]);
-            } else if (args.length == 2) {
-                path.append(args[0]);
-                propertyName.append(args[1]);
-            }
-
-            Registry registry = synCtx.getConfiguration().getRegistry();
-            registry.newNonEmptyResource(path.toString(), false, "text/plain", value.toString(), propertyName.toString());
-        }
-
-        else if (action == ACTION_SET) {
+        if (action == ACTION_SET) {
 
             Object resultValue = getResultValue(synCtx);
 
@@ -186,6 +166,34 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2smc.getAxis2MessageContext().getOperationContext().setProperty(name, resultValue);
+
+            } else if (XMLConfigConstants.SCOPE_REGISTRY.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+
+                String[] args = name.split("@");
+                StringBuffer path = new StringBuffer("");
+                StringBuffer propertyName = new StringBuffer("");
+                StringBuffer content = new StringBuffer("");
+
+                // If the name argument consistent with a @ separated property name then an empty resource is added
+                // with the property mentioned and the value as its value
+                if (args.length == 1){
+                    path.append(args[0]);
+                } else if (args.length == 2) {
+                    path.append(args[0]);
+                    propertyName.append(args[1]);
+
+                }
+
+                if (value != null){
+                    content.append(value.toString());
+                }
+                else {
+                    content.append(resultValue);
+                }
+
+                Registry registry = synCtx.getConfiguration().getRegistry();
+                registry.newNonEmptyResource(path.toString(), false, "text/plain", resultValue.toString(), propertyName.toString());
             }
 
         } else {
