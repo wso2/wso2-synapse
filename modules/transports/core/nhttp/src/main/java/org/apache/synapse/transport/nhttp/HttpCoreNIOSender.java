@@ -111,10 +111,8 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     private volatile NhttpMetricsCollector metrics;
     /** state of the listener */
     private volatile int state = BaseConstants.STOPPED;
-    /** Weather User-Agent header coming from client should be preserved */
-    private boolean preserveUserAgentHeader = false;
-    /** Weather Server header coming from server should be preserved */
-    private boolean preserveServerHeader = true;
+    /* NHttp transporter base configurations **/
+    private NHttpConfiguration cfg;
     /** Proxy config */
     private volatile ProxyConfig proxyConfig;
 
@@ -133,7 +131,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * @throws AxisFault thrown on an error
      */
     public void init(ConfigurationContext cfgCtx, TransportOutDescription transportOut) throws AxisFault {
-        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
+        cfg = NHttpConfiguration.getInstance();
         HttpParams params = new BasicHttpParams();
         params
                 .setIntParameter(CoreConnectionPNames.SO_TIMEOUT,
@@ -176,9 +174,6 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         if (cfg.getBooleanValue("http.nio.interest-ops-queueing", false)) {
             ioReactorConfig.setInterestOpQueued(true);
         }
-
-        preserveUserAgentHeader = cfg.isPreserveUserAgentHeader();
-        preserveServerHeader = cfg.isPreserveServerHeader();
 
         try {
             String prefix = name + " I/O dispatcher";
@@ -288,11 +283,11 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         Map excessHeaders = (Map) msgContext.getProperty(NhttpConstants.EXCESS_TRANSPORT_HEADERS);
 
         if (transportHeaders != null && !transportHeaders.isEmpty()) {
-            removeUnwantedHeaders(transportHeaders, msgContext, preserveServerHeader, preserveUserAgentHeader);
+            removeUnwantedHeaders(transportHeaders, msgContext, cfg);
         }
 
         if (excessHeaders != null && !excessHeaders.isEmpty()) {
-            removeUnwantedHeaders(excessHeaders, msgContext, preserveServerHeader, preserveUserAgentHeader);
+            removeUnwantedHeaders(excessHeaders, msgContext, cfg);
         }
 
     }
@@ -302,30 +297,31 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * should be dictated by the transport and not the user. We remove these as these may get
      * copied from the request messages
      *
-     * @param msgContext              the Axis2 Message context from which these headers should be removed
-     * @param preserveServerHeader    if true preserve the original server header
-     * @param preserveUserAgentHeader if true preserve the original user-agent header
+     * @param msgContext         the Axis2 Message context from which these headers should be removed
+     * @param nHttpConfiguration NHttp transporter base configurations
      */
     private static void removeUnwantedHeaders(Map headers, MessageContext msgContext,
-                                              boolean preserveServerHeader,
-                                              boolean preserveUserAgentHeader) {
+                                              NHttpConfiguration nHttpConfiguration) {
 
         Iterator iter = headers.keySet().iterator();
         while (iter.hasNext()) {
             String headerName = (String) iter.next();
             if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName) ||
                 HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName) ||
-                HTTP.DATE_HEADER.equalsIgnoreCase(headerName) ||
                 HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName) ||
                 HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)) {
                 iter.remove();
             }
 
-            if (!preserveServerHeader && HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)) {
+            if (!nHttpConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER) && HTTP.DATE_HEADER.equalsIgnoreCase(headerName)) {
                 iter.remove();
             }
 
-            if (!preserveUserAgentHeader && HTTP.USER_AGENT.equalsIgnoreCase(headerName)) {
+            if (!nHttpConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER) && HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)) {
+                iter.remove();
+            }
+
+            if (!nHttpConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT) && HTTP.USER_AGENT.equalsIgnoreCase(headerName)) {
                 iter.remove();
             }
         }

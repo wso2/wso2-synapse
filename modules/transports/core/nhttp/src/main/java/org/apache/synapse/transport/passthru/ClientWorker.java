@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -45,8 +46,8 @@ import java.util.TreeMap;
 
 public class ClientWorker implements Runnable {
     private Log log = LogFactory.getLog(ClientWorker.class);
-    /** the Axis2 configuration context */
-    private ConfigurationContext cfgCtx = null;
+    /** the Http connectors configuration context */
+    private TargetConfiguration targetConfiguration = null;
     /** the response message context that would be created */
     private org.apache.axis2.context.MessageContext responseMsgCtx = null;
     /** the HttpResponse received */
@@ -54,10 +55,10 @@ public class ClientWorker implements Runnable {
     /** weather a body is expected or not */
     private boolean expectEntityBody = true;
 
-    public ClientWorker(ConfigurationContext cfgCtx,
+    public ClientWorker(TargetConfiguration targetConfiguration,
                         MessageContext outMsgCtx,
                         TargetResponse response) {
-        this.cfgCtx = cfgCtx;
+        this.targetConfiguration = targetConfiguration;
         this.response = response;
         this.expectEntityBody = response.isExpectResponseBody();
 
@@ -69,10 +70,11 @@ public class ClientWorker implements Runnable {
 		// Special casing 301, 302, 303 and 307 scenario in following section. Not sure whether it's the correct fix,
 		// but this fix makes it possible to do http --> https redirection.
         if (oriURL != null && ((response.getStatus() != HttpStatus.SC_MOVED_TEMPORARILY) &&
-                (response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY) &&
-                (response.getStatus() != HttpStatus.SC_CREATED) &&
-		(response.getStatus() != HttpStatus.SC_SEE_OTHER) &&
-		(response.getStatus() != HttpStatus.SC_TEMPORARY_REDIRECT) )) {
+                               (response.getStatus() != HttpStatus.SC_MOVED_PERMANENTLY) &&
+                               (response.getStatus() != HttpStatus.SC_CREATED) &&
+                               (response.getStatus() != HttpStatus.SC_SEE_OTHER) &&
+                               (response.getStatus() != HttpStatus.SC_TEMPORARY_REDIRECT) &&
+                               !targetConfiguration.isPreserveHttpHeader(PassThroughConstants.LOCATION))) {
             URL url;
             String urlContext = null;
             try {
@@ -265,7 +267,7 @@ public class ClientWorker implements Runnable {
             return cTypeProperty.toString();
         }
         // Try to get the content type from the axis configuration
-        Parameter cTypeParam = cfgCtx.getAxisConfiguration().getParameter(
+        Parameter cTypeParam = targetConfiguration.getConfigurationContext().getAxisConfiguration().getParameter(
                 PassThroughConstants.CONTENT_TYPE);
         if (cTypeParam != null) {
             return cTypeParam.getValue().toString();
