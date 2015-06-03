@@ -182,7 +182,6 @@ public class PropertyMediator extends AbstractMediator {
                 } else if (args.length == 2) {
                     path.append(args[0]);
                     propertyName.append(args[1]);
-
                 }
 
                 if (value != null){
