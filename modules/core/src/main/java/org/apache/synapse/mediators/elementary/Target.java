@@ -173,7 +173,7 @@ public class Target {
             boolean isInserted = false;
             for (OMNode elem : sourceNodeList) {
                 if (elem instanceof OMElement) {
-                    e.insertSiblingAfter(elem);
+                    e.insertSiblingBefore(elem);
                     isInserted = true;
                 } else if (elem instanceof OMText) {
                     e.setText(((OMText) elem).getText());
