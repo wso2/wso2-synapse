@@ -284,14 +284,28 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * Remove unwanted headers from the http response of outgoing request. These are headers which
      * should be dictated by the transport and not the user. We remove these as these may get
      * copied from the request messages
+     *
      * @param msgContext the Axis2 Message context from which these headers should be removed
      */
     private void removeUnwantedHeaders(MessageContext msgContext) {
-        Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+        Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+        Map excessHeaders = (Map) msgContext.getProperty(NhttpConstants.EXCESS_TRANSPORT_HEADERS);
 
-        if (headers == null || headers.isEmpty()) {
-            return;
+        if (transportHeaders != null && !transportHeaders.isEmpty()) {
+            removeUnwantedHeadersFromHeaderMap(transportHeaders);
         }
+
+        if (excessHeaders != null && !excessHeaders.isEmpty()) {
+            removeUnwantedHeadersFromHeaderMap(excessHeaders);
+        }
+    }
+
+    /**
+     * Remove unwanted headers from the given header map.
+     *
+     * @param headers Header map
+     */
+    private void removeUnwantedHeadersFromHeaderMap(Map headers) {
 
         Iterator iter = headers.keySet().iterator();
         while (iter.hasNext()) {
