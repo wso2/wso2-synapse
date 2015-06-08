@@ -105,6 +105,16 @@ public class JDBCConsumer implements MessageConsumer {
         return true;
     }
 
+
+    /**
+     * Check JDBC consumer is alive
+     *
+     * @return consumer status
+     */
+    public boolean isAlive() {
+        return true; //TODO need to implement proper way to check availability
+    }
+
     /**
      * Set consumer id
      *
