@@ -812,7 +812,7 @@ public class MultiXMLConfigurationSerializer {
                                         SynapseConfiguration synapseConfiguration,
                                          OMElement parent) throws Exception{
         for (MessageStore messageStore : messageStores) {
-            serializeMessageStore(messageStore, synapseConfiguration, parent);
+            serializeMessageStore(messageStore,synapseConfiguration,parent);
         }
     }
 
