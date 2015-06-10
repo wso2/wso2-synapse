@@ -864,7 +864,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return false;
         } catch (Exception e) {
-            String msg = "Unexpected error executing message inject to given sequence " + seq;
+            String msg = "Unexpected error executing  injecting message to sequence ," + seq;
             log.error(msg, e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
