@@ -59,7 +59,7 @@ public class AccessLogger {
      * A date formatter to format a Date into a date in the given file format
      */
     protected SimpleDateFormat fileDateFormatter =
-            new SimpleDateFormat(AccessConstants.FILE_FORMAT);
+            new SimpleDateFormat(AccessConstants.getFileDateFormat());
 
     /**
      * The PrintWriter to which we are currently logging, if any.
@@ -180,7 +180,7 @@ public class AccessLogger {
         if (nhttpLogDir != null) {
             dir = new File(nhttpLogDir);
         } else {
-            dir = new File(AccessConstants.DIRECTORY);
+            dir = new File(AccessConstants.getDirectory());
         }
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -193,11 +193,11 @@ public class AccessLogger {
             String pathname;
             // If no rotate - no need for dateStamp in fileName
             if (isRotatable) {
-                pathname = dir.getAbsolutePath() + File.separator + AccessConstants.PREFIX +
-                           dateStamp + AccessConstants.SUFFIX;
+                pathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix() +
+                           dateStamp + AccessConstants.getSuffix();
             } else {
-                pathname = dir.getAbsolutePath() + File.separator + AccessConstants.PREFIX +
-                           AccessConstants.SUFFIX;
+                pathname = dir.getAbsolutePath() + File.separator + AccessConstants.getPrefix() +
+                           AccessConstants.getSuffix();
             }
 
             writer = new PrintWriter(new BufferedWriter(new FileWriter(
