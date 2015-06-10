@@ -33,6 +33,8 @@ import org.apache.synapse.rest.API;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.rest.Resource;
 
+import java.util.Set;
+
 /**
  * This is the utility class which manages ContinuationState Stack.
  * <p/>
@@ -43,6 +45,8 @@ import org.apache.synapse.rest.Resource;
 public class ContinuationStackManager {
 
     private static Log log = LogFactory.getLog(ContinuationStackManager.class);
+
+    public static final String SKIP_CONTINUATION_STATE = "SKIP_CONTINUATION_STATE";
 
     /**
      * Add new SeqContinuationState to the stack.
@@ -58,6 +62,24 @@ public class ContinuationStackManager {
             //ignore Anonymous type sequences
             synCtx.pushContinuationState(new SeqContinuationState(seqType, seqName));
         }
+    }
+
+    /**
+     * Check whether sequence continuation state addition need to be skipped
+     *
+     * @param synCtx  message context
+     * @return whether sequence continuation state addition need to be skipped
+     */
+    public static boolean isSkipSeqContinuationStateAddition(MessageContext synCtx) {
+        Boolean isSkipContinuationState = (Boolean) synCtx.getProperty(SKIP_CONTINUATION_STATE);
+        if (isSkipContinuationState != null && isSkipContinuationState) {
+            Set keySet = synCtx.getPropertyKeySet();
+            if (keySet != null) {
+                keySet.remove(SKIP_CONTINUATION_STATE);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
