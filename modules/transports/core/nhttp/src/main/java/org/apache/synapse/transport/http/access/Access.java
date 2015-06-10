@@ -49,7 +49,7 @@ public class Access {
      */
     protected AccessLogElement[] logElements = null;
 
-    protected String pattern = AccessConstants.LOG_PATTERN;
+    protected String pattern = AccessConstants.getLogPattern();
 
     private static AccessLogger accessLogger;
 

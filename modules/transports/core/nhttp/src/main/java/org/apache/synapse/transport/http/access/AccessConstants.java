@@ -65,4 +65,35 @@ public class AccessConstants {
      */
     public static String SUFFIX = ".log";
 
+    public static final String CONFIG_PATTERN = "access_log_pattern";
+
+    public static final String CONFIG_DIRECTORY = "access_log_directory";
+
+    public static final String CONFIG_PREFIX = "access_log_prefix";
+
+    public static final String CONFIG_SUFFIX = "access_log_suffix";
+
+    public static final String CONFIG_FILE_DATE_FORMAT = "access_log_file_date_format";
+
+
+    public static String getLogPattern() {
+        return AccessConfiguration.getInstance().getStringProperty(CONFIG_PATTERN, LOG_PATTERN);
+    }
+
+    public static String getSuffix() {
+        return AccessConfiguration.getInstance().getStringProperty(CONFIG_SUFFIX, SUFFIX);
+    }
+
+    public static String getPrefix() {
+        return AccessConfiguration.getInstance().getStringProperty(CONFIG_PREFIX, PREFIX);
+    }
+
+    public static String getFileDateFormat() {
+        return AccessConfiguration.getInstance().getStringProperty(CONFIG_FILE_DATE_FORMAT, FILE_FORMAT);
+    }
+
+    public static String getDirectory() {
+        return AccessConfiguration.getInstance().getStringProperty(CONFIG_DIRECTORY, DIRECTORY);
+    }
+
 }
