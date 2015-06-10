@@ -838,6 +838,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
+        if (seq == null) {
+            log.error("Please provide existing sequence");
+            return false;
+        }
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                     + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
@@ -860,7 +864,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return false;
         } catch (Exception e) {
-            String msg = "Unexpected error executing task  inject";
+            String msg = "Unexpected error executing  injecting message to sequence ," + seq;
             log.error(msg, e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
@@ -875,7 +879,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return false;
         } catch (Throwable e) {
-            String msg = "Unexpected error executing task inject, message dropped";
+            String msg = "Unexpected error executing  injecting message to sequence ," + seq + " message dropped";
             log.error(msg, e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
