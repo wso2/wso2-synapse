@@ -200,4 +200,19 @@ public class NhttpConstants {
      * Default value is one hour in milliseconds.
      */
     public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 3600000;
+
+	/**
+	 * Http method type constants to be used in synapse
+	 */
+	public static final String HTTP_HEAD = "HEAD";
+
+	/**
+	 * Used to keep backend responses content length
+	 */
+	public static final String ORIGINAL_CONTENT_LEN = "ORIGINAL_CONTENT_LENGTH";
+
+	/**
+	 * Holds the method type of the incoming request
+	 */
+	public static final String HTTP_REQUEST_METHOD = "HTTP_REQUEST_METHOD";
 }

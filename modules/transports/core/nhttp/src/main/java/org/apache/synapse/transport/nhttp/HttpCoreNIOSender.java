@@ -425,6 +425,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         // remove unwanted HTTP headers (if any from the current message)
         removeUnwantedHeaders(msgContext);
+        Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
 
         ServerWorker worker = (ServerWorker) msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
         HttpResponse response = worker.getResponse();
@@ -440,6 +441,19 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         }else if( Boolean.TRUE == noEntityBody){
             ((BasicHttpEntity)response.getEntity()).setChunked(false);
             ((BasicHttpEntity)response.getEntity()).setContentLength(0);
+
+            // Since HTTP HEAD request doesn't contain message body content length of the is set to be 0. To handle
+            // content length 0 while serving head method, content length of the backend response is set as the content
+            // as synapse cannot calculate content length without providing message body.
+            if (transportHeaders.get(NhttpConstants.HTTP_REQUEST_METHOD) != null &&
+                NhttpConstants.HTTP_HEAD.equals(transportHeaders.get(NhttpConstants.HTTP_REQUEST_METHOD)) &&
+                transportHeaders.get(NhttpConstants.ORIGINAL_CONTENT_LEN) != null ) {
+
+                ((BasicHttpEntity) response.getEntity()).setContentLength(
+                        Long.parseLong(String.valueOf(transportHeaders.get(NhttpConstants.ORIGINAL_CONTENT_LEN))));
+                transportHeaders.remove(NhttpConstants.ORIGINAL_CONTENT_LEN);
+                transportHeaders.remove(NhttpConstants.HTTP_REQUEST_METHOD);
+            }
         }
         response.setStatusCode(determineHttpStatusCode(msgContext, response));
 
@@ -450,7 +464,6 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         }
 
         // set any transport headers
-        Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
         if (transportHeaders != null && !transportHeaders.values().isEmpty()) {
             Iterator iter = transportHeaders.keySet().iterator();
             while (iter.hasNext()) {
