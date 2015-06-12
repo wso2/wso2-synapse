@@ -121,7 +121,15 @@ public class HTTPEndpoint extends AbstractEndpoint {
         // We have to create a local UriTemplate object, or else the UriTemplate.set(variables) call will fill up a list of variables and since uriTemplate
         // is not thread safe, this list won't be clearing.
         UriTemplate template = null;
-        template = UriTemplate.fromTemplate(uriTemplate.getTemplate());
+        String tmpl;
+        // This is a special case as we want handle {uri.var.variable} having full URL (except as a path param or query param)
+        // this was used in connectors Eg:- uri-template="{uri.var.variable}"
+        if(uriTemplate.getTemplate().charAt(0)=='{' && uriTemplate.getTemplate().charAt(1)!='+'){
+            tmpl = "{+" + uriTemplate.getTemplate().substring(1);
+        } else {
+            tmpl = uriTemplate.getTemplate();
+        }
+        template = UriTemplate.fromTemplate(tmpl);
 
         if(template != null) {
             template.set(variables);
