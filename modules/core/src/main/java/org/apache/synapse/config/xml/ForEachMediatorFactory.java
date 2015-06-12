@@ -18,11 +18,6 @@
  */
 package org.apache.synapse.config.xml;
 
-import java.util.List;
-import java.util.Properties;
-
-import javax.xml.namespace.QName;
-
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
@@ -33,6 +28,10 @@ import org.apache.synapse.mediators.builtin.CalloutMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.builtin.SendMediator;
 import org.jaxen.JaxenException;
+
+import javax.xml.namespace.QName;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * <p></p>The &lt;foreach&gt; mediator is used to split to messages by the given XPath expression
@@ -87,13 +86,12 @@ public class ForEachMediatorFactory extends AbstractMediatorFactory {
 
         OMAttribute sequenceAttr = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "sequence"));
+        OMElement sequence;
+
         if (sequenceAttr != null && sequenceAttr.getAttributeValue() != null) {
             mediator.setSequenceRef(sequenceAttr.getAttributeValue());
-        }
-
-        OMElement sequence = elem.getFirstChildWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence"));
-        if (sequence != null) {
+        } else if ((sequence = elem.getFirstChildWithName(
+                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "sequence"))) != null) {
             SequenceMediatorFactory fac = new SequenceMediatorFactory();
             SequenceMediator sequenceMediator = fac.createAnonymousSequence(sequence, properties);
             if (validateSequence(sequenceMediator)) {
