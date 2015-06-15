@@ -135,7 +135,11 @@ public class ServerWorker implements Runnable {
 			} else {
 				processNonEntityEnclosingRESTHandler(null, msgContext, true);
 			}
-		}
+		}else {
+            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
+            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
+            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
+        }
 
         sendAck(msgContext);
     }
@@ -147,7 +151,7 @@ public class ServerWorker implements Runnable {
 	 * @return
 	 * @throws FactoryConfigurationError
 	 */
-	private SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
+	public SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
 	    SOAPEnvelope soapEnvelope = null;
 	    String contentType = contentTypeHdr!=null?TransportUtils.getContentType(contentTypeHdr, msgContext):null;
 	    if (contentType == null || "".equals(contentType) || HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType)) {
@@ -599,9 +603,6 @@ public class ServerWorker implements Runnable {
             msgContext.setProperty(HTTPConstants.HTTP_METHOD, method);
             msgContext.setServerSide(true);
             msgContext.setDoingREST(true);
-            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
-            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
-            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
             return true;
         }
         return false;
