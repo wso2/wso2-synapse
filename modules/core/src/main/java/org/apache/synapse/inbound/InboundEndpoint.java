@@ -52,6 +52,10 @@ public class InboundEndpoint implements ManagedLifecycle {
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
         synapseEnvironment = se;
+        if(isSuspend){
+      	  log.info("Inbound endpoint " + name + " is currently suspended.");
+      	  return;
+        }
         inboundRequestProcessor = getInboundRequestProcessor();
         if (inboundRequestProcessor != null) {
             try {

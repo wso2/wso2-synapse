@@ -60,6 +60,9 @@ public abstract class BaseConfiguration {
 
     protected PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
+    private static final String PASSTHROUGH_THREAD_GROUP = "Pass-through Message Processing Thread Group";
+    private static final String PASSTHROUGH_THREAD_ID ="PassThroughMessageProcessor";
+
     public BaseConfiguration(ConfigurationContext configurationContext,
                              ParameterInclude parameters,
                              WorkerPool workerPool,
@@ -79,8 +82,8 @@ public abstract class BaseConfiguration {
                             conf.getWorkerPoolMaxSize(),
                             conf.getWorkerThreadKeepaliveSec(),
                             conf.getWorkerPoolQueueLen(),
-                            "Pass-through Message Processing Thread Group",
-                            "PassThroughMessageProcessor");
+                            PASSTHROUGH_THREAD_GROUP,
+                            PASSTHROUGH_THREAD_ID);
         }
 
         httpParams = buildHttpParams();
@@ -88,6 +91,35 @@ public abstract class BaseConfiguration {
 
         bufferFactory = new BufferFactory(iOBufferSize, new HeapByteBufferAllocator(), 512);
     }
+
+
+    public WorkerPool getWorkerPool(int workerPoolCoreSize, int workerPoolMaxSize,
+                                    int workerThreadKeepaliveSec, int workerPoolQueuLen,
+                                    String threadGroupName, String threadgroupID) {
+        if (threadGroupName == null) {
+            threadGroupName = PASSTHROUGH_THREAD_GROUP;
+        }
+        if (threadgroupID == null) {
+            threadgroupID = PASSTHROUGH_THREAD_ID;
+        }
+        if (workerPoolCoreSize == 0) {
+            workerPoolCoreSize = conf.getWorkerPoolCoreSize();
+        }
+        if (workerPoolMaxSize == 0) {
+            workerPoolMaxSize = conf.getWorkerPoolMaxSize();
+        }
+        if (workerThreadKeepaliveSec == 0) {
+            workerThreadKeepaliveSec = conf.getWorkerThreadKeepaliveSec();
+        }
+        if (workerPoolQueuLen == 0) {
+            workerPoolQueuLen = conf.getWorkerPoolQueueLen();
+        }
+        return WorkerPoolFactory.getWorkerPool(workerPoolCoreSize, workerPoolMaxSize,
+                                               workerThreadKeepaliveSec, workerPoolQueuLen,
+                                               threadGroupName, threadgroupID);
+    }
+
+
 
     public int getIOBufferSize() {
         return iOBufferSize;

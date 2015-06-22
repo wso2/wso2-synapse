@@ -124,6 +124,11 @@ public class ServerWorker implements Runnable {
         String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
 
         processHttpRequestUri(msgContext, method);
+
+        //For requests to fetch wsdl, return the message flow without going through the normal flow
+        if (isRequestToFetchWSDL()) {
+            return;
+        }
 		
 		//need special case to handle REST
 		boolean isRest = isRESTRequest(msgContext, method);
@@ -135,9 +140,25 @@ public class ServerWorker implements Runnable {
 			} else {
 				processNonEntityEnclosingRESTHandler(null, msgContext, true);
 			}
-		}
+		}else {
+            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
+            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
+            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
+        }
 
         sendAck(msgContext);
+    }
+
+    private boolean isRequestToFetchWSDL() {
+        //if WSDL done then moved out rather than hand over to entity handle methods.
+        SourceContext info = (SourceContext) request.getConnection().getContext().
+                getAttribute(SourceContext.CONNECTION_INFORMATION);
+        if (info != null && info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
+            (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null &&
+             Boolean.TRUE.equals((msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED))))) {
+            return true;
+        }
+        return false;
     }
 
 	/**
@@ -147,7 +168,7 @@ public class ServerWorker implements Runnable {
 	 * @return
 	 * @throws FactoryConfigurationError
 	 */
-	private SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
+	public SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
 	    SOAPEnvelope soapEnvelope = null;
 	    String contentType = contentTypeHdr!=null?TransportUtils.getContentType(contentTypeHdr, msgContext):null;
 	    if (contentType == null || "".equals(contentType) || HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType)) {
@@ -599,9 +620,6 @@ public class ServerWorker implements Runnable {
             msgContext.setProperty(HTTPConstants.HTTP_METHOD, method);
             msgContext.setServerSide(true);
             msgContext.setDoingREST(true);
-            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
-            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
-            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
             return true;
         }
         return false;
@@ -652,15 +670,6 @@ public class ServerWorker implements Runnable {
 
             httpGetRequestProcessor.process(request.getRequest(), response,msgContext,
                     request.getConnection(), os, isRestDispatching);
-        }
-        //if WSDL done then moved out rather than hand over to entity handle methods.
-        SourceContext info = (SourceContext) request.getConnection().getContext().getAttribute
-                                                                                  (SourceContext.CONNECTION_INFORMATION);
-        if (info != null &&
-                info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
-                (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null && Boolean.TRUE.equals
-                                                   ((msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED))))) {
-            return;
         }
     }
 
