@@ -42,6 +42,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
     private String httpMethod;
     private SynapseXPath httpMethodExpression;
 
+    private boolean legacySupport = false; // this is to support backward compatibility
+
+    public static String legacyPrefix = "#legacy";
+
     /*Todo*/
     /*Do we need HTTP Headers here?*/
 
@@ -110,24 +114,47 @@ public class HTTPEndpoint extends AbstractEndpoint {
         /*The properties with uri.var.* are only considered for Outbound REST Endpoints*/
         Set propertySet = synCtx.getPropertyKeySet();
 
-        for (Object propertyKey : propertySet) {
-            if (propertyKey.toString() != null&&
-                    (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
-                            || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
-                if (synCtx.getProperty(propertyKey.toString()) != null) {
-                    variables.put(propertyKey.toString(), decodeString((String) synCtx.getProperty(propertyKey.toString())));
-                }                              
+        if (legacySupport) {
+            for (Object propertyKey : propertySet) {
+                if (propertyKey.toString() != null&&
+                        (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
+                                || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
+                    if (synCtx.getProperty(propertyKey.toString()) != null) {
+                        variables.put(propertyKey.toString(), decodeString((String) synCtx.getProperty(propertyKey.toString())));
+                    }
+                }
             }
-        }
 
-        // Include properties defined at endpoint.
-        Iterator endpointProperties = getProperties().iterator();
-        while(endpointProperties.hasNext()) {
-            MediatorProperty property = (MediatorProperty) endpointProperties.next();
-            if(property.getName().toString() != null
-                    && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
-                    property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
-                variables.put(property.getName(), decodeString((String) property.getValue()));
+            // Include properties defined at endpoint.
+            Iterator endpointProperties = getProperties().iterator();
+            while(endpointProperties.hasNext()) {
+                MediatorProperty property = (MediatorProperty) endpointProperties.next();
+                if(property.getName().toString() != null
+                        && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
+                        property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
+                    variables.put(property.getName(), decodeString((String) property.getValue()));
+                }
+            }
+        } else {
+            for (Object propertyKey : propertySet) {
+                if (propertyKey.toString() != null&&
+                        (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
+                                || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
+                    if (synCtx.getProperty(propertyKey.toString()) != null) {
+                        variables.put(propertyKey.toString(), (String) synCtx.getProperty(propertyKey.toString()));
+                    }
+                }
+            }
+
+            // Include properties defined at endpoint.
+            Iterator endpointProperties = getProperties().iterator();
+            while(endpointProperties.hasNext()) {
+                MediatorProperty property = (MediatorProperty) endpointProperties.next();
+                if(property.getName().toString() != null
+                        && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
+                        property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
+                    variables.put(property.getName(), (String) property.getValue());
+                }
             }
         }
 
@@ -201,5 +228,13 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
     public void setHttpMethodExpression(SynapseXPath httpMethodExpression) {
         this.httpMethodExpression = httpMethodExpression;
+    }
+
+    public boolean isLegacySupport() {
+        return legacySupport;
+    }
+
+    public void setLegacySupport(boolean legacySupport) {
+        this.legacySupport = legacySupport;
     }
 }
