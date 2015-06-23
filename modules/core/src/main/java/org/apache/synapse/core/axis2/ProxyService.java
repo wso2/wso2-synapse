@@ -736,8 +736,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                         AxisModule axisModule = axisCfg.getModule(moduleName);
                         if (axisModule != null) {
                             proxyService.engageModule(axisModule, axisCfg);
+                            moduleEngaged = true;
                         }
-                        moduleEngaged = true;
+
                     } catch (AxisFault axisFault) {
                         handleException("Error loading " + moduleName + " module on proxy service : "
                                         + name, axisFault);
