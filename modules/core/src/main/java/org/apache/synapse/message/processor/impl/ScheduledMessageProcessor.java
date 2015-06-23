@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessorCleanupService;
@@ -99,6 +100,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			taskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
 		}
 
+        if (taskManager == null) {
+            throw new SynapseException("Task Manager not defined in the configuration.");
+        }
+
+
 		/*
 		 * If the task manager is not initialized yet, subscribe to
 		 * initialization completion event here.
@@ -108,12 +114,21 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			return;
 		}
 
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) &&
-		    !isDeactivated()) {
+		if (!isManuallyDeactivated()) {
 			this.start();
 		}
 
 	}
+
+    private boolean isManuallyDeactivated() {
+        Object isActiveParam = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
+        if (isActiveParam != null) {
+            if (!Boolean.parseBoolean(String.valueOf(isActiveParam))) {
+                return true;
+            }
+        }
+        return isDeactivated();
+    }
 
     @Override
     public boolean start() {
@@ -426,7 +441,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void update() {
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
+		if (!isManuallyDeactivated()) {
 			start();
 		}
 	}
