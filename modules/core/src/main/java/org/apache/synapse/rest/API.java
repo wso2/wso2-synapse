@@ -52,7 +52,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     private String fileName;
 
-    private final Log apiLog;
+    private  Log apiLog;
     private static final Log trace = LogFactory.getLog(SynapseConstants.TRACE_LOGGER);
 
     private int traceState = SynapseConstants.TRACING_UNSET;
