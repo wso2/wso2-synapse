@@ -74,17 +74,9 @@ public class InboundEndpointFactory {
         }
         if (inboundEndpointElem.getAttributeValue(ATT_SEQUENCE) != null) {
             inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(ATT_SEQUENCE));
-        } else {
-            String msg = "Injecting sequence cannot be null";
-            log.error(msg);
-            throw new SynapseException(msg);
         }
         if (inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE) != null) {
             inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE));
-        } else {
-            String msg = "On Error sequence cannot be null";
-            log.error(msg);
-            throw new SynapseException(msg);
         }
 
         // Set parameters
