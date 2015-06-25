@@ -40,6 +40,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -189,6 +190,22 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(final MessageContext synCtx) {
+
+//        if(synCtx.getProperty(SynapseConstants.CONTINUATION_CALL)!=null) {
+//            if (!synCtx.isResponse() && !((Boolean) (synCtx.getProperty(SynapseConstants.CONTINUATION_CALL)))) {
+//                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+//            }
+//        }
+//        else{
+//            if (!synCtx.isResponse()) {
+//                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+//            }
+//        }
+
+        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext");
         }
@@ -308,6 +325,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     public void injectAsync(final MessageContext synCtx, SequenceMediator seq) {
 
+        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
@@ -330,6 +351,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
+
+        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
@@ -879,6 +904,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.error("Please provide existing sequence");
             return false;
         }
+
+        if(smc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+            smc.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, smc.getMessageID());
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                     + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");

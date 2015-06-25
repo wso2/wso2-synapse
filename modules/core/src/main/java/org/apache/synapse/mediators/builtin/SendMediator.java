@@ -23,9 +23,12 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 
@@ -61,6 +64,10 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         if (synLog.isTraceTraceEnabled()) {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
+
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Send Mediator", true);
+        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
 
         if (buildMessage) {
               synCtx.getEnvelope().buildWithAttachments();
@@ -104,6 +111,8 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         } else {
             endpoint.send(synCtx);
         }
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Send Mediator", false);
 
         synLog.traceOrDebug("End : Send mediator");
         return true;

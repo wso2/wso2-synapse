@@ -135,6 +135,7 @@
 						<Export-Package>
 							org.apache.synapse,
 							org.apache.synapse.aspects.*,
+                            org.apache.synapse.flowtracer.*,
 							org.apache.synapse.deployers.*,
 							org.apache.synapse.executors.*,
 							org.apache.synapse.config.*,

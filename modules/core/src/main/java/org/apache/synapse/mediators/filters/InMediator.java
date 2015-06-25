@@ -22,6 +22,8 @@ package org.apache.synapse.mediators.filters;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractListMediator;
@@ -54,6 +56,9 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
             }
         }
 
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "In Mediator", true);
+
         boolean result = true;
         if (test(synCtx)) {
             synLog.traceOrDebug("Current message is incoming - executing child mediators");
@@ -65,6 +70,8 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         } else {
             synLog.traceOrDebug("Current message is a response - skipping child mediators");
         }
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "In Mediator", false);
 
         synLog.traceOrDebug("End : In mediator");
 

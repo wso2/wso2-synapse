@@ -27,11 +27,13 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorFaultHandler;
@@ -107,6 +109,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (key == null) {
 
+            setMediatorId();
+            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence Mediator: " + (name == null ? this.sequenceType.name() : name), true);
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+":"+ (name == null ? this.sequenceType.name() : name) +" -> ");
+
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
             Mediator errorHandlerMediator = null;
@@ -176,6 +182,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     synLog.traceOrDebug(
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
+
+                MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence Mediator: " + (name == null ? this.sequenceType.name() : name), false);
 
                 return result;
 

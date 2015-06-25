@@ -26,8 +26,11 @@ import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 
@@ -90,6 +93,10 @@ public class LogMediator extends AbstractMediator {
             }
         }
 
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Log Mediator", true);
+        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+
         switch (category) {
             case CATEGORY_INFO :
                 synLog.auditLog(getLogMessage(synCtx));
@@ -116,6 +123,9 @@ public class LogMediator extends AbstractMediator {
         }
 
         synLog.traceOrDebug("End : Log mediator");
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Log Mediator", false);
+
         return true;
     }
 

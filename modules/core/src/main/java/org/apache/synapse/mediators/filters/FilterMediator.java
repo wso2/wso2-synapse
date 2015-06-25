@@ -23,16 +23,18 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -125,8 +127,13 @@ public class FilterMediator extends AbstractListMediator implements
             }
         }
 
+        setMediatorId();
+
         boolean result = false;
         if (test(synCtx)) {
+
+            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Then(Filter)", true);
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+":Then(Filter)"+" -> ");
 
             if (thenKey != null) {
 
@@ -164,7 +171,12 @@ public class FilterMediator extends AbstractListMediator implements
 
             }
 
+            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Then(Filter)", false);
+
         } else {
+
+            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Else(Filter)", true);
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+":Else(Filter)"+" -> ");
 
             if (elseKey != null) {
 
@@ -209,7 +221,11 @@ public class FilterMediator extends AbstractListMediator implements
                 }
                 result = true;
             }
+
+            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Else(Filter)", false);
         }
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Filter Mediator", false);
 
         synLog.traceOrDebug("End : Filter mediator ");
         return result;
