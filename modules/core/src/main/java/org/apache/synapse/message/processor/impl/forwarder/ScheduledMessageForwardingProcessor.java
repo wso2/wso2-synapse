@@ -43,8 +43,11 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
 			parameters.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, nonRetryStatusCodes);
 		}
 
-		// Setting the end-point here.
-		parameters.put(ForwardingProcessorConstants.TARGET_ENDPOINT, targetEndpoint);
+		// Setting the end-point here. If target endpoint is not defined at the MP,
+		// target.endpoint property is used to fetch the endpoint
+        if (targetEndpoint != null) {
+            parameters.put(ForwardingProcessorConstants.TARGET_ENDPOINT, targetEndpoint);
+        }
 
 		super.init(se);
 
