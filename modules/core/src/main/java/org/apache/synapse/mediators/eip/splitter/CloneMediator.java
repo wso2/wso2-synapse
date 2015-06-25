@@ -34,6 +34,8 @@ import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -89,6 +91,10 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             }
         }
 
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Clone Mediator", true);
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Clone Mediator");
+
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
         Iterator<Target> iter = targets.iterator();
@@ -114,6 +120,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
         // finalize tracing and debugging
         synLog.traceOrDebug("End : Clone mediator");
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Clone Mediator", false);
 
         // if continue parent is true mediators after the clone will be called for the further
         // mediation of the message which is subjected for clonning (parent message)

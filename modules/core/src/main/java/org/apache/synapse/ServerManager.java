@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.flowtracer.MessageFlowDbReporterTask;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
 
@@ -44,6 +45,8 @@ import java.util.Date;
 public class ServerManager {
 
     private static final Log log = LogFactory.getLog(ServerManager.class);
+
+    private MessageFlowDbReporterTask messageFlowDbReporterTask;
 
     /**
      * The controller for synapse create and Destroy synapse artifacts in a particular environment
@@ -105,6 +108,11 @@ public class ServerManager {
         // does the initialization of the controller
         doInit();
         initialized = true;
+
+        //flow tracer report
+        messageFlowDbReporterTask = new MessageFlowDbReporterTask();
+        Thread messageFlowDbReporterTaskThread = new Thread(messageFlowDbReporterTask);
+        messageFlowDbReporterTaskThread.start();
 
         return this.serverContextInformation.getServerState();
     }

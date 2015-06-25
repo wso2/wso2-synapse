@@ -29,6 +29,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -109,6 +110,12 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 }
                 return;
             }
+        }
+
+        //trace message flow
+        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, "Proxy Service: " + name+" -> ");
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -218,6 +225,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
         }
+
+        //message flow trace
+//        MessageFlowDataHolder.addEntry(synCtx, this.toString(), "Proxy Service: " + name, false);
     }
 
     /**

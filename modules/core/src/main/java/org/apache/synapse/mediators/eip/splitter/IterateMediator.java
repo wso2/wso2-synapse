@@ -36,6 +36,8 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -101,6 +103,10 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             }
         }
 
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Iterate Mediator", true);
+        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+
         try {
             // get a copy of the message for the processing, if the continueParent is set to true
             // this original message can go in further mediations and hence we should not change
@@ -164,6 +170,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
 
         synLog.traceOrDebug("End : Iterate mediator");
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Iterate Mediator", false);
 
         // whether to continue mediation on the original message
         return continueParent;

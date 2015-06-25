@@ -24,10 +24,13 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.axis2.context.ConfigurationContext;
@@ -157,6 +160,10 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             }
         }
 
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synInCtx, getMediatorId(), "Call Mediator", true);
+        synInCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synInCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+
         // clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();
         if (keySet != null) {
@@ -207,6 +214,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Call mediator - Non Blocking Call");
         }
+
+        MessageFlowDataHolder.addEntry(synInCtx, getMediatorId(), "Call Mediator", false);
 
         if (outOnlyMessage) {
             // For out only invocations request flow should continue

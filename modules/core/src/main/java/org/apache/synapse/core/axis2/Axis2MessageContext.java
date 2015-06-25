@@ -39,6 +39,7 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
@@ -620,5 +621,9 @@ public class Axis2MessageContext implements MessageContext {
 
     public int getMediatorPosition() {
         return mediatorPosition;
+    }
+
+    public void addComponentToMessageFlow(String mediatorId, String mediatorName){
+        this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+mediatorId+" -> ");
     }
 }

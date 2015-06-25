@@ -21,7 +21,10 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 
 /**
@@ -47,6 +50,10 @@ public class DropMediator extends AbstractMediator {
             }
         }
 
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Drop Mediator", true);
+        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+
         synCtx.setTo(null);
 
         // if this is a response , this the end of the outflow
@@ -57,6 +64,9 @@ public class DropMediator extends AbstractMediator {
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Drop mediator");
         }
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Drop Mediator", false);
+        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
 
         return false;
     }
