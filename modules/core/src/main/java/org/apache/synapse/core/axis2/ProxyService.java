@@ -97,6 +97,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public static final String ABSOLUTE_SCHEMA_URL_PARAM = "showAbsoluteSchemaURL";
     public static final String ABSOLUTE_PROXY_SCHEMA_URL_PARAM = "showProxySchemaURL";
+    public static final String ENGAGED_MODULES = "engagedModules";
+
     /**
      * The name of the proxy service
      */
@@ -720,6 +722,32 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         moduleEngaged = wsSecEnabled || wsAddrEnabled;
         wsdlPublished = wsdlFound;
 
+        //Engaging Axis2 modules
+        Object engaged_modules = parameters.get(ENGAGED_MODULES);
+        if (engaged_modules != null) {
+
+            String[] moduleNames = getModuleNames((String) engaged_modules);
+
+            if (moduleNames != null) {
+
+                for (String moduleName : moduleNames) {
+
+                    try {
+                        AxisModule axisModule = axisCfg.getModule(moduleName);
+                        if (axisModule != null) {
+                            proxyService.engageModule(axisModule, axisCfg);
+                            moduleEngaged = true;
+                        }
+
+                    } catch (AxisFault axisFault) {
+                        handleException("Error loading " + moduleName + " module on proxy service : "
+                                        + name, axisFault);
+                    }
+                }
+            }
+
+        }
+
         auditInfo("Successfully created the Axis2 service for Proxy service : " + name);
         return proxyService;
     }
@@ -1237,6 +1265,15 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             log.debug(msg);
         }
 
+    }
+
+    private String[] getModuleNames(String propertyValue) {
+
+        if (propertyValue == null || propertyValue.trim().isEmpty()) {
+            return null;
+        }
+
+        return propertyValue.split(",");
     }
 
     @Override
