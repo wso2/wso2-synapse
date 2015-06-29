@@ -82,7 +82,6 @@ import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.io.IOException;
 import java.net.URI;
