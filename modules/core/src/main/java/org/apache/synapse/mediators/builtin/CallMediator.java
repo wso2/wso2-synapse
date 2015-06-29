@@ -162,7 +162,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         setMediatorId();
         MessageFlowDataHolder.addEntry(synInCtx, getMediatorId(), "Call Mediator", true);
-        synInCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synInCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synInCtx.addComponentToMessageFlow(getMediatorId(), "Call Mediator");
 
         // clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();

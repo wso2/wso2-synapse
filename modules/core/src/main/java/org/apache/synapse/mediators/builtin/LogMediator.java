@@ -95,7 +95,7 @@ public class LogMediator extends AbstractMediator {
 
         setMediatorId();
         MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Log Mediator", true);
-        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Log Mediator");
 
         switch (category) {
             case CATEGORY_INFO :

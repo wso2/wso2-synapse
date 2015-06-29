@@ -105,7 +105,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         setMediatorId();
         MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Iterate Mediator", true);
-        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Iterate Mediator");
 
         try {
             // get a copy of the message for the processing, if the continueParent is set to true

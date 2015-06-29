@@ -101,7 +101,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
             setMediatorId();
             MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence Mediator: " + (name == null ? this.sequenceType.name() : name), true);
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+":"+ (name == null ? this.sequenceType.name() : name) +" -> ");
+            synCtx.addComponentToMessageFlow(getMediatorId(), (name == null ? this.sequenceType.name() : name));
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence

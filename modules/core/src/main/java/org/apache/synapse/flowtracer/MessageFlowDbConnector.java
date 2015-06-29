@@ -20,15 +20,14 @@ package org.apache.synapse.flowtracer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.flowtracer.data.MessageFlowComponentEntry;
+import org.apache.synapse.flowtracer.data.MessageFlowTraceEntry;
 
-import java.lang.reflect.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class MessageFlowDbConnector {
 
@@ -93,6 +92,7 @@ public class MessageFlowDbConnector {
                 "ID int NOT NULL AUTO_INCREMENT,"+
                 "MessageId varchar(255)," +
                 "FlowTrace varchar(1000)," +
+                "EntryType varchar(1000)," +
                 "TimeStamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"+
                 "PRIMARY KEY (ID)"+
                 ")");
@@ -113,8 +113,8 @@ public class MessageFlowDbConnector {
         Connection con = null;
         PreparedStatement ps = null;
 
-        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" (MessageId, FlowTrace)\n" +
-                "VALUES (\'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)+"\', \'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+"\')");
+        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" (MessageId, FlowTrace, EntryType)\n" +
+                "VALUES (\'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)+"\', \'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+"\', \'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE)+"\')");
         try {
             con = jdbcConfiguration.getConnection();
             ps = con.prepareStatement(stmt.getRawStatement());
@@ -129,7 +129,7 @@ public class MessageFlowDbConnector {
         }
     }
 
-    public void writeToDb(MessageFlowEntry entry) {
+    public void writeToDb(MessageFlowComponentEntry entry) {
         Connection con = null;
         PreparedStatement ps = null;
 
@@ -181,13 +181,13 @@ public class MessageFlowDbConnector {
         return messageFlows.toArray(new String[messageFlows.size()]);
     }
 
-    public String[] getMessageFlows() {
+    public Map<String,MessageFlowTraceEntry> getMessageFlows() {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("SELECT distinct ID,MessageId FROM " + MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" ORDER BY ID");
+        Statement stmt = new Statement("SELECT distinct ID,MessageId,EntryType,TimeStamp FROM " + MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" ORDER BY ID");
 
-        Set<String> messageFlows = new HashSet<>();
+        Map<String,MessageFlowTraceEntry> messageFlows = new HashMap<>();
 
         try {
             con = jdbcConfiguration.getConnection();
@@ -196,7 +196,7 @@ public class MessageFlowDbConnector {
 
             while (rs.next()) {
                 try {
-                    messageFlows.add(rs.getString("MessageId"));
+                    messageFlows.put(rs.getString("MessageId"), new MessageFlowTraceEntry(rs.getString("MessageId"),rs.getString("EntryType"),rs.getString("TimeStamp")));
                 } catch (Exception e) {
                     logger.error("Error executing statement : " + stmt.getRawStatement() +
                             " against DataSource : " + jdbcConfiguration.getDSName(), e);
@@ -210,7 +210,39 @@ public class MessageFlowDbConnector {
         } finally {
             close(con, ps, rs);
         }
-        return messageFlows.toArray(new String[messageFlows.size()]);
+        return messageFlows;
+    }
+
+    public MessageFlowComponentEntry[] getComponentInfo(String messageId) {
+        Connection con = null;
+        ResultSet rs = null;
+        PreparedStatement ps = null;
+        Statement stmt = new Statement("SELECT * FROM " + MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" WHERE MessageId = \'"+messageId+"\' order by ID");
+
+        List<MessageFlowComponentEntry> componentInfo = new ArrayList<>();
+
+        try {
+            con = jdbcConfiguration.getConnection();
+            ps = con.prepareStatement(stmt.getRawStatement());
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                try {
+                    componentInfo.add(new MessageFlowComponentEntry(rs.getString("MessageId"), rs.getString("ComponentId"), rs.getString("Component"),rs.getBoolean("Response"),rs.getBoolean("Start"),rs.getString("Timestamp"),rs.getString("Properties"),rs.getString("Payload")));
+                } catch (Exception e) {
+                    logger.error("Error executing statement : " + stmt.getRawStatement() +
+                            " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                    break;
+                }
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error executing statement : " + stmt.getRawStatement() +
+                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+        } finally {
+            close(con, ps, rs);
+        }
+        return componentInfo.toArray(new MessageFlowComponentEntry[componentInfo.size()]);
     }
 
     public String[] getMessageFlowInfo(String messageId){

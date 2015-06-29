@@ -67,7 +67,7 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
 
         setMediatorId();
         MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Send Mediator", true);
-        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Send Mediator");
 
         if (buildMessage) {
               synCtx.getEnvelope().buildWithAttachments();

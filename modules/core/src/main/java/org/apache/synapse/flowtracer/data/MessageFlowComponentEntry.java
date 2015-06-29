@@ -1,6 +1,6 @@
-package org.apache.synapse.flowtracer;
+package org.apache.synapse.flowtracer.data;
 
-public class MessageFlowEntry {
+public class MessageFlowComponentEntry {
 
     private String messageId;
     private String componentId;
@@ -11,7 +11,7 @@ public class MessageFlowEntry {
     private String propertySet;
     private String payload;
 
-    public MessageFlowEntry(String messageId, String componentId, String componentName, boolean response, boolean start, String timestamp, String propertySet, String payload) {
+    public MessageFlowComponentEntry(String messageId, String componentId, String componentName, boolean response, boolean start, String timestamp, String propertySet, String payload) {
         this.messageId = messageId;
         this.componentId = componentId;
         this.componentName = componentName;

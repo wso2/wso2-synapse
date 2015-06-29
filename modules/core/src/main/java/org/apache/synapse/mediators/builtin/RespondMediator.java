@@ -22,7 +22,7 @@ public class RespondMediator extends AbstractMediator{
 
         setMediatorId();
         MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Respond Mediator", true);
-        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Respond Mediator");
 
         synCtx.setTo(null);
         synCtx.setResponse(true);

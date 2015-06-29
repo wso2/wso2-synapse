@@ -87,7 +87,7 @@ public class PropertyMediator extends AbstractMediator {
     public boolean mediate(MessageContext synCtx) {
         setMediatorId();
         MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Property Mediator", true);
-        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Property Mediator");
 
         SynapseLog synLog = getLog(synCtx);
 

@@ -133,7 +133,7 @@ public class FilterMediator extends AbstractListMediator implements
         if (test(synCtx)) {
 
             MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Then(Filter)", true);
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+":Then(Filter)"+" -> ");
+            synCtx.addComponentToMessageFlow(getMediatorId(), "Filter Mediator(Then)");
 
             if (thenKey != null) {
 
@@ -176,7 +176,7 @@ public class FilterMediator extends AbstractListMediator implements
         } else {
 
             MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Else(Filter)", true);
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+":Else(Filter)"+" -> ");
+            synCtx.addComponentToMessageFlow(getMediatorId(), "Filter Mediator(Else)");
 
             if (elseKey != null) {
 
@@ -225,7 +225,7 @@ public class FilterMediator extends AbstractListMediator implements
             MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Else(Filter)", false);
         }
 
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Filter Mediator", false);
+//        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Filter Mediator", false);
 
         synLog.traceOrDebug("End : Filter mediator ");
         return result;
