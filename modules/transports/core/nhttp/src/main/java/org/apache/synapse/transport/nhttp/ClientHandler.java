@@ -82,6 +82,7 @@ import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
 import org.apache.synapse.transport.nhttp.util.NhttpMetricsCollector;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.io.IOException;
 import java.net.URI;
@@ -925,6 +926,8 @@ public class ClientHandler implements NHttpClientEventHandler {
                         responseMsgCtx.setProperty(AddressingConstants.
                                 DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.TRUE);
                         responseMsgCtx.setProperty(NhttpConstants.SC_ACCEPTED, Boolean.TRUE);
+                        int statusCode = response.getStatusLine().getStatusCode();
+                        responseMsgCtx.setProperty(PassThroughConstants.HTTP_SC, statusCode);
                         mr.receive(responseMsgCtx);
 
                     } catch (org.apache.axis2.AxisFault af) {
