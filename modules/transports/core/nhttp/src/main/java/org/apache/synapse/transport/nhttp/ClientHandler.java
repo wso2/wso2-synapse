@@ -927,7 +927,7 @@ public class ClientHandler implements NHttpClientEventHandler {
                                 DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.TRUE);
                         responseMsgCtx.setProperty(NhttpConstants.SC_ACCEPTED, Boolean.TRUE);
                         int statusCode = response.getStatusLine().getStatusCode();
-                        responseMsgCtx.setProperty(PassThroughConstants.HTTP_SC, statusCode);
+                        responseMsgCtx.setProperty(NhttpConstants.HTTP_SC, statusCode);
                         mr.receive(responseMsgCtx);
 
                     } catch (org.apache.axis2.AxisFault af) {
