@@ -44,4 +44,6 @@ public class MessageFlowTracerConstants {
     public static final String MESSAGE_FLOW_ID = "MESSAGE_FLOW_ID";
 
     public static final String MESSAGE_FLOW = "MESSAGE_FLOW";
+
+    public static final String MESSAGE_FLOW_ENTRY_TYPE = "MESSAGE_FLOW_ENTRY_TYPE";
 }

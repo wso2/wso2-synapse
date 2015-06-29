@@ -623,7 +623,11 @@ public class Axis2MessageContext implements MessageContext {
         return mediatorPosition;
     }
 
-    public void addComponentToMessageFlow(String mediatorId, String mediatorName){
-        this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+mediatorId+" -> ");
+    public void addComponentToMessageFlow(String componentId, String componentName){
+        if(this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) != null) {
+            this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) + componentId + " -> ");
+        }else{
+            this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, componentId + " -> ");
+        }
     }
 }

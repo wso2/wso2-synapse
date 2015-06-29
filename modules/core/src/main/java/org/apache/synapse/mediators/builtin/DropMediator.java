@@ -52,7 +52,7 @@ public class DropMediator extends AbstractMediator {
 
         setMediatorId();
         MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Drop Mediator", true);
-        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+getMediatorId()+" -> ");
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Drop Mediator");
 
         synCtx.setTo(null);
 

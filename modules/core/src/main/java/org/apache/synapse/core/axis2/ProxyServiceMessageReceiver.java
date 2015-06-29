@@ -117,7 +117,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         //trace message flow
         if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, "Proxy Service: " + name+" -> ");
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE,"Proxy Service:"+name);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
