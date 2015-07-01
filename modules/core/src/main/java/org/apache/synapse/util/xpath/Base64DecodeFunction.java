@@ -65,7 +65,7 @@ public class Base64DecodeFunction implements Function {
             return decode(debugOn, charset, encodedValue);
         } else {
             if (debugOn) {
-                log.debug("base64Encode function expects only one argument, returning empty string");
+                log.debug("base64Decode function expects only two arguments maximum, returning empty string");
             }
         }
         // return empty string if the arguments are wrong
@@ -103,7 +103,7 @@ public class Base64DecodeFunction implements Function {
         }
 
         if (debugOn) {
-            log.debug("Converted base64 encoded value: " + value + " with charset: " + charset +
+            log.debug("Decoded base64 encoded value: " + value + " with charset: " + charset +
                       " to String: " + decodedString);
         }
 
