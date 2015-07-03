@@ -168,7 +168,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
             }
             taskManager.schedule(taskDescription);
         }
-        logger.info("Started message processor. [" + getName() + "].");
+        logger.info("Started message processor: [" + getName() + "].");
 
         return true;
     }
@@ -222,7 +222,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
                  */
                 taskManager.pause(TASK_PREFIX + name + i);
                 if (logger.isDebugEnabled()) {
-                    logger.debug("ShuttingDown Message Processor Scheduler : " +
+                    logger.debug("ShuttingDown Message Processor Scheduler: " +
                                  taskManager.getName());
                 }
                 /*
