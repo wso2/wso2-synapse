@@ -133,8 +133,8 @@ public class MessageFlowDbConnector {
         Connection con = null;
         PreparedStatement ps = null;
 
-        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" (MessageId, Component, ComponentId, Response, Start, Payload, Properties, Timestamp)\n" +
-                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getComponentName()+"\', "+" \'"+entry.getComponentId()+"\', "+entry.isResponse()+","+entry.isStart()+", \'"+entry.getPayload().toString().replace("\'", "\'\'")+"\',\'"+entry.getPropertySet()+"\',\'"+entry.getTimestamp()+"\')");
+        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" (MessageId, Component, ComponentId, Response, Start, Payload, Timestamp)\n" +
+                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getComponentName()+"\', "+" \'"+entry.getComponentId()+"\', "+entry.isResponse()+","+entry.isStart()+", \'"+entry.getPayload().toString().replace("\'", "\'\'")+"\',\'"+entry.getTimestamp()+"\')");
         try {
             con = jdbcConfiguration.getConnection();
             ps = con.prepareStatement(stmt.getRawStatement());
