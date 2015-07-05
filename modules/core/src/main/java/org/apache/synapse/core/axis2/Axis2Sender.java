@@ -100,9 +100,6 @@ public class Axis2Sender {
      */
     public static void sendBack(org.apache.synapse.MessageContext smc) {
 
-        //end of the flow
-        MessageFlowDbConnector.getInstance().writeToDb(smc);
-
         MessageContext messageContext = ((Axis2MessageContext) smc).getAxis2MessageContext();
 
         // if this is a dummy 202 Accepted message meant only for the http/s transports
@@ -218,6 +215,9 @@ public class Axis2Sender {
         } catch (AxisFault e) {
             handleException(getResponseMessage(messageContext), e);
         }
+
+        //end of the flow
+        MessageFlowDbConnector.getInstance().writeToDb(smc);
     }
 
     /**

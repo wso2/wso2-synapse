@@ -48,6 +48,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -113,6 +114,10 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Cache Mediator", true);
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Cache Mediator");
 
         //TODO: workaround for https://wso2.org/jira/browse/ESBJAVA-1575 : This is fixed now
         //caching component does not work with SOAP 1.2
@@ -180,6 +185,8 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         } catch (ClusteringFault clusteringFault) {
             synLog.traceOrDebug("Unable to replicate Cache mediator state among the cluster");
         }
+
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Cache Mediator", false);
 
         synLog.traceOrDebug("End : Cache mediator");
 

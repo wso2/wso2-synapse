@@ -108,10 +108,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
 
         if (key == null) {
-
-            setMediatorId();
-            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence Mediator: " + (name == null ? this.sequenceType.name() : name), true);
-            synCtx.addComponentToMessageFlow(getMediatorId(), (name == null ? this.sequenceType.name() : name));
+                setMediatorId();
+                MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence: " + (name == null ? this.sequenceType.name() : name), true);
+                synCtx.addComponentToMessageFlow(getMediatorId(), (name == null ? this.sequenceType.name() : name));
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
@@ -183,7 +182,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
 
-                MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence Mediator: " + (name == null ? this.sequenceType.name() : name), false);
+                MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence: " + (name == null ? this.sequenceType.name() : name), false);
 
                 return result;
 

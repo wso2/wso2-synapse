@@ -35,6 +35,8 @@ import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
@@ -166,6 +168,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        setMediatorId();
+        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Aggregate Mediator", true);
+        synCtx.addComponentToMessageFlow(getMediatorId(), "Aggregate Mediator");
+        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
 
         try {
             Aggregate aggregate = null;
@@ -317,6 +324,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     boolean onCompleteSeqResult = completeAggregate(aggregate);
                     
                     synLog.traceOrDebug("End : Aggregate mediator");
+
+                    MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Aggregate Mediator", false);
+
                     return onCompleteSeqResult;
                 } else {
                     aggregate.releaseLock();
