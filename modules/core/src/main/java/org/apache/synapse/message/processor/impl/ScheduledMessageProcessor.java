@@ -20,6 +20,7 @@ package org.apache.synapse.message.processor.impl;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 
@@ -36,8 +37,6 @@ import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.task.TaskManagerObserver;
-
-import sun.misc.Service;
 
 /**
  * Implements the common message processor infrastructure which is used by the
@@ -81,8 +80,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     private static final String DEFAULT_TASK_SUFFIX = "0";
 
+    private ServiceLoader<MessageProcessorCleanupService> loader;
+
     @Override
     public void init(SynapseEnvironment se) {
+        loader = ServiceLoader.load(MessageProcessorCleanupService.class);
         this.synapseEnvironment = se;
         initMessageSender(parameters);
         if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
@@ -459,16 +461,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         if (logger.isDebugEnabled()) {
             logger.debug("Trying to fetch MessageProcessorCleanupService from classpath...");
         }
-        Iterator<MessageProcessorCleanupService> it =
-                                                      Service.providers(MessageProcessorCleanupService.class);
+        Iterator<MessageProcessorCleanupService> it = loader.iterator();
         while (it.hasNext()) {
             cleanupTask = it.next();
             cleanupTask.setName(name);
-            if (cleanupTask != null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Message Processor Cleanup Service found  : " +
-                                 cleanupTask.getClass().getName());
-                }
+            if (logger.isDebugEnabled()) {
+                logger.debug("Message Processor Cleanup Service found: " +
+                             cleanupTask.getClass().getName());
             }
             return cleanupTask;
         }
