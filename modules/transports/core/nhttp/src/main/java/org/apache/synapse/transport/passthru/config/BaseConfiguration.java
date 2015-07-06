@@ -118,10 +118,6 @@ public abstract class BaseConfiguration {
               .setParameter(HttpProtocolParams.USER_AGENT,
                             conf.getStringProperty(HttpProtocolParams.USER_AGENT,
                                                    "Synapse-PT-HttpComponents-NIO"));
-        // setParameter(HttpProtocolParams.HTTP_ELEMENT_CHARSET,
-        // conf.getStringProperty(HttpProtocolParams.HTTP_ELEMENT_CHARSET,
-        // HTTP.DEFAULT_PROTOCOL_CHARSET));//TODO:This does not works with
-        // HTTPCore 4.3
 
         return params;
     }
@@ -151,7 +147,7 @@ public abstract class BaseConfiguration {
      * Checks whether the global keepalive property
      * <code>http.connection.disable.keepalive</code> is disabled in passthru
      * transport properties or not.
-     * 
+     *
      * @return <code>true</code> if http.connection.disable.keepalive property
      *         is set to <code>true</code>, <code>false</code> otherwise.
      */
