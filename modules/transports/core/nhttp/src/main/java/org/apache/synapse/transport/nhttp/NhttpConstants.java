@@ -82,6 +82,12 @@ public class NhttpConstants {
      * */
     public static final String SERVER_HEADER_PRESERVE = "http.server.preserve";
 
+    /**
+     * Defines weather synapse needs to preserve the original Http headers. Configures
+     * through nhttp.properties file
+     */
+    public static final String HTTP_HEADERS_PRESERVE = "http.headers.preserve";
+
     /** Denotes a connection close is forced if set at the NhttpContext */
     public static final String FORCE_CLOSING = "forceClosing";
     /** Denotes a message is being processed by the current connection if this is set at the context */
