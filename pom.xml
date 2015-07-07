@@ -451,11 +451,6 @@
              <version>${spring.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.wso2.uri.template</groupId>
-             <artifactId>wso2-uri-templates</artifactId>
-             <version>${org.wso2.uri.template.version}</version>
-         </dependency>
-         <dependency>
              <groupId>com.jayway.jsonpath</groupId>
              <artifactId>json-path</artifactId>
              <version>${com.jayway.jsonpath.version}</version>
@@ -959,7 +954,6 @@
       <com.damnhandy.version>1.1.7</com.damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
-      <org.wso2.uri.template.version>1.6.4</org.wso2.uri.template.version>
       <com.jayway.jsonpath.version>0.8.0</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
       <org.bouncycastle.version>1.52</org.bouncycastle.version>
