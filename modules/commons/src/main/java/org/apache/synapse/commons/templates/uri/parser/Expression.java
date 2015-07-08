@@ -39,7 +39,7 @@ public abstract class Expression extends Node {
                     throw new URITemplateException("Illegal variable reference with zero length");
                 } else {
                     variableList.add(new Variable(token.substring(startIndex, i)));
-                    startIndex = i+ 1;
+                    startIndex = i + 1;
                 }
             } else if (i == token.length() - 1) {
                 if (startIndex < token.length()) {
@@ -75,7 +75,7 @@ public abstract class Expression extends Node {
 
     protected String decodeValue(String value) {
         try {
-            return URLDecoder.decode(value, "UTF-8");
+            return URLDecoder.decode(value.replaceAll("\\+", "%2B"), "UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Error while encoding value: " + value, e);
         }
