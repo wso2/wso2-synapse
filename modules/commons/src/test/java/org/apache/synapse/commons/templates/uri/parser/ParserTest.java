@@ -20,14 +20,12 @@ package org.apache.synapse.commons.templates.uri.parser;
 
 import junit.framework.TestCase;
 import org.apache.synapse.commons.templates.uri.URITemplate;
-import org.apache.synapse.commons.templates.uri.parser.*;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class ParserTest extends TestCase {
 
-    Map<String,String> variables = new HashMap<String,String>();
+    Map<String, String> variables = new HashMap<String, String>();
 
     @Override
     protected void setUp() throws Exception {
@@ -64,7 +62,7 @@ public class ParserTest extends TestCase {
 
     public void testSimpleStringMatch() throws Exception {
         URITemplate template = new URITemplate("/admin/~{user}");
-        Map<String,String> var = new HashMap<String,String>();
+        Map<String, String> var = new HashMap<String, String>();
         assertTrue(template.matches("/admin/~hiranya", var));
         assertEquals("hiranya", var.get("user"));
         assertFalse(template.matches("/admi/~hiranya", var));
@@ -85,6 +83,22 @@ public class ParserTest extends TestCase {
         assertTrue(template.matches("/dictionary/h/hello%20world", var));
         assertEquals("h", var.get("char"));
         assertEquals("hello world", var.get("word"));
+        var.clear();
+
+        template = new URITemplate("/dictionary/{char}/{+word}");
+        assertTrue(template.matches("/dictionary/h/hello+world", var));
+        assertEquals("h", var.get("char"));
+        assertEquals("hello+world", var.get("word"));
+        var.clear();
+
+        assertTrue(template.matches("/dictionary/h/hello world", var));
+        assertEquals("h", var.get("char"));
+        assertEquals("hello world", var.get("word"));
+        var.clear();
+
+        assertTrue(template.matches("/dictionary/h/hello%2Bworld", var));
+        assertEquals("h", var.get("char"));
+        assertEquals("hello+world", var.get("word"));
         var.clear();
 
         template = new URITemplate("/dictionary/{char}/{word,count}");
@@ -179,10 +193,10 @@ public class ParserTest extends TestCase {
 
 
         template = new URITemplate("/sanjeewa/~{test}?*");
-        var.put("test","tester");
+        var.put("test", "tester");
         assertTrue(template.matches("/sanjeewa/~tester?test", var));
         var.clear();
-        
+
         template = new URITemplate("/sanjeewa/{name,id}/*");
         var.put("name", "user");
         var.put("id", "190");
@@ -222,7 +236,7 @@ public class ParserTest extends TestCase {
 
     public void testReservedStringMatch() throws Exception {
         URITemplate template = new URITemplate("/admin/~{+user}");
-        Map<String,String> var = new HashMap<String,String>();
+        Map<String, String> var = new HashMap<String, String>();
         assertTrue(template.matches("/admin/~foo!bar", var));
         assertEquals("foo!bar", var.get("user"));
         assertFalse(template.matches("/admi/~hiranya", var));
@@ -255,7 +269,7 @@ public class ParserTest extends TestCase {
 
     public void testFragmentMatch() throws Exception {
         URITemplate template = new URITemplate("/admin{#foo}");
-        Map<String,String> var = new HashMap<String,String>();
+        Map<String, String> var = new HashMap<String, String>();
         assertTrue(template.matches("/admin#test", var));
         assertEquals("test", var.get("foo"));
         var.clear();
@@ -277,7 +291,7 @@ public class ParserTest extends TestCase {
 
     public void testLabelMatch() throws Exception {
         URITemplate template = new URITemplate("/admin{.action}");
-        Map<String,String> var = new HashMap<String,String>();
+        Map<String, String> var = new HashMap<String, String>();
         assertTrue(template.matches("/admin.do", var));
         assertEquals("do", var.get("action"));
         assertFalse(template.matches("/admin.do.bad", var));
@@ -302,7 +316,7 @@ public class ParserTest extends TestCase {
 
     public void testPathSegmentMatch() throws Exception {
         URITemplate template = new URITemplate("/admin{/context}");
-        Map<String,String> var = new HashMap<String,String>();
+        Map<String, String> var = new HashMap<String, String>();
         assertTrue(template.matches("/admin/foo", var));
         assertEquals("foo", var.get("context"));
         assertFalse(template.matches("/admin.do.bad", var));
