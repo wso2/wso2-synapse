@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.AppenderWrapper;
+import org.apache.synapse.SingletonLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
@@ -45,6 +47,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     public String deploySynapseArtifact(OMElement artifactConfig, String filePath,
                                         Properties properties) {
 
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         /*boolean failSafeProxyEnabled = SynapseConfigUtils.isFailSafeEnabled(
                 SynapseConstants.FAIL_SAFE_MODE_PROXY_SERVICES);*/
 
@@ -54,6 +58,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
+            proxy.setCarName(custom_log);
+            SingletonLogSetter.getInstance().addAxisService(proxy.getName(), custom_log);
             if (proxy != null) {
                 if (getSynapseConfiguration().getProxyService(proxy.getName()) != null) {
                     log.warn("Hot deployment thread picked up an already deployed proxy - Ignoring");
@@ -115,6 +121,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
 
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         if (log.isDebugEnabled()) {
             log.debug("ProxyService Update from file : " + fileName + " : Started");
         }
@@ -166,6 +174,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         if (log.isDebugEnabled()) {
             log.debug("ProxyService Undeployment of the proxy named : "
                     + artifactName + " : Started");
@@ -195,6 +205,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void restoreSynapseArtifact(String artifactName) {
+
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
 
         if (log.isDebugEnabled()) {
             log.debug("Restoring the ProxyService with name : " + artifactName + " : Started");

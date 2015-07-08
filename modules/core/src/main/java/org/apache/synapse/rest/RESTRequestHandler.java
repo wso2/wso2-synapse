@@ -71,6 +71,7 @@ public class RESTRequestHandler {
         API defaultAPI = null;
         int i=0;
         for(API api : apiList){
+            api.setLogSetterValue();
             if(api.getVersion().trim().equals("")){ //caught no version api
                 //swap the no version api with the last element of the list to give it the lowest priority.
                 Collections.swap(apiList,i,apiList.size()-1);
@@ -84,6 +85,7 @@ public class RESTRequestHandler {
         }
 
         for (API api : apiList) {
+            api.setLogSetterValue();
             if ("/".equals(api.getContext())) {
                 defaultAPI = api;
             } else if (api.canProcess(synCtx)) {
@@ -96,6 +98,7 @@ public class RESTRequestHandler {
         }
 
         if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
+            defaultAPI.setLogSetterValue();
             defaultAPI.process(synCtx);
             return true;
         }

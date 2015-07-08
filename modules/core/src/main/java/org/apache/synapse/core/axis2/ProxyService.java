@@ -32,11 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseArtifact;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -233,6 +229,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private boolean moduleEngaged;
 
     private boolean wsdlPublished;
+
+    private String carName;
 
     /**
      * Constructor
@@ -1267,6 +1265,14 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     }
 
+    public void setCarName (String name) {
+        carName = name;
+    }
+
+    public String getCarName () {
+        return carName;
+    }
+
     private String[] getModuleNames(String propertyValue) {
 
         if (propertyValue == null || propertyValue.trim().isEmpty()) {
@@ -1289,5 +1295,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public void setPublishWSDLEndpoint(String publishWSDLEndpoint) {
         this.publishWSDLEndpoint = publishWSDLEndpoint;
+    }
+
+    public void setLogSetterValue () {
+        SingletonLogSetter.getInstance().setLogAppender(carName);
     }
 }

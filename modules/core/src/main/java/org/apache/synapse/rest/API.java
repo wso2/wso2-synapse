@@ -22,10 +22,7 @@ import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.*;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
@@ -57,6 +54,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     private int traceState = SynapseConstants.TRACING_UNSET;
 
+    private String carName = "";
+
     public API(String name, String context) {
         super(name);
         setContext(context);
@@ -69,6 +68,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         this.context = RESTUtils.trimTrailingSlashes(context);
         apiLog = LogFactory.getLog(SynapseConstants.API_LOGGER_PREFIX + name);
 
+    }
+
+    public void setCarName (String name) {
+        carName = name;
+    }
+
+    public void setLogSetterValue () {
+        SingletonLogSetter.getInstance().setLogAppender(carName);
     }
 
     /**

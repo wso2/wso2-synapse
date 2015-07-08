@@ -32,10 +32,7 @@ import org.apache.axis2.util.XMLPrettyPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.ServerConfigurationInformation;
-import org.apache.synapse.ServerContextInformation;
-import org.apache.synapse.ServerState;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.*;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
@@ -58,6 +55,8 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     private static final Log log = LogFactory.getLog(AbstractSynapseArtifactDeployer.class);
     protected  Log deployerLog;
     protected ConfigurationContext cfgCtx;
+    private String carName = "";
+    protected String custom_log = "";
 
     protected AbstractSynapseArtifactDeployer() {
         deployerLog = LogFactory.getLog(this.getClass());
@@ -94,6 +93,9 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      */
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
 
+
+//        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+        deployerLog.info("Hellooooooooo-----" + carName);
         if (!isHotDeploymentEnabled()) {
             if (log.isDebugEnabled()) {
                 log.debug("Hot deployment has been suspended - Ignoring");
@@ -565,5 +567,9 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                 element, filename, existingArtifactName, properties);
 
         return artifactName;
+    }
+
+    public void setCustom_log (String carName, String tenantId) {
+        custom_log = "Deployed CAR Name: " + carName + ", Tenant Id: " + tenantId;
     }
 }

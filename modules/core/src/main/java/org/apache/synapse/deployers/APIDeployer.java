@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SingletonLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.rest.APIFactory;
 import org.apache.synapse.config.xml.rest.APISerializer;
@@ -36,12 +37,15 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName, Properties properties) {
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         if (log.isDebugEnabled()) {
             log.debug("API deployment from file : " + fileName + " : Started");
         }
 
         try {
             API api = APIFactory.createAPI(artifactConfig, properties);
+            api.setCarName(custom_log);
             if (api != null) {
                 api.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
@@ -73,6 +77,9 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName, String existingArtifactName, Properties properties) {
+
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         if (log.isDebugEnabled()) {
             log.debug("API update from file : " + fileName + " has started");
         }
@@ -118,6 +125,9 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void undeploySynapseArtifact(String artifactName) {
+
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         if (log.isDebugEnabled()) {
             log.debug("Undeployment of the API named : "
                     + artifactName + " : Started");
@@ -143,6 +153,9 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void restoreSynapseArtifact(String artifactName) {
+
+        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+
         if (log.isDebugEnabled()) {
             log.debug("Restoring the API with name : " + artifactName + " : Started");
         }
