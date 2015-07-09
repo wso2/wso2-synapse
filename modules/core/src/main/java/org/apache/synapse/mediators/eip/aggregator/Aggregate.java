@@ -256,6 +256,7 @@ public class Aggregate extends TimerTask {
 
         public void run() {
             aggregateMediator.completeAggregate(aggregate);
+            log.warn("Aggregate Mediator Time out occured.");
         }
     }
 
