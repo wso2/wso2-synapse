@@ -140,7 +140,7 @@ public abstract class DynamicProfileReloader {
             OMElement profileParamElem = profileParam.getParameterElement();
             String interval = profileParamElem.getFirstChildWithName(new QName(intervalConfigName)).getText();
             if (interval != null) {
-                fileReadInterval = Long.valueOf(interval);
+                fileReadInterval = Long.parseLong(interval);
             }
         }
 
