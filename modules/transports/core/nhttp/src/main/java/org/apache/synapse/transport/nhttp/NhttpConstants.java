@@ -202,10 +202,10 @@ public class NhttpConstants {
     public static final String SERVER_WORKER_THREAD_ID = "SERVER_WORKER_THREAD_ID";
 
     /**
-     * Default interval which checks any configuration file updates for Dynamic SSL Profiles
-     * Default value is one hour in milliseconds.
+     * Default minimum interval which checks any configuration file updates for Dynamic SSL Profiles
+     * Default value is one minute in milliseconds.
      */
-    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 3600000;
+    public static final int DYNAMIC_PROFILE_RELOAD_DEFAULT_INTERVAL = 60000;
 
 	/**
 	 * Http method type constants to be used in synapse

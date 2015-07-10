@@ -37,7 +37,7 @@ public class SSLProfileInvoker implements SSLProfileInvokerMBean {
      * Invoke notify method of DynamicProfileReloader
      */
     public void notifyFileUpdate() {
-        dynamicProfileReloader.notifyFileUpdate();
+        dynamicProfileReloader.notifyFileUpdate(false);
     }
 
     /**
