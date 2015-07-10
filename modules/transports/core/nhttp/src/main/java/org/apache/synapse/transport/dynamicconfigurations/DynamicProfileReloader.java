@@ -43,11 +43,13 @@ public abstract class DynamicProfileReloader {
     /* XML element name for dynamic profiles file read interval in Axis2 config */
     private final String intervalConfigName = "fileReadInterval";
 
+    private boolean invokedFromSchedule = true;
+
     private long lastUpdatedtime;
 
     private String filePath;
 
-    public abstract void notifyFileUpdate();
+    public abstract void notifyFileUpdate(boolean isScheduled);
 
     protected FileUpdateNotificationHandler fileUpdateNotificationHandler;
 
@@ -84,6 +86,24 @@ public abstract class DynamicProfileReloader {
      */
     public void setLastUpdatedtime(long lastUpdatedtime) {
         this.lastUpdatedtime = lastUpdatedtime;
+    }
+
+    /**
+     * Check whether the file is invoked from scheduled task
+     *
+     * @return true if invoked from schedule, false otherwise
+     */
+    public boolean isInvokedFromSchedule() {
+        return invokedFromSchedule;
+    }
+
+    /**
+     * Set whether the file is invoked from schedule
+     *
+     * @param invokedFromSchedule true if invoked from schedule, false otherwise
+     */
+    public void setInvokedFromSchedule(boolean invokedFromSchedule) {
+        this.invokedFromSchedule = invokedFromSchedule;
     }
 
     /**
@@ -127,7 +147,6 @@ public abstract class DynamicProfileReloader {
         return fileReadInterval;
     }
 
-
     /**
      * Register this Profile Loader in FileUpdateNotificationHandler for notifications
      *
@@ -147,7 +166,10 @@ public abstract class DynamicProfileReloader {
             fileUpdateNotificationHandler.registerListener(this);
             notificationHandlerStarted = true;
         } else {
-            LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded " +
+                          "dynamically in " + this.getClass().getName());
+            }
         }
         return notificationHandlerStarted;
     }
