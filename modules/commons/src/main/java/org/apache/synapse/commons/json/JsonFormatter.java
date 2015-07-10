@@ -88,10 +88,10 @@ public final class JsonFormatter implements MessageFormatter {
     }
 
     /**
-     * @deprecated Use {@link org.apache.synapse.commons.json.JsonUtil#writeAsJson(org.apache.axiom.om.OMElement, java.io.OutputStream)}
-     * @param element XML element
+     * @param element      XML element
      * @param outputStream Output Stream to write the converted JSON representation.
      * @throws AxisFault
+     * @deprecated Use {@link org.apache.synapse.commons.json.JsonUtil#writeAsJson(org.apache.axiom.om.OMElement, java.io.OutputStream)}
      */
     public static void toJson(OMElement element, OutputStream outputStream) throws AxisFault {
         JsonUtil.writeAsJson(element.cloneOMElement(), outputStream);
@@ -99,10 +99,10 @@ public final class JsonFormatter implements MessageFormatter {
 
     public String getContentType(MessageContext messageContext, OMOutputFormat format,
                                  String soapActionString) {
-        String contentType = (String)messageContext.getProperty(Constants.Configuration.CONTENT_TYPE);
+        String contentType = (String) messageContext.getProperty(Constants.Configuration.CONTENT_TYPE);
         String encoding = format.getCharSetEncoding();
         if (contentType == null) {
-            contentType = (String)messageContext.getProperty(Constants.Configuration.MESSAGE_TYPE);
+            contentType = (String) messageContext.getProperty(Constants.Configuration.MESSAGE_TYPE);
         }
         if (encoding != null) {
             contentType += "; charset=" + encoding;

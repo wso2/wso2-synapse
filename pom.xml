@@ -572,11 +572,6 @@
              <version>${commons-lang.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.wso2.staxon</groupId>
-             <artifactId>staxon-core</artifactId>
-             <version>${staxon.version}</version>
-         </dependency>
-         <dependency>
              <groupId>org.springframework</groupId>
              <artifactId>spring-core</artifactId>
              <version>${spring.version}</version>
@@ -870,7 +865,7 @@
             <groupId>org.snmp4j</groupId>
             <artifactId>snmp4j</artifactId>
             <version>${snmp4j.version}</version>
-         </dependency>
+         </dependency>         
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -961,7 +956,6 @@
       <hc.httpclient.version>4.3.6</hc.httpclient.version>
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
-      <staxon.version>1.2.0.wso2v2</staxon.version>
       <commons-codec.version>1.2</commons-codec.version>
       <javax.activation.version>1.1</javax.activation.version>
       <!-- Sets the source encoding to UTF-8 -->
@@ -1006,7 +1000,7 @@
       <java-cup.version>0.0</java-cup.version>
       <JLex.version>0.0</JLex.version>
       <!-- misc -->
-      <junit.version>3.8.2</junit.version>
+      <junit.version>4.8.2</junit.version>
       <!-- Warning: log4j versions above 1.2.14 introduce additional transitive dependencies,
              some of which are not available from the Maven central repository. -->
       <log4j.version>1.2.14</log4j.version>

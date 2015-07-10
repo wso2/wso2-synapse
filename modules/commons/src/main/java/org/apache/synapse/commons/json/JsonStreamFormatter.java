@@ -35,7 +35,7 @@ public final class JsonStreamFormatter implements MessageFormatter {
     public byte[] getBytes(MessageContext messageContext, OMOutputFormat format) throws AxisFault {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        writeTo(messageContext, format, baos ,true);
+        writeTo(messageContext, format, baos, true);
         return baos.toByteArray();
     }
 
@@ -64,10 +64,10 @@ public final class JsonStreamFormatter implements MessageFormatter {
     }
 
     /**
-     * @deprecated Use {@link org.apache.synapse.commons.json.JsonUtil#writeAsJson(org.apache.axis2.context.MessageContext, java.io.OutputStream)}
      * @param messageContext Axis2 Message context that holds the JSON/XML payload.
-     * @param out Output stream to which the payload(JSON) must be written.
+     * @param out            Output stream to which the payload(JSON) must be written.
      * @throws AxisFault
+     * @deprecated Use {@link org.apache.synapse.commons.json.JsonUtil#writeAsJson(org.apache.axis2.context.MessageContext, java.io.OutputStream)}
      */
     public static void toJson(MessageContext messageContext, OutputStream out) throws AxisFault {
         JsonUtil.writeAsJson(messageContext, out);
