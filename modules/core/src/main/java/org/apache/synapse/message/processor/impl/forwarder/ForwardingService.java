@@ -18,7 +18,6 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -137,7 +136,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * queue and dispatch it to a given endpoint.
      */
     public void execute() {
-        final long startTime = new Date().getTime();
+        final long startTime = System.currentTimeMillis();
         /*
          * Initialize only if it is NOT already done. This will make sure that
          * the initialization is done only once.
@@ -247,7 +246,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
              * For cron expressions this scenario is already
              * handled above.
              */
-            if (isThrottling && new Date().getTime() - startTime > 1000) {
+            if (isThrottling && System.currentTimeMillis() - startTime > 1000) {
                 break;
             }
         } while ((isThrottling || isRunningUnderCronExpression()) && !isTerminated);
@@ -280,7 +279,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
         }
     }
 
-    public void init(SynapseEnvironment se) {
+    public void init(SynapseEnvironment synapseEnvironment) {
         // Setting up the JMS consumer here.
         setMessageConsumer();
 
