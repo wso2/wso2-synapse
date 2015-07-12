@@ -23,7 +23,7 @@ package org.apache.synapse.task;
  */
 public interface TaskManagerObserver {
     /**
-     * . * Notifies all the <code>Subscribers</code> when the NTaskTaskManager
+     * Notifies all the <code>Subscribers</code> when the NTaskTaskManager
      * is
      * successfully initialized.
      */
