@@ -20,21 +20,20 @@ package org.apache.synapse.mediators.store;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
-import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 
+
 /**
  * <code>MessageStoreMediator</code> will store the incoming Messages in associated MessageStore
  */
-public class MessageStoreMediator extends AbstractMediator implements ManagedLifecycle{
+public class MessageStoreMediator extends AbstractMediator{
 
     /**
      * Name of the Mediator
@@ -51,31 +50,23 @@ public class MessageStoreMediator extends AbstractMediator implements ManagedLif
      */
     private String  onStoreSequence;
 
-    /**
-     * Status of the guaranteed delivery
-     */
-    private boolean isGuaranteedDeliveryEnable = false;
-
-    /**
-     * Failover message store name
-     */
-    private String failoverMessageStoreName = null;
-
-    /**
-     * Original message store
-     */
-    private MessageStore messageStore = null;
-
-    private static final String PRODUCER_GUARANTEED_DELIVERY = "store.producer.guaranteed.delivery.enable";
-    private static final String FAILOVER_MESSAGE_STORE_NAME = "store.failover.message.store.name";
 
 
     public boolean mediate(MessageContext synCtx) {
-
+        boolean isGuaranteedDeliveryEnable = false;
+        String failoverMessageStoreName = null;
 
         if(synCtx != null) {
-
+            MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
             if(messageStore != null) {
+
+                if (messageStore.getParameters().get("store.producer.guaranteed.delivery.enable") != null) {
+                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get("store.producer.guaranteed.delivery.enable").toString());
+                }
+
+                if (messageStore.getParameters().get("store.failover.message.store.name") != null) {
+                    failoverMessageStoreName = (String) messageStore.getParameters().get("store.failover.message.store.name");
+                }
 
                 if(onStoreSequence != null) {
                     Mediator sequence = synCtx.getSequence(onStoreSequence);
@@ -114,27 +105,22 @@ public class MessageStoreMediator extends AbstractMediator implements ManagedLif
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }
-                boolean produceStatus = messageStore.getProducer().storeMessage(newCtx);
+                boolean result = messageStore.getProducer().storeMessage(newCtx);
 
-                if (!produceStatus) {
+                if (!result) {
 
-                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null && !failoverMessageStoreName
-                            .isEmpty()) {
+                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null) {
 
                         MessageStore failoverMessageStore = synCtx.getConfiguration().getMessageStore(failoverMessageStoreName);
-                        boolean failoverProduceStatus = failoverMessageStore.getProducer().storeMessage(newCtx);
+                        boolean finalResult = failoverMessageStore.getProducer().storeMessage(newCtx);
 
-                        if (!failoverProduceStatus) {
+                        if (!finalResult) {
                             synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
                             synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
                             synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
                                                                              + "] in store [" + messageStore.getName() + "].");
                             handleException("Failed to store message [" + synCtx.getMessageID()
-                                            + "] in failover store [" + failoverMessageStoreName + "].", synCtx);
-                        }
-
-                        if (shouldTrace(synCtx.getTracingState())) {
-                            trace.error("Message [" + synCtx.getMessageID() + "] store in the failover message store [" + failoverMessageStoreName + "]");
+                                            + "] in store [" + messageStore.getName() + "].", synCtx);
                         }
 
 
@@ -210,31 +196,4 @@ public class MessageStoreMediator extends AbstractMediator implements ManagedLif
         }
     }
 
-    @Override
-    public void init(SynapseEnvironment synapseEnvironment) {
-
-        if (synapseEnvironment != null) {
-
-            messageStore = synapseEnvironment.getSynapseConfiguration().getMessageStore(messageStoreName);
-
-            if (messageStore != null) {
-
-                if (messageStore.getParameters().get(PRODUCER_GUARANTEED_DELIVERY) != null) {
-                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get
-                            (PRODUCER_GUARANTEED_DELIVERY).toString());
-                }
-
-                if (messageStore.getParameters().get(FAILOVER_MESSAGE_STORE_NAME) != null) {
-                    failoverMessageStoreName = (String) messageStore.getParameters().get(FAILOVER_MESSAGE_STORE_NAME);
-                }
-
-            }
-        }
-
-    }
-
-    @Override
-    public void destroy() {
-
-    }
 }
