@@ -29,6 +29,7 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 
+
 /**
  * <code>MessageStoreMediator</code> will store the incoming Messages in associated MessageStore
  */
@@ -50,10 +51,23 @@ public class MessageStoreMediator extends AbstractMediator{
     private String  onStoreSequence;
 
 
+
     public boolean mediate(MessageContext synCtx) {
+        boolean isGuaranteedDeliveryEnable = false;
+        String failoverMessageStoreName = null;
+
         if(synCtx != null) {
             MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
             if(messageStore != null) {
+
+                if (messageStore.getParameters().get("store.producer.guaranteed.delivery.enable") != null) {
+                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get("store.producer.guaranteed.delivery.enable").toString());
+                }
+
+                if (messageStore.getParameters().get("store.failover.message.store.name") != null) {
+                    failoverMessageStoreName = (String) messageStore.getParameters().get("store.failover.message.store.name");
+                }
+
                 if(onStoreSequence != null) {
                     Mediator sequence = synCtx.getSequence(onStoreSequence);
                     if(sequence != null) {
@@ -92,13 +106,35 @@ public class MessageStoreMediator extends AbstractMediator{
                     handleException("Error when cloning the message context", af, synCtx);
                 }
                 boolean result = messageStore.getProducer().storeMessage(newCtx);
+
                 if (!result) {
-                    synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
-                    synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
-                    synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
-                                                        + "] in store [" + messageStore.getName() + "].");
-                    handleException("Failed to store message [" + synCtx.getMessageID()
-                                    + "] in store [" + messageStore.getName() + "].", synCtx);
+
+                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null) {
+
+                        MessageStore failoverMessageStore = synCtx.getConfiguration().getMessageStore(failoverMessageStoreName);
+                        boolean finalResult = failoverMessageStore.getProducer().storeMessage(newCtx);
+
+                        if (!finalResult) {
+                            synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
+                            synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
+                            synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
+                                                                             + "] in store [" + messageStore.getName() + "].");
+                            handleException("Failed to store message [" + synCtx.getMessageID()
+                                            + "] in store [" + messageStore.getName() + "].", synCtx);
+                        }
+
+
+                    } else {
+
+                        synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
+                        synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
+                        synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
+                                                                         + "] in store [" + messageStore.getName() + "].");
+                        handleException("Failed to store message [" + synCtx.getMessageID()
+                                        + "] in store [" + messageStore.getName() + "].", synCtx);
+
+                    }
+
                 }
                 // with the nio transport, this causes the listener not to write a 202
                 // Accepted response, as this implies that Synapse does not yet know if
@@ -159,4 +195,5 @@ public class MessageStoreMediator extends AbstractMediator{
             return null;
         }
     }
+
 }

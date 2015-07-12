@@ -55,6 +55,7 @@ public class JmsProducer implements MessageProducer {
 
     private boolean isInitialized = false;
 
+
     public JmsProducer(JmsStore store) {
         if (store == null) {
             logger.error("Cannot initialize.");
@@ -82,13 +83,38 @@ public class JmsProducer implements MessageProducer {
             setJmsProducerProperties(producer, synCtx);
             setJmsMessageProperties(objectMessage, synCtx);
             producer.send(objectMessage);
+
+            if (session.getTransacted()) {
+                session.commit();
+            }
+
         } catch (JMSException e) {
             throwable = e;
             error = true;
             isConnectionError = true;
+
+
+            try {
+                if (session.getTransacted()) {
+                    session.rollback();
+                }
+            } catch (JMSException e1) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Fail to rollback message : " + synCtx.getMessageID());
+                }
+            }
         } catch (Throwable t) {
             throwable = t;
             error = true;
+            try {
+                if (session.getTransacted()) {
+                    session.rollback();
+                }
+            } catch (JMSException e) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Fail to rollback message : " + synCtx.getMessageID());
+                }
+            }
         }
         if (error) {
             String errorMsg = getId() + ". Ignored MessageID : " + synCtx.getMessageID()
@@ -267,4 +293,5 @@ public class JmsProducer implements MessageProducer {
         }
 
     }
+
 }
