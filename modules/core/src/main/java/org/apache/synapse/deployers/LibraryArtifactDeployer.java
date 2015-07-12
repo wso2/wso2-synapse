@@ -135,7 +135,6 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 	    LibDeployerUtils.deployingLocalEntries(lib, getSynapseConfiguration());
 	}
 
-	
     }
 
     public void undeploy(String fileName) throws DeploymentException {
@@ -149,6 +148,9 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
 	if (deploymentStore.containsFileName(fileName)) {
 	    File undeployingFile = new File(fileName);
+		if(fileName.contains("/tmp/carbonapps/")){
+			undeployingFile.delete();
+		}
 	    // axis2 treats Hot-Update as (Undeployment + deployment), where
 	    // synapse needs to differentiate the Hot-Update from the above two, since it needs
 	    // some validations for a real undeployment. Also this makes sure a zero downtime of the
