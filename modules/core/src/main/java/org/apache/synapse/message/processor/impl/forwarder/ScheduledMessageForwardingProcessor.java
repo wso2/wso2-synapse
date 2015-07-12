@@ -20,12 +20,9 @@ package org.apache.synapse.message.processor.impl.forwarder;
 
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
-import org.quartz.JobDataMap;
-
-import java.util.Map;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
+import org.apache.synapse.task.Task;
 
 /**
  * Redelivery processor is the Message processor which implements the Dead letter channel EIP
@@ -40,6 +37,20 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
 
     @Override
     public void init(SynapseEnvironment se) {
+        parameters.put(ForwardingProcessorConstants.THROTTLE,
+                       String.valueOf((isThrottling(interval))));
+        if (isThrottling(cronExpression)) {
+            parameters.put(ForwardingProcessorConstants.THROTTLE_INTERVAL, String.valueOf(interval));
+            parameters.put(ForwardingProcessorConstants.CRON_EXPRESSION, cronExpression);
+        }
+
+        if (nonRetryStatusCodes != null) {
+            parameters.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, nonRetryStatusCodes);
+        }
+
+        // Setting the end-point here.
+        parameters.put(ForwardingProcessorConstants.TARGET_ENDPOINT, targetEndpoint);
+
         super.init(se);
 
         try {
@@ -49,46 +60,12 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
         }
 
         // register MBean
-        org.apache.synapse.commons.jmx.MBeanRegistrar.getInstance().registerMBean(view,
-                "Message Forwarding Processor view", getName());
+        org.apache.synapse.commons.jmx.MBeanRegistrar.getInstance()
+                                                     .registerMBean(view,
+                                                                    "Message Forwarding Processor view",
+                                                                    getName());
     }
 
-    @Override
-    protected JobDataMap getJobDataMap() {
-        JobDataMap jdm = new JobDataMap();
-        sender = initMessageSender(parameters);
-
-        jdm.put(BLOCKING_SENDER, sender);
-        jdm.put(MessageProcessorConstants.PROCESSOR_INSTANCE, this);
-        jdm.put(ForwardingProcessorConstants.TARGET_ENDPOINT, getTargetEndpoint());
-        jdm.put(ForwardingProcessorConstants.THROTTLE, isThrottling(this.interval) || isThrottling(this.cronExpression));
-
-        // we only this interval when it is running under a cron-expression
-        if (isThrottling(this.cronExpression)) {
-            jdm.put(ForwardingProcessorConstants.THROTTLE_INTERVAL, this.interval);
-        }
-
-        jdm.put(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES, this.nonRetryStatusCodes);
-
-        return jdm;
-    }
-
-    private BlockingMsgSender initMessageSender(Map<String, Object> params) {
-
-        String axis2repo = (String) params.get(ForwardingProcessorConstants.AXIS2_REPO);
-        String axis2Config = (String) params.get(ForwardingProcessorConstants.AXIS2_CONFIG);
-
-        sender = new BlockingMsgSender();
-        if (axis2repo != null) {
-            sender.setClientRepository(axis2repo);
-        }
-        if (axis2Config != null) {
-            sender.setAxis2xml(axis2Config);
-        }
-        sender.init();
-
-        return sender;
-    }
 
     /**
      * This method is used by back end of the message processor
@@ -96,5 +73,10 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
      */
     public MessageForwardingProcessorView getView() {
         return view;
+    }
+
+    @Override
+    protected Task getTask() {
+        return new ForwardingService(this, sender, synapseEnvironment, interval);
     }
 }
