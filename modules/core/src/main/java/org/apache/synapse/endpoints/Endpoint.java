@@ -124,4 +124,10 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      */
     public void setErrorHandler(String onFaultMessageStore);
 
+    /**
+     * Set the name of the car file which this endpoint deployed from
+     *
+     */
+    public void setCarName (String name);
+
 }

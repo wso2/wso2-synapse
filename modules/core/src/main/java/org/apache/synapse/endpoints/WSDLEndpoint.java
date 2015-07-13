@@ -42,7 +42,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
     public void onFault(MessageContext synCtx) {
 
         // For setting Car name (still for Proxy)
-        logSetter(synCtx);
+        logSetter();
 
         // is this an actual leaf endpoint
         if (getParentEndpoint() != null) {
@@ -65,7 +65,7 @@ public class WSDLEndpoint extends AbstractEndpoint {
     public void send(MessageContext synCtx) {
 
         // For setting Car name (still for Proxy)
-        logSetter(synCtx);
+        logSetter();
 
         if (getParentEndpoint() == null && !readyToSend()) {
             // if the this leaf endpoint is too a root endpoint and is in inactive 

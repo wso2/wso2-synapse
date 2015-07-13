@@ -107,6 +107,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
 
     public void send(MessageContext synCtx) {
 
+        logSetter();
         if (log.isDebugEnabled()) {
             log.debug("Sending using Load-balance " + toString());
         }
@@ -314,6 +315,8 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         }
 
         public void onFault(MessageContext synCtx) {
+
+            logSetter();
             if (currentMember == null) {
                 return;
             }

@@ -104,6 +104,9 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
     }
 
     public void send(MessageContext synCtx) {
+
+        logSetter();
+
         SessionInformation sessionInformation = null;
         Member currentMember = null;
         //TODO Temp hack: ESB removes the session id from request in a random manner.
@@ -504,6 +507,9 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
         }
 
         public void onFault(MessageContext synCtx) {
+
+            logSetter();
+
             //cleanup endpoint if exists
             if(currentEp != null){
                 currentEp.destroy();

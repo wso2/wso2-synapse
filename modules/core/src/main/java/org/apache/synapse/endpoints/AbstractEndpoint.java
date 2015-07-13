@@ -26,12 +26,7 @@ import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.PropertyInclude;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -103,6 +98,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     private boolean contentAware = false;
     
     private boolean forceBuildMC =false;
+
+    protected String carName = "";
 
     protected AbstractEndpoint() {
         log = LogFactory.getLog(this.getClass());
@@ -199,6 +196,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
+    public void setCarName (String name) {
+        carName = name;
+    }
+
     /**
      * set whether this endpoint needs to be registered for JMX MBeans. some endpoints may not need
      * to register under MBean and setting false will cut the additional overhead.
@@ -249,6 +250,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void send(MessageContext synCtx) {
+
+        logSetter();
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -472,6 +475,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @param synCtx the message at hand
      */
     public void onFault(MessageContext synCtx) {
+        logSetter();
         invokeNextFaultHandler(synCtx);
     }
 
@@ -741,11 +745,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
-    public void logSetter (MessageContext synCtx) {
-        //For Proxy car name
-        if (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null) {
-            synCtx.getConfiguration().getProxyService(
-                    (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE)).setLogSetterValue();
-        }
+    public void logSetter() {
+        CustomLogSetter.getInstance().setLogAppender(carName);
     }
 }

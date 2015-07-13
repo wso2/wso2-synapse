@@ -19,10 +19,6 @@
 
 package org.apache.synapse.endpoints;
 
-import java.io.IOException;
-
-import javax.xml.stream.XMLStreamException;
-
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -39,7 +35,7 @@ public class DefaultEndpoint extends AbstractEndpoint {
     public void onFault(MessageContext synCtx) {
 
         // For setting Car name (still for Proxy)
-        logSetter(synCtx);
+        logSetter();
 
         // is this really a fault or a timeout/connection close etc?
         if (isTimeout(synCtx)) {
@@ -62,7 +58,7 @@ public class DefaultEndpoint extends AbstractEndpoint {
     public void send(MessageContext synCtx) {
 
         // For setting Car name (still for Proxy)
-        logSetter(synCtx);
+        logSetter();
 
     	org.apache.axis2.context.MessageContext messageContext =((Axis2MessageContext) synCtx).getAxis2MessageContext();
     	final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);

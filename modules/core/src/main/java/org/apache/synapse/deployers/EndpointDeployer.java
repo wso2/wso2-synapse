@@ -51,6 +51,9 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
+
+            //Set the car name
+            ep.setCarName(customLogContent);
             if (ep != null) {
                 ep.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {

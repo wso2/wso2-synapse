@@ -47,6 +47,7 @@ public class IndirectEndpoint extends AbstractEndpoint {
      */
     public void send(MessageContext synCtx) {
 
+        logSetter();
         reLoadAndInitEndpoint(((Axis2MessageContext) synCtx).
                 getAxis2MessageContext().getConfigurationContext());
 

@@ -89,6 +89,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
 
     public void send(MessageContext synCtx) {
 
+        logSetter();
         if (log.isDebugEnabled()) {
             log.debug("Start : Session Affinity Load-balance Endpoint " + getName());
         }
