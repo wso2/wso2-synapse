@@ -740,4 +740,12 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             e.getValue().evaluate(synCtx);
         }
     }
+
+    public void logSetter (MessageContext synCtx) {
+        //For Proxy car name
+        if (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null) {
+            synCtx.getConfiguration().getProxyService(
+                    (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE)).setLogSetterValue();
+        }
+    }
 }

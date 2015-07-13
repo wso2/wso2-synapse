@@ -21,12 +21,11 @@ package org.apache.synapse.config;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SingletonLogSetter;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseException;
 
 import java.net.URL;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -190,7 +189,7 @@ public class Entry implements SynapseArtifact {
     }
 
     public void setLogSetterValue () {
-        SingletonLogSetter.getInstance().setLogAppender(carName);
+        CustomLogSetter.getInstance().setLogAppender(carName);
     }
 
     public boolean isExpired() {

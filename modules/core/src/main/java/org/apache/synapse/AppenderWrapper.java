@@ -26,7 +26,9 @@ public class AppenderWrapper extends PatternLayout {
         if (event.getMessage() != null && event.getMessage() instanceof String) {
 
             String message = event.getMessage().toString();
-            message = StringUtils.trim(SingletonLogSetter.getInstance().getLogAppenederContent() + message);
+            message = StringUtils.trim(
+                    ((CustomLogSetter.getInstance().getLogAppenederContent() != null) ?
+                            CustomLogSetter.getInstance().getLogAppenederContent() : "") + message);
 
             // earlier versions of log4j don't provide any way to update messages,
             // so use reflections to do this

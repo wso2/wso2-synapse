@@ -55,8 +55,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     private static final Log log = LogFactory.getLog(AbstractSynapseArtifactDeployer.class);
     protected  Log deployerLog;
     protected ConfigurationContext cfgCtx;
-    private String carName = "";
-    protected String custom_log = "";
+    protected String customLogContent = "";
 
     protected AbstractSynapseArtifactDeployer() {
         deployerLog = LogFactory.getLog(this.getClass());
@@ -93,9 +92,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      */
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
 
-
-//        SingletonLogSetter.getInstance().setLogAppender(custom_log);
-        deployerLog.info("Hellooooooooo-----" + carName);
+//        CustomLogSetter.getInstance().setLogAppender(customLogContent);
         if (!isHotDeploymentEnabled()) {
             if (log.isDebugEnabled()) {
                 log.debug("Hot deployment has been suspended - Ignoring");
@@ -569,7 +566,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
         return artifactName;
     }
 
-    public void setCustom_log (String carName, String tenantId) {
-        custom_log = "Deployed CAR Name: " + carName + ", Tenant Id: " + tenantId;
+    public void setCustomLog (String carName, String tenantId) {
+        customLogContent = "Deployed CAR Name: " + carName + ", Tenant Id: " + tenantId;
     }
 }

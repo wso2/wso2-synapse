@@ -23,7 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.SingletonLogSetter;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.xml.EntryFactory;
 import org.apache.synapse.config.xml.EntrySerializer;
@@ -45,7 +45,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
                                         Properties properties) {
 
-        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry Deployment from file : " + fileName + " : Started");
@@ -54,7 +54,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         try {
             Entry e = EntryFactory.createEntry(artifactConfig, properties);
 
-            e.setCarName(custom_log);
+            e.setCarName(customLogContent);
 
             if (e != null) {
                 e.setFileName((new File(fileName)).getName());
@@ -85,7 +85,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
 
-        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry update from file : " + fileName + " has started");
@@ -128,7 +128,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
-        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry Undeployment of the entry named : "
@@ -156,7 +156,7 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void restoreSynapseArtifact(String artifactName) {
 
-        SingletonLogSetter.getInstance().setLogAppender(custom_log);
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry the Sequence with name : " + artifactName + " : Started");

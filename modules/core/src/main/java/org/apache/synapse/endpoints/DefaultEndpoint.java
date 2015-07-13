@@ -38,6 +38,9 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 public class DefaultEndpoint extends AbstractEndpoint {
     public void onFault(MessageContext synCtx) {
 
+        // For setting Car name (still for Proxy)
+        logSetter(synCtx);
+
         // is this really a fault or a timeout/connection close etc?
         if (isTimeout(synCtx)) {
             getContext().onTimeout();
@@ -57,7 +60,10 @@ public class DefaultEndpoint extends AbstractEndpoint {
     }
 
     public void send(MessageContext synCtx) {
-    	
+
+        // For setting Car name (still for Proxy)
+        logSetter(synCtx);
+
     	org.apache.axis2.context.MessageContext messageContext =((Axis2MessageContext) synCtx).getAxis2MessageContext();
     	final Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null && !Boolean.TRUE.equals(messageContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) && messageContext.getProperty("To") == null) {

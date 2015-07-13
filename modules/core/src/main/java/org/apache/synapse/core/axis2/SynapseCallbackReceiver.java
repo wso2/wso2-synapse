@@ -34,11 +34,7 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.ServerContextInformation;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -70,6 +66,7 @@ import java.util.Timer;
 public class SynapseCallbackReceiver extends CallbackReceiver {
 
     private static final Log log = LogFactory.getLog(SynapseCallbackReceiver.class);
+    private String carName;
 
     /** This is the synchronized callbackStore that maps outgoing messageID's to callback objects */
 //    private final Map<String, AxisCallback> callbackStore;  // will made thread safe in the constructor
@@ -117,6 +114,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
     public void receive(MessageContext messageCtx) throws AxisFault {
 
         String messageID = null;
+
+        CustomLogSetter.getInstance().setLogAppender(carName);
 
         /**
          * In an Out-only scenario if the client receives a HTTP 202 accepted we need to

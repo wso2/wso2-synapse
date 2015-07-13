@@ -230,7 +230,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private boolean wsdlPublished;
 
-    private String carName;
+    private String carName = "";
 
     /**
      * Constructor
@@ -864,7 +864,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             auditInfo("Stopped the proxy service : " + name);
         } else {
             auditWarn("Unable to stop proxy service : " + name +
-                ". Couldn't access Axis configuration");
+                    ". Couldn't access Axis configuration");
         }
     }
 
@@ -1298,6 +1298,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     }
 
     public void setLogSetterValue () {
-        SingletonLogSetter.getInstance().setLogAppender(carName);
+        CustomLogSetter.getInstance().setLogAppender(carName);
     }
 }

@@ -75,7 +75,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     }
 
     public void setLogSetterValue () {
-        SingletonLogSetter.getInstance().setLogAppender(carName);
+        CustomLogSetter.getInstance().setLogAppender(carName);
     }
 
     /**
