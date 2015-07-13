@@ -26,6 +26,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
+import org.apache.http.HttpHeaders;
 import org.apache.http.client.protocol.RequestClientConnControl;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.message.BasicHttpRequest;
@@ -58,7 +59,7 @@ public class ProxyTunnelHandler {
     public HttpRequest generateRequest(final HttpContext context) throws IOException, HttpException {
         HttpHost target = this.route.getTargetHost();
         HttpRequest connect = new BasicHttpRequest("CONNECT", target.toHostString(), HttpVersion.HTTP_1_1);
-        
+        connect.setHeader(HttpHeaders.HOST, target.toHostString());
         this.httpProcessor.process(connect, context);
         return connect;
     }
