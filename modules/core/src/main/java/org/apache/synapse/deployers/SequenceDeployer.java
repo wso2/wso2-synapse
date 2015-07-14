@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
@@ -46,6 +47,8 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
                                         Properties properties) {
 
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
+
         if (log.isDebugEnabled()) {
             log.debug("Sequence Deployment from file : " + fileName + " : Started");
         }
@@ -56,6 +59,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
                     artifactConfig, properties);
             if (m instanceof SequenceMediator) {
                 SequenceMediator seq = (SequenceMediator) m;
+                seq.setCarName(customLogContent);
                 seq.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("Sequence named '" + seq.getName()

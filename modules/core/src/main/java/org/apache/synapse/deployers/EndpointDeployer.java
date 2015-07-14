@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
@@ -48,6 +49,8 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
         if (log.isDebugEnabled()) {
             log.debug("Endpoint Deployment from file : " + fileName + " : Started");
         }
+
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         try {
             Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
