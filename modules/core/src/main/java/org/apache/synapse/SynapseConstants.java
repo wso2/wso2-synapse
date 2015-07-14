@@ -490,7 +490,8 @@ public final class SynapseConstants {
     public static final String IS_INBOUND = "isInbound";
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
     public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
-
+    public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
+    
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 
