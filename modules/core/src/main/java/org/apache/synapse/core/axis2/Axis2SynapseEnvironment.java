@@ -358,10 +358,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (!synCtx.getFaultStack().isEmpty()) {
                 log.warn("Executing fault handler due to exception encountered");
                 ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+                return true;
             } else {
                 log.warn("Exception encountered but no fault handler found - message dropped");
+                throw syne;
             }
-            throw syne;
         } catch (Exception e) {
             String msg = "Unexpected error executing task/async inject";
             log.error(msg, e);
@@ -371,11 +372,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (!synCtx.getFaultStack().isEmpty()) {
                 log.warn("Executing fault handler due to exception encountered");
                 ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+                return true;
             } else {
                 log.warn("Exception encountered but no fault handler found - message dropped");
+                throw new SynapseException(
+                                           "Exception encountered but no fault handler found - message dropped",
+                                           e);
             }
-            throw new SynapseException(
-                    "Exception encountered but no fault handler found - message dropped", e);
         } catch (Throwable e) {
             String msg = "Unexpected error executing inbound/async inject, message dropped";
             log.error(msg, e);
@@ -383,7 +386,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 synCtx.getServiceLog().error(msg, e);
             }
             throw new SynapseException(msg, e);
-        }     
+        }
     }
     
     /**
@@ -417,6 +420,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 if (serviceModuleEngaged || isTransportSwitching(synCtx, null)) {
                     buildMessage(synCtx);
                 }
+                
+                //Build message in the case of inbound jms dual channel
+                Boolean isInboundJMS = (Boolean)synCtx.getProperty(SynapseConstants.INBOUND_JMS_PROTOCOL);
+                if (isInboundJMS != null && isInboundJMS) {
+                    buildMessage(synCtx);
+                }
+                
                 Axis2Sender.sendBack(synCtx);
             }
         } else {
