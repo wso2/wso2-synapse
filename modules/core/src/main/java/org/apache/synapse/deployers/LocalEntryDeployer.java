@@ -45,17 +45,12 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
                                         Properties properties) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry Deployment from file : " + fileName + " : Started");
         }
 
         try {
             Entry e = EntryFactory.createEntry(artifactConfig, properties);
-
-            e.setCarName(customLogContent);
-
             if (e != null) {
                 e.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
@@ -84,8 +79,6 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
-
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry update from file : " + fileName + " has started");
@@ -128,8 +121,6 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry Undeployment of the entry named : "
                     + artifactName + " : Started");
@@ -155,8 +146,6 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void restoreSynapseArtifact(String artifactName) {
-
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry the Sequence with name : " + artifactName + " : Started");

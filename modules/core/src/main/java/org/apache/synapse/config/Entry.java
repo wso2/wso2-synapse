@@ -21,7 +21,6 @@ package org.apache.synapse.config;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseException;
 
@@ -55,8 +54,6 @@ public class Entry implements SynapseArtifact {
     private String fileName;
     /** The description of the local entry */
     private String description;
-
-    private String carName = "";
 
     /**
      * Registry resource properties
@@ -182,14 +179,6 @@ public class Entry implements SynapseArtifact {
 
     public void setEntryProperties(Properties entryProperties) {
         this.entryProperties = entryProperties;
-    }
-
-    public void setCarName (String name) {
-        carName = name;
-    }
-
-    public void setLogSetterValue () {
-        CustomLogSetter.getInstance().setLogAppender(carName);
     }
 
     public boolean isExpired() {
