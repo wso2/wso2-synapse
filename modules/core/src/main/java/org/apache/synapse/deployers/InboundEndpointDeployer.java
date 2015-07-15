@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.inbound.InboundEndpointFactory;
 import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
@@ -37,6 +38,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName, Properties properties) {
 
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
         if (log.isDebugEnabled()) {
             log.debug("InboundEndpoint deployment from file : " + fileName + " : Started");
         }
@@ -46,6 +48,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             InboundEndpoint inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(artifactConfig, getSynapseConfiguration());
             if (inboundEndpoint != null) {
+                inboundEndpoint.setCarName(customLogContent);
                 inboundEndpoint.setFileName(new File(fileName).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("Inbound Endpoint named '" + inboundEndpoint.getName()
@@ -75,6 +78,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName, String existingArtifactName, Properties properties) {
 
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
         if (log.isDebugEnabled()) {
             log.debug("Inbound Endpoint update from file : " + fileName + " has started");
         }
@@ -90,6 +94,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
             }
 
             inboundEndpoint.setFileName(new File(fileName).getName());
+            inboundEndpoint.setCarName(customLogContent);
 
             if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint: " + inboundEndpoint.getName() + " has been built from the file: " + fileName);
@@ -124,6 +129,9 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
 
     public void undeploySynapseArtifact(String artifactName) {
+
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
+
         if (log.isDebugEnabled()) {
             log.debug("Undeployment of the Inbound Endpoint named : "
                     + artifactName + " : Started");
@@ -150,6 +158,8 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
     @Override
     public void restoreSynapseArtifact(String artifactName) {
+
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
 
         if (log.isDebugEnabled()) {
             log.debug("Restoring the Inbound Endpoint with name : " + artifactName + " : Started");
