@@ -23,6 +23,7 @@ import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.ImmutableHttpProcessor;
 import org.apache.http.protocol.RequestConnControl;
@@ -33,6 +34,10 @@ import org.apache.http.protocol.RequestUserAgent;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class stores configuration specific to HTTP Connectors (Senders)
@@ -49,6 +54,8 @@ public class TargetConfiguration extends BaseConfiguration {
     private boolean preserveUserAgentHeader = false;
     /** Weather Server header coming from server should be preserved */
     private boolean preserveServerHeader = true;
+    /** Http headers which should be preserved */
+    private List<String> preserveHttpHeaders;
 
     private TargetConnections connections = null;
 
@@ -77,6 +84,7 @@ public class TargetConfiguration extends BaseConfiguration {
                 Integer.MAX_VALUE);
         preserveUserAgentHeader = conf.isPreserveUserAgentHeader();
         preserveServerHeader = conf.isPreserveServerHeader();
+        populatePreserveHttpHeaders(conf.getPreserveHttpHeaders());
     }
 
     public HttpParams getHttpParams() {
@@ -99,14 +107,6 @@ public class TargetConfiguration extends BaseConfiguration {
         return maxConnections;
     }
 
-    public boolean isPreserveUserAgentHeader() {
-        return preserveUserAgentHeader;
-    }
-
-    public boolean isPreserveServerHeader() {
-        return preserveServerHeader;
-    }
-
     public TargetConnections getConnections() {
         return connections;
     }
@@ -114,4 +114,47 @@ public class TargetConfiguration extends BaseConfiguration {
     public void setConnections(TargetConnections connections) {
         this.connections = connections;
     }
+
+    /**
+     * Check preserving status of the given http header name
+     *
+     * @param headerName http header name which need to check preserving status
+     * @return preserving status of the given http header
+     */
+    public boolean isPreserveHttpHeader(String headerName) {
+
+        if (preserveHttpHeaders == null || preserveHttpHeaders.isEmpty() || headerName == null) {
+            return false;
+        }
+        return preserveHttpHeaders.contains(headerName.toUpperCase());
+    }
+
+    /**
+     * Populate preserve http headers from comma separate string
+     *
+     * @param preserveHeaders Comma separated preserve enable http headers
+     */
+    private void populatePreserveHttpHeaders(String preserveHeaders) {
+
+        preserveHttpHeaders = new ArrayList<String>();
+
+        if (preserveHeaders != null && !preserveHeaders.isEmpty()) {
+            String[] presHeaders = preserveHeaders.trim().toUpperCase().split(",");
+
+            if (presHeaders != null && presHeaders.length > 0) {
+
+                preserveHttpHeaders.addAll(Arrays.asList(presHeaders));
+
+            }
+        }
+
+        if (preserveServerHeader && !preserveHttpHeaders.contains(HTTP.SERVER_HEADER.toUpperCase())) {
+            preserveHttpHeaders.add(HTTP.SERVER_HEADER.toUpperCase());
+        }
+
+        if (preserveUserAgentHeader && !preserveHttpHeaders.contains(HTTP.USER_AGENT.toUpperCase())) {
+            preserveHttpHeaders.add(HTTP.USER_AGENT.toUpperCase());
+        }
+    }
+
 }
