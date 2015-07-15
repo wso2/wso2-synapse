@@ -105,7 +105,7 @@ final class JsonReaderDelegate extends StreamReaderDelegate {
         }
         int c, i = 0;
         StringBuilder newName = new StringBuilder();
-        while (i < name.length() &&  ((c = name.charAt(i++)) != -1)) {
+        while (i < name.length() && ((c = name.charAt(i++)) != -1)) {
             if (!XMLChar.isNCName(c)) {
                 newName.append(Constants.ID_KEY).append(c).append('_');
             } else {
