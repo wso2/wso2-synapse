@@ -72,8 +72,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
+	private Pattern ctxPattern = Pattern.compile("\\$(ctx.[^,\"'<>\n}\\]]*)");
 
-    private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
+	private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
@@ -132,7 +133,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         StringBuffer result = new StringBuffer();
-        regexTransform(result, synCtx, format);
+	    StringBuffer resultCTX = new StringBuffer();
+	    regexTransformCTX(resultCTX, synCtx, format);
+	    regexTransform(result, synCtx, resultCTX.toString());
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
             log.debug("#mediate. Transformed payload format>>> " + out);
@@ -142,7 +145,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 JsonUtil.removeJsonPayload(axis2MessageContext);
                 OMElement omXML = AXIOMUtil.stringToOM(out);
                 if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
-                    axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement());
+	                axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement().getFirstElement());
                 }
             } catch (XMLStreamException e) {
                 handleException("Error creating SOAP Envelope from source " + out, synCtx);
@@ -158,6 +161,36 @@ public class PayloadFactoryMediator extends AbstractMediator {
         setContentType(synCtx);
         return true;
     }
+
+	/**
+	 * Calls the replaceCTX function. isFormatDynamic check is used to remove indentations which come from registry based
+	 * configurations.
+	 * @param resultCTX
+	 * @param synCtx
+	 * @param format
+	 */
+	private void regexTransformCTX(StringBuffer resultCTX, MessageContext synCtx, String format) {
+		if (isFormatDynamic()) {
+			String key = formatKey.evaluateValue(synCtx);
+			Object entry = synCtx.getEntry(key);
+			if(entry == null){
+				handleException("Key " + key + " not found ", synCtx);
+			}
+			String text = "";
+			if (entry instanceof OMElement) {
+				OMElement e = (OMElement) entry;
+				removeIndentations(e);
+				text = e.toString();
+			} else if (entry instanceof OMText) {
+				text =  ((OMText) entry).getText();
+			} else if (entry instanceof String) {
+				text = (String) entry;
+			}
+			replaceCTX(text, resultCTX, synCtx);
+		} else {
+			replaceCTX(format, resultCTX, synCtx);
+		}
+	}
 
     /**
      * Calls the replace function. isFormatDynamic check is used to remove indentations which come from registry based
@@ -188,6 +221,61 @@ public class PayloadFactoryMediator extends AbstractMediator {
             replace(format, result, synCtx);
         }
     }
+
+	/**
+	 * Replaces the payload format with property values from messageContext.
+	 *
+	 * @param format
+	 * @param resultCTX
+	 * @param synCtx
+	 */
+	private void replaceCTX(String format, StringBuffer resultCTX, MessageContext synCtx) {
+		Matcher ctxMatcher;
+
+		if (mediaType != null && (mediaType.equals(JSON_TYPE) || mediaType.equals(TEXT_TYPE))) {
+			ctxMatcher=ctxPattern.matcher(format);
+		} else {
+			ctxMatcher=ctxPattern.matcher("<pfPadding>" + format + "</pfPadding>");
+		}
+		while (ctxMatcher.find()) {
+			String ctxMatchSeq = ctxMatcher.group();
+			String expressionTxt = ctxMatchSeq.substring(5, ctxMatchSeq.length());
+
+			String replaceValue = synCtx.getProperty(expressionTxt).toString();
+
+			if(mediaType.equals(JSON_TYPE) && inferReplacementType(replaceValue).equals(XML_TYPE)) {
+				// XML to JSON conversion here
+				try {
+					replaceValue = "<jsonObject>" + replaceValue + "</jsonObject>";
+					OMElement omXML = AXIOMUtil.stringToOM(replaceValue);
+					replaceValue = JsonUtil.toJsonString(omXML).toString();
+				} catch (XMLStreamException e) {
+					handleException("Error parsing XML for JSON conversion, please check your property values return valid XML: ", synCtx);
+				} catch (AxisFault e) {
+					handleException("Error converting XML to JSON", synCtx);
+				}
+			} else if(mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
+				// JSON to XML conversion here
+				try {
+					OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replaceValue), false);
+					if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
+						Iterator children = omXML.getChildElements();
+						String childrenStr = "";
+						while (children.hasNext()) {
+							childrenStr += (children.next()).toString().trim();
+						}
+						replaceValue = childrenStr;
+					} else {
+						replaceValue = omXML.toString();
+					}
+				} catch (AxisFault e) {
+					handleException("Error converting JSON to XML, please check your property values return valid JSON: ", synCtx);
+				}
+			}
+			ctxMatcher.appendReplacement(resultCTX, replaceValue);
+		}
+		ctxMatcher.appendTail(resultCTX);
+	}
 
     /**
      * Replaces the payload format with SynapsePath arguments which are evaluated using getArgValues().
@@ -283,6 +371,20 @@ public class PayloadFactoryMediator extends AbstractMediator {
             return STRING_TYPE;
         }
     }
+
+	private String inferReplacementType(String entry) {
+		if(isWellFormedXML(entry)) {
+			return XML_TYPE;
+		} else if(!isWellFormedXML(entry)) {
+			return STRING_TYPE;
+		} else if(isJson(entry)) {
+			return JSON_TYPE;
+		} else if(!isJson((entry))) {
+			return STRING_TYPE;
+		} else {
+			return STRING_TYPE;
+		}
+	}
 
     private boolean checkAndReplaceEnvelope(OMElement resultElement, MessageContext synCtx) {
         OMElement firstChild = resultElement.getFirstElement();
