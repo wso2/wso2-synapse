@@ -19,6 +19,24 @@
 
 package org.apache.synapse.commons.snmp;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.BindException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
+import javax.management.MBeanServer;
+import javax.management.ObjectInstance;
+import javax.management.ObjectName;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.snmp4j.TransportMapping;
@@ -28,20 +46,26 @@ import org.snmp4j.agent.DuplicateRegistrationException;
 import org.snmp4j.agent.ManagedObject;
 import org.snmp4j.agent.io.ImportModes;
 import org.snmp4j.agent.mo.MOTableRow;
-import org.snmp4j.agent.mo.snmp.*;
+import org.snmp4j.agent.mo.snmp.RowStatus;
+import org.snmp4j.agent.mo.snmp.SnmpCommunityMIB;
+import org.snmp4j.agent.mo.snmp.SnmpNotificationMIB;
+import org.snmp4j.agent.mo.snmp.SnmpTargetMIB;
+import org.snmp4j.agent.mo.snmp.StorageType;
+import org.snmp4j.agent.mo.snmp.VacmMIB;
 import org.snmp4j.agent.security.MutableVACM;
+import org.snmp4j.log.Log4jLogFactory;
 import org.snmp4j.mp.MPv3;
 import org.snmp4j.mp.SnmpConstants;
-import org.snmp4j.security.*;
-import org.snmp4j.smi.*;
+import org.snmp4j.security.SecurityLevel;
+import org.snmp4j.security.SecurityModel;
+import org.snmp4j.security.USM;
+import org.snmp4j.smi.Address;
+import org.snmp4j.smi.GenericAddress;
+import org.snmp4j.smi.Integer32;
+import org.snmp4j.smi.OID;
+import org.snmp4j.smi.OctetString;
+import org.snmp4j.smi.Variable;
 import org.snmp4j.transport.TransportMappings;
-
-import javax.management.*;
-import java.io.File;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.net.BindException;
-import java.util.*;
 
 /**
  * SNMP agent which is capable of listening for incoming SNMP GET/GETNEXT requests
@@ -65,6 +89,11 @@ class SNMPAgent extends BaseAgent {
 
     private Set<OID> registeredOIDs = new HashSet<OID>();
     private int snmpVersion;
+    
+    // initialize Log4J logging
+    static {
+        org.snmp4j.log.LogFactory.setLogFactory(new Log4jLogFactory());
+    }
 
     public SNMPAgent(Properties properties) {
         super(new File(SNMPConstants.BC_FILE), new File(SNMPConstants.CONFIG_FILE),
@@ -80,6 +109,20 @@ class SNMPAgent extends BaseAgent {
             log.warn("Unsupported SNMP version: " + version + " - Using defaults");
             this.snmpVersion = SnmpConstants.version1;
         }
+        
+        // Override the default sysOID and set the WSO2 OID...
+        this.sysOID = new OID(SNMPConstants.SYNAPSE_OID_BRANCH);
+
+        setSysDescr(new OctetString(getProperty(SNMPConstants.SNMP_DESCRIPTION, SNMPConstants.SNMP_DEFAULT_DESCRIPTION)));
+    }
+       
+    @Override
+    protected void registerSnmpMIBs() {
+        this.snmpv2MIB.setContact(new OctetString(getProperty(SNMPConstants.SNMP_CONTACT_NAME, SNMPConstants.SNMP_DEFAULT_CONTACT_NAME)));
+        this.snmpv2MIB.setLocation(new OctetString(getProperty(SNMPConstants.SNMP_LOCATION, SNMPConstants.SNMP_DEFAULT_LOCATION)));
+        this.snmpv2MIB.setName(new OctetString(getProperty(SNMPConstants.SNMP_HOST, SNMPConstants.SNMP_DEFAULT_HOST)));
+
+        super.registerSnmpMIBs();
     }
 
     /**
@@ -233,6 +276,18 @@ class SNMPAgent extends BaseAgent {
 
         vacm.addViewTreeFamily(new OctetString(FULL_READ_VIEW),
                 new OID(SNMPConstants.SYNAPSE_OID_BRANCH),
+                new OctetString(),
+                VacmMIB.vacmViewIncluded,
+                StorageType.nonVolatile);
+        
+        vacm.addViewTreeFamily(new OctetString(FULL_READ_VIEW),
+                new OID("1.3.6"),
+                new OctetString(),
+                VacmMIB.vacmViewIncluded,
+                StorageType.nonVolatile);
+                       
+        vacm.addViewTreeFamily(new OctetString(FULL_READ_VIEW),
+                new OID("1.3.6.1.2.1.1"),
                 new OctetString(),
                 VacmMIB.vacmViewIncluded,
                 StorageType.nonVolatile);
