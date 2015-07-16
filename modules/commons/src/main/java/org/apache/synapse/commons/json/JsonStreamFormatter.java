@@ -47,7 +47,7 @@ public final class JsonStreamFormatter implements MessageFormatter {
             contentType = (String) messageContext.getProperty(Constants.Configuration.MESSAGE_TYPE);
         }
         //Check whether there is an existing encoding type defined in the Content-Type header
-        if (encoding != null && !(contentType.contains("charset"))) {
+        if (encoding != null && contentType != null && !(contentType.contains("charset"))) {
             contentType += "; charset=" + encoding;
         }
         return contentType;
