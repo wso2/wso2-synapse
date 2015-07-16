@@ -338,7 +338,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                     msgCtx.getIncomingTransportName() + "://" + hostHeader);
         }
 
-        LinkedHashSet<Resource> acceptableResources = new LinkedHashSet<Resource>();
+        Set<Resource> acceptableResources = new LinkedHashSet<Resource>();
         for (Resource r : resources.values()) {
             if (r.canProcess(synCtx)) {
                 acceptableResources.add(r);
