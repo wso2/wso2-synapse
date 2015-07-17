@@ -16,42 +16,50 @@
  *  specific language governing permissions and limitations
  *  under the License.
  */
+
 package org.apache.synapse.mediators.throttle;
 
 import org.apache.axiom.om.OMElement;
-import org.apache.axis2.clustering.ClusteringFault;
-
 import org.apache.axis2.clustering.ClusteringAgent;
-import org.apache.axis2.clustering.state.Replicator;
-
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.neethi.PolicyEngine;
-import org.apache.synapse.ContinuationState;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.SynapseLog;
+import org.apache.synapse.*;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
-import org.wso2.throttle.*;
+import org.apache.synapse.commons.throttle.core.AccessRateController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
+import org.apache.synapse.commons.throttle.core.Throttle;
+import org.apache.synapse.commons.throttle.core.ThrottleConstants;
+import org.apache.synapse.commons.throttle.core.ThrottleDataHolder;
+import org.apache.synapse.commons.throttle.core.ThrottleConfiguration;
+import org.apache.synapse.commons.throttle.core.ThrottleException;
+import org.apache.synapse.commons.throttle.core.ThrottleContext;
+import org.apache.synapse.commons.throttle.core.AccessInformation;
+import org.apache.synapse.commons.throttle.core.ThrottleFactory;
 
 /**
  * The Mediator for the throttling - Throttling will occur according to the ws-policy
  * which is specified as the key for lookup from the registry or the inline policy
- * Only support IP based throttling- Throttling can manage per IP using the throttle policy
+ * Throttling can be applied on IP or Domain of the remote caller.Now has support for either
+ * Distributed or Standalone throttling schemes. Support two modes of throttling Concurrency and
+ * Access rate based throttling In concurrency based throttling - throttling ignores remote callers
+ * IP or Domains Considers only concurrent message flows at a given time. Access rate based
+ * throttling is bound to a particular remote caller.
  */
 
 public class ThrottleMediator extends AbstractMediator implements ManagedLifecycle,
-                                                                  FlowContinuableMediator {
+        FlowContinuableMediator {
 
-    /* The key for getting the throttling policy - key refers to a/an [registry] entry    */
+    /* The key for getting the throttling policy - key refers to a/an [registry] entry */
     private String policyKey = null;
     /* InLine policy object - XML  */
     private OMElement inLinePolicy = null;
@@ -69,269 +77,141 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
     private AccessRateController accessControler;
     /* ConcurrentAccessController - limit the remote callers concurrent access */
     private ConcurrentAccessController concurrentAccessController = null;
+    /* Replicates the concurrent access of remote across the cluster */
+    private ConcurrentAccessReplicator concurrentAccessReplicator;
+    /* Configuration where Throttle data is being kept */
+    private ConfigurationContext configContext;
+    /*Throttle Data is kept inside this holder eg :- Caller contexts */
+    private ThrottleDataHolder dataHolder;
     /* The property key that used when the ConcurrentAccessController
-       look up from ConfigurationContext */
+    look up from ThrottleDataHolder */
     private String key;
     /* Is this env. support clustering*/
     private boolean isClusteringEnable = false;
     /* The Throttle object - holds all runtime and configuration data */
     private Throttle throttle;
-    /* Lock used to ensure thread-safe creation of the throttle */
+    /* Lock used to ensure thread-safe creation of the throttle
+    when throttle is created dynamically */
     private final Object throttleLock = new Object();
     /* Last version of dynamic policy resource*/
     private long version;
 
     public ThrottleMediator() {
-        this.accessControler = new AccessRateController();
-    }
-
-    public void init(SynapseEnvironment se) {
-        if (onAcceptMediator instanceof ManagedLifecycle) {
-            ((ManagedLifecycle) onAcceptMediator).init(se);
-        } else if (onAcceptSeqKey != null) {
-            SequenceMediator onAcceptSeq =
-                    (SequenceMediator) se.getSynapseConfiguration().
-                            getSequence(onAcceptSeqKey);
-
-            if (onAcceptSeq == null || onAcceptSeq.isDynamic()) {
-                se.addUnavailableArtifactRef(onAcceptSeqKey);
-            }
-        }
-
-        if (onRejectMediator instanceof ManagedLifecycle) {
-            ((ManagedLifecycle) onRejectMediator).init(se);
-        } else if (onRejectSeqKey != null) {
-            SequenceMediator onRejectSeq =
-                    (SequenceMediator) se.getSynapseConfiguration().
-                            getSequence(onRejectSeqKey);
-
-            if (onRejectSeq == null || onRejectSeq.isDynamic()) {
-                se.addUnavailableArtifactRef(onRejectSeqKey);
-            }
-        }
-    }
-
-    public void destroy() {
-        if (onAcceptMediator instanceof ManagedLifecycle) {
-            ((ManagedLifecycle) onAcceptMediator).destroy();
-        }
-        if (onRejectMediator instanceof ManagedLifecycle) {
-            ((ManagedLifecycle) onRejectMediator).destroy();
-        }
     }
 
     public boolean mediate(MessageContext synCtx) {
-
         SynapseLog synLog = getLog(synCtx);
         boolean isResponse = synCtx.isResponse();
-        ConfigurationContext cc;
-        org.apache.axis2.context.MessageContext axisMC;
-
-        if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Start : Throttle mediator");
-
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Message : " + synCtx.getEnvelope());
-            }
-        }
-        // To ensure the creation of throttle is thread safe Ã¢â‚¬â€œ It is possible create same throttle
-        // object multiple times  by multiple threads.
-
-        synchronized (throttleLock) {
-
-            // get Axis2 MessageContext and ConfigurationContext
-            axisMC = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-            cc = axisMC.getConfigurationContext();
-
-            //To ensure check for clustering environment only happens one time
-            if ((throttle == null && !isResponse) || (isResponse
-                    && concurrentAccessController == null)) {
-                ClusteringAgent clusteringAgent = cc.getAxisConfiguration().getClusteringAgent();
-                if (clusteringAgent != null &&
-                        clusteringAgent.getStateManager() != null) {
-                    isClusteringEnable = true;
+        boolean canAccess = true;
+        if (!isResponse) {
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("Start : Throttle mediator");
+                if (synLog.isTraceTraceEnabled()) {
+                    synLog.traceTrace("Message : " + synCtx.getEnvelope());
                 }
             }
-
-            // Throttle only will be created ,if the massage flow is IN
+            //we consider dynamic loading of policy loading only for the request flow mediation
+            //we ignore policy initialization for the response flow case we use the existing policy
+            //reference throttling only applies for request flow mediation
             if (!isResponse) {
-                //check the availability of the ConcurrentAccessControler
-                //if this is a clustered environment
-                if (isClusteringEnable) {
-                    concurrentAccessController =
-                            (ConcurrentAccessController) cc.getProperty(key);
+                doInitializeThrottleDynamicPolicy(synCtx, synLog);
+            }
+            //in cluster environment local reference to concurrent access controller should be
+            //updated, local reference kept inside Throttle mediator maybe expired as a
+            //consequence of global concurrent access change with
+            //respect to controller we maintain at configuration context
+            if (isClusteringEnable) {
+                reloadDistributedConcurrentAccessController(synLog);
+            }
+            //throttle by concurrency is given the highest priority, if another throttling
+            // scheme fails eg :- rate based from this point onward Eg:- access rate
+            // checks we need to rollback the previous
+            if (concurrentAccessController != null) {
+                canAccess = doThrottleByConcurrency(isResponse, synLog);
+            }
+
+
+            //if the access is success through concurrency throttle and if this is a request message
+            //then do access rate based throttling
+            if (throttle != null && !isResponse && canAccess) {
+                org.apache.axis2.context.MessageContext axisMC =
+                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                canAccess = doThrottleByAccessRate(synCtx, axisMC, configContext, synLog);
+            }
+            // all the replication functionality of the access rate and concurrency based
+            // throttling handles by itself at throttle core level but for the the concurrency case
+            // this is done explicitly forcing as we make concurrent global state change available
+            // to other cluster nodes as synchronous manner
+            if (isClusteringEnable && concurrentAccessController != null) {
+                if (synLog.isTraceOrDebugEnabled()) {
+                    synLog.traceOrDebug("Going to replicates the  " +
+                            "states of the ConcurrentAccessController with key : " + key);
                 }
-                // for request messages, read the policy for throttling and initialize
-                if (inLinePolicy != null) {
-                    // this uses a static policy
-                    if (throttle == null) {  // only one time creation
-
-                        if (synLog.isTraceTraceEnabled()) {
-                            synLog.traceTrace("Initializing using static throttling policy : "
-                                    + inLinePolicy);
-                        }
-                        try {
-                            // process the policy
-                            throttle = ThrottleFactory.createMediatorThrottle(
-                                    PolicyEngine.getPolicy(inLinePolicy));
-
-                            //At this point concurrent access controller definitely 'null'
-                            // f the clustering is disable.
-                            //For a clustered environment,it is 'null' ,
-                            //if this is the first instance on the cluster ,
-                            // that message mediation has occurred through this mediator.
-                            if (throttle != null && concurrentAccessController == null) {
-                                concurrentAccessController =
-                                        throttle.getConcurrentAccessController();
-                                if (concurrentAccessController != null) {
-                                    cc.setProperty(key, concurrentAccessController);
-                                }
-                            }
-                        } catch (ThrottleException e) {
-                            handleException("Error processing the throttling policy", e, synCtx);
-                        }
-                    }
-
-                } else if (policyKey != null) {
-
-                    // If the policy has specified as a registry key.
-                    // load or re-load policy from registry or local entry if not already available
-
-                    Entry entry = synCtx.getConfiguration().getEntryDefinition(policyKey);
-                    if (entry == null) {
-                        handleException("Cannot find throttling policy using key : "
-                                + policyKey, synCtx);
-
+                concurrentAccessReplicator.replicate(key, concurrentAccessController);
+            }
+            //maintain properties in message context for the concurrency throttling
+            synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE, true);
+            //maintain properties in message context for the concurrency throttling
+            synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY, key);
+            //maintain properties in message context for the concurrency throttling
+            if (concurrentAccessController != null) {
+                synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER,
+                        concurrentAccessController);
+            }
+            //maintain properties in message context for the concurrency throttling
+            if (isClusteringEnable) {
+                synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR,
+                        concurrentAccessReplicator);
+            }
+            //depending on the subsequent throttling controller outcome from this point
+            // onwards mediation flow branches to either accept sequence or reject sequence
+            if (canAccess) {
+                //accept case
+                if (onAcceptSeqKey != null) {
+                    Mediator mediator = synCtx.getSequence(onAcceptSeqKey);
+                    if (mediator != null) {
+                        ContinuationStackManager.updateSeqContinuationState(synCtx,
+                                getMediatorPosition());
+                        return mediator.mediate(synCtx);
                     } else {
-                        boolean reCreate = false;
-                        // if the key refers to a dynamic resource
-                        if (entry.isDynamic()) {
-                            if ( (!entry.isCached() || entry.isExpired() ) && version!= entry.getVersion()) {
-                                reCreate = true;
-                                version = entry.getVersion();
-                            }
-                        }
-                        if (reCreate || throttle == null) {
-                            Object entryValue = synCtx.getEntry(policyKey);
-                            if (entryValue == null) {
-                                handleException(
-                                        "Null throttling policy returned by Entry : "
-                                                + policyKey, synCtx);
-
-                            } else {
-                                if (!(entryValue instanceof OMElement)) {
-                                    handleException("Policy returned from key : " + policyKey +
-                                            " is not an OMElement", synCtx);
-
-                                } else {
-                                    //Check for reload in a cluster environment Ã¢â‚¬â€œ
-                                    // For clustered environment ,if the concurrent access controller
-                                    // is not null and throttle is not null , then must reload.
-                                    if (isClusteringEnable && concurrentAccessController != null
-                                            && throttle != null) {
-                                        concurrentAccessController = null; // set null ,
-                                        // because need reload
-                                    }
-
-                                    try {
-                                        // Creates the throttle from the policy
-                                        throttle = ThrottleFactory.createMediatorThrottle(
-                                                PolicyEngine.getPolicy((OMElement) entryValue));
-
-                                        //For non-clustered  environment , must re-initiates
-                                        //For  clustered  environment,
-                                        //concurrent access controller is null ,
-                                        //then must re-initiates
-                                        if (throttle != null && (concurrentAccessController == null
-                                                || !isClusteringEnable)) {
-                                            concurrentAccessController =
-                                                    throttle.getConcurrentAccessController();
-                                            if (concurrentAccessController != null) {
-                                                cc.setProperty(key, concurrentAccessController);
-                                            } else {
-                                                cc.removeProperty(key);
-                                            }
-                                        }
-                                    } catch (ThrottleException e) {
-                                        handleException("Error processing the throttling policy",
-                                                e, synCtx);
-                                    }
-                                }
-                            }
-                        }
+                        handleException("Unable to find onAccept sequence with key : "
+                                + onAcceptSeqKey, synCtx);
                     }
-                }
-            } else {
-                // if the message flow path is OUT , then must lookp from ConfigurationContext -
-                // never create ,just get the existing one
-                concurrentAccessController =
-                        (ConcurrentAccessController) cc.getProperty(key);
-            }
-        }
-        //perform concurrency throttling
-        boolean canAccess = doThrottleByConcurrency(isResponse, synLog);
-
-        //if the access is success through concurrency throttle and if this is a request message
-        //then do access rate based throttling
-        if (throttle != null && !isResponse && canAccess) {
-            canAccess = throttleByAccessRate(synCtx, axisMC, cc, synLog);
-        }
-        // all the replication functionality of the access rate based throttling handles by itself
-        // Just replicate the current state of ConcurrentAccessController
-        if (isClusteringEnable && concurrentAccessController != null) {
-            if (cc != null) {
-                try {
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        synLog.traceOrDebug("Going to replicates the  " +
-                                "states of the ConcurrentAccessController with key : " + key);
+                } else if (onAcceptMediator != null) {
+                    ContinuationStackManager.addReliantContinuationState(synCtx, 0,
+                            getMediatorPosition());
+                    boolean result = onAcceptMediator.mediate(synCtx);
+                    if (result) {
+                        ContinuationStackManager.removeReliantContinuationState(synCtx);
                     }
-                    Replicator.replicate(cc);
-                } catch (ClusteringFault clusteringFault) {
-                    handleException("Error during the replicating  states ",
-                            clusteringFault, synCtx);
-                }
-            }
-        }
-        if (canAccess) {
-            if (onAcceptSeqKey != null) {
-                Mediator mediator = synCtx.getSequence(onAcceptSeqKey);
-                if (mediator != null) {
-                    ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
-                    return mediator.mediate(synCtx);
+                    return result;
                 } else {
-                    handleException("Unable to find onAccept sequence with key : "
-                            + onAcceptSeqKey, synCtx);
+                    return true;
                 }
-            } else if (onAcceptMediator != null) {
-                ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
-                boolean result = onAcceptMediator.mediate(synCtx);
-                if (result) {
-                    ContinuationStackManager.removeReliantContinuationState(synCtx);
-                }
-                return result;
-            } else {
-                return true;
-            }
 
-        } else {
-            if (onRejectSeqKey != null) {
-                Mediator mediator = synCtx.getSequence(onRejectSeqKey);
-                if (mediator != null) {
-                    ContinuationStackManager.updateSeqContinuationState(synCtx, getMediatorPosition());
-                    return mediator.mediate(synCtx);
-                } else {
-                    handleException("Unable to find onReject sequence with key : "
-                            + onRejectSeqKey, synCtx);
-                }
-            } else if (onRejectMediator != null) {
-                ContinuationStackManager.addReliantContinuationState(synCtx, 1, getMediatorPosition());
-                boolean result = onRejectMediator.mediate(synCtx);
-                if (result) {
-                    ContinuationStackManager.removeReliantContinuationState(synCtx);
-                }
-                return result;
             } else {
-                return false;
+                //reject case
+                if (onRejectSeqKey != null) {
+                    Mediator mediator = synCtx.getSequence(onRejectSeqKey);
+                    if (mediator != null) {
+                        ContinuationStackManager.updateSeqContinuationState(synCtx,
+                                getMediatorPosition());
+                        return mediator.mediate(synCtx);
+                    } else {
+                        handleException("Unable to find onReject sequence with key : "
+                                + onRejectSeqKey, synCtx);
+                    }
+                } else if (onRejectMediator != null) {
+                    ContinuationStackManager.addReliantContinuationState(synCtx, 1,
+                            getMediatorPosition());
+                    boolean result = onRejectMediator.mediate(synCtx);
+                    if (result) {
+                        ContinuationStackManager.removeReliantContinuationState(synCtx);
+                    }
+                    return result;
+                } else {
+                    return false;
+                }
             }
         }
 
@@ -350,21 +230,21 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
         if (subBranch == 0) {
             if (!continuationState.hasChild()) {
-                result = ((SequenceMediator)onAcceptMediator).
+                result = ((SequenceMediator) onAcceptMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
             } else {
                 FlowContinuableMediator mediator =
-                        (FlowContinuableMediator) ((SequenceMediator)onAcceptMediator).
+                        (FlowContinuableMediator) ((SequenceMediator) onAcceptMediator).
                                 getChild(continuationState.getPosition());
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
             }
         } else {
             if (!continuationState.hasChild()) {
-                result = ((SequenceMediator)onRejectMediator).
+                result = ((SequenceMediator) onRejectMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
             } else {
                 FlowContinuableMediator mediator =
-                        (FlowContinuableMediator) ((SequenceMediator)onRejectMediator).getChild(
+                        (FlowContinuableMediator) ((SequenceMediator) onRejectMediator).getChild(
                                 continuationState.getPosition());
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
             }
@@ -381,7 +261,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
      * @return true if the caller can access ,o.w. false
      */
     private boolean doThrottleByConcurrency(boolean isResponse, SynapseLog synLog) {
-        boolean canAcess = true;
+        boolean canAccess = true;
         if (concurrentAccessController != null) {
             // do the concurrency throttling
             int concurrentLimit = concurrentAccessController.getLimit();
@@ -392,21 +272,15 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             int available;
             if (!isResponse) {
                 available = concurrentAccessController.getAndDecrement();
-                canAcess = available > 0;
+                canAccess = available > 0;
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Concurrency Throttle : Access " +
-                            (canAcess ? "allowed" : "denied") + " :: " + available
+                            (canAccess ? "allowed" : "denied") + " :: " + available
                             + " of available of " + concurrentLimit + " connections");
-                }
-            } else {
-                available = concurrentAccessController.incrementAndGet();
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("Concurrency Throttle : Connection returned" + " :: " +
-                            available + " of available of " + concurrentLimit + " connections");
                 }
             }
         }
-        return canAcess;
+        return canAccess;
     }
 
     /**
@@ -418,10 +292,10 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
      * @param synLog the Synapse log to use
      * @return ue if the caller can access ,o.w. false
      */
-    private boolean throttleByAccessRate(MessageContext synCtx,
-                                         org.apache.axis2.context.MessageContext axisMC,
-                                         ConfigurationContext cc,
-                                         SynapseLog synLog) {
+    private boolean doThrottleByAccessRate(MessageContext synCtx,
+                                           org.apache.axis2.context.MessageContext axisMC,
+                                           ConfigurationContext cc,
+                                           SynapseLog synLog) {
 
         String callerId = null;
         boolean canAccess = true;
@@ -430,7 +304,6 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 org.apache.axis2.context.MessageContext.REMOTE_ADDR);
         //domain name of the caller
         String domainName = (String) axisMC.getPropertyNonReplicable(NhttpConstants.REMOTE_HOST);
-
         //Using remote caller domain name , If there is a throttle configuration for
         // this domain name ,then throttling will occur according to that configuration
         if (domainName != null) {
@@ -474,7 +347,8 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                             if (!canAccess && concurrentAccessController != null) {
                                 concurrentAccessController.incrementAndGet();
                                 if (isClusteringEnable) {
-                                    cc.setProperty(key, concurrentAccessController);
+                                    dataHolder.setConcurrentAccessController
+                                            (key, concurrentAccessController);
                                 }
                             }
                         } catch (ThrottleException e) {
@@ -538,7 +412,8 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                                 if (!canAccess && concurrentAccessController != null) {
                                     concurrentAccessController.incrementAndGet();
                                     if (isClusteringEnable) {
-                                        cc.setProperty(key, concurrentAccessController);
+                                        dataHolder.setConcurrentAccessController
+                                                (key, concurrentAccessController);
                                     }
                                 }
                             }
@@ -553,11 +428,200 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
     }
 
     /**
+     * Helper method that handles dynamic policy initialization
+     *
+     * @param synCtx MessageContext(Synapse)
+     */
+    private void doInitializeThrottleDynamicPolicy(MessageContext synCtx, SynapseLog synLog) {
+
+        if (policyKey == null) {
+            return;
+        }
+
+        if (synLog.isTraceOrDebugEnabled()) {
+            synLog.traceOrDebug("Throttle mediator : Initializing dynamic Policy");
+        }
+
+        // If the policy has specified as a registry key.
+        // load or re-load policy from registry or local entry if not already available
+
+        Entry entry = synCtx.getConfiguration().getEntryDefinition(policyKey);
+        if (entry == null) {
+            handleException("Cannot find throttling policy using key : "
+                    + policyKey, synCtx);
+
+        } else {
+
+            boolean reCreate = false;
+            // if the key refers to a dynamic resource
+            if (entry.isDynamic()) {
+                if ((!entry.isCached() || entry.isExpired()) && version != entry.getVersion()) {
+                    reCreate = true;
+                    version = entry.getVersion();
+                }
+            }
+            //we ignore the static initialization case
+            if (reCreate || throttle == null) {
+                Object entryValue = synCtx.getEntry(policyKey);
+                if (entryValue == null) {
+                    handleException(
+                            "Null throttling policy returned by Entry : "
+                                    + policyKey, synCtx);
+
+                } else {
+                    if (!(entryValue instanceof OMElement)) {
+                        handleException("Policy returned from key : " + policyKey +
+                                " is not an OMElement", synCtx);
+
+                    } else {
+                        //Check for reload in a cluster environment
+                        // For clustered environment ,if the concurrent access controller
+                        // is not null and throttle is not null , then must reload.
+                        if (isClusteringEnable && concurrentAccessController != null
+                                && throttle != null) {
+                            concurrentAccessController = null; // set null ,
+                            // because need to reload when throttle gets created again
+                        }
+
+                        try {
+                            // creation of throttle should be thread safe if multiple request flow
+                            // try to create a throttle object
+                            synchronized (throttleLock) {
+                                // Creates the throttle from the policy
+                                throttle = ThrottleFactory.createMediatorThrottle(
+                                        PolicyEngine.getPolicy((OMElement) entryValue));
+
+                                //For non-clustered  environment , must re-initiates
+                                //For  clustered  environment,
+                                //concurrent access controller is null ,
+                                //then must re-initiates
+                                if (throttle != null && (concurrentAccessController == null
+                                        || !isClusteringEnable)) {
+                                    concurrentAccessController =
+                                            throttle.getConcurrentAccessController();
+                                    if (concurrentAccessController != null) {
+                                        dataHolder.setConcurrentAccessController
+                                                (key, concurrentAccessController);
+                                    } else {
+                                        dataHolder.removeConcurrentAccessController(key);
+                                    }
+                                }
+                            }
+                        } catch (ThrottleException e) {
+                            handleException("Error processing the throttling policy",
+                                    e, synCtx);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Helper method that handles the update the local reference to the concurrent controller
+     *
+     * @param synLog the Synapse log to use
+     */
+    private void reloadDistributedConcurrentAccessController(SynapseLog synLog) {
+        if (synLog.isTraceOrDebugEnabled()) {
+            synLog.traceOrDebug("Throttle mediator : Updating local " +
+                    "reference to the Concurrent Access controller");
+        }
+        concurrentAccessController = dataHolder.getConcurrentAccessController(key);
+    }
+
+    public void init(SynapseEnvironment se) {
+
+        if (onAcceptMediator instanceof ManagedLifecycle) {
+            ((ManagedLifecycle) onAcceptMediator).init(se);
+        } else if (onAcceptSeqKey != null) {
+            SequenceMediator onAcceptSeq =
+                    (SequenceMediator) se.getSynapseConfiguration().
+                            getSequence(onAcceptSeqKey);
+
+            if (onAcceptSeq == null || onAcceptSeq.isDynamic()) {
+                se.addUnavailableArtifactRef(onAcceptSeqKey);
+            }
+        }
+
+        if (onRejectMediator instanceof ManagedLifecycle) {
+            ((ManagedLifecycle) onRejectMediator).init(se);
+        } else if (onRejectSeqKey != null) {
+            SequenceMediator onRejectSeq =
+                    (SequenceMediator) se.getSynapseConfiguration().
+                            getSequence(onRejectSeqKey);
+
+            if (onRejectSeq == null || onRejectSeq.isDynamic()) {
+                se.addUnavailableArtifactRef(onRejectSeqKey);
+            }
+        }
+        //reference to axis2 configuration context
+        configContext = ((Axis2SynapseEnvironment) se).getAxis2ConfigurationContext();
+        //throttling data holder initialization of
+        // runtime throttle data eg :- throttle contexts
+        dataHolder = (ThrottleDataHolder) configContext.
+                getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
+        if (dataHolder == null) {
+            log.debug("Data holder not present in current Configuration Context");
+            synchronized (configContext) {
+                dataHolder = (ThrottleDataHolder) configContext.
+                        getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
+                if (dataHolder == null) {
+                    dataHolder = new ThrottleDataHolder();
+                    configContext.setNonReplicableProperty
+                            (ThrottleConstants.THROTTLE_INFO_KEY, dataHolder);
+                }
+            }
+        }
+        //initializes whether clustering is enabled an Env. level
+        ClusteringAgent clusteringAgent = configContext.getAxisConfiguration().getClusteringAgent();
+        if (clusteringAgent != null) {
+            isClusteringEnable = true;
+        }
+        //static policy initialization
+        if (inLinePolicy != null) {
+            log.debug("Initializing using static throttling policy : " + inLinePolicy);
+            try {
+                throttle = ThrottleFactory.
+                        createMediatorThrottle(PolicyEngine.getPolicy(inLinePolicy));
+                if (throttle != null && concurrentAccessController == null) {
+                    concurrentAccessController = throttle.getConcurrentAccessController();
+                    if (concurrentAccessController != null) {
+                        dataHolder.setConcurrentAccessController(key, concurrentAccessController);
+                    }
+                }
+            } catch (ThrottleException e) {
+                handleException("Error processing the throttling policy", e, null);
+            }
+        }
+        //access rate controller initialization
+        accessControler = new AccessRateController();
+        //replicator for global concurrent state maintenance
+        if (isClusteringEnable) {
+            concurrentAccessReplicator = new ConcurrentAccessReplicator(configContext);
+        }
+
+    }
+
+    public void destroy() {
+        //if synapse configuration refreshes we need to drop the previous throttle data
+        if (configContext != null) {
+            dataHolder.removeConcurrentAccessController(key);
+        }
+        if (onAcceptMediator instanceof ManagedLifecycle) {
+            ((ManagedLifecycle) onAcceptMediator).destroy();
+        }
+        if (onRejectMediator instanceof ManagedLifecycle) {
+            ((ManagedLifecycle) onRejectMediator).destroy();
+        }
+    }
+
+    /**
      * To get the policy key - The key for which will used to lookup policy from the registry
      *
      * @return String
      */
-
     public String getPolicyKey() {
         return policyKey;
     }
