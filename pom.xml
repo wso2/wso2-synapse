@@ -421,11 +421,6 @@
              <version>${groovy.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.wso2.throttle</groupId>
-             <artifactId>wso2throttle-core</artifactId>
-             <version>${wso2throttle.version}</version>
-         </dependency>
-         <dependency>
              <groupId>org.jruby</groupId>
              <artifactId>jruby-complete</artifactId>
              <version>${jruby.version}</version>
@@ -585,6 +580,11 @@
              <groupId>org.springframework</groupId>
              <artifactId>spring-core</artifactId>
              <version>${spring.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>javax.servlet</groupId>
+             <artifactId>javax.servlet-api</artifactId>
+             <version>${javax.servlet.version}</version>
          </dependency>
          <dependency>
              <groupId>commons-logging</groupId>
@@ -876,6 +876,11 @@
             <artifactId>snmp4j</artifactId>
             <version>${snmp4j.version}</version>
          </dependency>
+         <dependency>
+             <groupId>javax.cache</groupId>
+             <artifactId>cache-api</artifactId>
+             <version>${javax.cache.version}</version>
+         </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1027,7 +1032,6 @@
       <saxon-HE.version>9.5.1-8</saxon-HE.version>
       <wso2commons.version>1.2</wso2commons.version>
       <wso2caching.version>4.0.3</wso2caching.version>
-      <wso2throttle.version>3.2.0</wso2throttle.version>
       <wso2eventing-api.version>2.1</wso2eventing-api.version>
       <xbean.version>2.2.0</xbean.version>
       <bsf.version>3.0</bsf.version>
@@ -1037,6 +1041,8 @@
       <snmp4j.version>2.0.3</snmp4j.version>
       <snmp4j.agent.version>2.0.5</snmp4j.agent.version>
       <project.scm.id>wso2-scm-server</project.scm.id>
+      <javax.cache.version>0.5</javax.cache.version> 
+      <javax.servlet.version>3.0.1</javax.servlet.version> 
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
