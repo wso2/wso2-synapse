@@ -230,53 +230,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.wso2.throttle</groupId>
-            <artifactId>wso2throttle-core</artifactId>
-            <type>jar</type>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.axis2</groupId>
-                    <artifactId>axis2-kernel</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.axis2</groupId>
-                    <artifactId>axis2</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.axis2</groupId>
-                    <artifactId>axis2-adb</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.axis2</groupId>
-                    <artifactId>axis2-clustering</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.neethi</groupId>
-                    <artifactId>neethi</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ws.commons.axiom</groupId>
-                    <artifactId>axiom-impl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ws.commons.axiom</groupId>
-                    <artifactId>axiom-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ws.commons.axiom</groupId>
-                    <artifactId>axiom-dom</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.servlet</groupId>
-                    <artifactId>servlet-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ant</groupId>
-                    <artifactId>ant-nodeps</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>

@@ -42,6 +42,8 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -482,6 +484,29 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         synapseOutMsgCtx.getContinuationStateStack();
                 for (int i = 0; i < seqContinuationStates.size(); i++) {
                     synapseInMessageContext.pushContinuationState(seqContinuationStates.get(i));
+                }
+            }
+
+            Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMsgCtx
+                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+
+            if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
+                ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController)
+                        synapseOutMsgCtx
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+                int available = concurrentAccessController.incrementAndGet();
+                int concurrentLimit = concurrentAccessController.getLimit();
+                if (log.isDebugEnabled()) {
+                    log.debug("Concurrency Throttle : Connection returned" + " :: " +
+                            available + " of available of " + concurrentLimit + " connections");
+                }
+                ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator)
+                        synapseOutMsgCtx
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+                String throttleKey = (String) synapseOutMsgCtx
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+                if (concurrentAccessReplicator != null) {
+                    concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
                 }
             }
 
