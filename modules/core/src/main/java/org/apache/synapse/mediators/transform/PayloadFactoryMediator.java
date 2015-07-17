@@ -135,7 +135,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
         StringBuffer result = new StringBuffer();
 	    StringBuffer resultCTX = new StringBuffer();
 	    regexTransformCTX(resultCTX, synCtx, format);
-	    regexTransform(result, synCtx, resultCTX.toString());
+	    log.info("!!!!!!!@@@@@@@!! resultCTX !!!!!!!"+resultCTX.toString());
+	    replace(resultCTX.toString(),result, synCtx);
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
             log.debug("#mediate. Transformed payload format>>> " + out);
@@ -191,36 +192,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
 			replaceCTX(format, resultCTX, synCtx);
 		}
 	}
-
-    /**
-     * Calls the replace function. isFormatDynamic check is used to remove indentations which come from registry based
-     * configurations.
-     * @param result
-     * @param synCtx
-     * @param format
-     */
-    private void regexTransform(StringBuffer result, MessageContext synCtx, String format) {
-        if (isFormatDynamic()) {
-            String key = formatKey.evaluateValue(synCtx);
-            Object entry = synCtx.getEntry(key);
-            if(entry == null){
-            	handleException("Key " + key + " not found ", synCtx);
-            }            
-            String text = "";
-            if (entry instanceof OMElement) {
-                OMElement e = (OMElement) entry;
-                removeIndentations(e);
-                text = e.toString();
-            } else if (entry instanceof OMText) {
-                text =  ((OMText) entry).getText();
-            } else if (entry instanceof String) {
-                text = (String) entry;
-            }
-            replace(text, result, synCtx);
-        } else {
-            replace(format, result, synCtx);
-        }
-    }
 
 	/**
 	 * Replaces the payload format with property values from messageContext.
