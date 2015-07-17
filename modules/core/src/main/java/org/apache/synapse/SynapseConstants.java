@@ -494,4 +494,13 @@ public final class SynapseConstants {
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 
+    //Synapse concurrency throttling
+    public static final String SYNAPSE_CONCURRENCY_THROTTLE =
+            "synapse.concurrency.throttle";
+    public static final String SYNAPSE_CONCURRENCY_THROTTLE_KEY =
+            "synapse.concurrency.throttle.key";
+    public static final String SYNAPSE_CONCURRENT_ACCESS_CONTROLLER =
+            "synapse.concurrent.access.controller";
+    public static final String SYNAPSE_CONCURRENT_ACCESS_REPLICATOR =
+            "synapse.concurrent.access.replicator";
 }
