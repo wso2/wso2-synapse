@@ -67,6 +67,16 @@ public class FileUpdateNotificationHandler extends TimerTask {
             filePath = profileLoader.getFilePath();
 
             if (filePath != null) {
+                if(!profileLoader.isInvokedFromSchedule()){
+                    if(LOG.isDebugEnabled()) {
+                        LOG.debug("Bypass the scheduled loading cycle of SSL profile since " +
+                                  "already loaded from JMX invocation : file path - " +filePath);
+                    }
+                    profileLoader.setInvokedFromSchedule(true);
+                    profileLoader.setLastUpdatedtime(System.currentTimeMillis());
+                    continue;
+                }
+
                 configFile = new File(filePath);
 
                 try {
@@ -75,10 +85,13 @@ public class FileUpdateNotificationHandler extends TimerTask {
                     if (latestLastUpdatedTime > recordedLastUpdatedTime) {
                         profileLoader.setLastUpdatedtime(latestLastUpdatedTime);
                         //Notify file update to the respective file loader
-                        profileLoader.notifyFileUpdate();
+                        profileLoader.notifyFileUpdate(true);
                     }
                 } catch (Exception e) {
-                    LOG.debug("Error loading last modified time for the SSL config file. Updates will not be loaded from " + filePath);
+                    if(LOG.isDebugEnabled()) {
+                        LOG.debug("Error loading last modified time for the SSL config file. Updates " +
+                                  "will not be loaded from " + filePath);
+                    }
                 }
             }
         }

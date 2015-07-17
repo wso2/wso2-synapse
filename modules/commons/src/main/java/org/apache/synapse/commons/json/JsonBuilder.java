@@ -40,10 +40,10 @@ public final class JsonBuilder implements Builder {
     }
 
     /**
-     * @deprecated Use {@link org.apache.synapse.commons.json.JsonUtil#toXml(java.io.InputStream, boolean)}
      * @param jsonStream
      * @param pIs
      * @return OMElement
+     * @deprecated Use {@link org.apache.synapse.commons.json.JsonUtil#toXml(java.io.InputStream, boolean)}
      */
     public static OMElement toXml(InputStream jsonStream, boolean pIs) throws AxisFault {
         return JsonUtil.toXml(jsonStream, pIs);

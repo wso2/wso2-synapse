@@ -120,6 +120,10 @@ public class PassThroughConfiguration {
         return getBooleanProperty(PassThroughConfigPNames.SERVER_HEADER_PRESERVE, false);
     }
 
+    public String getPreserveHttpHeaders() {
+        return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
+    }
+
     /**
      * Loads the properties from a given property file path
      *

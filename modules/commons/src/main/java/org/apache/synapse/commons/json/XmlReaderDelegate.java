@@ -37,9 +37,9 @@ final class XmlReaderDelegate extends StreamReaderDelegate {
     public XmlReaderDelegate(XMLStreamReader reader, boolean processNCNames) {
         super(reader);
         /** Possible reader implementations include;
-            com.ctc.wstx.sr.ValidatingStreamReader
-            de.odysseus.staxon.json.JsonXMLStreamReader
-            com.sun.org.apache.xerces.internal.impl.XMLStreamReaderImpl
+         com.ctc.wstx.sr.ValidatingStreamReader
+         de.odysseus.staxon.json.JsonXMLStreamReader
+         com.sun.org.apache.xerces.internal.impl.XMLStreamReaderImpl
          */
         if (logger.isDebugEnabled()) {
             logger.debug("#XmlReaderDelegate. Setting XMLStreamReader: " + reader.getClass().getName());
@@ -99,7 +99,7 @@ final class XmlReaderDelegate extends StreamReaderDelegate {
                 subStr = localName.substring(Constants.PRECEDING_DIGIT.length(),
                         localName.length());
                 if (processNCNames) {
-                    localName =  toOrigJsonKey(subStr);
+                    localName = toOrigJsonKey(subStr);
                     checked = true;
                 } else {
                     localName = subStr;
@@ -109,7 +109,7 @@ final class XmlReaderDelegate extends StreamReaderDelegate {
                 subStr = localName.substring(Constants.PRECEDING_DOLLOR.length(),
                         localName.length());
                 if (processNCNames) {
-                    localName =  (char) Constants.C_DOLLOR + toOrigJsonKey(subStr);
+                    localName = (char) Constants.C_DOLLOR + toOrigJsonKey(subStr);
                     checked = true;
                 } else {
                     localName = (char) Constants.C_DOLLOR + subStr;

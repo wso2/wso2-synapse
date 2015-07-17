@@ -154,7 +154,12 @@ public class RabbitMQConsumer implements MessageConsumer {
 		return false;
 	}
 
-	public RabbitMQConsumer setConnection(Connection connection) {
+    @Override
+    public boolean isAlive() {
+        return true;
+    }
+
+    public RabbitMQConsumer setConnection(Connection connection) {
 		this.connection = connection;
 		return this;
 	}

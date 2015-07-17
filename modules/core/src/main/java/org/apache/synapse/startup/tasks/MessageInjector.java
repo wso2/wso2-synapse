@@ -304,6 +304,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
                     if (log.isDebugEnabled()) {
                         log.debug("injecting message to sequence : " + sequenceName);
                     }
+                    mc.pushFaultHandler(new MediatorFaultHandler(mc.getFaultSequence()));
                     synapseEnvironment.injectAsync(mc, seq);
                 } else {
                     handleError("Sequence: " + sequenceName + " not found");

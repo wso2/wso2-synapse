@@ -19,28 +19,45 @@
 package org.apache.synapse.commons.json;
 
 final class Constants {
-    private Constants() {}
+    private Constants() {
+    }
 
     public static final String JSON_STRING = "JSON_STRING";
 
-    /** The JSON Key for wrapper type JSON Object */
+    /**
+     * The JSON Key for wrapper type JSON Object
+     */
     public static final String K_OBJECT = "\"jsonObject\"";
-    /** The JSON Key for wrapper type anonymous JSON array */
+    /**
+     * The JSON Key for wrapper type anonymous JSON array
+     */
     public static final String K_ARRAY = "\"jsonArray\"";
-    /** The JSON Key for wrapper type anonymous JSON array elements */
+    /**
+     * The JSON Key for wrapper type anonymous JSON array elements
+     */
     public static final String K_ARRAY_ELEM = "\"jsonElement\"";
 
     public static final String ID = "_JsonReader";
-    /** Used when the local name starts with a digit character. */
+    /**
+     * Used when the local name starts with a digit character.
+     */
     public static final String PRECEDING_DIGIT_S = "_PD_";
-    /** Final prefix for local names that have preceding digits */
+    /**
+     * Final prefix for local names that have preceding digits
+     */
     public static final String PRECEDING_DIGIT = ID + PRECEDING_DIGIT_S;
-    /** Used when the local name starts with the $ character. */
+    /**
+     * Used when the local name starts with the $ character.
+     */
     public static final String PRECEDING_DOLLOR_S = "_PS_";
     public static final String PRECEDING_DOLLOR = ID + PRECEDING_DOLLOR_S;
-    /** The Dollar character */
+    /**
+     * The Dollar character
+     */
     public static final int C_DOLLOR = '$';
-    /** The underscore character */
+    /**
+     * The underscore character
+     */
     public static final int C_USOCRE = '_';
 
     public static final String ID_KEY = ID + "_";

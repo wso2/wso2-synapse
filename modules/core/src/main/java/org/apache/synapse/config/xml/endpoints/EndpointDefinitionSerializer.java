@@ -103,10 +103,12 @@ public class EndpointDefinitionSerializer {
                     "timeout", SynapseConstants.SYNAPSE_OMNAMESPACE);
             element.addChild(timeout);
 
-            OMElement duration = fac.createOMElement(
-                    "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
-            duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
-            timeout.addChild(duration);
+            if (endpointDefinition.getTimeoutDuration() > 0) {
+                OMElement duration = fac.createOMElement(
+                        "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
+                timeout.addChild(duration);
+            }
 
             if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);

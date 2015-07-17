@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import de.odysseus.staxon.json.stream.JsonStreamSource;
-import de.odysseus.staxon.json.stream.JsonStreamToken;
+import org.apache.synapse.commons.staxon.core.json.stream.JsonStreamSource;
+import org.apache.synapse.commons.staxon.core.json.stream.JsonStreamToken;
 
 /**
  * Default <code>JsonStreamSource</code> implementation.
@@ -57,18 +57,24 @@ final class JsonStreamSourceImpl implements JsonStreamSource {
             EOF("EOF");
 
             private String name = null;
+
             Symbol(String name) {
                 this.name = name;
             }
-            public String toString(){
+
+            public String toString() {
                 return name;
             }
         }
+
         Symbol nextSymbol() throws IOException;
+
         String getText();
 
         int getCharOffset();
+
         int getLineNumber();
+
         int getColumnNumber();
     }
 
@@ -200,6 +206,7 @@ final class JsonStreamSourceImpl implements JsonStreamSource {
     /**
      * Make the next token the current token.
      * Save location info from scanner to prevent changing location by peek()
+     *
      * @param token expected token
      * @throws IOException
      */

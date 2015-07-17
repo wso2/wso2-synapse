@@ -184,4 +184,7 @@ public class PassThroughConstants {
     
     public static final String SERVER_WORKER_THREAD_ID = "SERVER_WORKER_THREAD_ID";
 
+    //Http method type constants to be used in synapse
+    public static final String HTTP_HEAD = "HEAD";
+
 }

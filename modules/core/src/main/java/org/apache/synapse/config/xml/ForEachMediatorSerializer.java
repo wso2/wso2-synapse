@@ -65,9 +65,7 @@ public class ForEachMediatorSerializer extends AbstractMediatorSerializer {
 
         if (forEachMed.getSequenceRef() != null) {
             forEachElem.addAttribute("sequence", forEachMed.getSequenceRef(), null);
-        }
-
-        if (forEachMed.getSequence() != null) {
+        } else if (forEachMed.getSequence() != null) {
             SequenceMediatorSerializer seqSerializer = new SequenceMediatorSerializer();
             OMElement seqElement = seqSerializer.serializeAnonymousSequence(
                     null, forEachMed.getSequence());

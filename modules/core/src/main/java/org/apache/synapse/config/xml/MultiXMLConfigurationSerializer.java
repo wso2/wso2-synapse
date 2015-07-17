@@ -104,7 +104,6 @@ public class MultiXMLConfigurationSerializer {
                 serializeTaskManager(synapseConfig.getTaskManager(), synapseConfig, definitions);
             }
 
-
             serializeProxyServices(synapseConfig.getProxyServices(), synapseConfig, definitions);
             serializeEventSources(synapseConfig.getEventSources(), synapseConfig, definitions);
             serializeTasks(synapseConfig.getStartups(), synapseConfig, definitions);
@@ -119,6 +118,7 @@ public class MultiXMLConfigurationSerializer {
             serializeAPIs(synapseConfig.getAPIs(), synapseConfig, definitions);
             serializeInboundEndpoints(synapseConfig.getInboundEndpoints(), synapseConfig, definitions);
             serializeImports(synapseConfig.getSynapseImports().values(), synapseConfig, definitions);
+            serializeComments(synapseConfig.getCommentedTextList(), definitions);
             serializeSynapseXML(definitions);
 
             markConfigurationForSerialization(synapseConfig);
@@ -260,6 +260,7 @@ public class MultiXMLConfigurationSerializer {
         Collection<API> apiCollection = synapseConfig.getAPIs();
         Collection<SynapseImport> synapseImportsCollection = synapseConfig.getSynapseImports().values();
         Collection<InboundEndpoint> inboundEndpoints = synapseConfig.getInboundEndpoints();
+        Collection<String> comments = synapseConfig.getCommentedTextList();
 
         for (ProxyService service : proxyServices) {
             if (service.getFileName() == null) {
@@ -351,6 +352,8 @@ public class MultiXMLConfigurationSerializer {
                 InboundEndpointSerializer.serializeInboundEndpoint(definitions,inboundEndpoint);
             }
         }
+
+        serializeComments(comments, definitions);
 
         serializeSynapseXML(definitions);
     }
@@ -710,11 +713,6 @@ public class MultiXMLConfigurationSerializer {
         return inboundEndpointElt;
     }
 
-
-
-
-
-
     public OMElement serializeImport(SynapseImport synapseImport, SynapseConfiguration synapseConfig,
                                   OMElement parent) throws Exception {
         File importDir = createDirectory(currentDirectory, MultiXMLConfigurationBuilder.SYNAPSE_IMPORTS_DIR);
@@ -736,6 +734,19 @@ public class MultiXMLConfigurationSerializer {
         return importElement;
     }
 
+    /**
+     * Serialize input Comment string to a OMElement
+     *
+     * @param comment String comment
+     * @param parent  Parent OMElement to be added with new Comment element
+     * @return Updated patent element
+     */
+    public OMElement serializeComments(String comment, OMElement parent) {
+        if (comment != null) {
+            CommentSerializer.serializeComment(parent, comment);
+        }
+        return parent;
+    }
 
     private void writeToFile(OMElement content, File file) throws Exception {
         File tempFile = File.createTempFile("syn_mx_", ".xml");
@@ -831,6 +842,18 @@ public class MultiXMLConfigurationSerializer {
                                OMElement parent) throws Exception {
         for (SynapseImport synapseImport : importCollection) {
             serializeImport(synapseImport, synapseConfig, parent);
+        }
+    }
+
+    /**
+     * Serialize given list of comment strings and add to the parent OMElement as OMComment nodes
+     *
+     * @param comments List of comment strings
+     * @param parent   Parent OMElement which the comment nodes should be added to
+     */
+    private void serializeComments(Collection<String> comments, OMElement parent) {
+        for (String comment : comments) {
+            serializeComments(comment, parent);
         }
     }
 
