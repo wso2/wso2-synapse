@@ -135,7 +135,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
         StringBuffer result = new StringBuffer();
 	    StringBuffer resultCTX = new StringBuffer();
 	    regexTransformCTX(resultCTX, synCtx, format);
-	    log.info("!!!!!!!@@@@@@@!! resultCTX !!!!!!!"+resultCTX.toString());
 	    replace(resultCTX.toString(),result, synCtx);
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
