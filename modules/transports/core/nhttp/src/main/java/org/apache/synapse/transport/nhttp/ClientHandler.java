@@ -925,6 +925,8 @@ public class ClientHandler implements NHttpClientEventHandler {
                         responseMsgCtx.setProperty(AddressingConstants.
                                 DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.TRUE);
                         responseMsgCtx.setProperty(NhttpConstants.SC_ACCEPTED, Boolean.TRUE);
+                        int statusCode = response.getStatusLine().getStatusCode();
+                        responseMsgCtx.setProperty(NhttpConstants.HTTP_SC, statusCode);
                         mr.receive(responseMsgCtx);
 
                     } catch (org.apache.axis2.AxisFault af) {
@@ -1136,6 +1138,16 @@ public class ClientHandler implements NHttpClientEventHandler {
                 && statusCode != HttpStatus.SC_NOT_MODIFIED
                 && statusCode != HttpStatus.SC_RESET_CONTENT) {
             expectEntityBody = true;
+        } else if (NhttpConstants.HTTP_HEAD.equals(requestMethod)) {
+	        // When invoking http HEAD request esb set content length as 0 to response header. Since there is no message
+	        // body content length cannot be calculated inside synapse. Hence additional two headers are added to
+	        // which contains content length of the backend response and the request method. These headers are removed
+	        // before submitting the actual response.
+	        response.addHeader(NhttpConstants.HTTP_REQUEST_METHOD, requestMethod);
+
+	        if (response.getFirstHeader(HTTP.CONTENT_LEN) != null) {
+		        response.addHeader(NhttpConstants.ORIGINAL_CONTENT_LEN, response.getFirstHeader(HTTP.CONTENT_LEN).getValue());
+	        }
         }
 
         if (expectEntityBody) {

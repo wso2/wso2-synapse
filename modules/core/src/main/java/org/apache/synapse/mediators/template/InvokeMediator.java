@@ -91,10 +91,10 @@ public class InvokeMediator extends AbstractMediator implements
 		// get the target function template and invoke by passing populated
 		// parameters
 		Mediator mediator = synCtx.getSequenceTemplate(targetTemplate);
-		
-		if (this.isDynamicMediator() && mediator ==null) {
-			handleException("Failed to locate the configure element for connector [" +
-			                targetTemplate + "]", synCtx);
+
+		if (mediator == null) {
+			handleException("Sequence template " +
+					targetTemplate + " cannot be found", synCtx);
 		}
 
 		// executing key reference if found defined at configuration.

@@ -134,6 +134,9 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
                         + " to : " + value, e);
             }
         }
+
+        addAllCommentChildrenToMediator(elem, validateMediator);
+
         return validateMediator;
     }
 

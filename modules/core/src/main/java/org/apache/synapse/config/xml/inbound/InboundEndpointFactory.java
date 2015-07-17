@@ -20,12 +20,17 @@ package org.apache.synapse.config.xml.inbound;
 
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
+
+import sun.util.logging.resources.logging;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -45,8 +50,8 @@ public class InboundEndpointFactory {
             = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE);
     private static final QName ATT_ERROR_SEQUENCE
             = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE);
-
-    public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem) {
+    
+    public static InboundEndpoint createInboundEndpoint(OMElement inboundEndpointElem, SynapseConfiguration config) {
         InboundEndpoint inboundEndpoint = new InboundEndpoint();
         if (inboundEndpointElem.getAttributeValue(ATT_NAME) != null) {
             inboundEndpoint.setName(inboundEndpointElem.getAttributeValue(ATT_NAME));
@@ -69,17 +74,9 @@ public class InboundEndpointFactory {
         }
         if (inboundEndpointElem.getAttributeValue(ATT_SEQUENCE) != null) {
             inboundEndpoint.setInjectingSeq(inboundEndpointElem.getAttributeValue(ATT_SEQUENCE));
-        } else {
-            String msg = "Injecting sequence cannot be null";
-            log.error(msg);
-            throw new SynapseException(msg);
         }
         if (inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE) != null) {
             inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE));
-        } else {
-            String msg = "On Error sequence cannot be null";
-            log.error(msg);
-            throw new SynapseException(msg);
         }
 
         // Set parameters
@@ -95,11 +92,30 @@ public class InboundEndpointFactory {
 
             while (parameters.hasNext()) {
                 OMElement parameter = (OMElement) parameters.next();
-                String paramName = parameter.getAttributeValue
-                        (new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
-                if(parameter.getFirstElement() != null){
-                    inboundEndpoint.addParameter(paramName,parameter.getFirstElement().toString());
-                }else {
+                String paramName = parameter.getAttributeValue(new QName(
+                        InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME));
+                String paramKey = parameter.getAttributeValue(new QName(
+                        InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_KEY));
+
+                if (paramKey != null) {
+                    Object obj = config.getEntry(paramKey);
+                    if (obj == null) {
+                        obj = config.getEntryDefinition(paramKey);
+                        obj = config.getEntry(paramKey);
+                    }
+                    if (obj != null && obj instanceof OMTextImpl) {
+                        OMText objText = (OMText) obj;
+                        inboundEndpoint.addParameter(paramName, objText.getText(), paramKey);
+                    } else {
+                        String msg = "Error while deploying inbound endpoint "
+                                + inboundEndpoint.getName() + ".Registry entry defined with key: "
+                                + paramKey + " not found.";
+                        log.error(msg);
+                        throw new SynapseException(msg);
+                    }
+                } else if (parameter.getFirstElement() != null) {
+                    inboundEndpoint.addParameter(paramName, parameter.getFirstElement().toString());
+                } else {
                     inboundEndpoint.addParameter(paramName, parameter.getText());
                 }
             }

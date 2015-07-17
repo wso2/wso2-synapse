@@ -49,17 +49,17 @@ public class ListenerProfileReloader extends DynamicProfileReloader {
     }
 
     /**
-     * Notification method which will be triggered by FileUpdateNotifier
+     * Notification method which will be triggered by FileUpdateNotifier and SSLProfileInvoker
+     *
+     * @param isScheduled Boolean value for specify whether this is called from scheduled task
      */
-    public void notifyFileUpdate() {
+    public void notifyFileUpdate(boolean isScheduled) {
+        setInvokedFromSchedule(isScheduled);
         try {
             sslProfileLoader.reloadConfig(transportInDescription);
         } catch (AxisFault axisFault) {
-            LOG.error("Error reloading dynamic SSL configurations for Listeners : New Configurations will not be applied "
-                      + axisFault.getMessage());
+            LOG.error("Error reloading dynamic SSL configurations for Listeners : New Configurations" +
+                      " will not be applied " + axisFault.getMessage());
         }
     }
-
-
-
 }

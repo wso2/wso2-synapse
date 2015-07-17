@@ -43,11 +43,31 @@ public class CacheMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inputXml, cacheMediatorSerializer));
     }
 
+    public void testCacheMediatorSerializationScenarioOneWithComment() {
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                          "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
+                          "timeout=\"10\" scope=\"per-host\" collector=\"false\" " +
+                          "maxMessageSize=\"10000\"><!--Test Comment--><onCacheHit><!--Test Comment--><send/></onCacheHit><implementation " +
+                          "type=\"memory\" maxSize=\"10\"/></cache>";
+        assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
+        assertTrue(serialization(inputXml, cacheMediatorSerializer));
+    }
+
     public void testCacheMediatorSerializationScenarioTwo() {
         String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
                           "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
                           "timeout=\"10\" scope=\"per-mediator\" collector=\"false\" " +
                           "maxMessageSize=\"10000\"><onCacheHit sequence=\"seq\"></onCacheHit>" +
+                          "<implementation type=\"memory\" maxSize=\"10\"/></cache>";
+        assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
+        assertTrue(serialization(inputXml, cacheMediatorSerializer));
+    }
+
+    public void testCacheMediatorSerializationScenarioTwoWithComments() {
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                          "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
+                          "timeout=\"10\" scope=\"per-mediator\" collector=\"false\" " +
+                          "maxMessageSize=\"10000\"><!--Test Comment--><onCacheHit sequence=\"seq\"></onCacheHit>" +
                           "<implementation type=\"memory\" maxSize=\"10\"/></cache>";
         assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
         assertTrue(serialization(inputXml, cacheMediatorSerializer));

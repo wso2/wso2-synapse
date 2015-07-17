@@ -151,21 +151,9 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             if (action != null && action.getText() != null) {
                 String actionString = action.getText();
                 if ("discard".equalsIgnoreCase(actionString.trim())) {
-
                     definition.setTimeoutAction(SynapseConstants.DISCARD);
-
-                    // set timeout duration to 30 seconds, if it is not set explicitly
-                    if (definition.getTimeoutDuration() == 0) {
-                        definition.setTimeoutDuration(30000);
-                    }
                 } else if ("fault".equalsIgnoreCase(actionString.trim())) {
-
                     definition.setTimeoutAction(SynapseConstants.DISCARD_AND_FAULT);
-
-                    // set timeout duration to 30 seconds, if it is not set explicitly
-                    if (definition.getTimeoutDuration() == 0) {
-                        definition.setTimeoutDuration(30000);
-                    }
                 } else {
                     handleException("Invalid timeout action, action : "
                             + actionString + " is not supported");

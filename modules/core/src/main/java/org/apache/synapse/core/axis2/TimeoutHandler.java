@@ -82,13 +82,15 @@ public class TimeoutHandler extends TimerTask {
     public void run() {
         if (alreadyExecuting) return;
 
-        synchronized(lock) {
+        synchronized (lock) {
             alreadyExecuting = true;
             try {
                 processCallbacks();
             } catch (Exception ex) {
                 log.warn("Exception occurred while processing callbacks", ex);
-            } finally {
+            } catch (Error ex) {
+                log.warn("Error occurred while processing callbacks", ex);
+            }finally {
                 alreadyExecuting = false;
             }
         }
@@ -133,65 +135,65 @@ public class TimeoutHandler extends TimerTask {
                         }
                         continue;
                     }
-                    if (callback.getTimeOutAction() != SynapseConstants.NONE) {
 
-                        if (callback.getTimeOutOn() <= currentTime) {
-                            //callbackStore.remove(key);
-                            toRemove.add(key);
-                            if (callback.getTimeOutAction() == SynapseConstants.DISCARD_AND_FAULT) {
+                    if (callback.getTimeOutOn() <= currentTime) {
 
-                                // actiavte the fault sequence of the current sequence mediator
-                                MessageContext msgContext = callback.getSynapseOutMsgCtx();
+                        toRemove.add(key);
 
-                                /* Clear the pipe to prevent release of the associated writer buffer
-                                 to the buffer factory.
-                                This is to prevent same buffer is getting released to both source
-                                and target buffer factories. Otherwise when a late response arrives,
-                                buffer is released to both factories and makes system unstable
-                                */
-                                ((Axis2MessageContext) msgContext).getAxis2MessageContext().
-                                                removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+                        if (callback.getTimeOutAction() == SynapseConstants.DISCARD_AND_FAULT) {
 
-                                // add an error code to the message context, so that error sequences
-                                // can identify the cause of error
-                                msgContext.setProperty(SynapseConstants.ERROR_CODE,
-                                        SynapseConstants.HANDLER_TIME_OUT);
-                                msgContext.setProperty(SynapseConstants.ERROR_MESSAGE,
-                                        SEND_TIMEOUT_MESSAGE);
+                            // activate the fault sequence of the current sequence mediator
+                            MessageContext msgContext = callback.getSynapseOutMsgCtx();
 
-                                SOAPEnvelope soapEnvelope;
-                                if(msgContext.isSOAP11()){
-                                    soapEnvelope = OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope();
-                                    soapEnvelope.addChild(OMAbstractFactory.getSOAP11Factory().createSOAPBody());
-                                } else {
-                                    soapEnvelope = OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope();
-                                    soapEnvelope.addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
-                                 }
-                                try {
-                                    msgContext.setEnvelope(soapEnvelope);
-                                } catch (Exception ex) {
-                                    log.error("Error resetting SOAP Envelope",ex);
-                                    continue;
-                                }
- 
-                                Stack<FaultHandler> faultStack = msgContext.getFaultStack();
-                                if (!faultStack.isEmpty()) {
-                                    FaultHandler faultHandler = faultStack.pop();
-                                    if (faultHandler != null) {
-                                        try {
-                                            faultHandler.handleFault(msgContext);
-                                        } catch (Exception ex) {
-                                            log.warn("Exception occurred while executing the fault handler", ex);
-                                            continue;
-                                        }
+                            /* Clear the pipe to prevent release of the associated writer buffer
+                               to the buffer factory.
+                               This is to prevent same buffer is getting released to both source
+                               and target buffer factories. Otherwise when a late response arrives,
+                               buffer is released to both factories and makes system unstable
+                            */
+                            ((Axis2MessageContext) msgContext).getAxis2MessageContext().
+                                    removeProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+
+                            // add an error code to the message context, so that error sequences
+                            // can identify the cause of error
+                            msgContext.setProperty(SynapseConstants.ERROR_CODE,
+                                                   SynapseConstants.HANDLER_TIME_OUT);
+                            msgContext.setProperty(SynapseConstants.ERROR_MESSAGE,
+                                                   SEND_TIMEOUT_MESSAGE);
+
+                            SOAPEnvelope soapEnvelope;
+                            if (msgContext.isSOAP11()) {
+                                soapEnvelope = OMAbstractFactory.
+                                        getSOAP11Factory().createSOAPEnvelope();
+                                soapEnvelope.addChild(
+                                        OMAbstractFactory.getSOAP11Factory().createSOAPBody());
+                            } else {
+                                soapEnvelope = OMAbstractFactory.
+                                        getSOAP12Factory().createSOAPEnvelope();
+                                soapEnvelope.addChild(
+                                        OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+                            }
+                            try {
+                                msgContext.setEnvelope(soapEnvelope);
+                            } catch (Throwable ex) {
+                                log.error("Exception or Error occurred resetting SOAP Envelope", ex);
+                                continue;
+                            }
+
+                            Stack<FaultHandler> faultStack = msgContext.getFaultStack();
+                            if (!faultStack.isEmpty()) {
+                                FaultHandler faultHandler = faultStack.pop();
+                                if (faultHandler != null) {
+                                    try {
+                                        faultHandler.handleFault(msgContext);
+                                    } catch (Throwable ex) {
+                                        log.warn("Exception or Error occurred while " +
+                                                 "executing the fault handler", ex);
+                                        continue;
                                     }
                                 }
-
                             }
                         }
-
-                    } else if (currentTime > globalTimeout + callback.getTimeOutOn()) {
-                        toRemove.add(key);
                     }
                 }
 
@@ -205,7 +207,7 @@ public class TimeoutHandler extends TimerTask {
 
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
                         log.warn("Expiring message ID : " + key + "; dropping message after " +
-                                "global timeout of : " + (globalTimeout / 1000) + " seconds");
+                                "timeout of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
                     }
                     callbackStore.remove(key);
                 }

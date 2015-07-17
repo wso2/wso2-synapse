@@ -147,6 +147,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_XML = "synapse.xml";
     /** The name of the system property used to specify/override the Synapse properties location */
     public static final String SYNAPSE_PROPERTIES = "synapse.properties";
+    /** The name of the synapse handlers file */
+    public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
 
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
@@ -216,6 +218,7 @@ public final class SynapseConstants {
         /** Tracing logger name */
         public static final String TRACE_LOGGER ="TRACE_LOGGER";
         public static final String SERVICE_LOGGER_PREFIX ="SERVICE_LOGGER.";
+        public static final String API_LOGGER_PREFIX ="API_LOGGER.";
 
         /** The tracing state -off */
         public static final int TRACING_OFF =0;
@@ -486,7 +489,9 @@ public final class SynapseConstants {
     //Inbound endpoint
     public static final String IS_INBOUND = "isInbound";
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
-
+    public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
+    public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
+    
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
 

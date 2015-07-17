@@ -18,10 +18,13 @@
  */
 package org.apache.synapse.commons.util;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.SynapseCommonsException;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.*;
 import java.util.Properties;
 
@@ -172,12 +175,78 @@ public class MiscellaneousUtil {
             try {
                 properties.load(in);
             } catch (IOException e) {
-                String msg = "Error loading properties from a file at : " + filePath;
-                log.error(msg, e);
-                throw new SynapseCommonsException(msg, e);
+                handleException("Error loading properties from a file at : " + filePath, e);
             }
         }
         return properties;
+    }
+
+
+    /**
+     * Load a xml configuration file
+     *
+     * @param filePath file path
+     * @return OMElement of build from the config file
+     */
+    public static OMElement loadXMLConfig(String filePath) {
+
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+
+        if (log.isDebugEnabled()) {
+            log.debug("Loading a file '" + filePath + "' from classpath");
+        }
+
+        InputStream in  = null;
+        if (System.getProperty(CONF_LOCATION) != null) {
+            try {
+                in = new FileInputStream(System.getProperty(CONF_LOCATION) + File.separator + filePath);
+            } catch (FileNotFoundException e) {
+                String msg = "Error loading properties from a file at from the System defined location: "
+                             + System.getProperty(CONF_LOCATION) + File.separator + filePath;
+                log.warn(msg);
+            }
+        }
+
+        if (in == null){
+            //if can not find with system path definition looking to the class path for the given config file
+            in = cl.getResourceAsStream(filePath);
+        }
+
+        if (in == null) {
+
+            if (log.isDebugEnabled()) {
+                log.debug("Unable to load file  '" + filePath + "'");
+            }
+
+            filePath = "conf" + File.separatorChar + filePath;
+            if (log.isDebugEnabled()) {
+                log.debug("Loading a file '" + filePath + "' from classpath");
+            }
+
+            in = cl.getResourceAsStream(filePath);
+            if (in == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Unable to load file  '" + filePath + "'");
+                }
+            }
+        }
+
+        if (in != null) {
+            try {
+                OMElement document = new StAXOMBuilder(in).getDocumentElement();
+                document.build();
+                return document;
+            } catch (Exception e) {
+                handleException("Error while parsing the content of the file: " + filePath, e);
+            } finally {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    log.warn("Error while closing the input stream from the file: " + filePath, e);
+                }
+            }
+        }
+        return null;
     }
 
 	/**
@@ -251,5 +320,16 @@ public class MiscellaneousUtil {
 	private static void handleException(String msg) {
 		log.error(msg);
 		throw new SynapseCommonsException(msg);
-	}
+    }
+
+    /**
+     * Helper method for handle errors.
+     *
+     * @param msg The error message
+     * @param ex  Error exception
+     */
+    private static void handleException(String msg, Exception ex) {
+        log.error(msg);
+        throw new SynapseCommonsException(msg, ex);
+    }
 }

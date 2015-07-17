@@ -2,6 +2,7 @@ package org.apache.synapse.task;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 public interface TaskManager {
     /**
@@ -55,10 +56,10 @@ public interface TaskManager {
     public Properties getConfigurationProperties();
 
     public void setConfigurationProperties(Properties properties);
-    
+
 	/**
 	 * Adds a new Observer to the list of observers of this task manager.
-	 * 
+	 *
 	 * @param o
 	 *            New Observer to be registered or subscribed.
 	 */
@@ -66,33 +67,44 @@ public interface TaskManager {
 
 	/**
 	 * Checks whether the {@link Task} with the given name is deactivated.
-	 * 
+	 *
 	 * @param taskName
 	 *            name of the Task
 	 * @return <code>true</code> if the task is deactivated,<code>false</code>
 	 *         otherwise
 	 */
 	boolean isTaskDeactivated(final String taskName);
-	
+
 	/**
 	 * Checks whether the {@link Task} with the given name is blocked without
 	 * giving the control back to the schedular.
-	 * 
+	 *
 	 * @param taskName
 	 *            name of the Task
 	 * @return <code>true</code> if the task is blocked, <code>false</code>
 	 *         otherwise.
 	 */
 	boolean isTaskBlocked(final String taskName);
-	
+
 	/**
 	 * Checks whether the {@link Task} with the given name is running.
-	 * 
+	 *
 	 * @param taskName
 	 *            name of the Task
 	 * @return <code>true</code> if the task is running,<code>false</code>
 	 *         otherwise.
 	 */
 	boolean isTaskRunning(final String taskName);
+
+    /**
+     * Sends a cluster message, with the given {@link Callable} task in this
+     * cluster. The given {@link Callable} task is executed by all the nodes in
+     * the cluster
+     *
+     * @param task
+     *            {@link Callable} task to be executed by members in the
+     *            cluster.
+     */
+    void sendClusterMessage(Callable<Void> task);
 
 }

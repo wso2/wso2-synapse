@@ -1,9 +1,27 @@
+/**
+ *  Copyright (c) 2005-2010, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.synapse.commons.json;
 
-import de.odysseus.staxon.json.JsonXMLConfig;
-import de.odysseus.staxon.json.JsonXMLConfigBuilder;
-import de.odysseus.staxon.json.JsonXMLInputFactory;
-import de.odysseus.staxon.json.JsonXMLOutputFactory;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLConfig;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLConfigBuilder;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLInputFactory;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLOutputFactory;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
@@ -48,8 +66,10 @@ public final class JsonUtil {
 
     private static final QName JSON_ARRAY = new QName("jsonArray");
 
-    /** If this property is set to <tt>true</tt> the input stream of the JSON payload will be reset
-     *  after writing to the output stream within the #writeAsJson method. */
+    /**
+     * If this property is set to <tt>true</tt> the input stream of the JSON payload will be reset
+     * after writing to the output stream within the #writeAsJson method.
+     */
     public static final String PRESERVE_JSON_STREAM = "preserve.json.stream";
 
     /// JSON/XML INPUT OUTPUT Formatting Configuration
@@ -102,17 +122,23 @@ public final class JsonUtil {
         }
     }
 
-    /** Configuration used to produce XML that has processing instructions in it. */
+    /**
+     * Configuration used to produce XML that has processing instructions in it.
+     */
     private static final JsonXMLConfig xmlOutputConfig = new JsonXMLConfigBuilder()
             .multiplePI(true)
             .autoArray(true)
             .autoPrimitive(true)
             .namespaceDeclarations(false)
+
             .namespaceSeparator( '\u0D89')
             .customRegex(jsonoutcustomRegex)
+
             .build();
 
-    /** Configuration used to produce XML that has no processing instructions in it. */
+    /**
+     * Configuration used to produce XML that has no processing instructions in it.
+     */
     private static final JsonXMLConfig xmlOutputConfigNoPIs = new JsonXMLConfigBuilder()
             .multiplePI(false)
             .autoArray(true)
@@ -121,7 +147,9 @@ public final class JsonUtil {
             .namespaceSeparator('\u0D89')
             .build();
 
-    /** This configuration is used to format the JSON output produced by the JSON writer. */
+    /**
+     * This configuration is used to format the JSON output produced by the JSON writer.
+     */
     private static final JsonXMLConfig jsonOutputConfig = new JsonXMLConfigBuilder()
             .multiplePI(true)
             .autoArray(true)
@@ -131,16 +159,24 @@ public final class JsonUtil {
             .build();
     /// End of JSON/XML INPUT OUTPUT Formatting Configuration.
 
-    /** Factory used to create JSON Readers */
+    /**
+     * Factory used to create JSON Readers
+     */
     private static final JsonXMLInputFactory jsonInputFactory = new JsonXMLInputFactory(xmlOutputConfig);
 
-    /** Factory used to create JSON Readers */
+    /**
+     * Factory used to create JSON Readers
+     */
     private static final JsonXMLInputFactory xmlInputFactoryNoPIs = new JsonXMLInputFactory(xmlOutputConfigNoPIs);
 
-    /** Factory used to create JSON Writers */
+    /**
+     * Factory used to create JSON Writers
+     */
     private static final JsonXMLOutputFactory jsonOutputFactory = new JsonXMLOutputFactory(jsonOutputConfig);
 
-    /** Factory used to create XML Readers */
+    /**
+     * Factory used to create XML Readers
+     */
     private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 
     /**
@@ -148,8 +184,9 @@ public final class JsonUtil {
      * If no XML payload is found, the existing JSON payload will be copied to the output stream.<br/>
      * Note that this method removes all existing namespace declarations and namespace prefixes of the payload that is <br/>
      * present in the provided message context.
+     *
      * @param messageContext Axis2 Message context that holds the JSON/XML payload.
-     * @param out Output stream to which the payload(JSON) must be written.
+     * @param out            Output stream to which the payload(JSON) must be written.
      * @throws org.apache.axis2.AxisFault
      */
     public static void writeAsJson(MessageContext messageContext, OutputStream out) throws AxisFault {
@@ -203,9 +240,10 @@ public final class JsonUtil {
 
     /**
      * Converts a JSON input stream to its XML representation.
+     *
      * @param jsonStream JSON input stream
-     * @param pIs Whether or not to add XML processing instructions to the output XML.<br/>
-     *            This property is useful when converting JSON payloads with array objects.
+     * @param pIs        Whether or not to add XML processing instructions to the output XML.<br/>
+     *                   This property is useful when converting JSON payloads with array objects.
      * @return OMElement that is the XML representation of the input JSON data.
      */
     public static OMElement toXml(InputStream jsonStream, boolean pIs) throws AxisFault {
@@ -224,8 +262,9 @@ public final class JsonUtil {
 
     /**
      * Returns an XMLStreamReader for a JSON input stream
+     *
      * @param jsonStream InputStream of JSON
-     * @param pIs Whether to add XML PIs to the XML output. This is used as an instruction to the returned XML Stream Reader.
+     * @param pIs        Whether to add XML PIs to the XML output. This is used as an instruction to the returned XML Stream Reader.
      * @return An XMLStreamReader
      * @throws javax.xml.stream.XMLStreamException
      */
@@ -236,12 +275,13 @@ public final class JsonUtil {
         }
         return pIs ? getReader(jsonStream)
                 : new JsonReaderDelegate(xmlInputFactoryNoPIs.createXMLStreamReader(jsonStream,
-                de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
+                org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
 
     /**
      * This method is useful when you need to get an XML reader directly for the input JSON stream <br/>
      * without adding any additional object wrapper elements such as 'jsonObject' and 'jsonArray'.
+     *
      * @param jsonStream InputStream of JSON
      * @return An XMLStreamReader
      * @throws javax.xml.stream.XMLStreamException
@@ -252,15 +292,16 @@ public final class JsonUtil {
             return null;
         }
         return new JsonReaderDelegate(jsonInputFactory.createXMLStreamReader(jsonStream,
-                de.odysseus.staxon.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
+                org.apache.synapse.commons.staxon.core.json.stream.impl.Constants.SCANNER.SCANNER_1), processNCNames);
     }
 
     /**
      * Converts an XML element to its JSON representation and writes it to an output stream.<br/>
      * Note that this method removes all existing namespace declarations and namespace prefixes of the provided XML element<br/>
-     * @param element XML element of which JSON representation is expected.
+     *
+     * @param element      XML element of which JSON representation is expected.
      * @param outputStream Output Stream to write the JSON representation.<br/>
-     * At the end of a successful conversion, its flush method will be called.
+     *                     At the end of a successful conversion, its flush method will be called.
      * @throws AxisFault
      */
     public static void writeAsJson(OMElement element, OutputStream outputStream) throws AxisFault {
@@ -293,7 +334,7 @@ public final class JsonUtil {
         } catch (IOException e) {
             logger.error("#writeAsJson. Could not convert OMElement to JSON. Error>>> " + e.getLocalizedMessage());
             throw new AxisFault("Could not convert OMElement to JSON.", e);
-        }finally {
+        } finally {
             if (xmlEventReader != null) {
                 try {
                     xmlEventReader.close();
@@ -313,6 +354,7 @@ public final class JsonUtil {
 
     /**
      * Converts an XML element to its JSON representation and returns it as a String.
+     *
      * @param element OMElement to be converted to JSON.
      * @return A String builder instance that contains the converted JSON string.
      */
@@ -328,7 +370,8 @@ public final class JsonUtil {
 
     /**
      * Removes XML namespace declarations, and namespace prefixes from an XML element.
-     * @param element Source XML element
+     *
+     * @param element       Source XML element
      * @param processAttrbs Whether to remove the namespaces from attributes as well
      */
     public static void transformElement(OMElement element, boolean processAttrbs) {
@@ -347,7 +390,7 @@ public final class JsonUtil {
     private static void removeIndentations(OMElement elem) {
         Iterator children = elem.getChildren();
         while (children.hasNext()) {
-            OMNode child = (OMNode)children.next();
+            OMNode child = (OMNode) children.next();
             if (child instanceof OMText) {
                 if ("".equals(((OMText) child).getText().trim())) {
                     children.remove();
@@ -360,7 +403,7 @@ public final class JsonUtil {
 
     private static void removeNamespaces(OMElement element, boolean processAttrbs) {
         OMNamespace ns = element.getNamespace();
-        Iterator i  = element.getAllDeclaredNamespaces();
+        Iterator i = element.getAllDeclaredNamespaces();
         while (i.hasNext()) {
             i.next();
             i.remove();
@@ -372,14 +415,14 @@ public final class JsonUtil {
         }
         Iterator children = element.getChildElements();
         while (children.hasNext()) {
-            removeNamespaces((OMElement)children.next(), processAttrbs);
+            removeNamespaces((OMElement) children.next(), processAttrbs);
         }
         if (!processAttrbs) {
             return;
         }
         Iterator attrbs = element.getAllAttributes();
         while (attrbs.hasNext()) {
-            OMAttribute attrb = (OMAttribute)attrbs.next();
+            OMAttribute attrb = (OMAttribute) attrbs.next();
             prefix = "";//attrb.getQName().getPrefix();
             attrb.setOMNamespace(attrb.getOMFactory().createOMNamespace("", prefix));
             //element.removeAttribute(attrb);
@@ -391,11 +434,12 @@ public final class JsonUtil {
      * This is the recommended way to build a JSON payload into an Axis2 message context.<br/>
      * A JSON payload built into a message context with this method can only be removed by calling
      * {@link #removeJsonPayload(org.apache.axis2.context.MessageContext)} method.
-     * @param messageContext Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
-     * @param inputStream JSON content as an input stream.
-     * @param removeChildren Whether to remove existing child nodes of the existing payload of the message context
+     *
+     * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
+     * @param inputStream        JSON content as an input stream.
+     * @param removeChildren     Whether to remove existing child nodes of the existing payload of the message context
      * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
-     * Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
+     *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that can build the XML tree for contained JSON payload on demand.
      */
     public static OMElement newJsonPayload(MessageContext messageContext, InputStream inputStream,
@@ -490,13 +534,14 @@ public final class JsonUtil {
 
     /**
      * Builds and returns a new JSON payload for a message context with a JSON string.<br/>
-     * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
-     * @param messageContext Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
-     * @param jsonString JSON content as a String.
-     * @param removeChildren Whether to remove existing child nodes of the existing payload of the message context
+     *
+     * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
+     * @param jsonString         JSON content as a String.
+     * @param removeChildren     Whether to remove existing child nodes of the existing payload of the message context
      * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
-     * Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
+     *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
+     * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
      */
     public static OMElement newJsonPayload(MessageContext messageContext, String jsonString,
                                            boolean removeChildren, boolean addAsNewFirstChild) {
@@ -509,15 +554,16 @@ public final class JsonUtil {
 
     /**
      * Builds and returns a new JSON payload for a message context with a byte array containing JSON.<br/>
-     * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
-     * @param messageContext Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
-     * @param json JSON content as a byte array.
-     * @param offset starting position of the JSON content in the provided array
-     * @param length how many bytes to read starting from the offset provided.
-     * @param removeChildren Whether to remove existing child nodes of the existing payload of the message context
+     *
+     * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
+     * @param json               JSON content as a byte array.
+     * @param offset             starting position of the JSON content in the provided array
+     * @param length             how many bytes to read starting from the offset provided.
+     * @param removeChildren     Whether to remove existing child nodes of the existing payload of the message context
      * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
-     * Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
+     *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
+     * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
      */
     public static OMElement newJsonPayload(MessageContext messageContext, byte[] json, int offset,
                                            int length, boolean removeChildren, boolean addAsNewFirstChild) {
@@ -535,6 +581,7 @@ public final class JsonUtil {
      * Removes the existing JSON payload of a message context if any.<br/>
      * This method can only remove a JSON payload that has been set with {@link #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)}
      * and its variants.
+     *
      * @param messageContext Axis2 Message context from which the JSON stream must be removed.
      * @return <tt>true</tt> if the operation is successful.
      */
@@ -572,8 +619,9 @@ public final class JsonUtil {
 
     /**
      * Returns the JSON stream associated with the payload of this message context.
+     *
      * @param messageContext Axis2 Message context
-     * @param reset Whether to reset the input stream that contains this JSON payload so that next read will start from the beginning of this stream.
+     * @param reset          Whether to reset the input stream that contains this JSON payload so that next read will start from the beginning of this stream.
      * @return JSON input stream
      */
     private static InputStream jsonStream(MessageContext messageContext, boolean reset) {
@@ -588,7 +636,7 @@ public final class JsonUtil {
                     try {
                         is.reset();
                     } catch (IOException e) {
-                        logger.error("#jsonStream. Could not reuse JSON Stream. Error>>>\n",e);
+                        logger.error("#jsonStream. Could not reuse JSON Stream. Error>>>\n", e);
                         return null;
                     }
                 }
@@ -600,6 +648,7 @@ public final class JsonUtil {
 
     /**
      * Returns the READ-ONLY input stream of the JSON payload contained in the provided message context.
+     *
      * @param messageContext Axis2 Message context
      * @return {@link java.io.InputStream} of JSON payload contained in the message context. Null otherwise.<br/>
      * It is possible to read from this stream right away. This InputStream cannot be <tt>close</tt>d, <tt>mark</tt>ed, or <tt>skip</tt>ped. <br/>
@@ -611,6 +660,7 @@ public final class JsonUtil {
 
     /**
      * Returns a copy of the JSON stream contained in the provided Message Context.
+     *
      * @param messageContext Axis2 Message context that contains a JSON payload.
      * @return {@link java.io.InputStream}
      */
@@ -657,6 +707,7 @@ public final class JsonUtil {
 
     /**
      * Returns a reusable cached copy of the JSON stream contained in the provided Message Context.
+     *
      * @param messageContext Axis2 Message context that contains a JSON payload.
      * @return {@link java.io.InputStream}
      */
@@ -702,6 +753,7 @@ public final class JsonUtil {
 
     /**
      * Returns a new instance of a reader that can read from the JSON payload contained in the provided message context.
+     *
      * @param messageContext Axis2 Message context
      * @return {@link java.io.Reader} if a JSON payload is found in the message context. null otherwise.
      */
@@ -718,6 +770,7 @@ public final class JsonUtil {
 
     /**
      * Returns the JSON payload contained in the provided message context as a byte array.
+     *
      * @param messageContext Axis2 Message context
      * @return <tt>byte</tt> array containing the JSON payload. Empty array if no JSON payload found or invalid message context is passed in.
      */
@@ -739,6 +792,7 @@ public final class JsonUtil {
 
     /**
      * Returns the JSON payload contained in the provided message context as a String.
+     *
      * @param messageContext Axis2 Message context
      * @return <tt>java.lang.String</tt> representation of the JSON payload. Returns "{}" if no JSON payload found or invalid message context is passed in.
      */
@@ -760,6 +814,7 @@ public final class JsonUtil {
 
     /**
      * Returns whether the provided XML element is an element that stores a sourced JSON payload.
+     *
      * @param element XML element
      * @return <tt>true</tt> if the element is a sourced JSON object (ie. an <tt>OMSourcedElement</tt> instance containing a JSON stream).
      */
@@ -769,6 +824,7 @@ public final class JsonUtil {
 
     /**
      * Returns true if the element passed in as the parameter is an element that contains a JSON stream.
+     *
      * @param element XML element
      * @return <tt>true</tt> if the element has the local name of a sourced (ie. an <tt>OMSourcedElement</tt>) JSON object.
      */
@@ -780,6 +836,7 @@ public final class JsonUtil {
 
     /**
      * Returns true if the payload stored in the provided message context is used as a JSON streaming payload.
+     *
      * @param messageContext Axis2 Message context
      * @return <tt>true</tt> if the message context contains a Streaming JSON payload.
      */
@@ -793,6 +850,7 @@ public final class JsonUtil {
 
     /**
      * Clones the JSON stream payload contained in the source message context, if any, to the target message context.
+     *
      * @param sourceMc Where to get the payload
      * @param targetMc Where to clone and copy the payload
      * @return <tt>true</tt> if the cloning was successful.
@@ -814,6 +872,7 @@ public final class JsonUtil {
 
     /**
      * Sets JSON media type 'application/json' as the message type to the current message context.
+     *
      * @param messageContext Axis2 Message context
      */
     public static void setContentType(MessageContext messageContext) {
@@ -826,6 +885,7 @@ public final class JsonUtil {
     /**
      * Returns a read only, re-readable input stream for an input stream. <br/>
      * The returned input stream cannot be closed, marked, or skipped, but it can be reset to the beginning of the stream.
+     *
      * @param inputStream Input stream to be wrapped
      * @return {@link java.io.InputStream}
      */
@@ -838,6 +898,7 @@ public final class JsonUtil {
 
     /**
      * Returns an input stream that contains the JSON representation of an XML element.
+     *
      * @param element XML element of which JSON representation is expected.
      * @return {@link java.io.InputStream}
      */
@@ -861,6 +922,7 @@ public final class JsonUtil {
      * Returns a reader that can read from the JSON payload contained in the provided message context as a JavaScript source.<br/>
      * The reader returns the '(' character at the beginning of the stream and marks the end with the ')' character.<br/>
      * The reader returned by this method can be directly used with the JavaScript {@link javax.script.ScriptEngine#eval(java.io.Reader)} method.
+     *
      * @param messageContext Axis2 Message context
      * @return {@link java.io.InputStreamReader}
      */
@@ -886,6 +948,7 @@ public final class JsonUtil {
     /**
      * Returns <tt>true</tt> if the message context contains a JSON payload that is a JSON Object. See {@link #hasAJsonArray(MessageContext)}<br/>
      * Example : {"a":1, "b":2}
+     *
      * @param messageContext request message context
      * @return
      */
@@ -896,6 +959,7 @@ public final class JsonUtil {
     /**
      * Returns <tt>true</tt> if the message context contains a JSON payload that is a JSON Array. See {@link #hasAJsonObject(MessageContext)}<br/>
      * Example: [{"a":1}, 2, null]
+     *
      * @param messageContext request message context
      * @return
      */

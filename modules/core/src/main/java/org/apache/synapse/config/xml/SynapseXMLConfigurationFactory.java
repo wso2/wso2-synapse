@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMComment;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -100,11 +101,11 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                     defineEventSource(config, elt, properties);
                 } else if (XMLConfigConstants.EXECUTOR_ELT.equals(elt.getQName())) {
                     defineExecutor(config, elt, properties);
-                } else if(XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
+                } else if (XMLConfigConstants.MESSAGE_STORE_ELT.equals(elt.getQName())) {
                     defineMessageStore(config, elt, properties);
-                } else if(XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
+                } else if (XMLConfigConstants.TASK_MANAGER_ELT.equals(elt.getQName())) {
                     defineTaskManager(config, elt, properties);
-                } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())){
+                } else if (XMLConfigConstants.MESSAGE_PROCESSOR_ELT.equals(elt.getQName())) {
                     defineMessageProcessor(config, elt, properties);
                 } else if (StartupFinder.getInstance().isStartup(elt.getQName())) {
                     defineStartup(config, elt, properties);
@@ -119,6 +120,9 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
                             "\'endpoint\', \'proxy\', \'eventSource\', \'localEntry\', \'priorityExecutor\'" +
                             ", \'registry\' or \'inboundEndpoint\' is expected");
                 }
+            } else if (o instanceof OMComment) {
+                OMComment commentNode = (OMComment) o;
+                defineComments(config, commentNode);
             }
         }
         return config;
@@ -411,7 +415,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
     public static InboundEndpoint defineInboundEndpoint(SynapseConfiguration config, OMElement elem, Properties properties) {
         InboundEndpoint inboundEndpoint = null;
         try {
-            inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(elem);
+            inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(elem, config);
             config.addInboundEndpoint(inboundEndpoint.getName(), inboundEndpoint);
         } catch (Exception e) {
             String msg = "Inbound Endpoint configuration cannot be built";
@@ -450,5 +454,15 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             log.error(msg, e);
             throw new SynapseException(msg, e);
         }
+    }
+
+    /**
+     * Add comment node value to the synapse configuration's comments list
+     *
+     * @param config Synapse Configuration instance
+     * @param comm   OMComment Node
+     */
+    private void defineComments(SynapseConfiguration config, OMComment comm) {
+        config.addToCommentedTextList(comm.getValue());
     }
 }

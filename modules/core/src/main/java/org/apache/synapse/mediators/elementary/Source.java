@@ -131,6 +131,9 @@ public class Source {
                 if (clone) {
                     sourceNodeList.add(((OMElement) o).cloneOMElement());
                 }
+                else{
+                    sourceNodeList.add((OMElement) o);
+                }
             } else if (o instanceof String) {
                 String sourceStr = (String) o;
                 OMFactory fac = OMAbstractFactory.getOMFactory();

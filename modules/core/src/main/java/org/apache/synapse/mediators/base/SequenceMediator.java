@@ -126,15 +126,18 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
 
                 // Add a new SeqContinuationState as we branched to new Sequence.
-                if (dynamic && registryKey != null) {
-                    ContinuationStackManager.addSeqContinuationState(synCtx, registryKey, sequenceType);
-                } else {
-                    ContinuationStackManager.addSeqContinuationState(synCtx, name, sequenceType);
+                boolean skipAddition = ContinuationStackManager.isSkipSeqContinuationStateAddition(synCtx);
+                if (!skipAddition) {
+                    if (dynamic && registryKey != null) {
+                        ContinuationStackManager.addSeqContinuationState(synCtx, registryKey, sequenceType);
+                    } else {
+                        ContinuationStackManager.addSeqContinuationState(synCtx, name, sequenceType);
+                    }
                 }
 
                 boolean result = super.mediate(synCtx);
 
-                if (result) {
+                if (result && !skipAddition) {
                     // if flow completed remove the previously added SeqContinuationState
                     ContinuationStackManager.removeSeqContinuationState(synCtx, sequenceType);
                 }

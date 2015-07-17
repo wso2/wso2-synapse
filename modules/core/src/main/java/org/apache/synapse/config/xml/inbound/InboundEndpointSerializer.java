@@ -51,10 +51,15 @@ public class InboundEndpointSerializer {
 		                                                   SynapseConstants.SYNAPSE_OMNAMESPACE);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_NAME,
 		                                inboundEndpoint.getName(), null);
-        inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
-                                        inboundEndpoint.getInjectingSeq(), null);
-        inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
-		                                inboundEndpoint.getOnErrorSeq(), null);
+		if (inboundEndpoint.getInjectingSeq() != null) {
+			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
+											inboundEndpoint.getInjectingSeq(), null);
+		}
+		if (inboundEndpoint.getOnErrorSeq() != null) {
+			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_ERROR_SEQUENCE,
+											inboundEndpoint.getOnErrorSeq(), null);
+		}
+
 		if (inboundEndpoint.getProtocol() != null) {
 			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL,
                     inboundEndpoint.getProtocol(), null);			
@@ -70,12 +75,16 @@ public class InboundEndpointSerializer {
 		                                              SynapseConstants.SYNAPSE_OMNAMESPACE);
 
 		for (Map.Entry<String, String> paramEntry : inboundEndpoint.getParametersMap().entrySet()) {
+			String strKey = paramEntry.getKey();
 			OMElement parameter = fac.createOMElement(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER,
 			                                          SynapseConstants.SYNAPSE_OMNAMESPACE);
 			parameter.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_NAME,
-			                       paramEntry.getKey(), null);
+			                       strKey, null);
 
-			if (isWellFormedXML(paramEntry.getValue())) {
+		if(inboundEndpoint.getParameterKey(strKey) != null){
+         parameter.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_PARAMETER_KEY,
+                                inboundEndpoint.getParameterKey(strKey), null);
+		}else if (isWellFormedXML(paramEntry.getValue())) {
 				try {
 					OMElement omElement = AXIOMUtil.stringToOM(paramEntry.getValue());
 					parameter.addChild(omElement);

@@ -39,4 +39,10 @@ public class OutMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inptXml, outMediatorFactory, outMediatorSerializer));
         assertTrue(serialization(inptXml, outMediatorSerializer));
     }
+
+    public void testOutMediatorSerializationWithComment() throws Exception {
+        String inptXml = " <out xmlns=\"http://ws.apache.org/ns/synapse\"><header name=\"To\" value=\"http://64.124.140.30:9090/soap\"/><!--Test Comment--></out>";
+        assertTrue(serialization(inptXml, outMediatorFactory, outMediatorSerializer));
+        assertTrue(serialization(inptXml, outMediatorSerializer));
+    }
 }

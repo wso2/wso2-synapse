@@ -95,10 +95,14 @@ public class LogMediator extends AbstractMediator {
                 synLog.auditLog(getLogMessage(synCtx));
                 break;
             case CATEGORY_TRACE :
-                synLog.auditTrace(getLogMessage(synCtx));
+            	if(synLog.isTraceEnabled()){
+            		synLog.auditTrace(getLogMessage(synCtx));
+            	}
                 break;
             case CATEGORY_DEBUG :
-                synLog.auditDebug(getLogMessage(synCtx));
+            	if(synLog.isDebugEnabled()){
+            		synLog.auditDebug(getLogMessage(synCtx));
+            	}
                 break;
             case CATEGORY_WARN :
                 synLog.auditWarn(getLogMessage(synCtx));
@@ -230,9 +234,13 @@ public class LogMediator extends AbstractMediator {
     }
 
     public void setSeparator(String separator) {
-        this.separator = separator;
+        if (separator.equals("\\n")) {
+            this.separator = "\n";
+        } else {
+            this.separator = separator;
+        }
     }
-
+        
     public void addProperty(MediatorProperty p) {
         properties.add(p);
     }

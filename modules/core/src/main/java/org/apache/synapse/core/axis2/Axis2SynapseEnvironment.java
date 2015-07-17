@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 
 
 import org.apache.synapse.FaultHandler;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
@@ -40,7 +41,9 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.SynapseHandlersLoader;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -82,6 +85,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private boolean initialized = false;
     private SynapseTaskManager taskManager;
     private RESTRequestHandler restHandler;
+    private List<SynapseHandler> synapseHandlers;
+    private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
@@ -161,6 +166,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         taskManager = new SynapseTaskManager();
         restHandler = new RESTRequestHandler();
+
+        synapseHandlers = SynapseHandlersLoader.loadHandlers();
+
+        this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
+
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
@@ -189,6 +199,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
 
         synCtx.setEnvironment(this);
+
+        if (!invokeHandlers(synCtx)) {
+            return false;
+        }
+
         Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
         // the mandatory sequence is optional and hence check for the existence before mediation
         if (mandatorySeq != null) {
@@ -260,24 +275,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
         if (proxyService != null) {
-            if (proxyService.getTargetFaultSequence() != null) {
-                Mediator faultSequence = synCtx.getSequence(proxyService.getTargetFaultSequence());
-                if (faultSequence != null) {
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(faultSequence));
-                } else {
-                    log.warn("Cloud not find any fault-sequence named :" +
-                                proxyService.getTargetFaultSequence() + "; Setting the default" +
-                                " fault sequence for out path");
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-                }
-
-            } else if (proxyService.getTargetInLineFaultSequence() != null) {
-                synCtx.pushFaultHandler(
-                        new MediatorFaultHandler(proxyService.getTargetInLineFaultSequence()));
-
-            } else {
-                synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-            }
+            proxyService.registerFaultHandler(synCtx);
 
             Mediator outSequence = getProxyOutSequence(synCtx, proxyService);
             if (receivingSequence != null) {
@@ -319,10 +317,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /**
      * 
      * Used by inbound polling endpoints to inject the message to synapse engine
-     * 
-     * @param MessageContext
-     * @param SequenceMediator
-     * @param sequential
+     *
+     * @param synCtx message context
+     * @param sequential whether message should be injected in sequential manner
+     *                   without spawning new threads
      * @return Boolean - Indicate if were able to inject the message
      * @throws SynapseException
      *             - in case error occured during the mediation
@@ -335,50 +333,60 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
-        if (sequential) {
+
+        synCtx.setEnvironment(this);
+        if (!invokeHandlers(synCtx)) {
+            return false;
+        }
+
+        if (!sequential) {
             try {
-                seq.mediate(synCtx);
-                return true;
-            } catch (SynapseException syne) {
-                if (!synCtx.getFaultStack().isEmpty()) {
-                    log.warn("Executing fault handler due to exception encountered");
-                    ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
-                } else {
-                    log.warn("Exception encountered but no fault handler found - message dropped");
-                }
-                throw syne;
-            } catch (Exception e) {
-                String msg = "Unexpected error executing task/async inject";
-                log.error(msg, e);
-                if (synCtx.getServiceLog() != null) {
-                    synCtx.getServiceLog().error(msg, e);
-                }
-                if (!synCtx.getFaultStack().isEmpty()) {
-                    log.warn("Executing fault handler due to exception encountered");
-                    ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
-                } else {
-                    log.warn("Exception encountered but no fault handler found - message dropped");
-                }
-                throw new SynapseException(
-                        "Exception encountered but no fault handler found - message dropped", e);
-            } catch (Throwable e) {
-                String msg = "Unexpected error executing inbound/async inject, message dropped";
-                log.error(msg, e);
-                if (synCtx.getServiceLog() != null) {
-                    synCtx.getServiceLog().error(msg, e);
-                }
-                throw new SynapseException(msg, e);
-            }
-        } else {
-            try {
-                synCtx.setEnvironment(this);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
                 return true;
             } catch (RejectedExecutionException re) {
-                log.warn("Inbound worker pool has reached the maximum capacity and will be ignorning the processing.");
+                // If the pool is full complete the execution with the same thread
+                log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
             }
         }
-        return false;
+        
+        // Following code is reached if the sequential==true or inbound is
+        // reached max level
+        try {
+            seq.mediate(synCtx);
+            return true;
+        } catch (SynapseException syne) {
+            if (!synCtx.getFaultStack().isEmpty()) {
+                log.warn("Executing fault handler due to exception encountered");
+                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+                return true;
+            } else {
+                log.warn("Exception encountered but no fault handler found - message dropped");
+                throw syne;
+            }
+        } catch (Exception e) {
+            String msg = "Unexpected error executing task/async inject";
+            log.error(msg, e);
+            if (synCtx.getServiceLog() != null) {
+                synCtx.getServiceLog().error(msg, e);
+            }
+            if (!synCtx.getFaultStack().isEmpty()) {
+                log.warn("Executing fault handler due to exception encountered");
+                ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+                return true;
+            } else {
+                log.warn("Exception encountered but no fault handler found - message dropped");
+                throw new SynapseException(
+                                           "Exception encountered but no fault handler found - message dropped",
+                                           e);
+            }
+        } catch (Throwable e) {
+            String msg = "Unexpected error executing inbound/async inject, message dropped";
+            log.error(msg, e);
+            if (synCtx.getServiceLog() != null) {
+                synCtx.getServiceLog().error(msg, e);
+            }
+            throw new SynapseException(msg, e);
+        }
     }
     
     /**
@@ -412,6 +420,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 if (serviceModuleEngaged || isTransportSwitching(synCtx, null)) {
                     buildMessage(synCtx);
                 }
+                
+                //Build message in the case of inbound jms dual channel
+                Boolean isInboundJMS = (Boolean)synCtx.getProperty(SynapseConstants.INBOUND_JMS_PROTOCOL);
+                if (isInboundJMS != null && isInboundJMS) {
+                    buildMessage(synCtx);
+                }
+                
                 Axis2Sender.sendBack(synCtx);
             }
         } else {
@@ -809,12 +824,42 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
     }
 
+    /**
+     * Get all synapse handlers
+     *
+     * @return list of synapse handlers
+     */
+    public List<SynapseHandler> getSynapseHandlers() {
+        return synapseHandlers;
+    }
+
+    /**
+     * Register a synapse handler to the synapse environment
+     *
+     * @param handler synapse handler
+     */
+    public void registerSynapseHandler(SynapseHandler handler) {
+        synapseHandlers.add(handler);
+    }
+
+    @Override
+    public long getGlobalTimeout() {
+        return globalTimeout;
+    }
+
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
+        if (seq == null) {
+            log.error("Please provide existing sequence");
+            return false;
+        }
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                     + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
         smc.setEnvironment(this);
+        if (!invokeHandlers(smc)) {
+            return false;
+        }
         try {
             seq.mediate(smc);
             return true;
@@ -829,7 +874,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return false;
         } catch (Exception e) {
-            String msg = "Unexpected error executing task  inject";
+            String msg = "Unexpected error executing  injecting message to sequence ," + seq;
             log.error(msg, e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
@@ -844,7 +889,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return false;
         } catch (Throwable e) {
-            String msg = "Unexpected error executing task inject, message dropped";
+            String msg = "Unexpected error executing  injecting message to sequence ," + seq + " message dropped";
             log.error(msg, e);
             if (smc.getServiceLog() != null) {
                 smc.getServiceLog().error(msg, e);
@@ -861,5 +906,41 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }
+    }
+
+
+    /**
+     * Invoke Synapse Handlers
+     *
+     * @param synCtx synapse message context
+     * @return whether flow should continue further
+     */
+    private boolean invokeHandlers(MessageContext synCtx) {
+
+        Iterator<SynapseHandler> iterator =
+                synCtx.getEnvironment().getSynapseHandlers().iterator();
+
+        if (iterator.hasNext()) {
+
+            Boolean isContinuationCall =
+                    (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+
+            if (synCtx.isResponse() || (isContinuationCall != null && isContinuationCall)) {
+                while (iterator.hasNext()) {
+                    SynapseHandler handler = iterator.next();
+                    if (!handler.handleResponseInFlow(synCtx)) {
+                        return false;
+                    }
+                }
+            } else {
+                while (iterator.hasNext()) {
+                    SynapseHandler handler = iterator.next();
+                    if (!handler.handleRequestInFlow(synCtx)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 }
