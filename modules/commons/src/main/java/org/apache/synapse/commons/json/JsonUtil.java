@@ -130,10 +130,8 @@ public final class JsonUtil {
             .autoArray(true)
             .autoPrimitive(true)
             .namespaceDeclarations(false)
-
             .namespaceSeparator( '\u0D89')
             .customRegex(jsonoutcustomRegex)
-
             .build();
 
     /**
