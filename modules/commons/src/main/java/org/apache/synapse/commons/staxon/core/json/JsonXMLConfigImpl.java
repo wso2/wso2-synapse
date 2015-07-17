@@ -34,6 +34,7 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
     private char namespaceSeparator = JsonXMLConfig.DEFAULT.getNamespaceSeparator();
 
     private boolean repairingNamespaces = JsonXMLConfig.DEFAULT.isRepairingNamespaces();
+    private String customRegex =JsonXMLConfig.DEFAULT.getCustomRegex();
 
     @Override
     protected JsonXMLConfigImpl clone() {
@@ -115,4 +116,14 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
     public void setRepairingNamespaces(boolean repairingNamespaces) {
         this.repairingNamespaces = repairingNamespaces;
     }
+
+    @Override
+    public String getCustomRegex() {
+        return customRegex;
+    }
+
+    public void setCustomRegex(String customRegex){
+        this.customRegex =customRegex;
+    }
+
 }

@@ -89,12 +89,15 @@ public final class JsonUtil {
 
     private static final boolean jsonOutEnableNsDeclarations;
 
+    private static final String jsonoutcustomRegex;
+
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
         if (properties == null) {
             preserverNamespacesForJson = processNCNames = jsonOutEnableNsDeclarations = false;
             jsonOutAutoPrimitive = true;
             jsonOutNamespaceSepChar = '_';
+            jsonoutcustomRegex=null;
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
             String process = properties.getProperty("synapse.commons.json.preserve.namespace", "false").trim();
@@ -112,7 +115,10 @@ public final class JsonUtil {
             process = properties.getProperty("synapse.commons.json.json.output.enableNSDeclarations", "false").trim();
             jsonOutEnableNsDeclarations = Boolean.parseBoolean(process.toLowerCase());
 
+            jsonoutcustomRegex = properties.getProperty("synapse.commons.json.json.output.disableAutoPrimitive.regex", null);
+
             process = properties.getProperty("synapse.commons.json.json.output.emptyXmlElemToEmptyStr", "true").trim();
+
         }
     }
 
@@ -124,7 +130,8 @@ public final class JsonUtil {
             .autoArray(true)
             .autoPrimitive(true)
             .namespaceDeclarations(false)
-            .namespaceSeparator('\u0D89')
+            .namespaceSeparator( '\u0D89')
+            .customRegex(jsonoutcustomRegex)
             .build();
 
     /**
