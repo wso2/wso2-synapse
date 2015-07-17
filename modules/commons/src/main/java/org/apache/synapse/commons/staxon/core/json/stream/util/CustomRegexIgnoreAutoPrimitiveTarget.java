@@ -16,9 +16,6 @@
 package org.apache.synapse.commons.staxon.core.json.stream.util;
 
 
-
-
-
 import org.apache.synapse.commons.staxon.core.json.stream.JsonStreamTarget;
 
 import java.io.IOException;
@@ -32,7 +29,8 @@ public class CustomRegexIgnoreAutoPrimitiveTarget extends StreamTargetDelegate {
 
     private String lastName;
 
-    public CustomRegexIgnoreAutoPrimitiveTarget(JsonStreamTarget delegate, boolean convertAttributes, String customRegex) {
+    public CustomRegexIgnoreAutoPrimitiveTarget(JsonStreamTarget delegate, boolean convertAttributes,
+                                                String customRegex) {
         super(delegate);
         this.convertAttributes = convertAttributes;
         this.customRegex = Pattern.compile(customRegex);
