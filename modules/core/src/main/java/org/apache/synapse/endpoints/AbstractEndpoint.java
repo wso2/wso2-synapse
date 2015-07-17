@@ -196,8 +196,20 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
+    /**
+     * Set the car File name which this endpoint deployed from
+     * @param name
+     */
     public void setCarName (String name) {
         carName = name;
+    }
+
+    /**
+     * Get the car File name which this endpoint deployed from
+     * @return carName
+     */
+    public String getCarName () {
+        return carName;
     }
 
     /**

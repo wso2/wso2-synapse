@@ -91,13 +91,16 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
-        
+
+        Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
+
+        CustomLogSetter.getInstance().setLogAppender((m != null) ? ((SequenceMediator) m).getCarName() : "");
+
         if (log.isDebugEnabled()) {
             log.debug("Sequence update from file : " + fileName + " has started");
         }
 
         try {
-            Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
             if (m == null || !(m instanceof  SequenceMediator)) {
                 handleSynapseArtifactDeploymentError("Sequence update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid sequence.");
@@ -154,6 +157,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);
             if (seq != null) {
+                CustomLogSetter.getInstance().setLogAppender(seq.getCarName());
                 if (SynapseConstants.MAIN_SEQUENCE_KEY.equals(seq.getName())
                         || SynapseConstants.FAULT_SEQUENCE_KEY.equals(seq.getName())) {
                     handleSynapseArtifactDeploymentError(
@@ -188,6 +192,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);
+            CustomLogSetter.getInstance().setLogAppender((seq != null) ? seq.getCarName() : "");
             OMElement seqElem = MediatorSerializerFinder.getInstance().getSerializer(seq).
                     serializeMediator(null, seq);
             if (seq.getFileName() != null) {

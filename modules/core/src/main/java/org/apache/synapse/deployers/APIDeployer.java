@@ -78,14 +78,17 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName, String existingArtifactName, Properties properties) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
+        API api = APIFactory.createAPI(artifactConfig, properties);
+
+        if (api != null) {
+            api.setLogSetterValue();
+        }
 
         if (log.isDebugEnabled()) {
             log.debug("API update from file : " + fileName + " has started");
         }
 
         try {
-            API api = APIFactory.createAPI(artifactConfig, properties);
             if (api == null) {
                 handleSynapseArtifactDeploymentError("API update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid API.");
@@ -126,8 +129,6 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("Undeployment of the API named : "
                     + artifactName + " : Started");
@@ -136,6 +137,7 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
         try {
             API api = getSynapseConfiguration().getAPI(artifactName);
             if (api != null) {
+                api.setLogSetterValue();
                 getSynapseConfiguration().removeAPI(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Undeployment of the API named : "
@@ -154,14 +156,16 @@ public class APIDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void restoreSynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("Restoring the API with name : " + artifactName + " : Started");
         }
 
         try {
             API api = getSynapseConfiguration().getAPI(artifactName);
+
+            if (api != null) {
+                api.setLogSetterValue();
+            }
             OMElement apiElement = APISerializer.serializeAPI(api);
             if (api.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()

@@ -119,8 +119,6 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("ProxyService Update from file : " + fileName + " : Started");
         }
@@ -128,6 +126,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
             if (proxy != null) {
+                proxy.setLogSetterValue();
                 proxy.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("ProxyService named '" + proxy.getName()
@@ -172,8 +171,6 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("ProxyService Undeployment of the proxy named : "
                     + artifactName + " : Started");
@@ -182,6 +179,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             ProxyService proxy = getSynapseConfiguration().getProxyService(artifactName);
             if (proxy != null) {
+                proxy.setLogSetterValue();
                 if (log.isDebugEnabled()) {
                     log.debug("Stopping the ProxyService named : " + artifactName);
                 }
@@ -204,8 +202,6 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void restoreSynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("Restoring the ProxyService with name : " + artifactName + " : Started");
         }
@@ -213,6 +209,11 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             ProxyService proxy
                     = getSynapseConfiguration().getProxyService(artifactName);
+
+            if (proxy != null) {
+                proxy.setLogSetterValue();
+            }
+
             OMElement proxyElem = ProxyServiceSerializer.serializeProxy(null, proxy);
             if (proxy.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()

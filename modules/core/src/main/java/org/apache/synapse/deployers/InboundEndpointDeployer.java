@@ -78,7 +78,6 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName, String existingArtifactName, Properties properties) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
         if (log.isDebugEnabled()) {
             log.debug("Inbound Endpoint update from file : " + fileName + " has started");
         }
@@ -92,6 +91,8 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
                         "defined in the file: " + fileName + " is not a valid Inbound Endpoint.");
                 return null;
             }
+
+            CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getCarName());
 
             inboundEndpoint.setFileName(new File(fileName).getName());
             inboundEndpoint.setCarName(customLogContent);
@@ -130,8 +131,6 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
     public void undeploySynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("Undeployment of the Inbound Endpoint named : "
                     + artifactName + " : Started");
@@ -140,6 +139,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
             if (inboundEndpoint != null) {
+                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getCarName());
             	inboundEndpoint.destroy();
                 getSynapseConfiguration().removeInboundEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
@@ -159,14 +159,13 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void restoreSynapseArtifact(String artifactName) {
 
-        CustomLogSetter.getInstance().setLogAppender(customLogContent);
-
         if (log.isDebugEnabled()) {
             log.debug("Restoring the Inbound Endpoint with name : " + artifactName + " : Started");
         }
 
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
+            CustomLogSetter.getInstance().setLogAppender((inboundEndpoint != null) ? inboundEndpoint.getCarName() : "");
             OMElement inboundEndpointElement = InboundEndpointSerializer.serializeInboundEndpoint(inboundEndpoint);
             if (inboundEndpoint.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()
