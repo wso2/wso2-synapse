@@ -145,7 +145,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 JsonUtil.removeJsonPayload(axis2MessageContext);
                 OMElement omXML = AXIOMUtil.stringToOM(out);
                 if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
-	                axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement().getFirstElement());
+                    axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement());
                 }
             } catch (XMLStreamException e) {
                 handleException("Error creating SOAP Envelope from source " + out, synCtx);
@@ -291,11 +291,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         String replacementValue = null;
         Matcher matcher;
 
-        if (mediaType != null && (mediaType.equals(JSON_TYPE) || mediaType.equals(TEXT_TYPE))) {
-            matcher = pattern.matcher(format);
-        } else {
-            matcher = pattern.matcher("<pfPadding>" + format + "</pfPadding>");
-        }
+        matcher = pattern.matcher(format);
         try {
             while (matcher.find()) {
                 String matchSeq = matcher.group();
@@ -385,7 +381,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
 			return STRING_TYPE;
 		}
 	}
-
     private boolean checkAndReplaceEnvelope(OMElement resultElement, MessageContext synCtx) {
         OMElement firstChild = resultElement.getFirstElement();
         QName resultQName = firstChild.getQName();
