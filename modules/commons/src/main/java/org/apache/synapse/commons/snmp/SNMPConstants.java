@@ -40,6 +40,10 @@ public class SNMPConstants {
     public static final String SNMP_HOST = "synapse.snmp.host";
     public static final String SNMP_PORT = "synapse.snmp.port";
     public static final String SNMP_VERSION = "synapse.snmp.version";
+    
+    public static final String SNMP_CONTACT_NAME = "synapse.snmp.contact";
+    public static final String SNMP_DESCRIPTION = "synapse.snmp.description";
+    public static final String SNMP_LOCATION = "synapse.snmp.location";
 
     // Configuration defaults
     public static final String SNMP_DEFAULT_COMMUNITY_NAME = "public";
@@ -48,6 +52,10 @@ public class SNMPConstants {
     public static final String SNMP_DEFAULT_HOST = "127.0.0.1";
     public static final int SNMP_DEFAULT_PORT = 9161;
     public static final String SNMP_DEFAULT_VERSION = SNMP_VERSION_1;
+    
+    public static final String SNMP_DEFAULT_CONTACT_NAME = "carbon@carbon.super";
+    public static final String SNMP_DEFAULT_DESCRIPTION = "WSO2 Carbon";
+    public static final String SNMP_DEFAULT_LOCATION = "Virtual";
 
     public static final String BC_FILE = "./logs/snmp/boot-counter.cfg";
     public static final String CONFIG_FILE = "./logs/snmp/conf.cfg";
