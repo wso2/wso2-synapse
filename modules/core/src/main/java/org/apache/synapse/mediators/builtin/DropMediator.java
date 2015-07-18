@@ -24,8 +24,9 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
+
+import java.util.UUID;
 
 /**
  * Halts further processing/mediation of the current message. i.e. returns false
@@ -50,9 +51,9 @@ public class DropMediator extends AbstractMediator {
             }
         }
 
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Drop Mediator", true);
-        synCtx.addComponentToMessageFlow(getMediatorId(), "Drop Mediator");
+        String mediatorId = UUID.randomUUID().toString();
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", true);
+        synCtx.addComponentToMessageFlow(mediatorId, "Drop Mediator");
 
         synCtx.setTo(null);
 
@@ -65,9 +66,9 @@ public class DropMediator extends AbstractMediator {
             synLog.traceOrDebug("End : Drop mediator");
         }
 
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Drop Mediator", false);
-        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
-
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", false);
+//        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
+        MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         return false;
     }
 

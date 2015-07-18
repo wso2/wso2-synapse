@@ -24,19 +24,18 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.jaxen.JaxenException;
 
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -127,13 +126,12 @@ public class FilterMediator extends AbstractListMediator implements
             }
         }
 
-        setMediatorId();
-
         boolean result = false;
         if (test(synCtx)) {
 
-            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Then(Filter)", true);
-            synCtx.addComponentToMessageFlow(getMediatorId(), "Filter Mediator(Then)");
+            String mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
+            synCtx.addComponentToMessageFlow(mediatorId, "Filter Mediator(Then)");
 
             if (thenKey != null) {
 
@@ -171,12 +169,13 @@ public class FilterMediator extends AbstractListMediator implements
 
             }
 
-            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Then(Filter)", false);
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", false);
 
         } else {
 
-            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Else(Filter)", true);
-            synCtx.addComponentToMessageFlow(getMediatorId(), "Filter Mediator(Else)");
+            String mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
+            synCtx.addComponentToMessageFlow(mediatorId, "Filter Mediator(Else)");
 
             if (elseKey != null) {
 
@@ -222,7 +221,7 @@ public class FilterMediator extends AbstractListMediator implements
                 result = true;
             }
 
-            MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Else(Filter)", false);
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", false);
         }
 
 //        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Filter Mediator", false);

@@ -27,19 +27,18 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
 
 import java.util.Stack;
+import java.util.UUID;
 
 /**
  * The Sequence mediator either refers to a named Sequence mediator instance
@@ -98,9 +97,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
 
         if (key == null) {
-                setMediatorId();
-                MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence: " + (name == null ? this.sequenceType.name() : name), true);
-                synCtx.addComponentToMessageFlow(getMediatorId(), (name == null ? this.sequenceType.name() : name));
+
+            String mediatorId = null;
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Sequence: " + (name == null ? this.sequenceType.name() : name), true);
+                synCtx.addComponentToMessageFlow(mediatorId, (name == null ? this.sequenceType.name() : name));
+            }
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
@@ -172,7 +175,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
 
-                MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Sequence: " + (name == null ? this.sequenceType.name() : name), false);
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Sequence: " + (name == null ? this.sequenceType.name() : name), false);
+                }
 
                 return result;
 

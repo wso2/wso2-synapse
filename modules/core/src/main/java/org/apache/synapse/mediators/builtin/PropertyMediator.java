@@ -24,12 +24,10 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
@@ -39,6 +37,7 @@ import org.apache.http.protocol.HTTP;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -85,9 +84,9 @@ public class PropertyMediator extends AbstractMediator {
      * @return true always
      */
     public boolean mediate(MessageContext synCtx) {
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Property Mediator", true);
-        synCtx.addComponentToMessageFlow(getMediatorId(), "Property Mediator");
+        String mediatorId = UUID.randomUUID().toString();
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", true);
+        synCtx.addComponentToMessageFlow(mediatorId, "Property Mediator");
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -219,7 +218,7 @@ public class PropertyMediator extends AbstractMediator {
         }
         synLog.traceOrDebug("End : Property mediator");
 
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Property Mediator", false);
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", false);
 
         return true;
     }

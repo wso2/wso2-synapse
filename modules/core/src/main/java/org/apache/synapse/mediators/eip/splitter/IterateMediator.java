@@ -37,7 +37,6 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -50,6 +49,7 @@ import org.jaxen.JaxenException;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Splits a message using an XPath expression and creates a new message to hold
@@ -103,9 +103,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             }
         }
 
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Iterate Mediator", true);
-        synCtx.addComponentToMessageFlow(getMediatorId(), "Iterate Mediator");
+        String mediatorId = UUID.randomUUID().toString();
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", true);
+        synCtx.addComponentToMessageFlow(mediatorId, "Iterate Mediator");
 
         try {
             // get a copy of the message for the processing, if the continueParent is set to true
@@ -171,7 +171,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         synLog.traceOrDebug("End : Iterate mediator");
 
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Iterate Mediator", false);
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", false);
 
         // whether to continue mediation on the original message
         return continueParent;

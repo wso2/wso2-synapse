@@ -23,11 +23,12 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
+
+import java.util.UUID;
 
 /**
  * The Out Mediator acts only on "outgoing" messages from synapse. This is
@@ -56,22 +57,30 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
             }
         }
 
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Out Mediator", true);
-
         boolean result = true;
         if (test(synCtx)) {
+
+            String mediatorId = null;
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Out Mediator", true);
+                synCtx.addComponentToMessageFlow(mediatorId, "Out Mediator");
+            }
+
             synLog.traceOrDebug("Current message is outgoing - executing child mediators");
             ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
             result = super.mediate(synCtx);
             if (result) {
                 ContinuationStackManager.removeReliantContinuationState(synCtx);
             }
+
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Out Mediator", false);
+            }
+
         } else {
             synLog.traceOrDebug("Current message is a request - skipping child mediators");
         }
-
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Out Mediator", false);
 
         synLog.traceOrDebug("End : Out mediator");
 

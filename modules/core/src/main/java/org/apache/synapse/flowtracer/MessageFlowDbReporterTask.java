@@ -1,6 +1,7 @@
 package org.apache.synapse.flowtracer;
 
 import org.apache.synapse.flowtracer.data.MessageFlowComponentEntry;
+import org.apache.synapse.flowtracer.data.MessageFlowTraceEntry;
 
 public class MessageFlowDbReporterTask implements Runnable{
 
@@ -13,17 +14,16 @@ public class MessageFlowDbReporterTask implements Runnable{
     @Override
     public void run() {
         while(running){
-            MessageFlowComponentEntry entry = MessageFlowDataHolder.getEntry();
+            MessageFlowComponentEntry componentInfoEntry = MessageFlowDataHolder.getComponentInfoEntry();
 
-            if(entry!=null){
-                MessageFlowDbConnector.getInstance().writeToDb(entry);
+            MessageFlowTraceEntry flowInfoEntry = MessageFlowDataHolder.getFlowInfoEntry();
+
+            if(componentInfoEntry!=null){
+                MessageFlowDbConnector.getInstance().writeToDb(componentInfoEntry);
             }
-            else {
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+            if(flowInfoEntry!=null){
+                MessageFlowDbConnector.getInstance().writeToDb(flowInfoEntry);
             }
         }
     }
