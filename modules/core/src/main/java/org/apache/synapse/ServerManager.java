@@ -22,7 +22,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowDbReporterTask;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
 
@@ -109,10 +111,18 @@ public class ServerManager {
         doInit();
         initialized = true;
 
-        //flow tracer report
-        messageFlowDbReporterTask = new MessageFlowDbReporterTask();
-        Thread messageFlowDbReporterTaskThread = new Thread(messageFlowDbReporterTask);
-        messageFlowDbReporterTaskThread.start();
+        ////////////////////
+        //flow tracer start
+        MessageFlowDataHolder.setMessageFlowTraceEnable(Boolean.parseBoolean(
+                SynapsePropertiesLoader.getPropertyValue(
+                        MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLE, String.valueOf(false))));
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            messageFlowDbReporterTask = new MessageFlowDbReporterTask();
+            Thread messageFlowDbReporterTaskThread = new Thread(messageFlowDbReporterTask);
+            messageFlowDbReporterTaskThread.start();
+        }
+        ////////////////////
 
         return this.serverContextInformation.getServerState();
     }

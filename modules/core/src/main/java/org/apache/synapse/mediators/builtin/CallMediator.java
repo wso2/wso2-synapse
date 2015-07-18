@@ -25,12 +25,10 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.axis2.context.ConfigurationContext;
@@ -39,6 +37,7 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Call Mediator sends a message using specified semantics. If it contains an endpoint it will
@@ -160,9 +159,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             }
         }
 
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synInCtx, getMediatorId(), "Call Mediator", true);
-        synInCtx.addComponentToMessageFlow(getMediatorId(), "Call Mediator");
+        String mediatorId = UUID.randomUUID().toString();
+        MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", true);
+        synInCtx.addComponentToMessageFlow(mediatorId, "Call Mediator");
 
         // clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();
@@ -215,7 +214,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             synLog.traceOrDebug("End : Call mediator - Non Blocking Call");
         }
 
-        MessageFlowDataHolder.addEntry(synInCtx, getMediatorId(), "Call Mediator", false);
+        MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", false);
 
         if (outOnlyMessage) {
             // For out only invocations request flow should continue

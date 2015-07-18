@@ -27,16 +27,15 @@ import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.MediatorProperty;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -93,9 +92,9 @@ public class LogMediator extends AbstractMediator {
             }
         }
 
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Log Mediator", true);
-        synCtx.addComponentToMessageFlow(getMediatorId(), "Log Mediator");
+        String mediatorId = UUID.randomUUID().toString();
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Log Mediator", true);
+        synCtx.addComponentToMessageFlow(mediatorId, "Log Mediator");
 
         switch (category) {
             case CATEGORY_INFO :
@@ -124,7 +123,7 @@ public class LogMediator extends AbstractMediator {
 
         synLog.traceOrDebug("End : Log mediator");
 
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Log Mediator", false);
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Log Mediator", false);
 
         return true;
     }

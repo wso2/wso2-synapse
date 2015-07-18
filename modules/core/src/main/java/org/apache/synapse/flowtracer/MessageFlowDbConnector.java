@@ -129,6 +129,26 @@ public class MessageFlowDbConnector {
         }
     }
 
+    public void writeToDb(MessageFlowTraceEntry entry) {
+        Connection con = null;
+        PreparedStatement ps = null;
+
+        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" (MessageId, FlowTrace, EntryType, TimeStamp)\n" +
+                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getMessageFlow()+"\', \'"+entry.getEntryType()+ "\', \'"+entry.getTimeStamp()+ "\')");
+        try {
+            con = jdbcConfiguration.getConnection();
+            ps = con.prepareStatement(stmt.getRawStatement());
+            int count = ps.executeUpdate();
+            con.commit();
+
+        } catch (SQLException e) {
+            logger.error("Error executing statement : " + stmt.getRawStatement() +
+                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+        } finally {
+            close(con, ps, null);
+        }
+    }
+
     public void writeToDb(MessageFlowComponentEntry entry) {
         Connection con = null;
         PreparedStatement ps = null;

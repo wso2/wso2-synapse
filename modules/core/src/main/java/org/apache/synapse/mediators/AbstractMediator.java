@@ -62,49 +62,11 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     private int mediatorPosition = 0;
 
-    private String mediatorId;
-
     /**
      * A constructor that makes subclasses pick up the correct logger
      */
     protected AbstractMediator() {
         log = LogFactory.getLog(this.getClass());
-    }
-
-    public String getMediatorId() {
-        if(mediatorId==null){
-            setMediatorId();
-        }
-        return mediatorId;
-    }
-
-    private static AtomicLong idCounter = new AtomicLong(0);
-
-    public static String createID() {
-        return String.valueOf(idCounter.getAndIncrement());
-    }
-
-    public synchronized void setMediatorId() {
-        Random r = new Random();
-
-        String cls = getClass().getName();
-        int p = cls.lastIndexOf(".");
-        if (p != -1)
-            cls = cls.substring(p + 1);
-
-        r.nextInt();
-        r.nextInt();
-        int ran = r.nextInt();
-
-//        mediatorId = cls+(ran<0 ? ran*-1 : ran)+hashCode();
-
-//        mediatorId = cls+UUID.randomUUID().toString();
-
-//        mediatorId = cls+count;
-
-//        mediatorId = cls+createID()+UUID.randomUUID().toString();
-
-        mediatorId = cls + UUID.randomUUID().toString() + createID()+""+ran;
     }
 
     /**

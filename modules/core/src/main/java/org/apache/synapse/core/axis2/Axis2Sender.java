@@ -38,6 +38,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
@@ -217,7 +218,8 @@ public class Axis2Sender {
         }
 
         //end of the flow
-        MessageFlowDbConnector.getInstance().writeToDb(smc);
+//        MessageFlowDbConnector.getInstance().writeToDb(smc);
+        MessageFlowDataHolder.addFlowInfoEntry(smc);
     }
 
     /**

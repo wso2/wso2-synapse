@@ -47,10 +47,7 @@ import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Aggregate a number of messages that are determined to be for a particular group, and combine
@@ -169,10 +166,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        setMediatorId();
-        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Aggregate Mediator", true);
-        synCtx.addComponentToMessageFlow(getMediatorId(), "Aggregate Mediator");
-        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
+        String mediatorId = UUID.randomUUID().toString();
+        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", true);
+        synCtx.addComponentToMessageFlow(mediatorId, "Aggregate Mediator");
+//        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
+        MessageFlowDataHolder.addFlowInfoEntry(synCtx);
 
         try {
             Aggregate aggregate = null;
@@ -325,7 +323,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     
                     synLog.traceOrDebug("End : Aggregate mediator");
 
-                    MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Aggregate Mediator", false);
+                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
 
                     return onCompleteSeqResult;
                 } else {
