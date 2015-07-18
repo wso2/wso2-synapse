@@ -148,7 +148,7 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
 	if (deploymentStore.containsFileName(fileName)) {
 	    File undeployingFile = new File(fileName);
-		if(fileName.contains("/tmp/carbonapps/")){
+		if(fileName.contains("/tmp/carbonapps/") && fileName.endsWith(".zip")){
 			undeployingFile.delete();
 		}
 	    // axis2 treats Hot-Update as (Undeployment + deployment), where
