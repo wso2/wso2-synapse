@@ -81,7 +81,8 @@ public class TargetRequestFactory {
                     Map.Entry entry = (Map.Entry) entryObj;
                     if (entry.getValue() != null && entry.getKey() instanceof String &&
                         entry.getValue() instanceof String) {
-                        if (HTTPConstants.HEADER_HOST.equalsIgnoreCase((String) entry.getKey()) && !configuration.isPreserveHttpHeader(HTTPConstants.HEADER_HOST)) {
+                        if (HTTPConstants.HEADER_HOST.equalsIgnoreCase((String) entry.getKey())
+                            && !configuration.isPreserveHttpHeader(HTTPConstants.HEADER_HOST)) {
                             if (msgContext.getProperty(NhttpConstants.REQUEST_HOST_HEADER) != null) {
                                 request.addHeader((String) entry.getKey(),
                                                   (String) msgContext.getProperty(NhttpConstants.REQUEST_HOST_HEADER));

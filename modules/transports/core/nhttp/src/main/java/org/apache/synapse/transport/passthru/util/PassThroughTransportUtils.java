@@ -145,27 +145,33 @@ public class PassThroughTransportUtils {
                 iter.remove();
             }
 
-            if (!targetConfiguration.isPreserveHttpHeader(HTTP.CONN_KEEP_ALIVE) && HTTP.CONN_KEEP_ALIVE.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONN_KEEP_ALIVE.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONN_KEEP_ALIVE)) {
                 iter.remove();
             }
 
-            if (!targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_LEN) && HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_LEN)) {
                 iter.remove();
             }
 
-            if (!targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE) && HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
                 iter.remove();
             }
 
-            if (!targetConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER) && HTTP.DATE_HEADER.equalsIgnoreCase(headerName)) {
+            if (HTTP.DATE_HEADER.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER)) {
                 iter.remove();
             }
 
-            if (!targetConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER) && HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)) {
+            if (HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER)) {
                 iter.remove();
             }
 
-            if (!targetConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT) && HTTP.USER_AGENT.equalsIgnoreCase(headerName)) {
+            if (HTTP.USER_AGENT.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT)) {
                 iter.remove();
             }
         }

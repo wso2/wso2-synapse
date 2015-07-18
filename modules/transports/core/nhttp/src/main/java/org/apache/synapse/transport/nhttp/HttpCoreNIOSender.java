@@ -306,22 +306,25 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         Iterator iter = headers.keySet().iterator();
         while (iter.hasNext()) {
             String headerName = (String) iter.next();
-            if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName) ||
-                HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName) ||
-                HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName) ||
-                HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName)
+                || HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName)
+                || HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)
+                || HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)) {
                 iter.remove();
             }
 
-            if (!nHttpConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER) && HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)) {
+            if (HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)
+                && !nHttpConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER)) {
                 iter.remove();
             }
 
-            if (!nHttpConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT) && HTTP.USER_AGENT.equalsIgnoreCase(headerName)) {
+            if (HTTP.USER_AGENT.equalsIgnoreCase(headerName)
+                && !nHttpConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT)) {
                 iter.remove();
             }
 
-            if (!nHttpConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER) && HTTP.DATE_HEADER.equalsIgnoreCase(headerName)) {
+            if (HTTP.DATE_HEADER.equalsIgnoreCase(headerName)
+                && !nHttpConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER)) {
                 iter.remove();
             }
 
