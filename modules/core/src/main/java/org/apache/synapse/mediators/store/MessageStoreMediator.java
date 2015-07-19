@@ -29,7 +29,6 @@ import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 
-
 /**
  * <code>MessageStoreMediator</code> will store the incoming Messages in associated MessageStore
  */
@@ -50,6 +49,8 @@ public class MessageStoreMediator extends AbstractMediator{
      */
     private String  onStoreSequence;
 
+    private static final String PRODUCER_GUARANTEED_DELIVERY = "store.producer.guaranteed.delivery.enable";
+    private static final String FAILOVER_MESSAGE_STORE_NAME = "store.failover.message.store.name";
 
 
     public boolean mediate(MessageContext synCtx) {
@@ -60,12 +61,12 @@ public class MessageStoreMediator extends AbstractMediator{
             MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
             if(messageStore != null) {
 
-                if (messageStore.getParameters().get("store.producer.guaranteed.delivery.enable") != null) {
-                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get("store.producer.guaranteed.delivery.enable").toString());
+                if (messageStore.getParameters().get(PRODUCER_GUARANTEED_DELIVERY) != null) {
+                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get(PRODUCER_GUARANTEED_DELIVERY).toString());
                 }
 
-                if (messageStore.getParameters().get("store.failover.message.store.name") != null) {
-                    failoverMessageStoreName = (String) messageStore.getParameters().get("store.failover.message.store.name");
+                if (messageStore.getParameters().get(FAILOVER_MESSAGE_STORE_NAME) != null) {
+                    failoverMessageStoreName = (String) messageStore.getParameters().get(FAILOVER_MESSAGE_STORE_NAME);
                 }
 
                 if(onStoreSequence != null) {
@@ -105,22 +106,23 @@ public class MessageStoreMediator extends AbstractMediator{
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }
-                boolean result = messageStore.getProducer().storeMessage(newCtx);
+                boolean produceStatus = messageStore.getProducer().storeMessage(newCtx);
 
-                if (!result) {
+                if (!produceStatus) {
 
-                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null) {
+                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null && !failoverMessageStoreName
+                            .isEmpty()) {
 
                         MessageStore failoverMessageStore = synCtx.getConfiguration().getMessageStore(failoverMessageStoreName);
-                        boolean finalResult = failoverMessageStore.getProducer().storeMessage(newCtx);
+                        boolean failoverProduceStatus = failoverMessageStore.getProducer().storeMessage(newCtx);
 
-                        if (!finalResult) {
+                        if (!failoverProduceStatus) {
                             synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
                             synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
                             synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
                                                                              + "] in store [" + messageStore.getName() + "].");
                             handleException("Failed to store message [" + synCtx.getMessageID()
-                                            + "] in store [" + messageStore.getName() + "].", synCtx);
+                                            + "] in failover store [" + failoverMessageStoreName + "].", synCtx);
                         }
 
                         if (shouldTrace(synCtx.getTracingState())) {
@@ -199,5 +201,4 @@ public class MessageStoreMediator extends AbstractMediator{
             return null;
         }
     }
-
 }
