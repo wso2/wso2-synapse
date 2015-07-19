@@ -93,6 +93,7 @@ public final class NHttpConfiguration {
     private NHttpConfiguration() {
         try {
             props = MiscellaneousUtil.loadProperties("nhttp.properties");
+            populatePreserveHttpHeaders();
         } catch (Exception ignore) {}
     }
 
@@ -205,27 +206,6 @@ public final class NHttpConfiguration {
      * @return return true if preserve else false
      */
     public boolean isPreserveHttpHeader(String httpHeader) {
-        if (preserveHeaders == null) {
-            preserveHeaders = new ArrayList<String>();
-            String presHeaders = getStringValue(NhttpConstants.HTTP_HEADERS_PRESERVE, "");
-
-            if (presHeaders != null && !presHeaders.isEmpty()) {
-                String[] splitHeaders = presHeaders.toUpperCase().trim().split(",");
-
-                if (splitHeaders != null && splitHeaders.length > 0) {
-                    preserveHeaders.addAll(Arrays.asList(splitHeaders));
-                }
-            }
-
-            if (getBooleanValue(NhttpConstants.SERVER_HEADER_PRESERVE, true) && !preserveHeaders.contains(HTTP.SERVER_HEADER.toUpperCase())) {
-                preserveHeaders.add(HTTP.SERVER_HEADER.toUpperCase());
-            }
-
-            if (getBooleanValue(NhttpConstants.USER_AGENT_HEADER_PRESERVE, false) && !preserveHeaders.contains(HTTP.USER_AGENT.toUpperCase())) {
-                preserveHeaders.add(HTTP.USER_AGENT.toUpperCase());
-            }
-        }
-
         if (preserveHeaders == null || preserveHeaders.isEmpty() || httpHeader == null) {
             return false;
         } else {
@@ -308,6 +288,33 @@ public final class NHttpConfiguration {
             }
         }
         return methods.contains(method);
+    }
+
+    private void populatePreserveHttpHeaders() {
+
+        if (preserveHeaders == null) {
+            preserveHeaders = new ArrayList<String>();
+            String presHeaders = getStringValue(NhttpConstants.HTTP_HEADERS_PRESERVE, "");
+
+            if (presHeaders != null && !presHeaders.isEmpty()) {
+                String[] splitHeaders = presHeaders.toUpperCase().trim().split(",");
+
+                if (splitHeaders != null && splitHeaders.length > 0) {
+                    preserveHeaders.addAll(Arrays.asList(splitHeaders));
+                }
+            }
+
+            if (getBooleanValue(NhttpConstants.SERVER_HEADER_PRESERVE, true)
+                && !preserveHeaders.contains(HTTP.SERVER_HEADER.toUpperCase())) {
+                preserveHeaders.add(HTTP.SERVER_HEADER.toUpperCase());
+            }
+
+            if (getBooleanValue(NhttpConstants.USER_AGENT_HEADER_PRESERVE, false)
+                && !preserveHeaders.contains(HTTP.USER_AGENT.toUpperCase())) {
+                preserveHeaders.add(HTTP.USER_AGENT.toUpperCase());
+            }
+        }
+
     }
 
 }
