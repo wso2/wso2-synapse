@@ -428,18 +428,8 @@ public class Axis2SynapseController implements SynapseController {
 		}
 		DeploymentEngine deploymentEngine = (DeploymentEngine) configurationContext
 				.getAxisConfiguration().getConfigurator();
-		String carbonRepoPath = configurationContext.getAxisConfiguration().getRepository()
-				.getPath();
-		SynapseArtifactDeploymentStore deploymentStore = synapseConfiguration
-				.getArtifactDeploymentStore();
 
-		String synapseImportDir = synapseConfiguration.getPathToConfigFile() + File.separator
-				+ MultiXMLConfigurationBuilder.SYNAPSE_IMPORTS_DIR;
-
-        /*Registering Import Deployer is not required here.*/
-		//deploymentEngine.addDeployer(new ImportDeployer(), synapseImportDir, "xml");
-
-		String libsPath = carbonRepoPath + File.separator + "synapse-libs";
+		String libsPath = deploymentEngine.getRepositoryDir().getPath() + File.separator + "synapse-libs";
 		deploymentEngine.addDeployer(new LibraryArtifactDeployer(), libsPath, "zip");
 	}
 
