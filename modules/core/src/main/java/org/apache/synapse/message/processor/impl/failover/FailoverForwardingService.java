@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2010, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -305,8 +305,8 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		// Default Value should be -1.
 		if (cronExpression != null &&
 		    parametersMap.get(FailoverForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
-			throttlingInterval = Long.parseLong((String) parametersMap.get(FailoverForwardingProcessorConstants
-					                                                               .THROTTLE_INTERVAL));
+			throttlingInterval =
+			                     Long.parseLong((String) parametersMap.get(FailoverForwardingProcessorConstants.THROTTLE_INTERVAL));
 		}
 
 		// Default to FALSE.
@@ -352,6 +352,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		}
 
 
+		MessageContext outCtx = null;
 		SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
 
 		if (targetMessageStoreName != null) {
@@ -365,8 +366,8 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 						// work as expected.
 						messageContext.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
 						OMElement firstChild = null; //
-						org.apache.axis2.context.MessageContext origAxis2Ctx = ((Axis2MessageContext) messageContext)
-								.getAxis2MessageContext();
+						org.apache.axis2.context.MessageContext origAxis2Ctx =
+						                                                       ((Axis2MessageContext) messageContext).getAxis2MessageContext();
 						if (JsonUtil.hasAJsonPayload(origAxis2Ctx)) {
 							firstChild = origAxis2Ctx.getEnvelope().getBody().getFirstElement();
 						} // Had to do this because
@@ -380,12 +381,15 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 								clonedFirstElement.detach();
 								messageContext.getEnvelope().getBody().addChild(firstChild);
 							}
-						}
+						}// Had to do this because
+						 // MessageHelper#cloneSOAPEnvelope does not clone
+						 // OMSourcedElemImpl correctly.
 
 						if (messageConsumer != null && messageConsumer.isAlive()) {
 
-							targetMessageProducer = synapseEnvironment.getSynapseConfiguration().getMessageStore
-									(targetMessageStoreName).getProducer();
+
+							targetMessageProducer = synapseEnvironment.getSynapseConfiguration().getMessageStore(targetMessageStoreName).getProducer();
+
 							if(targetMessageProducer != null) {
 								isSuccessful = targetMessageProducer.storeMessage(messageContext);
 							} else {
@@ -408,7 +412,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 						attemptCount = 0;
 
 						if (log.isDebugEnabled()) {
-							log.debug("Successfully sent the message to message store [" +
+							log.debug("Successfully sent the message to message processor [" +
 							          targetMessageStoreName + "]" + " with message processor [" +
 							          messageProcessor.getName() + "]");
 						}
@@ -436,10 +440,15 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		} else {
 			/*
 			 * No Target message store defined for the Message So we do not have a
-			 * place to deliver. Here we log a warning message
+			 * place to deliver.
+			 * Here we log a warning and remove the message
+			 * this by implementing a target inferring
+			 * mechanism.
 			 */
+
 			log.warn("Property " + FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE +
-			         " not found in the message context");
+			         " not found in the message context , Hence removing the message ");
+			messageConsumer.ack();
 		}
 		return;
 	}
@@ -580,8 +589,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		messageConsumer = messageStore.getConsumer();
 
 		if (messageProcessor.getParameters().get(FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE) != null) {
-			targetMessageStoreName = (String) messageProcessor.getParameters().get
-					(FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE);
+			targetMessageStoreName = (String) messageProcessor.getParameters().get(FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE);
 		}
 
 		/*
