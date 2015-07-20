@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
 
@@ -444,11 +445,20 @@ public class ServerWorker implements Runnable {
                 .getTransportIn(Constants.TRANSPORT_HTTPS));
 			msgContext.setIncomingTransportName(sourceConfiguration.getInDescription() != null?
 			                                    sourceConfiguration.getInDescription().getName(): Constants.TRANSPORT_HTTPS);
-  
+
             SSLIOSession ssliosession = (SSLIOSession) (conn.getContext()).getAttribute(SSLIOSession.SESSION_KEY);
-            if (ssliosession != null) {
-                msgContext.setProperty("ssl.client.auth.cert.X509",
-                    ssliosession.getAttribute("ssl.client.auth.cert.X509"));            
+            //set SSL certificates to message context if SSLVerifyClient parameter is set
+            if (ssliosession != null && msgContext.getTransportIn() != null
+                && msgContext.getTransportIn().getParameter(NhttpConstants.SSL_VERIFY_CLIENT) != null) {
+                try {
+                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509,
+                                           ssliosession.getSSLSession().getPeerCertificateChain().length);
+                } catch (SSLPeerUnverifiedException e) {
+                    //Peer Certificate Chain may not be available always.(in case of Mutual SSL is not enabled)
+                    if (log.isTraceEnabled()) {
+                        log.trace("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
+                    }
+                }
             }
         } else {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
