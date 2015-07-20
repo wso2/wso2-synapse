@@ -31,8 +31,10 @@ import org.apache.synapse.message.store.impl.jdbc.util.JDBCMessageConverter;
 import org.apache.synapse.message.store.impl.jdbc.util.Statement;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -155,9 +157,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
             }
             rs = ps.executeQuery();
             while (rs.next()) {
-                final Object msgObj;
+                byte[] msgObj;
                 try {
-                    msgObj = rs.getObject("message");
+                    msgObj = rs.getBytes("message");
                 } catch (SQLException e) {
                     throw new SynapseException("Error executing statement : " + stmt.getRawStatement() +
                                                " against DataSource : " + jdbcConfiguration.getDSName(), e);
@@ -166,7 +168,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     ObjectInputStream ios = null;
                     try {
                         // Convert back to MessageContext and add to list
-                        ios = new ObjectInputStream(new ByteArrayInputStream((byte[]) msgObj));
+                        ios = new ObjectInputStream(new ByteArrayInputStream(msgObj));
                         Object msg = ios.readObject();
                         if (msg instanceof StorableMessage) {
                             StorableMessage jdbcMsg = (StorableMessage) msg;
@@ -213,7 +215,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 if (param instanceof String) {
                     ps.setString(index, (String) param);
                 } else if (param instanceof StorableMessage) {
-                    ps.setObject(index, param);
+                    //Serialize the object into byteArray and update the statement
+                    ps.setBytes(index, serialize(param));
                 }
                 index++;
             }
@@ -222,7 +225,11 @@ public class JDBCMessageStore extends AbstractMessageStore {
         } catch (SQLException e) {
             throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
                                        " against DataSource : " + jdbcConfiguration.getDSName(), e);
-        } finally {
+        } catch(IOException ex) {
+            throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
+                    " against DataSource : " + jdbcConfiguration.getDSName(), ex);
+        }
+        finally {
             if (ps != null) {
                 try {
                     ps.close();
@@ -239,6 +246,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
             }
         }
         return result;
+    }
+
+    public byte[] serialize(Object obj) throws IOException {
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutputStream o = new ObjectOutputStream(b);
+        o.writeObject(obj);
+        return b.toByteArray();
     }
 
     /**
