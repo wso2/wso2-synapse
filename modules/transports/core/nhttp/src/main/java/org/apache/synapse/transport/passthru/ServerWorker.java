@@ -455,8 +455,8 @@ public class ServerWorker implements Runnable {
                                            ssliosession.getSSLSession().getPeerCertificateChain());
                 } catch (SSLPeerUnverifiedException e) {
                     //Peer Certificate Chain may not be available always.(in case of Mutual SSL is not enabled)
-                    if (log.isDebugEnabled()) {
-                        log.debug("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
+                    if (log.isTraceEnabled()) {
+                        log.trace("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
                     }
                 }
             }
