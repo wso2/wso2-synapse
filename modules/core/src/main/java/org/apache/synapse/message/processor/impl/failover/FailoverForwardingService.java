@@ -352,7 +352,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		}
 
 
-		MessageContext outCtx = null;
 		SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
 
 		if (targetMessageStoreName != null) {
@@ -381,9 +380,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 								clonedFirstElement.detach();
 								messageContext.getEnvelope().getBody().addChild(firstChild);
 							}
-						}// Had to do this because
-						 // MessageHelper#cloneSOAPEnvelope does not clone
-						 // OMSourcedElemImpl correctly.
+						}
 
 						if (messageConsumer != null && messageConsumer.isAlive()) {
 
@@ -439,15 +436,10 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		} else {
 			/*
 			 * No Target message store defined for the Message So we do not have a
-			 * place to deliver.
-			 * Here we log a warning and remove the message
-			 * this by implementing a target inferring
-			 * mechanism.
+			 * place to deliver. Here we log a warning message
 			 */
-
 			log.warn("Property " + FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE +
-			         " not found in the message context , Hence removing the message ");
-			messageConsumer.ack();
+			         " not found in the message context");
 		}
 		return;
 	}
