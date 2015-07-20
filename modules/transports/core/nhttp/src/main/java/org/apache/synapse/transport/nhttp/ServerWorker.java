@@ -169,8 +169,8 @@ public class ServerWorker implements Runnable {
                                            session.getSSLSession().getPeerCertificateChain());
                 } catch (SSLPeerUnverifiedException e) {
                     //Peer Certificate Chain may not be available always.(in case of verify client is optional)
-                    if (log.isDebugEnabled()) {
-                        log.debug("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
+                    if (log.isTraceEnabled()) {
+                        log.trace("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
                     }
                 }
             }
