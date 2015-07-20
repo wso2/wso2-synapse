@@ -81,6 +81,11 @@ public interface JsonXMLConfig {
         public boolean isRepairingNamespaces() {
             return false;
         }
+
+        @Override
+        public  String getCustomRegex(){
+            return null;
+        }
     };
 
     /**
@@ -161,4 +166,13 @@ public interface JsonXMLConfig {
      * @see XMLOutputFactory#IS_REPAIRING_NAMESPACES
      */
     public boolean isRepairingNamespaces();
+
+
+    /**
+     *<p>Format output ignoring scientific numbers</p>
+     * @see JsonXMLOutputFactory#PROP_CUSTOM_REGEX
+     * @return autoprimitive enabled with scientific Number Ignore flag
+     */
+    public String getCustomRegex();
+
 }
