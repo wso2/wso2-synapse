@@ -47,6 +47,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -509,6 +511,32 @@ public class Axis2FlexibleMEPClient {
         Set keySet = synapseOutMessageContext.getPropertyKeySet();
         if (keySet != null) {
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+        }
+
+        //at the last point of mediation engine where the client get invoked we reduce concurrent
+        // throttling count for OUT_ONLY messages
+        if (outOnlyMessage) {
+            Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMessageContext
+                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+            if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
+                ConcurrentAccessController concurrentAccessController =
+                        (ConcurrentAccessController) synapseOutMessageContext
+                                .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+                int available = concurrentAccessController.incrementAndGet();
+                int concurrentLimit = concurrentAccessController.getLimit();
+                if (log.isDebugEnabled()) {
+                    log.debug("Concurrency Throttle : Connection returned" + " :: " +
+                            available + " of available of " + concurrentLimit + " connections");
+                }
+                ConcurrentAccessReplicator concurrentAccessReplicator =
+                        (ConcurrentAccessReplicator) synapseOutMessageContext
+                                .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+                String throttleKey = (String) synapseOutMessageContext
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+                if (concurrentAccessReplicator != null) {
+                    concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+                }
+            }
         }
 
         mepClient.execute(true);
