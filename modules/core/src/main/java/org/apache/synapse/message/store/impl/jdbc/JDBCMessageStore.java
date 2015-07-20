@@ -390,7 +390,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (position < 0) {
             throw new IllegalArgumentException("Index:" + position + " out of table bound");
         }
-        if (!"com.mysql.jdbc.Driver".
+        if (this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER) != null && !"com.mysql.jdbc.Driver".
                 equals(this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER))) {
             throw new UnsupportedOperationException("Only support in MYSQL");
         }
