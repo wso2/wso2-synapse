@@ -98,11 +98,9 @@ public class JmsProducer implements MessageProducer {
                     session.rollback();
                 }
 
-            } catch (JMSException e1) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Fail to store message [" + synCtx.getMessageID() + "] in the message store " +
-                                 ":" + store.getName());
-                }
+            } catch (JMSException ex) {
+                logger.warn("Fail to commit the message [" + synCtx.getMessageID() + "] to the message store " +
+                            ":" + store.getName());
             }
 
         } catch (Throwable t) {
@@ -116,10 +114,8 @@ public class JmsProducer implements MessageProducer {
                 }
 
             } catch (JMSException e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Fail to store message [" + synCtx.getMessageID()+"] in the message store " +
-                                 ":" + store.getName());
-                }
+                logger.warn("Fail to commit the message [" + synCtx.getMessageID() + "] to the message store " +
+                            ":" + store.getName());
             }
         }
 
