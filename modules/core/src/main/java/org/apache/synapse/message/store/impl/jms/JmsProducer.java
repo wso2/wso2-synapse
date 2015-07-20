@@ -103,7 +103,7 @@ public class JmsProducer implements MessageProducer {
 
             } catch (JMSException e1) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Fail to rollback message [" + synCtx.getMessageID() + "] from the message store " +
+                    logger.debug("Fail to store message [" + synCtx.getMessageID() + "] in the message store " +
                                  ":" + store.getName());
                 }
             }
@@ -120,7 +120,7 @@ public class JmsProducer implements MessageProducer {
 
             } catch (JMSException e) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Fail to rollback message [" + synCtx.getMessageID()+"] from the message store " +
+                    logger.debug("Fail to store message [" + synCtx.getMessageID()+"] in the message store " +
                                  ":" + store.getName());
                 }
             }
