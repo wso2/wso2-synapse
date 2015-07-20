@@ -68,7 +68,6 @@ import java.util.Timer;
 public class SynapseCallbackReceiver extends CallbackReceiver {
 
     private static final Log log = LogFactory.getLog(SynapseCallbackReceiver.class);
-    private String carName;
 
     /** This is the synchronized callbackStore that maps outgoing messageID's to callback objects */
 //    private final Map<String, AxisCallback> callbackStore;  // will made thread safe in the constructor
@@ -116,8 +115,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
     public void receive(MessageContext messageCtx) throws AxisFault {
 
         String messageID = null;
-
-        CustomLogSetter.getInstance().setLogAppender(carName);
 
         /**
          * In an Out-only scenario if the client receives a HTTP 202 accepted we need to
