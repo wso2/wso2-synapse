@@ -221,4 +221,14 @@ public class NhttpConstants {
 	 * Holds the method type of the incoming request
 	 */
 	public static final String HTTP_REQUEST_METHOD = "HTTP_REQUEST_METHOD";
+
+    /**
+     * X509 certificate chain for Mutual SSL connections
+     */
+    public static final String SSL_CLIENT_AUTH_CERT_X509 = "ssl.client.auth.cert.X509";
+
+    /**
+     * axis2 configuration to enable Mutual SSL - verify client's certificate
+     */
+    public static final String SSL_VERIFY_CLIENT = "SSLVerifyClient";
 }

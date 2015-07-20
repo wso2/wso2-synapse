@@ -36,13 +36,14 @@ import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.*;
-import org.apache.http.impl.nio.reactor.SSLIOSession;
+import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -158,9 +159,20 @@ public class ServerWorker implements Runnable {
             msgContext.setTransportIn(cfgCtx.getAxisConfiguration()
                 .getTransportIn(Constants.TRANSPORT_HTTPS));
             msgContext.setIncomingTransportName(Constants.TRANSPORT_HTTPS);
-            SSLIOSession session = (SSLIOSession) (conn.getContext()).getAttribute("SSL_SESSION");
-            if(session != null){
-                msgContext.setProperty("ssl.client.auth.cert.X509", session.getAttribute("ssl.client.auth.cert.X509"));
+
+            SSLIOSession session = (SSLIOSession) (conn.getContext()).getAttribute(SSLIOSession.SESSION_KEY);
+            //set SSL certificates to message context if SSLVerifyClient parameter is set
+            if (session != null && msgContext.getTransportIn() != null
+                && msgContext.getTransportIn().getParameter(NhttpConstants.SSL_VERIFY_CLIENT) != null) {
+                try {
+                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509,
+                                           session.getSSLSession().getPeerCertificateChain());
+                } catch (SSLPeerUnverifiedException e) {
+                    //Peer Certificate Chain may not be available always.(in case of verify client is optional)
+                    if (log.isTraceEnabled()) {
+                        log.trace("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
+                    }
+                }
             }
         } else {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
