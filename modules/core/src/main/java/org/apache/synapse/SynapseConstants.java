@@ -341,6 +341,7 @@ public final class SynapseConstants {
     public static final String HTTP_SENDER_STATUSCODE = "transport.http.statusCode";
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =
             "BLOCKING_SENDER_PRESERVE_REQ_HEADERS";
+    public static final String DISABLE_CHUNKING = "DISABLE_CHUNKING";
 
     /** Synapse server instance name */
     public static final String SERVER_NAME = "serverName";
