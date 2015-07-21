@@ -35,6 +35,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.ErrorLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
@@ -190,6 +191,10 @@ public class MessageHelper {
             }
         }
 
+        if (RuntimeStatisticCollector.isStatisticsEnable()) {
+            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID,
+                               RuntimeStatisticCollector.getClonedMsgNumber(newCtx));
+        }
         return newCtx;
     }
 
