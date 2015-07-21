@@ -25,5 +25,9 @@ public enum ComponentType {
     PROXYSERVICE,
     ENDPOINT,
     SEQUENCE,
+	MEDIATOR,
+    FAULTHANDLER,
+    API,
+    RESOURCE,
     ANY
 }
