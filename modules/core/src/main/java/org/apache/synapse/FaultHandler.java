@@ -21,7 +21,8 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 import java.util.Stack;
 import java.io.StringWriter;
@@ -99,6 +100,11 @@ public abstract class FaultHandler {
             if (traceOrDebugOn) {
                 traceOrDebugWarn(traceOn, "FaultHandler : " + this);
             }
+            RuntimeStatisticCollector.recordStatisticCreateFaultLog(synCtx,
+                                                                    SynapseConstants.FAULTHANDLER,
+                                                                    ComponentType.FAULTHANDLER,
+                                                                    this.getClass().toString(),
+                                                                    System.currentTimeMillis());
             onFault(synCtx);
 
         } catch (SynapseException se) {
@@ -109,6 +115,10 @@ public abstract class FaultHandler {
             } else{
             	throw new RuntimeException(se);
             }
+        }finally {
+            RuntimeStatisticCollector.recordStatisticCloseFaultLog(synCtx,
+                                                                   SynapseConstants.FAULTHANDLER,
+                                                                   System.currentTimeMillis());
         }
     }
 
