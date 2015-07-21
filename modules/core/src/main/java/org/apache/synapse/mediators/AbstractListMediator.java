@@ -22,8 +22,11 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
@@ -56,7 +59,7 @@ public abstract class AbstractListMediator extends AbstractMediator
         // to pass it on; else, do nothing -> i.e. let the parents state flow
         setEffectiveTraceState(synCtx);
         int myEffectiveTraceState = synCtx.getTracingState();
-
+        String parentName = (String)synCtx.getProperty(SynapseConstants.CURRENTSEQUENCE);
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
@@ -77,11 +80,24 @@ public abstract class AbstractListMediator extends AbstractMediator
 
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
+                RuntimeStatisticCollector
+                        .recordStatisticCreateEntry(synCtx, mediators.get(i).getType(),
+                                                    ComponentType.MEDIATOR, parentName,
+                                                    System.currentTimeMillis());
+
+                synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, mediators.get(i).getType());
+
                 synCtx.setTracingState(myEffectiveTraceState);
                 if (!mediators.get(i).mediate(synCtx)) {
+                    RuntimeStatisticCollector
+                            .recordStatisticCloseLog(synCtx, mediators.get(i).getType(), parentName,
+                                                     System.currentTimeMillis());
                     returnVal = false;
                     break;
                 }
+                RuntimeStatisticCollector
+                        .recordStatisticCloseLog(synCtx, mediators.get(i).getType(), parentName,
+                                                 System.currentTimeMillis());
             }
         } catch (SynapseException synEx) {
             throw synEx;
@@ -92,6 +108,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
+            synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE,parentName);
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
 
