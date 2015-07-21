@@ -25,7 +25,10 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -257,6 +260,13 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     }
 
     void process(MessageContext synCtx) {
+
+        if (!synCtx.isResponse()) {
+            RuntimeStatisticCollector
+                    .recordStatisticCreateEntry(synCtx, name, ComponentType.RESOURCE, "",
+                                                System.currentTimeMillis());
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "resource: " + name);
@@ -265,6 +275,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
+                finishStatisticCollection(synCtx);
                 return;
             }
 
@@ -295,6 +306,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
+            finishStatisticCollection(synCtx);
             return;
         }
 
@@ -308,6 +320,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
+            finishStatisticCollection(synCtx);
             return;
         }
 
@@ -321,6 +334,29 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
             Axis2Sender.sendBack(synCtx);
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
+        }
+
+        finishStatisticCollection(synCtx);
+    }
+
+    private void finishStatisticCollection(MessageContext synCtx) {
+
+        if (!synCtx.isResponse()) {
+            boolean isOutOnly = Boolean.parseBoolean(
+                    String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
+
+            if (!isOutOnly) {
+                isOutOnly = (!Boolean.parseBoolean(
+                        String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                             !synCtx.isResponse());
+            }
+            if (isOutOnly) {
+                RuntimeStatisticCollector
+                        .recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+            }
+        } else {
+            RuntimeStatisticCollector
+                    .recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
         }
     }
 
