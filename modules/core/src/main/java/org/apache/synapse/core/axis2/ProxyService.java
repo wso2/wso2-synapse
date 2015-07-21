@@ -281,6 +281,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         if (wsdlKey != null) {
             synCfg.getEntryDefinition(wsdlKey);
             Object keyObject = synCfg.getEntry(wsdlKey);
+            //start of fix for ESBJAVA-2641
+            if(keyObject == null) {
+                synCfg.removeEntry(wsdlKey);
+            }
+            //end of fix for ESBJAVA-2641
             if (keyObject instanceof OMElement) {
                 wsdlElement = (OMElement) keyObject;
             }
