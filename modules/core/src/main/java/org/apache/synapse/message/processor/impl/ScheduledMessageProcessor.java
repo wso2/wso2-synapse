@@ -114,20 +114,36 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			return;
 		}
 
-		if (!isManuallyDeactivated()) {
-			this.start();
-		}
+        /*
+         * Schedule the task despite if it is ACTIVATED OR DEACTIVATED
+         * initially. Eventhough the Message Processor is explicitly deactivated
+         * initially, we need to have a Task to handle subsequent updates.
+         */
+        this.start();
+
+        /*
+         * If the Message Processor is Deactivated through the Advanced parameter 
+         * explicitly, then we deactivate the task immediately.
+         */
+        if (!getIsActivatedParamValue()) {
+            deactivate();
+        }
 
 	}
 
-    private boolean isManuallyDeactivated() {
+    /*
+     * Fetches the value of the IsActivated Property of Message Processor. The
+     * IsActivated property resides under the Advanced parameters section of the
+     * Message Processor.
+     */
+    private boolean getIsActivatedParamValue() {
         Object isActiveParam = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
+        // Message Processor is ACTIVATED by default.
+        boolean isActivated = true;
         if (isActiveParam != null) {
-            if (!Boolean.parseBoolean(String.valueOf(isActiveParam))) {
-                return true;
-            }
+            isActivated = Boolean.parseBoolean(String.valueOf(isActiveParam));
         }
-        return isDeactivated();
+        return isActivated;
     }
 
     @Override
@@ -167,9 +183,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			}
 			taskManager.schedule(taskDescription);
 		}
-		logger.info("Started message processor. [" + getName() + "].");
-
-		return true;
+		
+        logger.info("Started message processor. [" + getName() + "].");
+        return true;
 	}
 
     @Override
@@ -441,9 +457,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void update() {
-		if (!isManuallyDeactivated()) {
-			start();
-		}
+		start();
 	}
 
     @Override
