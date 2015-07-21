@@ -30,6 +30,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.endpoints.Endpoint;
@@ -81,6 +82,10 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+
+        RuntimeStatisticCollector
+                .recordStatisticCreateEntry(synCtx, this.name, ComponentType.PROXYSERVICE, "",
+                                            System.currentTimeMillis());
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -217,6 +222,18 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
+
+            boolean isOutOnly = Boolean.parseBoolean(
+                    String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
+
+            if (!isOutOnly) {
+                isOutOnly = (!Boolean.parseBoolean(
+                        String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                             !synCtx.isResponse());
+            }
+            if (isOutOnly) {
+                RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+            }
         }
     }
 
