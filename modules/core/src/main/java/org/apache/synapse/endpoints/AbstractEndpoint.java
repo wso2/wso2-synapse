@@ -35,6 +35,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -297,7 +298,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             throw new IllegalStateException("not initialized, " +
                     "endpoint must be in initialized state");
         }
-
+        if (this.endpointName != null) {
+            RuntimeStatisticCollector
+                    .recordStatisticCreateEntry(synCtx, this.endpointName, ComponentType.ENDPOINT,
+                                                "", System.currentTimeMillis());
+        } else {
+            RuntimeStatisticCollector
+                    .recordStatisticCreateEntry(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT,
+                                                ComponentType.ENDPOINT, "",
+                                                System.currentTimeMillis());
+        }
         prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
@@ -370,6 +380,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
+
+        if (this.endpointName != null) {
+            RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, this.endpointName, "",
+                                                              System.currentTimeMillis());
+        } else {
+            RuntimeStatisticCollector
+                    .recordStatisticCloseLog(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT, "",
+                                             System.currentTimeMillis());
+        }
+
     }
 
     /**
