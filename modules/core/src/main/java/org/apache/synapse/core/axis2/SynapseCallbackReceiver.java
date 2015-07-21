@@ -39,6 +39,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -106,6 +107,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (log.isDebugEnabled()) {
             log.debug("Callback added. Total callbacks waiting for : " + callbackStore.size());
         }
+        org.apache.synapse.MessageContext synCntx =
+                ((AsyncCallback) callback).getSynapseOutMsgCtx();
+        boolean isOutOnly = Boolean.parseBoolean(
+                String.valueOf(synCntx.getProperty(SynapseConstants.OUT_ONLY)));
+        if (!isOutOnly) {
+            isOutOnly = (!Boolean.parseBoolean(
+                    String.valueOf(synCntx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                         !synCntx.isResponse());
+        }
+        if (!isOutOnly) {
+            RuntimeStatisticCollector.addCallbacks(synCntx, MsgID);
+        }
     }
 
     /**
@@ -128,7 +141,15 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED) != null && "true".equals(
                 messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED))) {
             if (callbackStore.containsKey(messageCtx.getMessageID())) {
-                callbackStore.remove(messageCtx.getMessageID());
+                AsyncCallback callback =
+                        (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
+
+                RuntimeStatisticCollector.updateForReceivedCallback(callback.getSynapseOutMsgCtx(),
+                                                                    messageCtx.getMessageID(),
+                                                                    System.currentTimeMillis());
+
+                RuntimeStatisticCollector
+                        .removeCallback(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
                             " removed from the " +
@@ -159,6 +180,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 log.debug("Callback removed for request message id : " + messageID +
                         ". Pending callbacks count : " + callbackStore.size());
             }
+            org.apache.synapse.MessageContext SynapseOutMsgCtx =
+                    ((AsyncCallback) callback).getSynapseOutMsgCtx();
+
+            RuntimeStatisticCollector.updateForReceivedCallback(SynapseOutMsgCtx, messageID,
+                                                                System.currentTimeMillis());
 
             RelatesTo[] relates = messageCtx.getRelationships();
             if (relates != null && relates.length > 1) {
@@ -167,10 +193,24 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // gets duplicated, and we should remove it
                 removeDuplicateRelatesTo(messageCtx, relates);
             }
-            
+
             if (callback != null) {
-                handleMessage(messageID, messageCtx, ((AsyncCallback) callback).getSynapseOutMsgCtx(),
-                        (AsyncCallback)callback);
+                handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
+                if (log.isDebugEnabled()) {
+                    log.debug("Handled the callback");
+                }
+                RuntimeStatisticCollector.removeCallback(SynapseOutMsgCtx, messageID);
+                org.apache.synapse.MessageContext synMsgCtx =
+                        MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
+                String proxyName =
+                        (String) SynapseOutMsgCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+                Boolean isContinuationCall =
+                        (Boolean) synMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+
+                if (isContinuationCall == null || !isContinuationCall) {
+                    RuntimeStatisticCollector
+                            .finalizeEntry(SynapseOutMsgCtx, System.currentTimeMillis());
+                }
                 
             } else {
                 // TODO invoke a generic synapse error handler for this message
