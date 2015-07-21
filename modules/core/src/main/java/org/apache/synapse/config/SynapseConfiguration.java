@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.*;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -1580,6 +1581,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 						+ "] " + e.getMessage());
 			}
         }
+        RuntimeStatisticCollector.init(getSynapseTimer());
         initImportedLibraries(se);
     }
 
