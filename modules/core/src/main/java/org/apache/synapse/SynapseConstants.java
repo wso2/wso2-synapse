@@ -230,6 +230,21 @@ public final class SynapseConstants {
         public static final String STATISTICS_STACK ="synapse.statistics.stack";     
         
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
+
+        /** key to message context statistic entry */
+        public static final String NEW_STATISTICS_ID ="synapse.newStatistics";
+
+        /** key to message context statistic entry */
+        public static final String NEW_STATISTICS_MESSAGE_ID ="synapse.newStatistics.msgID";
+
+        /** Default backend name used for Statistic Collection*/
+        public static final String ANY ="any";
+
+        /** Default backend name used for Statistic Collection*/
+        public static final String FAULTHANDLER ="FaultHandler";
+
+        /** Default backend name used for Statistic Collection*/
+        public static final String CURRENTSEQUENCE ="current.sequence";
     
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
 
