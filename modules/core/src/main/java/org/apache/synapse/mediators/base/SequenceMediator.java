@@ -27,6 +27,7 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
@@ -93,6 +94,12 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        RuntimeStatisticCollector
+                .recordStatisticCreateEntry(synCtx, getSequenceNameForStatistics(synCtx),
+                                            ComponentType.SEQUENCE, "", System.currentTimeMillis());
+
+        synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, getSequenceNameForStatistics(synCtx));
 
         if (key == null) {
 
@@ -182,6 +189,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                                 getAspectConfiguration(), ComponentType.SEQUENCE);
                     }
                 }
+                statisticsEnd(synCtx); //end Statistics
             }
 
         } else {
@@ -205,13 +213,29 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("End : Sequence key=<" + key + ">");
                 }
+                statisticsEnd(synCtx); //end Statistics
                 return result;
             }
         }
-
         return false;
     }
 
+    private String getSequenceNameForStatistics(MessageContext synCtx) {
+        if (this.name != null) {
+            return this.name;
+        } else {
+
+            if (key != null) {
+                return key.evaluateValue(synCtx);
+            } else {
+                if (this.sequenceType != SequenceType.ANON) {
+                    return this.sequenceType.toString();
+                } else {
+                    return SynapseConstants.ANONYMOUS_SEQUENCE;
+                }
+            }
+        }
+    }
     public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
 
         SynapseLog synLog = getLog(synCtx);
@@ -282,7 +306,20 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
             }
         }
+        statisticsEnd(synCtx);
         return result;
+    }
+
+    private void statisticsEnd(MessageContext synCtx) {
+        Boolean isContinuationCall =
+                (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+
+        if (isContinuationCall == null || !isContinuationCall) {
+
+            RuntimeStatisticCollector
+                    .recordStatisticCloseLog(synCtx, getSequenceNameForStatistics(synCtx), "",
+                                             System.currentTimeMillis());
+        }
     }
 
     /**
