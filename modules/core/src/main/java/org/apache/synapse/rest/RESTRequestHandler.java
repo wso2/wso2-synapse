@@ -22,6 +22,8 @@ import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
@@ -94,17 +96,30 @@ public class RESTRequestHandler {
                 if (log.isDebugEnabled()) {
                     log.debug("Located specific API: " + api.getName() + " for processing message");
                 }
-                api.process(synCtx);
+                apiProcess(synCtx, api);
                 return true;
             }
         }
 
         if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
             defaultAPI.setLogSetterValue();
-            defaultAPI.process(synCtx);
+            apiProcess(synCtx, defaultAPI);
             return true;
         }
 
         return false;
+    }
+
+    private void apiProcess(MessageContext synCtx, API api) {
+        if (!synCtx.isResponse()) {
+            reportApiStartStatistics(synCtx, api);
+        }
+        api.process(synCtx);
+    }
+
+    private void reportApiStartStatistics(MessageContext synCtx, API api) {
+        RuntimeStatisticCollector
+                .recordStatisticCreateEntry(synCtx, api.getName(), ComponentType.API, "",
+                                            System.currentTimeMillis());
     }
 }
