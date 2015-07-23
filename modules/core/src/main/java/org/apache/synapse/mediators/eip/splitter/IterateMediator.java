@@ -26,9 +26,11 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.ContinuationState;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
@@ -46,8 +48,10 @@ import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Stack;
 
 /**
  * Splits a message using an XPath expression and creates a new message to hold
@@ -142,11 +146,29 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                              " messages for processing in sequentially"));
                 }
 
-                MessageContext itereatedMsgCtx =
+                MessageContext iteratedMsgCtx =
                         getIteratedMessage(synCtx, msgNumber++, msgCount, envelope, (OMNode) o);
                 ContinuationStackManager.
-                        addReliantContinuationState(itereatedMsgCtx, 0, getMediatorPosition());
-                target.mediate(itereatedMsgCtx);
+                        addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
+
+                if(target.isAsynchronous()) {
+                    target.mediate(iteratedMsgCtx);
+                }else {
+                    try {
+                        target.mediate(iteratedMsgCtx);
+                    } catch (SynapseException synEx) {
+                        throw synEx;
+                    } catch (Exception ex) {
+                        throw new SynapseException(ex);
+                    }finally {
+                        /*
+                         * if Iteration is sequential we won't be able to execute correct fault
+                         * handler as data are lost with clone message ending execution. So here we
+                         * copy fault stack of clone message context to original message context
+                         */
+                        copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                    }
+                }
             }
 
         } catch (JaxenException e) {
@@ -167,6 +189,38 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         // whether to continue mediation on the original message
         return continueParent;
+    }
+
+    /**
+     * Copy fault stack and properties of the iteratedMsgCtx to synCtx
+     * @param synCtx Original synapse Message Context
+     * @param iteratedMsgCtx cloned Message Context used for the iteration
+     */
+    private void copyFaultyIteratedMessage(MessageContext synCtx, MessageContext iteratedMsgCtx) {
+        synCtx.getFaultStack().clear(); //remove original fault stack
+        Stack<FaultHandler> faultStack = iteratedMsgCtx.getFaultStack();
+
+        if (!faultStack.isEmpty()) {
+            List<FaultHandler> newFaultStack = new ArrayList<FaultHandler>();
+            newFaultStack.addAll(faultStack);
+            for (FaultHandler faultHandler : newFaultStack) {
+                if (faultHandler != null) {
+                    synCtx.pushFaultHandler(faultHandler);
+                }
+            }
+        }
+        // copy all the String keyed synapse level properties to the Original synCtx
+        for (Object keyObject : iteratedMsgCtx.getPropertyKeySet()) {
+            /*
+             * There can be properties added while executing the iterated sequential flow and
+             * these may be accessed in the fault sequence, so updating string valued properties
+             */
+            if (keyObject instanceof String) {
+                String stringKey = (String) keyObject;
+                synCtx.setProperty(stringKey, iteratedMsgCtx.getProperty
+                        (stringKey));
+            }
+        }
     }
 
     public boolean mediate(MessageContext synCtx,
