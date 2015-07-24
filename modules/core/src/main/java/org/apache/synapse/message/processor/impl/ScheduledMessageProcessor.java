@@ -269,6 +269,27 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         }
 
         finally {
+            /*
+             * If the Task is scheduled with an interval value < 1000 ms, it is
+             * executed outside Quartz. For an example Task with interval 200ms.
+             * Here we directly pause the task, move on and cleanup the JMS
+             * connection.But actual pausing the task through TaskManager takes
+             * few ms (say 300 ms). During this time the Task is executed
+             * outside Quartz and
+             * a new JMS connection is created (After the previous cleanup).
+             * Once
+             * the task is paused and destroyed successfully, we create a new
+             * task, for which a new JMS
+             * connection is created. This leads to multiple JMS connections and
+             * is a Bug. This 1000 ms sleep is used to make sure that the task
+             * is paused before cleaning up the JMS connection, which prevents
+             * multiple JMS connections being created.
+             */
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.error("The thread was interrupted while sleeping");
+            }
             if (getMessageConsumer() != null && messageConsumers.size() > 0) {
                 boolean success = getMessageConsumer().get(0).cleanup();
                 if (!success) {
