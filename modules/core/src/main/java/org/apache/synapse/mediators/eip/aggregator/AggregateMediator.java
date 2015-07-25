@@ -37,6 +37,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowDbConnector;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
@@ -166,11 +167,12 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        String mediatorId = UUID.randomUUID().toString();
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", true);
-        synCtx.addComponentToMessageFlow(mediatorId, "Aggregate Mediator");
-//        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
-        MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId, "Aggregate Mediator");
+        }
 
         try {
             Aggregate aggregate = null;
@@ -323,7 +325,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     
                     synLog.traceOrDebug("End : Aggregate mediator");
 
-                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
+                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
+                    }
 
                     return onCompleteSeqResult;
                 } else {
@@ -340,6 +344,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
         } catch (JaxenException e) {
             handleException("Unable to execute the XPATH over the message", e, synCtx);
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
         }
 
         synLog.traceOrDebug("End : Aggregate mediator");
@@ -552,6 +560,15 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 handleException("Enclosing Element property: " +
                                 enclosingElementPropertyName + " not found ", newCtx);
             }
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            List<String> newMessageFlowTrace = new ArrayList<>();
+            for (MessageContext synCtx : aggregate.getMessages()) {
+                List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
+                newMessageFlowTrace.addAll(messageFlowTrace);
+            }
+            newCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlowTrace);
         }
 
         return newCtx;

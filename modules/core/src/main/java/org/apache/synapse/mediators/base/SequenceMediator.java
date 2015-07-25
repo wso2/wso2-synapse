@@ -97,7 +97,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
 
         if (key == null) {
-
             String mediatorId = null;
             if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
                 mediatorId = UUID.randomUUID().toString();
