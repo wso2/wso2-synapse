@@ -166,7 +166,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                         throw synEx;
                     } catch (Exception e) {
                         copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
-                        handleException("Exception Occurred while executing sequential iteration " +
+                        handleException("Exception occurred while executing sequential iteration " +
                                         "in the Iterator Mediator", e, synCtx);
                     }
                 }
@@ -179,7 +179,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         } catch (SynapseException synEx) {
             throw synEx;
         } catch (Exception e) {
-            handleException("Exception Occurred while executing the Iterate Mediator", e, synCtx);
+            handleException("Exception occurred while executing the Iterate Mediator", e, synCtx);
         }
 
         // if the continuation of the parent message is stopped from here set the RESPONSE_WRITTEN
@@ -199,7 +199,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     /**
      * Copy fault stack and properties of the iteratedMsgCtx to synCtx
      *
-     * @param synCtx         Original synapse Message Context
+     * @param synCtx         Original Synapse Message Context
      * @param iteratedMsgCtx cloned Message Context used for the iteration
      */
     private void copyFaultyIteratedMessage(MessageContext synCtx, MessageContext iteratedMsgCtx) {
