@@ -30,6 +30,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;

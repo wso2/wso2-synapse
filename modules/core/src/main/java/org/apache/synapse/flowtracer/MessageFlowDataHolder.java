@@ -1,34 +1,37 @@
 package org.apache.synapse.flowtracer;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.flowtracer.data.MessageFlowComponentEntry;
 import org.apache.synapse.flowtracer.data.MessageFlowTraceEntry;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class MessageFlowDataHolder {
 
-    private static ArrayList<MessageFlowComponentEntry> componentInfo = new ArrayList<>();
-    private static ArrayList<MessageFlowTraceEntry> flowInfo = new ArrayList<>();
+    private static List<MessageFlowComponentEntry> componentInfo = new ArrayList<>();
+    private static List<MessageFlowTraceEntry> flowInfo = new ArrayList<>();
 
     private static boolean messageFlowTraceEnable = false;
 
     public static synchronized void addComponentInfoEntry(MessageContext synCtx, String componentId, String componentName, boolean start){
         java.util.Date date= new java.util.Date();
-
         Set<String> propertySet = synCtx.getPropertyKeySet();
-
         String propertyString = "";
 
         for(String property:propertySet){
-
-            propertyString+=property+"="+synCtx.getProperty(property)+",";
-
+            Object propertyValue = synCtx.getProperty(property);
+            if(propertyValue instanceof String) {
+                propertyString += property + "=" + propertyValue + ",";
+            }
         }
 
-        componentInfo.add(new MessageFlowComponentEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx.isResponse(), start, new Timestamp(date.getTime()).toString(), propertyString, synCtx.getEnvelope().toString()));
+        String payload = synCtx.toString();
+        componentInfo.add(new MessageFlowComponentEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx.isResponse(), start, new Timestamp(date.getTime()).toString(), propertyString, payload));
     }
 
     public static synchronized MessageFlowComponentEntry getComponentInfoEntry() {
@@ -41,8 +44,11 @@ public class MessageFlowDataHolder {
 
     public static synchronized void addFlowInfoEntry(MessageContext synCtx){
         java.util.Date date= new java.util.Date();
+        List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
 
-        flowInfo.add(new MessageFlowTraceEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(),synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW).toString(),synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(),new Timestamp(date.getTime()).toString()));
+        for(String flow:messageFlowTrace){
+            flowInfo.add(new MessageFlowTraceEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(),flow,synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(),new Timestamp(date.getTime()).toString()));
+        }
     }
 
     public static synchronized MessageFlowTraceEntry getFlowInfoEntry() {

@@ -44,12 +44,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * This is the MessageContext implementation that synapse uses almost all the time because Synapse
@@ -625,9 +620,21 @@ public class Axis2MessageContext implements MessageContext {
 
     public void addComponentToMessageFlow(String componentId, String componentName){
         if(this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) != null) {
-            this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) + componentId + " -> ");
+
+            List<String> messageFlowTrace = (List<String>) this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
+            List<String> newMessageFlow = new ArrayList<>();
+
+            for (int i =0;i<messageFlowTrace.size();i++) {
+                newMessageFlow.add(messageFlowTrace.get(i) + componentId + " -> ");
+            }
+
+            this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlow);
         }else{
-            this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, componentId + " -> ");
+
+            List<String> messageFlowTrace = new ArrayList<>();
+            messageFlowTrace.add(componentId + " -> ");
+
+            this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, messageFlowTrace);
         }
     }
 }

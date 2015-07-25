@@ -66,7 +66,7 @@ public class MessageFlowDbConnector {
                 "ComponentId varchar(255)," +
                 "Response BOOLEAN,"+
                 "Payload varchar(10000),"+
-                "Properties varchar(5000),"+
+                "Properties varchar(10000),"+
                 "Start BOOLEAN,"+
                 "TimeStamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"+
                 "PRIMARY KEY (ID)"+
@@ -153,8 +153,8 @@ public class MessageFlowDbConnector {
         Connection con = null;
         PreparedStatement ps = null;
 
-        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" (MessageId, Component, ComponentId, Response, Start, Payload, Timestamp)\n" +
-                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getComponentName()+"\', "+" \'"+entry.getComponentId()+"\', "+entry.isResponse()+","+entry.isStart()+", \'"+entry.getPayload().toString().replace("\'", "\'\'")+"\',\'"+entry.getTimestamp()+"\')");
+        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" (MessageId, Component, ComponentId, Response, Start, Payload, Properties, Timestamp)\n" +
+                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getComponentName()+"\', "+" \'"+entry.getComponentId()+"\', "+entry.isResponse()+","+entry.isStart()+", \'"+entry.getPayload().toString().replace("\'", "\'\'")+"\',\'"+entry.getPropertySet().toString().replace("\'", "\'\'")+"\',\'"+entry.getTimestamp()+"\')");
         try {
             con = jdbcConfiguration.getConnection();
             ps = con.prepareStatement(stmt.getRawStatement());
