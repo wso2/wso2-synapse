@@ -147,6 +147,11 @@ public final class VFSConstants {
     public static final String TRANSPORT_DISTRIBUTED_LOCK = "transport.vfs.DistributedLock";
 
     /**
+     * Fully build the file
+     * */
+    public static final String TRANSPORT_BUILD = "transport.vfs.Build";
+    
+    /**
      * Distributed Lock timeout
      * */
     public static final String TRANSPORT_DISTRIBUTED_LOCK_TIMEOUT = "transport.vfs.DistributedTimeout";     
