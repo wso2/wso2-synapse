@@ -155,18 +155,19 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                     target.mediate(iteratedMsgCtx);
                 }else {
                     try {
-                        target.mediate(iteratedMsgCtx);
-                    } catch (SynapseException synEx) {
-                        throw synEx;
-                    } catch (Exception ex) {
-                        throw new SynapseException(ex);
-                    }finally {
                         /*
                          * if Iteration is sequential we won't be able to execute correct fault
                          * handler as data are lost with clone message ending execution. So here we
                          * copy fault stack of clone message context to original message context
                          */
+                        target.mediate(iteratedMsgCtx);
+                    } catch (SynapseException synEx) {
                         copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                        throw synEx;
+                    }catch(Exception e){
+                        copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
+                        handleException("Exception Occurred while executing sequential iteration " +
+                                        "in the Iterator Mediator", e, synCtx);
                     }
                 }
             }
@@ -175,6 +176,10 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             handleException("Error evaluating split XPath expression : " + expression, e, synCtx);
         } catch (AxisFault af) {
             handleException("Error creating an iterated copy of the message", af, synCtx);
+        }catch (SynapseException synEx) {
+            throw synEx;
+        }catch(Exception e){
+            handleException("Exception Occurred while executing the Iterate Mediator", e, synCtx);
         }
 
         // if the continuation of the parent message is stopped from here set the RESPONSE_WRITTEN
