@@ -151,9 +151,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                 ContinuationStackManager.
                         addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
 
-                if(target.isAsynchronous()) {
+                if (target.isAsynchronous()) {
                     target.mediate(iteratedMsgCtx);
-                }else {
+                } else {
                     try {
                         /*
                          * if Iteration is sequential we won't be able to execute correct fault
@@ -164,7 +164,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                     } catch (SynapseException synEx) {
                         copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
                         throw synEx;
-                    }catch(Exception e){
+                    } catch (Exception e) {
                         copyFaultyIteratedMessage(synCtx, iteratedMsgCtx);
                         handleException("Exception Occurred while executing sequential iteration " +
                                         "in the Iterator Mediator", e, synCtx);
@@ -176,9 +176,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             handleException("Error evaluating split XPath expression : " + expression, e, synCtx);
         } catch (AxisFault af) {
             handleException("Error creating an iterated copy of the message", af, synCtx);
-        }catch (SynapseException synEx) {
+        } catch (SynapseException synEx) {
             throw synEx;
-        }catch(Exception e){
+        } catch (Exception e) {
             handleException("Exception Occurred while executing the Iterate Mediator", e, synCtx);
         }
 
@@ -198,7 +198,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
     /**
      * Copy fault stack and properties of the iteratedMsgCtx to synCtx
-     * @param synCtx Original synapse Message Context
+     *
+     * @param synCtx         Original synapse Message Context
      * @param iteratedMsgCtx cloned Message Context used for the iteration
      */
     private void copyFaultyIteratedMessage(MessageContext synCtx, MessageContext iteratedMsgCtx) {
@@ -222,8 +223,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
              */
             if (keyObject instanceof String) {
                 String stringKey = (String) keyObject;
-                synCtx.setProperty(stringKey, iteratedMsgCtx.getProperty
-                        (stringKey));
+                synCtx.setProperty(stringKey, iteratedMsgCtx.getProperty(stringKey));
             }
         }
     }
