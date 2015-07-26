@@ -379,8 +379,12 @@ public class ServerWorker implements Runnable {
                     envelope = fac.getDefaultEnvelope();
                 }
 
-                msgContext.setEnvelope(envelope);
+                if ((soapAction != null) && soapAction.startsWith("\"") && soapAction.endsWith("\"")) {
+                    soapAction = soapAction.substring(1, soapAction.length() - 1);
+                }
+
                 msgContext.setSoapAction(soapAction);
+                msgContext.setEnvelope(envelope);
             }
             
            
