@@ -380,6 +380,7 @@ public class ServerWorker implements Runnable {
                 }
 
                 msgContext.setEnvelope(envelope);
+                msgContext.setSoapAction(soapAction);
             }
             
            
