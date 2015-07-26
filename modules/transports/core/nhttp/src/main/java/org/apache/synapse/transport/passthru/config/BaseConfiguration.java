@@ -1,17 +1,17 @@
 /**
- *  Copyright (c) 2009, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2009, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *        http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.apache.synapse.transport.passthru.config;
@@ -27,7 +27,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 import org.apache.synapse.transport.passthru.util.BufferFactory;
 
@@ -60,9 +59,10 @@ public abstract class BaseConfiguration {
 
     protected PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
 
+    private boolean disableGlobalKeepalive = false;
+
     public BaseConfiguration(ConfigurationContext configurationContext,
-                             ParameterInclude parameters,
-                             WorkerPool workerPool,
+                             ParameterInclude parameters, WorkerPool workerPool,
                              PassThroughTransportMetricsCollector metrics) {
         this.parameters = parameters;
         this.workerPool = workerPool;
@@ -74,19 +74,21 @@ public abstract class BaseConfiguration {
         iOBufferSize = conf.getIOBufferSize();
 
         if (workerPool == null) {
-            workerPool = WorkerPoolFactory.getWorkerPool(
-                            conf.getWorkerPoolCoreSize(),
-                            conf.getWorkerPoolMaxSize(),
-                            conf.getWorkerThreadKeepaliveSec(),
-                            conf.getWorkerPoolQueueLen(),
-                            "Pass-through Message Processing Thread Group",
-                            "PassThroughMessageProcessor");
+            workerPool =
+                         WorkerPoolFactory.getWorkerPool(conf.getWorkerPoolCoreSize(),
+                                                         conf.getWorkerPoolMaxSize(),
+                                                         conf.getWorkerThreadKeepaliveSec(),
+                                                         conf.getWorkerPoolQueueLen(),
+                                                         "Pass-through Message Processing Thread Group",
+                                                         "PassThroughMessageProcessor");
         }
 
         httpParams = buildHttpParams();
         ioReactorConfig = buildIOReactorConfig();
 
         bufferFactory = new BufferFactory(iOBufferSize, new HeapByteBufferAllocator(), 512);
+        // Setting up the GlobalKeepalive property value here.
+        disableGlobalKeepalive = conf.isKeepAliveDisabled();
     }
 
     public int getIOBufferSize() {
@@ -103,19 +105,19 @@ public abstract class BaseConfiguration {
 
     protected HttpParams buildHttpParams() {
         HttpParams params = new BasicHttpParams();
-        params.
-                setIntParameter(HttpConnectionParams.SO_TIMEOUT,
-                        conf.getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000)).
-                setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT,
-                        conf.getIntProperty(HttpConnectionParams.CONNECTION_TIMEOUT, 0)).
-                setIntParameter(HttpConnectionParams.SOCKET_BUFFER_SIZE,
-                        conf.getIntProperty(HttpConnectionParams.SOCKET_BUFFER_SIZE, 8 * 1024)).
-                setParameter(HttpProtocolParams.ORIGIN_SERVER,
-                        conf.getStringProperty(HttpProtocolParams.ORIGIN_SERVER, "WSO2-PassThrough-HTTP")).
-                setParameter(HttpProtocolParams.USER_AGENT,
-                        conf.getStringProperty(HttpProtocolParams.USER_AGENT, "Synapse-PT-HttpComponents-NIO"));
-//                setParameter(HttpProtocolParams.HTTP_ELEMENT_CHARSET,
-//                        conf.getStringProperty(HttpProtocolParams.HTTP_ELEMENT_CHARSET, HTTP.DEFAULT_PROTOCOL_CHARSET));//TODO:This does not works with HTTPCore 4.3
+        params.setIntParameter(HttpConnectionParams.SO_TIMEOUT,
+                               conf.getIntProperty(HttpConnectionParams.SO_TIMEOUT, 60000))
+              .setIntParameter(HttpConnectionParams.CONNECTION_TIMEOUT,
+                               conf.getIntProperty(HttpConnectionParams.CONNECTION_TIMEOUT, 0))
+              .setIntParameter(HttpConnectionParams.SOCKET_BUFFER_SIZE,
+                               conf.getIntProperty(HttpConnectionParams.SOCKET_BUFFER_SIZE,
+                                                   8 * 1024))
+              .setParameter(HttpProtocolParams.ORIGIN_SERVER,
+                            conf.getStringProperty(HttpProtocolParams.ORIGIN_SERVER,
+                                                   "WSO2-PassThrough-HTTP"))
+              .setParameter(HttpProtocolParams.USER_AGENT,
+                            conf.getStringProperty(HttpProtocolParams.USER_AGENT,
+                                                   "Synapse-PT-HttpComponents-NIO"));
 
         return params;
     }
@@ -132,13 +134,25 @@ public abstract class BaseConfiguration {
         config.setSelectInterval(conf.getIntProperty("http.nio.select-interval", 1000));
         return config;
     }
-    
+
     public BufferFactory getBufferFactory() {
         return bufferFactory;
     }
 
     public PassThroughTransportMetricsCollector getMetrics() {
         return metrics;
+    }
+
+    /**
+     * Checks whether the global keepalive property
+     * <code>http.connection.disable.keepalive</code> is disabled in passthru
+     * transport properties or not.
+     *
+     * @return <code>true</code> if http.connection.disable.keepalive property
+     *         is set to <code>true</code>, <code>false</code> otherwise.
+     */
+    public boolean isDisableGlobalKeepalive() {
+        return disableGlobalKeepalive;
     }
 
 }
