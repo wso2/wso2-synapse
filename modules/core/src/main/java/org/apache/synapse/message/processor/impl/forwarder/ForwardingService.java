@@ -505,13 +505,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						// Then we have to retry sending the message to the
 						// client.
 						prepareToRetry();
-					} else {
-						if (messageProcessor.isPaused()) {
-							this.messageProcessor.resumeService();
-							log.info("Resuming the service of message processor [" +
-							         messageProcessor.getName() + "]");
-						}
-					}
+					} 
 				}
 			} catch (Exception e) {
 				log.error("Message processor [" + messageProcessor.getName() +
@@ -639,18 +633,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 */
 	private void prepareToRetry() {
 		if (!isTerminated) {
-			/*
-			 * First stop the processor since no point in re-triggering jobs if
-			 * the we can't send
-			 * it to the client
-			 */
-			if (!messageProcessor.isPaused()) {
-				this.messageProcessor.pauseService();
-
-				log.info("Pausing the service of message processor [" + messageProcessor.getName() +
-				         "]");
-			}
-
 			checkAndDeactivateProcessor();
 
 			if (log.isDebugEnabled()) {
@@ -694,9 +676,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		messageConsumer.ack();
 		attemptCount = 0;
 		isSuccessful = true;
-		if (this.messageProcessor.isPaused()) {
-			this.messageProcessor.resumeService();
-		}
 		log.info("Removed failed message and continue the message processor [" +
 		         this.messageProcessor.getName() + "]");
 	}
