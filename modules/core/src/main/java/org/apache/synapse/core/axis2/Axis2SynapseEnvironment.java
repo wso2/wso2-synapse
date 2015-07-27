@@ -326,9 +326,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         Collection<InboundEndpoint> inboundEndpoints = synCtx.getConfiguration().getInboundEndpoints();
 
-        if (synCtx.getProperty("car.deployed.name") != null) {
+        if (synCtx.getProperty("inbound.endpoint.name") != null) {
             for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
-                if (synCtx.getProperty("car.deployed.name").equals(inboundEndpoint.getName())) {
+                if (synCtx.getProperty("inbound.endpoint.name").equals(inboundEndpoint.getName())) {
                     CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getCarName());
                 }
             }
