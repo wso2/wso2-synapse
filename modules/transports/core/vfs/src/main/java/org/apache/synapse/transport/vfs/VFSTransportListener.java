@@ -452,11 +452,6 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             }
                         }
 
-                        //close the file system after processing
-                        try{
-                            child.close();
-                        }catch(Exception e){}
-                        
                         if(iFileProcessingInterval != null && iFileProcessingInterval > 0){
                         	try{
                                 if (log.isDebugEnabled()) {
