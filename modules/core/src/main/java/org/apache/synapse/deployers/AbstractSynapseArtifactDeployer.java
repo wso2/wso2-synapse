@@ -570,6 +570,6 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     }
 
     public void setCustomLog (String artifactContainerName, String tenantId) {
-        customLogContent = "**************** Deployed CAR Name: " + artifactContainerName + ", Tenant Id: " + tenantId + " ****************";
+        customLogContent = "[ Deployed From Artifact Container: " + artifactContainerName + " ] ";
     }
 }
