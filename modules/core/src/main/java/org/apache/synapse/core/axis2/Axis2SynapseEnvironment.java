@@ -32,13 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 
-import org.apache.synapse.FaultHandler;
-import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.ServerContextInformation;
-import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
+import org.apache.synapse.*;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -49,6 +43,7 @@ import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -61,12 +56,7 @@ import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 
 import javax.xml.namespace.QName;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -332,6 +322,12 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
+        }
+
+        if (synCtx.getProperty("inbound.endpoint.name") != null) {
+            InboundEndpoint inboundEndpoint = synCtx.getConfiguration().
+                    getInboundEndpoint((String) synCtx.getProperty("inbound.endpoint.name"));
+            CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
         }
 
         synCtx.setEnvironment(this);
