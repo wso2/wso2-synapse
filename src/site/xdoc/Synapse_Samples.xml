@@ -2431,7 +2431,7 @@ proxy service definition. </p>
 <p>Now lets send a stock quote request on JMS, using the dumb stock quote client as follows: </p>
 <pre xml:space="preserve">ant jmsclient -Djms_type=pox -Djms_dest=dynamicQueues/StockQuoteProxy -Djms_payload=MSFT</pre>
 <p>On the Synapse debug log you will notice that the JMS listener received the request message as: </p>
-<pre xml:space="preserve">[JMSWorker-1] DEBUG ProxyServiceMessageReceiver -Proxy Service StockQuoteProxy received a new message...</pre>
+<pre xml:space="preserve">DEBUG -Proxy Service StockQuoteProxy received a new message...</pre>
 <p>Now if you examine the console running the sample Axis2 server, you will see a message indicating that the server has accepted an order as follows: </p>
 <pre xml:space="preserve">Accepted order for : 16517 stocks of MSFT at $ 169.14622538721846</pre>
 <p>In this sample, the client sends the request message to the proxy service exposed over JMS in Synsape. Synapse forwards this message to the HTTP EPR of the simple stock quote service hosted on the sample Axis2 server.
@@ -2569,7 +2569,7 @@ java.naming.provider.url=tcp://localhost:61616</pre>
 <p>Execute JMS client as follows. This will post a pure text JMS message with the content defined (e.g. &quot;12.33 1000 ACP&quot;) to the specified JMS destination - dynamicQueues/JMSTextProxy </p>
 <pre xml:space="preserve">ant jmsclient -Djms_type=text -Djms_payload=&quot;12.33 1000 ACP&quot; -Djms_dest=dynamicQueues/JMSTextProxy</pre>
 <p>Following the logs, you could notice that Synapse received the JMS text message and transformed it into a SOAP payload as follows. Notice that the wrapper element &quot;{http://services.samples/xsd}text&quot; has been used to hold the text message content. </p>
-<pre xml:space="preserve">[jms-Worker-1] INFO LogMediator To: , WSAction: urn:mediate, SOAPAction: urn:mediate, MessageID: ID:orcus.veithen.net-50631-1225235276233-1:0:1:1:1, Direction: request,
+<pre xml:space="preserve">INFO - To: , WSAction: urn:mediate, SOAPAction: urn:mediate, MessageID: ID:orcus.veithen.net-50631-1225235276233-1:0:1:1:1, Direction: request,
 Envelope:
 &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
 &lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
@@ -2578,7 +2578,7 @@ Envelope:
   &lt;/soapenv:Body&gt;
 &lt;/soapenv:Envelope&gt;</pre>
 <p>Now, you could see how the script mediator created a stock quote request by tokenizing the text as follows, and sent the message to the placeOrder operation of the SimpleStockQuoteService. </p>
-<pre xml:space="preserve">[jms-Worker-1] INFO LogMediator To: , WSAction: urn:placeOrder, SOAPAction: urn:placeOrder, MessageID: ID:orcus.veithen.net-50631-1225235276233-1:0:1:1:1, Direction: request,
+<pre xml:space="preserve">INFO - To: , WSAction: urn:placeOrder, SOAPAction: urn:placeOrder, MessageID: ID:orcus.veithen.net-50631-1225235276233-1:0:1:1:1, Direction: request,
 Envelope:
 &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
 &lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
@@ -2599,7 +2599,7 @@ Envelope:
 <pre xml:space="preserve">ant jmsclient -Djms_type=binary -Djms_dest=dynamicQueues/JMSFileUploadProxy \
               -Djms_payload=./../../repository/conf/sample/resources/mtom/asf-logo.gif</pre>
 <p>Examining the Synapse debug logs reveals that the binary content was received over JMS and wrapped with the specified element into a SOAP infoset as follows: </p>
-<pre xml:space="preserve">[jms-Worker-1] INFO LogMediator To: , WSAction: urn:mediate, SOAPAction: urn:mediate, MessageID: ID:orcus.veithen.net-50702-1225236039556-1:0:1:1:1, Direction: request,
+<pre xml:space="preserve">INFO - To: , WSAction: urn:mediate, SOAPAction: urn:mediate, MessageID: ID:orcus.veithen.net-50702-1225236039556-1:0:1:1:1, Direction: request,
 Envelope:
 &lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
 &lt;soapenv:Envelope xmlns:soapenv=&quot;http://schemas.xmlsoap.org/soap/envelope/&quot;&gt;
@@ -3193,7 +3193,7 @@ SocketAcceptPort=19877</pre>
 <p>Now lets send a stock quote request on JMS, using the dumb stock quote client as follows: </p>
 <pre xml:space="preserve">ant jmsclient -Djms_type=pox -Djms_dest=StockQuoteProxy -Djms_payload=MSFT -Djava.naming.provider.url=jnp://localhost:1099 -Djava.naming.factory.initial=org.jnp.interfaces.NamingContextFactory -D=java.naming.factory.url.pkgs=org.jboss.naming:org.jnp.interfaces</pre>
 <p>On the Synapse debug log you will notice that the JMS listener received the request message as: </p>
-<pre xml:space="preserve">[JMSWorker-1] DEBUG ProxyServiceMessageReceiver -Proxy Service StockQuoteProxy received a new message...</pre>
+<pre xml:space="preserve">DEBUG - Proxy Service StockQuoteProxy received a new message...</pre>
 <p>Now if you examine the console running the sample Axis2 server, you will see a message indicating that the server has accepted an order as follows: </p>
 <pre xml:space="preserve">Accepted order for : 16517 stocks of MSFT at $ 169.14622538721846</pre>
 <p>In this sample, the client sends the request message to the proxy service exposed over JMS in Synsape. Synapse forwards this message to the HTTP EPR of the simple stock quote service hosted on the sample Axis2 server.
