@@ -58,7 +58,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     private int traceState = SynapseConstants.TRACING_UNSET;
 
-    private String artifactContainerName = "";
+    private String artifactContainerName;
 
     public API(String name, String context) {
         super(name);

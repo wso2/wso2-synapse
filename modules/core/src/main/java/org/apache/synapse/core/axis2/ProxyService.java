@@ -240,7 +240,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private boolean wsdlPublished;
 
-    private String artifactContainerName = "";
+    private String artifactContainerName;
 
     /**
      * Constructor

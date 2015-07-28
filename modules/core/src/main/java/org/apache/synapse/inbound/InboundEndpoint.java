@@ -48,7 +48,7 @@ public class InboundEndpoint implements ManagedLifecycle {
     private SynapseEnvironment synapseEnvironment;
     private InboundRequestProcessor inboundRequestProcessor;
     /** car file name which this endpoint deployed from */
-    private String artifactContainerName = "";
+    private String artifactContainerName;
 
 
     public void init(SynapseEnvironment se) {

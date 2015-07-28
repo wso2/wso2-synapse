@@ -105,7 +105,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     
     private boolean forceBuildMC =false;
 
-    protected String artifactContainerName = "";
+    protected String artifactContainerName;
 
     protected AbstractEndpoint() {
         log = LogFactory.getLog(this.getClass());

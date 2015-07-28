@@ -34,7 +34,7 @@ public class CustomLogSetter {
     }
 
     public void setLogAppender (String appenderContent) {
-        if (!"".equals(appenderContent)){
+        if (appenderContent != null){
             logAppender.set(appenderContent);
         }
     }

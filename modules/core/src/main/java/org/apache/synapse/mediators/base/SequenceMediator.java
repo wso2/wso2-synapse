@@ -70,7 +70,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
     /** Name of the car file which the sequence deployed from */
-    private String artifactContainerName = "";
+    private String artifactContainerName;
 
     /**
      * If this mediator refers to another named Sequence, execute that. Else
