@@ -32,7 +32,10 @@ import org.apache.axis2.util.XMLPrettyPrinter;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.ServerConfigurationInformation;
+import org.apache.synapse.ServerContextInformation;
+import org.apache.synapse.ServerState;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
@@ -566,7 +569,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
         return artifactName;
     }
 
-    public void setCustomLog (String carName, String tenantId) {
-        customLogContent = "**************** Deployed CAR Name: " + carName + ", Tenant Id: " + tenantId + " ****************";
+    public void setCustomLog (String artifactContainerName, String tenantId) {
+        customLogContent = "**************** Deployed CAR Name: " + artifactContainerName + ", Tenant Id: " + tenantId + " ****************";
     }
 }

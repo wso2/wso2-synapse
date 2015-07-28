@@ -26,7 +26,13 @@ import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.FaultHandler;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.PropertyInclude;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -99,7 +105,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     
     private boolean forceBuildMC =false;
 
-    protected String carName = "";
+    protected String artifactContainerName = "";
 
     protected AbstractEndpoint() {
         log = LogFactory.getLog(this.getClass());
@@ -200,16 +206,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * Set the car File name which this endpoint deployed from
      * @param name
      */
-    public void setCarName (String name) {
-        carName = name;
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
     }
 
     /**
      * Get the car File name which this endpoint deployed from
-     * @return carName
+     * @return artifactContainerName
      */
-    public String getCarName () {
-        return carName;
+    public String getArtifactContainerName () {
+        return artifactContainerName;
     }
 
     /**
@@ -758,6 +764,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void logSetter() {
-        CustomLogSetter.getInstance().setLogAppender(carName);
+        CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 }

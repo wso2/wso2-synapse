@@ -56,7 +56,7 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
             Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
 
             //Set the car name
-            ep.setCarName(customLogContent);
+            ep.setArtifactContainerName(customLogContent);
             if (ep != null) {
                 ep.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
@@ -92,7 +92,7 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
 
         Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
 
-        CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getCarName() : "");
+        CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
 
         if (log.isDebugEnabled()) {
             log.debug("Endpoint update from file : " + fileName + " has started");
@@ -154,7 +154,7 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
             Endpoint ep = getSynapseConfiguration().getDefinedEndpoints().get(artifactName);
             if (ep != null) {
 
-                CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getCarName() : "");
+                CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
 
                 getSynapseConfiguration().removeEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
@@ -186,7 +186,7 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
             Endpoint ep
                     = getSynapseConfiguration().getDefinedEndpoints().get(artifactName);
 
-            CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getCarName() : "");
+            CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
 
             OMElement epElem = EndpointSerializer.getElementFromEndpoint(ep);
             if (ep.getFileName() != null) {

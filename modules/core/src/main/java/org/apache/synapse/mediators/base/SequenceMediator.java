@@ -19,7 +19,14 @@
 
 package org.apache.synapse.mediators.base;
 
-import org.apache.synapse.*;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.Nameable;
+import org.apache.synapse.SequenceType;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseLog;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -63,7 +70,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
     /** Name of the car file which the sequence deployed from */
-    private String carName = "";
+    private String artifactContainerName = "";
 
     /**
      * If this mediator refers to another named Sequence, execute that. Else
@@ -79,7 +86,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public boolean mediate(MessageContext synCtx) {
 
         SynapseLog synLog = getLog(synCtx);
-        CustomLogSetter.getInstance().setLogAppender(carName);
+
+        if (sequenceType == SequenceType.NAMED) {
+            CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
+        }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Sequence "
@@ -212,7 +222,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
 
         SynapseLog synLog = getLog(synCtx);
-        CustomLogSetter.getInstance().setLogAppender(carName);
+
+        if (sequenceType == SequenceType.NAMED) {
+            CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
+        }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Mediating using the SeqContinuationState type : " +
@@ -441,12 +454,12 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         return initialized;
     }
 
-    public void setCarName (String name) {
-        carName = name;
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
     }
 
-    public String getCarName () {
-        return carName;
+    public String getArtifactContainerName () {
+        return artifactContainerName;
     }
 
     @Override

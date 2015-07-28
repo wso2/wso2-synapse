@@ -48,7 +48,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             InboundEndpoint inboundEndpoint = InboundEndpointFactory.createInboundEndpoint(artifactConfig, getSynapseConfiguration());
             if (inboundEndpoint != null) {
-                inboundEndpoint.setCarName(customLogContent);
+                inboundEndpoint.setArtifactContainerName(customLogContent);
                 inboundEndpoint.setFileName(new File(fileName).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("Inbound Endpoint named '" + inboundEndpoint.getName()
@@ -92,10 +92,10 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
                 return null;
             }
 
-            CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getCarName());
+            CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
 
             inboundEndpoint.setFileName(new File(fileName).getName());
-            inboundEndpoint.setCarName(customLogContent);
+            inboundEndpoint.setArtifactContainerName(customLogContent);
 
             if (log.isDebugEnabled()) {
                 log.debug("Inbound Endpoint: " + inboundEndpoint.getName() + " has been built from the file: " + fileName);
@@ -139,7 +139,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
             if (inboundEndpoint != null) {
-                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getCarName());
+                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
             	inboundEndpoint.destroy();
                 getSynapseConfiguration().removeInboundEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
@@ -165,7 +165,7 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             InboundEndpoint inboundEndpoint = getSynapseConfiguration().getInboundEndpoint(artifactName);
-            CustomLogSetter.getInstance().setLogAppender((inboundEndpoint != null) ? inboundEndpoint.getCarName() : "");
+            CustomLogSetter.getInstance().setLogAppender((inboundEndpoint != null) ? inboundEndpoint.getArtifactContainerName() : "");
             OMElement inboundEndpointElement = InboundEndpointSerializer.serializeInboundEndpoint(inboundEndpoint);
             if (inboundEndpoint.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()

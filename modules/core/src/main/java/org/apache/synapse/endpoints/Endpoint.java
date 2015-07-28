@@ -128,11 +128,11 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      * Set the name of the car file which this endpoint deployed from
      *
      */
-    public void setCarName (String name);
+    public void setArtifactContainerName (String name);
 
     /**
      * Get the Car File Name which this endpoint deployed from
      */
-    public String getCarName ();
+    public String getArtifactContainerName ();
 
 }

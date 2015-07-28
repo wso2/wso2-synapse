@@ -32,7 +32,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
-import org.apache.synapse.*;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseArtifact;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -235,7 +240,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private boolean wsdlPublished;
 
-    private String carName = "";
+    private String artifactContainerName = "";
 
     /**
      * Constructor
@@ -855,8 +860,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             this.setRunning(true);
             auditInfo("Started the proxy service : " + name);
         } else {
-            auditWarn("Unable to start proxy service : " + name +
-                ". Couldn't access Axis configuration");
+            auditWarn("Unable to start proxy service : " + name + ". Couldn't access Axis configuration");
         }
     }
 
@@ -1289,12 +1293,12 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     }
 
-    public void setCarName (String name) {
-        carName = name;
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
     }
 
-    public String getCarName () {
-        return carName;
+    public String getArtifactContainerName () {
+        return artifactContainerName;
     }
 
     private String[] getModuleNames(String propertyValue) {
@@ -1322,6 +1326,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     }
 
     public void setLogSetterValue () {
-        CustomLogSetter.getInstance().setLogAppender(carName);
+        CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 }

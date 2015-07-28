@@ -59,7 +59,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
                     artifactConfig, properties);
             if (m instanceof SequenceMediator) {
                 SequenceMediator seq = (SequenceMediator) m;
-                seq.setCarName(customLogContent);
+                seq.setArtifactContainerName(customLogContent);
                 seq.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("Sequence named '" + seq.getName()
@@ -94,7 +94,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
 
         Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
 
-        CustomLogSetter.getInstance().setLogAppender((m != null) ? ((SequenceMediator) m).getCarName() : "");
+        CustomLogSetter.getInstance().setLogAppender((m != null) ? ((SequenceMediator) m).getArtifactContainerName() : "");
 
         if (log.isDebugEnabled()) {
             log.debug("Sequence update from file : " + fileName + " has started");
@@ -157,7 +157,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);
             if (seq != null) {
-                CustomLogSetter.getInstance().setLogAppender(seq.getCarName());
+                CustomLogSetter.getInstance().setLogAppender(seq.getArtifactContainerName());
                 if (SynapseConstants.MAIN_SEQUENCE_KEY.equals(seq.getName())
                         || SynapseConstants.FAULT_SEQUENCE_KEY.equals(seq.getName())) {
                     handleSynapseArtifactDeploymentError(
@@ -192,7 +192,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);
-            CustomLogSetter.getInstance().setLogAppender((seq != null) ? seq.getCarName() : "");
+            CustomLogSetter.getInstance().setLogAppender((seq != null) ? seq.getArtifactContainerName() : "");
             OMElement seqElem = MediatorSerializerFinder.getInstance().getSerializer(seq).
                     serializeMediator(null, seq);
             if (seq.getFileName() != null) {
