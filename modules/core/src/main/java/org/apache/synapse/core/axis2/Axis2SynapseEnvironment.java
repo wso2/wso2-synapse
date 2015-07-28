@@ -336,10 +336,16 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
 
+        /*
+         * If the method is invoked by the inbound endpoint
+         * Then check for the endpoint name and then set the Log Appender Content
+         */
         if (synCtx.getProperty("inbound.endpoint.name") != null) {
             InboundEndpoint inboundEndpoint = synCtx.getConfiguration().
                     getInboundEndpoint((String) synCtx.getProperty("inbound.endpoint.name"));
-            CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+            if (inboundEndpoint != null) {
+                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+            }
         }
 
         synCtx.setEnvironment(this);
@@ -856,6 +862,19 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
+
+        /*
+         * If the method is invoked by the inbound endpoint
+         * Then check for the endpoint name and then set the Log Appender Content
+         */
+        if (smc.getProperty("inbound.endpoint.name") != null) {
+            InboundEndpoint inboundEndpoint = smc.getConfiguration().
+                    getInboundEndpoint((String) smc.getProperty("inbound.endpoint.name"));
+            if (inboundEndpoint != null) {
+                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+            }
+        }
+
         if (seq == null) {
             log.error("Please provide existing sequence");
             return false;
