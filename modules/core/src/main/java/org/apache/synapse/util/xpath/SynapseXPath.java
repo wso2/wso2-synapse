@@ -314,7 +314,14 @@ public class SynapseXPath extends SynapsePath {
                     if (o instanceof OMTextImpl) {
                         textValue.append(((OMTextImpl) o).getText());
                     } else if (o instanceof OMElementImpl) {
-                        textValue.append(((OMElementImpl) o).toString());
+                        String s = ((OMElementImpl) o).getText();
+
+                        // We use StringUtils.trim as String.trim does not remove U+00A0 (int 160) (No-break space)
+                        if (s.replace(String.valueOf((char) 160), " ").trim().length() == 0) {
+                            s = o.toString();
+                        }
+                        textValue.append(s);
+
                     } else if (o instanceof OMDocumentImpl) {
 
                         textValue.append(
