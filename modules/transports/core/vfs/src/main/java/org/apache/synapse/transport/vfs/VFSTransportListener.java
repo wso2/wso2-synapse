@@ -751,7 +751,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             		+ VFSUtils.maskURLPassword(file.toString()), e);
 
         } finally {
-           closeFileSystem(file);
+            try {
+                if (file != null) {
+                    file.close();
+                }
+            } catch (FileSystemException warn) {
+                // ignore the warning,  since we handed over the stream close job to
+                // AutocloseInputstream..
+            }
         }
     }
 
