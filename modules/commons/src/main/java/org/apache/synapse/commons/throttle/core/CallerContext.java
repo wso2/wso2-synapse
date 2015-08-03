@@ -106,7 +106,7 @@ public abstract class CallerContext implements Serializable, Cloneable {
         this.firstAccessTime = currentTime;  // set the first access time
         // the end of this time window
         this.nextTimeWindow = currentTime + configuration.getUnitTime();
-        //throttleContext.addCallerContext(this, ID); // register this in the throttle
+        throttleContext.addCallerContext(this, ID); // register this in the throttle
     }
 
     /**

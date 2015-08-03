@@ -127,8 +127,15 @@ public class HTTPEndpoint extends AbstractEndpoint {
                 if (propertyKey.toString() != null&&
                         (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
                                 || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
-                    if (synCtx.getProperty(propertyKey.toString()) != null) {
-                        variables.put(propertyKey.toString(), decodeString((String) synCtx.getProperty(propertyKey.toString())));
+                    Object objProperty = synCtx.getProperty(propertyKey.toString());
+                    if (objProperty != null) {
+                        if (objProperty instanceof String) {
+                            variables.put(propertyKey.toString(),
+                                          decodeString((String) synCtx.getProperty(propertyKey.toString())));
+                        } else {
+                            variables.put(propertyKey.toString(),
+                                          decodeString(String.valueOf(synCtx.getProperty(propertyKey.toString()))));
+                        }
                     }
                 }
             }
@@ -185,8 +192,16 @@ public class HTTPEndpoint extends AbstractEndpoint {
                 if (propertyKey.toString() != null&&
                         (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
                                 || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
-                    if (synCtx.getProperty(propertyKey.toString()) != null) {
-                        variables.put(propertyKey.toString(), (String) synCtx.getProperty(propertyKey.toString()));
+                    Object objProperty =
+                                         synCtx.getProperty(propertyKey.toString());
+                    if (objProperty != null) {
+                        if (objProperty instanceof String) {
+                            variables.put(propertyKey.toString(),
+                                          (String) synCtx.getProperty(propertyKey.toString()));
+                        } else {
+                            variables.put(propertyKey.toString(),
+                                          (String) String.valueOf(synCtx.getProperty(propertyKey.toString())));
+                        }
                     }
                 }
             }

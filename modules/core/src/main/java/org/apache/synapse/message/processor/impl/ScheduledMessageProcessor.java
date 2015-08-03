@@ -378,17 +378,18 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public boolean isActive() {
-		/*
-		 * If the interval value is less than 1000 ms, then the task is run
-		 * inside the while loop. Due to that control is not returned back to
-		 * the taskmanager and hence the task is in BLOCKED state. This
-		 * situation is handled separately.
-		 */
-		if (isThrottling(interval)) {
-			return taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
-			       taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-		}
-		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        /*
+         * Sometimes when the backend is down, we may retry the delivery for a
+         * specified number of attempts. Due to that control is not returned
+         * back to the Quartz for some time (may be few secs depending on the
+         * config). Therefore the task is in Blocked
+         * state as far as Quartz is concerned. But we are running the execute
+         * method of the task in the meantime with our own logic. Therefore
+         * though the task is blocked from Quartz, still we are executing it. So
+         * that implies it is running.
+         */
+        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
+               taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
     @Override
