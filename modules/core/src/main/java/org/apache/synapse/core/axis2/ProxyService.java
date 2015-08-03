@@ -98,11 +98,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public static final String ABSOLUTE_SCHEMA_URL_PARAM = "showAbsoluteSchemaURL";
     public static final String ABSOLUTE_PROXY_SCHEMA_URL_PARAM = "showProxySchemaURL";
     public static final String ENGAGED_MODULES = "engagedModules";
-    
-	private static final String SECURITY_POLICY_1_1_NAME_SPACE =
-	                                                             "http://schemas.xmlsoap.org/ws/2005/07/securitypolicy";
-	private static final String SECURITY_POLICY_1_2_NAME_SPACE =
-	                                                             "http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702";
 
     /**
      * The name of the proxy service
@@ -598,6 +593,69 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                 // ignore
             }
         }
+
+        if (!policies.isEmpty()) {
+
+            for (PolicyInfo pi : policies) {
+                if (getPolicyFromKey(pi.getPolicyKey(), synCfg) == null) {
+                    handleException("Cannot find Policy from the key");
+                }
+
+                if (pi.isServicePolicy()) {
+
+                    proxyService.getPolicySubject().attachPolicy(
+                            getPolicyFromKey(pi.getPolicyKey(), synCfg));
+
+                } else if (pi.isOperationPolicy()) {
+
+                    AxisOperation op = proxyService.getOperation(pi.getOperation());
+                    if (op != null) {
+                        op.getPolicySubject().attachPolicy(
+                                getPolicyFromKey(pi.getPolicyKey(), synCfg));
+
+                    } else {
+                        handleException("Couldn't find the operation specified " +
+                                "by the QName : " + pi.getOperation());
+                    }
+
+                } else if (pi.isMessagePolicy()) {
+
+                    if (pi.getOperation() != null) {
+
+                        AxisOperation op = proxyService.getOperation(pi.getOperation());
+                        if (op != null) {
+                            op.getMessage(pi.getMessageLable()).getPolicySubject().attachPolicy(
+                                    getPolicyFromKey(pi.getPolicyKey(), synCfg));
+                        } else {
+                            handleException("Couldn't find the operation " +
+                                    "specified by the QName : " + pi.getOperation());
+                        }
+
+                    } else {
+                        // operation is not specified and hence apply to all the applicable messages
+                        for (Iterator itr = proxyService.getOperations(); itr.hasNext();) {
+                            Object obj = itr.next();
+                            if (obj instanceof AxisOperation) {
+                                // check whether the policy is applicable
+                                if (!((obj instanceof OutOnlyAxisOperation && pi.getType()
+                                        == PolicyInfo.MESSAGE_TYPE_IN) ||
+                                        (obj instanceof InOnlyAxisOperation
+                                        && pi.getType() == PolicyInfo.MESSAGE_TYPE_OUT))) {
+
+                                    AxisMessage message = ((AxisOperation)
+                                            obj).getMessage(pi.getMessageLable());
+                                    message.getPolicySubject().attachPolicy(
+                                            getPolicyFromKey(pi.getPolicyKey(), synCfg));
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    handleException("Undefined Policy type");
+                }
+            }
+        }
+
         // create a custom message receiver for this proxy service 
         ProxyServiceMessageReceiver msgRcvr = new ProxyServiceMessageReceiver();
         msgRcvr.setName(name);
@@ -654,99 +712,17 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             }
         }
 
-		// should Security be engaged on this service?
-		if (wsSecEnabled) {
-			auditInfo("WS-Security is enabled for service : " + name);
-			try {
-				proxyService.engageModule(axisCfg.getModule(SynapseConstants.SECURITY_MODULE_NAME),
-				                          axisCfg);
-				for (AxisEndpoint ep : proxyService.getEndpoints().values()) {
-					for (PolicyInfo pi : policies) {
-						final String registryContent =
-						                               synCfg.getRegistry()
-						                                     .lookup(pi.getPolicyKey()).toString();
-						/*
-						 * Only the security policies should be added to the
-						 * Bindings section of WSDL. The namespace is used to
-						 * check whether a given policy is a security policy or
-						 * not.
-						 */
-						if (registryContent.contains(SECURITY_POLICY_1_1_NAME_SPACE) ||
-						    registryContent.contains(SECURITY_POLICY_1_2_NAME_SPACE)) {
-							/*
-							 * Adding the security policy to the bindings
-							 * associated with the endpoint.
-							 */
-							ep.getBinding()
-							  .applyPolicy(getPolicyFromKey(pi.getPolicyKey(), synCfg));
-						}
-					}
-				}
-			} catch (AxisFault axisFault) {
-				handleException("Error loading WS Sec module on proxy service : " + name, axisFault);
-			}
-		} else {
-			if (!policies.isEmpty()) {
-
-				for (PolicyInfo pi : policies) {
-					if (getPolicyFromKey(pi.getPolicyKey(), synCfg) == null) {
-						handleException("Cannot find Policy from the key");
-					}
-
-					if (pi.isServicePolicy()) {
-
-						proxyService.getPolicySubject()
-						            .attachPolicy(getPolicyFromKey(pi.getPolicyKey(), synCfg));
-
-					} else if (pi.isOperationPolicy()) {
-
-						AxisOperation op = proxyService.getOperation(pi.getOperation());
-						if (op != null) {
-							op.getPolicySubject().attachPolicy(getPolicyFromKey(pi.getPolicyKey(),
-							                                                    synCfg));
-
-						} else {
-							handleException("Couldn't find the operation specified " +
-							                "by the QName : " + pi.getOperation());
-						}
-
-					} else if (pi.isMessagePolicy()) {
-
-						if (pi.getOperation() != null) {
-
-							AxisOperation op = proxyService.getOperation(pi.getOperation());
-							if (op != null) {
-								op.getMessage(pi.getMessageLable()).getPolicySubject()
-								  .attachPolicy(getPolicyFromKey(pi.getPolicyKey(), synCfg));
-							} else {
-								handleException("Couldn't find the operation " +
-								                "specified by the QName : " + pi.getOperation());
-							}
-
-						} else {
-							// operation is not specified and hence apply to all
-							// the applicable messages
-							for (Iterator itr = proxyService.getOperations(); itr.hasNext();) {
-								Object obj = itr.next();
-								if (obj instanceof AxisOperation) {
-									// check whether the policy is applicable
-									if (!((obj instanceof OutOnlyAxisOperation && pi.getType() == PolicyInfo.MESSAGE_TYPE_IN) || (obj instanceof InOnlyAxisOperation && pi.getType() == PolicyInfo.MESSAGE_TYPE_OUT))) {
-
-										AxisMessage message =
-										                      ((AxisOperation) obj).getMessage(pi.getMessageLable());
-										message.getPolicySubject()
-										       .attachPolicy(getPolicyFromKey(pi.getPolicyKey(),
-										                                      synCfg));
-									}
-								}
-							}
-						}
-					} else {
-						handleException("Undefined Policy type");
-					}
-				}
-			}
-		}
+        // should Security be engaged on this service?
+        if (wsSecEnabled) {
+            auditInfo("WS-Security is enabled for service : " + name);
+            try {
+                proxyService.engageModule(axisCfg.getModule(
+                    SynapseConstants.SECURITY_MODULE_NAME), axisCfg);
+            } catch (AxisFault axisFault) {
+                handleException("Error loading WS Sec module on proxy service : "
+                        + name, axisFault);
+            }
+        }
 
         moduleEngaged = wsSecEnabled || wsAddrEnabled;
         wsdlPublished = wsdlFound;
