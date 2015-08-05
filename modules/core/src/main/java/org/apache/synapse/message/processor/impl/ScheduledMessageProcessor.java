@@ -182,6 +182,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				taskDescription.setCronExpression(cronExpression);
 			}
 			taskManager.schedule(taskDescription);
+
 		}
 		
         logger.info("Started message processor. [" + getName() + "].");
@@ -480,6 +481,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     @Override
     public void update() {
 		start();
+	    if (!getIsActivatedParamValue()) {
+		    deactivate();
+	    }
 	}
 
     @Override
