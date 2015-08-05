@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.rest.version.DefaultStrategy;
 
 import java.util.*;
 
@@ -66,27 +67,27 @@ public class RESTRequestHandler {
     private boolean dispatchToAPI(MessageContext synCtx) {
         Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
         //Since swapping elements are not possible with sets, Collection is converted to a List
-        List<API> apiList=new ArrayList<API>(apiSet);
+        List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
 
         API defaultAPI = null;
-        int i=0;
-        for(API api : apiList){
-            if(api.getVersion().trim().equals("")){ //caught no version api
-                //swap the no version api with the last element of the list to give it the lowest priority.
-                Collections.swap(apiList,i,apiList.size()-1);
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Found API: " + api.getName() + " which has no version. Moved it to the last position.");
-                }
-                break;
-            }
-            i++;
-        }
-
-        for (API api : apiList) {
+        for (API api : apiSet) {
             if ("/".equals(api.getContext())) {
                 defaultAPI = api;
+            } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
+                //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at last.
+                //Otherwise they will be always chosen to process the request without matching the version.
+                defaultStrategyApiSet.add(api);
             } else if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                api.process(synCtx);
+                return true;
+            }
+        }
+
+        for (API api : defaultStrategyApiSet) {
+            if (api.canProcess(synCtx)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Located specific API: " + api.getName() + " for processing message");
                 }
