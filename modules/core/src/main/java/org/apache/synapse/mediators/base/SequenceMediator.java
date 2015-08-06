@@ -26,7 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.CustomLogSetter;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;

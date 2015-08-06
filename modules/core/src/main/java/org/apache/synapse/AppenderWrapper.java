@@ -22,6 +22,7 @@ package org.apache.synapse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.lang.reflect.Field;
 

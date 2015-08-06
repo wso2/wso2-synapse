@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
@@ -175,6 +176,7 @@ public class ClientWorker implements Runnable {
 
     public void run() {
 
+        CustomLogSetter.getInstance().clearThreadLocalContent();
         if (responseMsgCtx == null) {
             return;
         }

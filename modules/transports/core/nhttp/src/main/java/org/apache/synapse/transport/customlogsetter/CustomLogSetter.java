@@ -17,7 +17,7 @@
  *  under the License.
  */
 
-package org.apache.synapse;
+package org.apache.synapse.transport.customlogsetter;
 
 public class CustomLogSetter {
     private static CustomLogSetter instance = null;
@@ -41,5 +41,9 @@ public class CustomLogSetter {
 
     public String getLogAppenderContent() {
         return logAppender.get();
+    }
+
+    public void clearThreadLocalContent () {
+        logAppender.remove();
     }
 }

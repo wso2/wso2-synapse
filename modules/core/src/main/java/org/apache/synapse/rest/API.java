@@ -26,7 +26,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.CustomLogSetter;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
