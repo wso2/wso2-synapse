@@ -655,7 +655,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
                                 "] Dropped the failed message and continue due to reach of max attempts");
                     }
                 } else {
-                    terminate();
+	                terminate();
 	                deactivateMessageProcessor(msgCtx);
 
                     if (log.isDebugEnabled()) {
