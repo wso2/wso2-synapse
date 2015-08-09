@@ -32,16 +32,16 @@ import javax.xml.namespace.QName;
  */
 public abstract class DynamicProfileReloader {
 
-    private static final Log LOG = LogFactory.getLog(DynamicProfileReloader.class);
+    private static final Log log = LogFactory.getLog(DynamicProfileReloader.class);
 
     /* XML parameter name for dynamic profiles in Axis2 config */
-    private final String profileConfigName = "dynamicSSLProfilesConfig";
+    private final String PROFILE_CONFIG_NAME = "dynamicSSLProfilesConfig";
 
     /* XML element name for dynamic profiles configuration path in Axis2 config */
-    private final String pathConfigName = "filePath";
+    private final String PATH_CONFIG_NAME = "filePath";
 
     /* XML element name for dynamic profiles file read interval in Axis2 config */
-    private final String intervalConfigName = "fileReadInterval";
+    private final String INTERVAL_CONFIG_NAME = "fileReadInterval";
 
     private boolean invokedFromSchedule = true;
 
@@ -114,12 +114,11 @@ public abstract class DynamicProfileReloader {
      */
     protected String extractConfigurationFilePath(ParameterInclude transportOut) {
         String path = null;
-        Parameter profileParam = transportOut.getParameter(profileConfigName);
-
+        Parameter profileParam = transportOut.getParameter(PROFILE_CONFIG_NAME);
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profileParam != null) {
             OMElement profileParamElem = profileParam.getParameterElement();
-            path = profileParamElem.getFirstChildWithName(new QName(pathConfigName)).getText();
+            path = profileParamElem.getFirstChildWithName(new QName(PATH_CONFIG_NAME)).getText();
 
         }
         return path;
@@ -133,17 +132,15 @@ public abstract class DynamicProfileReloader {
      */
     protected long extractSleepInterval(ParameterInclude transportOut) {
         long fileReadInterval = -1;
-        Parameter profileParam = transportOut.getParameter(profileConfigName);
-
+        Parameter profileParam = transportOut.getParameter(PROFILE_CONFIG_NAME);
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profileParam != null) {
             OMElement profileParamElem = profileParam.getParameterElement();
-            String interval = profileParamElem.getFirstChildWithName(new QName(intervalConfigName)).getText();
+            String interval = profileParamElem.getFirstChildWithName(new QName(INTERVAL_CONFIG_NAME)).getText();
             if (interval != null) {
                 fileReadInterval = Long.parseLong(interval);
             }
         }
-
         return fileReadInterval;
     }
 
@@ -156,7 +153,6 @@ public abstract class DynamicProfileReloader {
         boolean notificationHandlerStarted = false;
         long configurationLoadingInterval = extractSleepInterval(transportDescription);
         String filePath = extractConfigurationFilePath(transportDescription);
-
         //Create File Update Notification Handler only if file path is configured
         if (filePath != null) {
             fileUpdateNotificationHandler = new FileUpdateNotificationHandler(configurationLoadingInterval);
@@ -166,8 +162,8 @@ public abstract class DynamicProfileReloader {
             fileUpdateNotificationHandler.registerListener(this);
             notificationHandlerStarted = true;
         } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded " +
+            if (log.isDebugEnabled()) {
+                log.debug("Configuration File path is not configured and SSL Profiles will not be loaded " +
                           "dynamically in " + this.getClass().getName());
             }
         }
