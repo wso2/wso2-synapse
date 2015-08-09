@@ -20,6 +20,7 @@
 package org.apache.synapse.transport.nhttp.config;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -36,6 +37,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
@@ -350,13 +352,13 @@ public class ClientConnFactoryBuilder {
     }
 
     /**
+     * Extracts Dynamic SSL profiles configuration from given TransportOut Configuration
      *
-     * @return
+     * @param transportOut TransportOut Configuration of the connection
+     * @return TransportOut configuration with extracted Dynamic SSL profiles information
      */
     public TransportOutDescription loadDynamicSSLConfig (TransportOutDescription transportOut) {
-
         Parameter profilePathParam = transportOut.getParameter("dynamicSSLProfilesConfig");
-
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profilePathParam == null) {
             return transportOut;
@@ -365,10 +367,8 @@ public class ClientConnFactoryBuilder {
         //Using separate SSL Profile configuration file, ignore Axis2 configurations
         OMElement pathEl = profilePathParam.getParameterElement();
         String path = pathEl.getFirstChildWithName(new QName("filePath")).getText();
-
         try {
             if (path != null) {
-
                 String separator = path.startsWith(System.getProperty("file.separator")) ?
                                    "" : System.getProperty("file.separator");
                 String fullPath = System.getProperty("user.dir") + separator + path;
@@ -384,9 +384,14 @@ public class ClientConnFactoryBuilder {
 
                 return transportOut;
             }
-
-        } catch (Exception e) {
-            log.error("Could not load customSSLProfiles from file path: " + path, e);
+        } catch (XMLStreamException xmlEx) {
+            log.error("XMLStreamException - Could not load customSSLProfiles from file path: " + path, xmlEx);
+        } catch (FileNotFoundException fileEx) {
+            log.error("FileNotFoundException - Could not load customSSLProfiles from file path: " + path, fileEx);
+        } catch (AxisFault axisFault) {
+            log.error("AxisFault - Could not load customSSLProfiles from file path: " + path, axisFault);
+        } catch (Exception ex) {
+            log.error("Exception - Could not load customSSLProfiles from file path: " + path, ex);
         }
         return null;
     }
