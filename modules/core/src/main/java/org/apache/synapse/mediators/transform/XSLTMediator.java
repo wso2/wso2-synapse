@@ -187,6 +187,11 @@ public class XSLTMediator extends AbstractMediator {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
 
+        if (synCtx.getEnvelope().getBody().getFirstElement() == null) {
+            synLog.auditWarn("Found empty soap body, skipping XSLT transformation and continuing the mediation");
+            return true;
+        }
+
         try {
             performXSLT(synCtx, synLog);
 
