@@ -20,7 +20,6 @@ package org.apache.synapse.message.processor.impl;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -83,14 +82,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public void init(SynapseEnvironment se) {
 		this.synapseEnvironment = se;
 		initMessageSender(parameters);
-		if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
-		                      .getServerName())) {
-			/*
-			 * If it is not a pinned server we do not start the message
-			 * processor. In that server.
-			 */
-			setActivated(false);
-		}
 		super.init(se);
 		/*
 		 * initialize the task manager only once to alleviate complexities
@@ -405,33 +396,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(activated));
 	}
 
-    private boolean isPinnedServer(String serverName) {
-        boolean pinned = false;
-        Object pinnedServersObj = this.parameters.get(MessageProcessorConstants.PINNED_SERVER);
-
-        if (pinnedServersObj != null && pinnedServersObj instanceof String) {
-
-            String pinnedServers = (String) pinnedServersObj;
-            StringTokenizer st = new StringTokenizer(pinnedServers, " ,");
-
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken().trim();
-                if (serverName.equals(token)) {
-                    pinned = true;
-                    break;
-                }
-            }
-            if (!pinned) {
-                logger.info("Message processor '" + name + "' pinned on '" + pinnedServers + "' not starting on" +
-                        " this server '" + serverName + "'");
-            }
-        } else {
-            // this means we have to use the default value that is to start the message processor
-            pinned = true;
-        }
-
-        return pinned;
-    }
 
 	/**
 	 * nTask does not except values less than 1000 for its schedule interval.
