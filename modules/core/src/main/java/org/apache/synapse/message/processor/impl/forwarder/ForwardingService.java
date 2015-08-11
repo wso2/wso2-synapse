@@ -123,13 +123,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * the message processor after maximum number of delivery
 	 */
 	private boolean isMaxDeliveryAttemptDropEnabled = false;
-
-	/**
-	 * If false, the MessageProcessor will process every single message in the queue regardless of their origin
-	 * If true, it will only process messages that were processed by a MessageStore running on the same server
-	 * Default value is set to true
-	 */
-	private boolean bindProcToServer = true;
     
 	private SynapseEnvironment synapseEnvironment;
 
@@ -164,18 +157,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				if (!this.messageProcessor.isDeactivated()) {
 					messageContext = fetch(messageConsumer);
 					if (messageContext != null) {
-
-						if (bindProcToServer) {
-							String serverName = (String) messageContext.getProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-							if (serverName != null && messageContext instanceof Axis2MessageContext) {
-								AxisConfiguration configuration = ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-								                                                                        .getConfigurationContext().getAxisConfiguration();
-								String myServerName = getAxis2ParameterValue(configuration,SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-								if (!serverName.equals(myServerName)) {
-									return;
-								}
-							}
-						}
 
 						Set proSet = messageContext.getPropertyKeySet();
 						if (proSet != null) {
@@ -314,12 +295,6 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		deactivateSeq = (String) parametersMap.get(ForwardingProcessorConstants.DEACTIVATE_SEQUENCE);
 
 		targetEndpoint = (String) parametersMap.get(ForwardingProcessorConstants.TARGET_ENDPOINT);
-
-		// Default value should be true
-		Object status;
-		if ((status = parametersMap.get(ForwardingProcessorConstants.BIND_PROCESSOR_TO_SERVER)) != null) {
-			bindProcToServer = Boolean.parseBoolean(status.toString());
-		}
 
 		// Default value should be true.
 		if (parametersMap.get(ForwardingProcessorConstants.THROTTLE) != null) {
