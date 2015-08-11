@@ -66,11 +66,6 @@ public final class ForwardingProcessorConstants {
     public static final String THROTTLE_INTERVAL = "throttle.interval";
     
     /**
-     * If false, the MessageProcessor will process every single message in the queue regardless of its origin
-     * If true, it will only process messages that were processed by a MessageStore running on the same server
-     */
-    public static final String BIND_PROCESSOR_TO_SERVER = "bind.processor.server";
-    /**
      * Message will be dropped after maximum delivery
      */
     public static final String MAX_DELIVERY_DROP = "max.delivery.drop";
