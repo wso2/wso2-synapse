@@ -59,47 +59,50 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
 	    Library lib = LibDeployerUtils.createSynapseLibrary(libFilePath);
 	    String libArtifactName = lib.getQName().toString();
-	    if (log.isDebugEnabled()) {
-		log.debug("Created the Synapse Library : " + libArtifactName + "  from : "
-			+ libFilePath);
-	    }
+		if (this.getSynapseConfiguration().getSynapseLibraries().get(lib.getQName().toString()) != null) {
+			log.warn("Hot deployment thread picked up an already deployed synapse library - Ignoring");
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug("Created the Synapse Library : " + libArtifactName + "  from : "
+						+ libFilePath);
+			}
 
-	    if (deploymentStore.isUpdatingArtifact(libFilePath)) {
+			if (deploymentStore.isUpdatingArtifact(libFilePath)) {
 
-		if (log.isDebugEnabled()) {
-		    log.debug("Updating Library artifact detected with filename : " + libFilePath);
-		}
-		// this is an hot-update case
-		String existingArtifactName = deploymentStore
-			.getUpdatingArtifactWithFileName(libFilePath);
-		deploymentStore.removeUpdatingArtifact(libFilePath);
-		undeploySynapseArtifact(existingArtifactName);
+				if (log.isDebugEnabled()) {
+					log.debug("Updating Library artifact detected with filename : " + libFilePath);
+				}
+				// this is an hot-update case
+				String existingArtifactName = deploymentStore
+						.getUpdatingArtifactWithFileName(libFilePath);
+				deploymentStore.removeUpdatingArtifact(libFilePath);
+				undeploySynapseArtifact(existingArtifactName);
 
-		// deploy from beginning
-		// add the library to synapse Config
-		completeDeployment(lib, libArtifactName);
+				// deploy from beginning
+				// add the library to synapse Config
+				completeDeployment(lib, libArtifactName);
 
-	    } else {
-		// new artifact hot-deployment case
-		try {
-		    // add the library to synapse Config
-		    completeDeployment(lib, libArtifactName);
-		} catch (SynapseArtifactDeploymentException sade) {
-		    log.error("Deployment of the Synapse Artifact from file : " + libFilePath
-			    + " : Failed!", sade);
+			} else {
+				// new artifact hot-deployment case
+				try {
+					// add the library to synapse Config
+					completeDeployment(lib, libArtifactName);
+				} catch (SynapseArtifactDeploymentException sade) {
+					log.error("Deployment of the Synapse Artifact from file : " + libFilePath
+							+ " : Failed!", sade);
 		    /*
 		     * log.info("The file has been backed up into : " +
 		     * backupFile(deploymentFileData.getFile()));
 		     */
+				}
+			}
+			if (libArtifactName != null) {
+				deploymentStore.addArtifact(libFilePath, libArtifactName);
+			}
+
+			log.info("Synapse Library named '" + lib.toString()
+					+ "' has been deployed from file : " + libFilePath);
 		}
-	    }
-	    if (libArtifactName != null) {
-		deploymentStore.addArtifact(libFilePath, libArtifactName);
-	    }
-
-	    log.info("Synapse Library named '" + lib.toString()
-		    + "' has been deployed from file : " + libFilePath);
-
 	} catch (IOException ex) {
 	    handleDeploymentError("Deployment of synapse artifact failed. Error reading "
 		    + libFilePath + " : " + ex.getMessage(), ex);
@@ -135,7 +138,6 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 	    LibDeployerUtils.deployingLocalEntries(lib, getSynapseConfiguration());
 	}
 
-	
     }
 
     public void undeploy(String fileName) throws DeploymentException {
@@ -149,6 +151,9 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
 	if (deploymentStore.containsFileName(fileName)) {
 	    File undeployingFile = new File(fileName);
+		if(fileName.contains("/tmp/carbonapps/") && fileName.endsWith(".zip")){
+			undeployingFile.delete();
+		}
 	    // axis2 treats Hot-Update as (Undeployment + deployment), where
 	    // synapse needs to differentiate the Hot-Update from the above two, since it needs
 	    // some validations for a real undeployment. Also this makes sure a zero downtime of the

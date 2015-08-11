@@ -48,6 +48,8 @@ public final class JsonStreamBuilder implements Builder {
                     logger.debug("#processDocument. Built JSON payload from JSON stream. MessageID: " + messageContext.getMessageID());
                 }
                 return element;
+            } else {
+                throw new AxisFault("No JSON payload provided.");
             }
         } else {
             EndpointReference endpointReference = messageContext.getTo();

@@ -76,4 +76,9 @@ public final class ForwardingProcessorConstants {
     public static final String MAX_DELIVERY_DROP = "max.delivery.drop";
     
     public static final String CRON_EXPRESSION = "cron.expression";
+
+    /**
+     * used for forward in case of scheduled message processor deactivation
+     */
+    public static final String DEACTIVATE_SEQUENCE = "message.processor.deactivate.sequence";
 }

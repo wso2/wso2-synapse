@@ -139,6 +139,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     private volatile int removeTaskState = STATE_STOPPED;
 
+    private boolean isFileSystemClosed = false;
+
     /**
      * By default file locking in VFS transport is turned on at a global level
      *
@@ -183,6 +185,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      */
     private void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
         FileSystemOptions fso = null;
+        setFileSystemClosed(false);
         try {
             fso = VFSUtils.attachFileSystemOptions(entry.getVfsSchemeProperties(), fsManager);
         } catch (Exception e) {
@@ -221,6 +224,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 if (retryCount >= maxRetryCount) {
                     processFailure("Repeatedly failed to resolve the file URI: " +
                             VFSUtils.maskURLPassword(fileURI), e, entry);
+                    closeFileSystem(fileObject);
                     return;
                 } else {
                     log.warn("Failed to resolve the file URI: " +
@@ -488,6 +492,22 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             onPollCompletion(entry);
         } catch (FileSystemException e) {
             processFailure("Error checking for existence and readability : " + VFSUtils.maskURLPassword(fileURI), e, entry);
+        } finally {
+            closeFileSystem(fileObject);
+        }
+    }
+
+    private void closeFileSystem(FileObject fileObject) {
+        try {
+            //Close the File system if it is not already closed by the finally block of processFile method
+            if (fileObject != null && !isFileSystemClosed() && fsManager != null && fileObject.getParent() != null  && fileObject.getParent().getFileSystem() != null) {
+                fsManager.closeFileSystem(fileObject.getParent().getFileSystem());
+                fileObject.close();
+                setFileSystemClosed(true);
+            }
+        } catch (FileSystemException warn) {
+            //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
+            // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
         }
     }
 
@@ -731,18 +751,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             		+ VFSUtils.maskURLPassword(file.toString()), e);
 
         } finally {
-            try {
-                if (file != null) {
-                    if (fsManager != null && file.getParent() != null  && file.getParent().getFileSystem() != null) {
-                        fsManager.closeFileSystem(file.getParent().getFileSystem());
-                    }
-                    file.close();
-                }
-
-            } catch (FileSystemException warn) {
-                 //  log.warn("Cannot close file after processing : " + file.getName().getPath(), warn);
-               // ignore the warning, since we handed over the stream close job to AutocloseInputstream..
-            }
+           closeFileSystem(file);
         }
     }
 
@@ -891,6 +900,15 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             }
         }
     }
+
+    public boolean isFileSystemClosed() {
+        return isFileSystemClosed;
+    }
+
+    public void setFileSystemClosed(boolean fileSystemClosed) {
+        isFileSystemClosed = fileSystemClosed;
+    }
+
     /**
      * Comparator classed used to sort the files according to user input
      * */

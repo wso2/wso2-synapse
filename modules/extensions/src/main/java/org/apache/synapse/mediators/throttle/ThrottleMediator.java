@@ -113,9 +113,8 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             //we consider dynamic loading of policy loading only for the request flow mediation
             //we ignore policy initialization for the response flow case we use the existing policy
             //reference throttling only applies for request flow mediation
-            if (!isResponse) {
-                doInitializeThrottleDynamicPolicy(synCtx, synLog);
-            }
+            doInitializeThrottleDynamicPolicy(synCtx, synLog);
+
             //in cluster environment local reference to concurrent access controller should be
             //updated, local reference kept inside Throttle mediator maybe expired as a
             //consequence of global concurrent access change with
@@ -149,12 +148,13 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 }
                 concurrentAccessReplicator.replicate(key, concurrentAccessController);
             }
-            //maintain properties in message context for the concurrency throttling
-            synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE, true);
-            //maintain properties in message context for the concurrency throttling
-            synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY, key);
-            //maintain properties in message context for the concurrency throttling
+
             if (concurrentAccessController != null) {
+                //maintain properties in message context for the concurrency throttling
+                synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE, true);
+                //maintain properties in message context for the concurrency throttling
+                synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY, key);
+                //maintain properties in message context for the concurrency throttling
                 synCtx.setProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER,
                         concurrentAccessController);
             }
@@ -321,7 +321,6 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                     //checks the availability of a policy configuration for  this domain name
                     callerId = config.getConfigurationKeyOfCaller(domainName);
                     if (callerId != null) {  // there is configuration for this domain name
-
                         //If this is a clustered env.
                         if (isClusteringEnable) {
                             context.setConfigurationContext(cc);
@@ -386,12 +385,12 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                             //Checks the availability of a policy configuration for  this ip
                             callerId = config.getConfigurationKeyOfCaller(remoteIP);
                             if (callerId != null) {   // there is configuration for this ip
-
                                 //For clustered env.
                                 if (isClusteringEnable) {
                                     context.setConfigurationContext(cc);
                                     context.setThrottleId(id);
                                 }
+
                                 //Checks access state
                                 AccessInformation accessInformation = accessControler.canAccess(
                                         context,

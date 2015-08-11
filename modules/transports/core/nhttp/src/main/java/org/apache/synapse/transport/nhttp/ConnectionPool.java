@@ -39,7 +39,7 @@ public class ConnectionPool {
     private static final Log log = LogFactory.getLog(ConnectionPool.class);
 
     /** Schema name foe SSL connections */
-    private final String sslSchemaName = "https";
+    private final String SSL_SCHEMA_NAME = "https";
 
     /** A map of available connections for reuse. The key selects the host+port of the
      * connection and the value contains a List of available connections to destination
@@ -171,7 +171,7 @@ public class ConnectionPool {
                 for (HttpRoute httpRoute : connMap.keySet()) {
                     if (params.length > 1 && params[0].equalsIgnoreCase(httpRoute.getTargetHost().getHostName())
                         && (Integer.valueOf(params[1]) == (httpRoute.getTargetHost().getPort())) &&
-                        httpRoute.getTargetHost().getSchemeName().equalsIgnoreCase(sslSchemaName)) {
+                        httpRoute.getTargetHost().getSchemeName().equalsIgnoreCase(SSL_SCHEMA_NAME)) {
 
                         List<NHttpClientConnection> clientConnections = connMap.get(httpRoute);
 
@@ -185,7 +185,9 @@ public class ConnectionPool {
                     }
                 }
             } catch (NumberFormatException e) {
-                log.debug("Error in port number in host:port - " + host + " discard connection loading ", e);
+                if(log.isWarnEnabled()) {
+                    log.warn("Error in port number in host:port - " + host + " discard connection loading ", e);
+                }
             }
         }
 
