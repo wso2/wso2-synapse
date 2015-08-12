@@ -56,5 +56,10 @@ public final class FailoverForwardingProcessorConstants {
      */
     public static final String TARGET_MESSAGE_STORE = "message.target.store.name";
 
+    /**
+     * Message store which need to send the messages
+     */
+    public static final String DEACTIVATE_SEQUENCE = "message.processor.deactivate.sequence";
+
 
 }
