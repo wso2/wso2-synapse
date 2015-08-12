@@ -20,9 +20,11 @@ package org.apache.synapse.mediators.store;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
@@ -32,7 +34,7 @@ import org.apache.synapse.util.MessageHelper;
 /**
  * <code>MessageStoreMediator</code> will store the incoming Messages in associated MessageStore
  */
-public class MessageStoreMediator extends AbstractMediator{
+public class MessageStoreMediator extends AbstractMediator implements ManagedLifecycle{
 
     /**
      * Name of the Mediator
@@ -49,11 +51,32 @@ public class MessageStoreMediator extends AbstractMediator{
      */
     private String  onStoreSequence;
 
+    /**
+     * Status of the guaranteed delivery
+     */
+    private boolean isGuaranteedDeliveryEnable = false;
+
+    /**
+     * Failover message store name
+     */
+    private String failoverMessageStoreName = null;
+
+    /**
+     * Original message store
+     */
+    private MessageStore messageStore = null;
+
+    private static final String PRODUCER_GUARANTEED_DELIVERY = "store.producer.guaranteed.delivery.enable";
+    private static final String FAILOVER_MESSAGE_STORE_NAME = "store.failover.message.store.name";
+
 
     public boolean mediate(MessageContext synCtx) {
+
+
         if(synCtx != null) {
-            MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
+
             if(messageStore != null) {
+
                 if(onStoreSequence != null) {
                     Mediator sequence = synCtx.getSequence(onStoreSequence);
                     if(sequence != null) {
@@ -91,14 +114,41 @@ public class MessageStoreMediator extends AbstractMediator{
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }
-                boolean result = messageStore.getProducer().storeMessage(newCtx);
-                if (!result) {
-                    synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
-                    synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
-                    synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
-                                                        + "] in store [" + messageStore.getName() + "].");
-                    handleException("Failed to store message [" + synCtx.getMessageID()
-                                    + "] in store [" + messageStore.getName() + "].", synCtx);
+                boolean produceStatus = messageStore.getProducer().storeMessage(newCtx);
+
+                if (!produceStatus) {
+
+                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null && !failoverMessageStoreName
+                            .isEmpty()) {
+
+                        MessageStore failoverMessageStore = synCtx.getConfiguration().getMessageStore(failoverMessageStoreName);
+                        boolean failoverProduceStatus = failoverMessageStore.getProducer().storeMessage(newCtx);
+
+                        if (!failoverProduceStatus) {
+                            synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
+                            synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
+                            synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
+                                                                             + "] in store [" + messageStore.getName() + "].");
+                            handleException("Failed to store message [" + synCtx.getMessageID()
+                                            + "] in failover store [" + failoverMessageStoreName + "].", synCtx);
+                        }
+
+                        if (shouldTrace(synCtx.getTracingState())) {
+                            trace.error("Message [" + synCtx.getMessageID() + "] store in the failover message store [" + failoverMessageStoreName + "]");
+                        }
+
+
+                    } else {
+
+                        synCtx.setProperty(NhttpConstants.HTTP_SC, 500);
+                        synCtx.setProperty(NhttpConstants.ERROR_DETAIL, "Failed to store message.");
+                        synCtx.setProperty(NhttpConstants.ERROR_MESSAGE, "Failed to store message [" + synCtx.getMessageID()
+                                                                         + "] in store [" + messageStore.getName() + "].");
+                        handleException("Failed to store message [" + synCtx.getMessageID()
+                                        + "] in store [" + messageStore.getName() + "].", synCtx);
+
+                    }
+
                 }
                 // with the nio transport, this causes the listener not to write a 202
                 // Accepted response, as this implies that Synapse does not yet know if
@@ -158,5 +208,33 @@ public class MessageStoreMediator extends AbstractMediator{
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void init(SynapseEnvironment synapseEnvironment) {
+
+        if (synapseEnvironment != null) {
+
+            messageStore = synapseEnvironment.getSynapseConfiguration().getMessageStore(messageStoreName);
+
+            if (messageStore != null) {
+
+                if (messageStore.getParameters().get(PRODUCER_GUARANTEED_DELIVERY) != null) {
+                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get
+                            (PRODUCER_GUARANTEED_DELIVERY).toString());
+                }
+
+                if (messageStore.getParameters().get(FAILOVER_MESSAGE_STORE_NAME) != null) {
+                    failoverMessageStoreName = (String) messageStore.getParameters().get(FAILOVER_MESSAGE_STORE_NAME);
+                }
+
+            }
+        }
+
+    }
+
+    @Override
+    public void destroy() {
+
     }
 }

@@ -85,14 +85,43 @@ public class JmsProducer implements MessageProducer {
             setJmsMessageProperties(objectMessage, synCtx);
             setTransportHeaders(objectMessage,synCtx);
             producer.send(objectMessage);
+
+            if (session.getTransacted()) {
+                session.commit();
+            }
+
         } catch (JMSException e) {
             throwable = e;
             error = true;
             isConnectionError = true;
+
+            try {
+
+                if (session.getTransacted()) {
+                    session.rollback();
+                }
+
+            } catch (JMSException ex) {
+                logger.warn("Fail to commit the message [" + synCtx.getMessageID() + "] to the message store " +
+                            ":" + store.getName());
+            }
+
         } catch (Throwable t) {
             throwable = t;
             error = true;
+
+            try {
+
+                if (session.getTransacted()) {
+                    session.rollback();
+                }
+
+            } catch (JMSException e) {
+                logger.warn("Fail to commit the message [" + synCtx.getMessageID() + "] to the message store " +
+                            ":" + store.getName());
+            }
         }
+
         if (error) {
             String errorMsg = getId() + ". Ignored MessageID : " + synCtx.getMessageID()
                               + ". Could not store message to store ["
