@@ -107,6 +107,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     protected String artifactContainerName;
 
+    private boolean isEdited = false;
+
     protected AbstractEndpoint() {
         log = LogFactory.getLog(this.getClass());
     }
@@ -216,6 +218,22 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      */
     public String getArtifactContainerName () {
         return artifactContainerName;
+    }
+
+    /**
+     * Get the edit state of the endpoint
+     * @return
+     */
+    public boolean getIsEdited() {
+        return isEdited;
+    }
+
+    /**
+     * Set the edit state of the endpoint
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 
     /**
