@@ -113,8 +113,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 	 * If true, it will only process messages that were processed by a MessageStore running on the same server
 	 * Default value is set to true
 	 */
-	private boolean bindProcToServer = true;
-
 	private SynapseEnvironment synapseEnvironment;
 
 	private boolean initialized = false;
@@ -369,7 +367,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 							}
 						}
 
-						if (messageConsumer != null && messageConsumer.isAlive()) {
+						if (messageConsumer != null && messageConsumer.isAlive() && targetMessageStoreName != null) {
 
 							targetMessageProducer = synapseEnvironment.getSynapseConfiguration().getMessageStore
 									(targetMessageStoreName).getProducer();
