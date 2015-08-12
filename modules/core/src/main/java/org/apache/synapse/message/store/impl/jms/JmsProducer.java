@@ -101,9 +101,11 @@ public class JmsProducer implements MessageProducer {
                     session.rollback();
                 }
 
-            } catch (JMSException ex) {
-                logger.warn("Fail to commit the message [" + synCtx.getMessageID() + "] to the message store " +
-                            ":" + store.getName());
+            } catch (JMSException e1) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Fail to rollback message [" + synCtx.getMessageID() + "] from the message store " +
+                                 ":" + store.getName());
+                }
             }
 
         } catch (Throwable t) {
@@ -117,8 +119,10 @@ public class JmsProducer implements MessageProducer {
                 }
 
             } catch (JMSException e) {
-                logger.warn("Fail to commit the message [" + synCtx.getMessageID() + "] to the message store " +
-                            ":" + store.getName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Fail to rollback message [" + synCtx.getMessageID()+"] from the message store " +
+                                 ":" + store.getName());
+                }
             }
         }
 
@@ -301,26 +305,28 @@ public class JmsProducer implements MessageProducer {
     private void setTransportHeaders(Message message, MessageContext synCtx){
         //Set transport headers to the message
         Map<?,?> headerMap = (Map<?,?>) ((Axis2MessageContext)synCtx).getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        for (Object headerName : headerMap.keySet()) {
-            String name = (String) headerName;
-            Object value = headerMap.get(name);
-            try {
-            if (value instanceof String) {
-                message.setStringProperty(name, (String) value);
-            } else if (value instanceof Boolean) {
-                message.setBooleanProperty(name, (Boolean) value);
-            } else if (value instanceof Integer) {
-                message.setIntProperty(name, (Integer) value);
-            } else if (value instanceof Long) {
-                message.setLongProperty(name, (Long) value);
-            } else if (value instanceof Double) {
-                message.setDoubleProperty(name, (Double) value);
-            } else if (value instanceof Float) {
-                message.setFloatProperty(name, (Float) value);
-            }
-            } catch (JMSException ex) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Could not save Message property: " + ex.getLocalizedMessage());
+        if(headerMap != null) {
+            for (Object headerName : headerMap.keySet()) {
+                String name = (String) headerName;
+                Object value = headerMap.get(name);
+                try {
+                    if (value instanceof String) {
+                        message.setStringProperty(name, (String) value);
+                    } else if (value instanceof Boolean) {
+                        message.setBooleanProperty(name, (Boolean) value);
+                    } else if (value instanceof Integer) {
+                        message.setIntProperty(name, (Integer) value);
+                    } else if (value instanceof Long) {
+                        message.setLongProperty(name, (Long) value);
+                    } else if (value instanceof Double) {
+                        message.setDoubleProperty(name, (Double) value);
+                    } else if (value instanceof Float) {
+                        message.setFloatProperty(name, (Float) value);
+                    }
+                } catch (JMSException ex) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Could not save Message property: " + ex.getLocalizedMessage());
+                    }
                 }
             }
         }

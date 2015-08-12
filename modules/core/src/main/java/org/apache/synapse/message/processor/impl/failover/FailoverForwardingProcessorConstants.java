@@ -38,7 +38,7 @@ public final class FailoverForwardingProcessorConstants {
      * Used th throttle forwarding-processor when it is used with cron expressions
      */
     public static final String THROTTLE_INTERVAL = "throttle.interval";
-    
+
     /**
      * If false, the MessageProcessor will process every single message in the queue regardless of its origin
      * If true, it will only process messages that were processed by a MessageStore running on the same server
@@ -48,13 +48,18 @@ public final class FailoverForwardingProcessorConstants {
      * Message will be dropped after maximum delivery
      */
     public static final String MAX_DELIVERY_DROP = "max.delivery.drop";
-    
+
     public static final String CRON_EXPRESSION = "cron.expression";
 
     /**
      * Message store which need to send the messages
      */
     public static final String TARGET_MESSAGE_STORE = "message.target.store.name";
+
+    /**
+     * Message store which need to send the messages
+     */
+    public static final String DEACTIVATE_SEQUENCE = "message.processor.deactivate.sequence";
 
 
 }
