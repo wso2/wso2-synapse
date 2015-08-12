@@ -542,7 +542,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			checkAndDeactivateProcessor(msgCtx);
 
 			if (log.isDebugEnabled()) {
-				log.debug("Failed to send to client retrying after " + retryInterval +
+				log.debug("Failed to send to target store retrying after " + retryInterval +
 				          "s with attempt count - " + attemptCount);
 			}
 
