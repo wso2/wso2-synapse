@@ -60,6 +60,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     private String artifactContainerName;
 
+    private boolean isEdited = false;
+
     public API(String name, String context) {
         super(name);
         setContext(context);
@@ -76,6 +78,18 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     public void setArtifactContainerName (String name) {
         artifactContainerName = name;
+    }
+
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 
     public void setLogSetterValue () {
