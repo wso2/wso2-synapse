@@ -1,5 +1,5 @@
 /**
- *  Copyright (c) 2005-2010, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2005-2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
  *  Version 2.0 (the "License"); you may not use this file except
@@ -60,10 +60,10 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 	// Owner of the this job
 	private MessageProcessor messageProcessor;
 
-	/*
-     * Interval between two retries to the client. This only come to affect only
-     * if the client is un-reachable
-     */
+    /*
+	 * Interval between two retries to the client. This only come to affect only
+	 * if the client is un-reachable
+	 */
 	private int retryInterval = 1000;
 
 	// Sequence to invoke in a failure
@@ -92,12 +92,12 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 	private int maxDeliverAttempts = -1;
 	private int attemptCount = 0;
 
-	private boolean isThrottling = true;
+    private boolean isThrottling = true;
 
-	/**
-	 * Throttling-interval is the forwarding interval when cron scheduling is enabled.
-	 */
-	private long throttlingInterval = -1;
+    /**
+     * Throttling-interval is the forwarding interval when cron scheduling is enabled.
+     */
+    private long throttlingInterval = -1;
 
 	// Message Queue polling interval value.
 	private long interval;
@@ -291,7 +291,8 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		// Default Value should be -1.
 		if (cronExpression != null &&
 		    parametersMap.get(FailoverForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
-			throttlingInterval = Long.parseLong((String) parametersMap.get(FailoverForwardingProcessorConstants
+			throttlingInterval =
+			                     Long.parseLong((String) parametersMap.get(FailoverForwardingProcessorConstants
 					                                                               .THROTTLE_INTERVAL));
 		}
 
@@ -510,27 +511,27 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 	 */
 	private void checkAndDeactivateProcessor(MessageContext msgCtx) {
 		if (maxDeliverAttempts > 0) {
-			this.attemptCount++;
-			if (attemptCount >= maxDeliverAttempts) {
+            this.attemptCount++;
+            if (attemptCount >= maxDeliverAttempts) {
 
-				if (this.isMaxDeliveryAttemptDropEnabled) {
-					dropMessageAndContinueMessageProcessor();
-					if (log.isDebugEnabled()) {
-						log.debug("Message processor [" + messageProcessor.getName() +
-						          "] Dropped the failed message and continue due to reach of max attempts");
-					}
-				} else {
-					terminate();
-					deactivateMessageProcessor(msgCtx);
+                if (this.isMaxDeliveryAttemptDropEnabled) {
+                    dropMessageAndContinueMessageProcessor();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Message processor [" + messageProcessor.getName() +
+                                "] Dropped the failed message and continue due to reach of max attempts");
+                    }
+                } else {
+	                terminate();
+	                deactivateMessageProcessor(msgCtx);
 
-					if (log.isDebugEnabled()) {
-						log.debug("Message processor [" + messageProcessor.getName() +
-						          "] stopped due to reach of max attempts");
-					}
-				}
-			}
-		}
-	}
+                    if (log.isDebugEnabled()) {
+                        log.debug("Message processor [" + messageProcessor.getName() +
+                                "] stopped due to reach of max attempts");
+                    }
+                }
+            }
+        }
+    }
 
 
 	/*

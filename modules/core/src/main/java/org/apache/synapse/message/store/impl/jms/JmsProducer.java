@@ -101,7 +101,7 @@ public class JmsProducer implements MessageProducer {
                     session.rollback();
                 }
 
-            } catch (JMSException e1) {
+            } catch (JMSException ex) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Fail to rollback message [" + synCtx.getMessageID() + "] from the message store " +
                                  ":" + store.getName());
