@@ -71,6 +71,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     private SynapseEnvironment synapseEnv;
     /** Name of the car file which the sequence deployed from */
     private String artifactContainerName;
+    /**
+     * Whether the sequence is edited through the management console or not
+     */
+    private boolean isEdited;
 
     /**
      * If this mediator refers to another named Sequence, execute that. Else
@@ -460,6 +464,14 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     public String getArtifactContainerName () {
         return artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 
     @Override
