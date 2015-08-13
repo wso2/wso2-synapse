@@ -47,6 +47,10 @@ public class Template implements SynapseArtifact {
 
     private String description = null;
 
+    private String artifactContainerName;
+
+    private boolean isEdited;
+
     public Endpoint create(TemplateEndpoint templateEndpoint, Properties properties) {
         // first go through all the elements and replace with the parameters
         OMElement clonedElement = element.cloneOMElement();
@@ -151,5 +155,21 @@ public class Template implements SynapseArtifact {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 }

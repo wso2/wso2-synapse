@@ -44,6 +44,10 @@ public class TemplateMediator extends AbstractListMediator {
     private boolean initialized = false;
     /** is this definition dynamic */
     private boolean dynamic = false;
+    /** Name of the artifact container which the template deployed from */
+    private String artifactContainerName;
+    /** whether the template edited via the management console or not */
+    private boolean isEdited;
 
     public void setParameters(Collection<String> paramNames) {
         this.paramNames = paramNames;
@@ -59,6 +63,22 @@ public class TemplateMediator extends AbstractListMediator {
 
     public String getName() {
         return eipPatternName;
+    }
+
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 
     public boolean mediate(MessageContext synCtx) {
