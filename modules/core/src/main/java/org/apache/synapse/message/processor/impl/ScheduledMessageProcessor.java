@@ -223,6 +223,17 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * therefore not started but initiated.
 		 */
 		if (taskManager != null && taskManager.isInitialized()) {
+            /*
+             * If the task is already deleted, then it does not exist any more.
+             * Therefore no point of deleting it again. Hence merely returning.
+             * This situation arises when a MP is deleted from the manager node
+             * in a cluster setup. Then the deployment engine will eventually
+             * call the destroy method in all workers, leading to delete an
+             * already deleted task. This leads to unnecessary exceptions.
+             */
+            if (!taskManager.isTaskExist(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX)) {
+                return false;
+            }
 			for (int i = 0; i < memberCount; i++) {
 				/*
 				 * This is to immediately stop the scheduler to avoid firing new
