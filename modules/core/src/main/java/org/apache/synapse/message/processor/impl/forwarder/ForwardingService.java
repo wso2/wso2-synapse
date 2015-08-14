@@ -18,8 +18,11 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -127,6 +130,20 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	private SynapseEnvironment synapseEnvironment;
 
 	private boolean initialized = false;
+	
+    /*
+     * Defines HTTP Status code prefixes which are defined as errors. For an
+     * example 400 and 500 status codes are considered as errors in general.
+     */
+    private static final List<String> ERROR_HTTP_SC_PREFIX =
+                                                             new ArrayList<String>(
+                                                                                   Arrays.asList("4",
+                                                                                                 "5"));
+    /*
+     * Defines other HTTP status codes which are considered as errors which does
+     * not belong to 400 or 500 errors.
+     */
+    private static final List<String> ERROR_HTTP_SC = new ArrayList<String>(Arrays.asList("301"));
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
@@ -455,18 +472,30 @@ public class ForwardingService implements Task, ManagedLifecycle {
 									sendThroughFaultSeq(outCtx);
 								}
 							} else {
+	                             isSuccessful = !isErrorHttpSC(String.valueOf(outCtx.getProperty(SynapseConstants.HTTP_SC)));
 								// Send the message down the reply sequence if
 								// there is one
-								sendThroughReplySeq(outCtx);
-								messageConsumer.ack();
-								attemptCount = 0;
-								isSuccessful = true;
+							    
+							    if (isSuccessful) {
+	                                sendThroughReplySeq(outCtx);
+	                                messageConsumer.ack();
+	                                attemptCount = 0;
+	                                isSuccessful = true;
 
-								if (log.isDebugEnabled()) {
-									log.debug("Successfully sent the message to endpoint [" +
-									          ep.getName() + "]" + " with message processor [" +
-									          messageProcessor.getName() + "]");
-								}
+	                                if (log.isDebugEnabled()) {
+	                                    log.debug("Successfully sent the message to endpoint [" +
+	                                              ep.getName() + "]" + " with message processor [" +
+	                                              messageProcessor.getName() + "]");
+	                                }
+                                } else {
+                                    // This means some error has occurred so
+                                    // must try to send down the fault sequence.
+                                    log.error("BlockingMessageSender of message processor [" +
+                                              this.messageProcessor.getName() +
+                                              " received the ERROR HTTP SC: " + outCtx.getProperty(SynapseConstants.HTTP_SC));
+                                    sendThroughFaultSeq(outCtx);
+                                }
+
 							}
 						} else {
 							// This Means we have invoked an out only operation
@@ -674,6 +703,17 @@ public class ForwardingService implements Task, ManagedLifecycle {
         }
 
         return isSuccess;
+    }
+    
+    /*
+     * Checks whether a given HTTP status code is an error code or not. All the
+     * 400 status codes are client errors and 500 status codes are server
+     * errors. If the given status code is within 400 or 500 range it is
+     * considered as an error code in general.
+     */
+    private boolean isErrorHttpSC(String responseSC) {
+        return responseSC.startsWith(ERROR_HTTP_SC_PREFIX.get(0)) ||
+               responseSC.startsWith(ERROR_HTTP_SC_PREFIX.get(1)) || ERROR_HTTP_SC.contains(responseSC);
     }
 
 	private boolean isRunningUnderCronExpression() {
