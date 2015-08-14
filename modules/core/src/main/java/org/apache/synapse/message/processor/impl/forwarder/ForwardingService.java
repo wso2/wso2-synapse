@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -130,6 +131,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	private SynapseEnvironment synapseEnvironment;
 
 	private boolean initialized = false;
+
+    /**
+     * Specifies whether the service should be started as deactivated or not
+     */
+    private boolean isDeactivatedAtStartup= false;
 	
     /*
      * Defines HTTP Status code prefixes which are defined as errors. For an
@@ -154,12 +160,33 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		this.interval = threshouldInterval;
 	}
 
-	/**
+    public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
+                             SynapseEnvironment synapseEnvironment, long threshouldInterval,
+                             boolean isDeactivatedAtStartup ) {
+        this.messageProcessor = messageProcessor;
+        this.sender = sender;
+        this.synapseEnvironment = synapseEnvironment;
+        this.interval = threshouldInterval;
+        this.isDeactivatedAtStartup = isDeactivatedAtStartup;
+    }
+
+    /**
 	 * Starts the execution of this task which grabs a message from the message
 	 * queue and dispatch it to a given endpoint.
 	 */
 	public void execute() {
 		final long startTime = new Date().getTime();
+
+        if(isDeactivatedAtStartup){
+            //This delay is required until tasks are paused from ScheduledMessageProcessor since message processor is
+            // inactive
+            try {
+                TimeUnit.MILLISECONDS.sleep(MessageProcessorConstants.INITIAL_EXECUTION_DELAY);
+            } catch (InterruptedException e) {
+                log.warn("Initial delay interrupted when Forwarding service started as inactive");
+            }
+            isDeactivatedAtStartup = false;
+        }
 		/*
 		 * Initialize only if it is NOT already done. This will make sure that
 		 * the initialization is done only once.
@@ -382,9 +409,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * 
 	 * @param messageContext
 	 *            synapse {@link MessageContext} to be sent
-	 */
-	public void dispatch(MessageContext messageContext) {
-		if (log.isDebugEnabled()) {
+     */
+    public void dispatch(MessageContext messageContext) {
+        if (log.isDebugEnabled()) {
 			log.debug("Sending the message to client with message processor [" +
 			          messageProcessor.getName() + "]");
 		}
@@ -542,16 +569,16 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * 
 	 * @param msgCtx
 	 *            Synapse {@link MessageContext} to be sent through the fault
-	 *            sequence.
-	 */
-	public void sendThroughFaultSeq(MessageContext msgCtx) {
+     *            sequence.
+     */
+    public void sendThroughFaultSeq(MessageContext msgCtx) {
 		if (faultSeq == null) {
 			log.warn("Failed to send the message through the fault sequence. Sequence name does not Exist.");
-			return;
-		}
-		Mediator mediator = msgCtx.getSequence(faultSeq);
+            return;
+        }
+        Mediator mediator = msgCtx.getSequence(faultSeq);
 
-		if (mediator == null) {
+        if (mediator == null) {
 			log.warn("Failed to send the message through the fault sequence. Sequence [" +
 			         faultSeq + "] does not Exist.");
 			return;

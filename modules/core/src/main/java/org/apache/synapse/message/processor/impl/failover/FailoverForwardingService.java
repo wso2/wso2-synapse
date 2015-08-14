@@ -20,6 +20,7 @@ package org.apache.synapse.message.processor.impl.failover;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -117,6 +118,11 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 
 	private boolean initialized = false;
 
+    /**
+     * Specifies whether the service should be started as deactivated or not
+     */
+    private boolean isDeactivatedAtStartup = false;
+
 	public FailoverForwardingService(MessageProcessor messageProcessor,
 	                                 SynapseEnvironment synapseEnvironment, long threshouldInterval) {
 		this.messageProcessor = messageProcessor;
@@ -125,12 +131,33 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		this.interval = threshouldInterval;
 	}
 
+    public FailoverForwardingService(MessageProcessor messageProcessor,
+                                     SynapseEnvironment synapseEnvironment, long threshouldInterval,
+                                     boolean isDeactivatedAtStartup ) {
+        this.messageProcessor = messageProcessor;
+        this.synapseEnvironment = synapseEnvironment;
+        this.interval = threshouldInterval;
+        this.isDeactivatedAtStartup = isDeactivatedAtStartup;
+    }
+
 	/**
 	 * Starts the execution of this task which grabs a message from the message
 	 * queue and dispatch it to a given endpoint.
 	 */
 	public void execute() {
 		final long startTime = new Date().getTime();
+
+        if(isDeactivatedAtStartup){
+            //This delay is required until tasks are paused from ScheduledMessageProcessor since message processor is
+            // inactive
+            try {
+                TimeUnit.MILLISECONDS.sleep(MessageProcessorConstants.INITIAL_EXECUTION_DELAY);
+            } catch (InterruptedException e) {
+                log.warn("Initial delay interrupted when Failover Forwarding service started as inactive");
+            }
+            isDeactivatedAtStartup = false;
+        }
+
 		/*
 		 * Initialize only if it is NOT already done. This will make sure that
 		 * the initialization is done only once.

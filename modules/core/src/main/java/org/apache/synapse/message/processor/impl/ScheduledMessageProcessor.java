@@ -137,6 +137,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         return isActivated;
     }
 
+    protected boolean isProcessorStartAsDeactivated(){
+        return !getIsActivatedParamValue();
+    }
+
     @Override
     public boolean start() {
 		for (int i = 0; i < memberCount; i++) {
