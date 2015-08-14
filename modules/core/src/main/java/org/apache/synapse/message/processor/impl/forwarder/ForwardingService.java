@@ -476,7 +476,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 								// Send the message down the reply sequence if
 								// there is one
 							    
-							    if (isSuccessful) {
+                                if (isSuccessful) {
 	                                sendThroughReplySeq(outCtx);
 	                                messageConsumer.ack();
 	                                attemptCount = 0;
