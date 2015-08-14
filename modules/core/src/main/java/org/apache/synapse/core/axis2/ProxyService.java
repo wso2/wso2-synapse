@@ -237,6 +237,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private String artifactContainerName;
 
+    private boolean isEdited;
+
     /**
      * Constructor
      *
@@ -1280,6 +1282,14 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public String getArtifactContainerName () {
         return artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 
     private String[] getModuleNames(String propertyValue) {
