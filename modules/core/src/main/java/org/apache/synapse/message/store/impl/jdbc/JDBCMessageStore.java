@@ -21,13 +21,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.store.AbstractMessageStore;
-import org.apache.synapse.message.store.impl.jdbc.message.StorableMessage;
+import org.apache.synapse.message.store.impl.commons.MessageConverter;
+import org.apache.synapse.message.store.impl.commons.StorableMessage;
 import org.apache.synapse.message.store.impl.jdbc.util.JDBCConfiguration;
-import org.apache.synapse.message.store.impl.jdbc.util.JDBCMessageConverter;
 import org.apache.synapse.message.store.impl.jdbc.util.Statement;
 
 import java.io.ByteArrayInputStream;
@@ -85,7 +88,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         jdbcConfiguration = new JDBCConfiguration();
         jdbcConfiguration.buildDataSource(parameters);
 
-        JDBCMessageConverter.setSynapseEnvironment(synapseEnvironment);
+//        JDBCMessageConverter.setSynapseEnvironment(synapseEnvironment);
     }
 
     /**
@@ -172,7 +175,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
                         Object msg = ios.readObject();
                         if (msg instanceof StorableMessage) {
                             StorableMessage jdbcMsg = (StorableMessage) msg;
-                            resultMsg = JDBCMessageConverter.createMessageContext(jdbcMsg);
+                            org.apache.axis2.context.MessageContext axis2Mc = this.newAxis2Mc();
+                            MessageContext synapseMc = this.newSynapseMc(axis2Mc);
+                            resultMsg = MessageConverter.toMessageContext(jdbcMsg, axis2Mc, synapseMc);
                         }
                     } catch (Exception e) {
                         throw new SynapseException("Error reading object input stream", e);
@@ -194,6 +199,17 @@ public class JDBCMessageStore extends AbstractMessageStore {
             close(con, ps, rs);
         }
         return resultMsg;
+    }
+
+    private org.apache.axis2.context.MessageContext newAxis2Mc() {
+        return ((Axis2SynapseEnvironment) synapseEnvironment)
+                .getAxis2ConfigurationContext().createMessageContext();
+    }
+
+    private org.apache.synapse.MessageContext newSynapseMc(
+            org.apache.axis2.context.MessageContext msgCtx) {
+        SynapseConfiguration configuration = synapseEnvironment.getSynapseConfiguration();
+        return new Axis2MessageContext(msgCtx, configuration, synapseEnvironment);
     }
 
     /**
@@ -286,8 +302,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 }
             }
             StorableMessage persistentMessage =
-                    JDBCMessageConverter.createStorableMessage(messageContext);
-            String msgId = persistentMessage.getAxis2Message().getMessageID();
+                    MessageConverter.toStorableMessage(messageContext);
+            String msgId = persistentMessage.getAxis2message().getMessageID();
             Statement stmt =
                     new Statement("INSERT INTO " + jdbcConfiguration.getTableName() + " (msg_id,message) VALUES (?,?)");
             stmt.addParameter(msgId);
