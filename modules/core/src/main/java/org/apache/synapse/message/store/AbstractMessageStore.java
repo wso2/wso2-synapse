@@ -103,6 +103,12 @@ public abstract class AbstractMessageStore implements MessageStore {
 
     private final Object messageCountLock = new Object();
 
+    /** Name of the artifact container from which the message store deployed */
+    private String artifactContainerName;
+
+    /** Whether the message store edited through the management console */
+    private boolean isEdited;
+
     public void init(SynapseEnvironment se) {
         this.synapseEnvironment = se;
         this.synapseConfiguration = synapseEnvironment.getSynapseConfiguration();
@@ -239,5 +245,37 @@ public abstract class AbstractMessageStore implements MessageStore {
             long diff = enqueued.get() - dequeued.get();
             return diff;
         }
+    }
+
+    /**
+     * Whether the message store edited through the management console
+     * @return isEdited
+     */
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    /**
+     * Set whether the message store edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    /**
+     * Get the name of the artifact container from which the message store deployed
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    /**
+     * Set the name of the artifact container from which the message store deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
     }
 }
