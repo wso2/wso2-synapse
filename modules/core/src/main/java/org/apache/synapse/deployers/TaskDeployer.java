@@ -49,6 +49,10 @@ public class TaskDeployer extends AbstractSynapseArtifactDeployer {
         try {
             Startup st = StartupFinder.getInstance().getStartup(artifactConfig, properties);
                 st.setFileName((new File(fileName)).getName());
+                /**
+                 * Set the name of the artifact container from which the task deployed
+                 */
+                st.setArtifactContainerName(customLogContent);
                 if (log.isDebugEnabled()) {
                     log.debug("StartupTask named '" + st.getName()
                             + "' has been built from the file " + fileName);
