@@ -152,8 +152,8 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
             // inactive
             try {
                 TimeUnit.MILLISECONDS.sleep(MessageProcessorConstants.INITIAL_EXECUTION_DELAY);
-            } catch (InterruptedException e) {
-                log.warn("Initial delay interrupted when Failover Forwarding service started as inactive");
+            } catch (InterruptedException exception) {
+                log.warn("Initial delay interrupted when Failover Forwarding service started as inactive ", exception);
             }
             isDeactivatedAtStartup = false;
         }

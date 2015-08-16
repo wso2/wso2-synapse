@@ -99,8 +99,8 @@ public class SamplingService implements Task, ManagedLifecycle {
             // inactive
             try {
                 TimeUnit.MILLISECONDS.sleep(MessageProcessorConstants.INITIAL_EXECUTION_DELAY);
-            } catch (InterruptedException e) {
-                log.warn("Initial delay interrupted when Sampling service started as inactive");
+            } catch (InterruptedException exception) {
+                log.warn("Initial delay interrupted when Sampling service started as inactive " , exception);
             }
             isDeactivatedAtStartup = false;
         }
