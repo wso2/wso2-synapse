@@ -61,6 +61,6 @@ public class SamplingProcessor extends ScheduledMessageProcessor {
     
 	@Override
 	protected Task getTask() {
-		return new SamplingService(this, synapseEnvironment, CONCURRENCY, SEQUENCE);
+		return new SamplingService(this, synapseEnvironment, CONCURRENCY, SEQUENCE, isProcessorStartAsDeactivated());
 	}
 }

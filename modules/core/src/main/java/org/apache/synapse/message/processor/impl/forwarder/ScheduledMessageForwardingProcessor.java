@@ -74,6 +74,6 @@ public class ScheduledMessageForwardingProcessor extends ScheduledMessageProcess
     
 	@Override
 	protected Task getTask() {
-		return new ForwardingService(this, sender, synapseEnvironment, interval);
+		return new ForwardingService(this, sender, synapseEnvironment, interval, isProcessorStartAsDeactivated());
 	}
 }

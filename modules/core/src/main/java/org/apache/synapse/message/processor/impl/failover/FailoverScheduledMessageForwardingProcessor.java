@@ -64,6 +64,6 @@ public class FailoverScheduledMessageForwardingProcessor extends ScheduledMessag
     
 	@Override
 	protected Task getTask() {
-		return new FailoverForwardingService(this, synapseEnvironment, interval);
+		return new FailoverForwardingService(this, synapseEnvironment, interval, isProcessorStartAsDeactivated());
 	}
 }

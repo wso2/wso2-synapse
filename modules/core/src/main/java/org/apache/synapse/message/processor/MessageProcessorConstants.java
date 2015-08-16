@@ -58,4 +58,9 @@ public final class MessageProcessorConstants {
     public static final String DEPRECATED_FORWARDING_PROCESSOR_CLASS =
             "org.apache.synapse.message.processors.forward.ScheduledMessageForwardingProcessor";
 
+    /**
+     * Initial delay to start message processor if it is deactivated (in milliseconds)
+     */
+    public static final int INITIAL_EXECUTION_DELAY = 2000;
+
 }

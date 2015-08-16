@@ -20,6 +20,7 @@ package org.apache.synapse.message.processor.impl.sampler;
 
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,6 +31,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.task.Task;
 
 /**
@@ -59,6 +61,11 @@ public class SamplingService implements Task, ManagedLifecycle {
 	private final String concurrencyPropName;
 	private final String sequencePropName;
 
+    /**
+     * Specifies whether the service should be started as deactivated or not
+     */
+    private boolean isDeactivatedAtStartup = false;
+
 	public SamplingService(MessageProcessor messageProcessor,
 	                       SynapseEnvironment synapseEnvironment, String concurrencyPropName,
 	                       String sequencePropName) {
@@ -69,11 +76,34 @@ public class SamplingService implements Task, ManagedLifecycle {
 		this.sequencePropName = sequencePropName;
 	}
 
-	/**
+    public SamplingService(MessageProcessor messageProcessor,
+                           SynapseEnvironment synapseEnvironment, String concurrencyPropName,
+                           String sequencePropName, boolean isDeactivatedAtStartup) {
+        super();
+        this.messageProcessor = messageProcessor;
+        this.synapseEnvironment = synapseEnvironment;
+        this.concurrencyPropName = concurrencyPropName;
+        this.sequencePropName = sequencePropName;
+        this.isDeactivatedAtStartup = isDeactivatedAtStartup;
+    }
+
+
+    /**
 	 * Starts the execution of this task which grabs a message from the message
 	 * queue and inject it to a given sequence.
 	 */
 	public void execute() {
+
+        if(isDeactivatedAtStartup){
+            //This delay is required until tasks are paused from ScheduledMessageProcessor since message processor is
+            // inactive
+            try {
+                TimeUnit.MILLISECONDS.sleep(MessageProcessorConstants.INITIAL_EXECUTION_DELAY);
+            } catch (InterruptedException exception) {
+                log.warn("Initial delay interrupted when Sampling service started as inactive " , exception);
+            }
+            isDeactivatedAtStartup = false;
+        }
 
 		try {
 			/*
