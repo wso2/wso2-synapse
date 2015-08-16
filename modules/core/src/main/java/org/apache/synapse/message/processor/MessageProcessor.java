@@ -151,4 +151,28 @@ public interface MessageProcessor extends ManagedLifecycle, Nameable, SynapseArt
      * used by the message processor.
      */
     void cleanupLocalResources();
+
+    /**
+     * Whether the message processor edited through the management console
+     * @return isEdited
+     */
+    public boolean isEdited();
+
+    /**
+     * Set whether the message processor edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited);
+
+    /**
+     * Get the name of the artifact container from which the message processor deployed
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName();
+
+    /**
+     * Set the name of the artifact container from which the message processor deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName);
 }
