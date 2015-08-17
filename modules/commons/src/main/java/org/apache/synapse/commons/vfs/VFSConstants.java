@@ -62,6 +62,11 @@ public final class VFSConstants {
     public static final String SUBFOLDER_TIMESTAMP = "transport.vfs.SubFolderTimestampFormat";
 
     /**
+     * parameter to set synchronous uploading of the files for a file protocol on host basis
+     */
+    public static final String TRANSPORT_FILE_SEND_FILE_LOCKING = "transport.vfs.SendFileSynchronously";
+
+    /**
      * File Sorting Parameter and values
      * */
     public static final String FILE_SORT_PARAM = "transport.vfs.FileSortAttribute";
