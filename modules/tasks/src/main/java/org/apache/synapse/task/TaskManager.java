@@ -106,5 +106,15 @@ public interface TaskManager {
      *            cluster.
      */
     void sendClusterMessage(Callable<Void> task);
+    
+    /**
+     * Checks whether the {@link Task} with the given name exists.
+     * 
+     * @param taskName
+     *            name of the Task
+     * @return <code>true</code> if the task exists, <code>false</code>
+     *         otherwise.
+     */
+    boolean isTaskExist(final String taskName);
 
 }

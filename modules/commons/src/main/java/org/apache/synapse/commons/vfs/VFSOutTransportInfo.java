@@ -49,6 +49,7 @@ public class VFSOutTransportInfo implements OutTransportInfo {
     private boolean append;
     private boolean fileLocking;
     private Map<String, String> fso = null;
+    private boolean sendFileSynchronously = false;
     //When the folder structure does not exists forcefully create
     private boolean forceCreateFolder = false;
     
@@ -132,6 +133,13 @@ public class VFSOutTransportInfo implements OutTransportInfo {
             this.fileLocking = fileLocking;
         }
 
+        if (properties.containsKey(VFSConstants.TRANSPORT_FILE_SEND_FILE_LOCKING)) {
+            String strSendLocking = properties.get(VFSConstants.TRANSPORT_FILE_SEND_FILE_LOCKING);
+            sendFileSynchronously = Boolean.parseBoolean(strSendLocking);
+        } else {
+            sendFileSynchronously = false;
+        }
+
         if (properties.containsKey(VFSConstants.APPEND)) {
             String strAppend = properties.get(VFSConstants.APPEND);
             append = Boolean.parseBoolean(strAppend);
@@ -186,6 +194,10 @@ public class VFSOutTransportInfo implements OutTransportInfo {
 
     public String getOutFileURI() {
         return outFileURI;
+    }
+
+    public boolean getSendFileSynchronously(){
+        return sendFileSynchronously;
     }
 
     public String getOutFileName() {

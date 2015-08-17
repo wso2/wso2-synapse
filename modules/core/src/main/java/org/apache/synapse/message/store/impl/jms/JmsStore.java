@@ -71,9 +71,11 @@ public class JmsStore extends AbstractMessageStore {
     public static final String PROVIDER_URL = "java.naming.provider.url";
     /** JNDI Queue Prefix */
     public static final String QUEUE_PREFIX = "queue.";
+    /** Guaranteed delivery status*/
+    public static final String GUARANTEED_DELIVERY_ENABLE = "store.producer.guaranteed.delivery.enable";
 
     /** JMS connection properties */
-    private final Properties properties = new Properties();
+    private final Properties connectionProperties = new Properties();
     /** JMS username */
     private String userName;
     /** JMS password */
@@ -104,6 +106,8 @@ public class JmsStore extends AbstractMessageStore {
     private final Object producerLock = new Object();
     /** records the last retried time between the broker and ESB */
     private long retryTime = -1;
+    /** Guaranteed delivery enable or disable flag */
+    private boolean isGuaranteedDeliveryEnable = false;
 
     public MessageProducer getProducer() {
         JmsProducer producer = new JmsProducer(this);
@@ -122,7 +126,7 @@ public class JmsStore extends AbstractMessageStore {
                 }
             }
             try {
-                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE);
+                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
             } catch (JMSException e) {
                 synchronized (producerLock) {
                     boolean ok = newWriteConnection();
@@ -130,7 +134,7 @@ public class JmsStore extends AbstractMessageStore {
                         return producer;
                     }
                 }
-                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE);
+                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
                 logger.info(nameString() + " established a connection to the broker.");
             }
             messageProducer = newProducer(session);
@@ -183,7 +187,7 @@ public class JmsStore extends AbstractMessageStore {
         }
         Session session;
         try {
-            session = newSession(connection, Session.CLIENT_ACKNOWLEDGE);
+            session = newSession(connection, Session.CLIENT_ACKNOWLEDGE, false);
         } catch (JMSException e) {
             if (logger.isDebugEnabled()) {
                 logger.error("Could not create a Message Consumer for "
@@ -304,20 +308,31 @@ public class JmsStore extends AbstractMessageStore {
      *
      * @param connection The JMS Connection that must be used when creating the session.
      * @param mode Acknowledgement mode that must be used for this session.
+     * @param isProducerSession Type of the session going to create
      * @return A JMS Session.
      * @throws JMSException
      */
-    public Session newSession(Connection connection, int mode) throws JMSException {
+    public Session newSession(Connection connection, int mode, boolean isProducerSession) throws JMSException {
         if (connection == null) {
             logger.error(nameString() + " cannot create JMS Session. Invalid connection.");
             return null;
         }
+
         Session session;
         if (isVersion11) {
-            session = connection.createSession(false, mode);
+            if (isGuaranteedDeliveryEnable && isProducerSession) {
+                session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            } else {
+                session = connection.createSession(false, mode);
+            }
         } else {
-            session = ((QueueConnection) connection).createQueueSession(false, mode);
+            if (isGuaranteedDeliveryEnable && isProducerSession) {
+                session = ((QueueConnection) connection).createQueueSession(true, Session.SESSION_TRANSACTED);
+            } else {
+                session = ((QueueConnection) connection).createQueueSession(false, mode);
+            }
         }
+
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + ". Created JMS Session.");
         }
@@ -504,7 +519,7 @@ public class JmsStore extends AbstractMessageStore {
         Set<Map.Entry<String, Object>> mapSet = parameters.entrySet();
         for (Map.Entry<String, Object> e : mapSet) {
             if (e.getValue() instanceof String) {
-                properties.put(e.getKey(), e.getValue());
+                connectionProperties.put(e.getKey(), e.getValue());
             }
         }
         userName = (String) parameters.get(USERNAME);
@@ -538,6 +553,11 @@ public class JmsStore extends AbstractMessageStore {
                 isVersion11 = false;
             }
         }
+
+        if (parameters != null && !parameters.isEmpty() && parameters.get(GUARANTEED_DELIVERY_ENABLE) != null) {
+            isGuaranteedDeliveryEnable = Boolean.valueOf(parameters.get(GUARANTEED_DELIVERY_ENABLE).toString());
+        }
+
         String consumerReceiveTimeOut = (String) parameters.get(CONSUMER_TIMEOUT);
         int consumerReceiveTimeOutI = 6000;
         if (consumerReceiveTimeOut != null) {
@@ -553,7 +573,7 @@ public class JmsStore extends AbstractMessageStore {
         //}
         String connectionFac = null;
         try {
-            context = new InitialContext(properties);
+            context = new InitialContext(connectionProperties);
             connectionFac = (String) parameters.get(CONN_FACTORY);
             if (connectionFac == null) {
                 connectionFac = "QueueConnectionFactory";

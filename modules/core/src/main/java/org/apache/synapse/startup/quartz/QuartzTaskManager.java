@@ -486,4 +486,8 @@ public class QuartzTaskManager implements TaskManager {
     public void sendClusterMessage(Callable<Void> task) {
 
     }
+
+    public boolean isTaskExist(String arg0) {
+        return false;
+    }
 }
