@@ -63,6 +63,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
      */
     private boolean globalFileLockingFlag = true;
 
+    /**
+     * Map to hold lock object for each host per service when operating in synchronous write mode
+     */
     private static final ConcurrentHashMap<String,WriteLockObject> lockingObjects = new ConcurrentHashMap<>();
 
     /**
