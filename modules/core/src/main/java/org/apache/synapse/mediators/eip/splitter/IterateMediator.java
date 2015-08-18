@@ -141,7 +141,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug(
-                            "Submitting " + (msgNumber+1) + " of " + msgNumber +
+                            "Submitting " + (msgNumber+1) + " of " + msgCount +
                             (target.isAsynchronous() ? " messages for processing in parallel" :
                              " messages for processing in sequentially"));
                 }
