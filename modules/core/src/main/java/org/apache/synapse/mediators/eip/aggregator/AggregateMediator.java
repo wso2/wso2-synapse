@@ -462,15 +462,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 					if (destinationStatRecord != null &&
 					    synCtx.getProperty(SynapseConstants.STATISTICS_STACK) != null) {
 						/*
-						 * The existing statistics record has some statistics
-						 * logs for ESB artifacts which comes before the clone
-						 * mediator which we are not interested in. These
-						 * statistics logs are collected by the request flow.
-						 * For an example stats for Proxy service and top level
-						 * sequence. Therefore we clear the logs first.
-						 */
-						destinationStatRecord.clearLogs();
-						/*
 						 * Then we collect the statistic logs only for the ESB
 						 * constructs which come after the clone mediator. We
 						 * are responsible for collecting stat logs for these
