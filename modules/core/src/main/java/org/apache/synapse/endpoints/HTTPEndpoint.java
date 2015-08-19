@@ -52,6 +52,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
     public void onFault(MessageContext synCtx) {
 
+        logSetter();
+        // For setting Car name (still for Proxy)
+        logSetter();
+
         // is this really a fault or a timeout/connection close etc?
         if (isTimeout(synCtx)) {
             getContext().onTimeout();
@@ -71,6 +75,11 @@ public class HTTPEndpoint extends AbstractEndpoint {
     }
 
     public void send(MessageContext synCtx) {
+
+        logSetter();
+        // For setting Car name (still for Proxy)
+        logSetter();
+
         executeEpTypeSpecificFunctions(synCtx);
         if (getParentEndpoint() == null && !readyToSend()) {
             // if the this leaf endpoint is too a root endpoint and is in inactive

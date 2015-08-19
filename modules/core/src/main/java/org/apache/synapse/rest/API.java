@@ -26,6 +26,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.dispatch.DispatcherHelper;
@@ -57,6 +58,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
     private int traceState = SynapseConstants.TRACING_UNSET;
 
+    private String artifactContainerName;
+
+    private boolean isEdited = false;
+
     public API(String name, String context) {
         super(name);
         setContext(context);
@@ -69,6 +74,26 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         this.context = RESTUtils.trimTrailingSlashes(context);
         apiLog = LogFactory.getLog(SynapseConstants.API_LOGGER_PREFIX + name);
 
+    }
+
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
+    }
+
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    public void setLogSetterValue () {
+        CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 
     /**

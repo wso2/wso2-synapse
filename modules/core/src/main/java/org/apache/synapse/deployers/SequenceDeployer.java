@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
@@ -46,6 +47,8 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     public String deploySynapseArtifact(OMElement artifactConfig, String fileName,
                                         Properties properties) {
 
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
+
         if (log.isDebugEnabled()) {
             log.debug("Sequence Deployment from file : " + fileName + " : Started");
         }
@@ -56,6 +59,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
                     artifactConfig, properties);
             if (m instanceof SequenceMediator) {
                 SequenceMediator seq = (SequenceMediator) m;
+                seq.setArtifactContainerName(customLogContent);
                 seq.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("Sequence named '" + seq.getName()
@@ -87,13 +91,16 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
-        
+
+        Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
+
+        CustomLogSetter.getInstance().setLogAppender((m != null) ? ((SequenceMediator) m).getArtifactContainerName() : "");
+
         if (log.isDebugEnabled()) {
             log.debug("Sequence update from file : " + fileName + " has started");
         }
 
         try {
-            Mediator m = MediatorFactoryFinder.getInstance().getMediator(artifactConfig, properties);
             if (m == null || !(m instanceof  SequenceMediator)) {
                 handleSynapseArtifactDeploymentError("Sequence update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid sequence.");
@@ -150,6 +157,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);
             if (seq != null) {
+                CustomLogSetter.getInstance().setLogAppender(seq.getArtifactContainerName());
                 if (SynapseConstants.MAIN_SEQUENCE_KEY.equals(seq.getName())
                         || SynapseConstants.FAULT_SEQUENCE_KEY.equals(seq.getName())) {
                     handleSynapseArtifactDeploymentError(
@@ -184,6 +192,7 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             SequenceMediator seq
                     = getSynapseConfiguration().getDefinedSequences().get(artifactName);
+            CustomLogSetter.getInstance().setLogAppender((seq != null) ? seq.getArtifactContainerName() : "");
             OMElement seqElem = MediatorSerializerFinder.getInstance().getSerializer(seq).
                     serializeMediator(null, seq);
             if (seq.getFileName() != null) {

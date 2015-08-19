@@ -40,6 +40,7 @@ import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.nhttp.util.NhttpUtil;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
 
@@ -257,6 +258,7 @@ public class ServerWorker implements Runnable {
     @SuppressWarnings({"unchecked"})
     public void run() {
 
+        CustomLogSetter.getInstance().clearThreadLocalContent();
         conn.getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
         conn.getContext().setAttribute(NhttpConstants.SERVER_WORKER_THREAD_ID, Thread.currentThread().getId());
         String method = request.getRequestLine().getMethod().toUpperCase();

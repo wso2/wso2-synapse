@@ -60,6 +60,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -117,6 +118,7 @@ public class ServerWorker implements Runnable {
     }
 
     public void run() {
+        CustomLogSetter.getInstance().clearThreadLocalContent();
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
                 System.currentTimeMillis());
         if (log.isDebugEnabled()) {

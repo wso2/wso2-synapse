@@ -39,6 +39,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -49,6 +50,7 @@ import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.MediatorWorker;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -332,6 +334,18 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
+        }
+
+        /*
+         * If the method is invoked by the inbound endpoint
+         * Then check for the endpoint name and then set the Log Appender Content
+         */
+        if (synCtx.getProperty("inbound.endpoint.name") != null) {
+            InboundEndpoint inboundEndpoint = synCtx.getConfiguration().
+                    getInboundEndpoint((String) synCtx.getProperty("inbound.endpoint.name"));
+            if (inboundEndpoint != null) {
+                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+            }
         }
 
         synCtx.setEnvironment(this);
@@ -848,6 +862,19 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
+
+        /*
+         * If the method is invoked by the inbound endpoint
+         * Then check for the endpoint name and then set the Log Appender Content
+         */
+        if (smc.getProperty("inbound.endpoint.name") != null) {
+            InboundEndpoint inboundEndpoint = smc.getConfiguration().
+                    getInboundEndpoint((String) smc.getProperty("inbound.endpoint.name"));
+            if (inboundEndpoint != null) {
+                CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+            }
+        }
+
         if (seq == null) {
             log.error("Please provide existing sequence");
             return false;

@@ -37,6 +37,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -233,6 +234,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private boolean moduleEngaged;
 
     private boolean wsdlPublished;
+
+    private String artifactContainerName;
+
+    private boolean isEdited;
 
     /**
      * Constructor
@@ -838,8 +843,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             this.setRunning(true);
             auditInfo("Started the proxy service : " + name);
         } else {
-            auditWarn("Unable to start proxy service : " + name +
-                ". Couldn't access Axis configuration");
+            auditWarn("Unable to start proxy service : " + name + ". Couldn't access Axis configuration");
         }
     }
 
@@ -871,7 +875,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             auditInfo("Stopped the proxy service : " + name);
         } else {
             auditWarn("Unable to stop proxy service : " + name +
-                ". Couldn't access Axis configuration");
+                    ". Couldn't access Axis configuration");
         }
     }
 
@@ -1272,6 +1276,22 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     }
 
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
+    }
+
+    public String getArtifactContainerName () {
+        return artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
     private String[] getModuleNames(String propertyValue) {
 
         if (propertyValue == null || propertyValue.trim().isEmpty()) {
@@ -1294,5 +1314,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public void setPublishWSDLEndpoint(String publishWSDLEndpoint) {
         this.publishWSDLEndpoint = publishWSDLEndpoint;
+    }
+
+    public void setLogSetterValue () {
+        CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 }

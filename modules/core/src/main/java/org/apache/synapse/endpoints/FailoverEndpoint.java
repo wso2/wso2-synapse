@@ -47,6 +47,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
     public void send(MessageContext synCtx) {
 
+        logSetter();
         if (log.isDebugEnabled()) {
             log.debug("Failover Endpoint : " + getName());
         }

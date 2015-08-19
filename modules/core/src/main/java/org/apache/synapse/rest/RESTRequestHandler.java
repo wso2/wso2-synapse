@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.version.DefaultStrategy;
+import org.apache.synapse.rest.version.DefaultStrategy;
 
 import java.util.*;
 
@@ -71,6 +72,7 @@ public class RESTRequestHandler {
 
         API defaultAPI = null;
         for (API api : apiSet) {
+            api.setLogSetterValue();
             if ("/".equals(api.getContext())) {
                 defaultAPI = api;
             } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
@@ -87,6 +89,7 @@ public class RESTRequestHandler {
         }
 
         for (API api : defaultStrategyApiSet) {
+            api.setLogSetterValue();
             if (api.canProcess(synCtx)) {
                 if (log.isDebugEnabled()) {
                     log.debug("Located specific API: " + api.getName() + " for processing message");
@@ -97,6 +100,7 @@ public class RESTRequestHandler {
         }
 
         if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
+            defaultAPI.setLogSetterValue();
             defaultAPI.process(synCtx);
             return true;
         }
