@@ -39,6 +39,9 @@ public final class SynapseXPathConstants {
     /** Header relative XPath variable name for the SOAPHeader */
     public static final String SOAP_HEADER_VARIABLE = "header";
 
+    /** Envelope relative XPath variable name for the SOAPEnvelopw */
+    public static final String SOAP_ENVELOPE_VARIABLE = "env";
+
     /** Variable prefix for accessing the MessageContext properties through XPath variables */
     public static final String MESSAGE_CONTEXT_VARIABLE_PREFIX = "ctx";
 
