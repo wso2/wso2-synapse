@@ -281,10 +281,10 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 		VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()), e);
             } finally {
                 if (replyFile != null) {
-                    try {
+                    try {/*
                         if (fsManager != null && replyFile.getParent() != null && replyFile.getParent().getFileSystem() != null) {
                             fsManager.closeFileSystem(replyFile.getParent().getFileSystem());
-                        }
+                        }*/
                         replyFile.close();
                     } catch (FileSystemException ignore) {}
                 }
