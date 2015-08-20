@@ -587,8 +587,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                 try {
                     fileObject.moveTo(dest);
                 } catch (FileSystemException e) {
-                    handleException("Error moving file : " + fileObject + " to " +
-                            moveToDirectoryURI, e);
+                    handleException("Error moving file : " + VFSUtils.maskURLPassword(fileObject.toString()) + " to " +
+                                    VFSUtils.maskURLPassword(moveToDirectoryURI), e);
                 }finally{
 	                try {
 	                	fileObject.close();
@@ -616,7 +616,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
         } catch (FileSystemException e) {
             handleException("Error resolving directory to move after processing : "
-                    + moveToDirectoryURI, e);
+                    + VFSUtils.maskURLPassword(moveToDirectoryURI), e);
         }
     }
 
