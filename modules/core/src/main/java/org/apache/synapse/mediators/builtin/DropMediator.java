@@ -51,9 +51,13 @@ public class DropMediator extends AbstractMediator {
             }
         }
 
-        String mediatorId = UUID.randomUUID().toString();
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", true);
-        synCtx.addComponentToMessageFlow(mediatorId, "Drop Mediator");
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
 
         synCtx.setTo(null);
 
@@ -66,9 +70,10 @@ public class DropMediator extends AbstractMediator {
             synLog.traceOrDebug("End : Drop mediator");
         }
 
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", false);
-//        MessageFlowDbConnector.getInstance().writeToDb(synCtx);
-        MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", false);
+        }
+
         return false;
     }
 

@@ -34,9 +34,6 @@ public class MessageFlowTracerConstants {
      */
     public static final String JDBC_DSNAME = "jdbc/WSO2CarbonDB";
 
-    /**
-     * Name of the database table
-     */
     public static final String TABLE_MESSAGE_FLOW_INFO = "MESSAGE_FLOW_INFO";
 
     public static final String TABLE_MESSAGE_FLOWS = "MESSAGE_FLOWS";

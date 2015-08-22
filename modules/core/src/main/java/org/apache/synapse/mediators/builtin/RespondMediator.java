@@ -21,9 +21,13 @@ public class RespondMediator extends AbstractMediator{
             }
         }
 
-        String mediatorId = UUID.randomUUID().toString();
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Respond Mediator", true);
-        synCtx.addComponentToMessageFlow(mediatorId, "Respond Mediator");
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Respond Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
 
         synCtx.setTo(null);
         synCtx.setResponse(true);
@@ -33,7 +37,9 @@ public class RespondMediator extends AbstractMediator{
             synLog.traceOrDebug("End : Respond Mediator");
         }
 
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Respond Mediator", false);
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Respond Mediator", false);
+        }
 
         return false;
     }

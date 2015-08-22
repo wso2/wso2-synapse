@@ -64,7 +64,7 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
             if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
                 mediatorId = UUID.randomUUID().toString();
                 MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", true);
-                synCtx.addComponentToMessageFlow(mediatorId, "In Mediator");
+                synCtx.addComponentToMessageFlow(mediatorId);
             }
 
             synLog.traceOrDebug("Current message is incoming - executing child mediators");

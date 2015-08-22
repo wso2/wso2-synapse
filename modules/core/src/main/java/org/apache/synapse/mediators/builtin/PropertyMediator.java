@@ -84,9 +84,6 @@ public class PropertyMediator extends AbstractMediator {
      * @return true always
      */
     public boolean mediate(MessageContext synCtx) {
-        String mediatorId = UUID.randomUUID().toString();
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", true);
-        synCtx.addComponentToMessageFlow(mediatorId, "Property Mediator");
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -96,6 +93,14 @@ public class PropertyMediator extends AbstractMediator {
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
+        }
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         if (action == ACTION_SET) {
@@ -218,7 +223,9 @@ public class PropertyMediator extends AbstractMediator {
         }
         synLog.traceOrDebug("End : Property mediator");
 
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", false);
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", false);
+        }
 
         return true;
     }

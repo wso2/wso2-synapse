@@ -362,6 +362,6 @@ public class TestMessageContext implements MessageContext {
 		}
 	}
 
-    public void addComponentToMessageFlow(String mediatorId, String mediatorName){
+    public void addComponentToMessageFlow(String mediatorId){
     }
 }

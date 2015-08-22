@@ -116,10 +116,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
             }
         }
 
-        String mediatorId = UUID.randomUUID().toString();
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Cache Mediator", true);
-        synCtx.addComponentToMessageFlow(mediatorId, "Cache Mediator");
-
         //TODO: workaround for https://wso2.org/jira/browse/ESBJAVA-1575 : This is fixed now
         //caching component does not work with SOAP 1.2
 //        if(!synCtx.isSOAP11()){
@@ -186,8 +182,6 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         } catch (ClusteringFault clusteringFault) {
             synLog.traceOrDebug("Unable to replicate Cache mediator state among the cluster");
         }
-
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Cache Mediator", false);
 
         synLog.traceOrDebug("End : Cache mediator");
 

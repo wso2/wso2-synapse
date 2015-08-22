@@ -171,7 +171,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
             mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", true);
-            synCtx.addComponentToMessageFlow(mediatorId, "Aggregate Mediator");
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         try {

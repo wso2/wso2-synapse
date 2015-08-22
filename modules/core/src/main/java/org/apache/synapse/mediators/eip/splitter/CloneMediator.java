@@ -91,9 +91,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             }
         }
 
-        String mediatorId = UUID.randomUUID().toString();
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Clone Mediator", true);
-        synCtx.addComponentToMessageFlow(mediatorId, "Clone Mediator");
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Clone Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+        }
 
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
@@ -121,7 +124,9 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         // finalize tracing and debugging
         synLog.traceOrDebug("End : Clone mediator");
 
-        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Clone Mediator", false);
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Clone Mediator", false);
+        }
 
         // if continue parent is true mediators after the clone will be called for the further
         // mediation of the message which is subjected for clonning (parent message)

@@ -22,9 +22,11 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Loopback further processing/Mediation of the current message to outflow
@@ -39,6 +41,15 @@ public class LoopBackMediator extends AbstractMediator {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "LoopBack Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
+
         //If message flow is inflow this will be executed.
         if (!synCtx.isResponse()) {
 
@@ -57,6 +68,11 @@ public class LoopBackMediator extends AbstractMediator {
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Loopback Mediator");
         }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "LoopBack Mediator", false);
+        }
+
         return false;
     }
 

@@ -19,11 +19,11 @@ public class MessageFlowDbReporterTask implements Runnable{
             MessageFlowTraceEntry flowInfoEntry = MessageFlowDataHolder.getFlowInfoEntry();
 
             if(componentInfoEntry!=null){
-                MessageFlowDbConnector.getInstance().writeToDb(componentInfoEntry);
+                MessageFlowDbConnector.getInstance().persistMessageFlowComponentEntry(componentInfoEntry);
             }
 
             if(flowInfoEntry!=null){
-                MessageFlowDbConnector.getInstance().writeToDb(flowInfoEntry);
+                MessageFlowDbConnector.getInstance().persistMessageFlowTraceEntry(flowInfoEntry);
             }
         }
     }
