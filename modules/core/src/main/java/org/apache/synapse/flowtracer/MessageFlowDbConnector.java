@@ -33,9 +33,6 @@ public class MessageFlowDbConnector {
 
     private JDBCConfiguration jdbcConfiguration;
 
-    /**
-     * Logger for the class
-     */
     private static final Log logger = LogFactory.getLog(MessageFlowDbConnector.class.getName());
 
     private static MessageFlowDbConnector instance;
@@ -58,26 +55,26 @@ public class MessageFlowDbConnector {
     private void initTable1() {
         Connection con = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("CREATE TABLE IF NOT EXISTS MESSAGE_FLOW_INFO\n" +
+        String stmt = new String("CREATE TABLE IF NOT EXISTS MESSAGE_FLOW_INFO\n" +
                 "(\n" +
                 "ID int NOT NULL AUTO_INCREMENT,"+
                 "MessageId varchar(255)," +
                 "Component varchar(255)," +
                 "ComponentId varchar(255)," +
                 "Response BOOLEAN,"+
-                "Payload varchar(10000),"+
-                "Properties varchar(10000),"+
+                "Payload varchar(1000000),"+
+                "Properties varchar(1000000),"+
                 "Start BOOLEAN,"+
                 "TimeStamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"+
                 "PRIMARY KEY (ID)"+
                 ")");
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
+            ps = con.prepareStatement(stmt);
             ps.execute();
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, null);
@@ -87,82 +84,116 @@ public class MessageFlowDbConnector {
     private void initTable2() {
         Connection con = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("CREATE TABLE IF NOT EXISTS MESSAGE_FLOWS\n" +
+        String stmt = new String("CREATE TABLE IF NOT EXISTS MESSAGE_FLOWS\n" +
                 "(\n" +
                 "ID int NOT NULL AUTO_INCREMENT,"+
                 "MessageId varchar(255)," +
-                "FlowTrace varchar(1000)," +
+                "FlowTrace varchar(10000)," +
                 "EntryType varchar(1000)," +
                 "TimeStamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"+
                 "PRIMARY KEY (ID)"+
                 ")");
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
+            ps = con.prepareStatement(stmt);
             ps.execute();
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, null);
         }
     }
 
-    public void writeToDb(MessageContext synCtx) {
+//    public void persistMessageFlowTraceEntry(MessageFlowTraceEntry entry) {
+//        Connection con = null;
+//        PreparedStatement ps = null;
+//
+//        String stmt = new String("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" (MessageId, FlowTrace, EntryType, TimeStamp)\n" +
+//                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getMessageFlow()+"\', \'"+entry.getEntryType()+ "\', \'"+entry.getTimeStamp()+ "\')");
+//        try {
+//            con = jdbcConfiguration.getConnection();
+//            ps = con.prepareStatement(stmt);
+//            int count = ps.executeUpdate();
+//            con.commit();
+//
+//        } catch (SQLException e) {
+//            logger.error("Error executing statement : " + stmt +
+//                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+//        } finally {
+//            close(con, ps, null);
+//        }
+//    }
+
+    //    public void persistMessageFlowComponentEntry(MessageFlowComponentEntry entry) {
+//        Connection con = null;
+//        PreparedStatement ps = null;
+//
+//        String stmt = new String("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" (MessageId, Component, ComponentId, Response, Start, Payload, Properties, Timestamp)\n" +
+//                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getComponentName()+"\', "+" \'"+entry.getComponentId()+"\', "+entry.isResponse()+","+entry.isStart()+", \'"+entry.getPayload().toString().replace("\'", "\'\'")+"\',\'"+entry.getPropertySet().toString().replace("\'", "\'\'")+"\',\'"+entry.getTimestamp()+"\')");
+//        try {
+//            con = jdbcConfiguration.getConnection();
+//            ps = con.prepareStatement(stmt);
+//            int count = ps.executeUpdate();
+//            con.commit();
+//
+//        } catch (SQLException e) {
+//            logger.error("Error executing statement : " + stmt +
+//                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
+//        } finally {
+//            close(con, ps, null);
+//        }
+//    }
+
+    public void persistMessageFlowTraceEntry(MessageFlowTraceEntry entry) {
         Connection con = null;
         PreparedStatement ps = null;
 
-        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" (MessageId, FlowTrace, EntryType)\n" +
-                "VALUES (\'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)+"\', \'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW)+"\', \'"+synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE)+"\')");
+        String stmt = SQLQueries.INSERT_MESSAGE_FLOWS_ENTRY;
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
-            int count = ps.executeUpdate();
+            ps = con.prepareStatement(stmt);
+
+            ps.setString(1,entry.getMessageId());
+            ps.setString(2,entry.getMessageFlow());
+            ps.setString(3,entry.getEntryType());
+            ps.setString(4,entry.getTimeStamp());
+
+            ps.executeUpdate();
             con.commit();
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, null);
         }
     }
 
-    public void writeToDb(MessageFlowTraceEntry entry) {
+    public void persistMessageFlowComponentEntry(MessageFlowComponentEntry entry) {
         Connection con = null;
         PreparedStatement ps = null;
 
-        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" (MessageId, FlowTrace, EntryType, TimeStamp)\n" +
-                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getMessageFlow()+"\', \'"+entry.getEntryType()+ "\', \'"+entry.getTimeStamp()+ "\')");
+        String stmt = SQLQueries.INSERT_MESSAGE_FLOW_INFO_ENTRY;
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
-            int count = ps.executeUpdate();
+            ps = con.prepareStatement(stmt);
+
+            ps.setString(1,entry.getMessageId());
+            ps.setString(2,entry.getComponentName());
+            ps.setString(3,entry.getComponentId());
+            ps.setBoolean(4,entry.isResponse());
+            ps.setBoolean(5,entry.isStart());
+            ps.setString(6,entry.getPayload());
+            ps.setString(7,entry.getPropertySet());
+            ps.setString(8,entry.getTimestamp());
+
+            ps.executeUpdate();
             con.commit();
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
-                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
-        } finally {
-            close(con, ps, null);
-        }
-    }
-
-    public void writeToDb(MessageFlowComponentEntry entry) {
-        Connection con = null;
-        PreparedStatement ps = null;
-
-        Statement stmt = new Statement("INSERT INTO "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" (MessageId, Component, ComponentId, Response, Start, Payload, Properties, Timestamp)\n" +
-                "VALUES (\'"+entry.getMessageId()+"\', \'"+entry.getComponentName()+"\', "+" \'"+entry.getComponentId()+"\', "+entry.isResponse()+","+entry.isStart()+", \'"+entry.getPayload().toString().replace("\'", "\'\'")+"\',\'"+entry.getPropertySet().toString().replace("\'", "\'\'")+"\',\'"+entry.getTimestamp()+"\')");
-        try {
-            con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
-            int count = ps.executeUpdate();
-            con.commit();
-
-        } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, null);
@@ -173,27 +204,29 @@ public class MessageFlowDbConnector {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("SELECT * FROM "+MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" WHERE messageId = \'"+messageId+"\'");
+        String stmt = SQLQueries.GET_MESSAGE_FLOW_TRACE;
 
         Set<String> messageFlows = new HashSet<>();
 
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
-            rs = ps.executeQuery();
+            ps = con.prepareStatement(stmt);
 
+            ps.setString(1,messageId);
+
+            rs = ps.executeQuery();
             while (rs.next()) {
                 try {
                     messageFlows.add(rs.getString("FlowTrace"));
                 } catch (Exception e) {
-                    logger.error("Error executing statement : " + stmt.getRawStatement() +
+                    logger.error("Error executing statement : " + stmt +
                             " against DataSource : " + jdbcConfiguration.getDSName(), e);
                     break;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt+
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
@@ -205,27 +238,27 @@ public class MessageFlowDbConnector {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("SELECT distinct ID,MessageId,EntryType,TimeStamp FROM " + MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" ORDER BY ID");
+        String stmt = SQLQueries.GET_ALL_MESSAGE_FLOWS;
 
         Map<String,MessageFlowTraceEntry> messageFlows = new HashMap<>();
 
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
+            ps = con.prepareStatement(stmt);
             rs = ps.executeQuery();
 
             while (rs.next()) {
                 try {
                     messageFlows.put(rs.getString("MessageId"), new MessageFlowTraceEntry(rs.getString("MessageId"),rs.getString("EntryType"),rs.getString("TimeStamp")));
                 } catch (Exception e) {
-                    logger.error("Error executing statement : " + stmt.getRawStatement() +
+                    logger.error("Error executing statement : " + stmt +
                             " against DataSource : " + jdbcConfiguration.getDSName(), e);
                     break;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
@@ -237,27 +270,29 @@ public class MessageFlowDbConnector {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("SELECT * FROM " + MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO+" WHERE MessageId = \'"+messageId+"\' order by ID");
+        String stmt = SQLQueries.GET_COMPONENT_INFO;
 
         List<MessageFlowComponentEntry> componentInfo = new ArrayList<>();
 
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
-            rs = ps.executeQuery();
+            ps = con.prepareStatement(stmt);
 
+            ps.setString(1,messageId);
+
+            rs = ps.executeQuery();
             while (rs.next()) {
                 try {
                     componentInfo.add(new MessageFlowComponentEntry(rs.getString("MessageId"), rs.getString("ComponentId"), rs.getString("Component"),rs.getBoolean("Response"),rs.getBoolean("Start"),rs.getString("Timestamp"),rs.getString("Properties"),rs.getString("Payload")));
                 } catch (Exception e) {
-                    logger.error("Error executing statement : " + stmt.getRawStatement() +
+                    logger.error("Error executing statement : " + stmt +
                             " against DataSource : " + jdbcConfiguration.getDSName(), e);
                     break;
                 }
             }
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
@@ -265,39 +300,7 @@ public class MessageFlowDbConnector {
         return componentInfo.toArray(new MessageFlowComponentEntry[componentInfo.size()]);
     }
 
-    public String[] getMessageFlowInfo(String messageId){
-        Connection con = null;
-        ResultSet rs = null;
-        PreparedStatement ps = null;
-        Statement stmt = new Statement("SELECT * FROM " + MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS+" WHERE MessageId = \'"+messageId+"\' order by ID");
-
-        ArrayList<String> messageFlows = new ArrayList<>();
-
-        try {
-            con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                try {
-                    messageFlows.add(rs.getString("FlowTrace"));
-                } catch (Exception e) {
-                    logger.error("Error executing statement : " + stmt.getRawStatement() +
-                            " against DataSource : " + jdbcConfiguration.getDSName(), e);
-                    break;
-                }
-            }
-
-        } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
-                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
-        } finally {
-            close(con, ps, rs);
-        }
-        return messageFlows.toArray(new String[messageFlows.size()]);
-    }
-
-    public void clearTable(){
+    public void clearTables(){
         clearTable(MessageFlowTracerConstants.TABLE_MESSAGE_FLOW_INFO);
         clearTable(MessageFlowTracerConstants.TABLE_MESSAGE_FLOWS);
     }
@@ -305,15 +308,15 @@ public class MessageFlowDbConnector {
     public void clearTable(String tableName){
         Connection con = null;
         PreparedStatement ps = null;
-        Statement stmt = new Statement("DELETE FROM "+ tableName);
+        String stmt = new String(SQLQueries.DELETE_ALL+ tableName);
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
+            ps = con.prepareStatement(stmt);
             int count = ps.executeUpdate();
             con.commit();
 
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
+            logger.error("Error executing statement : " + stmt +
                     " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, null);

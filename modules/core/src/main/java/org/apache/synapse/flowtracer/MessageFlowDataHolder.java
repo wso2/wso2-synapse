@@ -1,7 +1,5 @@
 package org.apache.synapse.flowtracer;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.flowtracer.data.MessageFlowComponentEntry;
 import org.apache.synapse.flowtracer.data.MessageFlowTraceEntry;
@@ -30,7 +28,7 @@ public class MessageFlowDataHolder {
             }
         }
 
-        String payload = synCtx.toString();
+        String payload = synCtx.getMessageString();
         componentInfo.add(new MessageFlowComponentEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx.isResponse(), start, new Timestamp(date.getTime()).toString(), propertyString, payload));
     }
 

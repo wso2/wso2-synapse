@@ -35,6 +35,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.AXIOMUtils;
@@ -133,8 +134,22 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     private boolean mediate(MessageContext synCtx, String format) {
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
+
         if (!isDoingXml(synCtx) && !isDoingJson(synCtx)) {
             log.error("#mediate. Could not identify the payload format of the existing payload prior to mediate.");
+
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", false);
+            }
+
             return false;
         }
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
@@ -165,6 +180,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
         //need to honour a content-type of the payload media-type as output from the payload 
         //{re-merging patch https://wso2.org/jira/browse/ESBJAVA-3014}
         setContentType(synCtx);
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", false);
+        }
+
         return true;
     }
 

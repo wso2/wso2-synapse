@@ -618,7 +618,7 @@ public class Axis2MessageContext implements MessageContext {
         return mediatorPosition;
     }
 
-    public void addComponentToMessageFlow(String componentId, String componentName){
+    public void addComponentToMessageFlow(String componentId){
         if(this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) != null) {
 
             List<String> messageFlowTrace = (List<String>) this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
@@ -636,5 +636,43 @@ public class Axis2MessageContext implements MessageContext {
 
             this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, messageFlowTrace);
         }
+    }
+
+    public String getMessageString() {
+
+        StringBuffer sb = new StringBuffer();
+        String separator = "\n";
+
+        if (getTo() != null) {
+            sb.append("To : ").append(getTo().getAddress());
+        } else {
+            sb.append("To : ");
+        }
+
+        if (getFrom() != null) {
+            sb.append(separator).append("From : ").append(getFrom().getAddress());
+        }
+
+        if (getWSAAction() != null) {
+            sb.append(separator).append("WSAction : ").append(getWSAAction());
+        }
+
+        if (getSoapAction() != null) {
+            sb.append(separator).append("SOAPAction : ").append(getSoapAction());
+        }
+
+        if (getReplyTo() != null) {
+            sb.append(separator).append("ReplyTo : ").append(getReplyTo().getAddress());
+        }
+
+        if (getMessageID() != null) {
+            sb.append(separator).append("MessageID : ").append(getMessageID());
+        }
+
+        if (getEnvelope() != null) {
+            sb.append(separator).append("Body : ").append(getEnvelope().toString());
+        }
+
+        return sb.toString();
     }
 }

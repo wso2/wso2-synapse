@@ -30,6 +30,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -115,9 +116,12 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         //trace message flow
-        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE,"Proxy Service:"+name);
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Proxy Service:" + name);
+                synCtx.getEnvelope().buildWithAttachments();
+            }
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();

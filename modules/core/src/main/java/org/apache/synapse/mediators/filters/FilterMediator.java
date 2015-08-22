@@ -131,7 +131,7 @@ public class FilterMediator extends AbstractListMediator implements
 
             String mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
-            synCtx.addComponentToMessageFlow(mediatorId, "Filter Mediator(Then)");
+            synCtx.addComponentToMessageFlow(mediatorId);
 
             if (thenKey != null) {
 
@@ -175,7 +175,7 @@ public class FilterMediator extends AbstractListMediator implements
 
             String mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
-            synCtx.addComponentToMessageFlow(mediatorId, "Filter Mediator(Else)");
+            synCtx.addComponentToMessageFlow(mediatorId);
 
             if (elseKey != null) {
 
