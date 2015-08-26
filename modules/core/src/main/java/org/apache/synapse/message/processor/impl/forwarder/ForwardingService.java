@@ -105,11 +105,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	private volatile boolean isTerminated = false;
 
 	/*
-	 * Number of retries before shutting-down the processor. -1 default value
+	 * Number of retries before shutting-down the processor. -1 value
 	 * indicates that
 	 * retry should happen forever
 	 */
-	private int maxDeliverAttempts = -1;
+	private int maxDeliverAttempts = 4;
 	private int attemptCount = 0;
 
     private boolean isThrottling = true;
