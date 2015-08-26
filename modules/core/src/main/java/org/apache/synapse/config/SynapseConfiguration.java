@@ -1752,6 +1752,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * @return The message store with the specified name
      */
     public MessageStore removeMessageStore(String name) {
+        Set<String> processors = messageProcessors.keySet();
+        for (String processorName : processors) {
+            if (messageProcessors.get(processorName).getMessageStoreName().equals(name)) {
+                (messageProcessors.get(processorName)).destroy();
+            }
+        }
         return messageStores.remove(name);
     }
 
