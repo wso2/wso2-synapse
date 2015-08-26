@@ -297,10 +297,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
                 logger.error("The thread was interrupted while sleeping");
             }
             if (getMessageConsumer() != null && messageConsumers.size() > 0) {
-                boolean success = getMessageConsumer().get(0).cleanup();
-                if (!success) {
-                    logger.error("[" + getName() + "] Could not cleanup message consumer.");
-                }
+                cleanupLocalResources();
             } else {
                 logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
             }
@@ -333,9 +330,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
                  * This will close the connection with the JMS Provider/message
                  * store.
                  */
-                if (messageConsumers != null && messageConsumers.size() > 0) {
-                    messageConsumers.get(0).cleanup();
-                }
+                cleanupLocalResources();
 
                 /*
                  * Cleaning up the resources in the cluster mode here.
