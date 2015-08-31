@@ -138,11 +138,11 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
             MessageProcessor mp =
                     getSynapseConfiguration().getMessageProcessors().get(artifactName);
             if (mp != null) {
+                mp.destroy();
                 getSynapseConfiguration().removeMessageProcessor(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Destroying the MessageProcessor named : " + artifactName);
                 }
-                mp.destroy();
                 if (log.isDebugEnabled()) {
                     log.debug("MessageProcessor Undeployment of the endpoint named : "
                             + artifactName + " : Completed");
