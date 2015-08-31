@@ -375,7 +375,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
      */
     private String getBaseUri(String targetAddress) {
 
-        //Remove vfs: part as in InboundEndpoint that part is not used
+        //Remove vfs part from the uri
         if(targetAddress.contains("vfs:"))
         {
             targetAddress = targetAddress.substring(targetAddress.indexOf("vfs:") + 4);
