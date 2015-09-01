@@ -86,7 +86,11 @@ public abstract class AbstractListMediator extends AbstractMediator
         } catch (SynapseException synEx) {
             throw synEx;
         } catch (Exception ex) {
-            throw new SynapseException(ex);          
+            String errorMsg = ex.getMessage();
+            if (errorMsg == null) {
+                errorMsg = "Runtime error occurred while mediating the message";
+            }
+            handleException(errorMsg, ex, synCtx);
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
