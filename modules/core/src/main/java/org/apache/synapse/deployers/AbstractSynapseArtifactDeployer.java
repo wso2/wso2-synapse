@@ -58,7 +58,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     private static final Log log = LogFactory.getLog(AbstractSynapseArtifactDeployer.class);
     protected  Log deployerLog;
     protected ConfigurationContext cfgCtx;
-    protected String customLogContent = "";
+    protected String customLogContent;
 
     protected AbstractSynapseArtifactDeployer() {
         deployerLog = LogFactory.getLog(this.getClass());
@@ -571,5 +571,9 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
 
     public void setCustomLog (String artifactContainerName, String tenantId) {
         customLogContent = "[ Deployed From Artifact Container: " + artifactContainerName + " ] ";
+    }
+
+    public void setCustomLogContentNull () {
+        customLogContent = null;
     }
 }
