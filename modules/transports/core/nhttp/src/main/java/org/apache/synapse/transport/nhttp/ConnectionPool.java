@@ -74,7 +74,7 @@ public class ConnectionPool {
                             log.debug("A connection  : " + route +
                                     " is available in the pool, and will be reused");
                         }
-                        conn.requestInput(); // asankha - make sure keep alives work properly when reused with throttling
+                        conn.requestInput(); // Make sure keep alives work properly when reused with throttling
                         return conn;
                     } else {
                         if (log.isDebugEnabled()) {
