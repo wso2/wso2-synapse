@@ -459,18 +459,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
 					destinationStatRecord =
 					                        (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
-					if (destinationStatRecord != null &&
-					    synCtx.getProperty(SynapseConstants.STATISTICS_STACK) != null) {
-						/*
-						 * Then we collect the statistic logs only for the ESB
-						 * constructs which come after the clone mediator. We
-						 * are responsible for collecting stat logs for these
-						 * artifacts only. These artifacts belong to the
-						 * response flow.
-						 */
-						mergeStatisticsRecords((StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK),
-						                       destinationStatRecord);
-					}
                 } catch (AxisFault axisFault) {
                     handleException("Error creating a copy of the message", axisFault, synCtx);
                 }

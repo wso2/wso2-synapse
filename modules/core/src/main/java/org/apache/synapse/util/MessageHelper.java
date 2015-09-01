@@ -236,7 +236,7 @@ public class MessageHelper {
 			if (o instanceof String) {
 				if (synCtx.getProperty((String) o) != null &&
 				    synCtx.getProperty((String) o) instanceof StatisticsRecord) {
-					StatisticsRecord record = StatisticsRecordFactory.getStatisticsRecord(synCtx);
+					StatisticsRecord record = getClonedStatisticRecord((StatisticsRecord) synCtx.getProperty((String) o));
 					newCtx.setProperty(SynapseConstants.STATISTICS_STACK, record);
 
 				} else {
