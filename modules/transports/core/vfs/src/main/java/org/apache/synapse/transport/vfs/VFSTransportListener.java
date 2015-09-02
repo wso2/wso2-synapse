@@ -284,7 +284,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                              ". This can be due to file moved from another process.");
                                     runPostProcess = false;
                                 } else {
-                                    logException("Error processing File URI : " + VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
+                                    logException("Error processing File URI : " +
+                                                 VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
                                     entry.setLastPollState(PollTableEntry.FAILED);
                                     metrics.incrementFaultsReceiving();
                                 }
@@ -438,7 +439,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                         skipUnlock = true;
                                         failCount++;
                                         entry.setLastPollState(PollTableEntry.FAILED);
-                                        String timeStamp = VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
+                                        String timeStamp =
+                                                VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
                                         addFailedRecord(entry, child, timeStamp);
                                     }
                                 }
