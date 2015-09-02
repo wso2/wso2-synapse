@@ -284,10 +284,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     try {
                         replacementValue = "<jsonObject>" + replacementEntry.getKey() + "</jsonObject>";
                         OMElement omXML = AXIOMUtil.stringToOM(replacementValue);
+                        // This is to replace \" with \\" and \\$ with \$. Because for Matcher, $ sign is
+                        // a special character and for JSON " is a special character.
                         replacementValue = JsonUtil.toJsonString(omXML).toString()
                                 .replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES, ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
                                 .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES);
-                        replacementValue = JsonUtil.toJsonString(omXML).toString();
                     } catch (XMLStreamException e) {
                         handleException("Error parsing XML for JSON conversion, please check your xPath expressions return valid XML: ", synCtx);
                     } catch (AxisFault e) {
