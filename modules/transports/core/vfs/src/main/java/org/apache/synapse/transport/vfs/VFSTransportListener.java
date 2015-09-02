@@ -54,6 +54,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileNotFolderException;
+import org.apache.commons.vfs2.FileNotFoundException;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemManager;
@@ -264,30 +265,42 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
                     if (fileObject.getType() == FileType.FILE &&
                             !isFailedRecord) {
+                        boolean runPostProcess = true;
                         if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
                                 acquireLock(fsManager, fileObject, entry, fso))) {
                             try {
-                                processFile(entry, fileObject);
-                                entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
-                                metrics.incrementMessagesReceived();
+                                if (fileObject.getType() == FileType.FILE) {
+                                    processFile(entry, fileObject);
+                                    entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                    metrics.incrementMessagesReceived();
+                                }else{
+                                    runPostProcess = false;
+                                }
 
                             } catch (AxisFault e) {
-                                logException("Error processing File URI : "
-                                        + VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
-                                entry.setLastPollState(PollTableEntry.FAILED);
-                                metrics.incrementFaultsReceiving();
+                                if (e.getCause() instanceof FileNotFoundException) {
+                                    log.warn("Error processing File URI : " +
+                                             VFSUtils.maskURLPassword(fileObject.getName().toString()) +
+                                             ". This can be due to file moved from another process.");
+                                    runPostProcess = false;
+                                } else {
+                                    logException("Error processing File URI : " +
+                                                 VFSUtils.maskURLPassword(fileObject.getName().getURI()), e);
+                                    entry.setLastPollState(PollTableEntry.FAILED);
+                                    metrics.incrementFaultsReceiving();
+                                }
                             }
-
-                            try {
-                                moveOrDeleteAfterProcessing(entry, fileObject, fso);
-                            } catch (AxisFault axisFault) {
-                                logException("File object '"
-                                		+ VFSUtils.maskURLPassword(fileObject.getURL().toString())
-                                		+ "' " + "cloud not be moved", axisFault);
-                                entry.setLastPollState(PollTableEntry.FAILED);
-                                String timeStamp =
-                                        VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
-                                addFailedRecord(entry, fileObject, timeStamp);
+                            if (runPostProcess) {
+                                try {
+                                    moveOrDeleteAfterProcessing(entry, fileObject, fso);
+                                } catch (AxisFault axisFault) {
+                                    logException(
+                                            "File object '" + VFSUtils.maskURLPassword(fileObject.getURL().toString()) +
+                                            "' " + "cloud not be moved", axisFault);
+                                    entry.setLastPollState(PollTableEntry.FAILED);
+                                    String timeStamp = VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
+                                    addFailedRecord(entry, fileObject, timeStamp);
+                                }
                             }
                             if (entry.isFileLockingEnabled()) {
                                 VFSUtils.releaseLock(fsManager, fileObject, fso);
@@ -378,7 +391,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             if (log.isDebugEnabled()) {
                                 log.debug("Matching file : " + child.getName().getBaseName());
                             }
-
+                            boolean runPostProcess = true;
                             if((!entry.isFileLockingEnabled()
                                     || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child, fso)))
                                     && !isFailedRecord){
@@ -389,39 +402,47 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                         		+ VFSUtils.maskURLPassword(child.toString()));
                                     }
                                     processCount++;
-                                    processFile(entry, child);
-                                    successCount++;
-                                    // tell moveOrDeleteAfterProcessing() file was success
-                                    entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
-                                    metrics.incrementMessagesReceived();
 
+                                    if(child.getType() == FileType.FILE){
+                                        processFile(entry, child);
+                                        successCount++;
+                                        // tell moveOrDeleteAfterProcessing() file was success
+                                        entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
+                                        metrics.incrementMessagesReceived();
+                                    }else{
+                                        runPostProcess = false;
+                                    }
                                 } catch (Exception e) {
-									logException(
-											"Error processing File URI : "
-													+ VFSUtils
-															.maskURLPassword(child
-																	.getName()
-																	.getURI()),
-											e);
-                                    failCount++;
-                                    // tell moveOrDeleteAfterProcessing() file failed
-                                    entry.setLastPollState(PollTableEntry.FAILED);
-                                    metrics.incrementFaultsReceiving();
+                                    if (e.getCause() instanceof FileNotFoundException) {
+                                        log.warn("Error processing File URI : " +
+                                                 VFSUtils.maskURLPassword(child.getName().toString()) +
+                                                 ". This can be due to file moved from another process.");
+                                        runPostProcess = false;
+                                    } else {
+                                        logException("Error processing File URI : " +
+                                                     VFSUtils.maskURLPassword(child.getName().getURI()), e);
+                                        failCount++;
+                                        // tell moveOrDeleteAfterProcessing() file failed
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        metrics.incrementFaultsReceiving();
+                                    }
                                 }
                                 //skipping un-locking file if failed to do delete/move after process
                                 boolean skipUnlock = false;
-                                try {
-                                    moveOrDeleteAfterProcessing(entry, child, fso);
-                                } catch (AxisFault axisFault) {
-                                    logException("File object '"
-                                    		+ VFSUtils.maskURLPassword(child.getURL().toString())
-                                    		+ "'cloud not be moved, will remain in \"locked\" state", axisFault);
-                                    skipUnlock = true;
-                                    failCount++;
-                                    entry.setLastPollState(PollTableEntry.FAILED);
-                                    String timeStamp =
-                                            VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
-                                    addFailedRecord(entry, child, timeStamp);
+                                if (runPostProcess) {
+                                    try {
+                                        moveOrDeleteAfterProcessing(entry, child, fso);
+                                    } catch (AxisFault axisFault) {
+                                        logException(
+                                                "File object '" + VFSUtils.maskURLPassword(child.getURL().toString()) +
+                                                "'cloud not be moved, will remain in \"locked\" state", axisFault);
+                                        skipUnlock = true;
+                                        failCount++;
+                                        entry.setLastPollState(PollTableEntry.FAILED);
+                                        String timeStamp =
+                                                VFSUtils.getSystemTime(entry.getFailedRecordTimestampFormat());
+                                        addFailedRecord(entry, child, timeStamp);
+                                    }
                                 }
                                 // if there is a failure or not we'll try to release the lock
                                 if (entry.isFileLockingEnabled() && !skipUnlock) {
