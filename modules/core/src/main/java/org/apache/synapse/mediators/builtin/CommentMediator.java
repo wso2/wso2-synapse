@@ -53,4 +53,9 @@ public class CommentMediator extends AbstractMediator {
     public String getCommentText() {
         return commentText;
     }
+
+    @Override
+    public boolean isContentAware() {
+        return false;
+    }
 }
