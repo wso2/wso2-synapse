@@ -383,9 +383,9 @@ public class ServerWorker implements Runnable {
 
                 if ((soapAction != null) && soapAction.startsWith("\"") && soapAction.endsWith("\"")) {
                     soapAction = soapAction.substring(1, soapAction.length() - 1);
+                    msgContext.setSoapAction(soapAction);
                 }
 
-                msgContext.setSoapAction(soapAction);
                 msgContext.setEnvelope(envelope);
             }
             
