@@ -113,7 +113,8 @@ public class BlockingMsgSender {
         } else {
             handleException("Service url, Endpoint or 'To' header is required");
         }
-        axisOutMsgCtx.setTo(new EndpointReference(endpointReferenceValue));
+        EndpointReference epr = new EndpointReference(endpointReferenceValue);
+        axisOutMsgCtx.setTo(epr);
 
         AxisService anonymousService;
         if (endpointReferenceValue != null &&
@@ -153,6 +154,7 @@ public class BlockingMsgSender {
             clientOptions = new Options();
         } else {
             clientOptions = axisInMsgCtx.getOptions();
+            clientOptions.setTo(epr);
         }
         // Fill Client options
         BlockingMsgSenderUtils.fillClientOptions(endpointDefinition, clientOptions, synapseInMsgCtx);
