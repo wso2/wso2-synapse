@@ -22,6 +22,7 @@ package org.apache.synapse.startup.tasks;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.EndpointReference;
@@ -209,6 +210,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
             axis2MsgCtx.setConfigurationContext(configurationContext);
             axis2MsgCtx.setIncomingTransportName(Constants.TRANSPORT_LOCAL);
             axis2MsgCtx.setServerSide(true);
+            axis2MsgCtx.setMessageID(UIDGenerator.generateURNString());
 
             try {
                 AxisService axisService = configurationContext.getAxisConfiguration().
@@ -266,6 +268,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
 
         } else {
             MessageContext mc = synapseEnvironment.createMessageContext();
+            mc.setMessageID(UIDGenerator.generateURNString());
             mc.pushFaultHandler(new MediatorFaultHandler(mc.getFaultSequence()));
             if (to != null) {
                 mc.setTo(new EndpointReference(to));
