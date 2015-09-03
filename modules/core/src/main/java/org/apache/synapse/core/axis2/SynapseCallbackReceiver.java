@@ -375,6 +375,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 response.setProperty(NhttpConstants.FORCE_SC_ACCEPTED, Constants.VALUE_TRUE);
             }
 
+            // axis2 client options still contains properties such as policy files used in
+            // outgoing request. Need to remove those.
+            removeUnwantedClientOptions(response);
+
             // create the synapse message context for the response
             Axis2MessageContext synapseInMessageContext =
                     new Axis2MessageContext(
@@ -568,4 +572,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         mc.setRelationships(trimmedRelates);
     }
 
+    /**
+     * Properties in client options such as inbound and outbound policy files used for outgoing
+     * request may still be present. These need to be removed before sending the response as
+     * they are no longer required.
+     *
+     * @param msgCtx Axis2 MessageContext
+     */
+    private void removeUnwantedClientOptions(MessageContext msgCtx) {
+
+        Options clientOptions = msgCtx.getOptions().getParent().getParent();
+        clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY, null);
+        clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY, null);
+    }
 }
