@@ -176,7 +176,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                     URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(),
                             url.getPath(), url.getQuery(), url.getRef());// this to avoid url.toURI which causes exceptions
                     evaluatedUri = uri.toURL().toString();
-                    evaluatedUri = URLDecoder.decode(evaluatedUri, "UTF-8");
+                    evaluatedUri = decodeString(evaluatedUri);
                     evaluatedUri = evaluatedUri.replace(" ", "%20");
 
                     if (log.isDebugEnabled()) {
