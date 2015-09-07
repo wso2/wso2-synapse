@@ -46,6 +46,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
+import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.message.store.impl.jms.JmsConsumer;
 import org.apache.synapse.task.Task;
@@ -760,6 +761,15 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		messageConsumer =
 		                  synapseEnvironment.getSynapseConfiguration()
 		                                    .getMessageStore(messageStore).getConsumer();
+		
+        /*
+         * If Message Processor is deactivated via Advanced params, then we need
+         * to cleanup the JMS consumers here. Ideally a deactivated MP should
+         * not have any active JMS consumers.
+         */
+        if (!((ScheduledMessageProcessor) messageProcessor).getIsActivatedParamValue()) {
+            messageConsumer.cleanup();
+        }
 		/*
 		 * Make sure to set the same message consumer in the message processor
 		 * since it is used by life-cycle management methods. Specially by the

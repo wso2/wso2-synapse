@@ -119,7 +119,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
      * IsActivated property resides under the Advanced parameters section of the
      * Message Processor.
      */
-    private boolean getIsActivatedParamValue() {
+    public boolean getIsActivatedParamValue() {
         Object isActiveParam = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
         // Message Processor is ACTIVATED by default.
         boolean isActivated = true;
