@@ -172,6 +172,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		
 		}
 		
+		
+        logger.info("Started message processor. [" + getName() + "].");
+        
         /*
          * If the Message Processor is Deactivated through the Advanced parameter 
          * explicitly, then we deactivate the task immediately.
@@ -179,8 +182,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         if (!getIsActivatedParamValue()) {
             deactivate();
         }
-		
-        logger.info("Started message processor. [" + getName() + "].");
         return true;
 	}
 
