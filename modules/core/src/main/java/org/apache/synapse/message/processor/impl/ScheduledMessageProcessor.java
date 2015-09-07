@@ -112,14 +112,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
          */
         this.start();
 
-        /*
-         * If the Message Processor is Deactivated through the Advanced parameter 
-         * explicitly, then we deactivate the task immediately.
-         */
-        if (!getIsActivatedParamValue()) {
-            deactivate();
-        }
-
 	}
 
     /*
@@ -177,9 +169,19 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				taskDescription.setCronExpression(cronExpression);
 			}
 			taskManager.schedule(taskDescription);
+		
 		}
 		
+		
         logger.info("Started message processor. [" + getName() + "].");
+        
+        /*
+         * If the Message Processor is Deactivated through the Advanced parameter 
+         * explicitly, then we deactivate the task immediately.
+         */
+        if (!getIsActivatedParamValue()) {
+            deactivate();
+        }
         return true;
 	}
 
@@ -454,9 +456,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     @Override
     public void update() {
 	    start();
-	    if (!getIsActivatedParamValue()) {
-		    deactivate();
-	    }
     }
 
     @Override
