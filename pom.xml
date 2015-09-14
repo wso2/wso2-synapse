@@ -325,6 +325,16 @@
              <version>${com.oopsconsultancy.version}</version>
          </dependency>
          <dependency>
+             <groupId>org.eclipse.osgi</groupId>
+             <artifactId>org.eclipse.osgi</artifactId>
+             <version>${version.equinox.osgi}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.eclipse.osgi</groupId>
+             <artifactId>org.eclipse.osgi.services</artifactId>
+             <version>${version.equinox.osgi.services}</version>
+         </dependency>
+         <dependency>
              <groupId>org.apache.synapse</groupId>
              <artifactId>synapse-patches</artifactId>
              <version>${project.version}</version>
@@ -842,6 +852,11 @@
             <version>${log4j.version}</version>
          </dependency>
          <dependency>
+              <groupId>org.wso2.orbit.com.hazelcast</groupId>
+              <artifactId>hazelcast</artifactId>
+              <version>${orbit.version.hazelcast}</version>
+         </dependency>
+         <dependency>
             <groupId>org.wso2.eventing</groupId>
             <artifactId>wso2eventing-api</artifactId>
             <version>${wso2eventing-api.version}</version>
@@ -927,6 +942,9 @@
    <properties>
       <maven.javadoc.plugin.version>2.1</maven.javadoc.plugin.version>
       <wagon.ssh.version>2.1</wagon.ssh.version>
+      <orbit.version.hazelcast>3.5.0.wso2v1</orbit.version.hazelcast>
+      <version.equinox.osgi>3.8.1.v20120830-144521</version.equinox.osgi>
+      <version.equinox.osgi.services>3.3.100.v20120522-1822</version.equinox.osgi.services>
       <maven.clean.plugin.version>2.2</maven.clean.plugin.version>
       <maven.resources.plugin.version>2.2</maven.resources.plugin.version>
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
