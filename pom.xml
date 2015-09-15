@@ -328,11 +328,13 @@
              <groupId>org.eclipse.osgi</groupId>
              <artifactId>org.eclipse.osgi</artifactId>
              <version>${version.equinox.osgi}</version>
+             <scope>provided</scope>
          </dependency>
          <dependency>
              <groupId>org.eclipse.osgi</groupId>
              <artifactId>org.eclipse.osgi.services</artifactId>
              <version>${version.equinox.osgi.services}</version>
+             <scope>provided</scope>
          </dependency>
          <dependency>
              <groupId>org.apache.synapse</groupId>
@@ -855,6 +857,7 @@
               <groupId>org.wso2.orbit.com.hazelcast</groupId>
               <artifactId>hazelcast</artifactId>
               <version>${orbit.version.hazelcast}</version>
+              <scope>provided</scope>
          </dependency>
          <dependency>
             <groupId>org.wso2.eventing</groupId>
