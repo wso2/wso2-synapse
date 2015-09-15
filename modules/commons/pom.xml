@@ -49,6 +49,9 @@
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Private-Package>
+                            org.apache.synapse.commons.throttle.core.internal.*
+                        </Private-Package>
                         <Export-Package>
                             org.apache.synapse.commons.*,
                         </Export-Package>
