@@ -408,6 +408,8 @@ public final class SynapseConstants {
     public static final String PRESERVE_PROCESSED_HEADERS = "preserveProcessedHeaders";
     // Property name for preserving the envelope before sending
     public static final String PRESERVE_ENVELOPE = "PRESERVE_ENVELOPE";
+    // Property name for preserving the envelope in case of loadbalance failover endpoint with content aware scenario
+    public static final String LB_FO_ENDPOINT_ORIGINAL_MESSAGE = "LB_FO_ENDPOINT_ORIGINAL_MESSAGE";
 
     // Known transport error codes
     public static final int RCV_IO_ERROR_SENDING     = 101000;
