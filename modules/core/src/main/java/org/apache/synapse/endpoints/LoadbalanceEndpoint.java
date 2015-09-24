@@ -136,6 +136,11 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 // may have to retry this message for failover support
                 if (failover) {
                     synCtx.getEnvelope().build();
+                    //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
+                    if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
+                            PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                        synCtx.setProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE, synCtx.getEnvelope());
+                    }
                 }
             } else {
                 if (metricsMBean != null) {
@@ -195,11 +200,6 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 synCtx.setTo(epr);
                 if (failover) {
                     synCtx.getEnvelope().build();
-                    //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
-                    if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
-                            PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
-                        synCtx.setProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE, synCtx.getEnvelope());
-                    }
                 }
 
                 AddressEndpoint endpoint = new AddressEndpoint();
