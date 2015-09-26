@@ -265,29 +265,37 @@ public class ForwardingService implements Task, ManagedLifecycle {
 					log.debug("Current Thread was interrupted while it is sleeping.");
 				}
 			}
-			/*
-			 * If the interval is less than 1000 ms, then the scheduling is done
-			 * using the while loop since ntask rejects any intervals whose
-			 * value is less then 1000 ms.
-			 */
-			if (interval > 0 && interval < MessageProcessorConstants.THRESHOULD_INTERVAL) {
-				try {
-					Thread.sleep(interval);
-				} catch (InterruptedException e) {
-					log.debug("Current Thread was interrupted while it is sleeping.");
-				}
-			}
-			/*
-			 * Gives the control back to Quartz scheduler. This needs to be done
-			 * only if the interval value is less than the Threshould interval
-			 * value of 1000 ms, where the scheduling is done outside of Quartz
-			 * via the while loop. Otherwise the schedular will get blocked.
-			 * For cron expressions this scenario is already
-			 * handled above.
-			 */
-			if (isThrottling && new Date().getTime() - startTime > 1000) {
-				break;
-			}
+            /*
+             * If the interval is less than 1000 ms, then the scheduling is done
+             * using the while loop since ntask rejects any intervals whose
+             * value is less then 1000 ms. Cron expressions are handled above so
+             * we need to skip it here. Otherwise the cron expression is kept
+             * sleeping twice as the forwarding interval.
+             */
+            if (interval > 0 && interval < MessageProcessorConstants.THRESHOULD_INTERVAL &&
+                !isRunningUnderCronExpression()) {
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    log.debug("Current Thread was interrupted while it is sleeping.");
+                }
+            }
+            /*
+             * Gives the control back to Quartz scheduler. This needs to be done
+             * only if the interval value is less than the Threshould interval
+             * value of 1000 ms, where the scheduling is done outside of Quartz
+             * via the while loop. Otherwise the schedular will get blocked.
+             * For cron expressions with interval < 1000ms this scenario is not
+             * applicable hence skipping it here. For cron expressions, all the
+             * messages in the queue at the moment are sent to the backend. If
+             * you give control back to the Quartz that behavior can not be
+             * achieved, only a portion of the messages will get dispatched
+             * while other messages will remain in the queue.
+             */
+            if (isThrottling && new Date().getTime() - startTime > 1000 &&
+                !isRunningUnderCronExpression()) {
+                break;
+            }
 		} while ((isThrottling || isRunningUnderCronExpression()) && !isTerminated);
 
 		if (log.isDebugEnabled()) {

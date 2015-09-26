@@ -19,6 +19,8 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -66,6 +68,11 @@ public class FailoverEndpoint extends AbstractEndpoint {
             }
             // If not yet a retry, we have to build the envelope since we need to support failover
             synCtx.getEnvelope().build();
+            //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
+            if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
+                    PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                synCtx.setProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE, synCtx.getEnvelope());
+            }
             mEndpointLog = new HashMap<String,Integer>();
             synCtx.setProperty(SynapseConstants.ENDPOINT_LOG, mEndpointLog);            
         } else {
@@ -173,6 +180,15 @@ public class FailoverEndpoint extends AbstractEndpoint {
     }
 
     public void onChildEndpointFail(Endpoint endpoint, MessageContext synMessageContext) {
+        //If there is a failure in child endpoint, restore the original message envelope from the message context
+        if (synMessageContext.getProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE) != null) {
+            try {
+                synMessageContext.setEnvelope(
+                        (SOAPEnvelope) synMessageContext.getProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE));
+            } catch (AxisFault ex) {
+                log.error("Couldn't restore the original message to the failover endpoint", ex);
+            }
+        }
         logOnChildEndpointFail(endpoint, synMessageContext);
         if (((AbstractEndpoint)endpoint).isRetry(synMessageContext)) {
             if (log.isDebugEnabled()) {
