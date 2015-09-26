@@ -21,7 +21,6 @@ package org.apache.synapse.commons.throttle.core;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.throttle.core.factory.ThrottleContextFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,8 +59,6 @@ public abstract class ThrottleContext {
     /* Throttle replicating to replicate Throttle data */
     private ThrottleReplicator throttleReplicator;
 
-    private ThrottleWindowReplicator throttleWindowReplicator;
-
     /**
      * default constructor – expects a throttle configuration.
      *
@@ -79,8 +76,6 @@ public abstract class ThrottleContext {
         this.nextCleanTime = 0;
         this.throttleConfiguration = throttleConfiguration;
         this.debugOn = log.isDebugEnabled();
-        this.throttleWindowReplicator = ThrottleContextFactory.getThrottleWindowReplicatorInstance();
-        ThrottleContextFactory.getThrottleContextCleanupTaskInstance().addThrottleContext(this);
     }
 
     /**
@@ -107,7 +102,12 @@ public abstract class ThrottleContext {
             }
             // for cluster env , caller state is contained in the axis configuration context
             if (dataHolder != null && keyPrefix != null) {
-                return dataHolder.getCallerContext(keyPrefix + id);
+                log.debug("CallerContext fetched from dataHolder");
+                CallerContext cc = dataHolder.getCallerContext(keyPrefix + id);
+                if (cc == null) {
+                    log.debug("CallerContext null in dataHolder");
+                }
+                return cc;
             }
             // for non - clustered  env
             Long timeKey = (Long) keyToTimeStampMap.get(id);
@@ -120,7 +120,8 @@ public abstract class ThrottleContext {
                         LinkedList callers = (LinkedList) co;
                         for (Iterator it = callers.iterator(); it.hasNext(); ) {
                             CallerContext cc = (CallerContext) it.next();
-                            if (cc != null && id.equals(cc.getId())) {
+                            if (cc != null && id.equals(cc.getID())) {
+                                log.debug("CallerContext found from keyToTimeStampMap");
                                 return cc;
                             }
                         }
@@ -142,10 +143,11 @@ public abstract class ThrottleContext {
      * @param callerContext - The remote caller's runtime data.
      * @param id            - The id of the remote caller
      */
-    public void addCallerContext(CallerContext callerContext, String id) {
+    public CallerContext addCallerContext(CallerContext callerContext, String id) {
         if (callerContext != null && id != null) {
-            addCaller(callerContext, id);
+            return addCaller(callerContext, id);
         }
+        return callerContext;
     }
 
     /**
@@ -154,14 +156,22 @@ public abstract class ThrottleContext {
      * @param callerContext The CallerContext
      * @param id            The id of the remote caller
      */
-    private void addCaller(CallerContext callerContext, String id) {
+    private CallerContext addCaller(CallerContext callerContext, String id) {
 
         if (debugOn) {
             log.debug("Setting the caller with an id " + id);
         }
-        //if this is a cluster env.,put the context into axis configuration context
+        /*
+        Put the CallerContext only if there's no values previously associated with it.
+        If a CallerContext already exists re-use it rather than create a new one. If a new one
+        is put without checking the existence, Throttle values can get erased.
+         */
         if (dataHolder != null && keyPrefix != null) {
-            dataHolder.addCallerContext(keyPrefix + id, callerContext);
+            CallerContext previous =
+                    dataHolder.addCallerContextIfAbsent(keyPrefix + id, callerContext);
+            if (previous != null) {
+                callerContext = previous;
+            }
         }
         // for clean up list
         Long time = new Long(callerContext.getNextTimeWindow());
@@ -185,6 +195,7 @@ public abstract class ThrottleContext {
         }
         //set Time Vs key
         keyToTimeStampMap.put(id, time);
+        return callerContext;
     }
 
     /**
@@ -224,7 +235,7 @@ public abstract class ThrottleContext {
      * @throws ThrottleException
      */
 
-    public void processCleanList(long time) {
+    public void processCleanList(long time) throws ThrottleException {
         if (debugOn) {
             log.debug("Cleaning up process is executing");
         }
@@ -236,7 +247,7 @@ public abstract class ThrottleContext {
                     if (o != null) {
                         if (o instanceof CallerContext) { // In the case nextAccessTime is unique
                             CallerContext c = ((CallerContext) o);
-                            String key = c.getId();
+                            String key = c.getID();
                             if (key != null) {
                                 if (dataHolder != null && keyPrefix != null) {
                                     c = dataHolder.getCallerContext(keyPrefix + key);
@@ -249,20 +260,20 @@ public abstract class ThrottleContext {
                                 }
                             }
                         }
-                        if (o instanceof LinkedList) { //In the case nextAccessTime of callers are same
+                        if (o instanceof LinkedList) {
+                            //In the case nextAccessTime of callers are same
                             LinkedList callers = (LinkedList) o;
                             for (Iterator ite = callers.iterator(); ite.hasNext(); ) {
                                 CallerContext c = (CallerContext) ite.next();
-                                String key = c.getId();
+                                String key = c.getID();
                                 if (key != null) {
                                     if (dataHolder != null && keyPrefix != null) {
-                                        c = (CallerContext) dataHolder.getCallerContext(keyPrefix + key);
+                                        c = dataHolder.getCallerContext(keyPrefix + key);
                                     }
                                     if (c != null) {
                                         c.cleanUpCallers(
-                                                this.throttleConfiguration.getCallerConfiguration(key)
-                                                , this
-                                                , time);
+                                             this.throttleConfiguration.getCallerConfiguration(key)
+                                             , this, time);
                                     }
                                 }
                             }
@@ -300,11 +311,13 @@ public abstract class ThrottleContext {
     private void initDataHolder() {
         if (configctx != null) {
             if (dataHolder == null) {
-                dataHolder = (ThrottleDataHolder) configctx.getPropertyNonReplicable(ThrottleConstants.THROTTLE_INFO_KEY);
+                dataHolder = (ThrottleDataHolder) configctx
+                        .getPropertyNonReplicable(ThrottleConstants.THROTTLE_INFO_KEY);
                 synchronized (configctx) {
                     if (dataHolder == null) {
                         dataHolder = new ThrottleDataHolder();
-                        configctx.setNonReplicableProperty(ThrottleConstants.THROTTLE_INFO_KEY, dataHolder);
+                        configctx.setNonReplicableProperty
+                                (ThrottleConstants.THROTTLE_INFO_KEY, dataHolder);
                     }
                 }
             }
@@ -324,7 +337,7 @@ public abstract class ThrottleContext {
      */
     public void addAndFlushCallerContext(CallerContext callerContext, String id) {
         if (callerContext != null && id != null) {
-            addCaller(callerContext, id);
+            //addCaller(callerContext, id);
             replicateCaller(id);
         }
     }
@@ -338,34 +351,22 @@ public abstract class ThrottleContext {
     public void flushCallerContext(CallerContext callerContext, String id) {
         if (dataHolder != null && callerContext != null && id != null) {
             String key = keyPrefix + id;
-            dataHolder.addCallerContext(key, callerContext); // have to do ,because we always gets
+            dataHolder.addCallerContextIfAbsent(key, callerContext);
+            // have to do ,because we always gets
             //  any property as non-replicable
             replicateCaller(id);
         }
     }
 
     /**
-     * Removes the caller and replicate the states
+     * Removes the caller and repicate the states
      *
      * @param id The Id of the caller
      */
     public void removeAndFlushCaller(String id) {
         if (id != null) {
-	        removeCaller(id);
-            replicateCaller(id);
-        }
-    }
-
-    /**
-     * Removes the caller and destroy shared params of caller
-     *
-     * @param id The Id of the caller
-     */
-    public void removeAndDestroyShareParamsOfCaller(String id) {
-        if (id != null) {
             removeCaller(id);
-            SharedParamManager.removeTimestamp(id);
-            SharedParamManager.removeCounter(id);
+            replicateCaller(id);
         }
     }
 
@@ -387,75 +388,6 @@ public abstract class ThrottleContext {
 
             } catch (Exception clusteringFault) {
                 log.error("Error during the replicating states ", clusteringFault);
-            }
-        }
-    }
-
-    /**
-     * Replicate the time window of this caller
-     * @param id
-     */
-    public void replicateTimeWindow(String id) {
-        if (configctx != null && keyPrefix != null) {
-            try {
-                if (debugOn) {
-                    log.debug("Going to replicate the time window states of the caller : " + id);
-                }
-
-                throttleWindowReplicator.setConfigContext(configctx);
-                throttleWindowReplicator.add(keyPrefix + id);
-
-            } catch (Exception e) {
-                log.error("Error during the replicating window change ", e);
-            }
-        }
-    }
-
-    /**
-     * This method will clean up callers which has next access time below from provided time
-     * This will first check the prohibited period and then it will check next access time lesser than unit time before a
-     * cleanup  a caller
-     *
-     * @param time to clean up the caller contexts
-     */
-    public void cleanupCallers(long time) {
-
-        SortedMap map = ((ConcurrentNavigableMap) callersMap).headMap(new Long(time));
-        if (map != null && map.size() > 0) {
-            for (Iterator it = map.values().iterator(); it.hasNext(); ) {
-                Object o = it.next();
-                if (o != null) {
-                    if (o instanceof CallerContext) { // In the case nextAccessTime is unique
-                        CallerContext c = ((CallerContext) o);
-                        String key = c.getId();
-                        if (key != null) {
-                            if (dataHolder != null && keyPrefix != null) {
-                                c = dataHolder.getCallerContext(keyPrefix + key);
-                            }
-                            if (c != null) {
-                                c.cleanUpCallers(
-                                        this.throttleConfiguration.getCallerConfiguration(key), this, time);
-                            }
-                        }
-                    }
-                    if (o instanceof LinkedList) { //In the case nextAccessTime of callers are same
-                        LinkedList callers = (LinkedList) o;
-                        Iterator ite = callers.iterator();
-                        while (ite.hasNext()) {
-                            CallerContext c = (CallerContext) ite.next();
-                            String key = c.getId();
-                            if (key != null) {
-                                if (dataHolder != null && keyPrefix != null) {
-                                    c = (CallerContext) dataHolder.getCallerContext(keyPrefix + key);
-                                }
-                                if (c != null) {
-                                    c.cleanUpCallers(
-                                            this.throttleConfiguration.getCallerConfiguration(key), this, time);
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }

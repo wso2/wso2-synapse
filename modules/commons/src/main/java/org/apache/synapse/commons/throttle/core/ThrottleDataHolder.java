@@ -71,20 +71,21 @@ public class ThrottleDataHolder {
         return applicationThrottleContexts.get(applicationId);
     }
 
-    public void addThrottleContext(String applicationId, ThrottleContext applicationThrottleContext) {
-        this.applicationThrottleContexts.put(applicationId,applicationThrottleContext);
+    public void addThrottleContext(String applicationId,
+                                   ThrottleContext applicationThrottleContext) {
+        this.applicationThrottleContexts.put(applicationId, applicationThrottleContext);
     }
 
-    public void addCallerContext(String id, CallerContext callerContext){
-        callerContextMap.put(id,callerContext);
+    public CallerContext addCallerContextIfAbsent(String id, CallerContext callerContext) {
+        return callerContextMap.putIfAbsent(id, callerContext);
     }
 
-    public CallerContext getCallerContext(String id){
+    public CallerContext getCallerContext(String id) {
         return callerContextMap.get(id);
     }
 
     public void removeCaller(String id) {
-        log.debug("Removing caller for "+ id);
+        log.debug("Removing caller for " + id);
         callerContextMap.remove(id);
     }
 }
