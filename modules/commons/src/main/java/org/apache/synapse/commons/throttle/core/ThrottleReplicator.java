@@ -18,10 +18,14 @@
 
 package org.apache.synapse.commons.throttle.core;
 
+import org.apache.axis2.clustering.ClusteringAgent;
+import org.apache.axis2.clustering.ClusteringFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -94,41 +98,66 @@ public class ThrottleReplicator {
     }
 
     private class ReplicatorTask implements Runnable {
+
         public void run() {
             try {
                 if (!set.isEmpty()) {
+                    List<String> keys = new ArrayList<String>();
+                    int keysReplicated = 0;
                     for (String key : set) {
                         synchronized (key.intern()) {
+                            keysReplicated++;
+                            keys.add(key);
+                            set.remove(key);
+                            if (keysReplicated >= keysToReplicate) {
+                                if (log.isDebugEnabled()) {
+                                    log.debug("Number of keys to replicated reached maximum "
+                                            + keysReplicated);
+                                    log.debug("Number of entries to be replicated : " + set.size());
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    try {
+
+                        ArrayList<String> keysToReplicate =
+                                new ArrayList<String>(keys.size());
+                        ArrayList<CallerContext> contextsToReplicate =
+                                new ArrayList<CallerContext>(keys.size());
+
+                        if (configContext != null && !keys.isEmpty()) {
                             ThrottleDataHolder dataHolder = (ThrottleDataHolder)
                                     configContext.getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
-                            CallerContext callerContext = dataHolder.getCallerContext(key);
-                            //get hazlecast instance and update counters
-                            //If both global and local counters are 0 then that means cleanup caller
-                            if (callerContext != null) {
-                                //If local counter > 0 and time window is not expired then only we have to replicate counters.
-                                //Otherwise we do not need to do replication.
-                                if (callerContext.getLocalCounter() > 0 &&
-                                        callerContext.getNextTimeWindow() > System.currentTimeMillis()) {
-	                                String id = callerContext.getId();
-	                                //First put local counter to variable and reset it just after it because
-	                                //if there are incoming requests coming. the local counter will be updated
-	                                //if that happen, reset will cause to miss the additional requests come after
-	                                //local counter value taken into the consideration
-	                                long localCounter = callerContext.getLocalCounter();
-	                                callerContext.resetLocalCounter();
-	                                Long distributedCounter = SharedParamManager.asyncGetAndAddDistributedCounter(id, localCounter);
-	                                //Update instance global counter with distributed counter
-                                    callerContext.setGlobalCounter(distributedCounter + localCounter);
-                                    if(log.isDebugEnabled()) {
-                                        log.debug("Increasing counters of context :" + callerContext.getId() + " "
-                                                  + "Replicated Count After  Update : distributedCounter =" +distributedCounter
-                                                  + " localCounter=" + localCounter + " total=" + (distributedCounter + localCounter));
+                            if (dataHolder != null) {
+                                for (String key : keys) {
+                                    CallerContext callerContext = dataHolder.getCallerContext(key);
+                                    if (callerContext != null) {
+                                        log.debug("CallerContext not present.");
+                                    }
+                                    if (callerContext != null &&
+                                            callerContext.getLocalCounter() > 0 &&
+                                            callerContext.getNextTimeWindow() >
+                                                    System.currentTimeMillis()) {
+                                        keysToReplicate.add(key);
+                                        contextsToReplicate.add(callerContext.clone());
                                     }
                                 }
                             }
-	                        set.remove(key);
                         }
-
+                        if (!keysToReplicate.isEmpty()) {
+                            ClusteringAgent clusteringAgent =
+                                    configContext.getAxisConfiguration().getClusteringAgent();
+                            if (clusteringAgent != null) {
+                                log.debug("Replicating " + contextsToReplicate.size() +
+                                        " CallerContexts in a ClusterMessage.");
+                                clusteringAgent.sendMessage(
+                                        new ThrottleUpdateClusterMessage(keysToReplicate,
+                                                contextsToReplicate), true);
+                            }
+                        }
+                    } catch (ClusteringFault e) {
+                        log.error("Could not replicate throttle data", e);
                     }
                 }
             } catch (Throwable t) {
