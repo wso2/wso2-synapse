@@ -513,6 +513,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             onPollCompletion(entry);
         } catch (FileSystemException e) {
             processFailure("Error checking for existence and readability : " + VFSUtils.maskURLPassword(fileURI), e, entry);
+        } catch (Exception ex) {
+            processFailure("Un-handled exception thrown when processing the file : ", ex, entry);
         } finally {
             closeFileSystem(fileObject);
         }
