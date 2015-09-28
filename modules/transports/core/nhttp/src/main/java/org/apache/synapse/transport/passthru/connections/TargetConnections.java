@@ -224,9 +224,11 @@ public class TargetConnections {
                     try {
                         NHttpClientConnection connection = connectionsEntry.getValue().getConnection();
                         if (connection != null && connection.getContext() != null) {
-                            shutdownConnection(connection);
+
+                            shutdownConnection(connectionsEntry.getValue().getConnection());
                             log.info("Connection " + httpRoute.getTargetHost().getHostName() + ":"
                                      + httpRoute.getTargetHost().getPort() + " Successful");
+
                         } else {
                             log.debug("Error shutdown connection for " + httpRoute.getTargetHost().getHostName()
                                       + " " + httpRoute.getTargetHost().getPort() + " - Connection not available");
@@ -235,7 +237,9 @@ public class TargetConnections {
                         log.warn("Error shutdown connection for " + httpRoute.getTargetHost().getHostName()
                                  + " " + httpRoute.getTargetHost().getPort() + " ", e);
                     }
+
                 }
+
             }
         }
     }
