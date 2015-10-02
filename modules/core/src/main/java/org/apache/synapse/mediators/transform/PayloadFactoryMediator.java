@@ -347,9 +347,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private String inferReplacementType(Map.Entry<String, String> entry) {
-        if(entry.getValue().equals(SynapsePath.X_PATH) && isWellFormedXML(entry.getKey())) {
+        if(entry.getValue().equals(SynapsePath.X_PATH) && isXML(entry.getKey())) {
             return XML_TYPE;
-        } else if(entry.getValue().equals(SynapsePath.X_PATH) && !isWellFormedXML(entry.getKey())) {
+        } else if(entry.getValue().equals(SynapsePath.X_PATH) && !isXML(entry.getKey())) {
             return STRING_TYPE;
         } else if(entry.getValue().equals(SynapsePath.JSON_PATH) && isJson(entry.getKey())) {
             return JSON_TYPE;
@@ -361,9 +361,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     private String inferReplacementType(String entry) {
-        if(isWellFormedXML(entry)) {
+        if(isXML(entry)) {
             return XML_TYPE;
-        } else if(!isWellFormedXML(entry)) {
+        } else if(!isXML(entry)) {
             return STRING_TYPE;
         } else if(isJson(entry)) {
             return JSON_TYPE;
@@ -451,7 +451,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             Argument arg = pathArgumentList.get(i);
             if (arg.getValue() != null) {
                 value = arg.getValue();
-                if (!isWellFormedXML(value)) {
+                if (!isXML(value)) {
                     value = StringEscapeUtils.escapeXml(value);
                 }
                 value = Matcher.quoteReplacement(value);
@@ -460,7 +460,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 if (value != null) {
                     // XML escape the result of an expression that produces a literal, if the target format
                     // of the payload is XML.
-                    if (!isWellFormedXML(value) && !arg.getExpression().getPathType().equals(SynapsePath.JSON_PATH)
+                    if (!isXML(value) && !arg.getExpression().getPathType().equals(SynapsePath.JSON_PATH)
                             && XML_TYPE.equals(getType())) {
                         value = StringEscapeUtils.escapeXml(value);
                     }
