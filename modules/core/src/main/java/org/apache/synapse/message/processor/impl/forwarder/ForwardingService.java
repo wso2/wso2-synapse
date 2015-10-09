@@ -86,7 +86,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	private String deactivateSeq = null;
 
     private String targetEndpoint = null;
-    
+
 	/*
 	 * The cron expression under which the message processor runs.
 	 */
@@ -608,13 +608,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			return;
 		}
 		Mediator mediator = msgCtx.getSequence(deactivateSeq);
-
 		if (mediator == null) {
 			log.warn("Failed to send the message through the deactivate sequence. Sequence [" +
 			         deactivateSeq + "] does not Exist.");
 			return;
 		}
-
 		mediator.mediate(msgCtx);
 	}
 
@@ -675,7 +673,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		if (maxDeliverAttempts > 0) {
             this.attemptCount++;
             if (attemptCount >= maxDeliverAttempts) {
-          
+
                 if (this.isMaxDeliveryAttemptDropEnabled) {
                     dropMessageAndContinueMessageProcessor();
                     if (log.isDebugEnabled()) {
