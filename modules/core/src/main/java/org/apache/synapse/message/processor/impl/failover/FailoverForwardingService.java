@@ -157,7 +157,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
             }
             isDeactivatedAtStartup = false;
         }
-
 		/*
 		 * Initialize only if it is NOT already done. This will make sure that
 		 * the initialization is done only once.
@@ -175,7 +174,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 						// Now it is NOT terminated anymore.
 						isTerminated = messageProcessor.isDeactivated();
 						dispatch(messageContext);
-
 					} else {
 						// either the connection is broken or there are no new
 						// massages.
@@ -183,7 +181,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 							log.debug("No messages were received for message processor [" +
 							          messageProcessor.getName() + "]");
 						}
-
 						// this means we have consumed all the messages
 						if (isRunningUnderCronExpression()) {
 							break;
@@ -260,48 +257,22 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		}
 	}
 
-    /**
-     * Helper method to get a value of a parameters in the AxisConfiguration
-     *
-     * @param axisConfiguration AxisConfiguration instance
-     * @param paramKey The name / key of the parameter
-     * @return The value of the parameter
-     */
-    private static String getAxis2ParameterValue(AxisConfiguration axisConfiguration,
-                                                 String paramKey) {
-        Parameter parameter = axisConfiguration.getParameter(paramKey);
-        if (parameter == null) {
-            return null;
-        }
-        Object value = parameter.getValue();
-        if (value != null && value instanceof String) {
-            return (String) parameter.getValue();
-        } else {
-            return null;
-        }
-    }
-
 	public void init(SynapseEnvironment se) {
 		// Setting up the JMS consumer/Producer here.
 		setMessageConsumerAndProducer();
-
 		// Defaults to -1.
 		Map<String, Object> parametersMap = messageProcessor.getParameters();
 		if (parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS) != null) {
 			maxDeliverAttempts =
 			                     Integer.parseInt((String) parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS));
 		}
-
 		if (parametersMap.get(MessageProcessorConstants.RETRY_INTERVAL) != null) {
 			retryInterval =
 			                Integer.parseInt((String) parametersMap.get(MessageProcessorConstants.RETRY_INTERVAL));
 		}
 
 		faultSeq = (String) parametersMap.get(FailoverForwardingProcessorConstants.FAULT_SEQUENCE);
-
-
 		deactivateSeq = (String) parametersMap.get(FailoverForwardingProcessorConstants.DEACTIVATE_SEQUENCE);
-
 		// Default value should be true.
 		if (parametersMap.get(FailoverForwardingProcessorConstants.THROTTLE) != null) {
 			isThrottling =
@@ -312,7 +283,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			cronExpression =
 			                 String.valueOf(parametersMap.get(FailoverForwardingProcessorConstants.CRON_EXPRESSION));
 		}
-
 		// Default Value should be -1.
 		if (cronExpression != null &&
 		    parametersMap.get(FailoverForwardingProcessorConstants.THROTTLE_INTERVAL) != null) {
@@ -320,14 +290,12 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			                     Long.parseLong((String) parametersMap.get(FailoverForwardingProcessorConstants
 					                                                               .THROTTLE_INTERVAL));
 		}
-
 		// Default to FALSE.
 		if (parametersMap.get(FailoverForwardingProcessorConstants.MAX_DELIVERY_DROP) != null &&
 		    parametersMap.get(FailoverForwardingProcessorConstants.MAX_DELIVERY_DROP).toString()
 		                 .equals("Enabled") && maxDeliverAttempts > 0) {
 			isMaxDeliveryAttemptDropEnabled = true;
 		}
-
 		// Setting the interval value.
 		interval = Long.parseLong((String) parametersMap.get(MessageProcessorConstants.INTERVAL));
 
@@ -337,7 +305,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		 */
 		initialized = true;
 	}
-
 
 	/**
 	 * Receives the next message from the message store.
@@ -363,9 +330,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			          messageProcessor.getName() + "]");
 		}
 
-
 		SOAPEnvelope originalEnvelop = messageContext.getEnvelope();
-
 		if (targetMessageStoreName != null) {
 
 			try {
@@ -393,9 +358,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 								messageContext.getEnvelope().getBody().addChild(firstChild);
 							}
 						}
-
 						if (messageConsumer != null && messageConsumer.isAlive() && targetMessageStoreName != null) {
-
 							targetMessageProducer = synapseEnvironment.getSynapseConfiguration().getMessageStore
 									(targetMessageStoreName).getProducer();
 							if(targetMessageProducer != null) {
@@ -406,41 +369,31 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 						}
 
 					} catch (Exception e) {
-
 						log.error("Message store messageSender of message processor [" +
 						          this.messageProcessor.getName() +
 						          "] failed to send message to the target message store");
-
 						sendThroughFaultSeq(messageContext);
 					}
-
 					if (isSuccessful) {
-
 						messageConsumer.ack();
 						attemptCount = 0;
-
 						if (log.isDebugEnabled()) {
 							log.debug("Successfully sent the message to message store [" +
 							          targetMessageStoreName + "]" + " with message processor [" +
 							          messageProcessor.getName() + "]");
 						}
-
 						if (messageProcessor.isPaused()) {
 							this.messageProcessor.resumeService();
 							log.info("Resuming the service of message processor [" +
 							         messageProcessor.getName() + "]");
 						}
-
 					} else {
-
 						// Then we have to retry sending the message to the target
 						// store.
 						prepareToRetry(messageContext);
 
 					}
-
 				}
-
 			} catch (Exception e) {
 				log.error("Message processor [" + messageProcessor.getName() +
 				          "] failed to send the message to target store" , e);
@@ -453,7 +406,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			 * this by implementing a target inferring
 			 * mechanism.
 			 */
-
 			log.warn("Property " + FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE +
 			         " not found in the message context , Hence removing the message ");
 			messageConsumer.ack();
@@ -474,13 +426,11 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			return;
 		}
 		Mediator mediator = msgCtx.getSequence(faultSeq);
-
 		if (mediator == null) {
 			log.warn("Failed to send the message through the fault sequence. Sequence [" +
 			         faultSeq + "] does not Exist.");
 			return;
 		}
-
 		mediator.mediate(msgCtx);
 	}
 
@@ -496,13 +446,11 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			return;
 		}
 		Mediator mediator = msgCtx.getSequence(deactivateSeq);
-
 		if (mediator == null) {
 			log.warn("Failed to send the message through the deactivate sequence. Sequence [" +
 			         deactivateSeq + "] does not Exist.");
 			return;
 		}
-
 		mediator.mediate(msgCtx);
 	}
 
@@ -516,7 +464,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		try {
 			isTerminated = true;
 			// Thread.currentThread().interrupt();
-
 			if (log.isDebugEnabled()) {
 				log.debug("Successfully terminated job of message processor [" +
 				          messageProcessor.getName() + "]");
@@ -548,7 +495,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
                 } else {
 	                terminate();
 	                deactivateMessageProcessor(msgCtx);
-
                     if (log.isDebugEnabled()) {
                         log.debug("Message processor [" + messageProcessor.getName() +
                                 "] stopped due to reach of max attempts");
@@ -570,7 +516,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 				log.debug("Failed to send to target store retrying after " + retryInterval +
 				          "s with attempt count - " + attemptCount);
 			}
-
 			try {
 				// wait for some time before retrying
 				Thread.sleep(retryInterval);
@@ -614,14 +559,12 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 			targetMessageStoreName = (String) messageProcessor.getParameters().get
 					(FailoverForwardingProcessorConstants.TARGET_MESSAGE_STORE);
 		}
-
 		/*
 		 * Make sure to set the same message consumer in the message processor
 		 * since it is used by life-cycle management methods. Specially by the
 		 * deactivate method to cleanup the connection before the deactivation.
 		 */
 		return messageProcessor.setMessageConsumer(messageConsumer);
-
 	}
 
 	/**
@@ -636,7 +579,6 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 
 	public void destroy() {
 		terminate();
-
 	}
 
 }

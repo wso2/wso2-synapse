@@ -52,7 +52,7 @@ public class MessageStoreMediator extends AbstractMediator{
     /**
      * Status of the guaranteed delivery
      */
-    private boolean isGuaranteedDeliveryEnable = false;
+    private boolean isGuaranteedDeliveryEnabled = false;
 
     /**
      * Failover message store name
@@ -71,7 +71,7 @@ public class MessageStoreMediator extends AbstractMediator{
             if(messageStore != null) {
 
                 if (messageStore.getParameters().get(PRODUCER_GUARANTEED_DELIVERY) != null) {
-                    isGuaranteedDeliveryEnable = Boolean.parseBoolean(messageStore.getParameters().get
+                    isGuaranteedDeliveryEnabled = Boolean.parseBoolean(messageStore.getParameters().get
                             (PRODUCER_GUARANTEED_DELIVERY).toString());
                 }
 
@@ -119,7 +119,7 @@ public class MessageStoreMediator extends AbstractMediator{
                 boolean produceStatus = messageStore.getProducer().storeMessage(newCtx);
                 if (!produceStatus) {
 
-                    if (isGuaranteedDeliveryEnable && failoverMessageStoreName != null && !failoverMessageStoreName
+                    if (isGuaranteedDeliveryEnabled && failoverMessageStoreName != null && !failoverMessageStoreName
                             .isEmpty()) {
 
                         MessageStore failoverMessageStore = synCtx.getConfiguration().getMessageStore(failoverMessageStoreName);

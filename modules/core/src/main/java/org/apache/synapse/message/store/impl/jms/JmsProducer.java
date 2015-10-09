@@ -94,34 +94,27 @@ public class JmsProducer implements MessageProducer {
             throwable = e;
             error = true;
             isConnectionError = true;
-
             try {
-
                 if (session.getTransacted()) {
                     session.rollback();
                 }
-
             } catch (JMSException ex) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Fail to rollback message [" + synCtx.getMessageID() + "] from the message store " +
-                                 ":" + store.getName());
+                                 ":" + store.getName(), ex);
                 }
             }
-
         } catch (Throwable t) {
             throwable = t;
             error = true;
-
             try {
-
                 if (session.getTransacted()) {
                     session.rollback();
                 }
-
             } catch (JMSException e) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("Fail to rollback message [" + synCtx.getMessageID()+"] from the message store " +
-                                 ":" + store.getName());
+                                 ":" + store.getName(), e);
                 }
             }
         }
