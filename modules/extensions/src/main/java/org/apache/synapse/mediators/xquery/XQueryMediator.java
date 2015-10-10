@@ -267,7 +267,6 @@ public class XQueryMediator extends AbstractMediator {
                         }
 
                         try {
-
                             if (sourceCode != null) {
                                 //create an xQueryExecutable using the query source
                                 xQueryExecutable = cachedQueryCompiler.compile(sourceCode);
@@ -278,9 +277,7 @@ public class XQueryMediator extends AbstractMediator {
                         } catch (IOException e) {
                             handleException("Error during the query inputStream compilation");
                         }
-
                         queryEvaluator = xQueryExecutable.load();
-
 
                         // if queryEvaluator is created then put it in to cachedXQueryEvaluatorMap
                         if (isQueryKeyGenerated) {
@@ -326,14 +323,11 @@ public class XQueryMediator extends AbstractMediator {
 
                 XdmNodeKind xdmNodeKind = null;
                 ItemType itemType = null;
-
                 if (xdmItem.isAtomicValue()) {
                     itemType = getItemType(xdmItem, cachedProcessor);
-
                     if (itemType == null) {
                         return;
                     }
-
                 } else {
                     xdmNodeKind = ((XdmNode) xdmItem).getNodeKind();
                 }
@@ -361,7 +355,6 @@ public class XQueryMediator extends AbstractMediator {
                             destination.insertSiblingAfter(resultOM);
                             destination.detach();
                         }
-
                     } else if (ItemType.INTEGER == itemType || ItemType.INT == itemType) {
                         //replace the text value of the target node by the result ,If the result is
                         // a basic type
@@ -384,7 +377,6 @@ public class XQueryMediator extends AbstractMediator {
 
                 } else if (null == target.getXPath() && null == destination) {
                     //In the case soap body doesn't have the first element --> Empty soap body
-
                     destination = synCtx.getEnvelope().getBody();
 
                     if (synLog.isTraceOrDebugEnabled()) {
@@ -407,7 +399,6 @@ public class XQueryMediator extends AbstractMediator {
                 break;   // Only take the *first* value of the result sequence
             }
             queryEvaluator.close();  // closing the result sequence
-
         } catch (SaxonApiException e) {
             handleException("Error during the querying " + e.getMessage(), e);
         } catch (XMLStreamException e) {
@@ -426,7 +417,6 @@ public class XQueryMediator extends AbstractMediator {
      */
     private void setVariable(XQueryEvaluator queryEvaluator, MediatorVariable variable,
                              SynapseLog synLog) throws SaxonApiException {
-
         QName name = new QName(variable.getName().getLocalPart());
 
         if (variable != null) {
@@ -470,7 +460,6 @@ public class XQueryMediator extends AbstractMediator {
                     if (intValue != -1) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(intValue), ItemType.INTEGER));
                     }
-
                 } else if (ItemType.INT == type) {
                     int intValue = -1;
                     if (value instanceof String) {
@@ -506,7 +495,6 @@ public class XQueryMediator extends AbstractMediator {
                     if (longValue != -1) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(longValue), ItemType.LONG));
                     }
-
                 } else if (ItemType.SHORT == type) {
                     short shortValue = -1;
                     if (value instanceof String) {
@@ -524,7 +512,6 @@ public class XQueryMediator extends AbstractMediator {
                     if (shortValue != -1) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(shortValue), ItemType.SHORT));
                     }
-
                 } else if (ItemType.DOUBLE == type) {
                     double doubleValue = -1;
                     if (value instanceof String) {
@@ -542,7 +529,6 @@ public class XQueryMediator extends AbstractMediator {
                     if (doubleValue != -1) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(doubleValue), ItemType.DOUBLE));
                     }
-
                 } else if (ItemType.FLOAT == type) {
                     float floatValue = -1;
                     if (value instanceof String) {
@@ -560,7 +546,6 @@ public class XQueryMediator extends AbstractMediator {
                     if (floatValue != -1) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(floatValue), ItemType.FLOAT));
                     }
-
                 } else if (ItemType.BYTE == type) {
                     byte byteValue = -1;
                     if (value instanceof String) {
@@ -578,24 +563,19 @@ public class XQueryMediator extends AbstractMediator {
                     if (byteValue != -1) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(byteValue), ItemType.BYTE));
                     }
-
                 } else if (ItemType.STRING == type) {
-
                     if (value instanceof String) {
                         queryEvaluator.setExternalVariable(name, new XdmAtomicValue(String.valueOf(value), ItemType.STRING));
                     } else {
                         handleException("Incompatible type for the String");
                     }
-
                 } else if (XdmNodeKind.DOCUMENT == nodeKind || XdmNodeKind.ELEMENT == nodeKind) {
                     setOMNode(name, value, queryEvaluator, cachedProcessor);
-
                 } else {
                     handleException("Unsupported  type for the binding type" + type +
                             " in the variable name " + name);
                 }
             }
-
         } else {
                 /*
                 The following block will invariably result in  "javax.xml.xquery.XQException: Argument value is null",
@@ -607,9 +587,7 @@ public class XQueryMediator extends AbstractMediator {
             if (synLog.isTraceOrDebugEnabled()) {
                 synLog.traceOrDebug("Null variable value encountered for variable name: " + name);
             }
-
             queryEvaluator.setExternalVariable(name, null);
-
         }
 
     }
@@ -627,15 +605,11 @@ public class XQueryMediator extends AbstractMediator {
         if (variableValue != null) {
             DocumentBuilder documentBuilder = processor.newDocumentBuilder();
             if (useDOMSource) {
-
-
                 XdmNode xdmNode = documentBuilder.build(new DOMSource(((Element) ElementHelper.
                         importOMElement(variableValue,
                                 DOOMAbstractFactory.getOMFactory())).
                         getOwnerDocument()));
-
                 queryEvaluator.setExternalVariable(name, xdmNode);
-
             } else {
                 StreamSource streamSource = new StreamSource(SynapseConfigUtils.getInputStream(variableValue));
                 XdmNode xdmNode = documentBuilder.build(streamSource);
@@ -647,7 +621,6 @@ public class XQueryMediator extends AbstractMediator {
     private static ItemType getItemType(XdmItem item, Processor process)throws SaxonApiException{
         return new ItemTypeFactory(process).getAtomicType(((XdmAtomicValue) item).getPrimitiveTypeName());
     }
-
 
     private void handleException(String msg, Exception e) {
         log.error(msg, e);
