@@ -85,7 +85,9 @@ public class ThrottleDataHolder {
     }
 
     public void removeCaller(String id) {
-        log.debug("Removing caller for " + id);
+        if (log.isDebugEnabled()) {
+           log.debug("Removing caller for " + id);
+        }
         callerContextMap.remove(id);
     }
 }
