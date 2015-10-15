@@ -52,6 +52,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -208,8 +209,22 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         (Boolean) synMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
 
                 if (isContinuationCall == null || !isContinuationCall) {
-                    RuntimeStatisticCollector
-                            .finalizeEntry(SynapseOutMsgCtx, System.currentTimeMillis());
+                    Object synapseRestApi = SynapseOutMsgCtx.getProperty(RESTConstants.REST_API_CONTEXT);
+                    Object restUrlPattern = SynapseOutMsgCtx.getProperty(RESTConstants.REST_URL_PATTERN);
+                    if (synapseRestApi != null) {
+                        String textualStringName;
+                        if (restUrlPattern != null) {
+                            textualStringName = (String) synapseRestApi + restUrlPattern;
+                        } else {
+                            textualStringName = (String) synapseRestApi;
+                        }
+                        RuntimeStatisticCollector.recordStatisticCloseLog(SynapseOutMsgCtx, textualStringName, "",
+                                                                          System.currentTimeMillis());
+                    } else {
+                        RuntimeStatisticCollector.recordStatisticCloseLog(SynapseOutMsgCtx, (String) SynapseOutMsgCtx
+                                .getProperty(RESTConstants.SYNAPSE_RESOURCE), "", System.currentTimeMillis());
+                    }
+                    RuntimeStatisticCollector.finalizeEntry(SynapseOutMsgCtx, System.currentTimeMillis());
                 }
                 
             } else {
