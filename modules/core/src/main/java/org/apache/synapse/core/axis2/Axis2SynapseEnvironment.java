@@ -39,6 +39,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -356,6 +358,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (!sequential) {
             try {
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
+                RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -365,6 +368,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         
         // Following code is reached if the sequential==true or inbound is
         // reached max level
+        if (synCtx.getProperty("inbound.endpoint.name") != null) {
+            RuntimeStatisticCollector
+                    .recordStatisticCreateEntry(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
+                                                ComponentType.INBOUNDENDPOINT, "", System.currentTimeMillis());
+        }else{
+            log.error("There is no info about the inbound endpoint, skipping collecting statistics at inbound level.");
+        }
         try {
             seq.mediate(synCtx);
             return true;
@@ -400,6 +410,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 synCtx.getServiceLog().error(msg, e);
             }
             throw new SynapseException(msg, e);
+        } finally {
+            RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
         }
     }
     

@@ -22,6 +22,8 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 /**
  * This class will be used as the executer for the injectAsync method for the
@@ -66,6 +68,12 @@ public class MediatorWorker implements Runnable {
      */
     public void run() {
         try {
+            //if inbound endpoint report statistics
+            if (synCtx.getProperty("inbound.endpoint.name") != null) {
+                RuntimeStatisticCollector
+                        .recordStatisticCreateEntry(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
+                                                    ComponentType.INBOUNDENDPOINT, "", System.currentTimeMillis());
+            }
             seq.mediate(synCtx);
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 
@@ -99,6 +107,8 @@ public class MediatorWorker implements Runnable {
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
             }
+        } finally {
+	        RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
         }
         synCtx = null;
         seq = null;
