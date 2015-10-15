@@ -188,11 +188,8 @@ public class StatisticsEntry {
 		//not closing the root statistic log as it will be closed be endAll method
 		if (componentLevel > 0) {
 			closeStatisticLog(componentLevel, endTime);
-			if (openLogs.isEmpty()) {
-				return true;
-			}
 		}
-		return false;
+		return openLogs.isEmpty();
 	}
 
 	/**
@@ -389,9 +386,7 @@ public class StatisticsEntry {
 			    parentId.equals(messageFlowLogs.get(index).getParent()) &&
 			    (msgId == messageFlowLogs.get(index).getMsgId())) {
 				parentIndex = index;
-				if ((index != 0)) {
-					StatLog.remove();   //if it is not root element remove
-				}
+				StatLog.remove();   //if it is not root element remove
 				break;
 			}
 		}
@@ -414,9 +409,7 @@ public class StatisticsEntry {
 			if (componentId.equals(messageFlowLogs.get(index).getComponentId()) &&
 			    (msgId == messageFlowLogs.get(index).getMsgId())) {
 				parentIndex = index;
-				if (index != 0) {
-					StatLog.remove(); //if it is not root element remove
-				}
+				StatLog.remove(); //if it is not root element remove
 				break;
 			}
 		}
