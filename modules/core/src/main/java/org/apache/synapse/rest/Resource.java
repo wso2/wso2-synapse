@@ -262,9 +262,25 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     void process(MessageContext synCtx) {
 
         if (!synCtx.isResponse()) {
-            RuntimeStatisticCollector
-                    .recordStatisticCreateEntry(synCtx, name, ComponentType.RESOURCE, "",
-                                                System.currentTimeMillis());
+            if (getDispatcherHelper() != null) {
+                synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
+            }
+            Object synapseRestApi = synCtx.getProperty(RESTConstants.REST_API_CONTEXT);
+            Object restUrlPattern = synCtx.getProperty(RESTConstants.REST_URL_PATTERN);
+            if (synapseRestApi != null) {
+                String textualStringName;
+                if (restUrlPattern != null) {
+                    textualStringName = (String) synapseRestApi + restUrlPattern;
+                } else {
+                    textualStringName = (String) synapseRestApi;
+                }
+                RuntimeStatisticCollector
+                        .recordStatisticCreateEntry(synCtx, textualStringName, ComponentType.RESOURCE, "",
+                                                    System.currentTimeMillis());
+            } else {
+                RuntimeStatisticCollector.recordStatisticCreateEntry(synCtx, name, ComponentType.RESOURCE, "",
+                                                                     System.currentTimeMillis());
+            }
         }
 
         if (log.isDebugEnabled()) {
@@ -340,23 +356,44 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     }
 
     private void finishStatisticCollection(MessageContext synCtx) {
-
         if (!synCtx.isResponse()) {
-            boolean isOutOnly = Boolean.parseBoolean(
-                    String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-
+            boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
             if (!isOutOnly) {
-                isOutOnly = (!Boolean.parseBoolean(
-                        String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                             !synCtx.isResponse());
+                isOutOnly =
+                        (!Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                         !synCtx.isResponse());
             }
             if (isOutOnly) {
-                RuntimeStatisticCollector
-                        .recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                Object synapseRestApi = synCtx.getProperty(RESTConstants.REST_API_CONTEXT);
+                Object restUrlPattern = synCtx.getProperty(RESTConstants.REST_URL_PATTERN);
+                if (synapseRestApi != null) {
+                    String textualStringName;
+                    if (restUrlPattern != null) {
+                        textualStringName = (String) synapseRestApi + restUrlPattern;
+                    } else {
+                        textualStringName = (String) synapseRestApi;
+                    }
+                    RuntimeStatisticCollector
+                            .recordStatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                } else {
+                    RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                }
             }
         } else {
-            RuntimeStatisticCollector
-                    .recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+            Object synapseRestApi = synCtx.getProperty(RESTConstants.REST_API_CONTEXT);
+            Object restUrlPattern = synCtx.getProperty(RESTConstants.REST_URL_PATTERN);
+            if (synapseRestApi != null) {
+                String textualStringName;
+                if (restUrlPattern != null) {
+                    textualStringName = (String) synapseRestApi + restUrlPattern;
+                } else {
+                    textualStringName = (String) synapseRestApi;
+                }
+                RuntimeStatisticCollector
+                        .recordStatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+            } else {
+                RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+            }
         }
     }
 
