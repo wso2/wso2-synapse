@@ -38,8 +38,7 @@ public class RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(RuntimeStatisticCollector.class);
 
-	private static HashMap<String, StatisticsEntry> runningStatistics =
-			new HashMap<String, StatisticsEntry>();
+	private static HashMap<String, StatisticsEntry> runningStatistics = new HashMap<String, StatisticsEntry>();
 
 	private static StatisticsStore statisticsStore = new StatisticsStore();
 
@@ -57,8 +56,7 @@ public class RuntimeStatisticCollector {
 	 * @param startTime     start time of the component execution
 	 */
 	public static void recordStatisticCreateEntry(MessageContext msgCtx, String componentId,
-	                                              ComponentType componentType, String parentId,
-	                                              Long startTime) {
+	                                              ComponentType componentType, String parentId, Long startTime) {
 		if (isStatisticsEnable) {
 			if (componentId == null) {
 				if (log.isDebugEnabled()) {
@@ -70,16 +68,16 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					runningStatistics.get(statisticsTraceId)
-					                 .createLog(componentId, componentType, getMsgId(msgCtx),
-					                            parentId, startTime, msgCtx.isResponse());
+					                 .createLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
+					                            msgCtx.isResponse());
 				} else {
 					StatisticsEntry statisticsEntry =
-							new StatisticsEntry(componentId, componentType, getMsgId(msgCtx),
-							                    parentId, startTime, msgCtx.isResponse());
+							new StatisticsEntry(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
+							                    msgCtx.isResponse());
 					runningStatistics.put(statisticsTraceId, statisticsEntry);
 					if (log.isDebugEnabled()) {
-						log.debug("Creating New Entry in Running Statistics: Current size :" +
-						          runningStatistics.size());
+						log.debug(
+								"Creating New Entry in Running Statistics: Current size :" + runningStatistics.size());
 					}
 				}
 			}
@@ -96,8 +94,7 @@ public class RuntimeStatisticCollector {
 	 * @param startTime     start time of the component execution
 	 */
 	public static void recordStatisticCreateFaultLog(MessageContext msgCtx, String componentId,
-	                                                 ComponentType componentType, String parentId,
-	                                                 Long startTime) {
+	                                                 ComponentType componentType, String parentId, Long startTime) {
 		if (isStatisticsEnable) {
 			if (componentId == null) {
 				if (log.isDebugEnabled()) {
@@ -109,8 +106,8 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					runningStatistics.get(statisticsTraceId)
-					                 .createFaultLog(componentId, componentType, getMsgId(msgCtx),
-					                                 parentId, startTime, msgCtx.isResponse());
+					                 .createFaultLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
+					                                 msgCtx.isResponse());
 				}
 			}
 		}
@@ -124,8 +121,7 @@ public class RuntimeStatisticCollector {
 	 * @param componentId component name of the statistics reporting component
 	 * @param endTime     end time of the component execution
 	 */
-	public static void recordStatisticCloseFaultLog(MessageContext msgCtx, String componentId,
-	                                                Long endTime) {
+	public static void recordStatisticCloseFaultLog(MessageContext msgCtx, String componentId, Long endTime) {
 		if (isStatisticsEnable) {
 			if (componentId == null) {
 				if (log.isDebugEnabled()) {
@@ -137,11 +133,9 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					boolean finished = runningStatistics.get(statisticsTraceId)
-					                                    .closeFaultLog(componentId,
-					                                                   getMsgId(msgCtx), endTime);
+					                                    .closeFaultLog(componentId, getMsgId(msgCtx), endTime);
 					if (finished) {
-						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId),
-						               endTime);
+						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime);
 					}
 				}
 			}
@@ -156,8 +150,8 @@ public class RuntimeStatisticCollector {
 	 * @param parentId    component name of the statistics reporting component's parent
 	 * @param endTime     end time of the component execution
 	 */
-	public static void recordStatisticCloseLog(MessageContext msgCtx, String componentId,
-	                                           String parentId, Long endTime) {
+	public static void recordStatisticCloseLog(MessageContext msgCtx, String componentId, String parentId,
+	                                           Long endTime) {
 		if (isStatisticsEnable) {
 			if (componentId == null) {
 				if (log.isDebugEnabled()) {
@@ -169,11 +163,9 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					boolean finished = runningStatistics.get(statisticsTraceId)
-					                                    .closeLog(componentId, getMsgId(msgCtx),
-					                                              parentId, endTime);
+					                                    .closeLog(componentId, getMsgId(msgCtx), parentId, endTime);
 					if (finished) {
-						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId),
-						               endTime);
+						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime);
 					}
 				}
 			}
@@ -191,8 +183,7 @@ public class RuntimeStatisticCollector {
 			String statisticsTraceId = getStatisticsTraceId(msgCtx);
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId)
-					                 .addCallback(callbackId, getMsgId(msgCtx));
+					runningStatistics.get(statisticsTraceId).addCallback(callbackId, getMsgId(msgCtx));
 				}
 			}
 		}
@@ -206,14 +197,12 @@ public class RuntimeStatisticCollector {
 	 * @param callbackId callback identification number
 	 * @param endTime    callback removal time at SynapseCallbackReceiver
 	 */
-	public static void updateForReceivedCallback(MessageContext msgCtx, String callbackId,
-	                                             Long endTime) {
+	public static void updateForReceivedCallback(MessageContext msgCtx, String callbackId, Long endTime) {
 		if (isStatisticsEnable) {
 			String statisticsTraceId = getStatisticsTraceId(msgCtx);
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId)
-					                 .updateCallbackReceived(callbackId, endTime);
+					runningStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime);
 				}
 			}
 		}
@@ -268,8 +257,8 @@ public class RuntimeStatisticCollector {
 	 * @param statisticsEntry  statistic entry to be closed
 	 * @param endTime          end time of the message flow
 	 */
-	private synchronized static void endMessageFlow(String statisticTraceId,
-	                                                StatisticsEntry statisticsEntry, long endTime) {
+	private synchronized static void endMessageFlow(String statisticTraceId, StatisticsEntry statisticsEntry,
+	                                                long endTime) {
 		boolean isMessageFlowEnded = statisticsEntry.endAll(endTime);
 		if (isMessageFlowEnded) {
 			if (log.isDebugEnabled()) {
@@ -296,8 +285,8 @@ public class RuntimeStatisticCollector {
 		if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
 			return (String) msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 		} else {
-			if ((componentType == ComponentType.PROXYSERVICE) ||
-			    (componentType == ComponentType.SEQUENCE) || (componentType == ComponentType.API)) {
+			if ((componentType == ComponentType.PROXYSERVICE) || (componentType == ComponentType.SEQUENCE) ||
+			    (componentType == ComponentType.API) || (componentType == ComponentType.INBOUNDENDPOINT)) {
 				String statisticsTraceId = msgCtx.getMessageID();
 				msgCtx.setProperty(SynapseConstants.NEW_STATISTICS_ID, statisticsTraceId);
 				if (log.isDebugEnabled()) {
@@ -380,14 +369,12 @@ public class RuntimeStatisticCollector {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is enabled");
 			}
-			StatisticsStoreCleaner statisticsStoreCleaner =
-					new StatisticsStoreCleaner(statisticsStore);
+			StatisticsStoreCleaner statisticsStoreCleaner = new StatisticsStoreCleaner(statisticsStore);
 			if (statisticsStoreCleaner.isCleanEnable()) {
 				StatisticStoreCleanerHandler statisticStoreCleanerHandler =
 						new StatisticStoreCleanerHandler(statisticsStoreCleaner);
 				// schedule timeout handler to run specified time
-				synapseTimer.schedule(statisticStoreCleanerHandler, 0,
-				                      statisticsStoreCleaner.getCleanInterval());
+				synapseTimer.schedule(statisticStoreCleanerHandler, 0, statisticsStoreCleaner.getCleanInterval());
 			}
 		} else {
 			if (log.isDebugEnabled()) {
