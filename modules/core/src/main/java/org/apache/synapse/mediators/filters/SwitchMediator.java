@@ -94,6 +94,7 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
             mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", true);
             synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         int parentsEffectiveTraceState = synCtx.getTracingState();

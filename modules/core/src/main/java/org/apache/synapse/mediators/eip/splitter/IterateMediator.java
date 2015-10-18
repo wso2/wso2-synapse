@@ -112,6 +112,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", true);
             synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         try {

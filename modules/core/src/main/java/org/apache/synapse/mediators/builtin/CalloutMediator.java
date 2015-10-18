@@ -107,6 +107,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Callout Mediator", true);
             synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         try {

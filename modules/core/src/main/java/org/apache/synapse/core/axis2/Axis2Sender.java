@@ -216,10 +216,6 @@ public class Axis2Sender {
         } catch (AxisFault e) {
             handleException(getResponseMessage(messageContext), e);
         }
-
-        //end of the flow
-//        MessageFlowDbConnector.getInstance().writeToDb(smc);
-        MessageFlowDataHolder.addFlowInfoEntry(smc);
     }
 
     /**

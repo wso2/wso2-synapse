@@ -129,9 +129,13 @@ public class FilterMediator extends AbstractListMediator implements
         boolean result = false;
         if (test(synCtx)) {
 
-            String mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
+            String mediatorId = null;
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
+                synCtx.addComponentToMessageFlow(mediatorId);
+                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+            }
 
             if (thenKey != null) {
 
@@ -169,13 +173,19 @@ public class FilterMediator extends AbstractListMediator implements
 
             }
 
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", false);
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", false);
+            }
 
         } else {
 
-            String mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
+            String mediatorId = null;
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
+                synCtx.addComponentToMessageFlow(mediatorId);
+                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+            }
 
             if (elseKey != null) {
 
@@ -221,7 +231,10 @@ public class FilterMediator extends AbstractListMediator implements
                 result = true;
             }
 
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", false);
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", false);
+            }
+
         }
 
 //        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Filter Mediator", false);

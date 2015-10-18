@@ -65,6 +65,7 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
                 mediatorId = UUID.randomUUID().toString();
                 MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Out Mediator", true);
                 synCtx.addComponentToMessageFlow(mediatorId);
+                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
             }
 
             synLog.traceOrDebug("Current message is outgoing - executing child mediators");

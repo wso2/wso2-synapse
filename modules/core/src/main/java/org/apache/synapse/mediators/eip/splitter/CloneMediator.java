@@ -96,6 +96,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             mediatorId = UUID.randomUUID().toString();
             MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Clone Mediator", true);
             synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         // get the targets list, clone the message for the number of targets and then
