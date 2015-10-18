@@ -717,4 +717,8 @@ public class ScriptMessageContext implements MessageContext {
 
     public void addComponentToMessageFlow(String mediatorId){
     }
+
+    public String getMessageString(){
+        return null;
+    }
 }
