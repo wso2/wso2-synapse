@@ -133,7 +133,6 @@ public abstract class CallerContext implements Serializable, Cloneable {
                             + configuration.getID() + " nextAccessTime=" + this.nextAccessTime);
                 }
                 canAccess = true;     // can continue access
-                this.globalCount.incrementAndGet();
                 this.localCount.incrementAndGet();
                 // Send the current state to others (clustered env)
                 throttleContext.flushCallerContext(this, id);
