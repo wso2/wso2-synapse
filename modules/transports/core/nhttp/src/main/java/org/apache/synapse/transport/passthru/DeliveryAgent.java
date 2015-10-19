@@ -28,6 +28,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
+import org.apache.synapse.transport.passthru.connections.HostConnection;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
@@ -153,14 +154,17 @@ public class DeliveryAgent {
                 lock.unlock();
             }
 
-            NHttpClientConnection conn = targetConnections.getConnection(route);
-            if (conn != null) {
-            	conn.resetInput();
-            	conn.resetOutput();
-                MessageContext messageContext = queue.poll();
+            HostConnection hostConnection = targetConnections.getConnection(route);
+            if (hostConnection != null) {
+                NHttpClientConnection conn = hostConnection.getConnection();
+                if (conn != null) {
+                    conn.resetInput();
+                    conn.resetOutput();
+                    MessageContext messageContext = queue.poll();
 
-                if (messageContext != null) {
-                    tryNextMessage(messageContext, route, conn);
+                    if (messageContext != null) {
+                        tryNextMessage(messageContext, route, conn);
+                    }
                 }
             }
 
@@ -193,8 +197,8 @@ public class DeliveryAgent {
      * Notification for a connection availability. When this occurs a message in the
      * queue for delivery will be tried.
      *
-     * @param host name of the remote host
-     * @param port remote port number
+     * @param route http route
+     * @param conn  nhttpClientConnection
      */
     public void connected(HttpRoute route, NHttpClientConnection conn) {
         Queue<MessageContext> queue = null;

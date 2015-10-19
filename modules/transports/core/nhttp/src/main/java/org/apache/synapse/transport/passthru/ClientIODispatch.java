@@ -36,6 +36,7 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingUtils;
+import org.apache.synapse.transport.passthru.connections.HostConnection;
 import org.apache.synapse.transport.passthru.connections.HostConnections;
 
 class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> {
@@ -53,16 +54,16 @@ class ClientIODispatch extends AbstractIODispatch<DefaultNHttpClientConnection> 
 
     @Override
     protected DefaultNHttpClientConnection createConnection(final IOSession session) {
-        HostConnections hostConnections = (HostConnections) session.getAttribute(IOSession.ATTACHMENT_KEY);
-        HttpRoute route = hostConnections.getRoute();
+        HostConnection hostConnection = (HostConnection) session.getAttribute(IOSession.ATTACHMENT_KEY);
+        HttpRoute route = hostConnection.getRoute();
         return this.connFactory.createConnection(session, route);
     }
 
     @Override
     protected void onConnected(final DefaultNHttpClientConnection conn) {
-        HostConnections hostConnections = (HostConnections) conn.getContext().getAttribute(IOSession.ATTACHMENT_KEY);
+        HostConnection hostConnection = (HostConnection) conn.getContext().getAttribute(IOSession.ATTACHMENT_KEY);
         try {
-            this.handler.connected(conn, hostConnections);
+            this.handler.connected(conn, hostConnection);
         } catch (final Exception ex) {
             this.handler.exception(conn, ex);
         }

@@ -29,9 +29,7 @@ import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages the connection from transport to the back end servers. It keeps track of the
@@ -40,9 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TargetConnections {
     private static final Log log = LogFactory.getLog(TargetConnections.class);
 
-    /** map to hold the ConnectionPools. The key is host:port */
-    private final Map<HttpRoute, HostConnections> poolMap =
-            new ConcurrentHashMap<HttpRoute, HostConnections>();
+    private HostConnectionPool connectionPool;
 
     private final String sslSchemaName = "https";
 
@@ -70,6 +66,7 @@ public class TargetConnections {
         this.maxConnections = targetConfiguration.getMaxConnections();
         this.ioReactor = ioReactor;
         this.callback = callback;
+        this.connectionPool = new HostConnectionPool(maxConnections);
     }
 
     /**
@@ -78,41 +75,35 @@ public class TargetConnections {
      * this method will try to connect asynchronously. If the connection is successful it will
      * be notified in a separate thread.
      *
-     * @param host host
-     * @param port port
+     * @param route
      * @return Either returns a connection if already available or returns null and notifies
      *         the delivery agent when the connection is available
      */
-    public NHttpClientConnection getConnection(HttpRoute route) {
+    public HostConnection getConnection(HttpRoute route) {
         if (log.isDebugEnabled()) {
             log.debug("Trying to get a connection " + route);
         }
-
-        HostConnections pool = getConnectionPool(route);
-
+        HostConnection hostConnection = getHostConnection(route);
         // trying to get an existing connection
-        NHttpClientConnection connection = pool.getConnection();
-        if (connection == null) {
-            if (pool.canHaveMoreConnections()) {
-                HttpHost host = route.getProxyHost() != null ? route.getProxyHost() : route.getTargetHost();
-                ioReactor.connect(new InetSocketAddress(host.getHostName(), host.getPort()), null, pool, callback);
-            } else {
-                log.warn("Connection pool reached maximum allowed connections for route "
-                        + route + ". Target server may have become slow");
-            }
-        }
+        if (hostConnection == null) {
+            hostConnection = new HostConnection(route, null);
+            HttpHost host = route.getProxyHost() != null ? route.getProxyHost() : route.getTargetHost();
+            ioReactor
+                    .connect(new InetSocketAddress(host.getHostName(), host.getPort()), null, hostConnection, callback);
 
-        return connection;
+        }
+        return hostConnection;
     }
 
     public NHttpClientConnection getExistingConnection(HttpRoute route) {
         if (log.isDebugEnabled()) {
             log.debug("Trying to get a existing connection connection " + route);
         }
-
-        HostConnections pool = getConnectionPool(route);
-        return pool.getConnection();
-
+        HostConnection hostConnection = getHostConnection(route);
+        if (hostConnection == null) {
+            return null;
+        }
+        return hostConnection.getConnection();
     }
 
     /**
@@ -136,13 +127,13 @@ public class TargetConnections {
      *                buffer factories
      */
     public void shutdownConnection(NHttpClientConnection conn, boolean isError) {
-        HostConnections pool = (HostConnections) conn.getContext().getAttribute(
-                PassThroughConstants.CONNECTION_POOL);
+        HostConnection hostConnection =
+                (HostConnection) conn.getContext().getAttribute(PassThroughConstants.HOST_CONNECTION);
 
         TargetContext.get(conn).reset(isError);
 
-        if (pool != null) {
-            pool.forget(conn);
+        if (hostConnection != null) {
+            connectionPool.forget(hostConnection);
         } else {
             // we shouldn't get here
             log.fatal("Connection without a pool. Something wrong. Need to fix.");
@@ -160,47 +151,22 @@ public class TargetConnections {
      * @param conn connection to be released
      */
     public void releaseConnection(NHttpClientConnection conn) {
-        HostConnections pool = (HostConnections) conn.getContext().getAttribute(
-                PassThroughConstants.CONNECTION_POOL);
+        HostConnection hostConnection =
+                (HostConnection) conn.getContext().getAttribute(PassThroughConstants.HOST_CONNECTION);
 
         TargetContext.get(conn).reset();
 
-        if (pool != null) {
-            pool.release(conn);
+        if (hostConnection != null) {
+            connectionPool.release(hostConnection);
         } else {
             // we shouldn't get here
             log.fatal("Connection without a pool. Something wrong. Need to fix.");
         }
     }
 
-    /**
-     * This method is called when a new connection is made.
-     *
-     * @param conn connection to the target server     
-     */
-    public void addConnection(NHttpClientConnection conn) {
-        HostConnections pool = (HostConnections) conn.getContext().getAttribute(
-                PassThroughConstants.CONNECTION_POOL);
-        if (pool != null) {
-            pool.addConnection(conn);
-        } else {
-            // we shouldn't get here
-            log.fatal("Connection without a pool. Something wrong. Need to fix.");            
-        }
-    }
-
-    private HostConnections getConnectionPool(HttpRoute route) {
+    private HostConnection getHostConnection(HttpRoute route) {
         // see weather a pool already exists for this host:port
-        synchronized (poolMap) {
-            HostConnections pool = poolMap.get(route);
-
-            if (pool == null) {
-                pool = new HostConnections(route, maxConnections);
-                poolMap.put(route, pool);
-            }
-            return pool;
-
-        }
+        return connectionPool.getConnection(route);
     }
 
     /**
@@ -214,18 +180,16 @@ public class TargetConnections {
         for (String host : hostList) {
             String[] params = host.split(":");
 
-            for (Map.Entry<HttpRoute, HostConnections> connectionsEntry : poolMap.entrySet()) {
-                HttpRoute httpRoute = connectionsEntry.getKey();
-
-                if (params.length > 1 && params[0].equalsIgnoreCase(httpRoute.getTargetHost().getHostName())
+	        for (HttpRoute httpRoute : connectionPool.getKeySet()) {
+		        if (params.length > 1 && params[0].equalsIgnoreCase(httpRoute.getTargetHost().getHostName())
                     && (Integer.valueOf(params[1]) == (httpRoute.getTargetHost().getPort())) &&
                     httpRoute.getTargetHost().getSchemeName().equalsIgnoreCase(sslSchemaName)) {
 
                     try {
-                        NHttpClientConnection connection = connectionsEntry.getValue().getConnection();
-                        if (connection != null && connection.getContext() != null) {
+	                    NHttpClientConnection connection = connectionPool.getConnection(httpRoute).getConnection();
+	                    if (connection != null && connection.getContext() != null) {
 
-                            shutdownConnection(connectionsEntry.getValue().getConnection());
+                            shutdownConnection(connection);
                             log.info("Connection " + httpRoute.getTargetHost().getHostName() + ":"
                                      + httpRoute.getTargetHost().getPort() + " Successful");
 

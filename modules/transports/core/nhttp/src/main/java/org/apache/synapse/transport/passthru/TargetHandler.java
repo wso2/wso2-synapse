@@ -23,25 +23,16 @@ import org.apache.axis2.engine.MessageReceiver;
 import org.apache.axis2.transport.base.MetricsCollector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
+import org.apache.http.*;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
-import org.apache.http.nio.ContentDecoder;
-import org.apache.http.nio.ContentEncoder;
-import org.apache.http.nio.NHttpClientConnection;
-import org.apache.http.nio.NHttpClientEventHandler;
-import org.apache.http.nio.NHttpServerConnection;
+import org.apache.http.nio.*;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
-import org.apache.synapse.transport.passthru.connections.HostConnections;
+import org.apache.synapse.transport.passthru.connections.HostConnection;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
 import java.io.IOException;
@@ -78,19 +69,17 @@ public class TargetHandler implements NHttpClientEventHandler {
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
-        assert o instanceof HostConnections : "Attachment should be a HostConnections";
-        HostConnections pool = (HostConnections) o;
-        conn.getContext().setAttribute(PassThroughConstants.CONNECTION_POOL, pool);
-        HttpRoute route = pool.getRoute();
+        assert o instanceof HostConnection : "Attachment should be a HostConnections";
+        HostConnection hostConnection = (HostConnection) o;
+        conn.getContext().setAttribute(PassThroughConstants.HOST_CONNECTION, hostConnection);
+        HttpRoute route = hostConnection.getRoute();
+        hostConnection.setConnection(conn);
           
         // create the connection information and set it to request ready
         TargetContext.create(conn, ProtocolState.REQUEST_READY, targetConfiguration);
 
-        // notify the pool about the new connection
-        targetConfiguration.getConnections().addConnection(conn);
-
         // notify about the new connection
-        deliveryAgent.connected(pool.getRoute(), conn);
+        deliveryAgent.connected(hostConnection.getRoute(), conn);
         
         HttpContext context = conn.getContext();
         context.setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
@@ -401,7 +390,6 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
 
             TargetContext.updateState(conn, ProtocolState.RESPONSE_BODY);
-
             TargetResponse response = TargetContext.getResponse(conn);
 
 			if (response != null) {

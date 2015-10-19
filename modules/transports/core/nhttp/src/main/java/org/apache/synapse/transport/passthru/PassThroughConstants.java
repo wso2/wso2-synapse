@@ -20,9 +20,9 @@ public class PassThroughConstants {
 
     public static final int DEFAULT_IO_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
     public static final int DEFAULT_MAX_CONN_PER_HOST_PORT = Integer.MAX_VALUE;
+    public static final String HOST_CONNECTION = "HOST_CONNECTION";
     
     public static final String REQUEST_MESSAGE_CONTEXT = "REQUEST_MESSAGE_CONTEXT";
-    public static final String CONNECTION_POOL = "CONNECTION_POOL";
     public static final String TUNNEL_HANDLER = "TUNNEL_HANDLER";
 
     public static final String TRUE = "TRUE";
