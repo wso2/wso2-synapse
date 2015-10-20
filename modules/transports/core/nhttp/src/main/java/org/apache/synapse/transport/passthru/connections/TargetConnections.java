@@ -75,7 +75,7 @@ public class TargetConnections {
      * this method will try to connect asynchronously. If the connection is successful it will
      * be notified in a separate thread.
      *
-     * @param route
+     * @param route route for the connection
      * @return Either returns a connection if already available or returns null and notifies
      *         the delivery agent when the connection is available
      */
@@ -95,6 +95,12 @@ public class TargetConnections {
         return hostConnection;
     }
 
+    /**
+     * get a existing connection for the route from free connection pool
+     *
+     * @param route route for the connection
+     * @return returns a connection if already available or returns null
+     */
     public NHttpClientConnection getExistingConnection(HttpRoute route) {
         if (log.isDebugEnabled()) {
             log.debug("Trying to get a existing connection connection " + route);

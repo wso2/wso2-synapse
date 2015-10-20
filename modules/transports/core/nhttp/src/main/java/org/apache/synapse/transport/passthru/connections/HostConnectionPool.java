@@ -47,7 +47,8 @@ public class HostConnectionPool {
 	/**
 	 * Get a connection for the host:port
 	 *
-	 * @return a connection
+	 * @param route route for the connection
+	 * @return hostConnection for the route
 	 */
 	public HostConnection getConnection(HttpRoute route) {
 		lock.lock();
@@ -89,6 +90,11 @@ public class HostConnectionPool {
 		}
 	}
 
+	/**
+	 * Releases hostConnection to free connection pool
+	 *
+	 * @param conn hostConnection
+	 */
 	public void release(HostConnection conn) {
 		conn.getConnection().getMetrics().reset();
 		HttpContext ctx = conn.getConnection().getContext();
@@ -115,6 +121,11 @@ public class HostConnectionPool {
 		}
 	}
 
+	/**
+	 * Remove hostConnection from free connection pool
+	 *
+	 * @param conn hostConnection
+	 */
 	public void forget(HostConnection conn) {
 		lock.lock();
 		try {
@@ -122,7 +133,7 @@ public class HostConnectionPool {
 			if (connections != null) {
 				synchronized (connections) {
 				    /*
-                     * This removal is heavily unlikely. It is kept just for the
+	                 * This removal is heavily unlikely. It is kept just for the
                      * sake of safety.
                      */
 					connections.getHostConnections().remove(conn);
@@ -133,6 +144,11 @@ public class HostConnectionPool {
 		}
 	}
 
+	/**
+	 * This returns keyset of the connection pool
+	 *
+	 * @return returns keySet
+	 */
 	public Set<HttpRoute> getKeySet() {
 		return connMap.keySet();
 	}
