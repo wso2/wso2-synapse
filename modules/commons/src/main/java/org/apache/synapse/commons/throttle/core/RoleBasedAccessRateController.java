@@ -104,12 +104,14 @@ public class RoleBasedAccessRateController {
             synchronized (consumerKey.intern()) {
                 CallerContext caller = throttleContext.getCallerContext(consumerKey);
                 if (caller == null) {
-                    log.debug("Caller for " + consumerKey + " is not present");
-                    caller = CallerContextFactory.createCaller(ThrottleConstants.ROLE_BASE,
-                                                                                     consumerKey);
-                    log.debug(" GUID for new caller : " + caller.getUuid());
-                    caller = throttleContext.addCallerContext(caller, consumerKey);
-                    log.debug("GUID for returned caller : " + caller.getUuid());
+                    log.debug("Caller for " + consumerKey + " is not present , Thread : " + Thread.currentThread().getName());
+                    //if caller has not already registered ,then create new caller description and
+                    //set it in throttle
+                    caller = throttleContext.getCallerContext(consumerKey);
+                    if (caller == null) {
+                        log.debug("Caller for " + consumerKey + " is not present for a second time , Thread : " + Thread.currentThread().getName());
+                        caller = CallerContextFactory.createCaller(ThrottleConstants.ROLE_BASE, consumerKey);
+                    }
                 }
                 if (caller != null) {
                     long currentTime = System.currentTimeMillis();
