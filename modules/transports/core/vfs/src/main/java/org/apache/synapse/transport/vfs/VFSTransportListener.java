@@ -273,7 +273,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     processFile(entry, fileObject);
                                     entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
                                     metrics.incrementMessagesReceived();
-                                }else{
+                                } else {
                                     runPostProcess = false;
                                 }
 
@@ -403,13 +403,13 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                     }
                                     processCount++;
 
-                                    if(child.getType() == FileType.FILE){
+                                    if (child.getType() == FileType.FILE) {
                                         processFile(entry, child);
                                         successCount++;
                                         // tell moveOrDeleteAfterProcessing() file was success
                                         entry.setLastPollState(PollTableEntry.SUCCSESSFUL);
                                         metrics.incrementMessagesReceived();
-                                    }else{
+                                    } else {
                                         runPostProcess = false;
                                     }
                                 } catch (Exception e) {
