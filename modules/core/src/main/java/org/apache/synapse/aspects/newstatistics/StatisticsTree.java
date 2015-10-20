@@ -27,9 +27,9 @@ public class StatisticsTree {
 	private IndividualStatistics root = null;
 
 	public StatisticsTree(StatisticsLog log) {
-		root = new IndividualStatistics(log.getComponentId(), log.getComponentType(),
-		                                log.getMsgId(), "", log.getParentMsgId(),
-		                                log.getEndTime() - log.getStartTime(), log.getNoOfFaults());
+		root = new IndividualStatistics(log.getComponentId(), log.getComponentType(), log.getMsgId(), "",
+		                                log.getParentMsgId(), log.getEndTime() - log.getStartTime(),
+		                                log.getNoOfFaults());
 	}
 
 	public IndividualStatistics getRoot() {

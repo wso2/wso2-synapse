@@ -43,8 +43,8 @@ public class StatisticsStore {
 
 		MBeanRegistrar registrar = MBeanRegistrar.getInstance();
 		synchronized (registrar) {
-			registrar.registerMBean(new StatisticCollectionView(statistics),
-			                        "StatisticsCollectionView", "StatisticsCollectionView");
+			registrar.registerMBean(new StatisticCollectionView(statistics), "StatisticsCollectionView",
+			                        "StatisticsCollectionView");
 		}
 	}
 
@@ -55,13 +55,12 @@ public class StatisticsStore {
 	 * @param statisticsLogs Collected statistics logs for a message flow
 	 */
 	public void update(ArrayList<StatisticsLog> statisticsLogs) {
-		if(!statisticsLogs.isEmpty()) {
+		if (!statisticsLogs.isEmpty()) {
 			StatisticsTree tree;
 			if (statistics.containsKey(statisticsLogs.get(0).getComponentId())) {
 				tree = statistics.get(statisticsLogs.get(0).getComponentId());
 				tree.getRoot().update(statisticsLogs.get(0).getNoOfFaults(),
-				                      statisticsLogs.get(0).getEndTime() -
-				                      statisticsLogs.get(0).getStartTime());
+				                      statisticsLogs.get(0).getEndTime() - statisticsLogs.get(0).getStartTime());
 			} else {
 				tree = new StatisticsTree(statisticsLogs.get(0));
 				statistics.put(statisticsLogs.get(0).getComponentId(), tree);
@@ -96,10 +95,8 @@ public class StatisticsStore {
 		//send root node of the tree as parent to next element and recursively find children
 		for (int i = 0; i < statisticsLogs.size(); i++) {
 			if (statisticsLogs.get(i) != null) {
-				currentStat = buildTree(statisticsLogs, currentStat,
-				                        statisticsLogs.get(i).getNoOfChildren(),
-				                        currentStat.getComponentId(),
-				                        statisticsLogs.get(i).getParentMsgId(), i + 1);
+				currentStat = buildTree(statisticsLogs, currentStat, statisticsLogs.get(i).getNoOfChildren(),
+				                        currentStat.getComponentId(), statisticsLogs.get(i).getParentMsgId(), i + 1);
 			}
 		}
 		if (log.isDebugEnabled()) { //this will be removed in actual implementation for testing only
@@ -121,9 +118,8 @@ public class StatisticsStore {
 	 * @param offset         from where to start searching for children
 	 * @return reference to the child
 	 */
-	private IndividualStatistics buildTree(ArrayList<StatisticsLog> statisticsLogs,
-	                                       IndividualStatistics currentStat, int noOfChildren,
-	                                       String parentId, int parentMsgId, int offset) {
+	private IndividualStatistics buildTree(ArrayList<StatisticsLog> statisticsLogs, IndividualStatistics currentStat,
+	                                       int noOfChildren, String parentId, int parentMsgId, int offset) {
 		int count = 0;
 		for (int index = offset; index < statisticsLogs.size(); index++) {
 			if (!(statisticsLogs.get(index) == null)) {
@@ -135,10 +131,10 @@ public class StatisticsStore {
 
 					//if that children have children find them recursively
 					if (statisticsLogs.get(index).isHasChildren()) {
-						currentStat = buildTree(statisticsLogs, currentStat,
-						                        statisticsLogs.get(index).getNoOfChildren(),
-						                        currentStat.getComponentId(),
-						                        statisticsLogs.get(index).getMsgId(), index + 1);
+						currentStat =
+								buildTree(statisticsLogs, currentStat, statisticsLogs.get(index).getNoOfChildren(),
+								          currentStat.getComponentId(), statisticsLogs.get(index).getMsgId(),
+								          index + 1);
 					}
 					statisticsLogs.set(index, null);
 					if (count == noOfChildren) {
@@ -158,8 +154,7 @@ public class StatisticsStore {
 	 * @param statisticsLog current statistic log
 	 * @return refrence to the child element
 	 */
-	private IndividualStatistics getChild(ArrayList<IndividualStatistics> childList,
-	                                      StatisticsLog statisticsLog) {
+	private IndividualStatistics getChild(ArrayList<IndividualStatistics> childList, StatisticsLog statisticsLog) {
 		//if child present get it otherwise create a child
 		for (IndividualStatistics statisticsNode : childList) {
 			if (statisticsLog.getParent().equals(statisticsNode.getParentId()) &&
@@ -184,9 +179,9 @@ public class StatisticsStore {
 	 */
 	private IndividualStatistics createNewNodeForLog(StatisticsLog statisticsLog) {
 		IndividualStatistics statisticsNode =
-				new IndividualStatistics(statisticsLog.getComponentId(),
-				                         statisticsLog.getComponentType(), statisticsLog.getMsgId(),
-				                         statisticsLog.getParent(), statisticsLog.getParentMsgId(),
+				new IndividualStatistics(statisticsLog.getComponentId(), statisticsLog.getComponentType(),
+				                         statisticsLog.getMsgId(), statisticsLog.getParent(),
+				                         statisticsLog.getParentMsgId(),
 				                         statisticsLog.getEndTime() - statisticsLog.getStartTime(),
 				                         statisticsLog.getNoOfFaults());
 		statisticsNode.setIsResponse(statisticsLog.isResponse());
@@ -203,8 +198,8 @@ public class StatisticsStore {
 		printNode(sb, treeNode);
 		for (IndividualStatistics individualStatistics : treeNode.getChildren()) {
 			if (treeNode.getChildren().size() >= 2) {
-				sb.append("\n----------Printing a new Branch From ")
-				  .append(treeNode.getComponentId()).append("---------------\n");
+				sb.append("\n----------Printing a new Branch From ").append(treeNode.getComponentId())
+				  .append("---------------\n");
 			}
 			print(individualStatistics, sb);
 		}
@@ -217,22 +212,17 @@ public class StatisticsStore {
 	 * @param statisticsNode tree node
 	 */
 	private void printNode(StringBuilder sb, IndividualStatistics statisticsNode) {
-		sb.append(statisticsNode.getComponentId()).append("[Count : ")
-		  .append(statisticsNode.getCount()).append("]\n");
+		sb.append(statisticsNode.getComponentId()).append("[Count : ").append(statisticsNode.getCount()).append("]\n");
 
 		sb.append("\t\t Response Path: ").append(statisticsNode.isResponse()).append("\n");
 		sb.append("\t\t Component Id: ").append(statisticsNode.getComponentId()).append("\n");
 		sb.append("\t\t Component Type: ").append(statisticsNode.getComponentType()).append("\n");
 		sb.append("\t\t Parent: ").append(statisticsNode.getParentId()).append("\n");
 		sb.append("\t\t Parent MsgID: ").append(statisticsNode.getParentId()).append("\n");
-		sb.append("\t\t Message Id(if > -1 cloned): ").append(statisticsNode.getMsgId())
-		  .append("\n");
-		sb.append("\t\t Minimum Response Time: ").append(statisticsNode.getMinProcessingTime())
-		  .append("\n");
-		sb.append("\t\t Maximum Response Time: ").append(statisticsNode.getMaxProcessingTime())
-		  .append("\n");
-		sb.append("\t\t Average Response Time: ").append(statisticsNode.getAvgProcessingTime())
-		  .append("\n");
+		sb.append("\t\t Message Id(if > -1 cloned): ").append(statisticsNode.getMsgId()).append("\n");
+		sb.append("\t\t Minimum Response Time: ").append(statisticsNode.getMinProcessingTime()).append("\n");
+		sb.append("\t\t Maximum Response Time: ").append(statisticsNode.getMaxProcessingTime()).append("\n");
+		sb.append("\t\t Average Response Time: ").append(statisticsNode.getAvgProcessingTime()).append("\n");
 		sb.append("\t\t Number of Faults: ").append(statisticsNode.getFaultCount()).append("\n");
 	}
 

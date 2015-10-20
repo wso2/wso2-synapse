@@ -102,8 +102,8 @@ public class IndividualStatistics {
 	 * @param duration      Execution time for this statistics reporting component
 	 * @param faultCount    Number of faults encountered during execution
 	 */
-	public IndividualStatistics(String componentId, ComponentType componentType, int msgId,
-	                            String parentId, int parentMsgId, long duration, int faultCount) {
+	public IndividualStatistics(String componentId, ComponentType componentType, int msgId, String parentId,
+	                            int parentMsgId, long duration, int faultCount) {
 		children = new ArrayList<IndividualStatistics>();
 		this.componentType = componentType;
 		this.componentId = componentId;

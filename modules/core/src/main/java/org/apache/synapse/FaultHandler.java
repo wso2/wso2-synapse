@@ -100,11 +100,9 @@ public abstract class FaultHandler {
             if (traceOrDebugOn) {
                 traceOrDebugWarn(traceOn, "FaultHandler : " + this);
             }
-            RuntimeStatisticCollector.recordStatisticCreateFaultLog(synCtx,
-                                                                    SynapseConstants.FAULTHANDLER,
-                                                                    ComponentType.FAULTHANDLER,
-                                                                    this.getClass().toString(),
-                                                                    System.currentTimeMillis());
+            RuntimeStatisticCollector
+                    .recordStatisticCreateFaultLog(synCtx, SynapseConstants.FAULTHANDLER, ComponentType.FAULTHANDLER,
+                                                   this.getClass().toString(), System.currentTimeMillis());
             onFault(synCtx);
 
         } catch (SynapseException se) {
@@ -116,9 +114,8 @@ public abstract class FaultHandler {
             	throw new RuntimeException(se);
             }
         }finally {
-            RuntimeStatisticCollector.recordStatisticCloseFaultLog(synCtx,
-                                                                   SynapseConstants.FAULTHANDLER,
-                                                                   System.currentTimeMillis());
+            RuntimeStatisticCollector
+                    .recordStatisticCloseFaultLog(synCtx, SynapseConstants.FAULTHANDLER, System.currentTimeMillis());
         }
     }
 

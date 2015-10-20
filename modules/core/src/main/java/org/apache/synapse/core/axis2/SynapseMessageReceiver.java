@@ -96,13 +96,11 @@ public class SynapseMessageReceiver implements MessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
 
-            boolean isOutOnly = Boolean.parseBoolean(
-                    String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-
+            boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
             if (!isOutOnly) {
-                isOutOnly = (!Boolean.parseBoolean(
-                        String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                             !synCtx.isResponse());
+                isOutOnly =
+                        (!Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                         !synCtx.isResponse());
             }
             if (isOutOnly) {
                 RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());

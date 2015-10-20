@@ -47,11 +47,10 @@ public class StatisticsStoreCleaner {
 	public StatisticsStoreCleaner(StatisticsStore statisticsStore) {
 		this.statisticsStore = statisticsStore;
 		long defaultCleanInterval = 1000 * 60 * 5; //300s default cleaning time
-		this.cleanInterval = Long.parseLong(SynapsePropertiesLoader.getPropertyValue(CLEAN_INTERVAL,
-		                                                                             String.valueOf(
-				                                                                             defaultCleanInterval)));
-		this.isCleanEnable = Boolean.parseBoolean(
-				SynapsePropertiesLoader.getPropertyValue(CLEAN_ENABLE, String.valueOf(true)));
+		this.cleanInterval = Long.parseLong(
+				SynapsePropertiesLoader.getPropertyValue(CLEAN_INTERVAL, String.valueOf(defaultCleanInterval)));
+		this.isCleanEnable =
+				Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(CLEAN_ENABLE, String.valueOf(true)));
 		if (isCleanEnable) {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics cleaning is will be occurred with interval : " +

@@ -299,13 +299,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     "endpoint must be in initialized state");
         }
         if (this.endpointName != null) {
-            RuntimeStatisticCollector
-                    .recordStatisticCreateEntry(synCtx, this.endpointName, ComponentType.ENDPOINT,
-                                                "", System.currentTimeMillis());
+            RuntimeStatisticCollector.recordStatisticCreateEntry(synCtx, this.endpointName, ComponentType.ENDPOINT, "",
+                                                                 System.currentTimeMillis());
         } else {
             RuntimeStatisticCollector
-                    .recordStatisticCreateEntry(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT,
-                                                ComponentType.ENDPOINT, "",
+                    .recordStatisticCreateEntry(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT, ComponentType.ENDPOINT, "",
                                                 System.currentTimeMillis());
         }
         prepareForEndpointStatistics(synCtx);
@@ -382,12 +380,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         synCtx.getEnvironment().send(definition, synCtx);
 
         if (this.endpointName != null) {
-            RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, this.endpointName, "",
-                                                              System.currentTimeMillis());
-        } else {
             RuntimeStatisticCollector
-                    .recordStatisticCloseLog(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT, "",
-                                             System.currentTimeMillis());
+                    .recordStatisticCloseLog(synCtx, this.endpointName, "", System.currentTimeMillis());
+        } else {
+            RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT, "",
+                                                              System.currentTimeMillis());
         }
 
     }

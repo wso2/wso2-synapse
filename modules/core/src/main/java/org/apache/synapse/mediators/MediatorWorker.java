@@ -108,7 +108,7 @@ public class MediatorWorker implements Runnable {
                 synCtx.getServiceLog().error(msg, e);
             }
         } finally {
-	        RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+            RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
         }
         synCtx = null;
         seq = null;

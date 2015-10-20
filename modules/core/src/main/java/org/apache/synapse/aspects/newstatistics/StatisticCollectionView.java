@@ -85,13 +85,11 @@ public class StatisticCollectionView implements StatisticCollectionViewMXBean {
 		if (statistics.containsKey(proxyName)) {
 			IndividualStatistics proxyStatistics = statistics.get(proxyName).getRoot();
 
-			ArrayList<StatisticsCompositeObject> statisticSamples =
-					new ArrayList<StatisticsCompositeObject>();
+			ArrayList<StatisticsCompositeObject> statisticSamples = new ArrayList<StatisticsCompositeObject>();
 
 			getStatisticTreeAsArrayList(proxyStatistics, statisticSamples);
 
-			StatisticsCompositeObject[] statisticSampleArray =
-					new StatisticsCompositeObject[statisticSamples.size()];
+			StatisticsCompositeObject[] statisticSampleArray = new StatisticsCompositeObject[statisticSamples.size()];
 			return statisticSamples.toArray(statisticSampleArray);
 
 		} else {
@@ -103,13 +101,11 @@ public class StatisticCollectionView implements StatisticCollectionViewMXBean {
 		if (statistics.containsKey(sequenceName)) {
 			IndividualStatistics sequenceStatistics = statistics.get(sequenceName).getRoot();
 
-			ArrayList<StatisticsCompositeObject> statisticSamples =
-					new ArrayList<StatisticsCompositeObject>();
+			ArrayList<StatisticsCompositeObject> statisticSamples = new ArrayList<StatisticsCompositeObject>();
 
 			getStatisticTreeAsArrayList(sequenceStatistics, statisticSamples);
 
-			StatisticsCompositeObject[] statisticSampleArray =
-					new StatisticsCompositeObject[statisticSamples.size()];
+			StatisticsCompositeObject[] statisticSampleArray = new StatisticsCompositeObject[statisticSamples.size()];
 			return statisticSamples.toArray(statisticSampleArray);
 
 		} else {
@@ -121,13 +117,11 @@ public class StatisticCollectionView implements StatisticCollectionViewMXBean {
 		if (statistics.containsKey(APIName)) {
 			IndividualStatistics apiStatistics = statistics.get(APIName).getRoot();
 
-			ArrayList<StatisticsCompositeObject> statisticSamples =
-					new ArrayList<StatisticsCompositeObject>();
+			ArrayList<StatisticsCompositeObject> statisticSamples = new ArrayList<StatisticsCompositeObject>();
 
 			getStatisticTreeAsArrayList(apiStatistics, statisticSamples);
 
-			StatisticsCompositeObject[] statisticSampleArray =
-					new StatisticsCompositeObject[statisticSamples.size()];
+			StatisticsCompositeObject[] statisticSampleArray = new StatisticsCompositeObject[statisticSamples.size()];
 			return statisticSamples.toArray(statisticSampleArray);
 
 		} else {
@@ -141,19 +135,16 @@ public class StatisticCollectionView implements StatisticCollectionViewMXBean {
 	 * @param individualStatistics individualStatistics Object
 	 * @return Composite Data Object that contain statistics of individualStatistics Object
 	 */
-	public StatisticsCompositeObject getCompositeDataObject(
-			IndividualStatistics individualStatistics) {
+	public StatisticsCompositeObject getCompositeDataObject(IndividualStatistics individualStatistics) {
 		if (individualStatistics != null) {
 			return new StatisticsCompositeObject(individualStatistics.getComponentId(),
 			                                     individualStatistics.getComponentType().toString(),
 			                                     individualStatistics.getParentId(),
-			                                     individualStatistics.getParentMsgId(),
-			                                     individualStatistics.getMsgId(),
+			                                     individualStatistics.getParentMsgId(), individualStatistics.getMsgId(),
 			                                     individualStatistics.getMaxProcessingTime(),
 			                                     individualStatistics.getMinProcessingTime(),
 			                                     individualStatistics.getAvgProcessingTime(),
-			                                     individualStatistics.isResponse(),
-			                                     individualStatistics.getCount(),
+			                                     individualStatistics.isResponse(), individualStatistics.getCount(),
 			                                     individualStatistics.getFaultCount());
 		}
 		return null;

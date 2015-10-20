@@ -47,20 +47,15 @@ public class StatisticsCompositeObject {
 
 	private int faultCount;
 
-	@ConstructorProperties({ "componentId", "componentType", "parentId", "parentMsgId", "msgId",
-	                         "maxProcessingTime", "maxProcessingTime", "minProcessingTime",
-	                         "avgProcessingTime", "inResponsePath",
-	                         "faultCount" }) public StatisticsCompositeObject(String componentId,
-	                                                                          String componentType,
-	                                                                          String parentId,
-	                                                                          int parentMsgId,
-	                                                                          int msgId,
-	                                                                          long maxProcessingTime,
+	@ConstructorProperties({ "componentId", "componentType", "parentId", "parentMsgId", "msgId", "maxProcessingTime",
+	                         "maxProcessingTime", "minProcessingTime", "avgProcessingTime", "inResponsePath",
+	                         "faultCount" }) public StatisticsCompositeObject(String componentId, String componentType,
+	                                                                          String parentId, int parentMsgId,
+	                                                                          int msgId, long maxProcessingTime,
 	                                                                          long minProcessingTime,
 	                                                                          long avgProcessingTime,
 	                                                                          boolean inResponsePath,
-	                                                                          int numberOfInvocations,
-	                                                                          int faultCount) {
+	                                                                          int numberOfInvocations, int faultCount) {
 		this.faultCount = faultCount;
 		this.componentId = componentId;
 		this.componentType = componentType;

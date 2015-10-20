@@ -107,8 +107,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
 
         RuntimeStatisticCollector
-                .recordStatisticCreateEntry(synCtx, getSequenceNameForStatistics(synCtx),
-                                            ComponentType.SEQUENCE, "", System.currentTimeMillis());
+                .recordStatisticCreateEntry(synCtx, getSequenceNameForStatistics(synCtx), ComponentType.SEQUENCE, "",
+                                            System.currentTimeMillis());
 
         synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, getSequenceNameForStatistics(synCtx));
 
@@ -326,14 +326,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     }
 
     private void statisticsEnd(MessageContext synCtx) {
-        Boolean isContinuationCall =
-                (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
-
+        Boolean isContinuationCall = (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
         if (isContinuationCall == null || !isContinuationCall) {
-
-            RuntimeStatisticCollector
-                    .recordStatisticCloseLog(synCtx, getSequenceNameForStatistics(synCtx), "",
-                                             System.currentTimeMillis());
+            RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, getSequenceNameForStatistics(synCtx), "",
+                                                              System.currentTimeMillis());
         }
     }
 

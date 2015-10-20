@@ -119,7 +119,6 @@ public class RESTRequestHandler {
 
     private void reportApiStartStatistics(MessageContext synCtx, API api) {
         RuntimeStatisticCollector
-                .recordStatisticCreateEntry(synCtx, api.getName(), ComponentType.API, "",
-                                            System.currentTimeMillis());
+                .recordStatisticCreateEntry(synCtx, api.getName(), ComponentType.API, "", System.currentTimeMillis());
     }
 }

@@ -74,10 +74,9 @@ public class StatisticsEntry {
 	 * @param startTime     starting time of the statistics reporting event
 	 * @param isResponse    is message context belong to an response
 	 */
-	public StatisticsEntry(String componentId, ComponentType componentType, int msgId,
-	                       String parentId, long startTime, boolean isResponse) {
-		StatisticsLog statisticsLog =
-				new StatisticsLog(componentId, componentType, msgId, -1, -1, parentId, startTime);
+	public StatisticsEntry(String componentId, ComponentType componentType, int msgId, String parentId, long startTime,
+	                       boolean isResponse) {
+		StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, parentId, startTime);
 		statisticsLog.setIsResponse(isResponse);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
@@ -97,12 +96,11 @@ public class StatisticsEntry {
 	 * @param startTime     starting time of the statistics reporting event
 	 * @param isResponse    is message context belong to an response
 	 */
-	public synchronized void createLog(String componentId, ComponentType componentType, int msgId,
-	                                   String parentId, long startTime, boolean isResponse) {
+	public synchronized void createLog(String componentId, ComponentType componentType, int msgId, String parentId,
+	                                   long startTime, boolean isResponse) {
 
 		if (openLogs.isEmpty()) {
-			StatisticsLog statisticsLog =
-					new StatisticsLog(componentId, componentType, msgId, -1, -1, "", startTime);
+			StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, "", startTime);
 			messageFlowLogs.add(statisticsLog);
 			openLogs.addFirst(messageFlowLogs.size() - 1);
 			if (log.isDebugEnabled()) {
@@ -113,8 +111,7 @@ public class StatisticsEntry {
 			if (openLogs.getFirst() == 0) {
 				if (messageFlowLogs.get(0).getComponentId().equals(componentId)) {
 					if (log.isDebugEnabled()) {
-						log.debug("Statistics event is ignored as it is a duplicate of root " +
-						          "element");
+						log.debug("Statistics event is ignored as it is a duplicate of root " + "element");
 					}
 					return;
 				}
@@ -137,8 +134,7 @@ public class StatisticsEntry {
 					parentIndex = getFirstLogWithMsgId(-1);
 				}
 				if (parentIndex > -1) {
-					createNewLog(componentId, componentType, msgId, parentIndex, startTime,
-					             isResponse);
+					createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
 				} else {
 					if (log.isDebugEnabled()) {
 						log.debug("Invalid stating element");
@@ -158,9 +154,8 @@ public class StatisticsEntry {
 	 * @param startTime     starting time of the statistics reporting event
 	 * @param isResponse    is message context belong to an response
 	 */
-	public synchronized void createFaultLog(String componentId, ComponentType componentType,
-	                                        int msgId, String parentId, Long startTime,
-	                                        boolean isResponse) {
+	public synchronized void createFaultLog(String componentId, ComponentType componentType, int msgId, String parentId,
+	                                        Long startTime, boolean isResponse) {
 		int parentIndex = getParentForFault(parentId, msgId);
 		createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
 		addFaultsToParents(parentIndex);
@@ -177,8 +172,7 @@ public class StatisticsEntry {
 	 * @param endTime     endTime of the statistics event
 	 * @return true if there are no open message logs in openLogs List
 	 */
-	public synchronized boolean closeLog(String componentId, int msgId, String parentId,
-	                                     long endTime) {
+	public synchronized boolean closeLog(String componentId, int msgId, String parentId, long endTime) {
 		int componentLevel;
 		if (parentId.equals("")) {
 			componentLevel = deleteAndGetComponentIndex(componentId, msgId);
@@ -260,14 +254,14 @@ public class StatisticsEntry {
 	 * @param startTime     starting time of the statistic log
 	 * @param isResponse    is message log related to a response
 	 */
-	private void createNewLog(String componentId, ComponentType componentType, int msgId,
-	                          int parentIndex, Long startTime, boolean isResponse) {
+	private void createNewLog(String componentId, ComponentType componentType, int msgId, int parentIndex,
+	                          Long startTime, boolean isResponse) {
 		StatisticsLog parentLog = messageFlowLogs.get(parentIndex);
 		parentLog.incrementNoOfChildren();
 		parentLog.setHasChildren(true);
 		StatisticsLog statisticsLog =
-				new StatisticsLog(componentId, componentType, msgId, parentIndex,
-				                  parentLog.getMsgId(), parentLog.getComponentId(), startTime);
+				new StatisticsLog(componentId, componentType, msgId, parentIndex, parentLog.getMsgId(),
+				                  parentLog.getComponentId(), startTime);
 		statisticsLog.setIsResponse(isResponse);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);

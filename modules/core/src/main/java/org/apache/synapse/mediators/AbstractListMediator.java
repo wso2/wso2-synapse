@@ -81,23 +81,18 @@ public abstract class AbstractListMediator extends AbstractMediator
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
                 RuntimeStatisticCollector
-                        .recordStatisticCreateEntry(synCtx, mediators.get(i).getType(),
-                                                    ComponentType.MEDIATOR, parentName,
-                                                    System.currentTimeMillis());
-
+                        .recordStatisticCreateEntry(synCtx, mediators.get(i).getType(), ComponentType.MEDIATOR,
+                                                    parentName, System.currentTimeMillis());
                 synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, mediators.get(i).getType());
-
                 synCtx.setTracingState(myEffectiveTraceState);
                 if (!mediators.get(i).mediate(synCtx)) {
-                    RuntimeStatisticCollector
-                            .recordStatisticCloseLog(synCtx, mediators.get(i).getType(), parentName,
-                                                     System.currentTimeMillis());
+                    RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, mediators.get(i).getType(), parentName,
+                                                                      System.currentTimeMillis());
                     returnVal = false;
                     break;
                 }
-                RuntimeStatisticCollector
-                        .recordStatisticCloseLog(synCtx, mediators.get(i).getType(), parentName,
-                                                 System.currentTimeMillis());
+                RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, mediators.get(i).getType(), parentName,
+                                                                  System.currentTimeMillis());
             }
         } catch (SynapseException synEx) {
             throw synEx;
