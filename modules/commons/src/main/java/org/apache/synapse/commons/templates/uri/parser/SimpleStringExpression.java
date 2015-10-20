@@ -67,7 +67,7 @@ public class SimpleStringExpression extends Expression {
         for (int i = 0; i < length; i++) {
             char ch = uriFragment.charAt(i);
             if (isReserved(ch) || (next != null && ch == next.getFirstCharacter())) {
-                if (ch == getSeparator() && variableList.size() > 0) {
+                if (ch == getSeparator() && variableList.size() > 1) {
                     continue;
                 }
 
