@@ -108,9 +108,11 @@ public class DeferredMessageBuilder {
       
 		Map transportHeaders = (Map) msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
 
+        String contentLength = null;
+        String trasferEncoded = null;
 		if (transportHeaders != null) {
-			String contentLength = (String) transportHeaders.get(HTTP.CONTENT_LEN);
-			String trasferEncoded = (String) transportHeaders.get(HTTP.TRANSFER_ENCODING);
+            contentLength = (String) transportHeaders.get(HTTP.CONTENT_LEN);
+            trasferEncoded = (String) transportHeaders.get(HTTP.TRANSFER_ENCODING);
 
 			if (contentType.equals(PassThroughConstants.DEFAULT_CONTENT_TYPE)
 					&& (contentLength == null || Integer.valueOf(contentLength) == 0)
@@ -135,7 +137,16 @@ public class DeferredMessageBuilder {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }*/
-                    element = builder.processDocument(in,contentType, msgCtx);
+                    if (contentLength != null && "0".equals(contentLength)) {
+                        element = new org.apache.axiom.soap.impl.llom.soap11.SOAP11Factory().getDefaultEnvelope();
+                        //since we are setting an empty envelop to achieve the empty body, we have to set a different
+                        //content-type other than text/xml, application/soap+xml or any other content-type which will
+                        //invoke the soap builder, otherwise soap builder will get hit and an empty envelope
+                        // will be send out
+                        msgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE, "application/xml");
+                    } else {
+                        element = builder.processDocument(in, contentType, msgCtx);
+                    }
                 } catch (AxisFault axisFault) {
                     log.error("Error building message", axisFault);
                     throw axisFault;
@@ -155,7 +166,16 @@ public class DeferredMessageBuilder {
                 // switch to default
                 builder = new SOAPBuilder();
                 try {
-                    element = builder.processDocument(in, contentType, msgCtx);
+                    if (contentLength != null && "0".equals(contentLength)) {
+                        element = new SOAP11Factory().getDefaultEnvelope();
+                        //since we are setting an empty envelop to achieve the empty body, we have to set a different
+                        //content-type other than text/xml, application/soap+xml or any other content-type which will
+                        //invoke the soap builder, otherwise soap builder will get hit and an empty envelope
+                        // will be send out
+                        msgCtx.setProperty(Constants.Configuration.MESSAGE_TYPE, "application/xml");
+                    } else {
+                        element = builder.processDocument(in, contentType, msgCtx);
+                    }
                 } catch (AxisFault axisFault) {
                     log.error("Error building message using SOAP builder");
                     throw axisFault;
