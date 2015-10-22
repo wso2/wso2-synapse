@@ -115,7 +115,7 @@ public abstract class FaultHandler {
             }
         }finally {
             RuntimeStatisticCollector
-                    .recordStatisticCloseFaultLog(synCtx, SynapseConstants.FAULTHANDLER, System.currentTimeMillis());
+                    .closeStatisticEntryForcefully(synCtx, System.currentTimeMillis());
         }
     }
 
