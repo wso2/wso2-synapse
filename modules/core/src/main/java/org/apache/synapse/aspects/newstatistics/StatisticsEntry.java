@@ -228,11 +228,12 @@ public class StatisticsEntry {
 	 * Close the remaining statistic logs after finishing all the message contexts of requests and
 	 * responses belonging to a message flow
 	 *
-	 * @param endTime endTime of the message flow
+	 * @param endTime         endTime of the message flow
+	 * @param closeForcefully should we finish the statistics forcefully without considering anything
 	 * @return true if message flow correctly ended
 	 */
-	public synchronized boolean endAll(long endTime) {
-		if (callbacks.isEmpty() && (openFaults == 0) && (openLogs.size() <= 1)) {
+	public synchronized boolean endAll(long endTime, boolean closeForcefully) {
+		if ((callbacks.isEmpty() && (openFaults == 0) && (openLogs.size() <= 1)) | closeForcefully) {
 			for (Integer index : openLogs) {
 				messageFlowLogs.get(index).setEndTime(endTime);
 			}

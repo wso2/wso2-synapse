@@ -135,7 +135,7 @@ public class RuntimeStatisticCollector {
 					boolean finished = runningStatistics.get(statisticsTraceId)
 					                                    .closeFaultLog(componentId, getMsgId(msgCtx), endTime);
 					if (finished) {
-						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime);
+						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime, false);
 					}
 				}
 			}
@@ -165,7 +165,7 @@ public class RuntimeStatisticCollector {
 					boolean finished = runningStatistics.get(statisticsTraceId)
 					                                    .closeLog(componentId, getMsgId(msgCtx), parentId, endTime);
 					if (finished) {
-						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime);
+						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime, false);
 					}
 				}
 			}
@@ -242,7 +242,27 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
-					endMessageFlow(statisticsTraceId, entry, endTime);
+					endMessageFlow(statisticsTraceId, entry, endTime, false);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Close the statistic log after finishing the message flow forcefully. When we try to use this method to end
+	 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
+	 * will send the completed statistic entry for collection
+	 *
+	 * @param msgCtx  message context
+	 * @param endTime end time of the message flow
+	 */
+	public static void closeStatisticEntryForcefully(MessageContext msgCtx, long endTime) {
+		if (isStatisticsEnable) {
+			String statisticsTraceId = getStatisticsTraceId(msgCtx);
+			if (statisticsTraceId != null) {
+				if (runningStatistics.containsKey(statisticsTraceId)) {
+					StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
+					endMessageFlow(statisticsTraceId, entry, endTime, true);
 				}
 			}
 		}
@@ -258,8 +278,8 @@ public class RuntimeStatisticCollector {
 	 * @param endTime          end time of the message flow
 	 */
 	private synchronized static void endMessageFlow(String statisticTraceId, StatisticsEntry statisticsEntry,
-	                                                long endTime) {
-		boolean isMessageFlowEnded = statisticsEntry.endAll(endTime);
+	                                                long endTime, boolean closeForceFully) {
+		boolean isMessageFlowEnded = statisticsEntry.endAll(endTime, closeForceFully);
 		if (isMessageFlowEnded) {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistic collection is ended for the message flow with statistic " +
