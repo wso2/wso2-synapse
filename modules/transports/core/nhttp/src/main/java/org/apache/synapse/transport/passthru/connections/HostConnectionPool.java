@@ -65,21 +65,8 @@ public class HostConnectionPool {
 				synchronized (connections) {
 					while (!connections.getHostConnections().isEmpty()) {
 						conn = connections.getHostConnections().remove(0);
-						if (conn.getConnection().isOpen() && !conn.getConnection().isStale()) {
-							if (log.isDebugEnabled()) {
-								log.debug("A connection  : " + route +
-								          " is available in the pool, and will be reused");
-							}
-							conn.getConnection().requestInput();
+						if (conn != null) {
 							return conn;
-						} else {
-							if (log.isDebugEnabled()) {
-								log.debug("closing stale connection : " + route);
-							}
-							try {
-								conn.getConnection().close();
-							} catch (IOException ignore) {
-							}
 						}
 					}
 				}
