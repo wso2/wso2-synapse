@@ -150,7 +150,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
                         getIteratedMessage(synCtx, msgNumber++, msgCount, envelope, (OMNode) o);
                 ContinuationStackManager.
                         addReliantContinuationState(iteratedMsgCtx, 0, getMediatorPosition());
-
                 if (target.isAsynchronous()) {
                     target.mediate(iteratedMsgCtx);
                 } else {

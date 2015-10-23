@@ -118,13 +118,11 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         }
 
         VFSOutTransportInfo vfsOutInfo = null;
-
         if (targetAddress != null) {
             vfsOutInfo = new VFSOutTransportInfo(targetAddress, globalFileLockingFlag);
         } else if (outTransportInfo != null && outTransportInfo instanceof VFSOutTransportInfo) {
             vfsOutInfo = (VFSOutTransportInfo) outTransportInfo;
         }
-
         WriteLockObject lockObject = null;
         String baseUri = null;
         if (vfsOutInfo != null) {
@@ -140,7 +138,6 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 }
             }
         }
-
         try {
             if (lockObject == null) {
                 writeFile(msgCtx, vfsOutInfo);
@@ -149,12 +146,12 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     writeFile(msgCtx, vfsOutInfo);
                 }
             }
-        }catch (AxisFault axisFault){
+        } catch (AxisFault axisFault) {
             throw axisFault;
-        }catch (Exception e){
+        } catch (Exception e) {
             handleException("Exception occurred while sending output to the destination" + e.getMessage(), e);
-        }finally {
-            if(lockObject != null && (lockObject.decrementAndGetUsers() == 0)){
+        } finally {
+            if (lockObject != null && (lockObject.decrementAndGetUsers() == 0)) {
                 lockingObjects.remove(baseUri);
                 log.debug("locking object removed for after Synchronous write|MapSize:" + lockingObjects.size());
             }
@@ -314,7 +311,6 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
     private void populateResponseFile(FileObject responseFile, MessageContext msgContext,
                                       boolean append, boolean lockingEnabled, FileSystemOptions fso) throws AxisFault {
-
         MessageFormatter messageFormatter = getMessageFormatter(msgContext);
         OMOutputFormat format = BaseUtils.getOMOutputFormat(msgContext);
         
@@ -370,14 +366,13 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
     /**
      * This method extracts base uri of vfs string.
+     *
      * @param targetAddress target address of the vfs connection
      * @return base uri for the vfs connection
      */
     private String getBaseUri(String targetAddress) {
-
         //Remove vfs part from the uri
-        if(targetAddress.contains("vfs:"))
-        {
+        if (targetAddress.contains("vfs:")) {
             targetAddress = targetAddress.substring(targetAddress.indexOf("vfs:") + 4);
         }
 
