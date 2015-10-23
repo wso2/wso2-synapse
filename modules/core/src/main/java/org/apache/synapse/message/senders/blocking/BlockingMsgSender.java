@@ -60,6 +60,9 @@ public class BlockingMsgSender {
     boolean initClientOptions = true;
 
     private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
+    
+    private final static int HTTP_SC_OK = 200;
+    private final static int HTTP_SC_ACCEPTED = 202;
 
     public void init() {
         try {
@@ -178,10 +181,12 @@ public class BlockingMsgSender {
                                                                   .trim());
                 /*
                  * If the response SC is neither equals to a value specified in
-                 * non-retry-sc in MP config, nor 200 OK, then we need to retry
+                 * non-retry-sc in MP config, nor 200 OK, nor 202 ACCEPTED, then
+                 * we need to retry
                  * sending that message.
                  */
-                if (httpStatusCode != 200 && !nonRetryErrorCodes.contains(httpStatusCode)) {
+                if (httpStatusCode != HTTP_SC_OK && httpStatusCode != HTTP_SC_ACCEPTED &&
+                    !nonRetryErrorCodes.contains(httpStatusCode)) {
                     throw new Exception(
                                         new Exception(
                                                       "Need to retry the Message since the HTTP SC: " +
@@ -211,10 +216,12 @@ public class BlockingMsgSender {
                                                   getNonRetryErrorCodes(((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                 /*
                  * If the response SC is neither equals to a value specified in
-                 * non-retry-sc in MP config, nor 200 OK, then we need to retry
+                 * non-retry-sc in MP config, nor 200 OK, nor 202 ACCEPTED, then
+                 * we need to retry
                  * sending that message.
                  */
-                if (statusCode != 200 && !nonRetryErrorCodes.contains(statusCode)) {
+                if (statusCode != HTTP_SC_OK && statusCode != HTTP_SC_ACCEPTED &&
+                    !nonRetryErrorCodes.contains(statusCode)) {
                     throw new AxisFault("Need to retry the Message since the HTTP SC: " +
                                         statusCode);
                 }
