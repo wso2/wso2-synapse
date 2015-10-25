@@ -26,7 +26,7 @@
    </parent>
    <groupId>org.apache.synapse</groupId>
    <artifactId>Apache-Synapse</artifactId>
-   <version>2.1.3-wso2v12-SNAPSHOT</version>
+   <version>2.1.3-wso2v12-M1-SNAPSHOT</version>
    <name>Apache Synapse</name>
    <description>Apache Synapse</description>
    <packaging>pom</packaging>
@@ -323,6 +323,18 @@
              <groupId>com.oopsconsultancy</groupId>
              <artifactId>xmltask</artifactId>
              <version>${com.oopsconsultancy.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.eclipse.osgi</groupId>
+             <artifactId>org.eclipse.osgi</artifactId>
+             <version>${version.equinox.osgi}</version>
+             <scope>provided</scope>
+         </dependency>
+         <dependency>
+             <groupId>org.eclipse.osgi</groupId>
+             <artifactId>org.eclipse.osgi.services</artifactId>
+             <version>${version.equinox.osgi.services}</version>
+             <scope>provided</scope>
          </dependency>
          <dependency>
              <groupId>org.apache.synapse</groupId>
@@ -842,6 +854,12 @@
             <version>${log4j.version}</version>
          </dependency>
          <dependency>
+              <groupId>org.wso2.orbit.com.hazelcast</groupId>
+              <artifactId>hazelcast</artifactId>
+              <version>${orbit.version.hazelcast}</version>
+              <scope>provided</scope>
+         </dependency>
+         <dependency>
             <groupId>org.wso2.eventing</groupId>
             <artifactId>wso2eventing-api</artifactId>
             <version>${wso2eventing-api.version}</version>
@@ -927,6 +945,9 @@
    <properties>
       <maven.javadoc.plugin.version>2.1</maven.javadoc.plugin.version>
       <wagon.ssh.version>2.1</wagon.ssh.version>
+      <orbit.version.hazelcast>3.5.0.wso2v1</orbit.version.hazelcast>
+      <version.equinox.osgi>3.8.1.v20120830-144521</version.equinox.osgi>
+      <version.equinox.osgi.services>3.3.100.v20120522-1822</version.equinox.osgi.services>
       <maven.clean.plugin.version>2.2</maven.clean.plugin.version>
       <maven.resources.plugin.version>2.2</maven.resources.plugin.version>
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
@@ -969,7 +990,7 @@
       <synapse.version>${project.version}</synapse.version>
       <commons.dbcp.version>1.2.2</commons.dbcp.version>
       <commons.pool.version>1.3</commons.pool.version>
-      <commons.vfs.version>2.0-wso2v13-SNAPSHOT</commons.vfs.version>
+      <commons.vfs.version>2.0-wso2v12</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
       <commons.net.version>1.4.1</commons.net.version>
       <jsch.version>0.1.49</jsch.version>
@@ -979,7 +1000,7 @@
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
       <axis2.version>1.6.1-wso2v12</axis2.version>
-      <axis2.transport.version>1.1.0-wso2v18-SNAPSHOT</axis2.transport.version>
+      <axis2.transport.version>1.1.0-wso2v17</axis2.transport.version>
       <axiom.version>1.2.11-wso2v6</axiom.version>
       <xml_schema.version>1.4.3</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>

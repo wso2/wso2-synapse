@@ -163,4 +163,7 @@ public final class ThrottleConstants {
     public static final String DUMMY_TOKEN = "dummy_token_for_token_based_throttle";
 
     public static final String THROTTLE_INFO_KEY = "throttle_info";
+
+    public static final String THROTTLE_TIMESTAMP_KEY = "startedTime-";
+
 }
