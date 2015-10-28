@@ -68,7 +68,6 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 			}
 
 			if (deploymentStore.isUpdatingArtifact(libFilePath)) {
-
 				if (log.isDebugEnabled()) {
 					log.debug("Updating Library artifact detected with filename : " + libFilePath);
 				}
@@ -81,7 +80,6 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 				// deploy from beginning
 				// add the library to synapse Config
 				completeDeployment(lib, libArtifactName);
-
 			} else {
 				// new artifact hot-deployment case
 				try {
@@ -99,7 +97,6 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 			if (libArtifactName != null) {
 				deploymentStore.addArtifact(libFilePath, libArtifactName);
 			}
-
 			log.info("Synapse Library named '" + lib.toString()
 					+ "' has been deployed from file : " + libFilePath);
 		}
@@ -151,7 +148,7 @@ public class LibraryArtifactDeployer extends AbstractSynapseArtifactDeployer {
 
 	if (deploymentStore.containsFileName(fileName)) {
 	    File undeployingFile = new File(fileName);
-		if(fileName.contains("/tmp/carbonapps/") && fileName.endsWith(".zip")){
+		if(fileName.contains(File.separator+"tmp"+File.separator+"carbonapps"+File.separator) && fileName.endsWith(".zip")){
 			undeployingFile.delete();
 		}
 	    // axis2 treats Hot-Update as (Undeployment + deployment), where
