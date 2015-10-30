@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.HashMap;
@@ -396,6 +397,7 @@ public class RuntimeStatisticCollector {
 				// schedule timeout handler to run specified time
 				synapseTimer.schedule(statisticStoreCleanerHandler, 0, statisticsStoreCleaner.getCleanInterval());
 			}
+			StatisticEventReceiver.Init();
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is not enabled in \'synapse.properties\' file");
