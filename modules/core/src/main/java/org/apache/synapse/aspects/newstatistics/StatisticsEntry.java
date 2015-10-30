@@ -118,21 +118,9 @@ public class StatisticsEntry {
 			}
 			if (parentId.equals("")) {
 				int parentIndex = getFirstLogWithMsgId(msgId);
-				if (parentIndex == -1) {
-					/* if msg Id not present this statistic event is related to a new cloned
-					message therefore get immediate root level open statistic log as the
-					parent of this log */
-					parentIndex = getFirstLogWithMsgId(-1);
-				}
 				createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
 			} else {
 				int parentIndex = getComponentIndex(parentId, msgId);
-				/* if msg Id not present this statistic event is related to a new cloned
-					message therefore get immediate root level open statistic log as the
-					parent of this log */
-				if (parentIndex == -1) {
-					parentIndex = getFirstLogWithMsgId(-1);
-				}
 				if (parentIndex > -1) {
 					createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
 				} else {
@@ -218,8 +206,6 @@ public class StatisticsEntry {
 			log.debug("Closed statistic log of [ElementId" + currentLog.getComponentId() +
 			          "][MsgId" + currentLog.getParentMsgId());
 		}
-		currentLog.setEndTime(endTime);
-		updateParentLogs(currentLog.getParentLevel(), endTime);
 		currentLog.setEndTime(endTime);
 		updateParentLogs(currentLog.getParentLevel(), endTime);
 	}
@@ -353,14 +339,21 @@ public class StatisticsEntry {
 	 * @return index of the statistics log
 	 */
 	private int getFirstLogWithMsgId(int msgId) {
-		int parentIndex = -1;
 		for (Integer index : openLogs) {
 			if (messageFlowLogs.get(index).getMsgId() == msgId) {
-				parentIndex = index;
-				break;
+				return index;
 			}
 		}
-		return parentIndex;
+		//No Log entry found for the msgID. So look for log IDs with default msgID
+		if (msgId != -1) {
+			msgId = -1;
+			for (Integer index : openLogs) {
+				if (messageFlowLogs.get(index).getMsgId() == msgId) {
+					return index;
+				}
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -458,6 +451,9 @@ public class StatisticsEntry {
 	 */
 	private int getParentForFault(String parentId, int msgId) {
 		int parentIndex = 0;
+		if(parentId.equals("")){
+			return getFirstLogWithMsgId(msgId);
+		}
 		for (int index = messageFlowLogs.size() - 1; index >= 0; index--) {
 			if (parentId.equals(messageFlowLogs.get(index).getComponentId()) &&
 			    (msgId == messageFlowLogs.get(index).getMsgId())) {
