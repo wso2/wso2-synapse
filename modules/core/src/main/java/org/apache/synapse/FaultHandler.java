@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 
 import java.util.Stack;
 import java.io.StringWriter;
@@ -45,12 +46,20 @@ public abstract class FaultHandler {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+        boolean faultReported = false;
 
         if (traceOrDebugOn) {
             traceOrDebugWarn(traceOn, "FaultHandler executing impl: " + this.getClass().getName());
         }
 
         try {
+            if (!isFaultAlreadyReported(synCtx)) {
+                RuntimeStatisticCollector.recordStatisticCreateFaultLog(synCtx, SynapseConstants.FAULTHANDLER,
+                                                                        ComponentType.FAULTHANDLER,
+                                                                        getStatisticReportingElementName(synCtx),
+                                                                        System.currentTimeMillis());
+                faultReported = true;
+            }
             synCtx.getServiceLog().info("FaultHandler executing impl: " + this.getClass().getName());
             onFault(synCtx);
 
@@ -59,6 +68,11 @@ public abstract class FaultHandler {
             Stack faultStack = synCtx.getFaultStack();
             if (faultStack != null && !faultStack.isEmpty()) {
                 ((FaultHandler) faultStack.pop()).handleFault(synCtx);
+            }
+        }finally {
+            if(faultReported) {
+                RuntimeStatisticCollector.closeStatisticEntryForcefully(synCtx, System.currentTimeMillis());
+                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
             }
         }
     }
@@ -72,6 +86,7 @@ public abstract class FaultHandler {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+        boolean faultReported = false;
 
         if (e != null && synCtx.getProperty(SynapseConstants.ERROR_CODE) == null) {
             synCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.DEFAULT_ERROR);
@@ -100,11 +115,16 @@ public abstract class FaultHandler {
             if (traceOrDebugOn) {
                 traceOrDebugWarn(traceOn, "FaultHandler : " + this);
             }
-            RuntimeStatisticCollector
-                    .recordStatisticCreateFaultLog(synCtx, SynapseConstants.FAULTHANDLER, ComponentType.FAULTHANDLER,
-                                                   this.getClass().toString(), System.currentTimeMillis());
-            onFault(synCtx);
 
+            if(!isFaultAlreadyReported(synCtx)) {
+                RuntimeStatisticCollector.recordStatisticCreateFaultLog(synCtx, SynapseConstants.FAULTHANDLER,
+                                                                        ComponentType.FAULTHANDLER,
+                                                                        getStatisticReportingElementName(synCtx),
+                                                                        System.currentTimeMillis());
+                faultReported = true;
+            }
+            synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, true);
+            onFault(synCtx);
         } catch (SynapseException se) {
 
             Stack faultStack = synCtx.getFaultStack();
@@ -114,8 +134,10 @@ public abstract class FaultHandler {
             	throw new RuntimeException(se);
             }
         }finally {
-            RuntimeStatisticCollector
-                    .closeStatisticEntryForcefully(synCtx, System.currentTimeMillis());
+            if(faultReported) {
+                RuntimeStatisticCollector.closeStatisticEntryForcefully(synCtx, System.currentTimeMillis());
+                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
+            }
         }
     }
 
@@ -143,6 +165,24 @@ public abstract class FaultHandler {
             trace.warn(msg);
         }
         log.warn(msg);
+    }
+
+    private String getStatisticReportingElementName(MessageContext synCtx) {
+        if (this instanceof AbstractEndpoint) {
+            return ((AbstractEndpoint) this).getStatisticReportingName(synCtx);
+        } else {
+            return "";
+        }
+    }
+
+    private boolean isFaultAlreadyReported(MessageContext synCtx) {
+        Object o = synCtx.getProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED);
+        if (o == null) {
+            return false;
+        } else if ((Boolean) o) {
+            return true;
+        }
+        return false;
     }
 
 }

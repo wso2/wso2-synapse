@@ -237,6 +237,9 @@ public final class SynapseConstants {
         /** key to message context statistic entry */
         public static final String NEW_STATISTICS_MESSAGE_ID ="synapse.newStatistics.msgID";
 
+        /** key to message context statistic entry */
+        public static final String NEW_STATISTICS_IS_FAULT_REPORTED ="synapse.newStatistics.fault.reported";
+
         /** Default backend name used for Statistic Collection*/
         public static final String ANY ="any";
 
