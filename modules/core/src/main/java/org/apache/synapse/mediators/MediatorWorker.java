@@ -23,7 +23,9 @@ import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
 
 /**
  * This class will be used as the executer for the injectAsync method for the
@@ -70,9 +72,10 @@ public class MediatorWorker implements Runnable {
         try {
             //if inbound endpoint report statistics
             if (synCtx.getProperty("inbound.endpoint.name") != null) {
-                RuntimeStatisticCollector
-                        .recordStatisticCreateEntry(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
+                CreateEntryStatisticLog createEntryStatisticLog =
+                        new CreateEntryStatisticLog(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
                                                     ComponentType.INBOUNDENDPOINT, "", System.currentTimeMillis());
+                StatisticEventReceiver.receive(createEntryStatisticLog);
             }
             seq.mediate(synCtx);
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
@@ -108,7 +111,8 @@ public class MediatorWorker implements Runnable {
                 synCtx.getServiceLog().error(msg, e);
             }
         } finally {
-            RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+            FinalizeEntryLog finalizeEntryLog = new FinalizeEntryLog(synCtx, System.currentTimeMillis());
+            StatisticEventReceiver.receive(finalizeEntryLog);
         }
         synCtx = null;
         seq = null;

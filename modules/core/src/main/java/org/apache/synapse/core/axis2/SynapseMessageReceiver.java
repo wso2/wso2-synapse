@@ -29,9 +29,9 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
-import org.apache.synapse.mediators.MediatorFaultHandler;
 
 /**
  * This message receiver should be configured in the Axis2 configuration as the
@@ -103,7 +103,8 @@ public class SynapseMessageReceiver implements MessageReceiver {
                          !synCtx.isResponse());
             }
             if (isOutOnly) {
-                RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+                FinalizeEntryLog finalizeEntryLog = new FinalizeEntryLog(synCtx, System.currentTimeMillis());
+                StatisticEventReceiver.receive(finalizeEntryLog);
             }
         }
     }

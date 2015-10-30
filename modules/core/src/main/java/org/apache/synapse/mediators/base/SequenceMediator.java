@@ -26,9 +26,11 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
@@ -106,9 +108,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             }
         }
 
-        RuntimeStatisticCollector
-                .recordStatisticCreateEntry(synCtx, getSequenceNameForStatistics(synCtx), ComponentType.SEQUENCE, "",
+        CreateEntryStatisticLog createEntryStatisticLog =
+                new CreateEntryStatisticLog(synCtx, getSequenceNameForStatistics(synCtx), ComponentType.SEQUENCE, "",
                                             System.currentTimeMillis());
+        StatisticEventReceiver.receive(createEntryStatisticLog);
 
         synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, getSequenceNameForStatistics(synCtx));
 
@@ -328,9 +331,11 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     private void statisticsEnd(MessageContext synCtx) {
         Boolean isContinuationCall = (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
         if (isContinuationCall == null || !isContinuationCall) {
-            RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, getSequenceNameForStatistics(synCtx), "",
-                                                              System.currentTimeMillis());
+            StatisticCloseLog statisticCloseLog =
+                    new StatisticCloseLog(synCtx, getSequenceNameForStatistics(synCtx), "", System.currentTimeMillis());
+            StatisticEventReceiver.receive(statisticCloseLog);
         }
+
     }
 
     /**

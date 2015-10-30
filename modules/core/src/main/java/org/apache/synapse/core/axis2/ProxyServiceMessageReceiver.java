@@ -29,9 +29,11 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.endpoints.Endpoint;
@@ -85,9 +87,10 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
-        RuntimeStatisticCollector
-                .recordStatisticCreateEntry(synCtx, this.name, ComponentType.PROXYSERVICE, "",
+        CreateEntryStatisticLog createEntryStatisticLog =
+                new CreateEntryStatisticLog(synCtx, this.name, ComponentType.PROXYSERVICE, "",
                                             System.currentTimeMillis());
+        StatisticEventReceiver.receive(createEntryStatisticLog);
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -232,7 +235,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                          !synCtx.isResponse());
             }
             if (isOutOnly) {
-                RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+                FinalizeEntryLog finalizeEntryLog =
+                        new FinalizeEntryLog(synCtx, System.currentTimeMillis());
+                StatisticEventReceiver.receive(finalizeEntryLog);
             }
         }
     }

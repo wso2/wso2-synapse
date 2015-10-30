@@ -23,9 +23,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
 
 import java.util.*;
@@ -118,7 +118,8 @@ public class RESTRequestHandler {
     }
 
     private void reportApiStartStatistics(MessageContext synCtx, API api) {
-        RuntimeStatisticCollector
-                .recordStatisticCreateEntry(synCtx, api.getName(), ComponentType.API, "", System.currentTimeMillis());
+        CreateEntryStatisticLog createEntryStatisticLog =
+                new CreateEntryStatisticLog(synCtx, api.getName(), ComponentType.API, "", System.currentTimeMillis());
+        StatisticEventReceiver.receive(createEntryStatisticLog);
     }
 }

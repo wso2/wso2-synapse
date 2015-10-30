@@ -22,7 +22,9 @@ package org.apache.synapse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CloseStatisticEntryForcefullyLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateFaultStatisticLog;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 
 import java.util.Stack;
@@ -54,10 +56,12 @@ public abstract class FaultHandler {
 
         try {
             if (!isFaultAlreadyReported(synCtx)) {
-                RuntimeStatisticCollector.recordStatisticCreateFaultLog(synCtx, SynapseConstants.FAULTHANDLER,
-                                                                        ComponentType.FAULTHANDLER,
-                                                                        getStatisticReportingElementName(synCtx),
-                                                                        System.currentTimeMillis());
+                CreateFaultStatisticLog createFaultStatisticLog =
+                        new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER,
+                                                    ComponentType.FAULTHANDLER,
+                                                    getStatisticReportingElementName(synCtx),
+                                                    System.currentTimeMillis());
+                StatisticEventReceiver.receive(createFaultStatisticLog);
                 faultReported = true;
             }
             synCtx.getServiceLog().info("FaultHandler executing impl: " + this.getClass().getName());
@@ -71,7 +75,9 @@ public abstract class FaultHandler {
             }
         }finally {
             if(faultReported) {
-                RuntimeStatisticCollector.closeStatisticEntryForcefully(synCtx, System.currentTimeMillis());
+                CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
+                        new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
+                StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
                 synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
             }
         }
@@ -117,10 +123,12 @@ public abstract class FaultHandler {
             }
 
             if(!isFaultAlreadyReported(synCtx)) {
-                RuntimeStatisticCollector.recordStatisticCreateFaultLog(synCtx, SynapseConstants.FAULTHANDLER,
-                                                                        ComponentType.FAULTHANDLER,
-                                                                        getStatisticReportingElementName(synCtx),
-                                                                        System.currentTimeMillis());
+                CreateFaultStatisticLog createFaultStatisticLog =
+                        new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER,
+                                                    ComponentType.FAULTHANDLER,
+                                                    getStatisticReportingElementName(synCtx),
+                                                    System.currentTimeMillis());
+                StatisticEventReceiver.receive(createFaultStatisticLog);
                 faultReported = true;
             }
             synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, true);
@@ -135,7 +143,9 @@ public abstract class FaultHandler {
             }
         }finally {
             if(faultReported) {
-                RuntimeStatisticCollector.closeStatisticEntryForcefully(synCtx, System.currentTimeMillis());
+                CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
+                        new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
+                StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
                 synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
             }
         }

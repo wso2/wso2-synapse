@@ -40,7 +40,9 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -358,7 +360,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (!sequential) {
             try {
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+                FinalizeEntryLog finalizeEntryLog =
+                        new FinalizeEntryLog(synCtx, System.currentTimeMillis());
+                StatisticEventReceiver.receive(finalizeEntryLog);
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -369,9 +373,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         // Following code is reached if the sequential==true or inbound is
         // reached max level
         if (synCtx.getProperty("inbound.endpoint.name") != null) {
-            RuntimeStatisticCollector
-                    .recordStatisticCreateEntry(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
+            CreateEntryStatisticLog createEntryStatisticLog =
+                    new CreateEntryStatisticLog(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
                                                 ComponentType.INBOUNDENDPOINT, "", System.currentTimeMillis());
+            StatisticEventReceiver.receive(createEntryStatisticLog);
         }else{
             log.error("There is no info about the inbound endpoint, skipping collecting statistics at inbound level.");
         }
@@ -411,7 +416,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
-            RuntimeStatisticCollector.finalizeEntry(synCtx, System.currentTimeMillis());
+            FinalizeEntryLog finalizeEntryLog =
+                    new FinalizeEntryLog(synCtx, System.currentTimeMillis());
+            StatisticEventReceiver.receive(finalizeEntryLog);
         }
     }
     

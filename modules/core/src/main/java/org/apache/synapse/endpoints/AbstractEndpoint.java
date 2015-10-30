@@ -32,10 +32,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -298,9 +300,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             throw new IllegalStateException("not initialized, " +
                     "endpoint must be in initialized state");
         }
-        RuntimeStatisticCollector
-                .recordStatisticCreateEntry(synCtx, getStatisticReportingName(synCtx), ComponentType.ENDPOINT, "",
+        CreateEntryStatisticLog createEntryStatisticLog =
+                new CreateEntryStatisticLog(synCtx, getStatisticReportingName(synCtx), ComponentType.ENDPOINT, "",
                                             System.currentTimeMillis());
+        StatisticEventReceiver.receive(createEntryStatisticLog);
         prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
@@ -373,9 +376,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
+        StatisticCloseLog statisticCloseLog =
+                new StatisticCloseLog(synCtx, getStatisticReportingName(synCtx), "", System.currentTimeMillis());
+        StatisticEventReceiver.receive(statisticCloseLog);
 
-        RuntimeStatisticCollector
-                .recordStatisticCloseLog(synCtx, getStatisticReportingName(synCtx), "", System.currentTimeMillis());
     }
 
     /**

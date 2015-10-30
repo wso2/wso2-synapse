@@ -28,7 +28,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -274,12 +276,15 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 } else {
                     textualStringName = (String) synapseRestApi;
                 }
-                RuntimeStatisticCollector
-                        .recordStatisticCreateEntry(synCtx, textualStringName, ComponentType.RESOURCE, "",
+                CreateEntryStatisticLog createEntryStatisticLog =
+                        new CreateEntryStatisticLog(synCtx, textualStringName, ComponentType.RESOURCE, "",
                                                     System.currentTimeMillis());
+                StatisticEventReceiver.receive(createEntryStatisticLog);
             } else {
-                RuntimeStatisticCollector.recordStatisticCreateEntry(synCtx, name, ComponentType.RESOURCE, "",
-                                                                     System.currentTimeMillis());
+                CreateEntryStatisticLog createEntryStatisticLog =
+                        new CreateEntryStatisticLog(synCtx, name, ComponentType.RESOURCE, "",
+                                                    System.currentTimeMillis());
+                StatisticEventReceiver.receive(createEntryStatisticLog);
             }
         }
 
@@ -373,10 +378,13 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                     } else {
                         textualStringName = (String) synapseRestApi;
                     }
-                    RuntimeStatisticCollector
-                            .recordStatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                    StatisticCloseLog statisticCloseLog =
+                            new StatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                    StatisticEventReceiver.receive(statisticCloseLog);
                 } else {
-                    RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                    StatisticCloseLog statisticCloseLog =
+                            new StatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                    StatisticEventReceiver.receive(statisticCloseLog);
                 }
             }
         } else {
@@ -389,10 +397,13 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 } else {
                     textualStringName = (String) synapseRestApi;
                 }
-                RuntimeStatisticCollector
-                        .recordStatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                StatisticCloseLog statisticCloseLog =
+                        new StatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                StatisticEventReceiver.receive(statisticCloseLog);
             } else {
-                RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                StatisticCloseLog statisticCloseLog =
+                        new StatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                StatisticEventReceiver.receive(statisticCloseLog);
             }
         }
     }

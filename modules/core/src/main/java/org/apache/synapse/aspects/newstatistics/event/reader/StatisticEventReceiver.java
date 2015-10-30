@@ -18,12 +18,15 @@
 
 package org.apache.synapse.aspects.newstatistics.event.reader;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
 public class StatisticEventReceiver {
+	private static final Log log = LogFactory.getLog(StatisticEventPublisher.class);
 	final static BlockingQueue<StatisticReportingLog> queue = new ArrayBlockingQueue<StatisticReportingLog>(10000);
 
 	/**
@@ -40,8 +43,14 @@ public class StatisticEventReceiver {
 	 *
 	 * @param event Statistic Event
 	 */
-	public static void addEventToQueue(StatisticReportingLog event) {
-		queue.add(event);
+	public static void receive(StatisticReportingLog event) {
+		try {
+			queue.add(event);
+		} catch (IllegalStateException e) {
+			log.error("Statistic event cannot be added at this time due to capacity restrictions.");
+		} catch (Exception e) {
+			log.error("Exception occurred while adding the statistic event to the queue.");
+		}
 	}
 }
 
