@@ -298,14 +298,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             throw new IllegalStateException("not initialized, " +
                     "endpoint must be in initialized state");
         }
-        if (this.endpointName != null) {
-            RuntimeStatisticCollector.recordStatisticCreateEntry(synCtx, this.endpointName, ComponentType.ENDPOINT, "",
-                                                                 System.currentTimeMillis());
-        } else {
-            RuntimeStatisticCollector
-                    .recordStatisticCreateEntry(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT, ComponentType.ENDPOINT, "",
-                                                System.currentTimeMillis());
-        }
+        RuntimeStatisticCollector
+                .recordStatisticCreateEntry(synCtx, getStatisticReportingName(synCtx), ComponentType.ENDPOINT, "",
+                                            System.currentTimeMillis());
         prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
@@ -379,14 +374,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
-        if (this.endpointName != null) {
-            RuntimeStatisticCollector
-                    .recordStatisticCloseLog(synCtx, this.endpointName, "", System.currentTimeMillis());
-        } else {
-            RuntimeStatisticCollector.recordStatisticCloseLog(synCtx, SynapseConstants.ANONYMOUS_ENDPOINT, "",
-                                                              System.currentTimeMillis());
-        }
-
+        RuntimeStatisticCollector
+                .recordStatisticCloseLog(synCtx, getStatisticReportingName(synCtx), "", System.currentTimeMillis());
     }
 
     /**
@@ -800,5 +789,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void logSetter() {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
+    }
+
+    public String getStatisticReportingName(MessageContext synCtx) {
+        if (this.endpointName != null) {
+            return this.endpointName + "|Address:" + synCtx.getTo().getAddress();
+        } else {
+            return SynapseConstants.ANONYMOUS_ENDPOINT + "|Address:" + synCtx.getTo().getAddress();
+        }
     }
 }
