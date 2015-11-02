@@ -24,6 +24,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
@@ -36,6 +37,7 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Call Mediator sends a message using specified semantics. If it contains an endpoint it will
@@ -105,6 +107,14 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             }
         }
 
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", true);
+            synInCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synInCtx);
+        }
+
         MessageContext resultMsgCtx = null;
         try {
             if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
@@ -129,6 +139,11 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("End : Call mediator - Blocking Call");
                 }
+
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", false);
+                }
+
                 return true;
             } catch (Exception e) {
                 handleFault(synInCtx, e);
@@ -138,6 +153,11 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 synLog.traceOrDebug("Service returned a null response");
             }
         }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", false);
+        }
+
         return true;
     }
 
@@ -155,6 +175,14 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synInCtx.getEnvelope());
             }
+        }
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", true);
+            synInCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synInCtx);
         }
 
         // clear the message context properties related to endpoint in last service invocation
@@ -206,6 +234,10 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Call mediator - Non Blocking Call");
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synInCtx, mediatorId, "Call Mediator", false);
         }
 
         if (outOnlyMessage) {

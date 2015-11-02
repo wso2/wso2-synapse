@@ -21,8 +21,12 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.mediators.AbstractMediator;
+
+import java.util.UUID;
 
 /**
  * Halts further processing/mediation of the current message. i.e. returns false
@@ -47,6 +51,14 @@ public class DropMediator extends AbstractMediator {
             }
         }
 
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
+
         synCtx.setTo(null);
 
         // if this is a response , this the end of the outflow
@@ -56,6 +68,10 @@ public class DropMediator extends AbstractMediator {
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Drop mediator");
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Drop Mediator", false);
         }
 
         return false;

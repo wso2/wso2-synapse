@@ -22,10 +22,13 @@ package org.apache.synapse.mediators.filters;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
+
+import java.util.UUID;
 
 /**
  * The In Mediator acts only on "incoming" messages into synapse. This is
@@ -56,12 +59,26 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
 
         boolean result = true;
         if (test(synCtx)) {
+
+            String mediatorId = null;
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", true);
+                synCtx.addComponentToMessageFlow(mediatorId);
+                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+            }
+
             synLog.traceOrDebug("Current message is incoming - executing child mediators");
             ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
             result = super.mediate(synCtx);
             if (result) {
                 ContinuationStackManager.removeReliantContinuationState(synCtx);
             }
+
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", false);
+            }
+
         } else {
             synLog.traceOrDebug("Current message is a response - skipping child mediators");
         }

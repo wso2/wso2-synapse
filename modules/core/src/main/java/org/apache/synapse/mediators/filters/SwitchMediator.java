@@ -28,12 +28,14 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The switch mediator implements the functionality of the "switch" construct. It first
@@ -87,6 +89,14 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
             }
         }
 
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
+
         int parentsEffectiveTraceState = synCtx.getTracingState();
         // if I have been explicitly asked to enable or disable tracing, set it to the message
         // to pass it on; else, do nothing -> i.e. let the parents state flow
@@ -108,6 +118,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
+
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+                }
+
                 return result;
 
             } else {
@@ -124,6 +139,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                             if (result) {
                                 ContinuationStackManager.removeReliantContinuationState(synCtx);
                             }
+
+                            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+                            }
+
                             return result;
                         }
                     }
@@ -138,6 +158,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                     if (result) {
                         ContinuationStackManager.removeReliantContinuationState(synCtx);
                     }
+
+                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+                    }
+
                     return result;
                 } else {
                     synLog.traceOrDebug("None of the switch cases matched - no default case");
@@ -146,6 +171,10 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
 
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
         }
 
         synLog.traceOrDebug("End : Switch mediator");

@@ -27,17 +27,22 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
+import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.rest.RESTConstants;
 
 import java.util.Stack;
+import java.util.UUID;
 
 /**
  * The Sequence mediator either refers to a named Sequence mediator instance
@@ -105,7 +110,27 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             }
         }
 
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+                if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null) {
+                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "REST API: " + synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
+                }
+                if(synCtx.getProperty(SynapseConstants.IS_INBOUND)!=null && (Boolean.TRUE).equals(synCtx.getProperty(SynapseConstants.IS_INBOUND))){
+                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Inbound Endpoint");
+                }
+            }
+        }
+
         if (key == null) {
+            String mediatorId = null;
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Sequence: " + (name == null ? this.sequenceType.name() : name), true);
+                synCtx.addComponentToMessageFlow(mediatorId);
+                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+            }
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
@@ -175,6 +200,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
                     synLog.traceOrDebug(
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
+                }
+
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Sequence: " + (name == null ? this.sequenceType.name() : name), false);
                 }
 
                 return result;
