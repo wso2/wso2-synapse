@@ -30,6 +30,8 @@ import org.apache.axis2.engine.Handler;
 import org.apache.axis2.engine.Phase;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -283,4 +285,23 @@ public class RelayUtils {
         throw new AxisFault(msg, e);
     }
 
+    /**
+     * Consumes the data in pipe completely in the given message context and discard it
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault
+     */
+    public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
+        final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null) {
+            InputStream in = pipe.getInputStream();
+            try {
+                if (in != null && in.available() > 0) {
+                    IOUtils.copy(in, new NullOutputStream());
+                }
+            } catch (IOException exception) {
+                handleException("Error when consuming the input stream to discard ", exception);
+            }
+        }
+    }
 }
