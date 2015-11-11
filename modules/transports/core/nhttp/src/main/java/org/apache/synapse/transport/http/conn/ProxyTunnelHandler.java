@@ -61,6 +61,7 @@ public class ProxyTunnelHandler {
         HttpRequest connect = new BasicHttpRequest("CONNECT", target.toHostString(), HttpVersion.HTTP_1_1);
         connect.setHeader(HttpHeaders.HOST, target.toHostString());
         this.httpProcessor.process(connect, context);
+        context.setAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL, target.toString());
         return connect;
     }
     
