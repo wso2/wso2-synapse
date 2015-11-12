@@ -11,8 +11,8 @@ import java.util.Set;
 
 public class MessageFlowDataHolder {
 
-    private static List<MessageFlowComponentEntry> componentInfo = new ArrayList<>();
-    private static List<MessageFlowTraceEntry> flowInfo = new ArrayList<>();
+    private static List<MessageFlowComponentEntry> componentInfo = new ArrayList<MessageFlowComponentEntry>();
+    private static List<MessageFlowTraceEntry> flowInfo = new ArrayList<MessageFlowTraceEntry>();
 
     private static boolean messageFlowTraceEnable = false;
 

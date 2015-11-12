@@ -622,7 +622,7 @@ public class Axis2MessageContext implements MessageContext {
         if(this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) != null) {
 
             List<String> messageFlowTrace = (List<String>) this.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
-            List<String> newMessageFlow = new ArrayList<>();
+            List<String> newMessageFlow = new ArrayList<String>();
 
             for (int i =0;i<messageFlowTrace.size();i++) {
                 newMessageFlow.add(messageFlowTrace.get(i) + componentId + " -> ");
@@ -631,7 +631,7 @@ public class Axis2MessageContext implements MessageContext {
             this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlow);
         }else{
 
-            List<String> messageFlowTrace = new ArrayList<>();
+            List<String> messageFlowTrace = new ArrayList<String>();
             messageFlowTrace.add(componentId + " -> ");
 
             this.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, messageFlowTrace);

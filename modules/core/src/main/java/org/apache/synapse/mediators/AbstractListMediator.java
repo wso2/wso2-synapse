@@ -90,6 +90,9 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
 
                 if (!mediators.get(i).mediate(synCtx)) {
+                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), false);
+                    }
                     returnVal = false;
                     break;
                 }
