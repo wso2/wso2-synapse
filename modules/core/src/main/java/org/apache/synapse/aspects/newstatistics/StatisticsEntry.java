@@ -43,6 +43,16 @@ public class StatisticsEntry {
 	private final ArrayList<StatisticsLog> messageFlowLogs = new ArrayList<StatisticsLog>();
 
 	/**
+	 * localMemberHost if this is a clustered environment
+	 */
+	private String localMemberHost = null;
+
+	/**
+	 * localMemberPort if this is a clustered environment
+	 */
+	private String localMemberPort = null;
+
+	/**
 	 * HashMap to hold all the remaining callbacks related to the message flow
 	 */
 	private final HashMap<String, Integer> callbacks = new HashMap<String, Integer>();
@@ -67,15 +77,19 @@ public class StatisticsEntry {
 	 * according to given parameters. Statistic Event for creating statistic entry can be either
 	 * PROXY, API or SEQUENCE.
 	 *
-	 * @param componentId   componentId of the statistic reporting element
-	 * @param componentType component Type of the statistic reporting element
-	 * @param msgId         msgId of the statistics reporting message context
-	 * @param parentId      parentId of the reporting statistic event
-	 * @param startTime     starting time of the statistics reporting event
-	 * @param isResponse    is message context belong to an response
+	 * @param componentId     componentId of the statistic reporting element
+	 * @param componentType   component Type of the statistic reporting element
+	 * @param msgId           msgId of the statistics reporting message context
+	 * @param parentId        parentId of the reporting statistic event
+	 * @param startTime       starting time of the statistics reporting event
+	 * @param isResponse      is message context belong to an response
+	 * @param localMemberHost localMemberHost in the cluster
+	 * @param localMemberPort localMemberPort in the cluster
 	 */
 	public StatisticsEntry(String componentId, ComponentType componentType, int msgId, String parentId, long startTime,
-	                       boolean isResponse) {
+	                       boolean isResponse, String localMemberHost, String localMemberPort) {
+		this.localMemberHost = localMemberHost;
+		this.localMemberPort = localMemberPort;
 		StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, parentId, startTime);
 		statisticsLog.setIsResponse(isResponse);
 		messageFlowLogs.add(statisticsLog);
@@ -98,7 +112,6 @@ public class StatisticsEntry {
 	 */
 	public synchronized void createLog(String componentId, ComponentType componentType, int msgId, String parentId,
 	                                   long startTime, boolean isResponse) {
-
 		if (openLogs.isEmpty()) {
 			StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, "", startTime);
 			messageFlowLogs.add(statisticsLog);
@@ -451,7 +464,7 @@ public class StatisticsEntry {
 	 */
 	private int getParentForFault(String parentId, int msgId) {
 		int parentIndex = 0;
-		if(parentId.equals("")){
+		if (parentId.equals("")) {
 			return getFirstLogWithMsgId(msgId);
 		}
 		for (int index = messageFlowLogs.size() - 1; index >= 0; index--) {
@@ -481,5 +494,13 @@ public class StatisticsEntry {
 	public int incrementAndGetClonedMsgCount() {
 		clonedMsgCount += 1;
 		return clonedMsgCount;
+	}
+
+	public String getLocalMemberHost() {
+		return localMemberHost;
+	}
+
+	public String getLocalMemberPort() {
+		return localMemberPort;
 	}
 }

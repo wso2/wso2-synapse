@@ -25,6 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.util.ClusterInformationProvider;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.HashMap;
@@ -46,6 +47,10 @@ public class RuntimeStatisticCollector {
 	private static boolean isStatisticsEnable = false;
 
 	private final static String STATISTICS_ENABLE = "new.statistics.enable";
+
+	private static String localMemberPort = null;
+
+	private static String localMemberHost = null;
 
 	/**
 	 * Create statistic log for the the reporting component
@@ -74,7 +79,7 @@ public class RuntimeStatisticCollector {
 				} else {
 					StatisticsEntry statisticsEntry =
 							new StatisticsEntry(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
-							                    msgCtx.isResponse());
+							                    msgCtx.isResponse(), localMemberHost, localMemberPort);
 					runningStatistics.put(statisticsTraceId, statisticsEntry);
 					if (log.isDebugEnabled()) {
 						log.debug(
@@ -396,6 +401,11 @@ public class RuntimeStatisticCollector {
 						new StatisticStoreCleanerHandler(statisticsStoreCleaner);
 				// schedule timeout handler to run specified time
 				synapseTimer.schedule(statisticStoreCleanerHandler, 0, statisticsStoreCleaner.getCleanInterval());
+			}
+			ClusterInformationProvider clusterInformationProvider = new ClusterInformationProvider();
+			if (clusterInformationProvider.isClusteringEnabled()) {
+				localMemberHost = clusterInformationProvider.getLocalMemberHostName();
+				localMemberPort = clusterInformationProvider.getLocalMemberPort();
 			}
 			StatisticEventReceiver.Init();
 		} else {
