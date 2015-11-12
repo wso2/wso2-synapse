@@ -26,10 +26,12 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * This is the base class for all List mediators
@@ -78,9 +80,22 @@ public abstract class AbstractListMediator extends AbstractMediator
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
+                String mediatorId = UUID.randomUUID().toString();
+//
+                if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+
+                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), true);
+                    synCtx.addComponentToMessageFlow(mediatorId);
+                    MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+                }
+
                 if (!mediators.get(i).mediate(synCtx)) {
                     returnVal = false;
                     break;
+                }
+
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), false);
                 }
             }
         } catch (SynapseException synEx) {

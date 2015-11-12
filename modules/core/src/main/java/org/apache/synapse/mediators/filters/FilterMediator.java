@@ -130,12 +130,12 @@ public class FilterMediator extends AbstractListMediator implements
         if (test(synCtx)) {
 
             String mediatorId = null;
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                mediatorId = UUID.randomUUID().toString();
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
-                synCtx.addComponentToMessageFlow(mediatorId);
-                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                mediatorId = UUID.randomUUID().toString();
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
+//                synCtx.addComponentToMessageFlow(mediatorId);
+//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//            }
 
             if (thenKey != null) {
 
@@ -173,19 +173,19 @@ public class FilterMediator extends AbstractListMediator implements
 
             }
 
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", false);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", false);
+//            }
 
         } else {
 
             String mediatorId = null;
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                mediatorId = UUID.randomUUID().toString();
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
-                synCtx.addComponentToMessageFlow(mediatorId);
-                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                mediatorId = UUID.randomUUID().toString();
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
+//                synCtx.addComponentToMessageFlow(mediatorId);
+//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//            }
 
             if (elseKey != null) {
 
@@ -231,9 +231,9 @@ public class FilterMediator extends AbstractListMediator implements
                 result = true;
             }
 
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", false);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", false);
+//            }
 
         }
 

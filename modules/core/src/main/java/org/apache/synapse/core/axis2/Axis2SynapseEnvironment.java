@@ -348,6 +348,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Inbound Endpoint:" + synCtx
+                    .getProperty("inbound.endpoint.name"));
         }
 
         if (log.isDebugEnabled()) {
@@ -381,7 +383,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
             }
         }
-        
+
         // Following code is reached if the sequential==true or inbound is
         // reached max level
         try {
@@ -887,6 +889,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
          * Then check for the endpoint name and then set the Log Appender Content
          */
         if (smc.getProperty("inbound.endpoint.name") != null) {
+            if(smc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+                smc.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, smc.getMessageID());
+                smc.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Inbound Endpoint:" + smc
+                        .getProperty("inbound.endpoint.name"));
+            }
             InboundEndpoint inboundEndpoint = smc.getConfiguration().
                     getInboundEndpoint((String) smc.getProperty("inbound.endpoint.name"));
             if (inboundEndpoint != null) {

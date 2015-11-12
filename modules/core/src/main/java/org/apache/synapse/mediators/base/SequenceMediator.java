@@ -110,19 +110,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             }
         }
 
-
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-                if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null) {
-                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "REST API: " + synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
-                }
-                if(synCtx.getProperty(SynapseConstants.IS_INBOUND)!=null && (Boolean.TRUE).equals(synCtx.getProperty(SynapseConstants.IS_INBOUND))){
-                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Inbound Endpoint");
-                }
-            }
-        }
-
         if (key == null) {
             String mediatorId = null;
             if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {

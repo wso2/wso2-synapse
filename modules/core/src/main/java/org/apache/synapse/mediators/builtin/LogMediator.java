@@ -93,12 +93,12 @@ public class LogMediator extends AbstractMediator {
         }
 
         String mediatorId = null;
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Log Mediator", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            mediatorId = UUID.randomUUID().toString();
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Log Mediator", true);
+//            synCtx.addComponentToMessageFlow(mediatorId);
+//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//        }
 
         switch (category) {
             case CATEGORY_INFO :
@@ -127,9 +127,9 @@ public class LogMediator extends AbstractMediator {
 
         synLog.traceOrDebug("End : Log mediator");
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Log Mediator", false);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Log Mediator", false);
+//        }
 
         return true;
     }

@@ -108,12 +108,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
 
         String mediatorId = null;
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            mediatorId = UUID.randomUUID().toString();
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", true);
+//            synCtx.addComponentToMessageFlow(mediatorId);
+//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//        }
 
         try {
             // get a copy of the message for the processing, if the continueParent is set to true
@@ -201,9 +201,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         synLog.traceOrDebug("End : Iterate mediator");
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", false);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Iterate Mediator", false);
+//        }
 
         // whether to continue mediation on the original message
         return continueParent;

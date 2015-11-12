@@ -43,12 +43,12 @@ public class LoopBackMediator extends AbstractMediator {
         }
 
         String mediatorId = null;
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "LoopBack Mediator", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            mediatorId = UUID.randomUUID().toString();
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "LoopBack Mediator", true);
+//            synCtx.addComponentToMessageFlow(mediatorId);
+//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//        }
 
         //If message flow is inflow this will be executed.
         if (!synCtx.isResponse()) {
@@ -69,9 +69,9 @@ public class LoopBackMediator extends AbstractMediator {
             synLog.traceOrDebug("End : Loopback Mediator");
         }
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "LoopBack Mediator", false);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "LoopBack Mediator", false);
+//        }
 
         return false;
     }

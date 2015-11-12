@@ -136,19 +136,19 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean mediate(MessageContext synCtx, String format) {
 
         String mediatorId = null;
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            mediatorId = UUID.randomUUID().toString();
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", true);
+//            synCtx.addComponentToMessageFlow(mediatorId);
+//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//        }
 
         if (!isDoingXml(synCtx) && !isDoingJson(synCtx)) {
             log.error("#mediate. Could not identify the payload format of the existing payload prior to mediate.");
 
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", false);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", false);
+//            }
 
             return false;
         }
@@ -181,9 +181,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
         //{re-merging patch https://wso2.org/jira/browse/ESBJAVA-3014}
         setContentType(synCtx);
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", false);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "PayloadFactory Mediator", false);
+//        }
 
         return true;
     }

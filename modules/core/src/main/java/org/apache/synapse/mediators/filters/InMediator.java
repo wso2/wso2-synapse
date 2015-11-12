@@ -61,12 +61,12 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         if (test(synCtx)) {
 
             String mediatorId = null;
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                mediatorId = UUID.randomUUID().toString();
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", true);
-                synCtx.addComponentToMessageFlow(mediatorId);
-                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                mediatorId = UUID.randomUUID().toString();
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", true);
+//                synCtx.addComponentToMessageFlow(mediatorId);
+//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//            }
 
             synLog.traceOrDebug("Current message is incoming - executing child mediators");
             ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
@@ -75,9 +75,9 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
                 ContinuationStackManager.removeReliantContinuationState(synCtx);
             }
 
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", false);
-            }
+//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", false);
+//            }
 
         } else {
             synLog.traceOrDebug("Current message is a response - skipping child mediators");

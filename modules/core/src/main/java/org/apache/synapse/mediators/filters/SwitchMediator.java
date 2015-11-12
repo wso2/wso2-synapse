@@ -90,12 +90,12 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
         }
 
         String mediatorId = null;
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", true);
-            synCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            mediatorId = UUID.randomUUID().toString();
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", true);
+//            synCtx.addComponentToMessageFlow(mediatorId);
+//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+//        }
 
         int parentsEffectiveTraceState = synCtx.getTracingState();
         // if I have been explicitly asked to enable or disable tracing, set it to the message
@@ -119,9 +119,9 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
 
-                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
-                }
+//                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+//                }
 
                 return result;
 
@@ -140,9 +140,9 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                                 ContinuationStackManager.removeReliantContinuationState(synCtx);
                             }
 
-                            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
-                            }
+//                            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+//                            }
 
                             return result;
                         }
@@ -159,9 +159,9 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                         ContinuationStackManager.removeReliantContinuationState(synCtx);
                     }
 
-                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
-                    }
+//                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+//                    }
 
                     return result;
                 } else {
@@ -173,9 +173,9 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
-        }
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Switch Mediator", false);
+//        }
 
         synLog.traceOrDebug("End : Switch mediator");
         return true;

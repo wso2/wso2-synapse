@@ -90,4 +90,11 @@ public interface Mediator extends SynapseArtifact {
      * @return short description of the artifact
      */
     public String getShortDescription();
+
+    /**
+     * Returns name of the mediator class. This was introduced due to that getType is not uniquely implemented for
+     * all mediators to get the name.
+     * @return a String of the mediator class name
+     */
+    public String getMediatorName();
 }

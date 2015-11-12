@@ -26,6 +26,8 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -286,6 +288,14 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
+
+        if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "REST API: " + synCtx
+                        .getProperty(RESTConstants.SYNAPSE_REST_API));
+            }
+        }
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
