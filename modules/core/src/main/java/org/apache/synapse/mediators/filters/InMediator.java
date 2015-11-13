@@ -59,26 +59,12 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
 
         boolean result = true;
         if (test(synCtx)) {
-
-            String mediatorId = null;
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                mediatorId = UUID.randomUUID().toString();
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", true);
-//                synCtx.addComponentToMessageFlow(mediatorId);
-//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//            }
-
             synLog.traceOrDebug("Current message is incoming - executing child mediators");
             ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
             result = super.mediate(synCtx);
             if (result) {
                 ContinuationStackManager.removeReliantContinuationState(synCtx);
             }
-
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "In Mediator", false);
-//            }
-
         } else {
             synLog.traceOrDebug("Current message is a response - skipping child mediators");
         }

@@ -64,14 +64,6 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
 
-        String mediatorId = null;
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            mediatorId = UUID.randomUUID().toString();
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Send Mediator", true);
-//            synCtx.addComponentToMessageFlow(mediatorId);
-//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//        }
-
         if (buildMessage) {
               synCtx.getEnvelope().buildWithAttachments();
         }
@@ -114,10 +106,6 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         } else {
             endpoint.send(synCtx);
         }
-
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Send Mediator", false);
-//        }
 
         synLog.traceOrDebug("End : Send mediator");
         return true;

@@ -167,14 +167,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        String mediatorId = null;
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            mediatorId = UUID.randomUUID().toString();
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", true);
-//            synCtx.addComponentToMessageFlow(mediatorId);
-//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//        }
-
         try {
             Aggregate aggregate = null;
             String correlationIdName = (id != null ? EIPConstants.AGGREGATE_CORRELATION + "." + id :
@@ -326,10 +318,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     
                     synLog.traceOrDebug("End : Aggregate mediator");
 
-//                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
-//                    }
-
                     return onCompleteSeqResult;
                 } else {
                     aggregate.releaseLock();
@@ -346,10 +334,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         } catch (JaxenException e) {
             handleException("Unable to execute the XPATH over the message", e, synCtx);
         }
-
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
-//        }
 
         synLog.traceOrDebug("End : Aggregate mediator");
 

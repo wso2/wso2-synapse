@@ -81,7 +81,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
                 String mediatorId = UUID.randomUUID().toString();
-//
+
                 if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
 
                     MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), true);

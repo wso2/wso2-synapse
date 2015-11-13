@@ -102,14 +102,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             }
         }
 
-        String mediatorId = null;
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            mediatorId = UUID.randomUUID().toString();
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Callout Mediator", true);
-//            synCtx.addComponentToMessageFlow(mediatorId);
-//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//        }
-
         try {
 
             if (!initClientOptions) {
@@ -247,10 +239,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             handleException("Error while evaluating the XPath expression: " + targetXPath,
                             e, synCtx);
         }
-
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Callout Mediator", false);
-//        }
 
         synLog.traceOrDebug("End : Callout mediator");
         return true;

@@ -128,15 +128,6 @@ public class FilterMediator extends AbstractListMediator implements
 
         boolean result = false;
         if (test(synCtx)) {
-
-            String mediatorId = null;
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                mediatorId = UUID.randomUUID().toString();
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", true);
-//                synCtx.addComponentToMessageFlow(mediatorId);
-//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//            }
-
             if (thenKey != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -170,23 +161,8 @@ public class FilterMediator extends AbstractListMediator implements
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
-
             }
-
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Then(Filter)", false);
-//            }
-
         } else {
-
-            String mediatorId = null;
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                mediatorId = UUID.randomUUID().toString();
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", true);
-//                synCtx.addComponentToMessageFlow(mediatorId);
-//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//            }
-
             if (elseKey != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -230,14 +206,7 @@ public class FilterMediator extends AbstractListMediator implements
                 }
                 result = true;
             }
-
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Else(Filter)", false);
-//            }
-
         }
-
-//        MessageFlowDataHolder.addEntry(synCtx, getMediatorId(), "Filter Mediator", false);
 
         synLog.traceOrDebug("End : Filter mediator ");
         return result;

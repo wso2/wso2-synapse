@@ -111,8 +111,6 @@ public class ServerManager {
         doInit();
         initialized = true;
 
-        ////////////////////
-        //flow tracer start
         MessageFlowDataHolder.setMessageFlowTraceEnable(Boolean.parseBoolean(
                 SynapsePropertiesLoader.getPropertyValue(
                         MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLE, String.valueOf(false))));
@@ -122,7 +120,6 @@ public class ServerManager {
             Thread messageFlowDbReporterTaskThread = new Thread(messageFlowDbReporterTask);
             messageFlowDbReporterTaskThread.start();
         }
-        ////////////////////
 
         return this.serverContextInformation.getServerState();
     }

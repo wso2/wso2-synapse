@@ -59,26 +59,12 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
 
         boolean result = true;
         if (test(synCtx)) {
-
-            String mediatorId = null;
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                mediatorId = UUID.randomUUID().toString();
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Out Mediator", true);
-//                synCtx.addComponentToMessageFlow(mediatorId);
-//                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//            }
-
             synLog.traceOrDebug("Current message is outgoing - executing child mediators");
             ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
             result = super.mediate(synCtx);
             if (result) {
                 ContinuationStackManager.removeReliantContinuationState(synCtx);
             }
-
-//            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Out Mediator", false);
-//            }
-
         } else {
             synLog.traceOrDebug("Current message is a request - skipping child mediators");
         }

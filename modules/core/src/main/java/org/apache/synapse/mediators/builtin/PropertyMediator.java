@@ -95,14 +95,6 @@ public class PropertyMediator extends AbstractMediator {
             }
         }
 
-        String mediatorId = null;
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            mediatorId = UUID.randomUUID().toString();
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", true);
-//            synCtx.addComponentToMessageFlow(mediatorId);
-//            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-//        }
-
         if (action == ACTION_SET) {
 
             Object resultValue = getResultValue(synCtx);
@@ -222,10 +214,6 @@ public class PropertyMediator extends AbstractMediator {
             }
         }
         synLog.traceOrDebug("End : Property mediator");
-
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-//            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Property Mediator", false);
-//        }
 
         return true;
     }
