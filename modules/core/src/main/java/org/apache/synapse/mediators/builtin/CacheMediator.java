@@ -20,18 +20,21 @@
 package org.apache.synapse.mediators.builtin;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import javax.xml.soap.SOAPException;
 import javax.xml.stream.XMLStreamException;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.util.AXIOMUtil;
-import org.apache.axiom.soap.*;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axiom.soap.SOAP12Constants;
+import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.clustering.ClusteringFault;
@@ -61,7 +64,6 @@ import org.wso2.caching.CachingException;
 import org.wso2.caching.RequestHash;
 import org.wso2.caching.ServiceName;
 import org.wso2.caching.digest.DigestGenerator;
-import org.wso2.caching.util.SOAPMessageHelper;
 
 /**
  * CacheMediator will cache the response messages indexed using the hash value of the
