@@ -176,8 +176,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             try {
                 if ("true".equals(synCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                     blockingMsgSender.send(endpoint, synapseOutMsgCtx);
+                    setResponseHttpSc(synapseOutMsgCtx, synCtx);
                 } else {
                     resultMsgCtx = blockingMsgSender.send(endpoint, synapseOutMsgCtx);
+                    setResponseHttpSc(resultMsgCtx, synCtx);
                     if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
                         handleFault(synCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
                     }
@@ -623,6 +625,17 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
      */
     public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
+    }
+    
+    private void setResponseHttpSc(MessageContext sourceSynCtx, MessageContext destinationSynCtx) {
+        if (sourceSynCtx != null) {
+            destinationSynCtx.setProperty(SynapseConstants.HTTP_SC,
+                                          sourceSynCtx.getProperty(SynapseConstants.HTTP_SC));
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                                                                          ((Axis2MessageContext) destinationSynCtx).getAxis2MessageContext();
+            axis2MessageContext.setProperty(SynapseConstants.HTTP_SC,
+                                            sourceSynCtx.getProperty(SynapseConstants.HTTP_SC));
+        }
     }
 
 }
