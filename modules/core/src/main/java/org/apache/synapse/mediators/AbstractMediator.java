@@ -29,13 +29,10 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.util.UUIDGenerator;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is the super class of all mediators, and defines common logging, tracing other aspects
@@ -412,5 +409,11 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public String getMediatorName(){
         String cls = getClass().getName();
         return cls.substring(cls.lastIndexOf(".") + 1);
+    }
+
+    public void setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart){
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.setTraceFlowEvent(msgCtx, mediatorId, mediator, isStart);
+        }
     }
 }

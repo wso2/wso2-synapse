@@ -21,12 +21,8 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowDbConnector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.mediators.AbstractMediator;
-
-import java.util.UUID;
 
 /**
  * Halts further processing/mediation of the current message. i.e. returns false

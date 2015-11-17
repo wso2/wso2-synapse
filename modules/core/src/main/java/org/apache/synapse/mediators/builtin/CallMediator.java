@@ -24,7 +24,6 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
@@ -37,7 +36,6 @@ import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
 
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Call Mediator sends a message using specified semantics. If it contains an endpoint it will

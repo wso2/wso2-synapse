@@ -20,15 +20,13 @@
 package org.apache.synapse.mediators.filters;
 
 import org.apache.synapse.ContinuationState;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
-
-import java.util.UUID;
 
 /**
  * The In Mediator acts only on "incoming" messages into synapse. This is
@@ -110,6 +108,12 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
 
     public void init(SynapseEnvironment se) {
         super.init(se);
+    }
+
+    public void setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+        if(test(msgCtx)){
+            super.setTraceFlow(msgCtx, mediatorId, mediator, isStart);
+        }
     }
 
 }

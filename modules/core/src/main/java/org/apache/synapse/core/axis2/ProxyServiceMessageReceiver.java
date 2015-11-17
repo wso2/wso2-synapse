@@ -231,9 +231,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
         }
-
-        //message flow trace
-//        MessageFlowDataHolder.addEntry(synCtx, this.toString(), "Proxy Service: " + name, false);
     }
 
     /**

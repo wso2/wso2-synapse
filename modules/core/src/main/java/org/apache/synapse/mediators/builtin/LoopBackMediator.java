@@ -22,11 +22,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Loopback further processing/Mediation of the current message to outflow

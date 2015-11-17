@@ -23,7 +23,6 @@ import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -37,7 +36,6 @@ import org.apache.http.protocol.HTTP;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 

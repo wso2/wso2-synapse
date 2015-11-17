@@ -33,13 +33,10 @@ import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
-import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
-import org.apache.synapse.rest.RESTConstants;
 
 import java.util.Stack;
 import java.util.UUID;

@@ -26,7 +26,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
@@ -71,7 +70,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
                     }
-                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
                 } catch (Exception e) {
                     handleException("Error while building message", e, synCtx);
                 }
@@ -81,25 +80,16 @@ public abstract class AbstractListMediator extends AbstractMediator
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
                 String mediatorId = UUID.randomUUID().toString();
+                Mediator mediator = mediators.get(i);
+                mediator.setTraceFlow(synCtx, mediatorId, mediator, true);
 
-                if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-
-                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), true);
-                    synCtx.addComponentToMessageFlow(mediatorId);
-                    MessageFlowDataHolder.addFlowInfoEntry(synCtx);
-                }
-
-                if (!mediators.get(i).mediate(synCtx)) {
-                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), false);
-                    }
+                if (!mediator.mediate(synCtx)) {
+                    mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
                     returnVal = false;
                     break;
                 }
 
-                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, mediators.get(i).getMediatorName(), false);
-                }
+                mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
             }
         } catch (SynapseException synEx) {
             throw synEx;
@@ -185,5 +175,6 @@ public abstract class AbstractListMediator extends AbstractMediator
     public boolean isContentAware() {
         return contentAware;
     }
+
 
 }

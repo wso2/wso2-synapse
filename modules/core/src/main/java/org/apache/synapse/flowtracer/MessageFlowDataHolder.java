@@ -1,5 +1,6 @@
 package org.apache.synapse.flowtracer;
 
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.flowtracer.data.MessageFlowComponentEntry;
 import org.apache.synapse.flowtracer.data.MessageFlowTraceEntry;
@@ -63,5 +64,15 @@ public class MessageFlowDataHolder {
 
     public static boolean isMessageFlowTraceEnable() {
         return messageFlowTraceEnable;
+    }
+
+    public static void setTraceFlowEvent(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+        if (isStart) {
+            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediator.getMediatorName(), true);
+            msgCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(msgCtx);
+        } else {
+            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediator.getMediatorName(), false);
+        }
     }
 }

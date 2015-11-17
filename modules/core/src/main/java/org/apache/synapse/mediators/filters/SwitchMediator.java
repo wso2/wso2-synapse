@@ -28,14 +28,11 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * The switch mediator implements the functionality of the "switch" construct. It first
