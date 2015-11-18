@@ -642,9 +642,11 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
      * @param msgCtx Axis2 MessageContext
      */
     private void removeUnwantedClientOptions(MessageContext msgCtx) {
-
-        Options clientOptions = msgCtx.getOptions().getParent().getParent();
-        clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY, null);
-        clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY, null);
+        if (msgCtx.getOptions() != null && msgCtx.getOptions().getParent() != null &&
+            msgCtx.getOptions().getParent().getParent() != null) {
+            Options clientOptions = msgCtx.getOptions().getParent().getParent();
+            clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY, null);
+            clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY, null);
+        }
     }
 }
