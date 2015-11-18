@@ -51,8 +51,6 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
 
     public void onFault(MessageContext synCtx) {
-
-        logSetter();
         // For setting Car name (still for Proxy)
         logSetter();
 
@@ -75,8 +73,6 @@ public class HTTPEndpoint extends AbstractEndpoint {
     }
 
     public void send(MessageContext synCtx) {
-
-        logSetter();
         // For setting Car name (still for Proxy)
         logSetter();
 
