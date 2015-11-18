@@ -21,7 +21,7 @@ package org.apache.synapse.aspects.newstatistics.log.templates;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
-public class CloseStatisticEntryForcefullyLog implements StatisticReportingLog{
+public class CloseStatisticEntryForcefullyLog implements StatisticReportingLog {
 	MessageContext messageContext;
 	long endTime;
 
@@ -30,7 +30,8 @@ public class CloseStatisticEntryForcefullyLog implements StatisticReportingLog{
 		this.endTime = endTime;
 	}
 
-	@Override public void process() {
+	@Override
+	public void process() {
 		RuntimeStatisticCollector.closeStatisticEntryForcefully(messageContext, endTime);
 	}
 }

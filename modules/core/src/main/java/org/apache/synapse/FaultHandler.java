@@ -73,8 +73,8 @@ public abstract class FaultHandler {
             if (faultStack != null && !faultStack.isEmpty()) {
                 ((FaultHandler) faultStack.pop()).handleFault(synCtx);
             }
-        }finally {
-            if(faultReported) {
+        } finally {
+            if (faultReported) {
                 CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
                         new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
                 StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
@@ -122,10 +122,9 @@ public abstract class FaultHandler {
                 traceOrDebugWarn(traceOn, "FaultHandler : " + this);
             }
 
-            if(!isFaultAlreadyReported(synCtx)) {
+            if (!isFaultAlreadyReported(synCtx)) {
                 CreateFaultStatisticLog createFaultStatisticLog =
-                        new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER,
-                                                    ComponentType.FAULTHANDLER,
+                        new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER, ComponentType.FAULTHANDLER,
                                                     getStatisticReportingElementName(synCtx),
                                                     System.currentTimeMillis());
                 StatisticEventReceiver.receive(createFaultStatisticLog);
@@ -141,8 +140,8 @@ public abstract class FaultHandler {
             } else{
             	throw new RuntimeException(se);
             }
-        }finally {
-            if(faultReported) {
+        } finally {
+            if (faultReported) {
                 CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
                         new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
                 StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);

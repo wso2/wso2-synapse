@@ -27,16 +27,17 @@ import java.util.concurrent.BlockingQueue;
 public class StatisticEventPublisher implements Runnable {
 	private static final Log log = LogFactory.getLog(StatisticEventPublisher.class);
 	BlockingQueue<StatisticReportingLog> queue;
+
 	public StatisticEventPublisher(BlockingQueue<StatisticReportingLog> queue) {
 		this.queue = queue;
 	}
 
 	public void run() {
 		while (true) {
-			try{
+			try {
 				StatisticReportingLog statisticReportingLog = queue.take();
 				statisticReportingLog.process();
-			}catch(InterruptedException e){
+			} catch (InterruptedException e) {
 				log.error("Statistic event worker was interrupted.");
 			}
 		}
