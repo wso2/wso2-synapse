@@ -23,6 +23,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -30,6 +31,7 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * SendMediator sends a message using specified semantics. If it contains an endpoint it will
@@ -60,6 +62,14 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         synLog.traceOrDebug("Start : Send mediator");
         if (synLog.isTraceTraceEnabled()) {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
+        }
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Send Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         if (buildMessage) {
@@ -103,6 +113,10 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
 
         } else {
             endpoint.send(synCtx);
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Send Mediator", false);
         }
 
         synLog.traceOrDebug("End : Send mediator");

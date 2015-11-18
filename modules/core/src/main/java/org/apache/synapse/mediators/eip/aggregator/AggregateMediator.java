@@ -35,6 +35,9 @@ import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.MessageFlowDbConnector;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
@@ -45,10 +48,7 @@ import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Aggregate a number of messages that are determined to be for a particular group, and combine
@@ -165,6 +165,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
+        }
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         try {
@@ -317,6 +325,11 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     boolean onCompleteSeqResult = completeAggregate(aggregate);
                     
                     synLog.traceOrDebug("End : Aggregate mediator");
+
+                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                        MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
+                    }
+
                     return onCompleteSeqResult;
                 } else {
                     aggregate.releaseLock();
@@ -332,6 +345,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
         } catch (JaxenException e) {
             handleException("Unable to execute the XPATH over the message", e, synCtx);
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Aggregate Mediator", false);
         }
 
         synLog.traceOrDebug("End : Aggregate mediator");
@@ -523,6 +540,15 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 handleException("Enclosing Element property: " +
                                 enclosingElementPropertyName + " not found ", newCtx);
             }
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            List<String> newMessageFlowTrace = new ArrayList<>();
+            for (MessageContext synCtx : aggregate.getMessages()) {
+                List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
+                newMessageFlowTrace.addAll(messageFlowTrace);
+            }
+            newCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlowTrace);
         }
 
         return newCtx;

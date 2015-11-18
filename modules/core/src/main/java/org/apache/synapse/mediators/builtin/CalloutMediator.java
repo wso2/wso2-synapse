@@ -44,17 +44,14 @@ import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -103,6 +100,14 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
+        }
+
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Callout Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         try {
@@ -241,6 +246,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         } catch (JaxenException e) {
             handleException("Error while evaluating the XPath expression: " + targetXPath,
                             e, synCtx);
+        }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Callout Mediator", false);
         }
 
         synLog.traceOrDebug("End : Callout mediator");

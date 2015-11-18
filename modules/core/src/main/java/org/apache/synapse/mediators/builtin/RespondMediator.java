@@ -5,7 +5,10 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
+
+import java.util.UUID;
 
 public class RespondMediator extends AbstractMediator{
 
@@ -19,6 +22,14 @@ public class RespondMediator extends AbstractMediator{
             }
         }
 
+        String mediatorId = null;
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Respond Mediator", true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
+
         synCtx.setTo(null);
         synCtx.setResponse(true);
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -30,6 +41,11 @@ public class RespondMediator extends AbstractMediator{
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Respond Mediator");
         }
+
+        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Respond Mediator", false);
+        }
+
         return false;
     }
 

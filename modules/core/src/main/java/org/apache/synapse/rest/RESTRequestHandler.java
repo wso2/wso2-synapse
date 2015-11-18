@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.version.DefaultStrategy;
-import org.apache.synapse.rest.version.DefaultStrategy;
 
 import java.util.*;
 
@@ -48,6 +47,7 @@ public class RESTRequestHandler {
      * @return true if the message was dispatched to an API and false otherwise
      */
     public boolean process(MessageContext synCtx) {
+
         if (synCtx.isResponse()) {
             return dispatchToAPI(synCtx);
         }

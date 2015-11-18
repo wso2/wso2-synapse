@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 
@@ -360,4 +361,11 @@ public class TestMessageContext implements MessageContext {
 			return m;
 		}
 	}
+
+    public void addComponentToMessageFlow(String mediatorId){
+    }
+
+    public String getMessageString() {
+        return null;
+    }
 }
