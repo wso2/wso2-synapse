@@ -28,8 +28,7 @@ import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventRecei
 import org.apache.synapse.aspects.newstatistics.util.ClusterInformationProvider;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
-import java.util.HashMap;
-import java.util.Timer;
+import java.util.*;
 
 /**
  * RuntimeStatisticCollector receives statistic events and responsible for handling each of these
@@ -42,7 +41,7 @@ public class RuntimeStatisticCollector {
 
 	private static HashMap<String, StatisticsEntry> runningStatistics = new HashMap<String, StatisticsEntry>();
 
-	private static StatisticsStore statisticsStore = new StatisticsStore();
+	//private static StatisticsStore statisticsStore = new StatisticsStore();
 
 	private static boolean isStatisticsEnable = false;
 
@@ -141,7 +140,8 @@ public class RuntimeStatisticCollector {
 					boolean finished = runningStatistics.get(statisticsTraceId)
 					                                    .closeFaultLog(componentId, getMsgId(msgCtx), endTime);
 					if (finished) {
-						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime, false);
+						endMessageFlow(msgCtx, statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime,
+						               false);
 					}
 				}
 			}
@@ -171,7 +171,8 @@ public class RuntimeStatisticCollector {
 					boolean finished = runningStatistics.get(statisticsTraceId)
 					                                    .closeLog(componentId, getMsgId(msgCtx), parentId, endTime);
 					if (finished) {
-						endMessageFlow(statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime, false);
+						endMessageFlow(msgCtx, statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime,
+						               false);
 					}
 				}
 			}
@@ -248,7 +249,7 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
-					endMessageFlow(statisticsTraceId, entry, endTime, false);
+					endMessageFlow(msgCtx, statisticsTraceId, entry, endTime, false);
 				}
 			}
 		}
@@ -268,7 +269,7 @@ public class RuntimeStatisticCollector {
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
-					endMessageFlow(statisticsTraceId, entry, endTime, true);
+					endMessageFlow(msgCtx, statisticsTraceId, entry, endTime, true);
 				}
 			}
 		}
@@ -279,19 +280,23 @@ public class RuntimeStatisticCollector {
 	 * its statistics collection statistics store is updated with new statistics data. Then entry
 	 * is removed from the running statistic map
 	 *
+	 * @param messageContext   message context
 	 * @param statisticTraceId statistic trace id for the message log
 	 * @param statisticsEntry  statistic entry to be closed
 	 * @param endTime          end time of the message flow
 	 */
-	private synchronized static void endMessageFlow(String statisticTraceId, StatisticsEntry statisticsEntry,
-	                                                long endTime, boolean closeForceFully) {
+	private synchronized static void endMessageFlow(MessageContext messageContext, String statisticTraceId,
+	                                                StatisticsEntry statisticsEntry, long endTime,
+	                                                boolean closeForceFully) {
 		boolean isMessageFlowEnded = statisticsEntry.endAll(endTime, closeForceFully);
 		if (isMessageFlowEnded) {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistic collection is ended for the message flow with statistic " +
 				          "trace Id :" + statisticTraceId);
 			}
-			statisticsStore.update(statisticsEntry.getMessageFlowLogs());
+			//statisticsStore.update(statisticsEntry.getMessageFlowLogs());
+			messageContext.getEnvironment().getCompletedStatisticStore()
+			              .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
 			runningStatistics.remove(statisticTraceId);
 		}
 	}
@@ -395,13 +400,13 @@ public class RuntimeStatisticCollector {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is enabled");
 			}
-			StatisticsStoreCleaner statisticsStoreCleaner = new StatisticsStoreCleaner(statisticsStore);
-			if (statisticsStoreCleaner.isCleanEnable()) {
-				StatisticStoreCleanerHandler statisticStoreCleanerHandler =
-						new StatisticStoreCleanerHandler(statisticsStoreCleaner);
-				// schedule timeout handler to run specified time
-				synapseTimer.schedule(statisticStoreCleanerHandler, 0, statisticsStoreCleaner.getCleanInterval());
-			}
+			//StatisticsStoreCleaner statisticsStoreCleaner = new StatisticsStoreCleaner(statisticsStore);
+			//			if (statisticsStoreCleaner.isCleanEnable()) {
+			//				StatisticStoreCleanerHandler statisticStoreCleanerHandler =
+			//						new StatisticStoreCleanerHandler(statisticsStoreCleaner);
+			//				// schedule timeout handler to run specified time
+			//				synapseTimer.schedule(statisticStoreCleanerHandler, 0, statisticsStoreCleaner.getCleanInterval());
+			//			}
 			ClusterInformationProvider clusterInformationProvider = new ClusterInformationProvider();
 			if (clusterInformationProvider.isClusteringEnabled()) {
 				localMemberHost = clusterInformationProvider.getLocalMemberHostName();

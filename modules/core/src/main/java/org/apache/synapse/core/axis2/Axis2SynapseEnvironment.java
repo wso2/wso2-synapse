@@ -40,6 +40,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.CompletedStatisticStore;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
@@ -96,6 +97,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
+
+    /** The CompletedStatisticStore object*/
+    private CompletedStatisticStore completedStatisticStore = new CompletedStatisticStore();
 
     private ServerContextInformation contextInformation;
 
@@ -549,6 +553,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return new OverflowBlob(numberOfChunks, chunkSize, tempPrefix, tempSuffix);
     }
 
+
+
     /**
      * This method returns the <code>StatisticsCollector</code> responsible for
      * collecting stats for this synapse instance.
@@ -604,6 +610,16 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public SynapseConfiguration getSynapseConfiguration() {
         return this.synapseConfig;
+    }
+
+    /**
+     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
+     * instance.
+     *
+     * @return completedStatisticStore for this synapse instance
+     */
+    public CompletedStatisticStore getCompletedStatisticStore() {
+        return completedStatisticStore;
     }
 
     /**
@@ -989,4 +1005,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         return true;
     }
+
+
 }
