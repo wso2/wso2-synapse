@@ -48,7 +48,6 @@ import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -324,13 +323,6 @@ public class BlockingMsgSender {
     private void handleException(String msg) {
         log.error(msg);
         throw new SynapseException(msg);
-    }
-
-    private Set<Integer> getNonRetryErrorCodes(org.apache.axis2.context.MessageContext axisOutMsgCtx) {
-        if (axisOutMsgCtx.getProperty("non.error.http.status.codes") != null) {
-            return (Set<Integer>) axisOutMsgCtx.getProperty("non.error.http.status.codes");
-        }
-        return Collections.<Integer> emptySet();
     }
 
     private int extractStatusCodeFromException(Exception exception) {
