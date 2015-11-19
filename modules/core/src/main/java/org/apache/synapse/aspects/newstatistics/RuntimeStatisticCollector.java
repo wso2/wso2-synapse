@@ -41,8 +41,6 @@ public class RuntimeStatisticCollector {
 
 	private static HashMap<String, StatisticsEntry> runningStatistics = new HashMap<String, StatisticsEntry>();
 
-	//private static StatisticsStore statisticsStore = new StatisticsStore();
-
 	private static boolean isStatisticsEnable = false;
 
 	private final static String STATISTICS_ENABLE = "new.statistics.enable";
@@ -400,13 +398,6 @@ public class RuntimeStatisticCollector {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is enabled");
 			}
-			//StatisticsStoreCleaner statisticsStoreCleaner = new StatisticsStoreCleaner(statisticsStore);
-			//			if (statisticsStoreCleaner.isCleanEnable()) {
-			//				StatisticStoreCleanerHandler statisticStoreCleanerHandler =
-			//						new StatisticStoreCleanerHandler(statisticsStoreCleaner);
-			//				// schedule timeout handler to run specified time
-			//				synapseTimer.schedule(statisticStoreCleanerHandler, 0, statisticsStoreCleaner.getCleanInterval());
-			//			}
 			ClusterInformationProvider clusterInformationProvider = new ClusterInformationProvider();
 			if (clusterInformationProvider.isClusteringEnabled()) {
 				localMemberHost = clusterInformationProvider.getLocalMemberHostName();
