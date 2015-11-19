@@ -60,9 +60,6 @@ public class BlockingMsgSender {
     boolean initClientOptions = true;
 
     private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
-    
-    private final static int HTTP_SC_OK = 200;
-    private final static int HTTP_SC_ACCEPTED = 202;
 
     public void init() {
         try {
@@ -174,24 +171,6 @@ public class BlockingMsgSender {
         try {
             if (isOutOnly) {
                 sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
-                Set<Integer> nonRetryErrorCodes =
-                                                  getNonRetryErrorCodes(((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
-                final int httpStatusCode =
-                                           Integer.parseInt(String.valueOf(axisOutMsgCtx.getProperty("transport.http.statusCode"))
-                                                                  .trim());
-                /*
-                 * If the response SC is neither equals to a value specified in
-                 * non-retry-sc in MP config, nor 200 OK, nor 202 ACCEPTED, then
-                 * we need to retry
-                 * sending that message.
-                 */
-                if (httpStatusCode != HTTP_SC_OK && httpStatusCode != HTTP_SC_ACCEPTED &&
-                    !nonRetryErrorCodes.contains(httpStatusCode)) {
-                    throw new Exception(
-                                        new Exception(
-                                                      "Need to retry the Message since the HTTP SC: " +
-                                                              httpStatusCode));
-                }
             } else {
                 org.apache.axis2.context.MessageContext result =
                 sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
@@ -199,8 +178,7 @@ public class BlockingMsgSender {
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                 }
-                int statusCode =
-                        Integer.parseInt(String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE)));
+                Object statusCode = result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
                 synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
                 axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
                 if ("false".equals(synapseInMsgCtx.getProperty(
@@ -211,20 +189,6 @@ public class BlockingMsgSender {
                 }
 
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
-                
-                Set<Integer> nonRetryErrorCodes =
-                                                  getNonRetryErrorCodes(((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
-                /*
-                 * If the response SC is neither equals to a value specified in
-                 * non-retry-sc in MP config, nor 200 OK, nor 202 ACCEPTED, then
-                 * we need to retry
-                 * sending that message.
-                 */
-                if (statusCode != HTTP_SC_OK && statusCode != HTTP_SC_ACCEPTED &&
-                    !nonRetryErrorCodes.contains(statusCode)) {
-                    throw new AxisFault("Need to retry the Message since the HTTP SC: " +
-                                        statusCode);
-                }
                 return synapseInMsgCtx;
             }
         } catch (Exception ex) {
@@ -343,7 +307,4 @@ public class BlockingMsgSender {
         throw new SynapseException(msg);
     }
 
-    private Set<Integer> getNonRetryErrorCodes(org.apache.axis2.context.MessageContext axisOutMsgCtx) {
-        return (Set<Integer>) axisOutMsgCtx.getProperty("non.error.http.status.codes");
-    }
 }

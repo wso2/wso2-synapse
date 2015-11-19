@@ -391,8 +391,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
         Set<Integer>nonRetryCodes = new HashSet<Integer>();
         if (nonRetryStatusCodes != null) {
             for (String code : nonRetryStatusCodes) {
-                int codeI = Integer.parseInt(code.trim());
-                nonRetryCodes.add(codeI);
+                try {
+                    int codeI = Integer.parseInt(code.trim());
+                    nonRetryCodes.add(codeI);
+                } catch (NumberFormatException e) {
+                } // ignore the invalid status code
             }
         }
          return nonRetryCodes;
