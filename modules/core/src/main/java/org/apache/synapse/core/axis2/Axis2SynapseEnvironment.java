@@ -381,7 +381,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     new CreateEntryStatisticLog(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
                                                 ComponentType.INBOUNDENDPOINT, "", System.currentTimeMillis());
             StatisticEventReceiver.receive(createEntryStatisticLog);
-        }else{
+        } else {
             log.error("There is no info about the inbound endpoint, skipping collecting statistics at inbound level.");
         }
         try {
