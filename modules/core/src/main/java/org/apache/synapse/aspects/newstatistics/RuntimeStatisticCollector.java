@@ -67,7 +67,7 @@ public class RuntimeStatisticCollector {
 				}
 				return;
 			}
-			String statisticsTraceId = getStatisticsTraceId(msgCtx, componentType);
+			String statisticsTraceId = getStatisticsTraceId(msgCtx);
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					runningStatistics.get(statisticsTraceId)
@@ -83,6 +83,8 @@ public class RuntimeStatisticCollector {
 								"Creating New Entry in Running Statistics: Current size :" + runningStatistics.size());
 					}
 				}
+			} else {
+				log.warn("Statistics reported for some flow without a statistic ID.");
 			}
 		}
 	}
@@ -105,13 +107,15 @@ public class RuntimeStatisticCollector {
 				}
 				return;
 			}
-			String statisticsTraceId = getStatisticsTraceId(msgCtx, componentType);
+			String statisticsTraceId = getStatisticsTraceId(msgCtx);
 			if (statisticsTraceId != null) {
 				if (runningStatistics.containsKey(statisticsTraceId)) {
 					runningStatistics.get(statisticsTraceId)
 					                 .createFaultLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
 					                                 msgCtx.isResponse());
 				}
+			} else {
+				log.warn("Statistics reported for some flow without a statistic ID.");
 			}
 		}
 	}
@@ -300,40 +304,14 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Returns statistics trace id corresponding to the message context. If statistics trace do
-	 * not exists for the message context put message id of this message context as the
-	 * statistics id for this flow. Starting of a message Id can only happen for APIs,Proxies and
-	 * Sequences as these are the trigger points of the ESB. So statistics trace id insertion only
-	 * happen if message context is reported by those components.
+	 * Set statistics trace Id for statistic collection
 	 *
-	 * @param msgCtx        message context
-	 * @param componentType statistic event reporting component Id
-	 * @return statistics trace Is for this message context
+	 * @param msgCtx message context
 	 */
-	private static String getStatisticsTraceId(MessageContext msgCtx, ComponentType componentType) {
-		if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
-			return (String) msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID);
-		} else {
-			if ((componentType == ComponentType.PROXYSERVICE) || (componentType == ComponentType.SEQUENCE) ||
-			    (componentType == ComponentType.API) || (componentType == ComponentType.INBOUNDENDPOINT)) {
-				String statisticsTraceId = msgCtx.getMessageID();
-				msgCtx.setProperty(SynapseConstants.NEW_STATISTICS_ID, statisticsTraceId);
-				if (log.isDebugEnabled()) {
-					log.debug("Setting Statistics trace Id in Message the context to be used for " +
-					          "statistic collection" + statisticsTraceId);
-				}
-				return statisticsTraceId;
-			} else {
-				if (log.isDebugEnabled()) {
-					log.debug("Statistics trace Id cannot be created for this component type :" +
-					          componentType.toString());
-				}
-			}
+	public static void setStatisticsTraceId(MessageContext msgCtx) {
+		if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) == null) {
+			msgCtx.setProperty(SynapseConstants.NEW_STATISTICS_ID, msgCtx.getMessageID());
 		}
-		if (log.isDebugEnabled()) {
-			log.debug("No Statistic Trace was found in the message context");
-		}
-		return null;
 	}
 
 	/**
@@ -343,14 +321,7 @@ public class RuntimeStatisticCollector {
 	 * @return statistics trace id
 	 */
 	private static String getStatisticsTraceId(MessageContext msgCtx) {
-		if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
-			return (String) msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID);
-		} else {
-			if (log.isDebugEnabled()) {
-				log.debug("No Statistic Trace was found in the message context");
-			}
-		}
-		return null;
+		return (String) msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 	}
 
 	/**

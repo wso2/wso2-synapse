@@ -233,8 +233,12 @@ public class StatisticsEntry {
 	 */
 	public synchronized boolean endAll(long endTime, boolean closeForcefully) {
 		if ((callbacks.isEmpty() && (openFaults == 0) && (openLogs.size() <= 1)) | closeForcefully) {
-			for (Integer index : openLogs) {
-				messageFlowLogs.get(index).setEndTime(endTime);
+			if (openLogs.isEmpty()) {
+				messageFlowLogs.get(0).setEndTime(endTime);
+			} else {
+				for (Integer index : openLogs) {
+					messageFlowLogs.get(index).setEndTime(endTime);
+				}
 			}
 			if (log.isDebugEnabled()) {
 				log.debug("Closed all logs after message flow ended");

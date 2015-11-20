@@ -41,6 +41,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.CompletedStatisticStore;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
@@ -201,6 +202,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext");
         }
 
+        //Setting Statistic Trace ID for statistic Collection
+        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
+
         //setting transport-in name as a message context property
         TransportInDescription trpInDesc = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getTransportIn();
         if (trpInDesc != null) {
@@ -320,6 +324,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
+        //Setting Statistic Trace ID for statistic Collection
+        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
         synCtx.setEnvironment(this);
         executorService.execute(new MediatorWorker(seq, synCtx));
     }
@@ -343,6 +349,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
+        //Setting Statistic Trace ID for statistic Collection
+        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
 
         /*
          * If the method is invoked by the inbound endpoint

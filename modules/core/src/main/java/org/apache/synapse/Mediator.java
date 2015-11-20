@@ -90,4 +90,16 @@ public interface Mediator extends SynapseArtifact {
      * @return short description of the artifact
      */
     public String getShortDescription();
+
+    /**
+     * Report Statistics for the Mediator
+     */
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog);
+
+    /**
+     * Returns name of the mediator
+     *
+     * @return mediator name
+     */
+    public String getMediatorName();
 }

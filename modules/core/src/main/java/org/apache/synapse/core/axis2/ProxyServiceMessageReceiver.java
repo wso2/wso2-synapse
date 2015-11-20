@@ -29,6 +29,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
@@ -86,6 +87,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+
+        //Setting Statistic Trace ID for statistic Collection
+        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
 
         CreateEntryStatisticLog createEntryStatisticLog =
                 new CreateEntryStatisticLog(synCtx, this.name, ComponentType.PROXYSERVICE, "",

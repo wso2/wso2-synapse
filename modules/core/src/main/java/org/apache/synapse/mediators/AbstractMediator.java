@@ -28,6 +28,11 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -396,5 +401,33 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     public void setCommentsList(List<String> commentsList) {
         this.commentsList = commentsList;
+    }
+
+    /**
+     * Returns name of the mediator
+     *
+     * @return mediator name
+     */
+    public String getMediatorName() {
+        String cls = getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
+    }
+
+    /**
+     * Report statistics for the mediator
+     *
+     * @param synCtx      message context
+     * @param parentName  sequence name that mediator belong to
+     * @param isCreateLog whether this is a start or end of a mediator execution
+     */
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog) {
+        StatisticReportingLog statisticLog;
+        if (isCreateLog) {
+            statisticLog = new CreateEntryStatisticLog(synCtx, getMediatorName(), ComponentType.MEDIATOR, parentName,
+                                                       System.currentTimeMillis());
+        } else {
+            statisticLog = new StatisticCloseLog(synCtx, getMediatorName(), parentName, System.currentTimeMillis());
+        }
+        StatisticEventReceiver.receive(statisticLog);
     }
 }
