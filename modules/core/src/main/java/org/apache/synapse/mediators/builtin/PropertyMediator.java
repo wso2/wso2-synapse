@@ -174,20 +174,20 @@ public class PropertyMediator extends AbstractMediator {
                     && synCtx instanceof Axis2MessageContext) {
 
                 String[] args = name.split("@");
-                StringBuffer path = new StringBuffer("");
-                StringBuffer propertyName = new StringBuffer("");
+                String path = "";
+                String propertyName = "";
 
                 // If the name argument consistent with a @ separated property name then an empty resource is added
                 // with the property mentioned and the value as its value
                 if (args.length == 1){
-                    path.append(args[0]);
+                    path = args[0];
                 } else if (args.length == 2) {
-                    path.append(args[0]);
-                    propertyName.append(args[1]);
+                    path = args[0];
+                    propertyName = args[1];
                 }
 
                 Registry registry = synCtx.getConfiguration().getRegistry();
-                registry.newNonEmptyResource(path.toString(), false, CONTENT_TYPE, resultValue.toString(), propertyName.toString());
+                registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
             }
 
         } else {
