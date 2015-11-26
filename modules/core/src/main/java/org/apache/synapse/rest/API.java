@@ -297,8 +297,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             }
         }
 
+        String mediatorId = UUID.randomUUID().toString();
+        if(!synCtx.isResponse()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, getName(), true);
+            synCtx.addComponentToMessageFlow(mediatorId);
+            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+        }
+
         // get API log for this message and attach to the message context
-        ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
+                ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
 
         // Calculate REST_URL_POSTFIX from full request path
         String restURLPostfix = (String) synCtx.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
@@ -350,7 +357,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             return;
         }
 
-
         String path = RESTUtils.getFullRequestPath(synCtx);
         String subPath;
         if (versionStrategy.getVersionType().equals(VersionStrategyFactory.TYPE_URL)) {
@@ -398,6 +404,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             if (sequence != null) {
                 sequence.mediate(synCtx);
             }
+        }
+
+        if(!synCtx.isResponse()) {
+            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, getName(), false);
         }
     }
 
