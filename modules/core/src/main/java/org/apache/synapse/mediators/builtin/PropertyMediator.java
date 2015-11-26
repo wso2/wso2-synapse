@@ -176,7 +176,6 @@ public class PropertyMediator extends AbstractMediator {
                 String[] args = name.split("@");
                 StringBuffer path = new StringBuffer("");
                 StringBuffer propertyName = new StringBuffer("");
-                StringBuffer content = new StringBuffer("");
 
                 // If the name argument consistent with a @ separated property name then an empty resource is added
                 // with the property mentioned and the value as its value
@@ -185,13 +184,6 @@ public class PropertyMediator extends AbstractMediator {
                 } else if (args.length == 2) {
                     path.append(args[0]);
                     propertyName.append(args[1]);
-                }
-
-                if (value != null){
-                    content.append(value.toString());
-                }
-                else {
-                    content.append(resultValue);
                 }
 
                 Registry registry = synCtx.getConfiguration().getRegistry();
