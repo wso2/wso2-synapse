@@ -176,7 +176,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             try {
                 if ("true".equals(synCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                     blockingMsgSender.send(endpoint, synapseOutMsgCtx);
-                    setResponseHttpSc(synapseOutMsgCtx, synCtx);
                 } else {
                     resultMsgCtx = blockingMsgSender.send(endpoint, synapseOutMsgCtx);
                     setResponseHttpSc(resultMsgCtx, synCtx);
@@ -629,12 +628,11 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     
     private void setResponseHttpSc(MessageContext sourceSynCtx, MessageContext destinationSynCtx) {
         if (sourceSynCtx != null) {
-            destinationSynCtx.setProperty(SynapseConstants.HTTP_SC,
-                                          sourceSynCtx.getProperty(SynapseConstants.HTTP_SC));
             org.apache.axis2.context.MessageContext axis2MessageContext =
                                                                           ((Axis2MessageContext) destinationSynCtx).getAxis2MessageContext();
             axis2MessageContext.setProperty(SynapseConstants.HTTP_SC,
-                                            sourceSynCtx.getProperty(SynapseConstants.HTTP_SC));
+                                            ((Axis2MessageContext) sourceSynCtx).getAxis2MessageContext()
+                                                                                .getProperty(SynapseConstants.HTTP_SC));
         }
     }
 

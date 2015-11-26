@@ -23,6 +23,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -39,7 +41,9 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
@@ -134,8 +138,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
      */
     private boolean isDeactivatedAtStartup= false;
     
-    private final static int HTTP_SC_OK = 200;
-    private final static int HTTP_SC_ACCEPTED = 202;
+    private boolean isNonHTTP = false;
+    
+    Pattern httpPattern = Pattern.compile("^http:");
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
@@ -422,6 +427,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 		if (targetEndpoint != null) {
 			Endpoint ep = messageContext.getEndpoint(targetEndpoint);
+			AbstractEndpoint abstractEndpoint = (AbstractEndpoint) ep;
+			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
+			String endpointReferenceValue = null;
+	        if (endpointDefinition.getAddress() != null) {
+	            endpointReferenceValue = endpointDefinition.getAddress();
+	            isNonHTTP = !isHTTPEndPoint(endpointReferenceValue);
+	        } 
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
@@ -456,24 +468,42 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							outCtx = sender.send(ep, messageContext);
 						}
 
-                        int responseSc =
-                                         ((Integer) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-                                                                                          .getProperty(SynapseConstants.HTTP_SC));
-                        isSuccessful =
-                                       responseSc == HTTP_SC_OK || responseSc == HTTP_SC_ACCEPTED ||
-                                               isNonRetryErrorCode(responseSc);
-					} catch (Exception e) {
-						// this means send has failed due to some reason so we
-						// have to retry it
-						if (e instanceof SynapseException) {
-                            int responseSc =
-                                             ((Integer) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
-                                                                                              .getProperty(SynapseConstants.HTTP_SC));
+                        if (isNonHTTP) {
+                            /*
+                             * There is no status codes to deal with JMS eps. So
+                             * merely set it as a success if there's no any
+                             * exceptions.
+                             */
+                            isSuccessful = true;
+                        } else {
+                            String responseSc =
+                                                ((String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                                                                                                .getProperty(SynapseConstants.HTTP_SC));
                             isSuccessful =
-                                           responseSc == HTTP_SC_OK ||
-                                                   responseSc == HTTP_SC_ACCEPTED ||
+                                           getHTTPStatusCodeFamily(
+                                                                   Integer.parseInt(responseSc.trim())).equals(HTTPStatusCodeFamily.SUCCESSFUL) ||
                                                    isNonRetryErrorCode(responseSc);
-						}
+                        }
+					} catch (Exception e) {
+                        // this means send has failed due to some reason so we
+                        // have to retry it
+                        /*
+                         * If an exception is thrown in a JMS scenario then we
+                         * have to consider it as a failure.
+                         */
+                        if (isNonHTTP) {
+                            isSuccessful = false;
+                        } else {
+                            if (e instanceof SynapseException) {
+                                String responseSc =
+                                                    ((String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                                                                                                    .getProperty(SynapseConstants.HTTP_SC));
+                                isSuccessful =
+                                               getHTTPStatusCodeFamily(
+                                                                       Integer.parseInt(responseSc.trim())).equals(HTTPStatusCodeFamily.SUCCESSFUL) ||
+                                                       isNonRetryErrorCode(responseSc);
+                            }
+                        }
 						if (!isSuccessful) {
 							log.error("BlockingMessageSender of message processor [" +
 							          this.messageProcessor.getName() +
@@ -707,9 +737,15 @@ public class ForwardingService implements Task, ManagedLifecycle {
         attemptCount = 0;
     }
 
-    private boolean isNonRetryErrorCode(int responseHttpSc) {
-        Set<Integer> nonRetryStatusCodes = getNonRetryStatusCodes();
-        return nonRetryStatusCodes.contains(responseHttpSc);
+    private boolean isNonRetryErrorCode(final String responseHttpSc) {
+        boolean isNonRetryErrCode = false;
+        for (String nonretrySc : nonRetryStatusCodes) {
+            if (nonretrySc.trim().contains(responseHttpSc.trim())) {
+                isNonRetryErrCode = true;
+                break;
+            }
+        }
+        return isNonRetryErrCode;
     }
 
 	private boolean isRunningUnderCronExpression() {
@@ -761,5 +797,42 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		terminate();
 
 	}
+    
+    private boolean isHTTPEndPoint(String epAddress) {
+        Matcher match = httpPattern.matcher(epAddress);
+        return match.find();
+    }
+    
+    /**
+     * + * Used to determine the family of HTTP status codes to which the given
+     * code
+     * + * belongs.
+     * + *
+     * + * @param statusCode - The HTTP status code
+     * +
+     */
+    private HTTPStatusCodeFamily getHTTPStatusCodeFamily(int statusCode) {
+        switch (statusCode / 100) {
+            case 1:
+                return HTTPStatusCodeFamily.INFORMATIONAL;
+            case 2:
+                return HTTPStatusCodeFamily.SUCCESSFUL;
+            case 3:
+                return HTTPStatusCodeFamily.REDIRECTION;
+            case 4:
+                return HTTPStatusCodeFamily.CLIENT_ERROR;
+            case 5:
+                return HTTPStatusCodeFamily.SERVER_ERROR;
+            default:
+                return HTTPStatusCodeFamily.OTHER;
+        }
+    }
+
+    /**
+     * The set of HTTP status code families.
+     */
+    private enum HTTPStatusCodeFamily {
+        INFORMATIONAL, SUCCESSFUL, REDIRECTION, CLIENT_ERROR, SERVER_ERROR, OTHER
+    }
 
 }

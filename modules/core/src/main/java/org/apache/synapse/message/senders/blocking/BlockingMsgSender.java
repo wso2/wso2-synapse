@@ -63,6 +63,10 @@ public class BlockingMsgSender {
     boolean initClientOptions = true;
 
     private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
+    
+    private Pattern errorMsgPattern = Pattern.compile("Transport error: \\d{3} .*");
+
+    private Pattern statusCodePattern = Pattern.compile("\\d{3}");
 
     public void init() {
         try {
@@ -174,6 +178,9 @@ public class BlockingMsgSender {
         try {
             if (isOutOnly) {
                 sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
+                final String httpStatusCode =
+                                           String.valueOf(axisOutMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
+                                                                  .trim();
                 /*
                  * Though this is OUT_ONLY operation, we need to set the
                  * response Status code so that others can make use of it.
@@ -186,8 +193,9 @@ public class BlockingMsgSender {
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                 }
-
-                Object statusCode = result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+                final String statusCode =
+                                          String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
+                                                .trim();
                 /*
                  * We need to set the response status code so that users can
                  * fetch it later.
@@ -207,8 +215,7 @@ public class BlockingMsgSender {
             /*
              * Extract the HTTP status code from the Exception message.
              */
-            int errorStatusCode = extractStatusCodeFromException(ex);
-            synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, errorStatusCode);
+            final String errorStatusCode = extractStatusCodeFromException(ex);
             axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, errorStatusCode);
             if (!isOutOnly) {
                 //axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
@@ -325,12 +332,12 @@ public class BlockingMsgSender {
         throw new SynapseException(msg);
     }
 
-    private int extractStatusCodeFromException(Exception exception) {
-        int responseStatusCode = 0;
-        Pattern p = Pattern.compile("\\d{3}");
-        Matcher m = p.matcher(exception.getMessage());
-        while (m.find()) {
-            responseStatusCode = Integer.parseInt(m.group().trim());
+    private String extractStatusCodeFromException(Exception exception) {
+        String responseStatusCode = "";
+        Matcher errMsgMatcher = errorMsgPattern.matcher(exception.getMessage());
+        Matcher statusCodeMatcher = statusCodePattern.matcher(exception.getMessage());
+        while (errMsgMatcher.find() && statusCodeMatcher.find()) {
+            responseStatusCode = statusCodeMatcher.group().trim();
             break;
         }
         return responseStatusCode;
