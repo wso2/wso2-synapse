@@ -28,6 +28,7 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.registry.Registry;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
@@ -73,6 +74,9 @@ public class PropertyMediator extends AbstractMediator {
 
     /** A pattern can be matched to several parts of the value. Which one to choose.*/
     private int group = 0;
+
+    /** Define the Content type of the resource **/
+    public static final String CONTENT_TYPE = "text/plain";
 
     /**
      * Sets a property into the current (local) Synapse Context or into the Axis Message Context
@@ -162,6 +166,25 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2smc.getAxis2MessageContext().getOperationContext().setProperty(name, resultValue);
+
+            } else if (XMLConfigConstants.SCOPE_REGISTRY.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+
+                String[] args = name.split("@");
+                String path = "";
+                String propertyName = "";
+
+                // If the name argument consistent with a @ separated property name then an empty resource is added
+                // with the property mentioned and the value as its value
+                if (args.length == 1){
+                    path = args[0];
+                } else if (args.length == 2) {
+                    path = args[0];
+                    propertyName = args[1];
+                }
+
+                Registry registry = synCtx.getConfiguration().getRegistry();
+                registry.newNonEmptyResource(path, false, CONTENT_TYPE, resultValue.toString(), propertyName);
             }
 
         } else {

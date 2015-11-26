@@ -124,13 +124,15 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
                 !XMLConfigConstants.SCOPE_TRANSPORT.equals(valueStr) &&
                 !XMLConfigConstants.SCOPE_OPERATION.equals(valueStr) &&
                 !XMLConfigConstants.SCOPE_DEFAULT.equals(valueStr) &&
-                !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr)) {
+                !XMLConfigConstants.SCOPE_CLIENT.equals(valueStr) &&
+                !XMLConfigConstants.SCOPE_REGISTRY.equals(valueStr)) {
 
                 String msg = "Only '" + XMLConfigConstants.SCOPE_AXIS2 +
                              "' or '" + XMLConfigConstants.SCOPE_TRANSPORT +
                              "' or '" + XMLConfigConstants.SCOPE_CLIENT +
                              "' or '" + XMLConfigConstants.SCOPE_DEFAULT +
                              "' or '" + XMLConfigConstants.SCOPE_OPERATION +
+                             "' or '" + XMLConfigConstants.SCOPE_REGISTRY +
                              "' values are allowed for attribute scope for a property mediator" +
                              ", Unsupported scope " + valueStr;
                 log.error(msg);
