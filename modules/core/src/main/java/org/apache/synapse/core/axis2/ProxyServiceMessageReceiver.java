@@ -39,6 +39,7 @@ import org.apache.synapse.endpoints.Endpoint;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * This is the MessageReceiver set to act on behalf of Proxy services.
@@ -54,6 +55,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     private ProxyService proxy = null;
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
+        String mediatorId = null;
 
         boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -116,12 +118,18 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         //trace message flow
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
+        if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if (mc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, mc.getProperty
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_ID));
+                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, mc.getProperty
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE));
+            } else if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
                 synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
                 synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Proxy Service:" + name);
-                synCtx.getEnvelope().buildWithAttachments();
             }
+            mediatorId = UUID.randomUUID().toString();
+            MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, name, true);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -230,6 +238,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
+            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, name, false);
+            }
         }
     }
 

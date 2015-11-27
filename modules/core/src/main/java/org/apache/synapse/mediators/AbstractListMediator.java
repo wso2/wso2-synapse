@@ -26,6 +26,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
@@ -77,19 +78,27 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
 
             for (int i = mediatorPosition; i < mediators.size(); i++) {
+                String mediatorId = null;
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
-                String mediatorId = UUID.randomUUID().toString();
+
                 Mediator mediator = mediators.get(i);
-                mediator.setTraceFlow(synCtx, mediatorId, mediator, true);
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    mediatorId = UUID.randomUUID().toString();
+                    mediator.setTraceFlow(synCtx, mediatorId, mediator, true);
+                }
 
                 if (!mediator.mediate(synCtx)) {
-                    mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
+                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                        mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
+                    }
                     returnVal = false;
                     break;
                 }
 
-                mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
+                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
+                }
             }
         } catch (SynapseException synEx) {
             throw synEx;

@@ -111,9 +111,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             String mediatorId = null;
             if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
                 mediatorId = UUID.randomUUID().toString();
-                MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Sequence: " + (name == null ? this.sequenceType.name() : name), true);
-                synCtx.addComponentToMessageFlow(mediatorId);
-                MessageFlowDataHolder.addFlowInfoEntry(synCtx);
+                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
+                        .sequenceType.name() : name), true);
             }
 
             // The onError sequence for handling errors which may occur during the
@@ -187,7 +186,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
 
                 if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                    MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, "Sequence: " + (name == null ? this.sequenceType.name() : name), false);
+                    MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
+                            .sequenceType.name() : name), false);
                 }
 
                 return result;

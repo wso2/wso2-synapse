@@ -17,7 +17,8 @@ public class MessageFlowDataHolder {
 
     private static boolean messageFlowTraceEnable = false;
 
-    public static synchronized void addComponentInfoEntry(MessageContext synCtx, String componentId, String componentName, boolean start){
+    private static void addComponentInfoEntry(MessageContext synCtx, String componentId, String
+            componentName, boolean start){
         java.util.Date date= new java.util.Date();
         Set<String> propertySet = synCtx.getPropertyKeySet();
         String propertyString = "";
@@ -37,11 +38,10 @@ public class MessageFlowDataHolder {
         if(componentInfo.size()>0){
             return componentInfo.remove(0);
         }
-
         return null;
     }
 
-    public static synchronized void addFlowInfoEntry(MessageContext synCtx){
+    private static void addFlowInfoEntry(MessageContext synCtx){
         java.util.Date date= new java.util.Date();
         List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
 
@@ -66,13 +66,14 @@ public class MessageFlowDataHolder {
         return messageFlowTraceEnable;
     }
 
-    public static void setTraceFlowEvent(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+    public static synchronized void setTraceFlowEvent(MessageContext msgCtx, String mediatorId, String mediatorName,
+                                                       boolean isStart) {
         if (isStart) {
-            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediator.getMediatorName(), true);
+            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediatorName, true);
             msgCtx.addComponentToMessageFlow(mediatorId);
             MessageFlowDataHolder.addFlowInfoEntry(msgCtx);
         } else {
-            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediator.getMediatorName(), false);
+            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediatorName, false);
         }
     }
 }

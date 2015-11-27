@@ -281,6 +281,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     }
 
     void process(MessageContext synCtx) {
+        String mediatorId = null;
+
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
 
@@ -290,18 +292,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
 
         if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "REST API: " + synCtx
-                        .getProperty(RESTConstants.SYNAPSE_REST_API));
+            if (!synCtx.isResponse()) {
+                if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
+                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "REST API: " + synCtx
+                            .getProperty(RESTConstants.SYNAPSE_REST_API));
+                }
+                mediatorId = UUID.randomUUID().toString();
+                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
             }
-        }
-
-        String mediatorId = UUID.randomUUID().toString();
-        if(!synCtx.isResponse()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, getName(), true);
-            synCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(synCtx);
         }
 
         // get API log for this message and attach to the message context
@@ -406,8 +405,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             }
         }
 
-        if(!synCtx.isResponse()) {
-            MessageFlowDataHolder.addComponentInfoEntry(synCtx, mediatorId, getName(), false);
+        if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if (!synCtx.isResponse()) {
+                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
+            }
         }
     }
 
