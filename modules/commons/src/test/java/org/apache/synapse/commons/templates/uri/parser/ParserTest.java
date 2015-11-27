@@ -327,4 +327,18 @@ public class ParserTest extends TestCase {
         assertEquals("do", var.get("action"));
         assertEquals("view", var.get("sub"));
     }
+
+    public void testComaSeperatedSimpleExpressions() throws Exception{
+        Map<String, String> var = new HashMap<String, String>();
+        var.put("one","param1");
+        var.put("two","param2");
+        var.put("three","param3");
+        URITemplate template = new URITemplate("/admin/{one},{two},{three}*");
+        assertTrue(template.matches("/admin/param1,param2,param3", var));
+        assertTrue(template.matches("/admin/param1,param2,param3/test", var));
+        assertTrue(template.matches("/admin/param1,param2,param3?query=param", var));
+        var.clear();
+    }
+
+
 }
