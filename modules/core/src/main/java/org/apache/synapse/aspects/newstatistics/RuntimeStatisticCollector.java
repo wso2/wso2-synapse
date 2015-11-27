@@ -60,32 +60,29 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void recordStatisticCreateEntry(MessageContext msgCtx, String componentId,
 	                                              ComponentType componentType, String parentId, Long startTime) {
-		if (isStatisticsEnable) {
-			if (componentId == null) {
-				if (log.isDebugEnabled()) {
-					log.debug("Statistics log closing component Id cannot be null");
-				}
-				return;
+		if (componentId == null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Statistics log closing component Id cannot be null");
 			}
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId)
-					                 .createLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
-					                            msgCtx.isResponse());
-				} else {
-					StatisticsEntry statisticsEntry =
-							new StatisticsEntry(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
-							                    msgCtx.isResponse(), localMemberHost, localMemberPort);
-					runningStatistics.put(statisticsTraceId, statisticsEntry);
-					if (log.isDebugEnabled()) {
-						log.debug(
-								"Creating New Entry in Running Statistics: Current size :" + runningStatistics.size());
-					}
-				}
+			return;
+		}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				runningStatistics.get(statisticsTraceId)
+				                 .createLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
+				                            msgCtx.isResponse());
 			} else {
-				log.warn("Statistics reported for some flow without a statistic ID.");
+				StatisticsEntry statisticsEntry =
+						new StatisticsEntry(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
+						                    msgCtx.isResponse(), localMemberHost, localMemberPort);
+				runningStatistics.put(statisticsTraceId, statisticsEntry);
+				if (log.isDebugEnabled()) {
+					log.debug("Creating New Entry in Running Statistics: Current size :" + runningStatistics.size());
+				}
 			}
+		} else {
+			log.warn("Statistics reported for some flow without a statistic ID.");
 		}
 	}
 
@@ -100,23 +97,21 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void recordStatisticCreateFaultLog(MessageContext msgCtx, String componentId,
 	                                                 ComponentType componentType, String parentId, Long startTime) {
-		if (isStatisticsEnable) {
-			if (componentId == null) {
-				if (log.isDebugEnabled()) {
-					log.debug("Statistics log closing component Id cannot be null");
-				}
-				return;
+		if (componentId == null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Statistics log closing component Id cannot be null");
 			}
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId)
-					                 .createFaultLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
-					                                 msgCtx.isResponse());
-				}
-			} else {
-				log.warn("Statistics reported for some flow without a statistic ID.");
+			return;
+		}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				runningStatistics.get(statisticsTraceId)
+				                 .createFaultLog(componentId, componentType, getMsgId(msgCtx), parentId, startTime,
+				                                 msgCtx.isResponse());
 			}
+		} else {
+			log.warn("Statistics reported for some flow without a statistic ID.");
 		}
 	}
 
@@ -129,22 +124,19 @@ public class RuntimeStatisticCollector {
 	 * @param endTime     end time of the component execution
 	 */
 	public static void recordStatisticCloseFaultLog(MessageContext msgCtx, String componentId, Long endTime) {
-		if (isStatisticsEnable) {
-			if (componentId == null) {
-				if (log.isDebugEnabled()) {
-					log.debug("Statistics log closing component Id cannot be null");
-				}
-				return;
+		if (componentId == null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Statistics log closing component Id cannot be null");
 			}
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					boolean finished = runningStatistics.get(statisticsTraceId)
-					                                    .closeFaultLog(componentId, getMsgId(msgCtx), endTime);
-					if (finished) {
-						endMessageFlow(msgCtx, statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime,
-						               false);
-					}
+			return;
+		}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				boolean finished =
+						runningStatistics.get(statisticsTraceId).closeFaultLog(componentId, getMsgId(msgCtx), endTime);
+				if (finished) {
+					endMessageFlow(msgCtx, statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime, false);
 				}
 			}
 		}
@@ -160,22 +152,19 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void recordStatisticCloseLog(MessageContext msgCtx, String componentId, String parentId,
 	                                           Long endTime) {
-		if (isStatisticsEnable) {
-			if (componentId == null) {
-				if (log.isDebugEnabled()) {
-					log.debug("Statistics log closing component Id cannot be null");
-				}
-				return;
+		if (componentId == null) {
+			if (log.isDebugEnabled()) {
+				log.debug("Statistics log closing component Id cannot be null");
 			}
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					boolean finished = runningStatistics.get(statisticsTraceId)
-					                                    .closeLog(componentId, getMsgId(msgCtx), parentId, endTime);
-					if (finished) {
-						endMessageFlow(msgCtx, statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime,
-						               false);
-					}
+			return;
+		}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				boolean finished = runningStatistics.get(statisticsTraceId)
+				                                    .closeLog(componentId, getMsgId(msgCtx), parentId, endTime);
+				if (finished) {
+					endMessageFlow(msgCtx, statisticsTraceId, runningStatistics.get(statisticsTraceId), endTime, false);
 				}
 			}
 		}
@@ -188,12 +177,10 @@ public class RuntimeStatisticCollector {
 	 * @param callbackId callback identification number
 	 */
 	public static void addCallbacks(MessageContext msgCtx, String callbackId) {
-		if (isStatisticsEnable) {
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId).addCallback(callbackId, getMsgId(msgCtx));
-				}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				runningStatistics.get(statisticsTraceId).addCallback(callbackId, getMsgId(msgCtx));
 			}
 		}
 	}
@@ -207,12 +194,10 @@ public class RuntimeStatisticCollector {
 	 * @param endTime    callback removal time at SynapseCallbackReceiver
 	 */
 	public static void updateForReceivedCallback(MessageContext msgCtx, String callbackId, Long endTime) {
-		if (isStatisticsEnable) {
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime);
-				}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				runningStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime);
 			}
 		}
 	}
@@ -225,14 +210,12 @@ public class RuntimeStatisticCollector {
 	 * @param callbackId callback identification number
 	 */
 	public static void removeCallback(MessageContext msgCtx, String callbackId) {
-		if (isStatisticsEnable) {
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					runningStatistics.get(statisticsTraceId).removeCallback(callbackId);
-					if (log.isDebugEnabled()) {
-						log.debug("Removed callback from statistic entry");
-					}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				runningStatistics.get(statisticsTraceId).removeCallback(callbackId);
+				if (log.isDebugEnabled()) {
+					log.debug("Removed callback from statistic entry");
 				}
 			}
 		}
@@ -246,13 +229,11 @@ public class RuntimeStatisticCollector {
 	 * @param endTime end time of the message flow
 	 */
 	public static void finalizeEntry(MessageContext msgCtx, long endTime) {
-		if (isStatisticsEnable) {
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
-					endMessageFlow(msgCtx, statisticsTraceId, entry, endTime, false);
-				}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
+				endMessageFlow(msgCtx, statisticsTraceId, entry, endTime, false);
 			}
 		}
 	}
@@ -266,13 +247,11 @@ public class RuntimeStatisticCollector {
 	 * @param endTime end time of the message flow
 	 */
 	public static void closeStatisticEntryForcefully(MessageContext msgCtx, long endTime) {
-		if (isStatisticsEnable) {
-			String statisticsTraceId = getStatisticsTraceId(msgCtx);
-			if (statisticsTraceId != null) {
-				if (runningStatistics.containsKey(statisticsTraceId)) {
-					StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
-					endMessageFlow(msgCtx, statisticsTraceId, entry, endTime, true);
-				}
+		String statisticsTraceId = getStatisticsTraceId(msgCtx);
+		if (statisticsTraceId != null) {
+			if (runningStatistics.containsKey(statisticsTraceId)) {
+				StatisticsEntry entry = runningStatistics.get(statisticsTraceId);
+				endMessageFlow(msgCtx, statisticsTraceId, entry, endTime, true);
 			}
 		}
 	}
@@ -346,6 +325,7 @@ public class RuntimeStatisticCollector {
 	 * @return next clone message identification number
 	 */
 	public static int getClonedMsgNumber(MessageContext msgCtx) {
+		//TODO remove this and collect it without contacting RuntimeStatCollector
 		String statisticsTraceId = getStatisticsTraceId(msgCtx);
 		if (statisticsTraceId != null) {
 			if (runningStatistics.containsKey(statisticsTraceId)) {

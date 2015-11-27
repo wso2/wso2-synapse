@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.newstatistics.event.reader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -34,7 +35,9 @@ public class StatisticEventReceiver {
 	 * report the statistics to the RuntimeStatisticCollector
 	 */
 	public static void Init() {
-		new Thread(new StatisticEventPublisher(queue)).start();
+		if(RuntimeStatisticCollector.isStatisticsEnable()) {
+			new Thread(new StatisticEventPublisher(queue)).start();
+		}
 	}
 
 	/**
@@ -45,7 +48,9 @@ public class StatisticEventReceiver {
 	 */
 	public static void receive(StatisticReportingLog event) {
 		try {
-			queue.add(event);
+			if(RuntimeStatisticCollector.isStatisticsEnable()) {
+				queue.add(event);
+			}
 		} catch (IllegalStateException e) {
 			log.error("Statistic event cannot be added at this time due to capacity restrictions.");
 		} catch (Exception e) {
