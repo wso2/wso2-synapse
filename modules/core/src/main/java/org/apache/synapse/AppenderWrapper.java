@@ -50,8 +50,8 @@ public class AppenderWrapper extends PatternLayout {
                 Field field = LoggingEvent.class.getDeclaredField("message");
                 field.setAccessible(true);
                 field.set(event, logMessage);
-            } catch (Exception e) {
-                log.error("Error Setting the Logging Event: " + e.getMessage());
+            } catch (Exception ex) {
+                log.error("Error Setting the Logging Event: " + ex);
             }
         }
         return super.format(event);
