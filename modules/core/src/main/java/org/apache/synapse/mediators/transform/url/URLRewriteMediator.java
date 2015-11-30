@@ -44,6 +44,13 @@ public class URLRewriteMediator extends AbstractMediator {
     private String outputProperty;
 
     public boolean mediate(MessageContext messageContext) {
+
+        if (messageContext.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(messageContext)) {
+                return true;
+            }
+        }
+
         URIFragments fragments;
         URI inputURI = getInputAddress(messageContext);
         if (inputURI != null) {

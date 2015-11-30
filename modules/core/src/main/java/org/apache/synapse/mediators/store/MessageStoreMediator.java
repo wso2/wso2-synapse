@@ -65,6 +65,11 @@ public class MessageStoreMediator extends AbstractMediator{
 
     public boolean mediate(MessageContext synCtx) {
 
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
 
         if(synCtx != null) {
             MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
