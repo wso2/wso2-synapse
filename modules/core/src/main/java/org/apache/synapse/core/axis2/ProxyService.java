@@ -866,16 +866,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         AxisConfiguration axisConfig = synCfg.getAxisConfiguration();
         if (axisConfig != null) {
 
-            if (targetInLineInSequence != null) {
-                targetInLineInSequence.destroy();
-            }
-            if (targetInLineOutSequence != null) {
-                targetInLineOutSequence.destroy();
-            }
-            if (targetInLineFaultSequence != null) {
-                targetInLineFaultSequence.destroy();
-            }
-
             AxisService as = axisConfig.getServiceForActivation(this.getName());
             //If an active AxisService is found
             if (as != null && as.isActive()) {
