@@ -295,12 +295,12 @@ public class RelayUtils {
         final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
         if (pipe != null) {
             InputStream in = pipe.getInputStream();
-            try {
-                if (in != null && in.available() > 0) {
+            if (in != null) {
+                try {
                     IOUtils.copy(in, new NullOutputStream());
+                } catch (IOException exception) {
+                    handleException("Error when consuming the input stream to discard ", exception);
                 }
-            } catch (IOException exception) {
-                handleException("Error when consuming the input stream to discard ", exception);
             }
         }
     }
