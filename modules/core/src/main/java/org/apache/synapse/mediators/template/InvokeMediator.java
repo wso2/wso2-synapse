@@ -79,6 +79,13 @@ public class InvokeMediator extends AbstractMediator implements
     }
 
 	private boolean mediate(MessageContext synCtx, boolean executePreFetchingSequence) {
+
+		if (synCtx.getEnvironment().isDebugEnabled()) {
+			if (super.divertMediationRoute(synCtx)) {
+				return true;
+			}
+		}
+
 		SynapseLog synLog = getLog(synCtx);
 
 		if (synLog.isTraceOrDebugEnabled()) {

@@ -22,7 +22,9 @@ package org.apache.synapse.mediators.ext;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.TestMessageContext;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediatorTestCase;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.om.OMAbstractFactory;
@@ -40,7 +42,9 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
                 "<pojoCommand name='org.apache.synapse.mediators.ext.POJOCommandTestMediator' " +
                         "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties());
         POJOCommandTestHelper.reset();
-        pcm.mediate(new TestMessageContext());
+        TestMessageContext msgContext = new TestMessageContext();
+        msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
+        pcm.mediate(msgContext);
         assertTrue(POJOCommandTestHelper.getInstance().isExecuted());
     }
 
@@ -50,7 +54,9 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
                         "xmlns='http://ws.apache.org/ns/synapse'><property name=\"testProp\" " +
                         "expression=\"fn:concat('XPATH ', 'FUNC')\" action=\"ReadMessage\"/></pojoCommand>"), new Properties());
         POJOCommandTestHelper.reset();
-        pcm.mediate(new TestMessageContext());
+        TestMessageContext msgContext = new TestMessageContext();
+        msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
+        pcm.mediate(msgContext);
         assertEquals("XPATH FUNC", POJOCommandTestHelper.getInstance().getChangedProperty());
         assertTrue(POJOCommandTestHelper.getInstance().isExecuted());
     }
@@ -60,7 +66,9 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
                 "<pojoCommand name='org.apache.synapse.mediators.ext.POJOCommandTestImplementedMediator' " +
                         "xmlns='http://ws.apache.org/ns/synapse'/>"), new Properties());
         POJOCommandTestHelper.reset();
-        pcm.mediate(new TestMessageContext());
+        TestMessageContext msgContext = new TestMessageContext();
+        msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
+        pcm.mediate(msgContext);
         assertTrue(POJOCommandTestHelper.getInstance().isExecuted());
     }
 
@@ -70,7 +78,9 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
                         "xmlns='http://ws.apache.org/ns/synapse'><property name=\"testProp\" " +
                         "expression=\"fn:concat('XPATH ', 'FUNC')\" action=\"ReadMessage\"/></pojoCommand>"), new Properties());
         POJOCommandTestHelper.reset();
-        pcm.mediate(new TestMessageContext());
+        TestMessageContext msgContext = new TestMessageContext();
+        msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
+        pcm.mediate(msgContext);
         assertEquals("XPATH FUNC", POJOCommandTestHelper.getInstance().getChangedProperty());
         assertTrue(POJOCommandTestHelper.getInstance().isExecuted());
     }
@@ -81,7 +91,9 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
                         "xmlns='http://ws.apache.org/ns/synapse'><property name=\"testProp\" " +
                         "value=\"Test Property\"/></pojoCommand>"), new Properties());
         POJOCommandTestHelper.reset();
-        pcm.mediate(new TestMessageContext());
+        TestMessageContext msgContext = new TestMessageContext();
+        msgContext.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
+        pcm.mediate(msgContext);
         assertEquals("Test Property", POJOCommandTestHelper.getInstance().getChangedProperty());
         assertTrue(POJOCommandTestHelper.getInstance().isExecuted());
     }
@@ -93,6 +105,7 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
                         "value=\"Test Property\" context-name=\"testPropInMC\"/></pojoCommand>"), new Properties());
         POJOCommandTestHelper.reset();
         MessageContext ctx = new TestMessageContext();
+        ctx.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         pcm.mediate(ctx);
         assertEquals("Test Property", POJOCommandTestHelper.getInstance().getChangedProperty());
         assertEquals("Test Property", ctx.getProperty("testPropInMC"));
@@ -109,6 +122,7 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
         SOAPEnvelope envelope = OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
         envelope.getBody().addChild(createOMElement("<original><testNode/></original>"));
         ctx.setEnvelope(envelope);
+        ctx.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         pcm.mediate(ctx);
         assertEquals("TestProperty", POJOCommandTestHelper.getInstance().getChangedProperty());
         assertEquals("<original>TestProperty</original>", ctx.getEnvelope().getBody().getFirstOMChild().toString());
@@ -123,6 +137,7 @@ public class POJOCommandMediatorTest extends AbstractMediatorTestCase {
         POJOCommandTestHelper.reset();
         MessageContext ctx = new TestMessageContext();
         ctx.setProperty("testCtxProp", "test");
+        ctx.setEnvironment(new Axis2SynapseEnvironment(new SynapseConfiguration()));
         pcm.mediate(ctx);
         assertEquals("testcommand", ctx.getProperty("testCtxProp").toString());
         assertTrue(POJOCommandTestHelper.getInstance().isExecuted());

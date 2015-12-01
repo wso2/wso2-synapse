@@ -89,6 +89,12 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      */
     public boolean mediate(MessageContext synCtx) {
 
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         SynapseLog synLog = getLog(synCtx);
 
         if (sequenceType == SequenceType.NAMED) {
