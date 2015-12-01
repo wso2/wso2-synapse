@@ -22,7 +22,7 @@
 
 	<groupId>org.apache.synapse</groupId>
 	<artifactId>synapse-core</artifactId>
-
+	
 	<name>Apache Synapse - Core</name>
 	<description>Apache Synapse - Core</description>
 	<packaging>bundle</packaging>
@@ -151,7 +151,8 @@
 							org.apache.synapse.util.*,
 							org.apache.synapse.libraries.*,
 							org.apache.synapse.carbonext.*,
-                            org.apache.synapse.continuation.*
+                            org.apache.synapse.continuation.*,
+                            org.apache.synapse.debug.*
                         </Export-Package>
 						<Import-Package>
 							!javax.xml.namespace,

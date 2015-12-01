@@ -26,6 +26,7 @@ import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.SynapseTaskManager;
@@ -246,4 +247,20 @@ public interface SynapseEnvironment {
      * @return global timeout interval
      */
     public long getGlobalTimeout();
+
+    /**
+     * Whether debugging is enabled in the environment.
+     *
+     * @return whether debugging is enabled in the environment
+     */
+    public boolean isDebugEnabled();
+
+    /**
+     * Retrieve the {@link org.apache.synapse.debug.SynapseDebugManager} from the
+     * <code>environment</code>.
+     *
+     * @return SynapseDebugManager of this synapse environment
+     */
+    public SynapseDebugManager getSynapseDebugManager();
+
 }

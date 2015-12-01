@@ -48,6 +48,7 @@ import org.apache.synapse.config.SynapseHandlersLoader;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -89,6 +90,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private RESTRequestHandler restHandler;
     private List<SynapseHandler> synapseHandlers;
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
+    private SynapseDebugManager synapseDebugManager;
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
@@ -114,6 +116,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
+
+    /** Debug mode is enabled/disabled*/
+    private boolean isDebugEnabled = false;
 
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
@@ -183,127 +188,158 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public Axis2SynapseEnvironment(ConfigurationContext cfgCtx,
-        SynapseConfiguration synapseConfig, ServerContextInformation contextInformation) {
+                                   SynapseConfiguration synapseConfig, ServerContextInformation contextInformation) {
         this(cfgCtx, synapseConfig);
         this.contextInformation = contextInformation;
+        setSeverDebugMode(contextInformation);
     }
 
+    /**
+     * this method is to set the debug mode is enabled and initializes the debug manager
+     * debug mode is enabled is set for each time Synapse configuration is changed and Synapse
+     * environment initializes
+     */
+    public void setSeverDebugMode(ServerContextInformation contextInformation) {
+        if (contextInformation.isServerDebugModeEnabled()) {
+            setDebugEnabled(true);
+            synapseDebugManager = contextInformation.getSynapseDebugManager();
+            contextInformation.getSynapseDebugManager()
+                    .init(synapseConfig, contextInformation.getSynapseDebugInterface(), this, true);
+        }
+    }
+
+
     public boolean injectMessage(final MessageContext synCtx) {
-        if (log.isDebugEnabled()) {
-            log.debug("Injecting MessageContext");
-        }
-
-        //setting transport-in name as a message context property
-        TransportInDescription trpInDesc = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getTransportIn();
-        if (trpInDesc != null) {
-            synCtx.setProperty(SynapseConstants.TRANSPORT_IN_NAME, trpInDesc.getName());
-        }
-
-
-        synCtx.setEnvironment(this);
-
-        if (!invokeHandlers(synCtx)) {
-            return false;
-        }
-
-        Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
-        // the mandatory sequence is optional and hence check for the existence before mediation
-        if (mandatorySeq != null) {
+        try {
 
             if (log.isDebugEnabled()) {
-                log.debug("Start mediating the message in the " +
-                        "pre-mediate state using the mandatory sequence");
+                log.debug("Injecting MessageContext");
             }
 
-            if(!mandatorySeq.mediate(synCtx)) {
-                if(log.isDebugEnabled()) {
-                    log.debug((synCtx.isResponse() ? "Response" : "Request") + " message for the "
-                            + (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null ?
-                            "proxy service " + synCtx.getProperty(SynapseConstants.PROXY_SERVICE) :
-                            "message mediation") + " dropped in the " +
-                            "pre-mediation state by the mandatory sequence : \n" + synCtx);
-                }
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(synCtx);
+            }
+
+            //setting transport-in name as a message context property
+            TransportInDescription trpInDesc = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getTransportIn();
+            if (trpInDesc != null) {
+                synCtx.setProperty(SynapseConstants.TRANSPORT_IN_NAME, trpInDesc.getName());
+            }
+
+
+            synCtx.setEnvironment(this);
+
+            if (!invokeHandlers(synCtx)) {
                 return false;
             }
-        }
 
-        String receivingSequence = (String) synCtx.getProperty(SynapseConstants.RECEIVING_SEQUENCE);
-        Boolean isContinuationCall =
-                (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
-        // clear the message context properties related to endpoint in last service invocation
-        Set keySet = synCtx.getPropertyKeySet();
-        if (keySet != null) {
-            keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
-            keySet.remove(SynapseConstants.CONTINUATION_CALL);
-        }
+            Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
+            // the mandatory sequence is optional and hence check for the existence before mediation
+            if (mandatorySeq != null) {
 
-        if (isContinuationCall != null && isContinuationCall) {
-            if (log.isDebugEnabled()) {
-                log.debug("Response received for the Continuation Call service invocation");
-            }
-            return mediateFromContinuationStateStack(synCtx);
-        }
-
-        // if this is not a response to a proxy service
-        String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
-        if (proxyName == null || "".equals(proxyName)) {
-            // set default fault handler
-            synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-            if (receivingSequence != null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Using Sequence with name: " + receivingSequence
-                            + " for injected message");
+                    log.debug("Start mediating the message in the " +
+                            "pre-mediate state using the mandatory sequence");
                 }
-                Mediator seqMediator = synCtx.getSequence(receivingSequence);
-                if (seqMediator != null) {
-                    return seqMediator.mediate(synCtx);
-                } else {
-                    log.warn("Cannot find a Sequence with name: " + receivingSequence
-                            + " for injecting the response message");
+
+                if (!mandatorySeq.mediate(synCtx)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug((synCtx.isResponse() ? "Response" : "Request") + " message for the "
+                                + (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null ?
+                                "proxy service " + synCtx.getProperty(SynapseConstants.PROXY_SERVICE) :
+                                "message mediation") + " dropped in the " +
+                                "pre-mediation state by the mandatory sequence : \n" + synCtx);
+                    }
                     return false;
                 }
-            } else {
-                boolean processed = restHandler.process(synCtx);
-                if (processed) {
-                    return true;
-                }
-
-                if (log.isDebugEnabled()) {
-                    log.debug("Using Main Sequence for injected message");
-                }
-                return synCtx.getMainSequence().mediate(synCtx);
             }
-        }
 
-        ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
-        if (proxyService != null) {
-            proxyService.registerFaultHandler(synCtx);
+            String receivingSequence = (String) synCtx.getProperty(SynapseConstants.RECEIVING_SEQUENCE);
+            Boolean isContinuationCall =
+                    (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+            // clear the message context properties related to endpoint in last service invocation
+            Set keySet = synCtx.getPropertyKeySet();
+            if (keySet != null) {
+                keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
+                keySet.remove(SynapseConstants.CONTINUATION_CALL);
+            }
 
-            Mediator outSequence = getProxyOutSequence(synCtx, proxyService);
-            if (receivingSequence != null) {
+            if (isContinuationCall != null && isContinuationCall) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Using Sequence with name: " + receivingSequence
-                            + " for injected message");
+                    log.debug("Response received for the Continuation Call service invocation");
                 }
-                Mediator seqMediator = synCtx.getSequence(receivingSequence);
-                if (seqMediator != null) {
-                    seqMediator.mediate(synCtx);
+                return mediateFromContinuationStateStack(synCtx);
+            }
+
+            // if this is not a response to a proxy service
+            String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+            if (proxyName == null || "".equals(proxyName)) {
+                // set default fault handler
+                synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
+                if (receivingSequence != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using Sequence with name: " + receivingSequence
+                                + " for injected message");
+                    }
+                    Mediator seqMediator = synCtx.getSequence(receivingSequence);
+                    if (seqMediator != null) {
+                        return seqMediator.mediate(synCtx);
+                    } else {
+                        log.warn("Cannot find a Sequence with name: " + receivingSequence
+                                + " for injecting the response message");
+                        return false;
+                    }
                 } else {
-                    log.warn("Cannot find a Sequence with name: " + receivingSequence
-                            + " for injecting the message");
-                    return false;
+                    boolean processed = restHandler.process(synCtx);
+                    if (processed) {
+                        return true;
+                    }
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using Main Sequence for injected message");
+                    }
+                    return synCtx.getMainSequence().mediate(synCtx);
                 }
-            } else if (outSequence != null) {
-                outSequence.mediate(synCtx);
-            } else {
-                if (log.isDebugEnabled()) {
-                    log.debug(proxyService
-                            + " does not specifies an out-sequence - sending the response back");
+            }
+
+            ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
+            if (proxyService != null) {
+                proxyService.registerFaultHandler(synCtx);
+
+                Mediator outSequence = getProxyOutSequence(synCtx, proxyService);
+                if (receivingSequence != null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Using Sequence with name: " + receivingSequence
+                                + " for injected message");
+                    }
+                    Mediator seqMediator = synCtx.getSequence(receivingSequence);
+                    if (seqMediator != null) {
+                        seqMediator.mediate(synCtx);
+                    } else {
+                        log.warn("Cannot find a Sequence with name: " + receivingSequence
+                                + " for injecting the message");
+                        return false;
+                    }
+                } else if (outSequence != null) {
+                    outSequence.mediate(synCtx);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug(proxyService
+                                + " does not specifies an out-sequence - sending the response back");
+                    }
+                    Axis2Sender.sendBack(synCtx);
                 }
-                Axis2Sender.sendBack(synCtx);
+            }
+            return true;
+        } finally {
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.advertiseMediationFlowTerminatePoint(synCtx);
+                debugManager.releaseMediationFlowLock();
             }
         }
-        return true;
     }
 
     public void injectAsync(final MessageContext synCtx, SequenceMediator seq) {
@@ -366,6 +402,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         // Following code is reached if the sequential==true or inbound is
         // reached max level
         try {
+
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(synCtx);
+            }
+
             seq.mediate(synCtx);
             return true;
         } catch (SynapseException syne) {
@@ -400,6 +443,12 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 synCtx.getServiceLog().error(msg, e);
             }
             throw new SynapseException(msg, e);
+        } finally {
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.advertiseMediationFlowTerminatePoint(synCtx);
+                debugManager.releaseMediationFlowLock();
+            }
         }
     }
     
@@ -970,4 +1019,41 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         return true;
     }
+
+    /**
+     * method to get the reference to debug manager instance which manages debug capabilities in synapse
+     * kept in environment level, made available who ever has access to message context will be able to
+     * get access to the debug manager
+     *
+     * @return debug manager instance
+     */
+    public SynapseDebugManager getSynapseDebugManager() {
+        return synapseDebugManager;
+    }
+
+    /**
+     * sets debug manager when synapse environment initializes if the server instance is started in debug mode
+     */
+    public void setSynapseDebugManager(SynapseDebugManager synapseDebugManager) {
+        this.synapseDebugManager = synapseDebugManager;
+    }
+
+    /**
+     * Whether debugging is enabled in the environment.
+     *
+     * @return whether debugging is enabled in the environment
+     */
+    public boolean isDebugEnabled() {
+        return isDebugEnabled;
+    }
+
+    /**
+     * set debugging enabled in the environment.     *
+     * when this is enabled mediation flow can be debugged through a external client
+     * when this is disabled mediation flow happens normally
+     */
+    public void setDebugEnabled(boolean isDebugEnabled) {
+        this.isDebugEnabled = isDebugEnabled;
+    }
+
 }

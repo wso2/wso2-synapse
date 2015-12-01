@@ -53,6 +53,13 @@ public class ForEachMediator extends AbstractMediator {
     private static final String FOREACH_COUNTER = "FOREACH_COUNTER";
 
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {

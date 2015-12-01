@@ -45,6 +45,12 @@ public class ConditionalRouterMediator extends AbstractMediator {
     private boolean continueAfterExplicitlySet;
     
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
         
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
         org.apache.axis2.context.MessageContext axis2MessageCtx =

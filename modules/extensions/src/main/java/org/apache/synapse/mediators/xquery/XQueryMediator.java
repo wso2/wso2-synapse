@@ -105,6 +105,12 @@ public class XQueryMediator extends AbstractMediator {
 
         try {
 
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                if (super.divertMediationRoute(synCtx)) {
+                    return true;
+                }
+            }
+
             SynapseLog synLog = getLog(synCtx);
 
             if (synLog.isTraceOrDebugEnabled()) {
