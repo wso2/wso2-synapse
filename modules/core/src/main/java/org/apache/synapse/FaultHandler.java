@@ -180,7 +180,7 @@ public abstract class FaultHandler {
         if (this instanceof AbstractEndpoint) {
             return ((AbstractEndpoint) this).getStatisticReportingName(synCtx);
         } else {
-            return "";
+            return null;
         }
     }
 
