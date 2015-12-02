@@ -110,7 +110,7 @@ public class StatisticsEntry {
 	public synchronized void createLog(String componentId, ComponentType componentType, int msgId, String parentId,
 	                                   long startTime, boolean isResponse) {
 		if (openLogs.isEmpty()) {
-			StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, "", startTime);
+			StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, null, startTime);
 			messageFlowLogs.add(statisticsLog);
 			openLogs.addFirst(messageFlowLogs.size() - 1);
 			if (log.isDebugEnabled()) {
