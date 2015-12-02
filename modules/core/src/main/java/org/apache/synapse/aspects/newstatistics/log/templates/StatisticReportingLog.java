@@ -21,7 +21,7 @@ package org.apache.synapse.aspects.newstatistics.log.templates;
 public interface StatisticReportingLog {
 
 	/**
-	 * Method that will call corresponding method in RuntimeStatisticCollector
+	 * Method that will call corresponding method in RuntimeStatisticCollector.
 	 */
 	void process();
 }

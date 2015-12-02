@@ -22,8 +22,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class FinalizeEntryLog implements StatisticReportingLog {
-	MessageContext messageContext;
-	long endTime;
+
+	private MessageContext messageContext;
+	private long endTime;
 
 	public FinalizeEntryLog(MessageContext messageContext, long endTime) {
 		this.messageContext = messageContext;

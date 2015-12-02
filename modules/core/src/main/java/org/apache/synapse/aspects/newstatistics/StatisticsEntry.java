@@ -23,44 +23,41 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * StatisticsEntry collects all the statistics logs related to a message flow. It is responsible
  * for collecting statistics logs in correct hierarchy so that these logs can be directly fed
- * into the statistic store as inputs
+ * into the statistic store as inputs.
  */
 public class StatisticsEntry {
 
 	private static final Log log = LogFactory.getLog(StatisticsEntry.class);
 
 	/**
-	 * ArrayList to hold all the statistic logs related to the message flow
+	 * List to hold all the statistic logs related to the message flow
 	 */
-	private final ArrayList<StatisticsLog> messageFlowLogs = new ArrayList<StatisticsLog>();
+	private final List<StatisticsLog> messageFlowLogs = new ArrayList<>();
 
 	/**
-	 * localMemberHost if this is a clustered environment
+	 * LocalMemberHost to use if this is a clustered environment
 	 */
 	private String localMemberHost = null;
 
 	/**
-	 * localMemberPort if this is a clustered environment
+	 * LocalMemberPort if this is a clustered environment
 	 */
 	private String localMemberPort = null;
 
 	/**
-	 * HashMap to hold all the remaining callbacks related to the message flow
+	 * Map to hold all the remaining callbacks related to the message flow
 	 */
-	private final HashMap<String, Integer> callbacks = new HashMap<String, Integer>();
+	private final Map<String, Integer> callbacks = new HashMap<>();
 
 	/**
-	 * HashMap to hold all the opened statistic logs related to the message flow
+	 * Map to hold all the opened statistic logs related to the message flow
 	 */
-	private final LinkedList<Integer> openLogs = new LinkedList<Integer>();
+	private final LinkedList<Integer> openLogs = new LinkedList<>();
 
 	/**
 	 * Number of faults waiting to be handled by a fault sequence
@@ -96,12 +93,12 @@ public class StatisticsEntry {
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
 			log.debug("Created statistic Entry [Start|RootElement]|[ElementId|" + componentId +
-			          "]|[MsgId|" + msgId + "]");
+			          "]|[MsgId|" + msgId + "].");
 		}
 	}
 
 	/**
-	 * Create statistics log at the start of a statistic reporting element
+	 * Create statistics log at the start of a statistic reporting element.
 	 *
 	 * @param componentId   componentId of the statistic reporting element
 	 * @param componentType component Type of the statistic reporting element
@@ -118,18 +115,18 @@ public class StatisticsEntry {
 			openLogs.addFirst(messageFlowLogs.size() - 1);
 			if (log.isDebugEnabled()) {
 				log.debug("Starting statistic log at root level [ElementId|" + componentId +
-				          "]|[MsgId|" + msgId + "]");
+				          "]|[MsgId|" + msgId + "].");
 			}
 		} else {
 			if (openLogs.getFirst() == 0) {
 				if (messageFlowLogs.get(0).getComponentId().equals(componentId)) {
 					if (log.isDebugEnabled()) {
-						log.debug("Statistics event is ignored as it is a duplicate of root " + "element");
+						log.debug("Statistics event is ignored as it is a duplicate of root element.");
 					}
 					return;
 				}
 			}
-			if (parentId.equals("")) {
+			if (parentId == null) {
 				int parentIndex = getFirstLogWithMsgId(msgId);
 				createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
 			} else {
@@ -146,7 +143,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Create statistics log at the start of a fault sequence
+	 * Create statistics log at the start of a fault sequence.
 	 *
 	 * @param componentId   componentId of the statistic reporting element
 	 * @param componentType component Type of the statistic reporting element
@@ -164,8 +161,8 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * close a opened statistics log after all the statistics collection relating to that statistics
-	 * component is ended
+	 * Close a opened statistics log after all the statistics collection relating to that statistics
+	 * component is ended.
 	 *
 	 * @param componentId componentId of the statistic event sender
 	 * @param msgId       message id of the message context
@@ -175,7 +172,7 @@ public class StatisticsEntry {
 	 */
 	public synchronized boolean closeLog(String componentId, int msgId, String parentId, long endTime) {
 		int componentLevel;
-		if (parentId.equals("")) {
+		if (parentId == null) {
 			componentLevel = deleteAndGetComponentIndex(componentId, msgId);
 		} else {
 			componentLevel = deleteAndGetComponentIndex(componentId, parentId, msgId);
@@ -188,7 +185,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * close fault sequence after ending the fault sequence.
+	 * Close fault sequence after ending the fault sequence.
 	 *
 	 * @param componentId componentId of the fault sequence
 	 * @param msgId       message id of the message context
@@ -208,7 +205,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Closes opened statistics log specified by the componentLevel
+	 * Closes opened statistics log specified by the componentLevel.
 	 *
 	 * @param componentLevel index of the closing statistic log in messageFlowLogs
 	 * @param endTime        endTime of the closing statistics log
@@ -225,7 +222,7 @@ public class StatisticsEntry {
 
 	/**
 	 * Close the remaining statistic logs after finishing all the message contexts of requests and
-	 * responses belonging to a message flow
+	 * responses belonging to a message flow.
 	 *
 	 * @param endTime         endTime of the message flow
 	 * @param closeForcefully should we finish the statistics forcefully without considering anything
@@ -241,7 +238,7 @@ public class StatisticsEntry {
 				}
 			}
 			if (log.isDebugEnabled()) {
-				log.debug("Closed all logs after message flow ended");
+				log.debug("Closed all logs after message flow ended.");
 			}
 			return true;
 		}
@@ -249,7 +246,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Create a new statistics log for the reported statistic event for given parameters
+	 * Create a new statistics log for the reported statistic event for given parameters.
 	 *
 	 * @param componentId   componentId of the statistic log
 	 * @param componentType component Type of the statistic log
@@ -276,7 +273,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Adds a callback entry for this message flow
+	 * Adds a callback entry for this message flow.
 	 *
 	 * @param callbackId callback id
 	 * @param msgId      message id of the message context belonging to this callback
@@ -291,7 +288,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Removes the callback entry from the callback map belonging to this entry message flow
+	 * Removes the callback entry from the callback map belonging to this entry message flow.
 	 *
 	 * @param callbackId callback id
 	 */
@@ -303,13 +300,13 @@ public class StatisticsEntry {
 			}
 		} else {
 			if (log.isDebugEnabled()) {
-				log.debug("No callback entry found for the callback id");
+				log.debug("No callback entry found for the callback id.");
 			}
 		}
 	}
 
 	/**
-	 * Updates the ArrayList after an response for that callback is received
+	 * Updates the ArrayList after an response for that callback is received.
 	 *
 	 * @param callbackId callback id
 	 * @param endTime    response received time
@@ -320,7 +317,7 @@ public class StatisticsEntry {
 			updateParentLogs(closedIndex, endTime);
 		} else {
 			if (log.isDebugEnabled()) {
-				log.debug("No stored callback information found in statistic trace");
+				log.debug("No stored callback information found in statistic trace.");
 			}
 		}
 	}
@@ -344,13 +341,13 @@ public class StatisticsEntry {
 				updatingLog = messageFlowLogs.get(updatingLog.getParentLevel());
 			}
 			if (log.isDebugEnabled()) {
-				log.debug("Logs updating finished");
+				log.debug("Log updating finished.");
 			}
 		}
 	}
 
 	/**
-	 * Get index of the first statistic log occurrence with the specified msgId in openLogs List
+	 * Get index of the first statistic log occurrence with the specified msgId in openLogs List.
 	 *
 	 * @param msgId msgId of the statistics log to be searched
 	 * @return index of the statistics log
@@ -374,8 +371,8 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * get first occurrence of the statistic log related to componentId, msgId and parentId if it is
-	 * present in the openLogs list and delete it from the openLogs list
+	 * Get first occurrence of the statistic log related to componentId, msgId and parentId, if it is
+	 * present in the openLogs list and delete it from the openLogs list.
 	 *
 	 * @param componentId componentId of the statistic log
 	 * @param parentId    parentId of the statistic log
@@ -399,8 +396,8 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * get first occurrence of the statistic log related to componentId and msgId if it s present
-	 * in the openLogs list and delete it from the openLogs list
+	 * Get first occurrence of the statistic log related to componentId and msgId, if it s present
+	 * in the openLogs list and delete it from the openLogs list.
 	 *
 	 * @param componentId componentId of the statistic log
 	 * @param msgId       msgId of the statistic log
@@ -422,8 +419,8 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * get first occurrence of the statistic log related to componentId and msgId if it s present
-	 * in the openLogs list
+	 * Get first occurrence of the statistic log related to componentId and msgId if it s present
+	 * in the openLogs list.
 	 *
 	 * @param componentId componentId of the statistic log
 	 * @param msgId       msgId of the statistic log
@@ -443,7 +440,7 @@ public class StatisticsEntry {
 
 	/**
 	 * After receiving a fault increment fault count of the statistics logs from its parent
-	 * to the root log to maintain correct fault hierarchy
+	 * to the root log to maintain correct fault hierarchy.
 	 *
 	 * @param parentIndexOfFault parent Index of the fault log
 	 */
@@ -458,7 +455,7 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * returns the index of first occurrence of the statistic log for specified parentId and msgId
+	 * Returns the index of first occurrence of the statistic log for specified parentId and msgId
 	 * index  of the statistic log. If no statistic log is found it will return index of the root
 	 * log.
 	 *
@@ -468,7 +465,7 @@ public class StatisticsEntry {
 	 */
 	private int getParentForFault(String parentId, int msgId) {
 		int parentIndex = 0;
-		if (parentId.equals("")) {
+		if (parentId == null) {
 			return getFirstLogWithMsgId(msgId);
 		}
 		for (int index = messageFlowLogs.size() - 1; index >= 0; index--) {
@@ -482,18 +479,18 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Returns collected message flows after message flow is ended
+	 * Returns collected message flows after message flow is ended.
 	 *
-	 * @return message flow logs of the message flow
+	 * @return Message flow logs of the message flow
 	 */
-	public ArrayList<StatisticsLog> getMessageFlowLogs() {
+	public List<StatisticsLog> getMessageFlowLogs() {
 		return messageFlowLogs;
 	}
 
 	/**
-	 * This method can be used to get the number of cloned messages in the message flow
+	 * This method can be used to get the number of cloned messages in the message flow.
 	 *
-	 * @return number of cloned messages in the message flow
+	 * @return Number of cloned messages in the message flow
 	 */
 	public int incrementAndGetClonedMsgCount() {
 		clonedMsgCount += 1;

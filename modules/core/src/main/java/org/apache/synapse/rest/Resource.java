@@ -277,12 +277,12 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                     textualStringName = (String) synapseRestApi;
                 }
                 CreateEntryStatisticLog createEntryStatisticLog =
-                        new CreateEntryStatisticLog(synCtx, textualStringName, ComponentType.RESOURCE, "",
+                        new CreateEntryStatisticLog(synCtx, textualStringName, ComponentType.RESOURCE, null,
                                                     System.currentTimeMillis());
                 StatisticEventReceiver.receive(createEntryStatisticLog);
             } else {
                 CreateEntryStatisticLog createEntryStatisticLog =
-                        new CreateEntryStatisticLog(synCtx, name, ComponentType.RESOURCE, "",
+                        new CreateEntryStatisticLog(synCtx, name, ComponentType.RESOURCE, null,
                                                     System.currentTimeMillis());
                 StatisticEventReceiver.receive(createEntryStatisticLog);
             }
@@ -379,11 +379,11 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                         textualStringName = (String) synapseRestApi;
                     }
                     StatisticCloseLog statisticCloseLog =
-                            new StatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                            new StatisticCloseLog(synCtx, textualStringName, null, System.currentTimeMillis());
                     StatisticEventReceiver.receive(statisticCloseLog);
                 } else {
                     StatisticCloseLog statisticCloseLog =
-                            new StatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                            new StatisticCloseLog(synCtx, name, null, System.currentTimeMillis());
                     StatisticEventReceiver.receive(statisticCloseLog);
                 }
             }
@@ -398,11 +398,11 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                     textualStringName = (String) synapseRestApi;
                 }
                 StatisticCloseLog statisticCloseLog =
-                        new StatisticCloseLog(synCtx, textualStringName, "", System.currentTimeMillis());
+                        new StatisticCloseLog(synCtx, textualStringName, null, System.currentTimeMillis());
                 StatisticEventReceiver.receive(statisticCloseLog);
             } else {
                 StatisticCloseLog statisticCloseLog =
-                        new StatisticCloseLog(synCtx, name, "", System.currentTimeMillis());
+                        new StatisticCloseLog(synCtx, name, null, System.currentTimeMillis());
                 StatisticEventReceiver.receive(statisticCloseLog);
             }
         }

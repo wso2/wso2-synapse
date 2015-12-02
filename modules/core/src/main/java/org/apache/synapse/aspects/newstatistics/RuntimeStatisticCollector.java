@@ -33,13 +33,13 @@ import java.util.*;
 /**
  * RuntimeStatisticCollector receives statistic events and responsible for handling each of these
  * events. It holds statistic store which contains the in memory statistics for the message
- * mediation happened in the ESB
+ * mediation happened in the ESB.
  */
 public class RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(RuntimeStatisticCollector.class);
 
-	private static HashMap<String, StatisticsEntry> runningStatistics = new HashMap<String, StatisticsEntry>();
+	private static Map<String, StatisticsEntry> runningStatistics = new HashMap<String, StatisticsEntry>();
 
 	private static boolean isStatisticsEnable = false;
 
@@ -50,7 +50,7 @@ public class RuntimeStatisticCollector {
 	private static String localMemberHost = null;
 
 	/**
-	 * Create statistic log for the the reporting component
+	 * Create statistic log for the the reporting component.
 	 *
 	 * @param msgCtx        message context
 	 * @param componentId   component name of the statistics reporting component
@@ -62,7 +62,7 @@ public class RuntimeStatisticCollector {
 	                                              ComponentType componentType, String parentId, Long startTime) {
 		if (componentId == null) {
 			if (log.isDebugEnabled()) {
-				log.debug("Statistics log closing component Id cannot be null");
+				log.debug("Statistics log closing component Id cannot be null.");
 			}
 			return;
 		}
@@ -87,7 +87,7 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Create fault log at the start of the fault sequence
+	 * Create fault log at the start of the fault sequence.
 	 *
 	 * @param msgCtx        message context
 	 * @param componentId   component name of the statistics reporting component
@@ -99,7 +99,7 @@ public class RuntimeStatisticCollector {
 	                                                 ComponentType componentType, String parentId, Long startTime) {
 		if (componentId == null) {
 			if (log.isDebugEnabled()) {
-				log.debug("Statistics log closing component Id cannot be null");
+				log.debug("Statistics log closing component Id cannot be null.");
 			}
 			return;
 		}
@@ -117,7 +117,7 @@ public class RuntimeStatisticCollector {
 
 	/**
 	 * Ends statistics collection log for the reported statistics component Id which belongs to a
-	 * fault
+	 * fault.
 	 *
 	 * @param msgCtx      message context
 	 * @param componentId component name of the statistics reporting component
@@ -126,7 +126,7 @@ public class RuntimeStatisticCollector {
 	public static void recordStatisticCloseFaultLog(MessageContext msgCtx, String componentId, Long endTime) {
 		if (componentId == null) {
 			if (log.isDebugEnabled()) {
-				log.debug("Statistics log closing component Id cannot be null");
+				log.debug("Statistics log closing component Id cannot be null.");
 			}
 			return;
 		}
@@ -143,7 +143,7 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Ends statistics collection log for the reported statistics component Id
+	 * Ends statistics collection log for the reported statistics component Id.
 	 *
 	 * @param msgCtx      message context
 	 * @param componentId component name of the statistics reporting component
@@ -154,7 +154,7 @@ public class RuntimeStatisticCollector {
 	                                           Long endTime) {
 		if (componentId == null) {
 			if (log.isDebugEnabled()) {
-				log.debug("Statistics log closing component Id cannot be null");
+				log.debug("Statistics log closing component Id cannot be null.");
 			}
 			return;
 		}
@@ -171,7 +171,7 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * registers callback information for the message flow on the corresponding statistics entry
+	 * Registers callback information for the message flow on the corresponding statistics entry.
 	 *
 	 * @param msgCtx     message context
 	 * @param callbackId callback identification number
@@ -186,8 +186,8 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * updates end time of the statistics logs after corresponding callback is removed from
-	 * SynapseCallbackReceiver
+	 * Updates end time of the statistics logs after corresponding callback is removed from
+	 * SynapseCallbackReceiver.
 	 *
 	 * @param msgCtx     message context
 	 * @param callbackId callback identification number
@@ -204,7 +204,7 @@ public class RuntimeStatisticCollector {
 
 	/**
 	 * Removes specified callback info for a message flow after all the processing for that
-	 * callback is ended
+	 * callback is ended.
 	 *
 	 * @param msgCtx     message context
 	 * @param callbackId callback identification number
@@ -223,7 +223,7 @@ public class RuntimeStatisticCollector {
 
 	/**
 	 * Check whether Statistics entry present for the message flow and if there is an entry try
-	 * to finish ending statistics collection for that entry
+	 * to finish ending statistics collection for that entry.
 	 *
 	 * @param msgCtx  message context
 	 * @param endTime end time of the message flow
@@ -241,7 +241,7 @@ public class RuntimeStatisticCollector {
 	/**
 	 * Close the statistic log after finishing the message flow forcefully. When we try to use this method to end
 	 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
-	 * will send the completed statistic entry for collection
+	 * will send the completed statistic entry for collection.
 	 *
 	 * @param msgCtx  message context
 	 * @param endTime end time of the message flow
@@ -257,9 +257,9 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Ends statistics collection for the message flow. If entry is successfully completed ending
+	 * End the statistics collection for the message flow. If entry is successfully completed ending
 	 * its statistics collection statistics store is updated with new statistics data. Then entry
-	 * is removed from the running statistic map
+	 * is removed from the running statistic map.
 	 *
 	 * @param messageContext   message context
 	 * @param statisticTraceId statistic trace id for the message log
@@ -283,9 +283,9 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Set statistics trace Id for statistic collection
+	 * Set statistics trace Id for statistic collection.
 	 *
-	 * @param msgCtx message context
+	 * @param msgCtx Message context
 	 */
 	public static void setStatisticsTraceId(MessageContext msgCtx) {
 		if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) == null) {
@@ -294,9 +294,9 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Returns statistics trace id corresponding to the message context
+	 * Returns statistics trace id corresponding to the message context.
 	 *
-	 * @param msgCtx message context
+	 * @param msgCtx Message context
 	 * @return statistics trace id
 	 */
 	private static String getStatisticsTraceId(MessageContext msgCtx) {
@@ -305,7 +305,7 @@ public class RuntimeStatisticCollector {
 
 	/**
 	 * Returns cloned message identification number for the specified  message context. If message
-	 * context is not a cloned one default value of -1 is sent
+	 * context is not a cloned one default value of -1 is sent.
 	 *
 	 * @param msgCtx message context
 	 * @return cloned message identification number
@@ -319,7 +319,7 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Returns clone message identification number for the next cloning message in the message flow
+	 * Returns clone message identification number for the next cloning message in the message flow.
 	 *
 	 * @param msgCtx message context
 	 * @return next clone message identification number
@@ -338,7 +338,7 @@ public class RuntimeStatisticCollector {
 	/**
 	 * Initialize statistics collection when ESB starts. If statistic cleaning is enabled in
 	 * synapse.properties file this method will schedule a timer event to clean statistics at
-	 * that specified time interval
+	 * that specified time interval.
 	 *
 	 * @param synapseTimer timer object for the Synapse Configuration
 	 */
@@ -347,7 +347,7 @@ public class RuntimeStatisticCollector {
 				SynapsePropertiesLoader.getPropertyValue(STATISTICS_ENABLE, String.valueOf(false)));
 		if (isStatisticsEnable) {
 			if (log.isDebugEnabled()) {
-				log.debug("Statistics is enabled");
+				log.debug("Statistics is enabled.");
 			}
 			ClusterInformationProvider clusterInformationProvider = new ClusterInformationProvider();
 			if (clusterInformationProvider.isClusteringEnabled()) {
@@ -357,7 +357,7 @@ public class RuntimeStatisticCollector {
 			StatisticEventReceiver.Init();
 		} else {
 			if (log.isDebugEnabled()) {
-				log.debug("Statistics is not enabled in \'synapse.properties\' file");
+				log.debug("Statistics is not enabled in \'synapse.properties\' file.");
 			}
 		}
 
@@ -365,7 +365,7 @@ public class RuntimeStatisticCollector {
 
 	/**
 	 * Returns whether statistics collection is enabled globally for the esb as specified in the
-	 * synapse.properties file
+	 * synapse.properties file.
 	 *
 	 * @return true if statistics collection is enabled
 	 */

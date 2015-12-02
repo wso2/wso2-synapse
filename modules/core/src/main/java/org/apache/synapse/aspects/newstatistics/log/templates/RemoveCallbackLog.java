@@ -23,8 +23,8 @@ import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class RemoveCallbackLog implements StatisticReportingLog {
 
-	MessageContext messageContext;
-	String callbackId;
+	private MessageContext messageContext;
+	private String callbackId;
 
 	public RemoveCallbackLog(MessageContext messageContext, String callbackId) {
 		this.messageContext = messageContext;

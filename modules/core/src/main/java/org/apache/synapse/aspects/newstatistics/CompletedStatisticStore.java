@@ -23,24 +23,24 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This class will hold completed statistic entries till they are collected for storage
+ * This class will hold completed statistic entries till they are collected for storage.
  */
 public class CompletedStatisticStore {
 
-	private final List<ArrayList<StatisticsLog>> completedStatitisticEntries = new LinkedList<>();
+	private final List<List<StatisticsLog>> completedStatisticEntries = new LinkedList<>();
 
-	public List<ArrayList<StatisticsLog>> getCompletedStatitisticEntries() {
-		List<ArrayList<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
-		synchronized (completedStatitisticEntries) {
-			cloneOfCompletedStatisticEntries.addAll(completedStatitisticEntries);
-			completedStatitisticEntries.clear();
+	public List<List<StatisticsLog>> getCompletedStatisticEntries() {
+		List<List<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
+		synchronized (completedStatisticEntries) {
+			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
+			completedStatisticEntries.clear();
 		}
 		return cloneOfCompletedStatisticEntries;
 	}
 
-	public void putCompletedStatisticEntry(ArrayList<StatisticsLog> statisticsLogs) {
-		synchronized (completedStatitisticEntries) {
-			completedStatitisticEntries.add(statisticsLogs);
+	public void putCompletedStatisticEntry(List<StatisticsLog> statisticsLogs) {
+		synchronized (completedStatisticEntries) {
+			completedStatisticEntries.add(statisticsLogs);
 		}
 	}
 }

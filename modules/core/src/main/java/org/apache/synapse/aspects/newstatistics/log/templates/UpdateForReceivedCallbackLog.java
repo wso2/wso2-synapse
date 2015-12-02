@@ -23,9 +23,9 @@ import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
 
-	MessageContext messageContext;
-	String callbackId;
-	Long endTime;
+	private MessageContext messageContext;
+	private String callbackId;
+	private Long endTime;
 
 	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
 		this.messageContext = messageContext;

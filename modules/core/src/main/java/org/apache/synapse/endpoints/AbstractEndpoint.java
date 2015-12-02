@@ -301,7 +301,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     "endpoint must be in initialized state");
         }
         CreateEntryStatisticLog createEntryStatisticLog =
-                new CreateEntryStatisticLog(synCtx, getStatisticReportingName(synCtx), ComponentType.ENDPOINT, "",
+                new CreateEntryStatisticLog(synCtx, getStatisticReportingName(synCtx), ComponentType.ENDPOINT, null,
                                             System.currentTimeMillis());
         StatisticEventReceiver.receive(createEntryStatisticLog);
         prepareForEndpointStatistics(synCtx);
@@ -377,7 +377,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
         StatisticCloseLog statisticCloseLog =
-                new StatisticCloseLog(synCtx, getStatisticReportingName(synCtx), "", System.currentTimeMillis());
+                new StatisticCloseLog(synCtx, getStatisticReportingName(synCtx), null, System.currentTimeMillis());
         StatisticEventReceiver.receive(statisticCloseLog);
 
     }

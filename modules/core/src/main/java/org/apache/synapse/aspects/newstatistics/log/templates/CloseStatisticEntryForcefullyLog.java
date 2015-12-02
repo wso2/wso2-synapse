@@ -22,8 +22,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class CloseStatisticEntryForcefullyLog implements StatisticReportingLog {
-	MessageContext messageContext;
-	long endTime;
+
+	private MessageContext messageContext;
+	private long endTime;
 
 	public CloseStatisticEntryForcefullyLog(MessageContext messageContext, long endTime) {
 		this.messageContext = messageContext;

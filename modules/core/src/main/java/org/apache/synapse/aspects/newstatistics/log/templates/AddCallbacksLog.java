@@ -23,8 +23,8 @@ import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class AddCallbacksLog implements StatisticReportingLog {
 
-	MessageContext messageContext;
-	String callbackId;
+	private MessageContext messageContext;
+	private String callbackId;
 
 	public AddCallbacksLog(MessageContext messageContext, String callbackId) {
 		this.messageContext = messageContext;

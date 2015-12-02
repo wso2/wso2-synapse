@@ -218,15 +218,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         } else {
                             textualStringName = (String) synapseRestApi;
                         }
-                        StatisticCloseLog statisticCloseLog = new StatisticCloseLog(SynapseOutMsgCtx, textualStringName, "",
-                                                                               System.currentTimeMillis());
+                        StatisticCloseLog statisticCloseLog =
+                                new StatisticCloseLog(SynapseOutMsgCtx, textualStringName, null,
+                                                      System.currentTimeMillis());
                         StatisticEventReceiver.receive(statisticCloseLog);
                     } else {
                         StatisticCloseLog statisticCloseLog = new StatisticCloseLog(SynapseOutMsgCtx,
                                                                                     (String) SynapseOutMsgCtx
                                                                                             .getProperty(
                                                                                                     RESTConstants.SYNAPSE_RESOURCE),
-                                                                                    "", System.currentTimeMillis());
+                                                                                    null, System.currentTimeMillis());
                         StatisticEventReceiver.receive(statisticCloseLog);
                     }
                     FinalizeEntryLog finalizeEntryLog =

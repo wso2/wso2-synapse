@@ -32,7 +32,7 @@ public class StatisticEventReceiver {
 
 	/**
 	 * This method will be called during server startup and it will create a thread that will read from the queue and
-	 * report the statistics to the RuntimeStatisticCollector
+	 * report the statistics to the RuntimeStatisticCollector.
 	 */
 	public static void Init() {
 		if(RuntimeStatisticCollector.isStatisticsEnable()) {
@@ -42,7 +42,7 @@ public class StatisticEventReceiver {
 
 	/**
 	 * This method will add statistic events to the queue. Then statistic worker thread will read these events and
-	 * publish them to the queue
+	 * publish them to the queue.
 	 *
 	 * @param event Statistic Event
 	 */

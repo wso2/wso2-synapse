@@ -22,7 +22,7 @@ import org.apache.synapse.aspects.ComponentType;
 
 /**
  * StatisticsLog holds statistics logs during statistic collection. When message passes through each
- * mediator,API,sequence etc. StatisticsLog will be created for each and every component
+ * mediator,API,sequence etc. StatisticsLog will be created for each and every component.
  */
 
 public class StatisticsLog {

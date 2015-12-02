@@ -23,10 +23,10 @@ import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class StatisticCloseLog implements StatisticReportingLog {
 
-	MessageContext messageContext;
-	String componentId;
-	String parentId;
-	Long endTime;
+	private MessageContext messageContext;
+	private String componentId;
+	private String parentId;
+	private Long endTime;
 
 	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime) {
 		this.messageContext = messageContext;

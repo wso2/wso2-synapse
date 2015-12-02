@@ -92,7 +92,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
 
         CreateEntryStatisticLog createEntryStatisticLog =
-                new CreateEntryStatisticLog(synCtx, this.name, ComponentType.PROXYSERVICE, "",
+                new CreateEntryStatisticLog(synCtx, this.name, ComponentType.PROXYSERVICE, null,
                                             System.currentTimeMillis());
         StatisticEventReceiver.receive(createEntryStatisticLog);
 

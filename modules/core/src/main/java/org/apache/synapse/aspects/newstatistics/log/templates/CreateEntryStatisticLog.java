@@ -24,11 +24,11 @@ import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class CreateEntryStatisticLog implements StatisticReportingLog {
 
-	MessageContext messageContext;
-	String componentId;
-	ComponentType componentType;
-	String parentId;
-	Long startTime;
+	private MessageContext messageContext;
+	private String componentId;
+	private ComponentType componentType;
+	private String parentId;
+	private Long startTime;
 
 	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
 	                               String parentId, Long startTime) {
