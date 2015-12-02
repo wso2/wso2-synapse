@@ -24,19 +24,21 @@ import org.apache.axiom.om.OMXMLBuilderFactory;
 import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.jaxen.JaxenException;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
 
 /**
- * This class is used to obtain clustering information when collecting mediation statistics in cluster
+ * This class is used to obtain clustering information when collecting mediation statistics in cluster.
  */
 public class ClusterInformationProvider {
 	private static final Log log = LogFactory.getLog(ClusterInformationProvider.class);
 
 	/**
-	 * Check whether clustering is enabled in axis2.xml
+	 * Check whether clustering is enabled in axis2.xml.
 	 *
 	 * @return true if clustering is enabled
 	 */
@@ -49,22 +51,22 @@ public class ClusterInformationProvider {
 			if (!nodeList.isEmpty()) {
 				OMAttribute attribute = (OMAttribute) nodeList.get(0);
 				if (attribute.getAttributeValue().equals("true")) {
-					return false;
+					return true;
 				} else {
 					if (log.isDebugEnabled()) {
 						log.debug("Clustering is disabled in axis2.xml. Statistics will be collected without hostname" +
-						          " and port");
+						          " and port.");
 					}
 				}
 			}
-		} catch (Exception e) {
-			log.error("Error occurred while reading clustering information from axis2.xml");
+		} catch (FileNotFoundException | JaxenException ignored) {
+			log.error("Error occurred while reading clustering information from axis2.xml.");
 		}
 		return false;
 	}
 
 	/**
-	 * Provide localMemberHost of the node as specified in axis2.xml
+	 * Provide localMemberHost of the node as specified in axis2.xml.
 	 *
 	 * @return localMemberHost in the cluster
 	 */
@@ -78,14 +80,14 @@ public class ClusterInformationProvider {
 				OMElement localMemberHost = (OMElement) nodeList.get(0);
 				return localMemberHost.getText();
 			}
-		} catch (Exception e) {
-			log.error("Error occurred while reading localMemberHost information from axis2.xml");
+		} catch (FileNotFoundException | JaxenException ignored) {
+			log.error("Error occurred while reading localMemberHost information from axis2.xml.");
 		}
 		return null;
 	}
 
 	/**
-	 * Provide localMemberPort of the node as specified in axis2.xml
+	 * Provide localMemberPort of the node as specified in axis2.xml.
 	 *
 	 * @return localMemberPort in the cluster
 	 */
@@ -99,8 +101,8 @@ public class ClusterInformationProvider {
 				OMElement localMemberPort = (OMElement) nodeList.get(0);
 				return localMemberPort.getText();
 			}
-		} catch (Exception e) {
-			log.error("Error occurred while reading localMemberPort information from axis2.xml");
+		} catch (FileNotFoundException | JaxenException ignored) {
+			log.error("Error occurred while reading localMemberPort information from axis2.xml.");
 		}
 		return null;
 	}

@@ -37,7 +37,7 @@ public class StatisticEventPublisher implements Runnable {
 			try {
 				StatisticReportingLog statisticReportingLog = queue.take();
 				statisticReportingLog.process();
-			} catch (InterruptedException e) {
+			} catch (InterruptedException ignored) {
 				log.error("Statistic event worker was interrupted.");
 			}
 		}
