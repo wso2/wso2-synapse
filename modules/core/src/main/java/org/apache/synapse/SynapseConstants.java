@@ -231,22 +231,22 @@ public final class SynapseConstants {
         
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
 
-        /** key to message context statistic entry */
+        /** Key to message context statistic entry */
         public static final String NEW_STATISTICS_ID ="synapse.newStatistics";
 
-        /** key to message context statistic entry */
+        /** Key to message context statistic entry */
         public static final String NEW_STATISTICS_MESSAGE_ID ="synapse.newStatistics.msgID";
 
-        /** key to message context statistic entry */
+        /** Key to message context statistic entry */
         public static final String NEW_STATISTICS_IS_FAULT_REPORTED ="synapse.newStatistics.fault.reported";
 
-        /** Default backend name used for Statistic Collection*/
+        /** Default backend name used for statistic collection*/
         public static final String ANY ="any";
 
-        /** Default backend name used for Statistic Collection*/
+        /** Default backend name used for statistic collection*/
         public static final String FAULTHANDLER ="FaultHandler";
 
-        /** Default backend name used for Statistic Collection*/
+        /** Default backend name used for statistic collection*/
         public static final String CURRENTSEQUENCE ="current.sequence";
     
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
