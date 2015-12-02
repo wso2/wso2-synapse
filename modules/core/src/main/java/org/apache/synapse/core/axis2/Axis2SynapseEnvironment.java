@@ -356,9 +356,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
          * If the method is invoked by the inbound endpoint
          * Then check for the endpoint name and then set the Log Appender Content
          */
-        if (synCtx.getProperty("inbound.endpoint.name") != null) {
+        if (synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
             InboundEndpoint inboundEndpoint = synCtx.getConfiguration().
-                    getInboundEndpoint((String) synCtx.getProperty("inbound.endpoint.name"));
+                    getInboundEndpoint((String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
             }
@@ -384,10 +384,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         
         // Following code is reached if the sequential==true or inbound is
         // reached max level
-        if (synCtx.getProperty("inbound.endpoint.name") != null) {
-            CreateEntryStatisticLog createEntryStatisticLog =
-                    new CreateEntryStatisticLog(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
-                                                ComponentType.INBOUNDENDPOINT, null, System.currentTimeMillis());
+        if (synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
+            CreateEntryStatisticLog createEntryStatisticLog = new CreateEntryStatisticLog(synCtx, (String) synCtx
+                    .getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME), ComponentType.INBOUNDENDPOINT, null,
+                                                                                          System.currentTimeMillis());
             StatisticEventReceiver.receive(createEntryStatisticLog);
         } else {
             log.error("There is no info about the inbound endpoint, skipping collecting statistics at inbound level.");
@@ -910,9 +910,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
          * If the method is invoked by the inbound endpoint
          * Then check for the endpoint name and then set the Log Appender Content
          */
-        if (smc.getProperty("inbound.endpoint.name") != null) {
+        if (smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
             InboundEndpoint inboundEndpoint = smc.getConfiguration().
-                    getInboundEndpoint((String) smc.getProperty("inbound.endpoint.name"));
+                    getInboundEndpoint((String) smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
             }

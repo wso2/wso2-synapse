@@ -71,10 +71,10 @@ public class MediatorWorker implements Runnable {
     public void run() {
         try {
             //if inbound endpoint report statistics
-            if (synCtx.getProperty("inbound.endpoint.name") != null) {
-                CreateEntryStatisticLog createEntryStatisticLog =
-                        new CreateEntryStatisticLog(synCtx, (String) synCtx.getProperty("inbound.endpoint.name"),
-                                                    ComponentType.INBOUNDENDPOINT, null, System.currentTimeMillis());
+            if (synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
+                CreateEntryStatisticLog createEntryStatisticLog = new CreateEntryStatisticLog(synCtx, (String) synCtx
+                        .getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME), ComponentType.INBOUNDENDPOINT, null,
+                                                                                              System.currentTimeMillis());
                 StatisticEventReceiver.receive(createEntryStatisticLog);
             }
             seq.mediate(synCtx);
