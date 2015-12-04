@@ -24,6 +24,7 @@ public abstract class Node {
 
     protected String token;
     protected Node next;
+    protected boolean hasQueryTemplate = false;
 
     protected Node(String token) {
         this.token = token;
@@ -76,6 +77,10 @@ public abstract class Node {
         else {
             return matchLength;
         }
+    }
+
+    public boolean hasQueryTemplate(){
+        return (next != null)? hasQueryTemplate || next.hasQueryTemplate(): hasQueryTemplate;
     }
 
     abstract String expand(Map<String,String> variables);
