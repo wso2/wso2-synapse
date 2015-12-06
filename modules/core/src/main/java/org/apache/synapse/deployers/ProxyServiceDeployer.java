@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
@@ -45,6 +46,8 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     public String deploySynapseArtifact(OMElement artifactConfig, String filePath,
                                         Properties properties) {
 
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
+
         /*boolean failSafeProxyEnabled = SynapseConfigUtils.isFailSafeEnabled(
                 SynapseConstants.FAIL_SAFE_MODE_PROXY_SERVICES);*/
 
@@ -54,6 +57,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
+            proxy.setArtifactContainerName(customLogContent);
             if (proxy != null) {
                 if (getSynapseConfiguration().getProxyService(proxy.getName()) != null) {
                     log.warn("Hot deployment thread picked up an already deployed proxy - Ignoring");
@@ -84,7 +88,15 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 log.info("ProxyService named '" + proxy.getName()
                         + "' has been deployed from file : " + filePath);
+
+                if (!proxy.isStartOnLoad()) {
+                    proxy.stop(getSynapseConfiguration());
+                    log.info("ProxyService named '" + proxy.getName()
+                             + "' has been stopped as startOnLoad parameter is set to false");
+                }
+
                 return proxy.getName();
+
             } else {
                 handleSynapseArtifactDeploymentError("ProxyService Deployment Failed. The " +
                         "artifact described in the file " + filePath + " is not a ProxyService");
@@ -114,6 +126,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
             if (proxy != null) {
+                proxy.setLogSetterValue();
                 proxy.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("ProxyService named '" + proxy.getName()
@@ -166,6 +179,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             ProxyService proxy = getSynapseConfiguration().getProxyService(artifactName);
             if (proxy != null) {
+                proxy.setLogSetterValue();
                 if (log.isDebugEnabled()) {
                     log.debug("Stopping the ProxyService named : " + artifactName);
                 }
@@ -195,6 +209,11 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
         try {
             ProxyService proxy
                     = getSynapseConfiguration().getProxyService(artifactName);
+
+            if (proxy != null) {
+                proxy.setLogSetterValue();
+            }
+
             OMElement proxyElem = ProxyServiceSerializer.serializeProxy(null, proxy);
             if (proxy.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()

@@ -30,6 +30,8 @@ import org.apache.axis2.engine.Handler;
 import org.apache.axis2.engine.Phase;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -133,6 +135,11 @@ public class RelayUtils {
             element = messageBuilder.getDocument(messageContext,
                     bufferedInputStream != null ? bufferedInputStream : in);
         } catch (Exception e) {
+            /*
+            Remove bufferedinputstream content & continue: (for large payloads)
+            reset bufferedInputStream can't be done in this situation
+            */
+            while ((bufferedInputStream.read()) > 0);
             messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
             handleException("Error while building Passthrough stream", e);
         }
@@ -278,4 +285,23 @@ public class RelayUtils {
         throw new AxisFault(msg, e);
     }
 
+    /**
+     * Consumes the data in pipe completely in the given message context and discard it
+     *
+     * @param msgContext Axis2 Message context which contains the data
+     * @throws AxisFault
+     */
+    public static void consumeAndDiscardMessage(MessageContext msgContext) throws AxisFault {
+        final Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+        if (pipe != null) {
+            InputStream in = pipe.getInputStream();
+            if (in != null) {
+                try {
+                    IOUtils.copy(in, new NullOutputStream());
+                } catch (IOException exception) {
+                    handleException("Error when consuming the input stream to discard ", exception);
+                }
+            }
+        }
+    }
 }

@@ -28,6 +28,8 @@ import org.apache.axis2.transport.base.ManagementSupport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.nhttp.HttpCoreNIOListener;
+import org.apache.synapse.transport.passthru.PassThroughHttpListener;
+import org.apache.synapse.transport.passthru.PassThroughHttpSSLListener;
 
 import java.util.Map;
 
@@ -62,13 +64,18 @@ public class Axis2TransportHelper {
 
             for (TransportInDescription trpIn : trpIns.values()) {
                 TransportListener trpLst = trpIn.getReceiver();
-                if (trpLst instanceof ManagementSupport) {
-                    try {
+                try {
+                    if (trpLst instanceof ManagementSupport) {
                         ((ManagementSupport) trpLst).pause();
-                    } catch (AxisFault axisFault) {
-                        log.error(new StringBuilder("Error putting transport listener for: ")
-                                .append(trpIn.getName()).append(" into maintenence").toString());
+                    } else if (trpLst instanceof PassThroughHttpListener) {
+                        ((PassThroughHttpListener) trpLst).pause();
+                    } else if (trpLst instanceof PassThroughHttpSSLListener) {
+                        ((PassThroughHttpSSLListener) trpLst).pause();
                     }
+                } catch (AxisFault axisFault) {
+                    log.error(new StringBuilder("Error putting transport listener for: ").append(trpIn.getName())
+                                                                                         .append(" into maintenence")
+                                                                                         .toString());
                 }
             }
         }
@@ -86,13 +93,18 @@ public class Axis2TransportHelper {
     
             for (TransportInDescription trpIn : trpIns.values()) {
                 TransportListener trpLst = trpIn.getReceiver();
-                if (trpLst instanceof ManagementSupport) {
-                    try {
+                try {
+                    if (trpLst instanceof ManagementSupport) {
                         ((ManagementSupport) trpLst).resume();
-                    } catch (AxisFault axisFault) {
-                        log.error(new StringBuilder("Error resuming transport listener for: ")
-                                .append(trpIn.getName()).append(" from maintenence").toString());
+                    } else if (trpLst instanceof PassThroughHttpListener) {
+                        ((PassThroughHttpListener) trpLst).resume();
+                    } else if (trpLst instanceof PassThroughHttpSSLListener) {
+                        ((PassThroughHttpSSLListener) trpLst).resume();
                     }
+                } catch (AxisFault axisFault) {
+                    log.error(new StringBuilder("Error resuming transport listener for: ").append(trpIn.getName())
+                                                                                          .append(" from maintenence")
+                                                                                          .toString());
                 }
             }
         }

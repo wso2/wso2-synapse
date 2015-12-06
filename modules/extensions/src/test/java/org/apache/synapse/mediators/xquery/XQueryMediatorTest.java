@@ -19,6 +19,8 @@
 package org.apache.synapse.mediators.xquery;
 
 import junit.framework.TestCase;
+import net.sf.saxon.s9api.ItemType;
+import net.sf.saxon.s9api.XdmNodeKind;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.mediators.TestUtils;
@@ -27,7 +29,6 @@ import javax.xml.namespace.QName;
 import java.util.List;
 import java.util.ArrayList;
 
-import javax.xml.xquery.XQItemType;
 
 /**
  *
@@ -112,39 +113,39 @@ public class XQueryMediatorTest extends TestCase {
                 "</all></b></a> }");
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();
         MediatorVariable intVariable = new MediatorBaseVariable(new QName("intVar"));
-        intVariable.setType(XQItemType.XQBASETYPE_INT);
+        intVariable.setType(ItemType.INT);
         intVariable.setValue(8);
         list.add(intVariable);
         MediatorVariable boolVariable = new MediatorBaseVariable(new QName("boolVar"));
-        boolVariable.setType(XQItemType.XQBASETYPE_BOOLEAN);
+        boolVariable.setType(ItemType.BOOLEAN);
         boolVariable.setValue(Boolean.TRUE);
         list.add(boolVariable);
         MediatorVariable doubleVariable = new MediatorBaseVariable(new QName("doubleVar"));
-        doubleVariable.setType(XQItemType.XQBASETYPE_DOUBLE);
+        doubleVariable.setType(ItemType.DOUBLE);
         doubleVariable.setValue(23.33);
         list.add(doubleVariable);
         MediatorVariable floatVariable = new MediatorBaseVariable(new QName("floatVar"));
-        floatVariable.setType(XQItemType.XQBASETYPE_FLOAT);
+        floatVariable.setType(ItemType.FLOAT);
         floatVariable.setValue(new Float(23.33));
         list.add(floatVariable);
         MediatorVariable shortVariable = new MediatorBaseVariable(new QName("shortVar"));
-        shortVariable.setType(XQItemType.XQBASETYPE_SHORT);
+        shortVariable.setType(ItemType.SHORT);
         shortVariable.setValue((short) 327);
         list.add(shortVariable);
         MediatorVariable byteVariable = new MediatorBaseVariable(new QName("byteVar"));
-        byteVariable.setType(XQItemType.XQBASETYPE_BYTE);
+        byteVariable.setType(ItemType.BYTE);
         byteVariable.setValue((byte) 3);
         list.add(byteVariable);
         MediatorVariable longVariable = new MediatorBaseVariable(new QName("longVar"));
-        longVariable.setType(XQItemType.XQBASETYPE_LONG);
+        longVariable.setType(ItemType.LONG);
         longVariable.setValue((long) 334);
         list.add(longVariable);
         MediatorVariable stringValue = new MediatorBaseVariable(new QName("stringVar"));
-        stringValue.setType(XQItemType.XQBASETYPE_STRING);
+        stringValue.setType(ItemType.STRING);
         stringValue.setValue("synapse");
         list.add(stringValue);
         MediatorVariable integerValue = new MediatorBaseVariable(new QName("integerVar"));
-        integerValue.setType(XQItemType.XQBASETYPE_INTEGER);
+        integerValue.setType(ItemType.INTEGER);
         integerValue.setValue(5);
         list.add(integerValue);
         mediator.addAllVariables(list);
@@ -160,7 +161,8 @@ public class XQueryMediatorTest extends TestCase {
         XQueryMediator mediator = new XQueryMediator();
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();
         MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
-        variable.setType(XQItemType.XQITEMKIND_DOCUMENT);
+        // variable.setType(ItemType.XQITEMKIND_DOCUMENT);
+        variable.setNodeKind(XdmNodeKind.DOCUMENT);
         list.add(variable);
         mediator.addAllVariables(list);
         mediator.setQuerySource("declare variable $payload as document-node() external;" +
@@ -170,11 +172,13 @@ public class XQueryMediatorTest extends TestCase {
     }
 
     public void testQueryWithPayloadTwo() throws Exception {
+
         MessageContext mc = TestUtils.getTestContext(sampleXml2, null);
         XQueryMediator mediator = new XQueryMediator();
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();
         MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
-        variable.setType(XQItemType.XQITEMKIND_DOCUMENT);
+        //variable.setType(ItemType.XQITEMKIND_DOCUMENT);
+        variable.setNodeKind(XdmNodeKind.DOCUMENT);
         list.add(variable);
         mediator.addAllVariables(list);
         mediator.setQuerySource("declare namespace m0=\"http://www.apache-synapse.org/test\"; " +
@@ -189,49 +193,61 @@ public class XQueryMediatorTest extends TestCase {
 
         assertEquals("IBM", mc.getEnvelope().getBody().getFirstElement().
                 getFirstElement().getFirstElement().getText());
+
     }
 
     public void testQueryWithPayloadThree() throws Exception {
-        MessageContext mc = TestUtils.getTestContext(sampleXml3, null);
-        XQueryMediator mediator = new XQueryMediator();
-        List<MediatorVariable> list = new ArrayList<MediatorVariable>();
-        MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
-        variable.setType(XQItemType.XQITEMKIND_DOCUMENT);
-        list.add(variable);
-        mediator.addAllVariables(list);
-        mediator.setQuerySource("declare namespace m0=\"http://services.samples/xsd\";" +
-                " declare variable $payload as document-node() external;\n" +
-                "<m:CheckPriceResponse xmlns:m=\"http://www.apache-synapse.org/test\">\n" +
-                "\t<m:Code>{$payload//m0:return/m0:symbol/child::text()}</m:Code>\n" +
-                "\t<m:Price>{$payload//m0:return/m0:last/child::text()}</m:Price>\n" +
-                "</m:CheckPriceResponse>");
-        assertTrue(mediator.mediate(mc));
+        try {
+            MessageContext mc = TestUtils.getTestContext(sampleXml3, null);
+            XQueryMediator mediator = new XQueryMediator();
+            List<MediatorVariable> list = new ArrayList<MediatorVariable>();
+            MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
+            // variable.setType(ItemType.XQITEMKIND_DOCUMENT);
+            variable.setNodeKind(XdmNodeKind.DOCUMENT);
+            list.add(variable);
+            mediator.addAllVariables(list);
+            mediator.setQuerySource("declare namespace m0=\"http://services.samples/xsd\";" +
+                    " declare variable $payload as document-node() external;\n" +
+                    "<m:CheckPriceResponse xmlns:m=\"http://www.apache-synapse.org/test\">\n" +
+                    "\t<m:Code>{$payload//m0:return/m0:symbol/child::text()}</m:Code>\n" +
+                    "\t<m:Price>{$payload//m0:return/m0:last/child::text()}</m:Price>\n" +
+                    "</m:CheckPriceResponse>");
+            assertTrue(mediator.mediate(mc));
+        }catch (Exception e) {
+            fail(e.getMessage());
+        }
     }
 
     public void testQueryWithPayloadFour() throws Exception {
-        MessageContext mc = TestUtils.getTestContext(sampleXml3, null);
-        XQueryMediator mediator = new XQueryMediator();
-        List<MediatorVariable> list = new ArrayList<MediatorVariable>();
-        MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
-        variable.setType(XQItemType.XQITEMKIND_DOCUMENT);
-        list.add(variable);
-        MediatorCustomVariable variableForXml = new MediatorCustomVariable(new QName("commission"));
-        variableForXml.setType(XQItemType.XQITEMKIND_DOCUMENT);
-        variableForXml.setRegKey("file:key");
-        variableForXml.setValue(SynapseConfigUtils.stringToOM(externalXMl));
-        list.add(variableForXml);
-        mediator.addAllVariables(list);
-        mediator.setQuerySource(" declare namespace m0=\"http://services.samples/xsd\";\n" +
-                " declare variable $payload as document-node() external;\n" +
-                " declare variable $commission as document-node() external;\n" +
-                " <m0:return xmlns:m0=\"http://services.samples/xsd\">\n" +
-                "  \t<m0:symbol>{$payload//m0:return/m0:symbol/child::text()}" +
-                "   </m0:symbol>\n" +
-                "  \t<m0:last>{$payload//m0:return/m0:last/child::text()+ " +
-                "$commission//commission/vendor[@symbol=$payload//m0:return/m0:symbol/child::text()]}" +
-                "</m0:last>\n" +
-                " </m0:return>");
-        assertTrue(mediator.mediate(mc));
+        try {
+            MessageContext mc = TestUtils.getTestContext(sampleXml3, null);
+            XQueryMediator mediator = new XQueryMediator();
+            List<MediatorVariable> list = new ArrayList<MediatorVariable>();
+            MediatorVariable variable = new MediatorCustomVariable(new QName("payload"));
+            //variable.setType(ItemType.XQITEMKIND_DOCUMENT);
+            variable.setNodeKind(XdmNodeKind.DOCUMENT);
+            list.add(variable);
+            MediatorCustomVariable variableForXml = new MediatorCustomVariable(new QName("commission"));
+            //variableForXml.setType(ItemType.XQITEMKIND_DOCUMENT);
+            variableForXml.setNodeKind(XdmNodeKind.DOCUMENT);
+            variableForXml.setRegKey("file:key");
+            variableForXml.setValue(SynapseConfigUtils.stringToOM(externalXMl));
+            list.add(variableForXml);
+            mediator.addAllVariables(list);
+            mediator.setQuerySource(" declare namespace m0=\"http://services.samples/xsd\";\n" +
+                    " declare variable $payload as document-node() external;\n" +
+                    " declare variable $commission as document-node() external;\n" +
+                    " <m0:return xmlns:m0=\"http://services.samples/xsd\">\n" +
+                    "  \t<m0:symbol>{$payload//m0:return/m0:symbol/child::text()}" +
+                    "   </m0:symbol>\n" +
+                    "  \t<m0:last>{$payload//m0:return/m0:last/child::text()+ " +
+                    "$commission//commission/vendor[@symbol=$payload//m0:return/m0:symbol/child::text()]}" +
+                    "</m0:last>\n" +
+                    " </m0:return>");
+            assertTrue(mediator.mediate(mc));
+        }catch (Exception e) {
+            fail(e.getMessage());
+        }
     }
 
     public void testQueryReturnInt() throws Exception {
@@ -248,7 +264,7 @@ public class XQueryMediatorTest extends TestCase {
         mediator.setQuerySource("declare variable $boolVar as xs:boolean external; $boolVar");
         List<MediatorVariable> list = new ArrayList<MediatorVariable>();
         MediatorVariable boolVariable = new MediatorBaseVariable(new QName("boolVar"));
-        boolVariable.setType(XQItemType.XQBASETYPE_BOOLEAN);
+        boolVariable.setType(ItemType.BOOLEAN);
         boolVariable.setValue(Boolean.TRUE);
         list.add(boolVariable);
         mediator.addAllVariables(list);

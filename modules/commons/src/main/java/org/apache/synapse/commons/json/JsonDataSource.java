@@ -134,7 +134,7 @@ final class JsonDataSource implements OMDataSource {
                 case XMLStreamConstants.ENTITY_REFERENCE:
                     xmlWriter.writeEntityRef(reader.getLocalName());
                     break;
-                default :
+                default:
                     throw new OMException();
             }
         }

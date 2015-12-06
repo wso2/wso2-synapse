@@ -18,111 +18,188 @@
 
 package org.apache.synapse.message.processor.impl.sampler;
 
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
-import org.apache.synapse.message.processor.Service;
-import org.apache.synapse.message.processor.impl.forwarder.ScheduledMessageForwardingProcessor;
-import org.quartz.InterruptableJob;
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.UnableToInterruptJobException;
+import org.apache.synapse.task.Task;
 
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-
-public class SamplingService implements InterruptableJob, Service {
+/**
+ * This {@link Task} injects a message to a given sequence. It also supports
+ * Throttling scenarios.
+ *
+ */
+public class SamplingService implements Task, ManagedLifecycle {
     private static Log log = LogFactory.getLog(SamplingService.class);
 
-    /** The consumer that is associated with the particular message store */
-    private MessageConsumer messageConsumer;
+	// The consumer that is associated with the particular message store
+	private MessageConsumer messageConsumer;
 
-    /** Owner of the this job */
-    private MessageProcessor messageProcessor;
+	// Owner of the this job
+	private MessageProcessor messageProcessor;
 
-    /** Determines how many messages at a time it should execute */
-    private int concurrency = 1;
+	// Determines how many messages at a time it should execute
+	private int concurrency = 1;
 
-    /** Represents the send sequence of a message */
-    private String sequence;
+	// Represents the send sequence of a message
+	private String sequence;
+    
+	private SynapseEnvironment synapseEnvironment;
 
-    public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
+	private boolean initialized = false;
 
-        try {
-            init(jobExecutionContext);
+	private final String concurrencyPropName;
+	private final String sequencePropName;
 
-            if (!this.messageProcessor.isDeactivated()) {
-                for (int i = 0; i < concurrency; i++) {
+    /**
+     * Specifies whether the service should be started as deactivated or not
+     */
+    private boolean isDeactivatedAtStartup = false;
 
-                    final MessageContext messageContext = fetch(messageConsumer);
+	public SamplingService(MessageProcessor messageProcessor,
+	                       SynapseEnvironment synapseEnvironment, String concurrencyPropName,
+	                       String sequencePropName) {
+		super();
+		this.messageProcessor = messageProcessor;
+		this.synapseEnvironment = synapseEnvironment;
+		this.concurrencyPropName = concurrencyPropName;
+		this.sequencePropName = sequencePropName;
+	}
 
-                    if (messageContext != null) {
-                        dispatch(messageContext);
-                    }
-                    else {
-                        // either the connection is broken or there are no new massages.
-                        if (log.isDebugEnabled()) {
-                            log.debug("No messages were received for message processor ["+ messageProcessor.getName() + "]");
-                        }
-                    }
-                }
-            }
-            else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Exiting service since the message processor is deactivated");
-                }
-            }
-        } catch (Throwable t) {
-            // All the possible recoverable exceptions are handles case by case and yet if it comes this
-            // we have to shutdown the processor
-            log.fatal("Deactivating the message processor [" + this.messageProcessor.getName() + "]", t);
-
-            this.messageProcessor.stop();
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("Exiting service thread of message processor [" + this.messageProcessor.getName() + "]");
-        }
+    public SamplingService(MessageProcessor messageProcessor,
+                           SynapseEnvironment synapseEnvironment, String concurrencyPropName,
+                           String sequencePropName, boolean isDeactivatedAtStartup) {
+        super();
+        this.messageProcessor = messageProcessor;
+        this.synapseEnvironment = synapseEnvironment;
+        this.concurrencyPropName = concurrencyPropName;
+        this.sequencePropName = sequencePropName;
+        this.isDeactivatedAtStartup = isDeactivatedAtStartup;
     }
 
-    public boolean init(JobExecutionContext jobExecutionContext) {
 
-        JobDataMap jdm = jobExecutionContext.getMergedJobDataMap();
-        Map<String, Object> parameters = (Map<String, Object>) jdm.get(MessageProcessorConstants.PARAMETERS);
+    /**
+	 * Starts the execution of this task which grabs a message from the message
+	 * queue and inject it to a given sequence.
+	 */
+	public void execute() {
 
-        messageConsumer = ((MessageProcessor)jdm.get(MessageProcessorConstants.PROCESSOR_INSTANCE)).getMessageConsumer();
-        sequence = (String) parameters.get(SamplingProcessor.SEQUENCE);
-        messageProcessor = (MessageProcessor)jdm.get(MessageProcessorConstants.PROCESSOR_INSTANCE);
-
-        String con = (String) parameters.get(SamplingProcessor.CONCURRENCY);
-        if (con != null) {
+        if(isDeactivatedAtStartup){
+            //This delay is required until tasks are paused from ScheduledMessageProcessor since message processor is
+            // inactive
             try {
-                concurrency = Integer.parseInt(con);
-            } catch (NumberFormatException nfe) {
-                parameters.remove(SamplingProcessor.CONCURRENCY);
-                log.error("Invalid value for concurrency switching back to default value", nfe);
+                TimeUnit.MILLISECONDS.sleep(MessageProcessorConstants.INITIAL_EXECUTION_DELAY);
+            } catch (InterruptedException exception) {
+                log.warn("Initial delay interrupted when Sampling service started as inactive " , exception);
             }
+            isDeactivatedAtStartup = false;
         }
 
-        return true;
-    }
+		try {
+			/*
+			 * Initialize only if it is NOT already done. This will make sure
+			 * that the initialization is done only once.
+			 */
+			if (!initialized) {
+				this.init(synapseEnvironment);
+			}
 
-    public MessageContext fetch(MessageConsumer msgConsumer) {
-        MessageContext newMsg = messageConsumer.receive();
-        if (newMsg != null) {
-            messageConsumer.ack();
-        }
+			if (!this.messageProcessor.isDeactivated()) {
+				for (int i = 0; i < concurrency; i++) {
 
-        return newMsg;
-    }
+					final MessageContext messageContext = fetch(messageConsumer);
 
-    public boolean dispatch(final MessageContext messageContext) {
+					if (messageContext != null) {
+						dispatch(messageContext);
+					} else {
+						// either the connection is broken or there are no new
+						// massages.
+						if (log.isDebugEnabled()) {
+							log.debug("No messages were received for message processor [" +
+							          messageProcessor.getName() + "]");
+						}
+					}
+				}
+			} else {
+				if (log.isDebugEnabled()) {
+					log.debug("Exiting service since the message processor is deactivated");
+				}
+			}
+		} catch (Throwable t) {
+			// All the possible recoverable exceptions are handles case by case
+			// and yet if it comes this
+			// we have to shutdown the processor
+			log.fatal("Deactivating the message processor [" + this.messageProcessor.getName() +
+			          "]", t);
+
+			this.messageProcessor.stop();
+		}
+
+		if (log.isDebugEnabled()) {
+			log.debug("Exiting service thread of message processor [" +
+			          this.messageProcessor.getName() + "]");
+		}
+	}
+
+
+	public void init(SynapseEnvironment se) {
+		// Setting up the JMS consumer here.
+		setMessageConsumer();
+
+		Map<String, Object> parameterMap = messageProcessor.getParameters();
+		sequence = (String) parameterMap.get(sequencePropName);
+		String conc = (String) parameterMap.get(concurrencyPropName);
+		if (conc != null) {
+
+			try {
+				concurrency = Integer.parseInt(conc);
+			} catch (NumberFormatException e) {
+				parameterMap.remove(concurrencyPropName);
+				log.error("Invalid value for concurrency switching back to default value", e);
+			}
+		}
+
+		/*
+		 * Make sure to set the isInitialized flag too TRUE in order to avoid
+		 * re-initialization.
+		 */
+		initialized = true;
+	}
+
+	/**
+	 * Receives the next message from the message store.
+	 * 
+	 * @param msgConsumer
+	 *            message consumer
+	 * @return {@link MessageContext} of the last message received from the
+	 *         store.
+	 */
+	public MessageContext fetch(MessageConsumer msgConsumer) {
+		MessageContext newMsg = messageConsumer.receive();
+		if (newMsg != null) {
+			messageConsumer.ack();
+		}
+
+		return newMsg;
+	}
+
+	/**
+	 * Sends the message to a given sequence.
+	 * 
+	 * @param messageContext
+	 *            message to be injected.
+	 */
+    public void dispatch(final MessageContext messageContext) {
 
         final ExecutorService executor = messageContext.getEnvironment().
                 getExecutorService();
@@ -139,22 +216,49 @@ public class SamplingService implements InterruptableJob, Service {
                     }
                     log.error("Error occurred while executing the message", syne);
                 } catch (Throwable t) {
-                    // TODO : Should I send throw this ???
                     log.error("Error occurred while executing the message", t);
                 }
             }
         });
-
-        return true;
     }
 
-    public boolean terminate() {
-        messageConsumer.cleanup();
-        return true;
-    }
+	/**
+	 * Terminates the job of the message processor.
+	 * 
+	 * @return <code>true</code> if the job is terminated successfully,
+	 *         <code>false</code> otherwise.
+	 */
+	public boolean terminate() {
+		messageConsumer.cleanup();
+		return true;
+	}
 
-    public void interrupt() throws UnableToInterruptJobException {
-        // we don't need do anything here since this does not block on anything. This is
-        // here just to have the consistency with message forwarder.
-    }
+	private boolean setMessageConsumer() {
+		final String messageStore = messageProcessor.getMessageStoreName();
+		messageConsumer =
+		                  synapseEnvironment.getSynapseConfiguration()
+		                                    .getMessageStore(messageStore).getConsumer();
+		/*
+		 * Make sure to set the same message consumer in the message processor
+		 * since it is used by life-cycle management methods. Specially by the
+		 * deactivate method to cleanup the connection before the deactivation.
+		 */
+		return messageProcessor.setMessageConsumer(messageConsumer);
+
+	}
+
+	/**
+	 * Checks whether this TaskService is properly initialized or not.
+	 * 
+	 * @return <code>true</code> if this TaskService is properly initialized.
+	 *         <code>false</code> otherwise.
+	 */
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	public void destroy() {
+		terminate();
+
+	}
 }

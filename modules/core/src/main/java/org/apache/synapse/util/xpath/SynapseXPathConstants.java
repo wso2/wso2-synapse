@@ -30,11 +30,17 @@ public final class SynapseXPathConstants {
     /** base64Encode XPath extension function name */
     public static final String BASE64_ENCODE_FUNCTION = "base64Encode";
 
+    /** base64Decode XPath extension function name */
+    public static final String BASE64_DECODE_FUNCTION = "base64Decode";
+
     /** Body relative XPath variale name for the SOAPBody */
     public static final String SOAP_BODY_VARIABLE = "body";
 
     /** Header relative XPath variable name for the SOAPHeader */
     public static final String SOAP_HEADER_VARIABLE = "header";
+
+    /** Envelope relative XPath variable name for the SOAPEnvelopw */
+    public static final String SOAP_ENVELOPE_VARIABLE = "env";
 
     /** Variable prefix for accessing the MessageContext properties through XPath variables */
     public static final String MESSAGE_CONTEXT_VARIABLE_PREFIX = "ctx";

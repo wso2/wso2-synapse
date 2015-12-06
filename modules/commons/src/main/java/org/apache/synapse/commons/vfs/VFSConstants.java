@@ -56,9 +56,26 @@ public final class VFSConstants {
     public static final String STREAMING = "transport.vfs.Streaming";
     
     public static final String MAX_RETRY_COUNT = "transport.vfs.MaxRetryCount";
+    public static final String FORCE_CREATE_FOLDER = "transport.vfs.CreateFolder";
     public static final String RECONNECT_TIMEOUT = "transport.vfs.ReconnectTimeout";
     public static final String APPEND = "transport.vfs.Append";
+    public static final String SUBFOLDER_TIMESTAMP = "transport.vfs.SubFolderTimestampFormat";
 
+    /**
+     * parameter to set synchronous uploading of the files for a file protocol on host basis
+     */
+    public static final String TRANSPORT_FILE_SEND_FILE_LOCKING = "transport.vfs.SendFileSynchronously";
+
+    /**
+     * File Sorting Parameter and values
+     * */
+    public static final String FILE_SORT_PARAM = "transport.vfs.FileSortAttribute";
+    public static final String FILE_SORT_VALUE_NAME = "Name";
+    public static final String FILE_SORT_VALUE_SIZE = "Size";
+    public static final String FILE_SORT_VALUE_LASTMODIFIEDTIMESTAMP = "Lastmodifiedtimestamp";
+    public static final String FILE_SORT_ORDER = "transport.vfs.FileSortAsscending";
+    
+    
     /**
     * If a rename/move operation failed, we'll keep track of a list in a text file and this will
      * provide the ability to configure that property file name
@@ -134,6 +151,11 @@ public final class VFSConstants {
      * */
     public static final String TRANSPORT_DISTRIBUTED_LOCK = "transport.vfs.DistributedLock";
 
+    /**
+     * Fully build the file
+     * */
+    public static final String TRANSPORT_BUILD = "transport.vfs.Build";
+    
     /**
      * Distributed Lock timeout
      * */

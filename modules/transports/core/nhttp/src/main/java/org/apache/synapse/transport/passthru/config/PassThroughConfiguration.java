@@ -120,6 +120,10 @@ public class PassThroughConfiguration {
         return getBooleanProperty(PassThroughConfigPNames.SERVER_HEADER_PRESERVE, false);
     }
 
+    public String getPreserveHttpHeaders() {
+        return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
+    }
+
     /**
      * Loads the properties from a given property file path
      *
@@ -279,6 +283,10 @@ public class PassThroughConfiguration {
 
     public String getRestUriProxyRegex() {
         return getStringProperty(REST_URI_PROXY_REGEX, "");
+    }
+
+    public boolean isListeningIOReactorShared(){
+        return getBooleanProperty(PassThroughConfigPNames.HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE, false);
     }
 
 }

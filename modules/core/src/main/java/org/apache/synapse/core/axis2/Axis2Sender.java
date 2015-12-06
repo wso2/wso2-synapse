@@ -20,6 +20,9 @@
 package org.apache.synapse.core.axis2;
 
 import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.AxisFault;
@@ -32,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
@@ -40,6 +44,8 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
 
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,6 +65,17 @@ public class Axis2Sender {
                               org.apache.synapse.MessageContext synapseInMessageContext) {
 
         try {
+
+            // Invoke Synapse Handlers
+            Iterator<SynapseHandler> iterator =
+                    synapseInMessageContext.getEnvironment().getSynapseHandlers().iterator();
+            while (iterator.hasNext()) {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleRequestOutFlow(synapseInMessageContext)) {
+                    return;
+                }
+            }
+
             Axis2FlexibleMEPClient.send(
                     // The endpoint where we are sending to
                     endpoint,
@@ -93,7 +110,8 @@ public class Axis2Sender {
         }
 
         // fault processing code
-        if (messageContext.isDoingREST() && messageContext.isFault()) {
+        if (messageContext.isDoingREST() && messageContext.isFault() &&
+            isMessagePayloadHasASOAPFault(messageContext)) {
             POXUtils.convertSOAPFaultToPOX(messageContext);
         }
 
@@ -163,6 +181,15 @@ public class Axis2Sender {
 
             Axis2FlexibleMEPClient.clearSecurtityProperties(messageContext.getOptions());
 
+            // Invoke Synapse Handlers
+            Iterator<SynapseHandler> iterator = smc.getEnvironment().getSynapseHandlers().iterator();
+            while (iterator.hasNext()) {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleResponseOutFlow(smc)) {
+                    return;
+                }
+            }
+
             // report stats for any component at response sending check point
             StatisticsReporter.reportForAllOnResponseSent(smc);
 
@@ -187,6 +214,32 @@ public class Axis2Sender {
         } catch (AxisFault e) {
             handleException(getResponseMessage(messageContext), e);
         }
+    }
+
+    /**
+     * Check whether message body has a SOAPFault
+     *
+     * @param axis2Ctx axis2 message context
+     * @return whether message is a SOAPFault
+     */
+    private static boolean isMessagePayloadHasASOAPFault(MessageContext axis2Ctx) {
+        SOAPBody body = axis2Ctx.getEnvelope().getBody();
+        if (body != null) {
+            OMElement element = body.getFirstElement();
+            if (element != null && "Fault".equalsIgnoreCase(element.getLocalName())) {
+                OMNamespace ns = element.getNamespace();
+                if (ns != null) {
+                    String nsURI = ns.getNamespaceURI();
+                    if ("http://schemas.xmlsoap.org/soap/envelope".equals(nsURI) ||
+                        "http://schemas.xmlsoap.org/soap/envelope/".equals(nsURI) ||
+                        "http://www.w3.org/2003/05/soap-envelope".equals(nsURI) ||
+                        "http://www.w3.org/2003/05/soap-envelope/".equals(nsURI)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private static void handleException(String msg, Exception e) {

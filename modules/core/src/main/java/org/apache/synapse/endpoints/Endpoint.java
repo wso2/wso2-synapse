@@ -124,4 +124,27 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      */
     public void setErrorHandler(String onFaultMessageStore);
 
+    /**
+     * Set the name of the car file which this endpoint deployed from
+     *
+     */
+    public void setArtifactContainerName (String name);
+
+    /**
+     * Get the Car File Name which this endpoint deployed from
+     */
+    public String getArtifactContainerName ();
+
+    /**
+     * Get the edit state of the endpoint
+     * @return
+     */
+    public boolean getIsEdited();
+
+    /**
+     * Set the edit state of the endpoint
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited);
+
 }

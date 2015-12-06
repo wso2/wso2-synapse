@@ -44,7 +44,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.message.store.impl.jms.Axis2Message;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Wrapper;
@@ -633,7 +632,7 @@ public class ScriptMessageContext implements MessageContext {
     }
 
     private void serializeJSON_(Object obj, OutputStream out) throws IOException {
-        if (obj == null || out == null) {
+        if (out == null) {
             logger.warn("#serializeJSON_. Did not serialize JSON object. Object: " + obj + "  Stream: " + out);
             return;
         }
@@ -641,7 +640,10 @@ public class ScriptMessageContext implements MessageContext {
             obj = ((Wrapper) obj).unwrap();
         }
 
-        if (obj instanceof NativeObject) {
+        if(obj == null){
+            out.write("null".getBytes());
+        }
+        else if (obj instanceof NativeObject) {
             out.write('{');
             NativeObject o = (NativeObject) obj;
             Object[] ids = o.getIds();

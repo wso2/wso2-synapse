@@ -47,4 +47,28 @@ public interface Startup extends ManagedLifecycle, Nameable, SynapseArtifact {
      * @param fileName the name of the file as a string
      */
     public void setFileName(String fileName);
+
+    /**
+     * Whether the task edited through the management console
+     * @return isEdited
+     */
+    public boolean isEdited();
+
+    /**
+     * Set whether the task edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited);
+
+    /**
+     * Get the name of the artifact container from which the task deployed
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName();
+
+    /**
+     * Set the name of the artifact container from which the task deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName);
 }

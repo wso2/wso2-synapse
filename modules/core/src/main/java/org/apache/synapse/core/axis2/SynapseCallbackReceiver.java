@@ -34,7 +34,6 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
-import org.apache.sandesha2.client.SandeshaClientConstants;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
@@ -43,6 +42,8 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -148,7 +149,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     messageID = relatesTo.getValue();
                 }
             }
-        } else if (messageCtx.getProperty(SandeshaClientConstants.SEQUENCE_KEY) == null) {
+        } else if (messageCtx.getProperty(SynapseConstants.SANDESHA2_SEQUENCE_KEY) == null) {
             messageID = (String) messageCtx.getProperty(SynapseConstants.RELATES_TO_FOR_POX);
         }
 
@@ -374,6 +375,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 response.setProperty(NhttpConstants.FORCE_SC_ACCEPTED, Constants.VALUE_TRUE);
             }
 
+            // axis2 client options still contains properties such as policy files used in
+            // outgoing request. Need to remove those.
+            removeUnwantedClientOptions(response);
+
             // create the synapse message context for the response
             Axis2MessageContext synapseInMessageContext =
                     new Axis2MessageContext(
@@ -486,6 +491,29 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
             }
 
+            Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMsgCtx
+                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+
+            if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
+                ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController)
+                        synapseOutMsgCtx
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+                int available = concurrentAccessController.incrementAndGet();
+                int concurrentLimit = concurrentAccessController.getLimit();
+                if (log.isDebugEnabled()) {
+                    log.debug("Concurrency Throttle : Connection returned" + " :: " +
+                            available + " of available of " + concurrentLimit + " connections");
+                }
+                ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator)
+                        synapseOutMsgCtx
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+                String throttleKey = (String) synapseOutMsgCtx
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+                if (concurrentAccessReplicator != null) {
+                    concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+                }
+            }
+
             // If this response is related to session affinity endpoints -Server initiated session
             Dispatcher dispatcher =
                     (Dispatcher) synapseOutMsgCtx.getProperty(
@@ -544,4 +572,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         mc.setRelationships(trimmedRelates);
     }
 
+    /**
+     * Properties in client options such as inbound and outbound policy files used for outgoing
+     * request may still be present. These need to be removed before sending the response as
+     * they are no longer required.
+     *
+     * @param msgCtx Axis2 MessageContext
+     */
+    private void removeUnwantedClientOptions(MessageContext msgCtx) {
+        if (msgCtx.getOptions() != null && msgCtx.getOptions().getParent() != null &&
+            msgCtx.getOptions().getParent().getParent() != null) {
+            Options clientOptions = msgCtx.getOptions().getParent().getParent();
+            clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY, null);
+            clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY, null);
+        }
+    }
 }

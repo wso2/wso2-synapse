@@ -19,14 +19,25 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
+
+import java.util.Set;
 
 /**
  * Loopback further processing/Mediation of the current message to outflow
  */
 public class LoopBackMediator extends AbstractMediator {
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         SynapseLog synLog = getLog(synCtx);
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Loopback Mediator");
@@ -37,6 +48,15 @@ public class LoopBackMediator extends AbstractMediator {
         }
         //If message flow is inflow this will be executed.
         if (!synCtx.isResponse()) {
+
+            // clear the message context properties related to endpoint in last service invocation
+            Set keySet = synCtx.getPropertyKeySet();
+            if (keySet != null) {
+                keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
+                keySet.remove(SynapseConstants.CONTINUATION_CALL);
+                keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+            }
+
             synCtx.setResponse(true);
             synCtx.setTo(null);
             synCtx.getEnvironment().injectMessage(synCtx);

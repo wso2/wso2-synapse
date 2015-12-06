@@ -42,6 +42,16 @@ public abstract class AbstractStartup implements Startup {
     protected String description;
 
     /**
+     * Name of the artifact container from which the task deployed
+     */
+    protected String artifactContainerName;
+
+    /**
+     * Whether the task edited via the management console
+     */
+    protected boolean isEdited;
+
+    /**
      * This will return the name of the startup
      *
      * @return String representing the name
@@ -94,5 +104,37 @@ public abstract class AbstractStartup implements Startup {
      */
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    /**
+     * Whether the task edited through the management console
+     * @return isEdited
+     */
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    /**
+     * Set whether the task edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    /**
+     * Get the name of the artifact container from which the task deployed
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    /**
+     * Set the name of the artifact container from which the task deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
     }
 }

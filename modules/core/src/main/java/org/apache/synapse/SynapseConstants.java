@@ -49,6 +49,8 @@ public final class SynapseConstants {
     public static final String FAULT_SEQUENCE_XML = "fault.xml";
     /** The name of the mandatory sequence to execute before the begining of the actual mediation */
     public static final String MANDATORY_SEQUENCE_KEY = "pre-mediate";
+    /** The name prefix of the hidden sequence */
+    public static final String PREFIX_HIDDEN_SEQUENCE_KEY = "_Hidden_Sequence_";
 
     /** The name of the Synapse service (used for message mediation) */
     public static final String SYNAPSE_SERVICE_NAME ="__SynapseService";
@@ -57,6 +59,7 @@ public final class SynapseConstants {
 
     //- names of modules to be engaged at runtime -
     /** The Name of the WS-RM module */
+    @Deprecated
     public static final String RM_MODULE_NAME = "sandesha2";
     /** The Name of the WS-A Addressing module */
     public static final String ADDRESSING_MODULE_NAME = "addressing";
@@ -144,6 +147,8 @@ public final class SynapseConstants {
     public static final String SYNAPSE_XML = "synapse.xml";
     /** The name of the system property used to specify/override the Synapse properties location */
     public static final String SYNAPSE_PROPERTIES = "synapse.properties";
+    /** The name of the synapse handlers file */
+    public static final String SYNAPSE_HANDLER_FILE = "synapse-handlers.xml";
 
     /** the name of the property used for synapse library based class loading */
     public static final String SYNAPSE_LIB_LOADER = "synapse.lib.classloader";
@@ -213,6 +218,7 @@ public final class SynapseConstants {
         /** Tracing logger name */
         public static final String TRACE_LOGGER ="TRACE_LOGGER";
         public static final String SERVICE_LOGGER_PREFIX ="SERVICE_LOGGER.";
+        public static final String API_LOGGER_PREFIX ="API_LOGGER.";
 
         /** The tracing state -off */
         public static final int TRACING_OFF =0;
@@ -335,6 +341,7 @@ public final class SynapseConstants {
     public static final String HTTP_SENDER_STATUSCODE = "transport.http.statusCode";
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =
             "BLOCKING_SENDER_PRESERVE_REQ_HEADERS";
+    public static final String DISABLE_CHUNKING = "DISABLE_CHUNKING";
 
     /** Synapse server instance name */
     public static final String SERVER_NAME = "serverName";
@@ -401,6 +408,8 @@ public final class SynapseConstants {
     public static final String PRESERVE_PROCESSED_HEADERS = "preserveProcessedHeaders";
     // Property name for preserving the envelope before sending
     public static final String PRESERVE_ENVELOPE = "PRESERVE_ENVELOPE";
+    // Property name for preserving the envelope in case of loadbalance failover endpoint with content aware scenario
+    public static final String LB_FO_ENDPOINT_ORIGINAL_MESSAGE = "LB_FO_ENDPOINT_ORIGINAL_MESSAGE";
 
     // Known transport error codes
     public static final int RCV_IO_ERROR_SENDING     = 101000;
@@ -483,5 +492,21 @@ public final class SynapseConstants {
     //Inbound endpoint
     public static final String IS_INBOUND = "isInbound";
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
+    public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
+    public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
+    
+    //Sandesha
+    public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";
+
+
+    //Synapse concurrency throttling
+    public static final String SYNAPSE_CONCURRENCY_THROTTLE =
+            "synapse.concurrency.throttle";
+    public static final String SYNAPSE_CONCURRENCY_THROTTLE_KEY =
+            "synapse.concurrency.throttle.key";
+    public static final String SYNAPSE_CONCURRENT_ACCESS_CONTROLLER =
+            "synapse.concurrent.access.controller";
+    public static final String SYNAPSE_CONCURRENT_ACCESS_REPLICATOR =
+            "synapse.concurrent.access.replicator";
 
 }

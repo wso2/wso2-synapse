@@ -28,11 +28,17 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.debug.SynapseDebugManager;
+import org.apache.synapse.debug.constants.SynapseDebugManagerConstants;
 import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.mediators.MediatorFaultHandler;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This is the MessageReceiver set to act on behalf of Proxy services.
@@ -51,6 +57,8 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
         boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+
+        CustomLogSetter.getInstance().setLogAppender(proxy.getArtifactContainerName());
 
         String remoteAddr = (String) mc.getProperty(
             org.apache.axis2.context.MessageContext.REMOTE_ADDR);
@@ -77,6 +85,36 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+
+        Object inboundServiceParam =
+                proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
+        Object inboundMsgCtxParam = mc.getProperty(SynapseConstants.IS_INBOUND);
+
+        //check whether the message is from Inbound EP
+        if (inboundMsgCtxParam == null || !(boolean) inboundMsgCtxParam) {
+            //check whether service parameter is set to true or null, then block this request
+            if (inboundServiceParam != null && (Boolean.valueOf((String) inboundServiceParam))) {
+                /*
+                return because same proxy is exposed via InboundEP and service parameter(inbound.only) is set to
+                true, which disable normal http transport proxy
+                */
+                if (!synCtx.getFaultStack().isEmpty()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Executing fault handler - message discarded due to the proxy is allowed only via InboundEP");
+                    }
+                    (synCtx.getFaultStack().pop()).
+                            handleFault(synCtx, new Exception("Proxy Service " + name +
+                                                              " message discarded due to the proxy is allowed only via InboundEP"));
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Proxy Service " + name + " message discarded due to the proxy is " +
+                                  "allowed only via InboundEP");
+                    }
+                }
+                return;
+            }
+        }
+
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
         if (configurator != null) {
             configurator.extractTenantInfo(synCtx);
@@ -97,7 +135,22 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
         synCtx.setTracingState(proxy.getTraceState());
 
-        try {            
+        try {
+
+            if(synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(synCtx);
+            }
+
+            List handlers = synCtx.getEnvironment().getSynapseHandlers();
+            Iterator<SynapseHandler> iterator = handlers.iterator();
+            while (iterator.hasNext()) {
+                SynapseHandler handler = iterator.next();
+                if (!handler.handleRequestInFlow(synCtx)) {
+                    return;
+                }
+            }
 
             Mediator mandatorySeq = synCtx.getConfiguration().getMandatorySequence();
             if (mandatorySeq != null) {
@@ -116,33 +169,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
 
             // setup fault sequence - i.e. what happens when something goes wrong with this message
-            if (proxy.getTargetFaultSequence() != null) {
-
-                Mediator faultSequence = synCtx.getSequence(proxy.getTargetFaultSequence());
-                if (faultSequence != null) {
-                    if (traceOrDebugOn) {
-                        traceOrDebug(traceOn,
-                            "Setting the fault-sequence to : " + faultSequence);
-                    }
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(
-                        synCtx.getSequence(proxy.getTargetFaultSequence())));
-
-                } else {
-                    // when we can not find the reference to the fault sequence of the proxy
-                    // service we should not throw an exception because still we have the global
-                    // fault sequence and the message mediation can still continue
-                    traceOrDebug(traceOn, "Unable to find fault-sequence : " +
-                        proxy.getTargetFaultSequence() + "; using default fault sequence");
-                    synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
-                }
-
-            } else if (proxy.getTargetInLineFaultSequence() != null) {
-                if (traceOrDebugOn) {
-                    traceOrDebug(traceOn, "Setting specified anonymous fault-sequence for proxy");
-                }
-                synCtx.pushFaultHandler(
-                    new MediatorFaultHandler(proxy.getTargetInLineFaultSequence()));
-            }
+            proxy.registerFaultHandler(synCtx);
 
             boolean inSequenceResult = true;
 
@@ -200,6 +227,11 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
+            if(synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.advertiseMediationFlowTerminatePoint(synCtx);
+                debugManager.releaseMediationFlowLock();
+            }
         }
     }
 

@@ -109,6 +109,8 @@ public class ServiceDynamicLoadbalanceEndpoint extends DynamicLoadbalanceEndpoin
     }
 
     public void send(MessageContext synCtx) {
+
+        logSetter();
         setCookieHeader(synCtx);
         //TODO: Refactor Session Aware LB dispatching code
 

@@ -58,6 +58,15 @@ public class SourceResponseFactory {
 	    	 sourceResponse.addHeader(HTTP.CONTENT_LEN, (String)msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH));
 		}
 
+        // When invoking http HEAD request esb set content length as 0 to response header. Since there is no message
+        // body content length cannot be calculated inside synapse. Hence content length of the backend response is
+        // set to sourceResponse.
+        if (PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(sourceRequest.getRequest().getRequestLine().getMethod()) &&
+            msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
+            sourceResponse.addHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH, (String) msgContext.getProperty
+                    (PassThroughConstants.ORGINAL_CONTEN_LENGTH));
+        }
+
         if (transportHeaders != null && msgContext.getProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE) != null) {
             if (msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE) != null
                     && msgContext.getProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE).toString().contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {

@@ -126,19 +126,6 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             }
         }
 
-        OMElement wsRm = elem.getFirstChildWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableRM"));
-        if (wsRm != null) {
-
-            definition.setReliableMessagingOn(true);
-
-            OMAttribute policy
-                    = wsRm.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "policy"));
-            if (policy != null) {
-                definition.setWsRMPolicyKey(policy.getAttributeValue());
-            }
-        }
-
         // set the timeout configuration
         OMElement timeout = elem.getFirstChildWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "timeout"));
@@ -164,21 +151,9 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             if (action != null && action.getText() != null) {
                 String actionString = action.getText();
                 if ("discard".equalsIgnoreCase(actionString.trim())) {
-
                     definition.setTimeoutAction(SynapseConstants.DISCARD);
-
-                    // set timeout duration to 30 seconds, if it is not set explicitly
-                    if (definition.getTimeoutDuration() == 0) {
-                        definition.setTimeoutDuration(30000);
-                    }
                 } else if ("fault".equalsIgnoreCase(actionString.trim())) {
-
                     definition.setTimeoutAction(SynapseConstants.DISCARD_AND_FAULT);
-
-                    // set timeout duration to 30 seconds, if it is not set explicitly
-                    if (definition.getTimeoutDuration() == 0) {
-                        definition.setTimeoutDuration(30000);
-                    }
                 } else {
                     handleException("Invalid timeout action, action : "
                             + actionString + " is not supported");

@@ -39,7 +39,15 @@ import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.collections.map.MultiValueMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.*;
+import org.apache.http.ConnectionClosedException;
+import org.apache.http.ConnectionReuseStrategy;
+import org.apache.http.Header;
+import org.apache.http.HttpException;
+import org.apache.http.HttpInetConnection;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -49,10 +57,24 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.entity.ContentInputStream;
-import org.apache.http.nio.util.*;
+import org.apache.http.nio.util.ByteBufferAllocator;
+import org.apache.http.nio.util.ContentInputBuffer;
+import org.apache.http.nio.util.ContentOutputBuffer;
+import org.apache.http.nio.util.HeapByteBufferAllocator;
+import org.apache.http.nio.util.SharedInputBuffer;
+import org.apache.http.nio.util.SharedOutputBuffer;
 import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.params.HttpParams;
-import org.apache.http.protocol.*;
+import org.apache.http.protocol.BasicHttpProcessor;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpProcessor;
+import org.apache.http.protocol.RequestConnControl;
+import org.apache.http.protocol.RequestContent;
+import org.apache.http.protocol.RequestExpectContinue;
+import org.apache.http.protocol.RequestTargetHost;
+import org.apache.http.protocol.RequestUserAgent;
 import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
@@ -66,7 +88,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -350,8 +374,11 @@ public class ClientHandler implements NHttpClientEventHandler {
         if (log.isTraceEnabled()) {
             log.trace(conn + ": " + message);
         }
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-            conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_CLOSED, message, null);
@@ -381,8 +408,11 @@ public class ClientHandler implements NHttpClientEventHandler {
             log.debug(conn + ": " + message);
         }
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-            conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_TIMEOUT, message, null);
@@ -419,6 +449,9 @@ public class ClientHandler implements NHttpClientEventHandler {
      * @param ex the exception encountered
      */
     public void exception(final NHttpClientConnection conn, final Exception ex) {
+        HttpContext context = conn.getContext();
+        Axis2HttpRequest axis2Req = (Axis2HttpRequest) context.getAttribute(ATTACHMENT_KEY);
+        context.setAttribute(AXIS2_HTTP_REQUEST, axis2Req);
 
         if (ex instanceof HttpException) {
             String message = getErrorMessage("HTTP protocol violation : " + ex.getMessage(), conn);
@@ -480,8 +513,12 @@ public class ClientHandler implements NHttpClientEventHandler {
     private void checkAxisRequestComplete(NHttpClientConnection conn,
         final int errorCode, final String errorMessage, final Exception exceptionToRaise) {
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest)
-                conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
+
         if (axis2Request != null && !axis2Request.isCompleted()) {
             markRequestCompletedWithError(axis2Request, errorCode, errorMessage, exceptionToRaise);
         }
@@ -813,6 +850,14 @@ public class ClientHandler implements NHttpClientEventHandler {
                     log.debug(conn + ": Received a 202 Accepted response");
                 }
 
+                // Process response body if Content-Type header is present in the response
+                // If Content-Type header is null, We will ignore entity body
+                Header contentType = response.getFirstHeader(HTTP.CONTENT_TYPE);
+                if (contentType != null) {
+                    processResponse(conn, context, response);
+                    return;
+                }
+
                 // sometimes, some http clients sends an "\r\n" as the content body with a
                 // HTTP 202 OK.. we will just get it into this temp buffer and ignore it..
                 ContentInputBuffer inputBuffer = new SharedInputBuffer(8, conn, allocator);
@@ -880,6 +925,8 @@ public class ClientHandler implements NHttpClientEventHandler {
                         responseMsgCtx.setProperty(AddressingConstants.
                                 DISABLE_ADDRESSING_FOR_OUT_MESSAGES, Boolean.TRUE);
                         responseMsgCtx.setProperty(NhttpConstants.SC_ACCEPTED, Boolean.TRUE);
+                        int statusCode = response.getStatusLine().getStatusCode();
+                        responseMsgCtx.setProperty(NhttpConstants.HTTP_SC, statusCode);
                         mr.receive(responseMsgCtx);
 
                     } catch (org.apache.axis2.AxisFault af) {
@@ -1091,6 +1138,16 @@ public class ClientHandler implements NHttpClientEventHandler {
                 && statusCode != HttpStatus.SC_NOT_MODIFIED
                 && statusCode != HttpStatus.SC_RESET_CONTENT) {
             expectEntityBody = true;
+        } else if (NhttpConstants.HTTP_HEAD.equals(requestMethod)) {
+	        // When invoking http HEAD request esb set content length as 0 to response header. Since there is no message
+	        // body content length cannot be calculated inside synapse. Hence additional two headers are added to
+	        // which contains content length of the backend response and the request method. These headers are removed
+	        // before submitting the actual response.
+	        response.addHeader(NhttpConstants.HTTP_REQUEST_METHOD, requestMethod);
+
+	        if (response.getFirstHeader(HTTP.CONTENT_LEN) != null) {
+		        response.addHeader(NhttpConstants.ORIGINAL_CONTENT_LEN, response.getFirstHeader(HTTP.CONTENT_LEN).getValue());
+	        }
         }
 
         if (expectEntityBody) {
@@ -1324,4 +1381,27 @@ public class ClientHandler implements NHttpClientEventHandler {
             }
         }
     }
+
+    /**
+     * Set the given Client Connection Factory.
+     *
+     * @param connFactory ClientConnectionFactory instance
+     */
+    public void setConnFactory(ClientConnFactory connFactory) {
+        this.connFactory = connFactory;
+    }
+
+    /**
+     * Shutdown the connections of the given host:port list. This will allow to create new connection
+     * at the next request happens.
+     *
+     * @param hostList Set of String which contains entries in hots:port format
+     */
+    public void resetConnectionPool(Set<String> hostList) {
+        List<NHttpClientConnection> clientConnections = connpool.getSslConnectionsList(hostList);
+        for (NHttpClientConnection conn : clientConnections) {
+            shutdownConnection(conn, false, " Connection closed to re-loading of Dynamic SSL Configurations ");
+        }
+    }
+
 }

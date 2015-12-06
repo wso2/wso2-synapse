@@ -19,17 +19,36 @@ package org.apache.synapse.startup.quartz;
  *  under the License.
  */
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
+
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.task.*;
-import org.quartz.*;
+import org.apache.synapse.task.DefaultTaskJobDetailFactory;
+import org.apache.synapse.task.DefaultTaskTriggerFactory;
+import org.apache.synapse.task.SynapseTaskException;
+import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskConstants;
+import org.apache.synapse.task.TaskDescription;
+import org.apache.synapse.task.TaskJobDetailFactory;
+import org.apache.synapse.task.TaskManager;
+import org.apache.synapse.task.TaskManagerObserver;
+import org.apache.synapse.task.TaskTriggerFactory;
+import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobKey;
+import org.quartz.ObjectAlreadyExistsException;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
-
-import java.util.*;
 
 public class QuartzTaskManager implements TaskManager {
     private static final Log logger = LogFactory.getLog(QuartzTaskManager.class.getName());
@@ -64,6 +83,7 @@ public class QuartzTaskManager implements TaskManager {
 
     protected final Properties configProperties = new Properties();
 
+    @Override
     public boolean schedule(TaskDescription taskDescription) {
         assertInitialized();
         assertStarted();
@@ -152,11 +172,13 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public boolean reschedule(String name, TaskDescription taskDescription) {
         logger.error("reschedule not supported. Task name: " + name);
         return false;
     }
 
+    @Override
     public boolean delete(String nameGroup) {
         if (nameGroup == null) {
             return false;
@@ -188,11 +210,13 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public boolean pause(String name) {
         logger.error("pause not supported. Task name : " + name);
         return false;
     }
 
+    @Override
     public boolean pauseAll() {
         try {
             assertInitialized();
@@ -206,10 +230,12 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public boolean resume(String name) {
         return false;
     }
 
+    @Override
     public boolean resumeAll() {
         try {
             assertInitialized();
@@ -223,15 +249,18 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public TaskDescription getTask(String name) {
 
         return null;
     }
 
+    @Override
     public String[] getTaskNames() {
         return new String[0];
     }
 
+    @Override
     public boolean init(Properties properties) {
         StdSchedulerFactory sf = new StdSchedulerFactory();
         if (properties != null) {
@@ -266,10 +295,12 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public boolean isInitialized() {
         return initialized;
     }
 
+    @Override
     public boolean start() {
         assertInitialized();
         try {
@@ -287,6 +318,7 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public boolean stop() {
         if (isInitialized()) {
             try {
@@ -306,6 +338,7 @@ public class QuartzTaskManager implements TaskManager {
         return false;
     }
 
+    @Override
     public int getRunningTaskCount() {
         int runningTasks = 0;
         try {
@@ -320,6 +353,7 @@ public class QuartzTaskManager implements TaskManager {
         return runningTasks;
     }
 
+    @Override
     public boolean isTaskRunning(Object taskKey) {
         if (!(taskKey instanceof JobKey)) {
             return false;
@@ -345,6 +379,7 @@ public class QuartzTaskManager implements TaskManager {
 
     private Map<String, Object> properties = new HashMap<String, Object>(5);
 
+    @Override
     public boolean setProperties(Map<String, Object> properties) {
         for (String key : properties.keySet()) {
             synchronized (lock) {
@@ -354,6 +389,7 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public boolean setProperty(String name, Object property) {
         synchronized (lock) {
             if ("Q_TASK_TRIGGER_FACTORY".equals(name) && (property instanceof TaskTriggerFactory)) {
@@ -367,6 +403,7 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    @Override
     public Object getProperty(String name) {
         if (name == null) {
             return null;
@@ -376,24 +413,29 @@ public class QuartzTaskManager implements TaskManager {
         }
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getProviderClass() {
         return this.getClass().getName();
     }
 
+    @Override
     public Properties getConfigurationProperties() {
         synchronized (lock) {
             return configProperties;
         }
     }
 
+    @Override
     public void setConfigurationProperties(Properties properties) {
         synchronized (lock) {
             this.configProperties.putAll(properties);
@@ -418,5 +460,34 @@ public class QuartzTaskManager implements TaskManager {
         } catch (SchedulerException e) {
             throw new SynapseTaskException("Error determine start state of the scheduler ", e, logger);
         }
+    }
+
+    @Override
+    public void addObserver(TaskManagerObserver o) {
+
+    }
+
+    @Override
+    public boolean isTaskDeactivated(String taskName) {
+        return false;
+    }
+
+    @Override
+    public boolean isTaskBlocked(String taskName) {
+        return false;
+    }
+
+    @Override
+    public boolean isTaskRunning(String taskName) {
+        return false;
+    }
+
+    @Override
+    public void sendClusterMessage(Callable<Void> task) {
+
+    }
+
+    public boolean isTaskExist(String arg0) {
+        return false;
     }
 }

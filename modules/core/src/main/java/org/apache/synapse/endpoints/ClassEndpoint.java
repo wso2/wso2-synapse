@@ -77,6 +77,8 @@ public class ClassEndpoint extends AbstractEndpoint  {
 	 */
 	public void send(MessageContext synMessageContext) {
 
+		logSetter();
+
 		if (log.isDebugEnabled()) {
 			log.debug("Start sending message");
 			if (log.isTraceEnabled()) {

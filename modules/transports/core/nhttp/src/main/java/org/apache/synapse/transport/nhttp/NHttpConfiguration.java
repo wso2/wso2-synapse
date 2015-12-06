@@ -21,9 +21,11 @@ package org.apache.synapse.transport.nhttp;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -56,6 +58,13 @@ public final class NHttpConfiguration {
     private static final String C_T_QLEN     = "lst_qlen";
     private static final String C_IO_WORKERS = "lst_io_threads";
 
+    // Client error handler
+    private static final String ERROR_HANDLER_POOL_ENABLED = "error_handler_pool_enabled";
+    private static final String ERROR_HANDLER_T_CORE     = "error_handler_t_core";
+    private static final String ERROR_HANDLER_T_MAX      = "error_handler_t_max";
+    private static final String ERROR_HANDLER_T_ALIVE    = "error_handler_alive_sec";
+    private static final String ERROR_HANDLER_T_QLEN     = "error_handler_qlen";
+
     // general
     private static final String G_BUFFER_SIZE  = "nhttp_buffer_size";
     private static final String G_DISABLED_HTTP_METHODS = "nhttp_disabled_methods";
@@ -73,6 +82,8 @@ public final class NHttpConfiguration {
     private static NHttpConfiguration _instance = new NHttpConfiguration();
     private Properties props;
     List<String> methods;
+    //Preserve HTTP headers
+    private List<String> preserveHeaders;
 
     /** Comma separated list of blocked uris*/
     public static final String BLOCK_SERVICE_LIST = "http.block_service_list";
@@ -82,6 +93,7 @@ public final class NHttpConfiguration {
     private NHttpConfiguration() {
         try {
             props = MiscellaneousUtil.loadProperties("nhttp.properties");
+            populatePreserveHttpHeaders();
         } catch (Exception ignore) {}
     }
 
@@ -134,20 +146,33 @@ public final class NHttpConfiguration {
     	return getProperty(C_MAX_ACTIVE, MAX_ACTIVE_CON);
     }    
 
+    public int getErrorHandlerCoreThreads() {
+        return getProperty(ERROR_HANDLER_T_CORE, getClientCoreThreads()/2);
+    }
+
+    public int getErrorHandlerTMaxThreads() {
+        return getProperty(ERROR_HANDLER_T_MAX, getClientMaxThreads()/2);
+    }
+
+    public int getErrorHandlerKeepAlive() {
+        return getProperty(ERROR_HANDLER_T_ALIVE, WORKER_KEEP_ALIVE);
+    }
+
+    public int getErrorHandlerQueuelen() {
+        return getProperty(ERROR_HANDLER_T_QLEN, BLOCKING_QUEUE_LENGTH);
+    }
+
+    public boolean isErrorHandlerPoolEnabled() {
+        return getBooleanValue(ERROR_HANDLER_POOL_ENABLED, false);
+
+    }
+
     public int getBufferSize() {
         return getProperty(G_BUFFER_SIZE, BUFFER_SIZE);
     }
 
     public boolean isKeepAliveDisabled() {
         return getProperty(NhttpConstants.DISABLE_KEEPALIVE, 0) == 1;
-    }
-
-    public boolean isPreserveUserAgentHeader() {
-        return getBooleanValue(NhttpConstants.USER_AGENT_HEADER_PRESERVE, false);
-    }
-
-    public boolean isPreserveServerHeader() {
-        return getBooleanValue(NhttpConstants.SERVER_HEADER_PRESERVE, true);
     }
 
     public boolean isCountConnections() {
@@ -172,6 +197,20 @@ public final class NHttpConfiguration {
 
     public int getListenerShutdownWaitTime() {
         return getProperty(TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME, DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME)*1000;
+    }
+
+    /**
+     * Check preserving status of the http header field
+     *
+     * @param httpHeader http header name
+     * @return return true if preserve else false
+     */
+    public boolean isPreserveHttpHeader(String httpHeader) {
+        if (preserveHeaders == null || preserveHeaders.isEmpty() || httpHeader == null) {
+            return false;
+        } else {
+            return preserveHeaders.contains(httpHeader.toUpperCase());
+        }
     }
 
     /**
@@ -249,6 +288,33 @@ public final class NHttpConfiguration {
             }
         }
         return methods.contains(method);
+    }
+
+    private void populatePreserveHttpHeaders() {
+
+        if (preserveHeaders == null) {
+            preserveHeaders = new ArrayList<String>();
+            String presHeaders = getStringValue(NhttpConstants.HTTP_HEADERS_PRESERVE, "");
+
+            if (presHeaders != null && !presHeaders.isEmpty()) {
+                String[] splitHeaders = presHeaders.toUpperCase().trim().split(",");
+
+                if (splitHeaders != null && splitHeaders.length > 0) {
+                    preserveHeaders.addAll(Arrays.asList(splitHeaders));
+                }
+            }
+
+            if (getBooleanValue(NhttpConstants.SERVER_HEADER_PRESERVE, true)
+                && !preserveHeaders.contains(HTTP.SERVER_HEADER.toUpperCase())) {
+                preserveHeaders.add(HTTP.SERVER_HEADER.toUpperCase());
+            }
+
+            if (getBooleanValue(NhttpConstants.USER_AGENT_HEADER_PRESERVE, false)
+                && !preserveHeaders.contains(HTTP.USER_AGENT.toUpperCase())) {
+                preserveHeaders.add(HTTP.USER_AGENT.toUpperCase());
+            }
+        }
+
     }
 
 }

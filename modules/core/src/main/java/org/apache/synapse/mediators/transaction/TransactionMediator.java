@@ -22,6 +22,7 @@ package org.apache.synapse.mediators.transaction;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.mediators.AbstractMediator;
 
 import javax.naming.Context;
@@ -29,6 +30,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.transaction.Status;
 import javax.transaction.UserTransaction;
+import javax.transaction.TransactionManager;
 
 /**
  * The Mediator for commit, rollback, suspend, resume jta transactions
@@ -41,13 +43,22 @@ public class TransactionMediator extends AbstractMediator {
     public static final String ACTION_USE_EXISTING_OR_NEW = "use-existing-or-new";
     public static final String ACTION_FAULT_IF_NO_TX = "fault-if-no-tx";
     private static final String USER_TX_LOOKUP_STR = "java:comp/UserTransaction";
+    private static final String USER_TX_LOOKUP_STR1 = "java:comp/TransactionManager";
     private Context txContext;
 
     private String action = "";
 
+
+
     public boolean mediate(MessageContext synCtx) {
 
-        UserTransaction tx = null;
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
+       // UserTransaction tx = null;
         final SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -59,15 +70,18 @@ public class TransactionMediator extends AbstractMediator {
         }
         initContext(synCtx);
         try {
-            tx = (UserTransaction) txContext.lookup(USER_TX_LOOKUP_STR);
-        } catch (NamingException e) {
+            //tx = (UserTransaction) txContext.lookup(USER_TX_LOOKUP_STR);
+            TranscationManger.lookUp(txContext);
+        } catch (Exception e) {
             handleException("Cloud not get the context name " + USER_TX_LOOKUP_STR, e, synCtx);
         }
 
         if (action.equals(ACTION_COMMIT)) {
 
             try {
-                tx.commit();
+                //tx.commit();
+            	long key = Thread.currentThread().getId();
+            	TranscationManger.endTransaction(true, key);
             } catch (Exception e) {
                 handleException("Unable to commit transaction", e, synCtx);
             }
@@ -75,7 +89,9 @@ public class TransactionMediator extends AbstractMediator {
         } else if (action.equals(ACTION_ROLLBACK)) {
 
             try {
-                tx.rollback();
+                //tx.rollback();
+            	long key = Thread.currentThread().getId();
+            	TranscationManger.rollbackTransaction(true, key);
             } catch (Exception e) {
                 handleException("Unable to rollback transaction", e, synCtx);
             }
@@ -84,18 +100,20 @@ public class TransactionMediator extends AbstractMediator {
 
             int status = Status.STATUS_UNKNOWN;
             try {
-                status = tx.getStatus();
+               // status = tx.getStatus();
+            	status = TranscationManger.getStatus();
             } catch (Exception e) {
                 handleException("Unable to query transaction status", e, synCtx);
             }
 
-            if (status != Status.STATUS_NO_TRANSACTION) {
+            if (!(status == Status.STATUS_NO_TRANSACTION || status == Status.STATUS_UNKNOWN)) {
                 throw new SynapseException("Require to begin a new transaction, " +
                         "but a transaction already exist");
             }
 
             try {
-                tx.begin();
+                //tx.begin();
+            	TranscationManger.beginTransaction();
             } catch (Exception e) {
                 handleException("Unable to begin a new transaction", e, synCtx);
             }
@@ -104,14 +122,15 @@ public class TransactionMediator extends AbstractMediator {
 
             int status = Status.STATUS_UNKNOWN;
             try {
-                status = tx.getStatus();
+               // status = tx.getStatus();
+            	status = TranscationManger.getStatus();
             } catch (Exception e) {
                 handleException("Unable to query transaction status", e, synCtx);
             }
 
             try {
                 if (status == Status.STATUS_NO_TRANSACTION) {
-                    tx.begin();
+                   // tx.begin();
                 }
             } catch (Exception e) {
                 handleException("Unable to begin a new transaction", e, synCtx);
@@ -121,7 +140,8 @@ public class TransactionMediator extends AbstractMediator {
 
             int status = Status.STATUS_UNKNOWN;
             try {
-                status = tx.getStatus();
+                //status = tx.getStatus();
+            	status = TranscationManger.getStatus();
             } catch (Exception e) {
                 handleException("Unable to query transaction status", e, synCtx);
             }

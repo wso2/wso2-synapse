@@ -47,8 +47,13 @@ public class HTTPEndpointSerializer extends DefaultEndpointSerializer {
         }
 
         if (httpEndpoint.getUriTemplate() != null) {
-        	httpEPElement.addAttribute(
+            if (httpEndpoint.isLegacySupport()) {
+                httpEPElement.addAttribute(
+                        fac.createOMAttribute("uri-template", null, HTTPEndpoint.legacyPrefix + httpEndpoint.getUriTemplate().getTemplate()));
+            } else {
+        	    httpEPElement.addAttribute(
                     fac.createOMAttribute("uri-template", null, httpEndpoint.getUriTemplate().getTemplate()));
+            }
         }
 
         endpointElement.addChild(httpEPElement);

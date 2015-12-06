@@ -54,16 +54,18 @@ import java.io.*;
 import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Properties;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 @SuppressWarnings({"UnusedDeclaration"})
 public class SynapseConfigUtils {
 
     private static final Log log = LogFactory.getLog(SynapseConfigUtils.class);
+
+
+    private static ConcurrentHashMap<String, SynapseConfiguration> lastRegisteredSynapseConfigurationMap =
+                                                                 new ConcurrentHashMap<String, SynapseConfiguration>();
 
     /**
      * Return a StreamSource for the given Object
@@ -877,6 +879,15 @@ public class SynapseConfigUtils {
             return true; // Enabled by default
         }
         return false;
+    }
+
+
+    public static SynapseConfiguration getSynapseConfiguration(String tenantDomain){
+         return  lastRegisteredSynapseConfigurationMap.get(tenantDomain);
+    }
+
+    public static void addSynapseConfiguration(String tenantDomain , SynapseConfiguration synapseConfiguration){
+        lastRegisteredSynapseConfigurationMap.put(tenantDomain,synapseConfiguration);
     }
 }
 

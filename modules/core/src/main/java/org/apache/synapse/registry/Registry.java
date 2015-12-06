@@ -116,6 +116,16 @@ public interface Registry {
      */
     public void newResource(String path, boolean isDirectory);
 
+
+    /**
+     *
+     * @param path          new Resource path
+     * @param isDirectory   whether the resource is a collection or not
+     * @param contentType   content type of the resource
+     * @param content       resource content
+     */
+    public void newNonEmptyResource(String path, boolean isDirectory, String contentType, String content, String propertyName);
+
     /**
      * Updates the value of a resource
      *

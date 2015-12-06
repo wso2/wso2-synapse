@@ -34,8 +34,7 @@ import java.util.Map;
  * by Clients. InboundEndpoint is an artifact type which can be created/modified dynamically.
  */
 public class InboundEndpoint implements ManagedLifecycle {
-
-    protected Log log = LogFactory.getLog(InboundEndpoint.class);
+    protected static final Log log = LogFactory.getLog(InboundEndpoint.class);
 
     private String name;
     private String protocol;
@@ -44,25 +43,37 @@ public class InboundEndpoint implements ManagedLifecycle {
     private String injectingSeq;
     private String onErrorSeq;
     private Map<String, String> parametersMap = new LinkedHashMap<String, String>();
+    private Map<String, String> parameterKeyMap = new LinkedHashMap<String, String>();
     private String fileName;
     private SynapseEnvironment synapseEnvironment;
     private InboundRequestProcessor inboundRequestProcessor;
-
+    /** car file name which this endpoint deployed from */
+    private String artifactContainerName;
+    /** Whether the deployed inbound endpoint is edited via the management console */
+    private boolean isEdited;
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
         synapseEnvironment = se;
-
+        if(isSuspend){
+      	  log.info("Inbound endpoint " + name + " is currently suspended.");
+      	  return;
+        }
         inboundRequestProcessor = getInboundRequestProcessor();
         if (inboundRequestProcessor != null) {
-            inboundRequestProcessor.init();
+            try {
+                inboundRequestProcessor.init();
+            } catch (Exception e) {
+                String msg = "Error initializing inbound endpoint " + getName();
+                log.error(msg);
+                throw new SynapseException(msg,e);
+            }
         } else {
             String msg = "Inbound Request processor not found for Inbound EP : " + name +
                          " Protocol: " + protocol + " Class" + classImpl;
             log.error(msg);
             throw new SynapseException(msg);
         }
-
     }
 
     /**
@@ -81,7 +92,6 @@ public class InboundEndpoint implements ManagedLifecycle {
         InboundProcessorParams params = populateParams();
         while (it.hasNext()) {
             InboundRequestProcessorFactory factory = it.next();
-
             InboundRequestProcessor inboundRequestProcessor =
                                 factory.createInboundProcessor(params);
             if (inboundRequestProcessor != null) {
@@ -175,10 +185,19 @@ public class InboundEndpoint implements ManagedLifecycle {
         parametersMap.put(name, value);
     }
 
+    public void addParameter(String name, String value, String key) {
+        addParameter(name, value);
+        parameterKeyMap.put(name, key);
+    }    
+    
     public String getParameter(String name) {
         return parametersMap.get(name);
     }
 
+    public String getParameterKey(String name) {
+        return parameterKeyMap.get(name);
+    }
+    
     public String getClassImpl() {
         return classImpl;
     }
@@ -187,4 +206,19 @@ public class InboundEndpoint implements ManagedLifecycle {
         this.classImpl = classImpl;
     }
 
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
+    }
+
+    public String getArtifactContainerName () {
+        return artifactContainerName;
+    }
+
+    public boolean getIsEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
 }

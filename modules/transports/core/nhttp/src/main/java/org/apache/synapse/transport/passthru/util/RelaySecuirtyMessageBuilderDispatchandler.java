@@ -20,6 +20,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
@@ -163,6 +164,12 @@ public class RelaySecuirtyMessageBuilderDispatchandler  extends AbstractDispatch
 	private void build(MessageContext messageContext) {
 	    try {
 	    	RelayUtils.buildMessage(messageContext, false);
+            if (messageContext.getEnvelope().getHeader() == null) {
+                SOAPFactory fac =
+                        messageContext.isSOAP11() ? OMAbstractFactory.getSOAP11Factory()
+                                                  : OMAbstractFactory.getSOAP12Factory();
+                fac.createSOAPHeader(messageContext.getEnvelope());
+            }
 	    } catch (Exception e) {
 	    	 log.error("Error while executing the message at relaySecurity handler", e);
 	    }

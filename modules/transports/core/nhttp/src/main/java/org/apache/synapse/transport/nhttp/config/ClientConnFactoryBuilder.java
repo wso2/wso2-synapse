@@ -20,11 +20,14 @@
 package org.apache.synapse.transport.nhttp.config;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,8 +37,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
@@ -69,6 +74,7 @@ public class ClientConnFactoryBuilder {
     public ClientConnFactoryBuilder parseSSL() throws AxisFault {
         Parameter keyParam    = transportOut.getParameter("keystore");
         Parameter trustParam  = transportOut.getParameter("truststore");
+        Parameter httpsProtocolsParam = transportOut.getParameter("HttpsProtocols");
 
         OMElement ksEle = null;
         OMElement tsEle = null;
@@ -78,7 +84,7 @@ public class ClientConnFactoryBuilder {
         }
 
         boolean novalidatecert = ParamUtils.getOptionalParamBoolean(transportOut,
-                "novalidatecert", false);
+                                                                    "novalidatecert", false);
 
         if (trustParam != null) {
             if (novalidatecert) {
@@ -88,7 +94,7 @@ public class ClientConnFactoryBuilder {
             }
             tsEle = trustParam.getParameterElement().getFirstElement();
         }
-        
+
         SSLContext sslContext = createSSLContext(ksEle, tsEle, novalidatecert);
 
         final Parameter hvp = transportOut.getParameter("HostnameVerifier");
@@ -108,7 +114,7 @@ public class ClientConnFactoryBuilder {
 
         final Parameter cvp = transportOut.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
-                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
+                                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
         RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
@@ -119,12 +125,36 @@ public class ClientConnFactoryBuilder {
             try {
                 cacheSize = new Integer(cacheSizeString);
                 cacheDelay = new Integer(cacheDelayString);
+            } catch (NumberFormatException e) {
             }
-            catch (NumberFormatException e) {}
             revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
 
-        ssl = new SSLContextDetails(sslContext, new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier));
+        // Process HttpProtocols
+        OMElement httpsProtocolsEl = httpsProtocolsParam != null ? httpsProtocolsParam.getParameterElement() : null;
+        String[] httpsProtocols = null;
+        final String configuredHttpsProtocols =
+                httpsProtocolsEl != null ? httpsProtocolsEl.getText() : null;
+        if (configuredHttpsProtocols != null && configuredHttpsProtocols.trim().length() != 0) {
+            String[] configuredValues = configuredHttpsProtocols.trim().split(",");
+            List<String> protocolList = new ArrayList<String>(configuredValues.length);
+            for (String protocol : configuredValues) {
+                if (!protocol.trim().isEmpty()) {
+                    protocolList.add(protocol.trim());
+                }
+            }
+
+            httpsProtocols = protocolList.toArray(new String[protocolList.size()]);
+        }
+
+        // Initiated separately to cater setting https protocols
+        ClientSSLSetupHandler clientSSLSetupHandler = new ClientSSLSetupHandler(hostnameVerifier, revocationVerifier);
+
+        if (null != httpsProtocols) {
+            clientSSLSetupHandler.setHttpsProtocols(httpsProtocols);
+        }
+
+        ssl = new SSLContextDetails(sslContext, clientSSLSetupHandler);
         sslByHostMap = getCustomSSLContexts(transportOut);
         return this;
     }
@@ -159,7 +189,9 @@ public class ClientConnFactoryBuilder {
     private Map<String, SSLContext> getCustomSSLContexts(TransportOutDescription transportOut)
             throws AxisFault {
 
-        Parameter customProfilesParam = transportOut.getParameter("customSSLProfiles");
+        TransportOutDescription customSSLProfileTransport = loadDynamicSSLConfig(transportOut);
+
+        Parameter customProfilesParam = customSSLProfileTransport.getParameter("customSSLProfiles");
         if (customProfilesParam == null) {
             return null;
         }
@@ -167,16 +199,17 @@ public class ClientConnFactoryBuilder {
         if (log.isInfoEnabled()) {
             log.info(name + " Loading custom SSL profiles for the HTTPS sender");
         }
-        
+
         OMElement customProfilesElt = customProfilesParam.getParameterElement();
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
         Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
+
         while (profiles.hasNext()) {
             OMElement profile = (OMElement) profiles.next();
             OMElement serversElt = profile.getFirstChildWithName(new QName("servers"));
             if (serversElt == null || serversElt.getText() == null) {
                 String msg = "Each custom SSL profile must define at least one host:port " +
-                        "pair under the servers element";
+                             "pair under the servers element";
                 log.error(name + " " + msg);
                 throw new AxisFault(msg);
             }
@@ -189,13 +222,13 @@ public class ClientConnFactoryBuilder {
             SSLContext sslContext = createSSLContext(ksElt, trElt, novalidatecert);
 
             for (String server : servers) {
-                server = server.trim();                
+                server = server.trim();
                 if (!contextMap.containsKey(server)) {
                     contextMap.put(server, sslContext);
                 } else {
                     if (log.isWarnEnabled()) {
-                        log.warn(name + " Multiple SSL profiles were found for the server : " + 
-                            server + ". Ignoring the excessive profiles.");
+                        log.warn(name + " Multiple SSL profiles were found for the server : " +
+                                 server + ". Ignoring the excessive profiles.");
                     }
                 }
             }
@@ -203,8 +236,8 @@ public class ClientConnFactoryBuilder {
 
         if (contextMap.size() > 0) {
             if (log.isInfoEnabled()) {
-                log.info(name + " Custom SSL profiles initialized for " + contextMap.size() + 
-                    " servers");
+                log.info(name + " Custom SSL profiles initialized for " + contextMap.size() +
+                         " servers");
             }
             return contextMap;
         }
@@ -317,5 +350,49 @@ public class ClientConnFactoryBuilder {
             return new ClientConnFactory(params);
         }
     }
-    
+
+    /**
+     * Extracts Dynamic SSL profiles configuration from given TransportOut Configuration
+     *
+     * @param transportOut TransportOut Configuration of the connection
+     * @return TransportOut configuration with extracted Dynamic SSL profiles information
+     */
+    public TransportOutDescription loadDynamicSSLConfig (TransportOutDescription transportOut) {
+        Parameter profilePathParam = transportOut.getParameter("dynamicSSLProfilesConfig");
+        //No Separate configuration file configured. Therefore using Axis2 Configuration
+        if (profilePathParam == null) {
+            return transportOut;
+        }
+
+        //Using separate SSL Profile configuration file, ignore Axis2 configurations
+        OMElement pathEl = profilePathParam.getParameterElement();
+        String path = pathEl.getFirstChildWithName(new QName("filePath")).getText();
+        try {
+            if (path != null) {
+                String separator = path.startsWith(System.getProperty("file.separator")) ?
+                                   "" : System.getProperty("file.separator");
+                String fullPath = System.getProperty("user.dir") + separator + path;
+
+                OMElement profileEl = new StAXOMBuilder(fullPath).getDocumentElement();
+                Parameter profileParam = new Parameter();
+                profileParam.setParameterElement(profileEl);
+                profileParam.setName("customSSLProfiles");
+                profileParam.setValue(profileEl);
+
+                transportOut.addParameter(profileParam);
+                log.info("customSSLProfiles configuration is loaded from path: " + fullPath);
+
+                return transportOut;
+            }
+        } catch (XMLStreamException xmlEx) {
+            log.error("XMLStreamException - Could not load customSSLProfiles from file path: " + path, xmlEx);
+        } catch (FileNotFoundException fileEx) {
+            log.error("FileNotFoundException - Could not load customSSLProfiles from file path: " + path, fileEx);
+        } catch (AxisFault axisFault) {
+            log.error("AxisFault - Could not load customSSLProfiles from file path: " + path, axisFault);
+        } catch (Exception ex) {
+            log.error("Exception - Could not load customSSLProfiles from file path: " + path, ex);
+        }
+        return null;
+    }
 }

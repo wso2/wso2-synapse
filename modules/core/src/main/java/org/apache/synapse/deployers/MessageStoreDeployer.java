@@ -48,6 +48,9 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
             MessageStore ms = MessageStoreFactory.createMessageStore(artifactConfig,properties);
             if(ms != null) {
                 ms.setFileName((new File(fileName)).getName());
+
+                /** Set the name of the artifact container from which the message store deployed */
+                ms.setArtifactContainerName(customLogContent);
                  if (log.isDebugEnabled()) {
                     log.debug("Message Store named '" + ms.getName()
                             + "' has been built from the file " + fileName);

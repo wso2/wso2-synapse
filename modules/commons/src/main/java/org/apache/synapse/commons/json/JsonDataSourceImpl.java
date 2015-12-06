@@ -18,9 +18,9 @@
 
 package org.apache.synapse.commons.json;
 
-import de.odysseus.staxon.json.JsonXMLConfig;
-import de.odysseus.staxon.json.JsonXMLConfigBuilder;
-import de.odysseus.staxon.json.JsonXMLInputFactory;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLConfig;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLConfigBuilder;
+import org.apache.synapse.commons.staxon.core.json.JsonXMLInputFactory;
 
 import org.apache.axiom.om.OMDataSource;
 import org.apache.axiom.om.OMException;
@@ -61,7 +61,9 @@ final class JsonDataSourceImpl implements OMDataSource {
 
     private static final JsonXMLInputFactory xmlInputFactory = new JsonXMLInputFactory(xmlConfig);
 
-    /** Configuration used to produce XML that has no processing instructions in it. */
+    /**
+     * Configuration used to produce XML that has no processing instructions in it.
+     */
     private static final JsonXMLConfig xmlConfigNoPIs = new JsonXMLConfigBuilder()
             .multiplePI(false)
             .autoArray(true)
@@ -77,7 +79,8 @@ final class JsonDataSourceImpl implements OMDataSource {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         int c;
         try {
-            while (((c = inputStream.read()) != -1) && Character.isWhitespace((char)c)) {}
+            while (((c = inputStream.read()) != -1) && Character.isWhitespace((char) c)) {
+            }
             ++length;
             if (c == '{') {
                 stream.write(WRAPPER_OBJECT.getBytes());
@@ -88,7 +91,7 @@ final class JsonDataSourceImpl implements OMDataSource {
                 offset = WRAPPER_ARRAY.length();
             } else {
                 logger.error("Could not create a JSON data source from the input stream. Found '"
-                             + ((char) c) + "' at the start of the input stream.") ;
+                        + ((char) c) + "' at the start of the input stream.");
                 this.stream = EMPTY_OBJECT.getBytes();
                 return;
             }
@@ -109,7 +112,7 @@ final class JsonDataSourceImpl implements OMDataSource {
             }
         } catch (IOException e) {
             logger.error("Could not create a JSON data source from the input stream. "
-                         + e.getLocalizedMessage());
+                    + e.getLocalizedMessage());
             this.stream = EMPTY_OBJECT.getBytes();
             isObject = true;
         }
@@ -139,18 +142,18 @@ final class JsonDataSourceImpl implements OMDataSource {
             switch (x) {
                 case XMLStreamConstants.START_ELEMENT:
                     xmlWriter.writeStartElement(reader.getPrefix(), reader.getLocalName(),
-                                                reader.getNamespaceURI());
+                            reader.getNamespaceURI());
                     int namespaceCount = reader.getNamespaceCount();
                     for (int i = namespaceCount - 1; i >= 0; i--) {
                         xmlWriter.writeNamespace(reader.getNamespacePrefix(i),
-                                                 reader.getNamespaceURI(i));
+                                reader.getNamespaceURI(i));
                     }
                     int attributeCount = reader.getAttributeCount();
                     for (int i = 0; i < attributeCount; i++) {
                         xmlWriter.writeAttribute(reader.getAttributePrefix(i),
-                                                 reader.getAttributeNamespace(i),
-                                                 reader.getAttributeLocalName(i),
-                                                 reader.getAttributeValue(i));
+                                reader.getAttributeNamespace(i),
+                                reader.getAttributeLocalName(i),
+                                reader.getAttributeValue(i));
                     }
                     break;
                 case XMLStreamConstants.START_DOCUMENT:
@@ -182,7 +185,7 @@ final class JsonDataSourceImpl implements OMDataSource {
                 case XMLStreamConstants.ENTITY_REFERENCE:
                     xmlWriter.writeEntityRef(reader.getLocalName());
                     break;
-                default :
+                default:
                     throw new OMException();
             }
         }

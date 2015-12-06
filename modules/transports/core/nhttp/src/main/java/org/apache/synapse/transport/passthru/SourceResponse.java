@@ -168,6 +168,23 @@ public class SourceResponse {
                 SourceContext.getRequest(conn).getRequest());
         
         sourceConfiguration.getHttpProcessor().process(response, conn.getContext());
+
+        //Since HTTP HEAD request doesn't contain message body, entity will be null when above HttpProcessor()
+        // process invoked. Hence content length is set to 0 inside the HTTP-Core. To avoid that content length of
+        // the backend response is set as the content length.
+        if (entity == null &&
+            PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(request.getRequest().getRequestLine().getMethod())) {
+            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && (response
+                    .getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
+                response.removeHeaders(HTTP.CONTENT_LEN);
+            } else {
+                response.removeHeaders(HTTP.CONTENT_LEN);
+                response.addHeader(HTTP.CONTENT_LEN,
+                                   response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH).getValue());
+                response.removeHeaders(PassThroughConstants.ORGINAL_CONTEN_LENGTH);
+            }
+        }
+        
         conn.submitResponse(response);
 
         // Handle non entity body responses
@@ -276,6 +293,13 @@ public class SourceResponse {
         if (headers.get(name) != null) {
             headers.remove(name);
         }
+    }
+
+    public String getHeader(String name) {
+        if (headers.containsKey(name)){
+            return headers.get(name).first();
+        }
+        return null;
     }
 
     private boolean canResponseHaveBody(final HttpRequest request, final HttpResponse response) {

@@ -19,10 +19,14 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.config.SynapseConfigUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +39,9 @@ import java.util.regex.Pattern;
  * level endpoints to store this information (e.g. AddressEndpoint and WSDLEndpoint).
  */
 public class EndpointDefinition implements AspectConfigurable {
+
+    private static final Log log = LogFactory.getLog(EndpointDefinition.class);
+
     public static final String DYNAMIC_URL_VALUE = "DYNAMIC_URL_VALUE";
 
     /** Who is the leaf level Endpoint which uses me? */
@@ -46,6 +53,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * Should messages be sent in an WS-RM Sequence ?
      */
+    @Deprecated
     private boolean reliableMessagingOn = false;
     /**
      * Should messages be sent using WS-A?
@@ -62,6 +70,7 @@ public class EndpointDefinition implements AspectConfigurable {
     /**
      * The "key" for any WS-RM Policy overrides to be used
      */
+    @Deprecated
     private String wsRMPolicyKey = null;
     /**
      * The "key" for any Rampart Security Policy to be used
@@ -135,6 +144,11 @@ public class EndpointDefinition implements AspectConfigurable {
     private long timeoutDuration = 0;
 
     /**
+     * Effective timeout interval for the endpoint
+     */
+    private long effectiveTimeout = 0;
+
+    /**
      * action to perform when a timeout occurs (NONE | DISCARD | DISCARD_AND_FAULT) *
      */
     private int timeoutAction = SynapseConstants.NONE;
@@ -166,6 +180,19 @@ public class EndpointDefinition implements AspectConfigurable {
 
     /** A list of error codes which permit the retries for Enabled error Codes */
     private final List<Integer> retryEnabledErrorCodes = new ArrayList<Integer>();
+
+    public EndpointDefinition() {
+        try {
+            // Set the timeout value to global timeout value.
+            // This will be overridden if endpoint timeout is set
+            effectiveTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
+        } catch (Exception ex) {
+            String msg = "Error while reading global timeout interval";
+            log.error(msg, ex);
+            throw new SynapseException(msg, ex);
+        }
+    }
+
     /**
      * This should return the absolute EPR address referenced by the named endpoint. This may be
      * possibly computed.
@@ -235,6 +262,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @return true if on
      */
+    @Deprecated
     public boolean isReliableMessagingOn() {
         return reliableMessagingOn;
     }
@@ -244,6 +272,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @param reliableMessagingOn a boolean flag indicating RM is on or not
      */
+    @Deprecated
     public void setReliableMessagingOn(boolean reliableMessagingOn) {
         this.reliableMessagingOn = reliableMessagingOn;
     }
@@ -364,6 +393,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @return the WS-RM configuration policys' 'key' to be used
      */
+    @Deprecated
     public String getWsRMPolicyKey() {
         return wsRMPolicyKey;
     }
@@ -373,6 +403,7 @@ public class EndpointDefinition implements AspectConfigurable {
      *
      * @param wsRMPolicyKey the WS-RM configuration policys' 'key' to be used
      */
+    @Deprecated
     public void setWsRMPolicyKey(String wsRMPolicyKey) {
         this.wsRMPolicyKey = wsRMPolicyKey;
     }
@@ -446,12 +477,25 @@ public class EndpointDefinition implements AspectConfigurable {
     }
 
     /**
+     * Get the effective timeout duration for the endpoint
+     *
+     * If endpoint timeout is set explicitly this will return that,
+     * If not global timeout interval is returned
+     *
+     * @return effective timeout duration for the endpoint
+     */
+    public long getEffectiveTimeout() {
+        return effectiveTimeout;
+    }
+
+    /**
      * Set the timeout duration.
      *
      * @param timeoutDuration a duration in milliseconds
      */
     public void setTimeoutDuration(long timeoutDuration) {
         this.timeoutDuration = timeoutDuration;
+        this.effectiveTimeout = timeoutDuration;
     }
 
     public int getTimeoutAction() {

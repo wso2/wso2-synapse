@@ -26,6 +26,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.builder.Builder;
 import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.util.URIEncoderDecoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -48,6 +49,18 @@ public final class JsonStreamBuilder implements Builder {
                     logger.debug("#processDocument. Built JSON payload from JSON stream. MessageID: " + messageContext.getMessageID());
                 }
                 return element;
+            } else {
+                /*
+                * This method required to introduce due the GET request failure with query parameter and content-type=
+                * application/json. Because of the logic implemented with '=' sign below, it expects a valid JSON
+                * string as the query parameter value (string after '=' sign) for GET requests with application/json
+                * content type. Therefore it fails for requests like
+                * https://localhost:8243/services/customer?format=xml and throws axis fault. With this fix, HTTP
+                * method is checked and avoid throwing axis2 fault for GET requests.
+                 */
+                if (isValidPayloadRequired(messageContext)) {
+                    throw new AxisFault("No JSON payload provided.");
+                }
             }
         } else {
             EndpointReference endpointReference = messageContext.getTo();
@@ -79,5 +92,20 @@ public final class JsonStreamBuilder implements Builder {
             logger.debug("#processDocument. No JSON payload found in request. MessageID: " + messageContext.getMessageID());
         }
         return envelope;
+    }
+
+    /**
+     * Check whether the request HTTP method is required valid payload
+     *
+     * @param msgCtx Message Context of incoming request
+     * @return true if payload required, false otherwise
+     */
+    private boolean isValidPayloadRequired(MessageContext msgCtx) {
+        boolean isRequired = true;
+        if (HTTPConstants.HEADER_GET.equals(msgCtx.getProperty(HTTPConstants.HTTP_METHOD)) || HTTPConstants
+                .HEADER_DELETE.equals(msgCtx.getProperty(HTTPConstants.HTTP_METHOD))) {
+            isRequired = false;
+        }
+        return isRequired;
     }
 }

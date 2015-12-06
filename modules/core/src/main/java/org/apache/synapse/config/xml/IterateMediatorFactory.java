@@ -145,6 +145,8 @@ public class IterateMediatorFactory extends AbstractMediatorFactory {
             handleException("Target for an iterate mediator is required :: missing target");
         }
 
+        addAllCommentChildrenToList(elem, mediator.getCommentsList());
+
         return mediator;
     }
 

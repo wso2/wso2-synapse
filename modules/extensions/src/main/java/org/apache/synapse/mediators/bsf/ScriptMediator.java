@@ -46,6 +46,8 @@ import javax.script.*;
 import java.io.*;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -122,7 +124,9 @@ public class ScriptMediator extends AbstractMediator {
     /**
      * Lock used to ensure thread-safe lookup of the object from the registry
      */
-    private final Object resourceLock = new Object();
+    private final Lock resourceLock = new ReentrantLock();
+
+    private Lock scriptEvaluatorLock = new ReentrantLock();
 
     /**
      * JSON parser used to parse JSON strings
@@ -180,6 +184,12 @@ public class ScriptMediator extends AbstractMediator {
      * @return the boolean result from the script invocation
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -270,7 +280,12 @@ public class ScriptMediator extends AbstractMediator {
         prepareExternalScript(synCtx);
         ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
         processJSONPayload(synCtx, scriptMC);
-        return invocableScript.invokeFunction(function, new Object[]{scriptMC});        
+        scriptEvaluatorLock.lock();
+        try {
+            return invocableScript.invokeFunction(function, new Object[]{scriptMC});
+        } finally {
+            scriptEvaluatorLock.unlock();
+        }
     }
 
     /**
@@ -320,17 +335,6 @@ public class ScriptMediator extends AbstractMediator {
         }
         if (jsonObject != null) {
             scriptMC.setJsonObject(synCtx, jsonObject);
-            if (language.equalsIgnoreCase("js")) {
-                if (jsEngine instanceof Invocable) {
-                    try {
-                        Object returnObj = ((Invocable) jsEngine).invokeMethod(this.jsEngine.eval("JSON"), "stringify", jsonObject);
-                        scriptMC.setJsonText(synCtx, returnObj);
-                    } catch (NoSuchMethodException e) {
-                        //escaping the exception,since we do not block this if the given method is not executable
-                        logger.debug("Could not Stringify the JSON Payload.");
-                    }
-        		}
-        	}
         }
     }
 
@@ -374,7 +378,7 @@ public class ScriptMediator extends AbstractMediator {
      * @param synCtx MessageContext script
      * @throws ScriptException For any errors , when compile the script
      */
-    protected synchronized void prepareExternalScript(MessageContext synCtx)
+    protected void prepareExternalScript(MessageContext synCtx)
             throws ScriptException {
 
         // TODO: only need this synchronized method for dynamic registry entries. If there was a way
@@ -386,7 +390,8 @@ public class ScriptMediator extends AbstractMediator {
         Entry entry = synCtx.getConfiguration().getEntryDefinition(generatedScriptKey);
         boolean needsReload = (entry != null) && entry.isDynamic() &&
                 (!entry.isCached() || entry.isExpired());
-        synchronized (resourceLock) {
+        resourceLock.lock();
+        try {
             if (scriptSourceCode == null || needsReload) {
                 Object o = synCtx.getEntry(generatedScriptKey);
                 if (o instanceof OMElement) {
@@ -396,15 +401,19 @@ public class ScriptMediator extends AbstractMediator {
                     scriptSourceCode = (String) o;
                     scriptEngine.eval(scriptSourceCode);
                 } else if (o instanceof OMText) {
-
                     DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
                     if (dataHandler != null) {
                         BufferedReader reader = null;
                         try {
                             reader = new BufferedReader(
                                     new InputStreamReader(dataHandler.getInputStream()));
-                            scriptEngine.eval(reader);
-
+                            StringBuilder scriptSB = new StringBuilder();
+                            String currentLine;
+                            while ((currentLine = reader.readLine()) != null) {
+                                scriptSB.append(currentLine).append('\n');
+                            }
+                            scriptSourceCode = scriptSB.toString();
+                            scriptEngine.eval(scriptSourceCode);
                         } catch (IOException e) {
                             handleException("Error in reading script as a stream ", e, synCtx);
                         } finally {
@@ -422,6 +431,8 @@ public class ScriptMediator extends AbstractMediator {
                 }
 
             }
+        } finally {
+            resourceLock.unlock();
         }
 
         // load <include /> scripts; reload each script if needed
@@ -434,7 +445,8 @@ public class ScriptMediator extends AbstractMediator {
             Entry includeEntry = synCtx.getConfiguration().getEntryDefinition(generatedKey);
             boolean includeEntryNeedsReload = (includeEntry != null) && includeEntry.isDynamic()
                     && (!includeEntry.isCached() || includeEntry.isExpired());
-            synchronized (resourceLock) {
+            resourceLock.lock();
+            try {
                 if (includeSourceCode == null || includeEntryNeedsReload) {
                     log.debug("Re-/Loading the include script with key " + includeKey);
                     Object o = synCtx.getEntry(generatedKey);
@@ -445,15 +457,19 @@ public class ScriptMediator extends AbstractMediator {
                         includeSourceCode = (String) o;
                         scriptEngine.eval(includeSourceCode);
                     } else if (o instanceof OMText) {
-
                         DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
                         if (dataHandler != null) {
                             BufferedReader reader = null;
                             try {
                                 reader = new BufferedReader(
                                         new InputStreamReader(dataHandler.getInputStream()));
-                                scriptEngine.eval(reader);
-
+                                StringBuilder scriptSB = new StringBuilder();
+                                String currentLine;
+                                while ((currentLine = reader.readLine()) != null) {
+                                    scriptSB.append(currentLine).append('\n');
+                                }
+                                includeSourceCode = scriptSB.toString();
+                                scriptEngine.eval(includeSourceCode);
                             } catch (IOException e) {
                                 handleException("Error in reading script as a stream ", e, synCtx);
                             } finally {
@@ -469,7 +485,10 @@ public class ScriptMediator extends AbstractMediator {
                             }
                         }
                     }
+                    includes.put(includeKey, includeSourceCode);
                 }
+            } finally {
+                resourceLock.unlock();
             }
         }
     }

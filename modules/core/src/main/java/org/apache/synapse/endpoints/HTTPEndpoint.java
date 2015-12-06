@@ -29,10 +29,7 @@ import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLDecoder;
+import java.net.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,11 +42,17 @@ public class HTTPEndpoint extends AbstractEndpoint {
     private String httpMethod;
     private SynapseXPath httpMethodExpression;
 
+    private boolean legacySupport = false; // this is to support backward compatibility
+
+    public static String legacyPrefix = "legacy-encoding:";
+
     /*Todo*/
     /*Do we need HTTP Headers here?*/
 
 
     public void onFault(MessageContext synCtx) {
+        // For setting Car name (still for Proxy)
+        logSetter();
 
         // is this really a fault or a timeout/connection close etc?
         if (isTimeout(synCtx)) {
@@ -70,6 +73,9 @@ public class HTTPEndpoint extends AbstractEndpoint {
     }
 
     public void send(MessageContext synCtx) {
+        // For setting Car name (still for Proxy)
+        logSetter();
+
         executeEpTypeSpecificFunctions(synCtx);
         if (getParentEndpoint() == null && !readyToSend()) {
             // if the this leaf endpoint is too a root endpoint and is in inactive
@@ -94,77 +100,168 @@ public class HTTPEndpoint extends AbstractEndpoint {
         // http method from incoming message is used as the http method
     }
 
+    private String decodeString(String value) {
+        if (value == null) {
+            return "";
+        }
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            if(log.isDebugEnabled()) {
+                log.warn("Encoding is not supported", e);
+            }
+            return value;
+        }
+    }
+
     private void processUrlTemplate(MessageContext synCtx) throws ExpressionParseException {
         Map<String, Object> variables = new HashMap<String, Object>();
 
         /*The properties with uri.var.* are only considered for Outbound REST Endpoints*/
         Set propertySet = synCtx.getPropertyKeySet();
 
-        for (Object propertyKey : propertySet) {
-            if (propertyKey.toString() != null&&
-                    (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
-                            || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
-                if (synCtx.getProperty(propertyKey.toString()) != null) {
-                    variables.put(propertyKey.toString(), synCtx.getProperty(propertyKey.toString()));
-                }                              
-            }
-        }
-
-        // Include properties defined at endpoint.
-        Iterator endpointProperties = getProperties().iterator();
-        while(endpointProperties.hasNext()) {
-            MediatorProperty property = (MediatorProperty) endpointProperties.next();
-            if(property.getName().toString() != null
-                    && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
-                    property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
-                variables.put(property.getName(), property.getValue());
-            }
-        }
-
         // We have to create a local UriTemplate object, or else the UriTemplate.set(variables) call will fill up a list of variables and since uriTemplate
         // is not thread safe, this list won't be clearing.
         UriTemplate template = null;
-        template = UriTemplate.fromTemplate(uriTemplate.getTemplate());
-
-        if(template != null) {
-            template.set(variables);
-        }
 
         String evaluatedUri = "";
-        if(variables.isEmpty()){
-        	evaluatedUri = template.getTemplate();
-        }else{
-            try {
-                URL url = new URL(URLDecoder.decode(template.expand(), "UTF-8"));
-                evaluatedUri = url.toURI().toString();
-                /*evaluatedUri = template.expand();
-                evaluatedUri=evaluatedUri.replace("%3A", ":");
-                evaluatedUri=evaluatedUri.replace("%2F", "/");*/
-            } catch(URISyntaxException e) {
-                log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName());
-                URL url;
-                try {
-	                url = new URL(URLDecoder.decode(template.expand(), "UTF-8"));
-	                evaluatedUri = url.toString();
-                } catch (Exception e1) {
-                	  log.debug("Error while decoding URL: " + this.getName());
+
+        // legacySupport for backward compatibility where URI Template decoding handled via HTTPEndpoint
+        if (legacySupport) {
+            for (Object propertyKey : propertySet) {
+                if (propertyKey.toString() != null&&
+                        (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
+                                || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
+                    Object objProperty = synCtx.getProperty(propertyKey.toString());
+                    if (objProperty != null) {
+                        if (objProperty instanceof String) {
+                            variables.put(propertyKey.toString(),
+                                          decodeString((String) synCtx.getProperty(propertyKey.toString())));
+                        } else {
+                            variables.put(propertyKey.toString(),
+                                          decodeString(String.valueOf(synCtx.getProperty(propertyKey.toString()))));
+                        }
+                    }
                 }
-            } catch(MalformedURLException e) {
-                log.debug("Invalid URL for HTTP Endpoint: " + this.getName());
+            }
+
+            // Include properties defined at endpoint.
+            Iterator endpointProperties = getProperties().iterator();
+            while(endpointProperties.hasNext()) {
+                MediatorProperty property = (MediatorProperty) endpointProperties.next();
+                if(property.getName().toString() != null
+                        && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
+                        property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
+                    variables.put(property.getName(), decodeString((String) property.getValue()));
+                }
+            }
+
+            template = UriTemplate.fromTemplate(uriTemplate.getTemplate());
+
+            if(template != null) {
+                template.set(variables);
+            }
+
+            if(variables.isEmpty()){
                 evaluatedUri = template.getTemplate();
-            } catch(UnsupportedEncodingException e) {
-                log.debug("Exception while decoding the URL in HTTP Endpoint: " + this.getName());
-                evaluatedUri = template.getTemplate();                
-            } catch(ExpressionParseException e) {
-                log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
+            } else {
+                try {
+                    // Decode needs to avoid replacing special characters(e.g %20 -> %2520) when creating URL.
+                    String decodedString = URLDecoder.decode(template.expand(), "UTF-8");
+                    URL url = new URL(decodedString);
+                    URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(),
+                            url.getPath(), url.getQuery(), url.getRef());// this to avoid url.toURI which causes exceptions
+                    evaluatedUri = uri.toURL().toString();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Expanded URL : " + evaluatedUri);
+                    }
+                } catch (URISyntaxException e) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
+                    }
+                    evaluatedUri = template.getTemplate();
+                } catch(ExpressionParseException e) {
+                    log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
+                    evaluatedUri = template.getTemplate();
+                } catch(MalformedURLException e) {
+                    log.debug("Invalid URL for HTTP Endpoint: " + this.getName());
+                    evaluatedUri = template.getTemplate();
+                } catch(UnsupportedEncodingException e) {
+                    log.debug("Exception while decoding the URL in HTTP Endpoint: " + this.getName());
+                    evaluatedUri = template.getTemplate();
+                }
+            }
+
+        } else { // URI Template encoding not handled by HTTP Endpoint, compliant with RFC6570
+            for (Object propertyKey : propertySet) {
+                if (propertyKey.toString() != null&&
+                        (propertyKey.toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX)
+                                || propertyKey.toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX))) {
+                    Object objProperty =
+                                         synCtx.getProperty(propertyKey.toString());
+                    if (objProperty != null) {
+                        if (objProperty instanceof String) {
+                            variables.put(propertyKey.toString(),
+                                          (String) synCtx.getProperty(propertyKey.toString()));
+                        } else {
+                            variables.put(propertyKey.toString(),
+                                          (String) String.valueOf(synCtx.getProperty(propertyKey.toString())));
+                        }
+                    }
+                }
+            }
+
+            // Include properties defined at endpoint.
+            Iterator endpointProperties = getProperties().iterator();
+            while(endpointProperties.hasNext()) {
+                MediatorProperty property = (MediatorProperty) endpointProperties.next();
+                if(property.getName().toString() != null
+                        && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
+                        property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
+                    variables.put(property.getName(), (String) property.getValue());
+                }
+            }
+
+            String tmpl;
+            // This is a special case as we want handle {uri.var.variable} having full URL (except as a path param or query param)
+            // this was used in connectors Eg:- uri-template="{uri.var.variable}"
+            if(uriTemplate.getTemplate().charAt(0)=='{' && uriTemplate.getTemplate().charAt(1)!='+'){
+                tmpl = "{+" + uriTemplate.getTemplate().substring(1);
+            } else {
+                tmpl = uriTemplate.getTemplate();
+            }
+            template = UriTemplate.fromTemplate(tmpl);
+
+            if(template != null) {
+                template.set(variables);
+            }
+
+            if(variables.isEmpty()){
                 evaluatedUri = template.getTemplate();
+            } else {
+                try {
+                    URI uri = new URI(template.expand());
+                    evaluatedUri = uri.toString();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Expanded URL : " + evaluatedUri);
+                    }
+                } catch (URISyntaxException e) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
+                    }
+                    evaluatedUri = template.getTemplate();
+                } catch(ExpressionParseException e) {
+                    log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
+                    evaluatedUri = template.getTemplate();
+                }
             }
         }
+
 
         if (evaluatedUri != null) {
             synCtx.setTo(new EndpointReference(evaluatedUri));
             if (super.getDefinition() != null) {
-            	synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
+                synCtx.setProperty(EndpointDefinition.DYNAMIC_URL_VALUE, evaluatedUri);
             }
         }
     }
@@ -191,5 +288,13 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
     public void setHttpMethodExpression(SynapseXPath httpMethodExpression) {
         this.httpMethodExpression = httpMethodExpression;
+    }
+
+    public boolean isLegacySupport() {
+        return legacySupport;
+    }
+
+    public void setLegacySupport(boolean legacySupport) {
+        this.legacySupport = legacySupport;
     }
 }

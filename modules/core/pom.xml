@@ -11,19 +11,18 @@
 	License for the ~ specific language governing permissions and limitations 
 	~ under the License. -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.apache.synapse</groupId>
 		<artifactId>Apache-Synapse</artifactId>
-		<version>2.1.3-wso2v1-SNAPSHOT</version>
+		<version>2.1.5-wso2v2-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 
 	<groupId>org.apache.synapse</groupId>
 	<artifactId>synapse-core</artifactId>
-
+	
 	<name>Apache Synapse - Core</name>
 	<description>Apache Synapse - Core</description>
 	<packaging>bundle</packaging>
@@ -31,11 +30,9 @@
 
 	<build>
 		<plugins>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
-				<version>2.0</version>
 				<executions>
 					<execution>
 						<id>copy</id>
@@ -48,7 +45,6 @@
 								<artifactItem>
 									<groupId>org.apache.axis2</groupId>
 									<artifactId>addressing</artifactId>
-									<version>${addressing.version}</version>
 									<type>mar</type>
 									<overWrite>true</overWrite>
 									<outputDirectory>target/test_repos/synapse/modules</outputDirectory>
@@ -62,7 +58,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-antrun-plugin</artifactId>
-				<version>1.1</version>
 				<executions>
 					<execution>
 						<id>create_repo</id>
@@ -86,7 +81,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.3</version>
 				<configuration>
 					<systemProperties>
 						<property>
@@ -108,7 +102,6 @@
 			<plugin>
 				<groupId>org.antlr</groupId>
 				<artifactId>antlr3-maven-plugin</artifactId>
-				<version>3.4</version>
 				<executions>
 					<execution>
 						<goals>
@@ -135,11 +128,10 @@
 			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
-				<version>1.4.0</version>
 				<extensions>true</extensions>
 				<configuration>
 					<instructions>
-						<Bundle-SymbolicName>${pom.artifactId}</Bundle-SymbolicName>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
 						<Export-Package>
 							org.apache.synapse,
 							org.apache.synapse.aspects.*,
@@ -159,17 +151,18 @@
 							org.apache.synapse.util.*,
 							org.apache.synapse.libraries.*,
 							org.apache.synapse.carbonext.*,
-                            org.apache.synapse.continuation.*
+                            org.apache.synapse.continuation.*,
+                            org.apache.synapse.debug.*
                         </Export-Package>
 						<Import-Package>
 							!javax.xml.namespace,
 							javax.xml.namespace;
 							version=0.0.0,
 							!javax.xml.soap,
-							javax.xml.soap; version=1.0.0,
+							javax.xml.soap; version=${javax.xml.soap.version},
 							!org.apache.commons.io,
 							org.apache.commons.io; version=0.0.0,
-							org.quartz.*;version="2.1.1",
+							org.quartz.*;version="${quartz.version}",
 							*;resolution:=optional,
                         </Import-Package>
 						<DynamicImport-Package>*</DynamicImport-Package>
@@ -199,8 +192,12 @@
         <dependency>
             <groupId>javax.jms</groupId>
             <artifactId>jms</artifactId>
-            <version>1.1</version>
         </dependency>
+	<dependency>
+			<groupId>com.rabbitmq.wso2</groupId>
+			<artifactId>amqp-client</artifactId>
+			<version>${version.orbit.rabbitmq}</version>
+		</dependency>
         <dependency>
             <groupId>org.apache.axis2.transport</groupId>
             <artifactId>axis2-transport-jms</artifactId>
@@ -225,7 +222,6 @@
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr-runtime</artifactId>
-			<version>3.4</version>
 		</dependency>
 
 		<!-- This is used by the CacheMediator. TODO: since axis2-saaj is based 
@@ -236,27 +232,17 @@
 			<artifactId>axis2-saaj</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.wso2.uri.template</groupId>
-			<artifactId>wso2-uri-templates</artifactId>
-			<version>1.6.4</version>
-		</dependency>
-		<dependency>
 			<groupId>com.damnhandy</groupId>
 			<artifactId>handy-uri-templates</artifactId>
-			<version>1.1.7</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
-			<version>2.3</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.codehaus.jettison.wso2</groupId>
 			<artifactId>jettison</artifactId>
-			<version>1.1.wso2v1</version>
 		</dependency>
-
 		<!--dependency>
 			<groupId>org.apache.axis2</groupId>
 			<artifactId>axis2-json</artifactId>
@@ -265,13 +251,57 @@
 		<dependency>
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path</artifactId>
-			<version>0.8.0</version>
 		</dependency>
-        	<dependency>
+        <dependency>
 			<groupId>com.jayway.jsonpath</groupId>
 			<artifactId>json-path-assert</artifactId>
-			<version>0.8.0</version>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>org.wso2.eventing</groupId>
+            <artifactId>wso2eventing-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-adb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.sandesha2</groupId>
+            <artifactId>sandesha2-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.saxon</groupId>
+            <artifactId>saxon-dom</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>xalan</groupId>
+            <artifactId>xalan</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-utils</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-transport-local</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derby</artifactId>
+            <scope>test</scope>
+        </dependency>
 	</dependencies>
+<properties>
+		<version.orbit.rabbitmq>3.4.4.wso2v1</version.orbit.rabbitmq>
+	</properties>
 </project>

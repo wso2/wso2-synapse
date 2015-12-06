@@ -21,7 +21,9 @@ import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.client.Options;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
+import org.apache.axis2.util.JavaUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -48,17 +50,6 @@ public class BlockingMsgSenderUtils {
                 = ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext();
 
         if (endpoint != null) {
-
-            // if RM is enabled
-            boolean wsRMEnabled = endpoint.isReliableMessagingOn();
-            if (wsRMEnabled) {
-                String wsRMPolicyKey = endpoint.getWsRMPolicyKey();
-                if (wsRMPolicyKey != null) {
-                    clientOptions.setProperty(
-                            SynapseConstants.SANDESHA_POLICY,
-                            MessageHelper.getPolicy(synapseInMsgCtx, wsRMPolicyKey));
-                }
-            }
 
             // if security is enabled
             boolean wsSecurityEnabled = endpoint.isSecurityOn();
@@ -93,6 +84,11 @@ public class BlockingMsgSenderUtils {
 
         clientOptions.setExceptionToBeThrownOnSOAPFault(
                 "true".equals(synapseInMsgCtx.getProperty(SynapseConstants.FORCE_ERROR_PROPERTY)));
+
+        if (axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING) != null &&
+            JavaUtils.isTrueExplicitly(axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING))) {
+            clientOptions.setProperty(HTTPConstants.CHUNKED, "false");
+        }
     }
 
     /**
@@ -237,8 +233,8 @@ public class BlockingMsgSenderUtils {
         }
 
         // set the SEND_TIMEOUT for transport sender
-        if (endpoint.getTimeoutDuration() > 0) {
-            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getTimeoutDuration());
+        if (endpoint.getEffectiveTimeout() > 0) {
+            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
         }
 
         // Check for preserve WS-Addressing

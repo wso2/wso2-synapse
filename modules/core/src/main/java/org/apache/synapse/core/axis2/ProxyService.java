@@ -32,9 +32,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
 import org.apache.neethi.PolicyEngine;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -43,6 +46,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.WSDLEndpoint;
+import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.PolicyInfo;
 import org.apache.synapse.util.resolver.CustomWSDLLocator;
@@ -77,7 +81,6 @@ import java.util.*;
  *       <resource location="..." key="..."/>*
  *    </publishWSDL>?
  *    <enableSec/>?
- *    <enableRM/>?
  *    <policy key="string" [type=("in" |"out")] [operationName="string"]
  *      [operationNamespace="string"]>?
  *       // optional service parameters
@@ -95,6 +98,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public static final String ABSOLUTE_SCHEMA_URL_PARAM = "showAbsoluteSchemaURL";
     public static final String ABSOLUTE_PROXY_SCHEMA_URL_PARAM = "showProxySchemaURL";
+    public static final String ENGAGED_MODULES = "engagedModules";
+    private static final String NO_SECURITY_POLICY = "NoSecurity";
+
     /**
      * The name of the proxy service
      */
@@ -196,6 +202,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     /**
      * Should WS RM be engaged on this service
      */
+    @Deprecated
     private boolean wsRMEnabled = false;
     /**
      * Should WS Sec be engaged on this service
@@ -228,6 +235,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private boolean moduleEngaged;
 
     private boolean wsdlPublished;
+
+    private String artifactContainerName;
+
+    private boolean isEdited;
 
     /**
      * Constructor
@@ -271,6 +282,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         if (wsdlKey != null) {
             synCfg.getEntryDefinition(wsdlKey);
             Object keyObject = synCfg.getEntry(wsdlKey);
+            //start of fix for ESBJAVA-2641
+            if(keyObject == null) {
+                synCfg.removeEntry(wsdlKey);
+            }
+            //end of fix for ESBJAVA-2641
             if (keyObject instanceof OMElement) {
                 wsdlElement = (OMElement) keyObject;
             }
@@ -584,24 +600,32 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             }
         }
 
+        boolean isNoSecPolicy = false;
         if (!policies.isEmpty()) {
 
             for (PolicyInfo pi : policies) {
-                if (getPolicyFromKey(pi.getPolicyKey(), synCfg) == null) {
+
+                Policy policy = getPolicyFromKey(pi.getPolicyKey(), synCfg);
+
+                if (policy == null) {
                     handleException("Cannot find Policy from the key");
+                }
+
+                if (NO_SECURITY_POLICY.equals(policy.getId())) {
+                    isNoSecPolicy = true;
+                    log.info("NoSecurity Policy found, skipping policy attachment");
+                    continue;
                 }
 
                 if (pi.isServicePolicy()) {
 
-                    proxyService.getPolicySubject().attachPolicy(
-                            getPolicyFromKey(pi.getPolicyKey(), synCfg));
+                    proxyService.getPolicySubject().attachPolicy(policy);
 
                 } else if (pi.isOperationPolicy()) {
 
                     AxisOperation op = proxyService.getOperation(pi.getOperation());
                     if (op != null) {
-                        op.getPolicySubject().attachPolicy(
-                                getPolicyFromKey(pi.getPolicyKey(), synCfg));
+                        op.getPolicySubject().attachPolicy(policy);
 
                     } else {
                         handleException("Couldn't find the operation specified " +
@@ -614,8 +638,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
                         AxisOperation op = proxyService.getOperation(pi.getOperation());
                         if (op != null) {
-                            op.getMessage(pi.getMessageLable()).getPolicySubject().attachPolicy(
-                                    getPolicyFromKey(pi.getPolicyKey(), synCfg));
+                            op.getMessage(pi.getMessageLable()).getPolicySubject().attachPolicy(policy);
                         } else {
                             handleException("Couldn't find the operation " +
                                     "specified by the QName : " + pi.getOperation());
@@ -634,8 +657,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
                                     AxisMessage message = ((AxisOperation)
                                             obj).getMessage(pi.getMessageLable());
-                                    message.getPolicySubject().attachPolicy(
-                                            getPolicyFromKey(pi.getPolicyKey(), synCfg));
+                                    message.getPolicySubject().attachPolicy(policy);
                                 }
                             }
                         }
@@ -702,31 +724,50 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             }
         }
 
-        // should RM be engaged on this service?
-        if (wsRMEnabled) {
-            auditInfo("WS-Reliable messaging is enabled for service : " + name);
-            try {
-                proxyService.engageModule(axisCfg.getModule(
-                    SynapseConstants.RM_MODULE_NAME), axisCfg);
-            } catch (AxisFault axisFault) {
-                handleException("Error loading WS RM module on proxy service : " + name, axisFault);
-            }
-        }
-
         // should Security be engaged on this service?
-        if (wsSecEnabled) {
+        boolean secModuleEngaged = false;
+        if (wsSecEnabled && !isNoSecPolicy) {
             auditInfo("WS-Security is enabled for service : " + name);
             try {
                 proxyService.engageModule(axisCfg.getModule(
                     SynapseConstants.SECURITY_MODULE_NAME), axisCfg);
+                secModuleEngaged = true;
             } catch (AxisFault axisFault) {
                 handleException("Error loading WS Sec module on proxy service : "
                         + name, axisFault);
             }
+        } else if (isNoSecPolicy) {
+            log.info("NoSecurity Policy found, skipping rampart engagement");
         }
 
-        moduleEngaged = wsSecEnabled || wsRMEnabled || wsAddrEnabled;
+        moduleEngaged = secModuleEngaged || wsAddrEnabled;
         wsdlPublished = wsdlFound;
+
+        //Engaging Axis2 modules
+        Object engaged_modules = parameters.get(ENGAGED_MODULES);
+        if (engaged_modules != null) {
+
+            String[] moduleNames = getModuleNames((String) engaged_modules);
+
+            if (moduleNames != null) {
+
+                for (String moduleName : moduleNames) {
+
+                    try {
+                        AxisModule axisModule = axisCfg.getModule(moduleName);
+                        if (axisModule != null) {
+                            proxyService.engageModule(axisModule, axisCfg);
+                            moduleEngaged = true;
+                        }
+
+                    } catch (AxisFault axisFault) {
+                        handleException("Error loading " + moduleName + " module on proxy service : "
+                                        + name, axisFault);
+                    }
+                }
+            }
+
+        }
 
         auditInfo("Successfully created the Axis2 service for Proxy service : " + name);
         return proxyService;
@@ -813,8 +854,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             this.setRunning(true);
             auditInfo("Started the proxy service : " + name);
         } else {
-            auditWarn("Unable to start proxy service : " + name +
-                ". Couldn't access Axis configuration");
+            auditWarn("Unable to start proxy service : " + name + ". Couldn't access Axis configuration");
         }
     }
 
@@ -826,16 +866,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         AxisConfiguration axisConfig = synCfg.getAxisConfiguration();
         if (axisConfig != null) {
 
-            if (targetInLineInSequence != null) {
-                targetInLineInSequence.destroy();
-            }
-            if (targetInLineOutSequence != null) {
-                targetInLineOutSequence.destroy();
-            }
-            if (targetInLineFaultSequence != null) {
-                targetInLineFaultSequence.destroy();
-            }
-
             AxisService as = axisConfig.getServiceForActivation(this.getName());
             //If an active AxisService is found
             if (as != null && as.isActive()) {
@@ -846,7 +876,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             auditInfo("Stopped the proxy service : " + name);
         } else {
             auditWarn("Unable to stop proxy service : " + name +
-                ". Couldn't access Axis configuration");
+                    ". Couldn't access Axis configuration");
         }
     }
 
@@ -972,10 +1002,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         this.wsAddrEnabled = wsAddrEnabled;
     }
 
+    @Deprecated
     public boolean isWsRMEnabled() {
         return wsRMEnabled;
     }
-
+    @Deprecated
     public void setWsRMEnabled(boolean wsRMEnabled) {
         this.wsRMEnabled = wsRMEnabled;
     }
@@ -1188,6 +1219,89 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 		
     }
 
+    /**
+     * Register the fault handler for the message context
+     *
+     * @param synCtx Message Context
+     */
+    public void registerFaultHandler(MessageContext synCtx) {
+
+        boolean traceOn = trace();
+        boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
+
+        if (targetFaultSequence != null) {
+
+            Mediator faultSequence = synCtx.getSequence(targetFaultSequence);
+            if (faultSequence != null) {
+                if (traceOrDebugOn) {
+                    traceOrDebug(traceOn,
+                            "Setting the fault-sequence to : " + faultSequence);
+                }
+                synCtx.pushFaultHandler(new MediatorFaultHandler(
+                        synCtx.getSequence(targetFaultSequence)));
+
+            } else {
+                // when we can not find the reference to the fault sequence of the proxy
+                // service we should not throw an exception because still we have the global
+                // fault sequence and the message mediation can still continue
+                if (traceOrDebugOn) {
+                    traceOrDebug(traceOn, "Unable to find fault-sequence : " +
+                            targetFaultSequence + "; using default fault sequence");
+                }
+                synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
+            }
+
+        } else if (targetInLineFaultSequence != null) {
+            if (traceOrDebugOn) {
+                traceOrDebug(traceOn, "Setting specified anonymous fault-sequence for proxy");
+            }
+            synCtx.pushFaultHandler(
+                    new MediatorFaultHandler(targetInLineFaultSequence));
+        } else {
+            if (traceOrDebugOn) {
+                traceOrDebug(traceOn, "Setting default fault-sequence for proxy");
+            }
+            synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
+        }
+    }
+
+    private void traceOrDebug(boolean traceOn, String msg) {
+        if (traceOn) {
+            trace.info(msg);
+            if (log.isDebugEnabled()) {
+                log.debug(msg);
+            }
+        } else {
+            log.debug(msg);
+        }
+
+    }
+
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
+    }
+
+    public String getArtifactContainerName () {
+        return artifactContainerName;
+    }
+
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    private String[] getModuleNames(String propertyValue) {
+
+        if (propertyValue == null || propertyValue.trim().isEmpty()) {
+            return null;
+        }
+
+        return propertyValue.split(",");
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -1201,5 +1315,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public void setPublishWSDLEndpoint(String publishWSDLEndpoint) {
         this.publishWSDLEndpoint = publishWSDLEndpoint;
+    }
+
+    public void setLogSetterValue () {
+        CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 }

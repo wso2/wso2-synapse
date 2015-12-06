@@ -28,8 +28,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.statistics.StatisticsLog;
+import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -153,6 +156,12 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      * @return boolean true if the complete condition for the particular aggregate is validated
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
 
         SynapseLog synLog = getLog(synCtx);
 
@@ -406,6 +415,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
+        aggregate.clear();
         activeAggregates.remove(aggregate.getCorrelation());
 
         if ((correlateExpression != null &&
@@ -446,12 +456,15 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     private MessageContext getAggregatedMessage(Aggregate aggregate) {
 
         MessageContext newCtx = null;
+        StatisticsRecord destinationStatRecord = null;
 
         for (MessageContext synCtx : aggregate.getMessages()) {
             
             if (newCtx == null) {
                 try {
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
+					destinationStatRecord =
+					                        (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
                 } catch (AxisFault axisFault) {
                     handleException("Error creating a copy of the message", axisFault, synCtx);
                 }
@@ -469,6 +482,13 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
                     EIPUtils.enrichEnvelope(
                             newCtx.getEnvelope(), synCtx.getEnvelope(), synCtx, aggregationExpression);
+					if (destinationStatRecord != null &&
+					    synCtx.getProperty(SynapseConstants.STATISTICS_STACK) != null) {
+						// Merge the statistics logs to one single message
+						// context.
+						mergeStatisticsRecords((StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK),
+						                       destinationStatRecord);
+					}
 
                     if (log.isDebugEnabled()) {
                         log.debug("Merged result : " + newCtx.getEnvelope());
@@ -514,6 +534,21 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         return newCtx;
     }
 
+    
+	/*
+	 * Merges the statistics logs of the ESB artifacts that are not already
+	 * collected by the request flow.
+	 */
+	private void mergeStatisticsRecords(final StatisticsRecord source,
+	                                    final StatisticsRecord destination) {
+		StatisticsRecord clonedSourceStatRecord = MessageHelper.getClonedStatisticRecord(source);
+		for (StatisticsLog clonedSourceStatLog : clonedSourceStatRecord.getAllStatisticsLogs()) {
+			if (!clonedSourceStatLog.isCollectedByRequestFlow()) {
+				destination.collect(clonedSourceStatLog);
+			}
+		}
+
+	}
     public SynapseXPath getCorrelateExpression() {
         return correlateExpression;
     }

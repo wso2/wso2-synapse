@@ -22,9 +22,11 @@ package org.apache.synapse.core;
 import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.SynapseTaskManager;
@@ -32,6 +34,7 @@ import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
 
 import javax.xml.namespace.QName;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
@@ -214,5 +217,50 @@ public interface SynapseEnvironment {
      * @param key artifact reference key
      */
     public void clearUnavailabilityOfArtifact(String key);
+
+    /**
+     * Inject message to the sequence in synchronous manner
+     * @param smc - Synapse message context to be injected
+     * @param seq - Sequence to be used for mediation
+     * @return boolean true if the message processing should be continued
+     *  and false if it should be aborted
+     */
+    public boolean injectMessage(MessageContext smc,SequenceMediator seq);
+
+    /**
+     * Get all synapse handlers
+     *
+     * @return list of synapse handlers
+     */
+    public List<SynapseHandler> getSynapseHandlers();
+
+    /**
+     * Register a synapse handler to the synapse environment
+     *
+     * @param handler synapse handler
+     */
+    public void registerSynapseHandler(SynapseHandler handler);
+
+    /**
+     * Get the global timeout interval for callbacks
+     *
+     * @return global timeout interval
+     */
+    public long getGlobalTimeout();
+
+    /**
+     * Whether debugging is enabled in the environment.
+     *
+     * @return whether debugging is enabled in the environment
+     */
+    public boolean isDebugEnabled();
+
+    /**
+     * Retrieve the {@link org.apache.synapse.debug.SynapseDebugManager} from the
+     * <code>environment</code>.
+     *
+     * @return SynapseDebugManager of this synapse environment
+     */
+    public SynapseDebugManager getSynapseDebugManager();
 
 }

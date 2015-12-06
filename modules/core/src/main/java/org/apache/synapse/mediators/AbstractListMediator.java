@@ -22,6 +22,7 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -82,6 +83,14 @@ public abstract class AbstractListMediator extends AbstractMediator
                     break;
                 }
             }
+        } catch (SynapseException synEx) {
+            throw synEx;
+        } catch (Exception ex) {
+            String errorMsg = ex.getMessage();
+            if (errorMsg == null) {
+                errorMsg = "Runtime error occurred while mediating the message";
+            }
+            handleException(errorMsg, ex, synCtx);
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }

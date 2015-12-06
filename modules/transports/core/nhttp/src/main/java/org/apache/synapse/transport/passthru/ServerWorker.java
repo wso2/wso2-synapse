@@ -23,7 +23,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
+
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.soap.SOAP11Constants;
@@ -57,6 +60,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -94,7 +98,7 @@ public class ServerWorker implements Runnable {
         this.request = request;
         this.sourceConfiguration = sourceConfiguration;
 
-        this.msgContext = createMessageContext(request);
+        this.msgContext = createMessageContext(null, request);
         
         this.httpGetRequestProcessor = sourceConfiguration.getHttpGetRequestProcessor();
         
@@ -109,87 +113,55 @@ public class ServerWorker implements Runnable {
                 PassThroughConstants.PASS_THROUGH_SOURCE_CONFIGURATION, sourceConfiguration);
         msgContext.setProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION,
                 request.getConnection());
+        request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
+                System.currentTimeMillis());
     }
 
     public void run() {
+        CustomLogSetter.getInstance().clearThreadLocalContent();
+        request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
+                System.currentTimeMillis());
         if (log.isDebugEnabled()) {
             log.debug("Starting a new Server Worker instance");
         }
-        ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();        
-        msgContext.setProperty(Constants.Configuration.HTTP_METHOD, request.getMethod());
-
         String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
-        
-        //String uri = request.getUri();
-        String oriUri = request.getUri();
-        String restUrlPostfix = NhttpUtil.getRestUrlPostfix(oriUri, cfgCtx.getServicePath());
-        
-        String servicePrefix = oriUri.substring(0, oriUri.indexOf(restUrlPostfix));
-        if (servicePrefix.indexOf("://") == -1) {
-            HttpInetConnection inetConn = (HttpInetConnection) request.getConnection();
-            InetAddress localAddr = inetConn.getLocalAddress();
-            if (localAddr != null) {
-                servicePrefix = sourceConfiguration.getScheme().getName() + "://" +
-                        localAddr.getHostAddress() + ":" + inetConn.getLocalPort() + servicePrefix;
-            }
+
+        processHttpRequestUri(msgContext, method);
+
+        //For requests to fetch wsdl, return the message flow without going through the normal flow
+        if (isRequestToFetchWSDL()) {
+            return;
         }
-       
-        msgContext.setProperty(PassThroughConstants.SERVICE_PREFIX, servicePrefix);
-
-        msgContext.setTo(new EndpointReference(restUrlPostfix));
-        msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
-
-		if ("GET".equals(method) || "DELETE".equals(method) || "OPTIONS".equals(method) || "HEAD".equals(method)) {
-			
-			HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
-		                request.getVersion(), HttpStatus.SC_OK,
-		                request.getConnection().getContext());
-			
-			// create a basic HttpEntity using the source channel of the response pipe
-            BasicHttpEntity entity = new BasicHttpEntity();
-            if (request.getVersion().greaterEquals(HttpVersion.HTTP_1_1)) {
-                entity.setChunked(true);
-            }
-            response.setEntity(entity);
-            
-			httpGetRequestProcessor.process(request.getRequest(), response,msgContext,
-					request.getConnection(), os, isRestDispatching);
-		} 
 		
 		//need special case to handle REST
-		boolean restHandle =false;
-		if(msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null && (Boolean)msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE)){
-			msgContext.setProperty(HTTPConstants.HTTP_METHOD, method);
-	        msgContext.setServerSide(true);
-	        msgContext.setDoingREST(true);
-	        String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
-	        //String contentType = contentTypeHeader != null ?TransportUtils.getContentType(contentTypeHeader, msgContext):null;
-	        SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
-	        processNonEntityEnclosingRESTHandler(soapEnvelope);
-			restHandle =true;
-		}
-		
-		//if WSDL done then moved out rather than hand over to entity handle methods.
-		SourceContext info = (SourceContext) request.getConnection().getContext().getAttribute(SourceContext.CONNECTION_INFORMATION);
-		if (info != null &&
-		    info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
-		    (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null && Boolean.TRUE.equals((msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED))))) {
-			return;
-		}
-		
-		//should be process normally
-		if (!restHandle) {
-			if (request.isEntityEnclosing()) {
-				processEntityEnclosingRequest();
-			} else {
-				processNonEntityEnclosingRESTHandler(null);
-			}
-		}
-	
-		
-		
+		boolean isRest = isRESTRequest(msgContext, method);
 
-        sendAck();
+		//should be process normally
+		if (!isRest) {
+			if (request.isEntityEnclosing()) {
+				processEntityEnclosingRequest(msgContext, true);
+			} else {
+				processNonEntityEnclosingRESTHandler(null, msgContext, true);
+			}
+		}else {
+            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
+            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
+            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
+        }
+
+        sendAck(msgContext);
+    }
+
+    private boolean isRequestToFetchWSDL() {
+        //if WSDL done then moved out rather than hand over to entity handle methods.
+        SourceContext info = (SourceContext) request.getConnection().getContext().
+                getAttribute(SourceContext.CONNECTION_INFORMATION);
+        if (info != null && info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
+            (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null &&
+             Boolean.TRUE.equals((msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED))))) {
+            return true;
+        }
+        return false;
     }
 
 	/**
@@ -199,7 +171,7 @@ public class ServerWorker implements Runnable {
 	 * @return
 	 * @throws FactoryConfigurationError
 	 */
-	private SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
+	public SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
 	    SOAPEnvelope soapEnvelope = null;
 	    String contentType = contentTypeHdr!=null?TransportUtils.getContentType(contentTypeHdr, msgContext):null;
 	    if (contentType == null || "".equals(contentType) || HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType)) {
@@ -270,7 +242,7 @@ public class ServerWorker implements Runnable {
 	    return soapEnvelope;
     }
 
-    private void sendAck() {
+    public  void sendAck(MessageContext msgContext) {
         String respWritten = "";
         if (msgContext.getOperationContext() != null) {
             respWritten = (String) msgContext.getOperationContext().getProperty(
@@ -319,7 +291,7 @@ public class ServerWorker implements Runnable {
         }
     }
 
-    private void processNonEntityEnclosingRESTHandler(SOAPEnvelope soapEnvelope) {
+    public void processNonEntityEnclosingRESTHandler(SOAPEnvelope soapEnvelope, MessageContext msgContext, boolean injectToAxis2Engine) {
         String soapAction = request.getHeaders().get(SOAP_ACTION_HEADER);
         if ((soapAction != null) && soapAction.startsWith("\"") && soapAction.endsWith("\"")) {
             soapAction = soapAction.substring(1, soapAction.length() - 1);
@@ -339,9 +311,11 @@ public class ServerWorker implements Runnable {
         	}else{
         		 msgContext.setEnvelope(soapEnvelope);
         	}
-         
 
-            AxisEngine.receive(msgContext);
+
+            if (injectToAxis2Engine) {
+                AxisEngine.receive(msgContext);
+            }
         } catch (AxisFault axisFault) {
             handleException("Error processing " + request.getMethod() +
                 " request for : " + request.getUri(), axisFault);
@@ -352,7 +326,7 @@ public class ServerWorker implements Runnable {
         }
     }
 
-    private void processEntityEnclosingRequest() {
+    public  void processEntityEnclosingRequest(MessageContext msgContext, boolean injectToAxis2Engine) {
         try {
             String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
             contentTypeHeader = contentTypeHeader != null ? contentTypeHeader : inferContentType();
@@ -381,12 +355,12 @@ public class ServerWorker implements Runnable {
             msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, contentTypeHeader);
             msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE, contentType);
 
-            if (contentTypeHeader ==null || HTTPTransportUtils.isRESTRequest(contentTypeHeader) || isRest(contentTypeHeader)) {
+            if (contentTypeHeader == null || HTTPTransportUtils.isRESTRequest(contentTypeHeader) || isRest(contentTypeHeader)) {
                 msgContext.setProperty(PassThroughConstants.REST_REQUEST_CONTENT_TYPE, contentType);
                 msgContext.setDoingREST(true);
                 SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
                 msgContext.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, request.getPipe());
-                processNonEntityEnclosingRESTHandler(soapEnvelope);
+                processNonEntityEnclosingRESTHandler(soapEnvelope, msgContext, injectToAxis2Engine);
     			return;
             } else {
                 String soapAction = request.getHeaders().get(SOAP_ACTION_HEADER);
@@ -407,12 +381,19 @@ public class ServerWorker implements Runnable {
                     envelope = fac.getDefaultEnvelope();
                 }
 
+                if ((soapAction != null) && soapAction.startsWith("\"") && soapAction.endsWith("\"")) {
+                    soapAction = soapAction.substring(1, soapAction.length() - 1);
+                    msgContext.setSoapAction(soapAction);
+                }
+
                 msgContext.setEnvelope(envelope);
             }
             
            
             msgContext.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, request.getPipe());
-            AxisEngine.receive(msgContext);
+            if (injectToAxis2Engine) {
+                AxisEngine.receive(msgContext);
+            }
         } catch (AxisFault axisFault) {
             handleException("Error processing " + request.getMethod() +
                 " request for : " + request.getUri(), axisFault);
@@ -439,12 +420,14 @@ public class ServerWorker implements Runnable {
      * @param request the http request to be used to create the corresponding Axis2 message context
      * @return the Axis2 message context created
      */
-    private MessageContext createMessageContext(SourceRequest request) {
+    public MessageContext createMessageContext(MessageContext msgContext, SourceRequest request) {
     	
     	Map excessHeaders = request.getExcessHeaders();
         ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
-        MessageContext msgContext =
-                new MessageContext();
+
+        if (msgContext == null) {
+            msgContext = new MessageContext();
+        }
         msgContext.setMessageID(UIDGenerator.generateURNString());
 
         // Axis2 spawns a new threads to send a message if this is TRUE - and it has to
@@ -469,11 +452,20 @@ public class ServerWorker implements Runnable {
                 .getTransportIn(Constants.TRANSPORT_HTTPS));
 			msgContext.setIncomingTransportName(sourceConfiguration.getInDescription() != null?
 			                                    sourceConfiguration.getInDescription().getName(): Constants.TRANSPORT_HTTPS);
-  
+
             SSLIOSession ssliosession = (SSLIOSession) (conn.getContext()).getAttribute(SSLIOSession.SESSION_KEY);
-            if (ssliosession != null) {
-                msgContext.setProperty("ssl.client.auth.cert.X509",
-                    ssliosession.getAttribute("ssl.client.auth.cert.X509"));            
+            //set SSL certificates to message context if SSLVerifyClient parameter is set
+            if (ssliosession != null && msgContext.getTransportIn() != null
+                && msgContext.getTransportIn().getParameter(NhttpConstants.SSL_VERIFY_CLIENT) != null) {
+                try {
+                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509,
+                                           ssliosession.getSSLSession().getPeerCertificateChain());
+                } catch (SSLPeerUnverifiedException e) {
+                    //Peer Certificate Chain may not be available always.(in case of Mutual SSL is not enabled)
+                    if (log.isTraceEnabled()) {
+                        log.trace("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
+                    }
+                }
             }
         } else {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
@@ -614,7 +606,96 @@ public class ServerWorker implements Runnable {
         return null;
     }
 
-    MessageContext getRequestContext() {
+    protected MessageContext getRequestContext() {
         return msgContext;
     }
+
+    /**
+     * @return Get SourceRequest Processed by ServerWorker
+     */
+    public SourceRequest getSourceRequest() {
+        return request;
+    }
+
+    /**
+     * @param request Set SourceRequest to be processed by ServerWorker
+     */
+    public void setSourceRequest(SourceRequest request) {
+        this.request = request;
+    }
+
+    /**
+     * Adding REST related properties to the message context if request is  REST
+     * @param msgContext Axis2MessageContext of the request
+     * @param method HTTP Method of the request
+     * @return whether request is REST or SOAP
+     */
+    public boolean isRESTRequest(MessageContext msgContext, String method){
+        if(msgContext.getProperty
+                (PassThroughConstants.REST_GET_DELETE_INVOKE) != null && (Boolean)msgContext.getProperty
+                                                                         (PassThroughConstants.REST_GET_DELETE_INVOKE)){
+            msgContext.setProperty(HTTPConstants.HTTP_METHOD, method);
+            msgContext.setServerSide(true);
+            msgContext.setDoingREST(true);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get Uri of underlying SourceRequest and  calculate service prefix and add to message context
+     * create response buffers for  HTTP GET, DELETE, OPTION and HEAD methods
+     * @param msgContext Axis2MessageContext of the request
+     * @param method HTTP Method of the request
+     */
+    public void processHttpRequestUri(MessageContext msgContext, String method){
+        String servicePrefixIndex="://";
+        ConfigurationContext cfgCtx = sourceConfiguration.getConfigurationContext();
+        msgContext.setProperty(Constants.Configuration.HTTP_METHOD, request.getMethod());
+
+
+        //String uri = request.getUri();
+        String oriUri = request.getUri();
+        String restUrlPostfix = NhttpUtil.getRestUrlPostfix(oriUri, cfgCtx.getServicePath());
+
+        String servicePrefix = oriUri.substring(0, oriUri.indexOf(restUrlPostfix));
+        if (servicePrefix.indexOf(servicePrefixIndex) == -1) {
+            HttpInetConnection inetConn = (HttpInetConnection) request.getConnection();
+            InetAddress localAddr = inetConn.getLocalAddress();
+            if (localAddr != null) {
+                servicePrefix = sourceConfiguration.getScheme().getName() + servicePrefixIndex +
+                        localAddr.getHostAddress() + ":" + inetConn.getLocalPort() + servicePrefix;
+            }
+        }
+
+        msgContext.setProperty(PassThroughConstants.SERVICE_PREFIX, servicePrefix);
+        msgContext.setTo(new EndpointReference(restUrlPostfix));
+        msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
+
+        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
+                                                                                             "OPTIONS".equals(method)) {
+            HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
+                    request.getVersion(), HttpStatus.SC_OK,
+                    request.getConnection().getContext());
+
+            // create a basic HttpEntity using the source channel of the response pipe
+            BasicHttpEntity entity = new BasicHttpEntity();
+            if (request.getVersion().greaterEquals(HttpVersion.HTTP_1_1)) {
+                entity.setChunked(true);
+            }
+            response.setEntity(entity);
+
+            httpGetRequestProcessor.process(request.getRequest(), response,msgContext,
+                    request.getConnection(), os, isRestDispatching);
+        }
+    }
+
+    /**
+     * Get the shared pass-through source configuration
+     * @return source configuration
+     */
+    public SourceConfiguration getSourceConfiguration() {
+        return sourceConfiguration;
+    }
+
 }

@@ -23,6 +23,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.store.Constants;
+import org.apache.synapse.message.store.impl.commons.MessageConverter;
+import org.apache.synapse.message.store.impl.commons.StorableMessage;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -144,6 +146,16 @@ public class JmsConsumer implements MessageConsumer {
             return true;
         }
         return false;
+    }
+
+    public boolean isAlive() {
+        try {
+            session.getAcknowledgeMode(); /** No straight forward way to check session availability */
+        } catch (JMSException e) {
+            return false;
+        }
+
+        return true;
     }
 
     public Connection getConnection() {

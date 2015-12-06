@@ -19,9 +19,7 @@
 
 package org.apache.synapse.mediators.transform;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMException;
-import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.*;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAP12Constants;
@@ -42,9 +40,16 @@ import org.apache.synapse.mediators.Value;
 import org.apache.synapse.util.AXIOMUtils;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,14 +61,24 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private String mediaType = XML_TYPE;
     private final static String JSON_CONTENT_TYPE = "application/json";
     private final static String XML_CONTENT_TYPE  = "application/xml";
+    private final static String TEXT_CONTENT_TYPE  = "text/plain";
     private final static String SOAP11_CONTENT_TYPE  = "text/xml";
     private final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
     private final static String JSON_TYPE = "json";
     private final static String XML_TYPE = "xml";
+    private final static String TEXT_TYPE = "text";
     private final static String STRING_TYPE = "str";
+    private final static QName TEXT_ELEMENT = new QName("http://ws.apache.org/commons/ns/payload", "text");
+    private final static String ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES = "\\\\\"";
+    private final static String ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES = "\\\\\\\\\"";
+    private final static String ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES = "\\\\\\\\\\\\\\\\";
+    private final static String ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES = "\\\\\\\\\"";
+    private final static String ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES = "\\\\\\$";
+    private final static String ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES = "\\\\\\\\\\$";
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
+    private Pattern ctxPattern = Pattern.compile("\\$(ctx.[^,\"'<>\n}\\]]*)");
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
@@ -74,6 +89,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         String format = formatRaw;
         return mediate(synCtx, format);
     }
@@ -85,19 +107,24 @@ public class PayloadFactoryMediator extends AbstractMediator {
      */
     private void setContentType(MessageContext synCtx) {
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if(mediaType.equals(XML_TYPE)) {
-            if(!XML_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
+        if (mediaType.equals(XML_TYPE)) {
+            if (!XML_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
                     !SOAP11_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
-                    !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) ){
+                    !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) ) {
                 a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, XML_CONTENT_TYPE);
                 a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, XML_CONTENT_TYPE);
                 handleSpecialProperties(XML_CONTENT_TYPE, a2mc);
             }
-        } else if(mediaType.equals(JSON_TYPE)) {
+        } else if (mediaType.equals(JSON_TYPE)) {
             a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, JSON_CONTENT_TYPE);
             a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, JSON_CONTENT_TYPE);
             handleSpecialProperties(JSON_CONTENT_TYPE, a2mc);
+        } else if (mediaType.equals(TEXT_TYPE)) {
+            a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, TEXT_CONTENT_TYPE);
+            a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, TEXT_CONTENT_TYPE);
+            handleSpecialProperties(TEXT_CONTENT_TYPE, a2mc);
         }
+        a2mc.removeProperty("NO_ENTITY_BODY");
     }
 
     // This is copied from PropertyMediator, required to change Content-Type
@@ -119,7 +146,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         StringBuffer result = new StringBuffer();
-        regexTransform(result, synCtx, format);
+        StringBuffer resultCTX = new StringBuffer();
+        regexTransformCTX(resultCTX, synCtx, format);
+        replace(resultCTX.toString(),result, synCtx);
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
             log.debug("#mediate. Transformed payload format>>> " + out);
@@ -128,14 +157,17 @@ public class PayloadFactoryMediator extends AbstractMediator {
             try {
                 JsonUtil.removeJsonPayload(axis2MessageContext);
                 OMElement omXML = AXIOMUtil.stringToOM(out);
-                if (!checkAndReplaceEnvelop(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
+                if (!checkAndReplaceEnvelope(omXML, synCtx)) { // check if the target of the PF 'format' is the entire SOAP envelop, not just the body.
                     axis2MessageContext.getEnvelope().getBody().addChild(omXML.getFirstElement());
                 }
             } catch (XMLStreamException e) {
                 handleException("Error creating SOAP Envelope from source " + out, synCtx);
             }
-        } else {
+        } else if  (mediaType.equals(JSON_TYPE)) {
             JsonUtil.newJsonPayload(axis2MessageContext, out, true, true);
+        } else if  (mediaType.equals(TEXT_TYPE)) {
+            JsonUtil.removeJsonPayload(axis2MessageContext);
+            axis2MessageContext.getEnvelope().getBody().addChild(getTextElement(out));
         }
         //need to honour a content-type of the payload media-type as output from the payload 
         //{re-merging patch https://wso2.org/jira/browse/ESBJAVA-3014}
@@ -144,19 +176,19 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     /**
-     * Calls the replace function. isFormatDynamic check is used to remove indentations which come from registry based
+     * Calls the replaceCTX function. isFormatDynamic check is used to remove indentations which come from registry based
      * configurations.
-     * @param result
+     * @param resultCTX
      * @param synCtx
      * @param format
      */
-    private void regexTransform(StringBuffer result, MessageContext synCtx, String format) {
+    private void regexTransformCTX(StringBuffer resultCTX, MessageContext synCtx, String format) {
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
             if(entry == null){
-            	handleException("Key " + key + " not found ", synCtx);
-            }            
+                handleException("Key " + key + " not found ", synCtx);
+            }
             String text = "";
             if (entry instanceof OMElement) {
                 OMElement e = (OMElement) entry;
@@ -167,10 +199,65 @@ public class PayloadFactoryMediator extends AbstractMediator {
             } else if (entry instanceof String) {
                 text = (String) entry;
             }
-            replace(text, result, synCtx);
-        } else {
-            replace(format, result, synCtx);
+            replaceCTX(text, resultCTX, synCtx);
+            } else {
+            replaceCTX(format, resultCTX, synCtx);
         }
+    }
+
+    /**
+     * Replaces the payload format with property values from messageContext.
+     *
+     * @param format
+     * @param resultCTX
+     * @param synCtx
+     */
+    private void replaceCTX(String format, StringBuffer resultCTX, MessageContext synCtx) {
+        Matcher ctxMatcher;
+
+        if (mediaType != null && (mediaType.equals(JSON_TYPE) || mediaType.equals(TEXT_TYPE))) {
+            ctxMatcher=ctxPattern.matcher(format);
+        } else {
+            ctxMatcher=ctxPattern.matcher("<pfPadding>" + format + "</pfPadding>");
+        }
+        while (ctxMatcher.find()) {
+            String ctxMatchSeq = ctxMatcher.group();
+            String expressionTxt = ctxMatchSeq.substring(5, ctxMatchSeq.length());
+
+            String replaceValue = synCtx.getProperty(expressionTxt).toString();
+
+            if(mediaType.equals(JSON_TYPE) && inferReplacementType(replaceValue).equals(XML_TYPE)) {
+                // XML to JSON conversion here
+                try {
+                    replaceValue = "<jsonObject>" + replaceValue + "</jsonObject>";
+                    OMElement omXML = AXIOMUtil.stringToOM(replaceValue);
+                    replaceValue = JsonUtil.toJsonString(omXML).toString();
+                } catch (XMLStreamException e) {
+                    handleException("Error parsing XML for JSON conversion, please check your property values return valid XML: ", synCtx);
+                } catch (AxisFault e) {
+                    handleException("Error converting XML to JSON", synCtx);
+                }
+            } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
+                // JSON to XML conversion here
+                try {
+                    OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replaceValue), false);
+                    if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
+                        Iterator children = omXML.getChildElements();
+                        String childrenStr = "";
+                        while (children.hasNext()) {
+                            childrenStr += (children.next()).toString().trim();
+                        }
+                        replaceValue = childrenStr;
+                    } else {
+                        replaceValue = omXML.toString();
+                    }
+                } catch (AxisFault e) {
+                    handleException("Error converting JSON to XML, please check your property values return valid JSON: ", synCtx);
+                }
+            }
+            ctxMatcher.appendReplacement(resultCTX, replaceValue);
+        }
+        ctxMatcher.appendTail(resultCTX);
     }
 
     /**
@@ -187,11 +274,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         String replacementValue = null;
         Matcher matcher;
 
-        if (mediaType != null && mediaType.equals(JSON_TYPE)) {
-            matcher = pattern.matcher(format);
-        } else {
-            matcher = pattern.matcher("<pfPadding>" + format + "</pfPadding>");
-        }
+        matcher = pattern.matcher(format);
         try {
             while (matcher.find()) {
                 String matchSeq = matcher.group();
@@ -208,7 +291,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     try {
                         replacementValue = "<jsonObject>" + replacementEntry.getKey() + "</jsonObject>";
                         OMElement omXML = AXIOMUtil.stringToOM(replacementValue);
-                        replacementValue = JsonUtil.toJsonString(omXML).toString();
+                        // This is to replace \" with \\" and \\$ with \$. Because for Matcher, $ sign is
+                        // a special character and for JSON " is a special character.
+                        replacementValue = JsonUtil.toJsonString(omXML).toString()
+                                .replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES, ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                                .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES);
                     } catch (XMLStreamException e) {
                         handleException("Error parsing XML for JSON conversion, please check your xPath expressions return valid XML: ", synCtx);
                     } catch (AxisFault e) {
@@ -235,6 +322,18 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 } else {
                     // No conversion required, as path evaluates to regular String.
                     replacementValue = replacementEntry.getKey();
+                    // This is to replace " with \" and \\ with \\\\
+                    if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
+                            (!replacementValue.startsWith("{") && !replacementValue.startsWith("["))) {
+                        replacementValue = replacementValue
+                                .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
+                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES);
+                    }
+                    else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
+                            (!replacementValue.startsWith("{") && !replacementValue.startsWith("["))) {
+                        // This is to handle only the string value
+                        replacementValue = replacementValue.replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES);
+                    }
                 }
                 matcher.appendReplacement(result, replacementValue);
             }
@@ -268,7 +367,21 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
     }
 
-    private boolean checkAndReplaceEnvelop(OMElement resultElement, MessageContext synCtx) {
+    private String inferReplacementType(String entry) {
+        if(isXML(entry)) {
+            return XML_TYPE;
+        } else if(!isXML(entry)) {
+            return STRING_TYPE;
+        } else if(isJson(entry)) {
+            return JSON_TYPE;
+        } else if(!isJson((entry))) {
+            return STRING_TYPE;
+        } else {
+            return STRING_TYPE;
+        }
+    }
+
+    private boolean checkAndReplaceEnvelope(OMElement resultElement, MessageContext synCtx) {
         OMElement firstChild = resultElement.getFirstElement();
         QName resultQName = firstChild.getQName();
         if (resultQName.getLocalPart().equals("Envelope") && (
@@ -278,6 +391,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             SOAPEnvelope soapEnvelope = AXIOMUtils.getSOAPEnvFromOM(resultElement.getFirstElement());
             if (soapEnvelope != null) {
                 try {
+                    soapEnvelope.buildWithAttachments();
                     synCtx.setEnvelope(soapEnvelope);
                 } catch (AxisFault axisFault) {
                     handleException("Unable to attach SOAPEnvelope", axisFault, synCtx);
@@ -366,7 +480,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             }
             //value = value.replace(String.valueOf((char) 160), " ").trim();
             valueMap = new HashMap<String, String>();
-            if(null != arg.getExpression()) {
+            if (null != arg.getExpression()) {
                 valueMap.put(value, arg.getExpression().getPathType());
             } else {
                 valueMap.put(value, SynapsePath.X_PATH);
@@ -406,6 +520,20 @@ public class PayloadFactoryMediator extends AbstractMediator {
         } catch (OMException ignore) {
             // means not a xml
             return false;
+        }
+        return true;
+    }
+
+    private boolean isWellFormedXML(String value)  {
+        try {
+            XMLReader parser = XMLReaderFactory.createXMLReader();
+            parser.setErrorHandler(null);
+            InputSource source = new InputSource(new ByteArrayInputStream(value.getBytes()));
+            parser.parse(source);
+        } catch (SAXException e) {
+            return  false;
+        } catch (IOException e) {
+           return false;
         }
         return true;
     }
@@ -467,5 +595,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     public String getOutputType() {
         return mediaType;
+    }
+
+
+    private OMElement getTextElement(String content) {
+        OMFactory factory = OMAbstractFactory.getOMFactory();
+        OMElement textElement = factory.createOMElement(TEXT_ELEMENT);
+        if (content == null) {
+            content = "";
+        }
+        textElement.setText(content);
+        return textElement;
     }
 }

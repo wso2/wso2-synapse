@@ -138,6 +138,8 @@ public class SynapseXPathVariableContext implements VariableContext {
                     return env.getBody();
                 } else if (SynapseXPathConstants.SOAP_HEADER_VARIABLE.equals(localName)) {
                     return env.getHeader();
+                } else if (SynapseXPathConstants.SOAP_ENVELOPE_VARIABLE.equals(localName)) {
+                    return env;
                 }
             }
 

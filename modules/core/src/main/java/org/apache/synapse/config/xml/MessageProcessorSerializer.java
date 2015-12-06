@@ -23,10 +23,12 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.commons.logging.Log;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -95,7 +97,13 @@ public class MessageProcessorSerializer {
             Iterator iterator = processor.getParameters().keySet().iterator();
             while (iterator.hasNext()) {
                 String name = (String) iterator.next();
-                String value = (String) processor.getParameters().get(name);
+                String value;
+                if (ForwardingProcessorConstants.NON_RETRY_STATUS_CODES.equals(name)) {
+                    Object statusCode = processor.getParameters().get(ForwardingProcessorConstants.NON_RETRY_STATUS_CODES);
+                    value = StringUtils.join((String[]) statusCode, ",");
+                } else {
+                    value = (String) processor.getParameters().get(name);
+                }
                 OMElement property = fac.createOMElement("parameter", synNS);
                 property.addAttribute(fac.createOMAttribute(
                         "name", nullNS, name));

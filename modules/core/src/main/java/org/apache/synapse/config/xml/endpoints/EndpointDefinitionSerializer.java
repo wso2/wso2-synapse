@@ -77,16 +77,6 @@ public class EndpointDefinitionSerializer {
             element.addChild(addressing);
         }
 
-        if (endpointDefinition.isReliableMessagingOn()) {
-            OMElement rm = fac.createOMElement("enableRM", SynapseConstants.SYNAPSE_OMNAMESPACE);
-
-            if (endpointDefinition.getWsRMPolicyKey() != null) {
-                rm.addAttribute(fac.createOMAttribute(
-                        "policy", null, endpointDefinition.getWsRMPolicyKey()));
-            }
-            element.addChild(rm);
-        }
-
         if (endpointDefinition.isSecurityOn()) {
             OMElement sec = fac.createOMElement("enableSec", SynapseConstants.SYNAPSE_OMNAMESPACE);
 
@@ -113,10 +103,12 @@ public class EndpointDefinitionSerializer {
                     "timeout", SynapseConstants.SYNAPSE_OMNAMESPACE);
             element.addChild(timeout);
 
-            OMElement duration = fac.createOMElement(
-                    "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
-            duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
-            timeout.addChild(duration);
+            if (endpointDefinition.getTimeoutDuration() > 0) {
+                OMElement duration = fac.createOMElement(
+                        "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
+                duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
+                timeout.addChild(duration);
+            }
 
             if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE) {
                 OMElement action = fac.createOMElement("responseAction", SynapseConstants.SYNAPSE_OMNAMESPACE);

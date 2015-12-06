@@ -95,6 +95,12 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
     public boolean mediate(MessageContext synCtx) {
 
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -261,9 +267,11 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             List<OMNode> newHeaderNodes = new ArrayList<OMNode>();
             while (iHeader.hasNext()) {
                 try {
-                    OMElement element = (OMElement) iHeader.next();
+                    Object element = iHeader.next();
                     iHeader.remove();
-                    newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock(element, fac));
+                    if (element instanceof  OMElement) {
+                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+                    }
                 } catch (OMException e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 } catch (Exception e) {

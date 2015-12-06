@@ -19,18 +19,17 @@
 
 package org.apache.synapse.config.xml;
 
-import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
-import org.apache.axiom.om.OMFactory;
-import org.apache.axiom.om.OMNamespace;
+import org.apache.axiom.om.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Startup;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.TemplateSerializer;
+import org.apache.synapse.config.xml.inbound.InboundEndpointSerializer;
 import org.apache.synapse.config.xml.rest.APISerializer;
 import org.apache.synapse.endpoints.Template;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
@@ -48,10 +47,7 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.API;
 
 import javax.xml.namespace.QName;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class SynapseXMLConfigurationSerializer implements ConfigurationSerializer {
 
@@ -162,7 +158,16 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
         serializeMessageProcessors(definitions,synCfg.getMessageProcessors());
 
         serializeAPIs(definitions, synCfg.getAPIs());
-     
+
+        //XML comments
+        serializeComments(definitions, synCfg.getCommentedTextList());
+
+        if (synCfg.getInboundEndpoints() != null && synCfg.getInboundEndpoints().size() > 0) {
+            Collection<InboundEndpoint> inboundEndpoints = synCfg.getInboundEndpoints();
+            for (InboundEndpoint inboundEndpoint : inboundEndpoints) {
+                InboundEndpointSerializer.serializeInboundEndpoint(definitions, inboundEndpoint);
+            }
+        }
 
         return definitions;
     }
@@ -191,7 +196,7 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
     private static void serializeSequences(OMElement definitions,
                                            Map<String, SequenceMediator> sequences) {
         for (SequenceMediator seq : sequences.values()) {
-            if(!(seq.getName().startsWith("_Recipe_Sequence_"))) {
+            if(!(seq.getName().startsWith(SynapseConstants.PREFIX_HIDDEN_SEQUENCE_KEY))) {
             MediatorSerializerFinder.getInstance().getSerializer(seq)
                     .serializeMediator(definitions, seq);
             }
@@ -263,5 +268,21 @@ public class SynapseXMLConfigurationSerializer implements ConfigurationSerialize
     public QName getTagQName() {
         return XMLConfigConstants.DEFINITIONS_ELT;
 	}
+
+
+    /**
+     * Serialize given comment text list to OMComment Nodes and add to the definition
+     *
+     * @param definitions  OMElement Structure for the configuration
+     * @param commentsList List of Comment Texts
+     */
+    private static void serializeComments(OMElement definitions,
+                                          List<String> commentsList) {
+        for (String comment : commentsList) {
+            OMComment commentNode = fac.createOMComment(definitions, "comment");
+            commentNode.setValue(comment);
+            definitions.addChild(commentNode);
+        }
+    }
 
 }

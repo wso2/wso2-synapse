@@ -19,6 +19,10 @@
 
 package org.apache.synapse.message.processor.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
@@ -26,8 +30,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
-
-import java.util.Map;
 
 /**
  * Class <code>AbstractMessageProcessor</code> is handles Message processing of the messages
@@ -49,7 +51,13 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     protected SynapseConfiguration configuration;
 
-    protected MessageConsumer messageConsumer;
+    protected List<MessageConsumer> messageConsumers = new ArrayList<MessageConsumer>();
+
+    /** Name of the artifact container from which the message processor deployed */
+    protected String artifactContainerName;
+
+    /** Whether the message processor edited via the management console */
+    protected boolean isEdited;
 
     /** This attribute is only need for forwarding message processor. However, it here because
      * then we don't need to implement this in sampling processor with nothing */
@@ -58,10 +66,12 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
     /**message store parameters */
     protected Map<String, Object> parameters = null;
 
+    @Override
     public void init(SynapseEnvironment se) {
         configuration = se.getSynapseConfiguration();
     }
 
+    @Override
     public void setMessageStoreName(String  messageStore) {
         if (messageStore != null) {
             this.messageStore = messageStore;
@@ -70,66 +80,106 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
         }
     }
 
+    @Override
     public String getMessageStoreName() {
         return messageStore;
     }
 
+    @Override
     public void setParameters(Map<String, Object> parameters) {
         this.parameters = parameters;
     }
 
+    @Override
     public Map<String, Object> getParameters() {
         return parameters;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public void setDescription(String description) {
         this.description=description;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public void setFileName(String filename) {
         this.fileName = filename;
     }
 
+    @Override
     public String getFileName() {
         return fileName;
     }
 
-    public MessageConsumer getMessageConsumer() {
-        return messageConsumer;
+    @Override
+    public List<MessageConsumer> getMessageConsumer() {
+        return messageConsumers;
     }
 
+    @Override
     public boolean setMessageConsumer(MessageConsumer consumer) {
         if (consumer == null) {
             logger.error("[" + getName() + "] Faulty message consumer.");
             return false;
         }
-
-        if (messageConsumer != null) {
-            messageConsumer.cleanup();
-        }
-
-        messageConsumer = consumer;
+        messageConsumers.add(consumer);
 
         return true;
     }
 
+    @Override
     public void setTargetEndpoint(String targetEndpoint) {
         this.targetEndpoint = targetEndpoint;
     }
 
+    @Override
     public String getTargetEndpoint() {
         return targetEndpoint;
+    }
+
+    /**
+     * Whether the message processor edited through the management console
+     * @return isEdited
+     */
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    /**
+     * Set whether the message processor edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    /**
+     * Get the name of the artifact container from which the message processor deployed
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    /**
+     * Set the name of the artifact container from which the message processor deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
     }
 }

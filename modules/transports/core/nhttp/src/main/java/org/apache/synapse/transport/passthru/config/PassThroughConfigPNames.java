@@ -71,6 +71,11 @@ public interface PassThroughConfigPNames {
     public String SERVER_HEADER_PRESERVE = "http.server.preserve";
 
     /**
+     * Defines whether ESB needs to preserve the original Http header.
+     */
+    public String HTTP_HEADERS_PRESERVE = "http.headers.preserve";
+
+    /**
      * Defines whether HTTP keep-alive is disabled
      */
     public String DISABLE_KEEPALIVE = "http.connection.disable.keepalive";
@@ -81,4 +86,9 @@ public interface PassThroughConfigPNames {
     public String MAX_CONNECTION_PER_HOST_PORT = "http.max.connection.per.host.port";
 
     public String TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME_SEC = "transport.listener.shutdown.wait.sec";
+
+    /**
+     * Defines whether Listening IOReactor is shared among non axis2 Listeners
+     */
+    public String HTTP_LISTENING_IO_REACTOR_SHARING_ENABLE ="http_listening_io_reactor_sharing_enable";
 }
