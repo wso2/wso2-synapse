@@ -65,7 +65,6 @@ import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 import org.wso2.caching.CachingConstants;
 import org.wso2.caching.digest.DigestGenerator;
 
-=======
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
