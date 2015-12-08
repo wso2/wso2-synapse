@@ -24,7 +24,9 @@ import org.apache.axis2.Constants;
 import org.apache.axiom.om.OMNode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.rest.API;
@@ -113,6 +115,24 @@ public class APIFactory {
                     api.setProtocol(RESTConstants.PROTOCOL_HTTPS_ONLY);
                 } else {
                     handleException("Invalid protocol name: " + transports);
+                }
+            }
+        }
+
+        String nameString = api.getName();
+        if (nameString == null || "".equals(nameString)) {
+            nameString = SynapseConstants.ANONYMOUS_API;
+        }
+        AspectConfiguration aspectConfiguration = new AspectConfiguration(nameString);
+        api.configure(aspectConfiguration);
+
+        OMAttribute statistics = apiElt.getAttribute(
+                new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.STATISTICS_ATTRIB_NAME));
+        if (statistics != null) {
+            String statisticsValue = statistics.getAttributeValue();
+            if (statisticsValue != null) {
+                if (XMLConfigConstants.STATISTICS_ENABLE.equals(statisticsValue)) {
+                    aspectConfiguration.enableStatistics();
                 }
             }
         }
