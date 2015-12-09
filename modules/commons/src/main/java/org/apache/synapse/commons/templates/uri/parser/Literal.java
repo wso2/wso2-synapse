@@ -32,6 +32,7 @@ public class Literal extends Node {
         if (tokenLength == 0) {
             throw new URITemplateException("Invalid literal token with zero length");
         }
+        hasQueryTemplate = token.contains("?");
     }
 
     @Override

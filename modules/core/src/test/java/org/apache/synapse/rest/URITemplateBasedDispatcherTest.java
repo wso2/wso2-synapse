@@ -86,9 +86,12 @@ public class URITemplateBasedDispatcherTest extends RESTMediationTestCase {
         handler.process(synCtx);
         assertNull(synCtx.getProperty(PROP_NAME));
 
+        /* With ESBJAVA-4260 we now support optional query parameters for URITemplates */
         synCtx = getMessageContext(synapseConfig, false, "/dictionary/c/cat?a=5", "GET");
         handler.process(synCtx);
-        assertNull(synCtx.getProperty(PROP_NAME));
+        assertEquals(PROP_VALUE, synCtx.getProperty(PROP_NAME));
+        assertEquals("c", synCtx.getProperty(RESTConstants.REST_URI_VARIABLE_PREFIX + "char"));
+        assertEquals("cat", synCtx.getProperty(RESTConstants.REST_URI_VARIABLE_PREFIX + "word"));
     }
 
     public void testDefaultDispatch() throws Exception {
@@ -157,8 +160,11 @@ public class URITemplateBasedDispatcherTest extends RESTMediationTestCase {
         handler.process(synCtx);
         assertNull(synCtx.getProperty(PROP_NAME));
 
+        /* With ESBJAVA-4260 we now support optional query parameters for URITemplates */
         synCtx = getMessageContext(synapseConfig, false, "/dictionary/c/cat?a=5", "GET");
         handler.process(synCtx);
-        assertNull(synCtx.getProperty(PROP_NAME));
+        assertEquals("r1", synCtx.getProperty(PROP_NAME));
+        assertEquals("c", synCtx.getProperty(RESTConstants.REST_URI_VARIABLE_PREFIX + "char"));
+        assertEquals("cat", synCtx.getProperty(RESTConstants.REST_URI_VARIABLE_PREFIX + "word"));
     }
 }
