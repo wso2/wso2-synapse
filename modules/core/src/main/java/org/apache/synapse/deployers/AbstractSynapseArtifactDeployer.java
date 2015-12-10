@@ -570,10 +570,10 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     }
 
     public void setCustomLog (String artifactContainerName, String tenantId) {
+        if (artifactContainerName == null) {
+            customLogContent = null;
+            return;
+        }
         customLogContent = "[ Deployed From Artifact Container: " + artifactContainerName + " ] ";
-    }
-
-    public void setCustomLogContentNull () {
-        customLogContent = null;
     }
 }
