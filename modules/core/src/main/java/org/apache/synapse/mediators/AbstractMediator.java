@@ -29,6 +29,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 
 import java.util.ArrayList;
@@ -412,6 +413,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     }
 
     public void setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
-        MessageFlowDataHolder.setTraceFlowEvent(msgCtx, mediatorId, mediator.getMediatorName(), isStart);
+        MediationTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, mediator.getMediatorName(), isStart);
     }
 }

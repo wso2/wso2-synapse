@@ -29,8 +29,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -129,7 +130,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Proxy Service:" + name);
             }
             mediatorId = UUID.randomUUID().toString();
-            MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, name, true);
+            MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, true);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -239,7 +240,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, name, false);
+                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
             }
         }
     }

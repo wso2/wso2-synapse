@@ -26,6 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.aspects.ComponentType;
@@ -111,7 +112,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             String mediatorId = null;
             if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
                 mediatorId = UUID.randomUUID().toString();
-                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
+                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
                         .sequenceType.name() : name), true);
             }
 
@@ -186,7 +187,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
 
                 if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-                    MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
+                    MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
                             .sequenceType.name() : name), false);
                 }
 

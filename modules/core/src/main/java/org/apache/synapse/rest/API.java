@@ -26,6 +26,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -299,7 +300,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
                             .getProperty(RESTConstants.SYNAPSE_REST_API));
                 }
                 mediatorId = UUID.randomUUID().toString();
-                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
+                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
             }
         }
 
@@ -407,7 +408,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
         if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
             if (!synCtx.isResponse()) {
-                MessageFlowDataHolder.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
+                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
             }
         }
     }

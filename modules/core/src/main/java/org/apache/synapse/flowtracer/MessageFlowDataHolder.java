@@ -1,62 +1,23 @@
 package org.apache.synapse.flowtracer;
 
-import org.apache.synapse.Mediator;
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.flowtracer.data.MessageFlowComponentEntry;
 import org.apache.synapse.flowtracer.data.MessageFlowTraceEntry;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class MessageFlowDataHolder {
 
-    private static List<MessageFlowComponentEntry> componentInfo = new ArrayList<MessageFlowComponentEntry>();
-    private static List<MessageFlowTraceEntry> flowInfo = new ArrayList<MessageFlowTraceEntry>();
+    private static Map<String, List<MessageFlowComponentEntry>> componentInfo = new HashMap<String,
+            List<MessageFlowComponentEntry>>();
+    private static Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<String,
+            List<MessageFlowTraceEntry>>();
 
     private static boolean messageFlowTraceEnable = false;
-
-    private static void addComponentInfoEntry(MessageContext synCtx, String componentId, String
-            componentName, boolean start){
-        java.util.Date date= new java.util.Date();
-        Set<String> propertySet = synCtx.getPropertyKeySet();
-        String propertyString = "";
-
-        for(String property:propertySet){
-            Object propertyValue = synCtx.getProperty(property);
-            if(propertyValue instanceof String) {
-                propertyString += property + "=" + propertyValue + ",";
-            }
-        }
-
-        String payload = synCtx.getMessageString();
-        componentInfo.add(new MessageFlowComponentEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx.isResponse(), start, new Timestamp(date.getTime()).toString(), propertyString, payload));
-    }
-
-    public static synchronized MessageFlowComponentEntry getComponentInfoEntry() {
-        if(componentInfo.size()>0){
-            return componentInfo.remove(0);
-        }
-        return null;
-    }
-
-    private static void addFlowInfoEntry(MessageContext synCtx){
-        java.util.Date date= new java.util.Date();
-        List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
-
-        for(String flow:messageFlowTrace){
-            flowInfo.add(new MessageFlowTraceEntry(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(),flow,synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(),new Timestamp(date.getTime()).toString()));
-        }
-    }
-
-    public static synchronized MessageFlowTraceEntry getFlowInfoEntry() {
-        if(flowInfo.size()>0){
-            return flowInfo.remove(0);
-        }
-
-        return null;
-    }
 
     public static void setMessageFlowTraceEnable(boolean messageFlowTraceEnable) {
         MessageFlowDataHolder.messageFlowTraceEnable = messageFlowTraceEnable;
@@ -66,14 +27,52 @@ public class MessageFlowDataHolder {
         return messageFlowTraceEnable;
     }
 
-    public static synchronized void setTraceFlowEvent(MessageContext msgCtx, String mediatorId, String mediatorName,
-                                                       boolean isStart) {
-        if (isStart) {
-            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediatorName, true);
-            msgCtx.addComponentToMessageFlow(mediatorId);
-            MessageFlowDataHolder.addFlowInfoEntry(msgCtx);
-        } else {
-            MessageFlowDataHolder.addComponentInfoEntry(msgCtx, mediatorId, mediatorName, false);
+    public static void addFlowInfoEntry(MessageFlowTraceEntry messageFlowTraceEntry) {
+        List<MessageFlowTraceEntry> traceList = flowInfo.get(messageFlowTraceEntry.getMessageId());
+        if (traceList == null) {
+            traceList = new ArrayList<MessageFlowTraceEntry>();
+            flowInfo.put(messageFlowTraceEntry.getMessageId(), traceList);
         }
+        traceList.add(messageFlowTraceEntry);
+    }
+
+    public static void addComponentInfoEntry(MessageFlowComponentEntry messageFlowComponentEntry) {
+        List<MessageFlowComponentEntry> componentList = componentInfo.get(messageFlowComponentEntry.getMessageId());
+        if (componentList == null) {
+            componentList = new ArrayList<MessageFlowComponentEntry>();
+            componentInfo.put(messageFlowComponentEntry.getMessageId(), componentList);
+        }
+        componentList.add(messageFlowComponentEntry);
+        componentInfo.put(messageFlowComponentEntry.getMessageId(), componentList);
+    }
+
+    public static Map<String, List<MessageFlowTraceEntry>> getMessageFlows() {
+        return flowInfo;
+    }
+
+
+    public static String[] getMessageFlowTrace(String messageId) {
+        List<MessageFlowTraceEntry> traceList = flowInfo.get(messageId);
+
+        if (traceList != null && traceList.size() > 0) {
+            int position = 0;
+            String[] messageFlows = new String[traceList.size()];
+            for (MessageFlowTraceEntry messageFlowTraceEntry : traceList) {
+                messageFlows[position] = messageFlowTraceEntry.getMessageFlow();
+                position++;
+            }
+            return messageFlows;
+        }
+        return null;
+    }
+
+    public static MessageFlowComponentEntry[] getComponentInfo(String messageId) {
+        List<MessageFlowComponentEntry> componentList = componentInfo.get(messageId);
+        return componentList.toArray(new MessageFlowComponentEntry[componentList.size()]);
+    }
+
+    public static void clearDataStores() {
+        componentInfo.clear();
+        flowInfo.clear();
     }
 }

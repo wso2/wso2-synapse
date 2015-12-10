@@ -1,6 +1,9 @@
 package org.apache.synapse.flowtracer.data;
 
-public class MessageFlowTraceEntry {
+import org.apache.synapse.aspects.data.MediationDataEntry;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+
+public class MessageFlowTraceEntry implements MediationDataEntry {
 
     private String messageId;
     private String entryType;
@@ -34,5 +37,9 @@ public class MessageFlowTraceEntry {
 
     public String getMessageFlow() {
         return messageFlow;
+    }
+
+    public void process(){
+        MessageFlowDataHolder.addFlowInfoEntry(this);
     }
 }

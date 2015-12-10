@@ -19,30 +19,8 @@ package org.apache.synapse.flowtracer;
 
 public class MessageFlowTracerConstants {
 
-    /**
-     * Connection URL to database
-     */
-    public static final String JDBC_CONNECTION_URL = "store.jdbc.connection.url";
-
-    /**
-     * Driver to use
-     */
-    public static final String JDBC_CONNECTION_DRIVER = "store.jdbc.driver";
-
-    /**
-     * DataSource name
-     */
-    public static final String JDBC_DSNAME = "jdbc/WSO2CarbonDB";
-
-    public static final String TABLE_MESSAGE_FLOW_INFO = "MESSAGE_FLOW_INFO";
-
-    public static final String TABLE_MESSAGE_FLOWS = "MESSAGE_FLOWS";
-
     public static final String MESSAGE_FLOW_ID = "MESSAGE_FLOW_ID";
-
     public static final String MESSAGE_FLOW = "MESSAGE_FLOW";
-
     public static final String MESSAGE_FLOW_ENTRY_TYPE = "MESSAGE_FLOW_ENTRY_TYPE";
-
     public static final String MESSAGE_FLOW_TRACE_ENABLE = "message.flow.trace.enable";
 }
