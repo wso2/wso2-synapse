@@ -46,6 +46,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
 
     public static String legacyPrefix = "legacy-encoding:";
 
+    private static final char URI_TEMPLATE_START_CHARACTER = '{';
+    private static final char URI_TEMPLATE_ENCODE_ESCAPE_CHARACTER = '+';
+    private static final String URI_TEMPLATE_RFC6570_ENCODE_ESCAPE_CHARACTER_WITH_BRACE = "{+";
+
     /*Todo*/
     /*Do we need HTTP Headers here?*/
 
@@ -225,8 +229,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
             String tmpl;
             // This is a special case as we want handle {uri.var.variable} having full URL (except as a path param or query param)
             // this was used in connectors Eg:- uri-template="{uri.var.variable}"
-            if(uriTemplate.getTemplate().charAt(0)=='{' && uriTemplate.getTemplate().charAt(1)!='+'){
-                tmpl = "{+" + uriTemplate.getTemplate().substring(1);
+            if (uriTemplate.getTemplate().charAt(0) == URI_TEMPLATE_START_CHARACTER
+                    && uriTemplate.getTemplate().charAt(1) != URI_TEMPLATE_ENCODE_ESCAPE_CHARACTER) {
+                tmpl = URI_TEMPLATE_RFC6570_ENCODE_ESCAPE_CHARACTER_WITH_BRACE
+                        + uriTemplate.getTemplate().substring(1);
             } else {
                 tmpl = uriTemplate.getTemplate();
             }
@@ -250,7 +256,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                         log.debug("Invalid URL syntax for HTTP Endpoint: " + this.getName(), e);
                     }
                     evaluatedUri = template.getTemplate();
-                } catch(ExpressionParseException e) {
+                } catch (ExpressionParseException e) {
                     log.debug("No URI Template variables defined in HTTP Endpoint: " + this.getName());
                     evaluatedUri = template.getTemplate();
                 }
