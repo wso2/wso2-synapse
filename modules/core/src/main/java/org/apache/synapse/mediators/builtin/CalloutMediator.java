@@ -95,6 +95,12 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
     public boolean mediate(MessageContext synCtx) {
 
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -178,6 +184,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                     blockingMsgSender.send(endpoint, synapseOutMsgCtx);
                 } else {
                     resultMsgCtx = blockingMsgSender.send(endpoint, synapseOutMsgCtx);
+                    setResponseHttpSc(resultMsgCtx, synCtx);
                     if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
                         handleFault(synCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
                     }
@@ -623,6 +630,16 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
      */
     public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
+    }
+    
+    private void setResponseHttpSc(MessageContext sourceSynCtx, MessageContext destinationSynCtx) {
+        if (sourceSynCtx != null) {
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                                                                          ((Axis2MessageContext) destinationSynCtx).getAxis2MessageContext();
+            axis2MessageContext.setProperty(SynapseConstants.HTTP_SC,
+                                            ((Axis2MessageContext) sourceSynCtx).getAxis2MessageContext()
+                                                                                .getProperty(SynapseConstants.HTTP_SC));
+        }
     }
 
 }

@@ -421,6 +421,11 @@ public class ServerManager {
 
         if (serverState == ServerState.INITIALIZED || serverState == ServerState.STOPPED) {
 
+            //shutdown debug manager and close TCP connection in the debug interface
+            if(serverContextInformation.isServerDebugModeEnabled()) {
+                serverContextInformation.getSynapseDebugManager().shutdownDebugManager();
+            }
+
             // Shutdown global PasswordManager instance used in synapse
             PasswordManager passwordManager = PasswordManager.getInstance();
             if (passwordManager.isInitialized()) {

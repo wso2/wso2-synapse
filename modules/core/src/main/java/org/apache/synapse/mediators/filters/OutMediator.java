@@ -43,6 +43,12 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
      * @return true if filter condition fails. else returns as per List mediator semantics
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
         
         SynapseLog synLog = getLog(synCtx);
 

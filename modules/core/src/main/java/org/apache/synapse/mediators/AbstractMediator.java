@@ -33,6 +33,7 @@ import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventRecei
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +63,13 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     private int mediatorPosition = 0;
 
+    private boolean isBreakPoint = false;
+
+    private boolean isSkipEnabled = false;
+
+    private SynapseMediationFlowPoint flowPoint = null;
+
+
     /**
      * A constructor that makes subclasses pick up the correct logger
      */
@@ -72,7 +80,27 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Comment Texts List associated with the mediator
      */
-    private List<String> commentsList = new ArrayList<String>();
+    private List<String> commentsList = new ArrayList<String>(); 
+
+    /**
+     * this method is invoked mediation happens either in debug mode or normal running mode,
+     * branches execution to the debug manager if only in debug mode
+     * @return true if the mediation should be continued after this method call, false if mediation
+     * of current child mediator position should be skipped
+     */
+    public boolean divertMediationRoute(MessageContext synCtx){
+        if(synCtx.getEnvironment().isDebugEnabled()) {
+            if (isSkipEnabled()) {
+                synCtx.getEnvironment().getSynapseDebugManager()
+                        .advertiseMediationFlowSkip(synCtx, getRegisteredMediationFlowPoint());
+                return true;
+            } else if (isBreakPoint()) {
+                synCtx.getEnvironment().getSynapseDebugManager()
+                        .advertiseMediationFlowBreakPoint(synCtx, getRegisteredMediationFlowPoint());
+            }
+        }
+        return false;
+    }
 
     /**
      * Returns the class name of the mediator
@@ -437,4 +465,19 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
             }
         }
     }
+
+    public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint){this.flowPoint=flowPoint;}
+
+    public void unregisterMediationFlowPoint(){if(this.flowPoint!=null)this.flowPoint=null;}
+
+    public SynapseMediationFlowPoint getRegisteredMediationFlowPoint(){return flowPoint;}
+
+    public boolean isBreakPoint(){return isBreakPoint;}
+
+    public boolean isSkipEnabled(){return isSkipEnabled;}
+
+    public void setBreakPoint(boolean isBreakPoint){this.isBreakPoint=isBreakPoint;}
+
+    public void setSkipEnabled(boolean isSkipEnabled){this.isSkipEnabled=isSkipEnabled;}
+
 }

@@ -21,6 +21,8 @@ package org.apache.synapse;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.SynapseCallbackReceiver;
+import org.apache.synapse.debug.SynapseDebugInterface;
+import org.apache.synapse.debug.SynapseDebugManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +46,12 @@ public class ServerContextInformation {
     private ServerState serverState = ServerState.UNDETERMINED;
     /** Reference to the server configuration */
     private ServerConfigurationInformation serverConfigurationInformation;
+    /** Reference to the debug manager instance */
+    private SynapseDebugManager debugManager;
+    /** Reference to the debug interface instance */
+    private SynapseDebugInterface debugInterface;
+    /** whether debug mode is enabled or not */
+    private boolean isDebugModeEnabled=false;
 
     public ServerContextInformation(ServerConfigurationInformation serverConfigurationInformation) {
         this.serverConfigurationInformation = serverConfigurationInformation;
@@ -118,4 +126,27 @@ public class ServerContextInformation {
         }
         return 0;
     }
+
+    public SynapseDebugManager getSynapseDebugManager(){
+        return debugManager;
+    }
+
+    public void setSynapseDebugManager(SynapseDebugManager debugManager){this.debugManager=debugManager;}
+
+    public SynapseDebugInterface getSynapseDebugInterface(){
+        return debugInterface;
+    }
+
+    public void setSynapseDebugInterface(SynapseDebugInterface debugInterface) {
+        this.debugInterface = debugInterface;
+    }
+
+    public boolean isServerDebugModeEnabled(){
+        return isDebugModeEnabled;
+    }
+
+    public void setServerDebugModeEnabled(boolean isDebugModeEnabled){
+        this.isDebugModeEnabled=isDebugModeEnabled;
+    }
+
 }

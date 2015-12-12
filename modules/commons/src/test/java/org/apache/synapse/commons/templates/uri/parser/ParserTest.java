@@ -327,4 +327,37 @@ public class ParserTest extends TestCase {
         assertEquals("do", var.get("action"));
         assertEquals("view", var.get("sub"));
     }
+
+    public void testComaSeperatedSimpleExpressions() throws Exception{
+        Map<String, String> var = new HashMap<String, String>();
+        URITemplate template = new URITemplate("/admin/{one},{two},{three}*");
+        assertTrue(template.matches("/admin/param1,param2,param3", var));
+        assertTrue(template.matches("/admin/param1,param2,param3/test", var));
+        assertTrue(template.matches("/admin/param1,param2,param3?query=param", var));
+        assertEquals("param1", var.get("one"));
+        assertEquals("param2", var.get("two"));
+        assertEquals("param3", var.get("three"));
+        var.clear();
+    }
+
+    public void testOptionalQueryParameters() throws Exception{
+        Map<String, String> var = new HashMap<String, String>();
+
+        URITemplate template = new URITemplate("/admin/{one}");
+        assertTrue(template.matches("/admin/param1?query=parameter", var));
+        assertEquals("param1", var.get("one"));
+        var.clear();
+        assertTrue(template.matches("/admin/param1", var));
+        assertEquals("param1", var.get("one"));
+        var.clear();
+        assertFalse(template.matches("/admin/param1/param2?query=parameter", var));
+
+        template = new URITemplate("/admin/{one}?query={two}");
+        assertTrue(template.matches("/admin/param1?query=param2", var));
+        assertEquals("param1", var.get("one"));
+        assertEquals("param2", var.get("two"));
+        var.clear();
+        assertFalse(template.matches("/admin/param1/param2?query=parameter", var));
+        assertFalse(template.matches("/admin/param1", var));
+    }
 }
