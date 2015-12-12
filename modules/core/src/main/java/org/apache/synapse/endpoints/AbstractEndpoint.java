@@ -35,6 +35,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -300,10 +301,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             throw new IllegalStateException("not initialized, " +
                     "endpoint must be in initialized state");
         }
-        CreateEntryStatisticLog createEntryStatisticLog =
-                new CreateEntryStatisticLog(synCtx, getStatisticReportingName(synCtx), ComponentType.ENDPOINT, null,
-                                            System.currentTimeMillis());
-        StatisticEventReceiver.receive(createEntryStatisticLog);
+                reportStatistic(synCtx, null, true);
         prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
@@ -376,10 +374,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
-        StatisticCloseLog statisticCloseLog =
-                new StatisticCloseLog(synCtx, getStatisticReportingName(synCtx), null, System.currentTimeMillis());
-        StatisticEventReceiver.receive(statisticCloseLog);
-
+        reportStatistic(synCtx, null, false);
     }
 
     /**
@@ -797,9 +792,41 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public String getStatisticReportingName(MessageContext synCtx) {
         if (this.endpointName != null) {
-            return this.endpointName + "|Address:" + synCtx.getTo().getAddress();
+            return this.endpointName;
         } else {
-            return SynapseConstants.ANONYMOUS_ENDPOINT + "|Address:" + synCtx.getTo().getAddress();
+            return SynapseConstants.ANONYMOUS_ENDPOINT;
         }
+    }
+
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
+        if (isStatCollected == null) {
+            if (definition.getAspectConfiguration().isStatisticsEnable()) {
+                createStatistic(messageContext, isCreateLog);
+                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+            } else {
+                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
+            }
+        } else {
+            if (isStatCollected) {
+                if (definition.getAspectConfiguration().isStatisticsEnable()) {
+                    createStatistic(messageContext, isCreateLog);
+                }
+            }
+        }
+    }
+
+    private void createStatistic(MessageContext messageContext, boolean isCreateLog) {
+        StatisticReportingLog statisticReportingLog;
+        if (isCreateLog) {
+            statisticReportingLog =
+                    new CreateEntryStatisticLog(messageContext, getStatisticReportingName(messageContext),
+                                                ComponentType.ENDPOINT, null, System.currentTimeMillis());
+        } else {
+            statisticReportingLog =
+                    new StatisticCloseLog(messageContext, getStatisticReportingName(messageContext), null,
+                                          System.currentTimeMillis());
+        }
+        StatisticEventReceiver.receive(statisticReportingLog);
     }
 }

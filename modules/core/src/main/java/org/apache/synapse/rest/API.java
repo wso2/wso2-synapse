@@ -26,6 +26,8 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.AspectConfigurable;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -39,7 +41,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.util.*;
 
-public class API extends AbstractRESTProcessor implements ManagedLifecycle {
+public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable {
 
     private String host;
     private int port = -1;
@@ -61,6 +63,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     private String artifactContainerName;
 
     private boolean isEdited = false;
+
+    private AspectConfiguration aspectConfiguration;
 
     public API(String name, String context) {
         super(name);
@@ -503,5 +507,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
         }
 
+    }
+
+    @Override
+    public void configure(AspectConfiguration aspectConfiguration) {
+        this.aspectConfiguration = aspectConfiguration;
+    }
+
+    @Override
+    public AspectConfiguration getAspectConfiguration() {
+        return aspectConfiguration;
     }
 }

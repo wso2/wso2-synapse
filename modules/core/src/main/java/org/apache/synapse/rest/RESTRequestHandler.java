@@ -22,6 +22,7 @@ import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
@@ -118,8 +119,14 @@ public class RESTRequestHandler {
     }
 
     private void reportApiStartStatistics(MessageContext synCtx, API api) {
-        CreateEntryStatisticLog createEntryStatisticLog =
-                new CreateEntryStatisticLog(synCtx, api.getName(), ComponentType.API, null, System.currentTimeMillis());
-        StatisticEventReceiver.receive(createEntryStatisticLog);
+        if (api.getAspectConfiguration().isStatisticsEnable()) {
+            CreateEntryStatisticLog createEntryStatisticLog =
+                    new CreateEntryStatisticLog(synCtx, api.getName(), ComponentType.API, null,
+                                                System.currentTimeMillis());
+            StatisticEventReceiver.receive(createEntryStatisticLog);
+            synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+        } else {
+            synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
+        }
     }
 }

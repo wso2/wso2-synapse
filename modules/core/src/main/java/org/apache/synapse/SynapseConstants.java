@@ -240,6 +240,9 @@ public final class SynapseConstants {
         /** Key to message context statistic entry */
         public static final String NEW_STATISTICS_IS_FAULT_REPORTED ="synapse.newStatistics.fault.reported";
 
+        /** Key to specify whether statistics should be reported */
+        public static final String NEW_STATISTICS_IS_COLLECTED ="synapse.newStatistics.fault.reported";
+
         /** Default backend name used for statistic collection*/
         public static final String ANY ="any";
 
@@ -313,6 +316,9 @@ public final class SynapseConstants {
 
     /**A name to use for anonymous proxyservice  */
     public static final String ANONYMOUS_PROXYSERVICE = "AnonymousProxyService";
+
+    /**A name to use for anonymous API  */
+    public static final String ANONYMOUS_API = "AnonymousApi";
 
     /* Constants related to the SAL endpoints */
 
@@ -513,6 +519,8 @@ public final class SynapseConstants {
     public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
     public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
     public static final String INBOUND_ENDPOINT_NAME = "inbound.endpoint.name";
+    public static final String INBOUND_STATISTIC_ENABLE = "inbound.statistic.enable";
+    public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousApIInboundEndpoint";
     
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";

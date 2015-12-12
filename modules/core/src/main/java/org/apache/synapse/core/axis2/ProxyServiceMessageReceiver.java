@@ -33,6 +33,7 @@ import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -88,13 +89,11 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
-        //Setting Statistic Trace ID for statistic Collection
+        //Setting statistic trace ID for statistic collection
         RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
 
-        CreateEntryStatisticLog createEntryStatisticLog =
-                new CreateEntryStatisticLog(synCtx, this.name, ComponentType.PROXYSERVICE, null,
-                                            System.currentTimeMillis());
-        StatisticEventReceiver.receive(createEntryStatisticLog);
+        //Statistic reporting
+        reportStatistics(true, synCtx);
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -146,7 +145,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setTracingState(proxy.getTraceState());
 
         try {
-
             List handlers = synCtx.getEnvironment().getSynapseHandlers();
             Iterator<SynapseHandler> iterator = handlers.iterator();
             while (iterator.hasNext()) {
@@ -232,6 +230,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
 
+            //Statistic reporting
             boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
             if (!isOutOnly) {
                 isOutOnly =
@@ -239,9 +238,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                          !synCtx.isResponse());
             }
             if (isOutOnly) {
-                FinalizeEntryLog finalizeEntryLog =
-                        new FinalizeEntryLog(synCtx, System.currentTimeMillis());
-                StatisticEventReceiver.receive(finalizeEntryLog);
+                reportStatistics(false, synCtx);
             }
         }
     }
@@ -293,6 +290,24 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             trace.error(msg);
         }
         throw new SynapseException(msg);
+    }
+
+    private void reportStatistics(boolean createStatisticLog, MessageContext messageContext) {
+        StatisticReportingLog statisticReportingLog;
+        if (proxy.getAspectConfiguration().isStatisticsEnable()) {
+            if (createStatisticLog) {
+                statisticReportingLog =
+                        new CreateEntryStatisticLog(messageContext, this.name, ComponentType.PROXYSERVICE, null,
+                                                    System.currentTimeMillis());
+
+                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+            } else {
+                statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
+            }
+            StatisticEventReceiver.receive(statisticReportingLog);
+        } else {
+            messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
+        }
     }
 
 }

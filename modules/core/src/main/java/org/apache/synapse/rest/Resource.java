@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -267,25 +268,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-            Object synapseRestApi = synCtx.getProperty(RESTConstants.REST_API_CONTEXT);
-            Object restUrlPattern = synCtx.getProperty(RESTConstants.REST_URL_PATTERN);
-            if (synapseRestApi != null) {
-                String textualStringName;
-                if (restUrlPattern != null) {
-                    textualStringName = (String) synapseRestApi + restUrlPattern;
-                } else {
-                    textualStringName = (String) synapseRestApi;
-                }
-                CreateEntryStatisticLog createEntryStatisticLog =
-                        new CreateEntryStatisticLog(synCtx, textualStringName, ComponentType.RESOURCE, null,
-                                                    System.currentTimeMillis());
-                StatisticEventReceiver.receive(createEntryStatisticLog);
-            } else {
-                CreateEntryStatisticLog createEntryStatisticLog =
-                        new CreateEntryStatisticLog(synCtx, name, ComponentType.RESOURCE, null,
-                                                    System.currentTimeMillis());
-                StatisticEventReceiver.receive(createEntryStatisticLog);
-            }
+
+            reportStatistic(synCtx, null, true);
         }
 
         if (log.isDebugEnabled()) {
@@ -369,42 +353,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                          !synCtx.isResponse());
             }
             if (isOutOnly) {
-                Object synapseRestApi = synCtx.getProperty(RESTConstants.REST_API_CONTEXT);
-                Object restUrlPattern = synCtx.getProperty(RESTConstants.REST_URL_PATTERN);
-                if (synapseRestApi != null) {
-                    String textualStringName;
-                    if (restUrlPattern != null) {
-                        textualStringName = (String) synapseRestApi + restUrlPattern;
-                    } else {
-                        textualStringName = (String) synapseRestApi;
-                    }
-                    StatisticCloseLog statisticCloseLog =
-                            new StatisticCloseLog(synCtx, textualStringName, null, System.currentTimeMillis());
-                    StatisticEventReceiver.receive(statisticCloseLog);
-                } else {
-                    StatisticCloseLog statisticCloseLog =
-                            new StatisticCloseLog(synCtx, name, null, System.currentTimeMillis());
-                    StatisticEventReceiver.receive(statisticCloseLog);
-                }
+                reportStatistic(synCtx, null, false);
             }
         } else {
-            Object synapseRestApi = synCtx.getProperty(RESTConstants.REST_API_CONTEXT);
-            Object restUrlPattern = synCtx.getProperty(RESTConstants.REST_URL_PATTERN);
-            if (synapseRestApi != null) {
-                String textualStringName;
-                if (restUrlPattern != null) {
-                    textualStringName = (String) synapseRestApi + restUrlPattern;
-                } else {
-                    textualStringName = (String) synapseRestApi;
-                }
-                StatisticCloseLog statisticCloseLog =
-                        new StatisticCloseLog(synCtx, textualStringName, null, System.currentTimeMillis());
-                StatisticEventReceiver.receive(statisticCloseLog);
-            } else {
-                StatisticCloseLog statisticCloseLog =
-                        new StatisticCloseLog(synCtx, name, null, System.currentTimeMillis());
-                StatisticEventReceiver.receive(statisticCloseLog);
-            }
+            reportStatistic(synCtx, null, false);
         }
     }
 
@@ -506,5 +458,46 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (faultSequence != null && faultSequence.isInitialized()) {
             faultSequence.destroy();
         }
+    }
+
+    /**
+     * Report statistics for the mediator
+     *
+     * @param messageContext message context
+     * @param parentName     sequence name that mediator belong to
+     * @param isCreateLog    whether this is a start or end of a mediator execution
+     */
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
+        StatisticReportingLog statisticLog;
+        if (isStatCollected != null) {
+            if (isStatCollected) {
+                if (isCreateLog) {
+                    statisticLog = new CreateEntryStatisticLog(messageContext, getResourceNameForStat(messageContext),
+                                                               ComponentType.RESOURCE, parentName,
+                                                               System.currentTimeMillis());
+                } else {
+                    statisticLog =
+                            new StatisticCloseLog(messageContext, getResourceNameForStat(messageContext), parentName,
+                                                  System.currentTimeMillis());
+                }
+                StatisticEventReceiver.receive(statisticLog);
+            }
+        }
+    }
+
+    private String getResourceNameForStat(MessageContext messageContext) {
+        Object synapseRestApi = messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
+        Object restUrlPattern = messageContext.getProperty(RESTConstants.REST_URL_PATTERN);
+        if (synapseRestApi != null) {
+            String textualStringName;
+            if (restUrlPattern != null) {
+                textualStringName = (String) synapseRestApi + restUrlPattern;
+            } else {
+                textualStringName = (String) synapseRestApi;
+            }
+            return textualStringName;
+        }
+        return name;
     }
 }

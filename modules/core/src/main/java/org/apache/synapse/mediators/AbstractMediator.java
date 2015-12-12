@@ -416,18 +416,25 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Report statistics for the mediator
      *
-     * @param synCtx      message context
-     * @param parentName  sequence name that mediator belong to
-     * @param isCreateLog whether this is a start or end of a mediator execution
+     * @param messageContext message context
+     * @param parentName     sequence name that mediator belong to
+     * @param isCreateLog    whether this is a start or end of a mediator execution
      */
-    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog) {
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
         StatisticReportingLog statisticLog;
-        if (isCreateLog) {
-            statisticLog = new CreateEntryStatisticLog(synCtx, getMediatorName(), ComponentType.MEDIATOR, parentName,
-                                                       System.currentTimeMillis());
-        } else {
-            statisticLog = new StatisticCloseLog(synCtx, getMediatorName(), parentName, System.currentTimeMillis());
+        if (isStatCollected != null) {
+            if (isStatCollected) {
+                if (isCreateLog) {
+                    statisticLog =
+                            new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                        parentName, System.currentTimeMillis());
+                } else {
+                    statisticLog = new StatisticCloseLog(messageContext, getMediatorName(), parentName,
+                                                         System.currentTimeMillis());
+                }
+                StatisticEventReceiver.receive(statisticLog);
+            }
         }
-        StatisticEventReceiver.receive(statisticLog);
     }
 }
