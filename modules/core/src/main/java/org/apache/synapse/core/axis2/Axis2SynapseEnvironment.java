@@ -363,7 +363,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     getInboundEndpoint((String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
-                inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
+                if(inboundEndpoint.getAspectConfiguration() != null) {
+                    inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
+                }
                 inboundName = (String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
             }
         }
@@ -378,6 +380,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 reportStatistics(true, synCtx, inboundStatistics, inboundName);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
                 reportStatistics(false, synCtx, inboundStatistics, inboundName);
+                return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
                 log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
@@ -911,7 +914,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
                 inboundName =(String) smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
-                inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
+                if(inboundEndpoint.getAspectConfiguration() != null) {
+                    inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
+                }
             }
         }
 

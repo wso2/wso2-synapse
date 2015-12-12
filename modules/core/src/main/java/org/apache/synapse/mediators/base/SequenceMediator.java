@@ -496,7 +496,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
         if (isStatCollected == null) {
-            if (getAspectConfiguration().isStatisticsEnable()) {
+            if (getAspectConfiguration() != null && getAspectConfiguration().isStatisticsEnable()) {
                 createStatistic(messageContext, isCreateLog);
                 messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
             } else {
@@ -504,9 +504,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             }
         } else {
             if (isStatCollected) {
-                if (getAspectConfiguration().isStatisticsEnable()) {
-                    createStatistic(messageContext, isCreateLog);
-                }
+                createStatistic(messageContext, isCreateLog); //give stats if upper level set stat collection to true
             }
         }
     }

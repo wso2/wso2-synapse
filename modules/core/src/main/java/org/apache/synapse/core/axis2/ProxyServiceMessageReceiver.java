@@ -294,7 +294,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
     private void reportStatistics(boolean createStatisticLog, MessageContext messageContext) {
         StatisticReportingLog statisticReportingLog;
-        if (proxy.getAspectConfiguration().isStatisticsEnable()) {
+        if (proxy.getAspectConfiguration() != null && proxy.getAspectConfiguration().isStatisticsEnable()) {
             if (createStatisticLog) {
                 statisticReportingLog =
                         new CreateEntryStatisticLog(messageContext, this.name, ComponentType.PROXYSERVICE, null,

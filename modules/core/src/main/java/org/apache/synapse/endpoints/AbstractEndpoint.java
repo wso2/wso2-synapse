@@ -801,22 +801,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
         if (isStatCollected == null) {
-            if (definition.getAspectConfiguration().isStatisticsEnable()) {
-                createStatistic(messageContext, isCreateLog);
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
-            } else {
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
-            }
+            log.error("Endpoint" + getName() + " received message context with no statistic identification.");
         } else {
             if (isStatCollected) {
-                if (definition.getAspectConfiguration().isStatisticsEnable()) {
-                    createStatistic(messageContext, isCreateLog);
+                if (definition.getAspectConfiguration() != null &&
+                    definition.getAspectConfiguration().isStatisticsEnable()) {
+                    //set some parameter to indicate to collect individual statistics of this endpoint like boolean
                 }
+                createStatisticLog(messageContext, isCreateLog);
             }
         }
     }
 
-    private void createStatistic(MessageContext messageContext, boolean isCreateLog) {
+    private void createStatisticLog(MessageContext messageContext, boolean isCreateLog) {
         StatisticReportingLog statisticReportingLog;
         if (isCreateLog) {
             statisticReportingLog =

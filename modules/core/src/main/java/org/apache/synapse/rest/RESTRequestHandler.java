@@ -119,7 +119,7 @@ public class RESTRequestHandler {
     }
 
     private void reportApiStartStatistics(MessageContext synCtx, API api) {
-        if (api.getAspectConfiguration().isStatisticsEnable()) {
+        if (api.getAspectConfiguration() != null && api.getAspectConfiguration().isStatisticsEnable()) {
             CreateEntryStatisticLog createEntryStatisticLog =
                     new CreateEntryStatisticLog(synCtx, api.getName(), ComponentType.API, null,
                                                 System.currentTimeMillis());
