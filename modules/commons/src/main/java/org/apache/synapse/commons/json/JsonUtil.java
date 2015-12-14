@@ -231,8 +231,12 @@ public final class JsonUtil {
                 throw new AxisFault("Could not write JSON string.", e);
             }
         } else {
-            logger.error("#writeAsJson. Payload could not be written as JSON. MessageID: " + messageContext.getMessageID());
-            throw new AxisFault("Payload could not be written as JSON.");
+            try {
+                out.write("".getBytes());
+            } catch (IOException e) {
+                logger.error("#writeAsJson. Payload could not be written as JSON. MessageID: " + messageContext.getMessageID());
+                throw new AxisFault("Payload could not be written as JSON.");
+            }
         }
     }
 
