@@ -91,6 +91,14 @@ public final class JsonUtil {
 
     private static final String jsonoutcustomRegex;
 
+    private static final boolean jsonoutAutoArray;
+
+    private static final boolean jsonoutMultiplePI;
+
+    private static final boolean xmloutAutoArray;
+
+    private static final boolean xmloutMultiplePI;
+
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
         if (properties == null) {
@@ -98,6 +106,10 @@ public final class JsonUtil {
             jsonOutAutoPrimitive = true;
             jsonOutNamespaceSepChar = '_';
             jsonoutcustomRegex=null;
+            jsonoutAutoArray = true;
+            jsonoutMultiplePI = false;
+            xmloutAutoArray = true;
+            xmloutMultiplePI = false;
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
             String process = properties.getProperty("synapse.commons.json.preserve.namespace", "false").trim();
@@ -116,6 +128,18 @@ public final class JsonUtil {
             jsonOutEnableNsDeclarations = Boolean.parseBoolean(process.toLowerCase());
 
             jsonoutcustomRegex = properties.getProperty("synapse.commons.json.json.output.disableAutoPrimitive.regex", null);
+
+            jsonoutAutoArray = Boolean.parseBoolean(properties.getProperty
+                    ("synapse.commons.json.json.output.jsonoutAutoArray", "true"));
+
+            jsonoutMultiplePI = Boolean.parseBoolean(properties.getProperty
+                    ("synapse.commons.json.json.output.jsonoutMultiplePI", "true"));
+
+            xmloutAutoArray = Boolean.parseBoolean(properties.getProperty
+                    ("synapse.commons.json.json.output.xmloutAutoArray", "true"));
+
+            xmloutMultiplePI = Boolean.parseBoolean(properties.getProperty
+                    ("synapse.commons.json.json.output.xmloutMultiplePI", "false"));
 
             process = properties.getProperty("synapse.commons.json.json.output.emptyXmlElemToEmptyStr", "true").trim();
 
@@ -138,8 +162,8 @@ public final class JsonUtil {
      * Configuration used to produce XML that has no processing instructions in it.
      */
     private static final JsonXMLConfig xmlOutputConfigNoPIs = new JsonXMLConfigBuilder()
-            .multiplePI(false)
-            .autoArray(true)
+            .multiplePI(xmloutMultiplePI)
+            .autoArray(xmloutAutoArray)
             .autoPrimitive(true)
             .namespaceDeclarations(false)
             .namespaceSeparator('\u0D89')
@@ -149,8 +173,8 @@ public final class JsonUtil {
      * This configuration is used to format the JSON output produced by the JSON writer.
      */
     private static final JsonXMLConfig jsonOutputConfig = new JsonXMLConfigBuilder()
-            .multiplePI(true)
-            .autoArray(true)
+            .multiplePI(jsonoutMultiplePI)
+            .autoArray(jsonoutAutoArray)
             .autoPrimitive(jsonOutAutoPrimitive)
             .namespaceDeclarations(jsonOutEnableNsDeclarations)
             .namespaceSeparator(jsonOutNamespaceSepChar)
