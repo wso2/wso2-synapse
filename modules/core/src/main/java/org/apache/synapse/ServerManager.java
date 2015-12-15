@@ -20,6 +20,7 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.aspects.data.tracing.MediationTracingDataConsumer;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -109,13 +110,10 @@ public class ServerManager {
         doInit();
         initialized = true;
 
-//        MessageFlowDataHolder.setMessageFlowTraceEnable(Boolean.parseBoolean(
-//                SynapsePropertiesLoader.getPropertyValue(
-//                        MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLE, String.valueOf(false))));
+        MediationTracingDataCollector.init();
+        Thread t = new Thread(new MediationTracingDataConsumer());
+        t.start();
 
-//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
-            new MediationTracingDataConsumer();
-//        }
 
         return this.serverContextInformation.getServerState();
     }

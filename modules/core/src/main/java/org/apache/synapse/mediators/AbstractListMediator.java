@@ -24,6 +24,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
@@ -78,26 +79,25 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
 
             for (int i = mediatorPosition; i < mediators.size(); i++) {
-                String mediatorId = null;
+                String componentId = null;
                 // ensure correct trace state after each invocation of a mediator
                 synCtx.setTracingState(myEffectiveTraceState);
 
                 Mediator mediator = mediators.get(i);
-                if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
-                    mediatorId = UUID.randomUUID().toString();
-                    mediator.setTraceFlow(synCtx, mediatorId, mediator, true);
+                if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    componentId = mediator.setTraceFlow(synCtx, componentId, mediator, true);
                 }
 
                 if (!mediator.mediate(synCtx)) {
-                    if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
-                        mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
+                    if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                        mediator.setTraceFlow(synCtx, componentId, mediator, false);
                     }
                     returnVal = false;
                     break;
                 }
 
-                if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
-                    mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
+                if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    mediator.setTraceFlow(synCtx, componentId, mediator, false);
                 }
             }
         } catch (SynapseException synEx) {

@@ -25,6 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 
@@ -110,9 +111,10 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
         super.init(se);
     }
 
-    public void setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+    public String setTraceFlow(MessageContext msgCtx, String componentId, Mediator mediator, boolean isStart) {
         if(test(msgCtx)){
-            super.setTraceFlow(msgCtx, mediatorId, mediator, isStart);
+            return super.setTraceFlow(msgCtx, componentId, mediator, isStart);
         }
+        return MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
     }
 }

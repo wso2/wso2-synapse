@@ -280,12 +280,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     log.debug("Using Main Sequence for injected message");
                 }
 
-                if (this.getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
-                    if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-                        MediationTracingDataCollector.setEntryPoint(synCtx,
-                                                                    MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
-                                                                    synCtx.getMessageID());
-                    }
+                if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    MediationTracingDataCollector.setEntryPoint(synCtx,
+                                                                MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
+                                                                synCtx.getMessageID());
                 }
 
                 return synCtx.getMainSequence().mediate(synCtx);
@@ -352,7 +350,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
 
-        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null) {
+        if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
             MediationTracingDataCollector.setEntryPoint(synCtx,
                                                         MessageFlowTracerConstants.ENTRY_TYPE_INBOUND_ENDPOINT +
                                                         synCtx.getProperty("inbound.endpoint.name"),

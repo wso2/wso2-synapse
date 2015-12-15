@@ -22,11 +22,17 @@ public class MessageFlowTracerConstants {
     public static final String MESSAGE_FLOW_ID = "MESSAGE_FLOW_ID";
     public static final String MESSAGE_FLOW = "MESSAGE_FLOW";
     public static final String MESSAGE_FLOW_ENTRY_TYPE = "MESSAGE_FLOW_ENTRY_TYPE";
-    public static final String MESSAGE_FLOW_TRACE_ENABLE = "message.flow.trace.enable";
+    public static final String MESSAGE_FLOW_TRACE_ENABLED = "message.flow.trace.enabled";
+    public static final String MESSAGE_FLOW_TRACE_QUEUE_SIZE = "message.flow.tracer.queue.size";
 
     //Entry Types
     public  static final String ENTRY_TYPE_MAIN_SEQ = "Main Sequence:";
-    public  static final String ENTRY_TYPE_PROXY_SERVICE = "Main Sequence";
+    public  static final String ENTRY_TYPE_PROXY_SERVICE = "Proxy:";
     public  static final String ENTRY_TYPE_INBOUND_ENDPOINT = "Inbound Endpoint:";
     public  static final String ENTRY_TYPE_REST_API = "REST_API:";
+
+    public static final String DEFAULT_QUEUE_SIZE = "10000";
+    public static final String DEFAULT_TRACE_ENABLED = "false";
+
+    public static final String DEFAULT_COMPONENT_ID = "";
 }

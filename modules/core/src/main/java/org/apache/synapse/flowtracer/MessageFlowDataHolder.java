@@ -17,16 +17,6 @@ public class MessageFlowDataHolder {
     private static Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<String,
             List<MessageFlowTraceEntry>>();
 
-    private boolean messageFlowTraceEnable = true;
-
-    public void setMessageFlowTraceEnable(boolean messageFlowTraceEnable) {
-        messageFlowTraceEnable = messageFlowTraceEnable;
-    }
-
-    public boolean isMessageFlowTraceEnable() {
-        return messageFlowTraceEnable;
-    }
-
     public void addFlowInfoEntry(MessageFlowTraceEntry messageFlowTraceEntry) {
         List<MessageFlowTraceEntry> traceList = flowInfo.get(messageFlowTraceEntry.getMessageId());
         if (traceList == null) {

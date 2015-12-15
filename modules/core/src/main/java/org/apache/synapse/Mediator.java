@@ -98,5 +98,5 @@ public interface Mediator extends SynapseArtifact {
      */
     public String getMediatorName();
 
-    public void setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart);
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart);
 }

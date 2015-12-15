@@ -110,10 +110,11 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (key == null) {
             String mediatorId = null;
-            if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
-                mediatorId = UUID.randomUUID().toString();
-                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
-                        .sequenceType.name() : name), true);
+            if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                mediatorId = MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " +
+                                                                                                 (name == null ?
+                                                                                                  this.sequenceType.name() :
+                                                                                                  name), true);
             }
 
             // The onError sequence for handling errors which may occur during the
@@ -186,9 +187,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
 
-                if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
-                    MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
-                            .sequenceType.name() : name), false);
+                if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ?
+                                                                                            this.sequenceType.name()
+                                                                                                         : name), false);
                 }
 
                 return result;
