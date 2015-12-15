@@ -525,7 +525,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+        if(newCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
             List<String> newMessageFlowTrace = new ArrayList<String>();
             for (MessageContext synCtx : aggregate.getMessages()) {
                 List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);

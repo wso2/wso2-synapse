@@ -292,12 +292,13 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
 
-        if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+        if (synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
             if (!synCtx.isResponse()) {
                 if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
                     synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "REST API: " + synCtx
-                            .getProperty(RESTConstants.SYNAPSE_REST_API));
+                    synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE,
+                                       MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
+                                       synCtx.getProperty(RESTConstants.SYNAPSE_REST_API));
                 }
                 mediatorId = UUID.randomUUID().toString();
                 MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
@@ -406,7 +407,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             }
         }
 
-        if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+        if (synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
             if (!synCtx.isResponse()) {
                 MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
             }

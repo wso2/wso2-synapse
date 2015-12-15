@@ -119,15 +119,15 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         //trace message flow
-        if (MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+        if (synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
             if (mc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, mc.getProperty
+                MediationTracingDataCollector.setEntryPoint(synCtx, (String) mc.getProperty
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE), (String) mc.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ID));
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, mc.getProperty
-                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE));
             } else if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-                synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Proxy Service:" + name);
+                MediationTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants
+                                                                            .ENTRY_TYPE_PROXY_SERVICE + name, synCtx
+                                                                    .getMessageID());
             }
             mediatorId = UUID.randomUUID().toString();
             MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, true);
@@ -239,7 +239,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                 MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
             }
         }

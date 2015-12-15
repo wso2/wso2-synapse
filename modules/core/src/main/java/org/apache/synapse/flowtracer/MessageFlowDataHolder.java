@@ -17,17 +17,17 @@ public class MessageFlowDataHolder {
     private static Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<String,
             List<MessageFlowTraceEntry>>();
 
-    private static boolean messageFlowTraceEnable = false;
+    private boolean messageFlowTraceEnable = true;
 
-    public static void setMessageFlowTraceEnable(boolean messageFlowTraceEnable) {
-        MessageFlowDataHolder.messageFlowTraceEnable = messageFlowTraceEnable;
+    public void setMessageFlowTraceEnable(boolean messageFlowTraceEnable) {
+        messageFlowTraceEnable = messageFlowTraceEnable;
     }
 
-    public static boolean isMessageFlowTraceEnable() {
+    public boolean isMessageFlowTraceEnable() {
         return messageFlowTraceEnable;
     }
 
-    public static void addFlowInfoEntry(MessageFlowTraceEntry messageFlowTraceEntry) {
+    public void addFlowInfoEntry(MessageFlowTraceEntry messageFlowTraceEntry) {
         List<MessageFlowTraceEntry> traceList = flowInfo.get(messageFlowTraceEntry.getMessageId());
         if (traceList == null) {
             traceList = new ArrayList<MessageFlowTraceEntry>();
@@ -36,7 +36,7 @@ public class MessageFlowDataHolder {
         traceList.add(messageFlowTraceEntry);
     }
 
-    public static void addComponentInfoEntry(MessageFlowComponentEntry messageFlowComponentEntry) {
+    public void addComponentInfoEntry(MessageFlowComponentEntry messageFlowComponentEntry) {
         List<MessageFlowComponentEntry> componentList = componentInfo.get(messageFlowComponentEntry.getMessageId());
         if (componentList == null) {
             componentList = new ArrayList<MessageFlowComponentEntry>();
@@ -46,12 +46,12 @@ public class MessageFlowDataHolder {
         componentInfo.put(messageFlowComponentEntry.getMessageId(), componentList);
     }
 
-    public static Map<String, List<MessageFlowTraceEntry>> getMessageFlows() {
+    public Map<String, List<MessageFlowTraceEntry>> getMessageFlows() {
         return flowInfo;
     }
 
 
-    public static String[] getMessageFlowTrace(String messageId) {
+    public String[] getMessageFlowTrace(String messageId) {
         List<MessageFlowTraceEntry> traceList = flowInfo.get(messageId);
 
         if (traceList != null && traceList.size() > 0) {
@@ -66,12 +66,12 @@ public class MessageFlowDataHolder {
         return null;
     }
 
-    public static MessageFlowComponentEntry[] getComponentInfo(String messageId) {
+    public MessageFlowComponentEntry[] getComponentInfo(String messageId) {
         List<MessageFlowComponentEntry> componentList = componentInfo.get(messageId);
         return componentList.toArray(new MessageFlowComponentEntry[componentList.size()]);
     }
 
-    public static void clearDataStores() {
+    public void clearDataStores() {
         componentInfo.clear();
         flowInfo.clear();
     }

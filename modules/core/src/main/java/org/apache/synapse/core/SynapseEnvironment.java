@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
@@ -246,4 +247,6 @@ public interface SynapseEnvironment {
      * @return global timeout interval
      */
     public long getGlobalTimeout();
+
+    public MessageFlowDataHolder getMessageFlowDataHolder();
 }

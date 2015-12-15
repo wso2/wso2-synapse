@@ -83,20 +83,20 @@ public abstract class AbstractListMediator extends AbstractMediator
                 synCtx.setTracingState(myEffectiveTraceState);
 
                 Mediator mediator = mediators.get(i);
-                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                     mediatorId = UUID.randomUUID().toString();
                     mediator.setTraceFlow(synCtx, mediatorId, mediator, true);
                 }
 
                 if (!mediator.mediate(synCtx)) {
-                    if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                    if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                         mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
                     }
                     returnVal = false;
                     break;
                 }
 
-                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                     mediator.setTraceFlow(synCtx, mediatorId, mediator, false);
                 }
             }

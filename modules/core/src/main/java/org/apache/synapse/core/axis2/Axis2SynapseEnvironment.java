@@ -39,6 +39,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
@@ -117,6 +118,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
 
+    private MessageFlowDataHolder messageFlowDataHolder;
+
     public Axis2SynapseEnvironment(SynapseConfiguration synCfg) {
 
         int coreThreads = SynapseThreadPool.SYNAPSE_CORE_THREADS;
@@ -172,6 +175,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         restHandler = new RESTRequestHandler();
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
+
+        messageFlowDataHolder = new MessageFlowDataHolder();
 
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
@@ -275,10 +280,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     log.debug("Using Main Sequence for injected message");
                 }
 
-                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                if (this.getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                     if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-                        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-                        synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Main Sequence");
+                        MediationTracingDataCollector.setEntryPoint(synCtx,
+                                                                    MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
+                                                                    synCtx.getMessageID());
                     }
                 }
 
@@ -319,9 +325,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     public void injectAsync(final MessageContext synCtx, SequenceMediator seq) {
 
-        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-        }
+//        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+//            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+//        }
 
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
@@ -346,10 +352,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
 
-        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, "Inbound Endpoint:" + synCtx
-                    .getProperty("inbound.endpoint.name"));
+        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null) {
+            MediationTracingDataCollector.setEntryPoint(synCtx,
+                                                        MessageFlowTracerConstants.ENTRY_TYPE_INBOUND_ENDPOINT +
+                                                        synCtx.getProperty("inbound.endpoint.name"),
+                                                        synCtx.getMessageID());
         }
 
         if (log.isDebugEnabled()) {
@@ -991,5 +998,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
         }
         return true;
+    }
+
+    public MessageFlowDataHolder getMessageFlowDataHolder(){
+        return this.messageFlowDataHolder;
     }
 }

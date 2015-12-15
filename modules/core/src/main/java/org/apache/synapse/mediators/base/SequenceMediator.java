@@ -110,7 +110,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (key == null) {
             String mediatorId = null;
-            if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+            if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                 mediatorId = UUID.randomUUID().toString();
                 MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
                         .sequenceType.name() : name), true);
@@ -186,7 +186,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
 
-                if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+                if(synCtx.getEnvironment().getMessageFlowDataHolder().isMessageFlowTraceEnable()) {
                     MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ? this
                             .sequenceType.name() : name), false);
                 }

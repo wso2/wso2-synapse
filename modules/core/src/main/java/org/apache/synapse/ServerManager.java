@@ -109,13 +109,13 @@ public class ServerManager {
         doInit();
         initialized = true;
 
-        MessageFlowDataHolder.setMessageFlowTraceEnable(Boolean.parseBoolean(
-                SynapsePropertiesLoader.getPropertyValue(
-                        MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLE, String.valueOf(false))));
+//        MessageFlowDataHolder.setMessageFlowTraceEnable(Boolean.parseBoolean(
+//                SynapsePropertiesLoader.getPropertyValue(
+//                        MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLE, String.valueOf(false))));
 
-        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
+//        if(MessageFlowDataHolder.isMessageFlowTraceEnable()) {
             new MediationTracingDataConsumer();
-        }
+//        }
 
         return this.serverContextInformation.getServerState();
     }

@@ -1,6 +1,7 @@
 package org.apache.synapse.flowtracer.data;
 
 import org.apache.synapse.aspects.data.MediationDataEntry;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 
 public class MessageFlowComponentEntry implements MediationDataEntry {
@@ -13,8 +14,11 @@ public class MessageFlowComponentEntry implements MediationDataEntry {
     private String timestamp;
     private String propertySet;
     private String payload;
+    private SynapseEnvironment synapseEnvironment;
 
-    public MessageFlowComponentEntry(String messageId, String componentId, String componentName, boolean response, boolean start, String timestamp, String propertySet, String payload) {
+    public MessageFlowComponentEntry(String messageId, String componentId, String componentName, boolean response,
+                                     boolean start, String timestamp, String propertySet, String payload,
+                                     SynapseEnvironment synapseEnvironment) {
         this.messageId = messageId;
         this.componentId = componentId;
         this.componentName = componentName;
@@ -23,6 +27,7 @@ public class MessageFlowComponentEntry implements MediationDataEntry {
         this.timestamp = timestamp;
         this.propertySet = propertySet;
         this.payload = payload;
+        this.synapseEnvironment = synapseEnvironment;
     }
 
     public String getPayload() {
@@ -66,6 +71,6 @@ public class MessageFlowComponentEntry implements MediationDataEntry {
     }
 
     public void process(){
-        MessageFlowDataHolder.addComponentInfoEntry(this);
+        this.synapseEnvironment.getMessageFlowDataHolder().addComponentInfoEntry(this);
     }
 }

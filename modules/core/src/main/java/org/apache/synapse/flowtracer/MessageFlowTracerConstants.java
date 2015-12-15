@@ -23,4 +23,10 @@ public class MessageFlowTracerConstants {
     public static final String MESSAGE_FLOW = "MESSAGE_FLOW";
     public static final String MESSAGE_FLOW_ENTRY_TYPE = "MESSAGE_FLOW_ENTRY_TYPE";
     public static final String MESSAGE_FLOW_TRACE_ENABLE = "message.flow.trace.enable";
+
+    //Entry Types
+    public  static final String ENTRY_TYPE_MAIN_SEQ = "Main Sequence:";
+    public  static final String ENTRY_TYPE_PROXY_SERVICE = "Main Sequence";
+    public  static final String ENTRY_TYPE_INBOUND_ENDPOINT = "Inbound Endpoint:";
+    public  static final String ENTRY_TYPE_REST_API = "REST_API:";
 }
