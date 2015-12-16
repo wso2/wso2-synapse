@@ -19,20 +19,26 @@
 package org.apache.synapse.aspects.newstatistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class AddCallbacksLog implements StatisticReportingLog {
 
-	private MessageContext messageContext;
+	private final String statisticId;
+	private final Integer cloneId;
 	private String callbackId;
 
 	public AddCallbacksLog(MessageContext messageContext, String callbackId) {
-		this.messageContext = messageContext;
+		statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
+			cloneId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
+		} else {
+			cloneId = -1;
+		}
 		this.callbackId = callbackId;
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.addCallbacks(messageContext, callbackId);
+	@Override public void process() {
+		RuntimeStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
 	}
 }

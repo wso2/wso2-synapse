@@ -29,6 +29,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
@@ -449,20 +450,16 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param isCreateLog    whether this is a start or end of a mediator execution
      */
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
-        StatisticReportingLog statisticLog;
-        if (isStatCollected != null) {
-            if (isStatCollected) {
-                if (isCreateLog) {
-                    statisticLog =
-                            new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                        parentName, System.currentTimeMillis());
-                } else {
-                    statisticLog = new StatisticCloseLog(messageContext, getMediatorName(), parentName,
-                                                         System.currentTimeMillis());
-                }
-                StatisticEventReceiver.receive(statisticLog);
+        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
+            StatisticReportingLog statisticLog;
+            if (isCreateLog) {
+                statisticLog = new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           parentName, System.currentTimeMillis());
+            } else {
+                statisticLog = new StatisticCloseLog(messageContext, getMediatorName(), parentName,
+                                                     System.currentTimeMillis());
             }
+            StatisticEventReceiver.receive(statisticLog);
         }
     }
 

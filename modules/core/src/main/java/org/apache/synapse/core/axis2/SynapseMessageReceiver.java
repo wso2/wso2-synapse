@@ -29,6 +29,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -96,15 +97,17 @@ public class SynapseMessageReceiver implements MessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
 
-            boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-            if (!isOutOnly) {
-                isOutOnly =
-                        (!Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                         !synCtx.isResponse());
-            }
-            if (isOutOnly) {
-                FinalizeEntryLog finalizeEntryLog = new FinalizeEntryLog(synCtx, System.currentTimeMillis());
-                StatisticEventReceiver.receive(finalizeEntryLog);
+            if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+                boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
+                if (!isOutOnly) {
+                    isOutOnly = (!Boolean
+                            .parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                                 !synCtx.isResponse());
+                }
+                if (isOutOnly) {
+                    FinalizeEntryLog finalizeEntryLog = new FinalizeEntryLog(synCtx, System.currentTimeMillis());
+                    StatisticEventReceiver.receive(finalizeEntryLog);
+                }
             }
         }
     }

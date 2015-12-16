@@ -19,24 +19,29 @@
 package org.apache.synapse.aspects.newstatistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.StatisticDataUnit;
 
 public class StatisticCloseLog implements StatisticReportingLog {
 
-	private MessageContext messageContext;
-	private String componentId;
-	private String parentId;
-	private Long endTime;
+	private StatisticDataUnit statisticDataUnit;
 
 	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime) {
-		this.messageContext = messageContext;
-		this.componentId = componentId;
-		this.parentId = parentId;
-		this.endTime = endTime;
+		String statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+		int msgId;
+		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
+			msgId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
+		} else {
+			msgId = -1;
+		}
+
+		statisticDataUnit =
+				new StatisticDataUnit(statisticId, componentId, parentId, msgId, endTime, messageContext.isResponse()
+						,messageContext.getEnvironment());
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.recordStatisticCloseLog(messageContext, componentId, parentId, endTime);
+	@Override public void process() {
+		RuntimeStatisticCollector.recordStatisticCloseLog(statisticDataUnit);
 	}
 }

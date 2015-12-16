@@ -32,6 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
@@ -799,16 +800,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
-        if (isStatCollected == null) {
-            log.error("Endpoint" + getName() + " received message context with no statistic identification.");
-        } else {
-            if (isStatCollected) {
-                if (definition.getAspectConfiguration() != null &&
-                    definition.getAspectConfiguration().isStatisticsEnable()) {
-                    //set some parameter to indicate to collect individual statistics of this endpoint like boolean
+        if (RuntimeStatisticCollector.isStatisticsTraced(messageContext)) {
+            Boolean isStatCollected =
+                    (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
+            if (isStatCollected == null) {
+                log.error("Endpoint" + getName() + " received message context with no statistic identification.");
+            } else {
+                if (isStatCollected) {
+                    if (definition.getAspectConfiguration() != null &&
+                        definition.getAspectConfiguration().isStatisticsEnable()) {
+                        //set some parameter to indicate to collect individual statistics of this endpoint like boolean
+                    }
+                    createStatisticLog(messageContext, isCreateLog);
                 }
-                createStatisticLog(messageContext, isCreateLog);
             }
         }
     }

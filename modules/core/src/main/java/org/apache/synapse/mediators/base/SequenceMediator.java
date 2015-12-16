@@ -26,6 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
@@ -498,19 +499,26 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         this.sequenceType = sequenceType;
     }
 
-    @Override
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
-        if (isStatCollected == null) {
-            if (getAspectConfiguration() != null && getAspectConfiguration().isStatisticsEnable()) {
-                createStatistic(messageContext, isCreateLog);
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        if (RuntimeStatisticCollector.isStatisticsEnable()) {
+            Boolean isStatCollected =
+                    (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
+            if (isStatCollected == null) {
+                if (getAspectConfiguration() != null && getAspectConfiguration().isStatisticsEnable()) {
+                    if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) == null && !isCreateLog) {
+                        log.error("Trying close statistic entry without Statistic ID");
+                        return;
+                    }
+                    RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
+                    createStatistic(messageContext, isCreateLog);
+                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+                } else {
+                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
+                }
             } else {
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
-            }
-        } else {
-            if (isStatCollected) {
-                createStatistic(messageContext, isCreateLog); //give stats if upper level set stat collection to true
+                if ((messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) && isStatCollected) {
+                    createStatistic(messageContext, isCreateLog);
+                }
             }
         }
     }

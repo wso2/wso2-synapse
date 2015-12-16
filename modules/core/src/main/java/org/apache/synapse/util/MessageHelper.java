@@ -192,8 +192,11 @@ public class MessageHelper {
         }
 
         if (RuntimeStatisticCollector.isStatisticsEnable()) {
-            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID,
-                               RuntimeStatisticCollector.getClonedMsgNumber(newCtx));
+            if (newCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
+                int cloneNo = RuntimeStatisticCollector
+                        .getClonedMsgNumber((String) newCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID));
+                newCtx.setProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID, cloneNo);
+            }
         }
         return newCtx;
     }

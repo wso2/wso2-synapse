@@ -22,6 +22,7 @@ package org.apache.synapse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CloseStatisticEntryForcefullyLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateFaultStatisticLog;
@@ -56,13 +57,17 @@ public abstract class FaultHandler {
 
         try {
             if (!isFaultAlreadyReported(synCtx)) {
-                CreateFaultStatisticLog createFaultStatisticLog =
-                        new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER,
-                                                    ComponentType.FAULTHANDLER,
-                                                    getStatisticReportingElementName(synCtx),
-                                                    System.currentTimeMillis());
-                StatisticEventReceiver.receive(createFaultStatisticLog);
-                faultReported = true;
+                if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+                    CreateFaultStatisticLog createFaultStatisticLog =
+                            new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER,
+                                                        ComponentType.FAULTHANDLER,
+                                                        getStatisticReportingElementName(synCtx),
+                                                        System.currentTimeMillis());
+                    StatisticEventReceiver.receive(createFaultStatisticLog);
+                    faultReported = true;
+                    synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, true);
+                }
+
             }
             synCtx.getServiceLog().info("FaultHandler executing impl: " + this.getClass().getName());
             onFault(synCtx);
@@ -75,10 +80,14 @@ public abstract class FaultHandler {
             }
         } finally {
             if (faultReported) {
-                CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
-                        new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
-                StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
-                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
+                if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+                    CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
+                            new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
+                    StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
+                    synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
+                } else {
+                    log.error("Trying close statistic entry without Statistic ID");
+                }
             }
         }
     }
@@ -123,14 +132,17 @@ public abstract class FaultHandler {
             }
 
             if (!isFaultAlreadyReported(synCtx)) {
-                CreateFaultStatisticLog createFaultStatisticLog =
-                        new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER, ComponentType.FAULTHANDLER,
-                                                    getStatisticReportingElementName(synCtx),
-                                                    System.currentTimeMillis());
-                StatisticEventReceiver.receive(createFaultStatisticLog);
-                faultReported = true;
+                if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+                    CreateFaultStatisticLog createFaultStatisticLog =
+                            new CreateFaultStatisticLog(synCtx, SynapseConstants.FAULTHANDLER,
+                                                        ComponentType.FAULTHANDLER,
+                                                        getStatisticReportingElementName(synCtx),
+                                                        System.currentTimeMillis());
+                    StatisticEventReceiver.receive(createFaultStatisticLog);
+                    faultReported = true;
+                    synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, true);
+                }
             }
-            synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, true);
             onFault(synCtx);
         } catch (SynapseException se) {
 
@@ -142,10 +154,14 @@ public abstract class FaultHandler {
             }
         } finally {
             if (faultReported) {
-                CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
-                        new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
-                StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
-                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
+                if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+                    CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
+                            new CloseStatisticEntryForcefullyLog(synCtx, System.currentTimeMillis());
+                    StatisticEventReceiver.receive(closeStatisticEntryForcefullyLog);
+                    synCtx.setProperty(SynapseConstants.NEW_STATISTICS_IS_FAULT_REPORTED, false);
+                } else {
+                    log.error("Trying close statistic entry without Statistic ID");
+                }
             }
         }
     }

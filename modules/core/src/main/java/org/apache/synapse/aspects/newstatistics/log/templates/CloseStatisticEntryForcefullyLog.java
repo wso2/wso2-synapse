@@ -19,20 +19,21 @@
 package org.apache.synapse.aspects.newstatistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.StatisticDataUnit;
 
 public class CloseStatisticEntryForcefullyLog implements StatisticReportingLog {
 
-	private MessageContext messageContext;
-	private long endTime;
+	private final StatisticDataUnit statisticDataUnit;
 
 	public CloseStatisticEntryForcefullyLog(MessageContext messageContext, long endTime) {
-		this.messageContext = messageContext;
-		this.endTime = endTime;
+		String statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
 	}
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector.closeStatisticEntryForcefully(messageContext, endTime);
+		RuntimeStatisticCollector.closeStatisticEntryForcefully(statisticDataUnit);
 	}
 }

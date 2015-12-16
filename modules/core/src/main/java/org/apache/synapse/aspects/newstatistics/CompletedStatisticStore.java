@@ -18,7 +18,6 @@
 
 package org.apache.synapse.aspects.newstatistics;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 

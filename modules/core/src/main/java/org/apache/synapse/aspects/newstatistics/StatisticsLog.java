@@ -51,15 +51,14 @@ public class StatisticsLog {
 
 	private boolean isResponse;
 
-	public StatisticsLog(String componentId, ComponentType componentType, int msgId, int parentLevel, int parentMsgId,
-	                     String parent, long startTime) {
-
+	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
+		this.startTime = statisticDataUnit.getTime();
+		this.componentType = statisticDataUnit.getComponentType();
+		this.componentId = statisticDataUnit.getComponentId();
+		this.parent = statisticDataUnit.getParentId();
+		this.msgId = statisticDataUnit.getCloneId();
+		this.isResponse = statisticDataUnit.isResponse();
 		this.parentLevel = parentLevel;
-		this.startTime = startTime;
-		this.componentType = componentType;
-		this.componentId = componentId;
-		this.parent = parent;
-		this.msgId = msgId;
 		this.parentMsgId = parentMsgId;
 	}
 

@@ -19,29 +19,30 @@
 package org.apache.synapse.aspects.newstatistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.StatisticDataUnit;
 
 public class CreateFaultStatisticLog implements StatisticReportingLog {
 
-	private MessageContext messageContext;
-	private String componentId;
-	private ComponentType componentType;
-	private String parentId;
-	private Long startTime;
+	StatisticDataUnit statisticDataUnit;
 
 	public CreateFaultStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
 	                               String parentId, Long startTime) {
-		this.messageContext = messageContext;
-		this.componentId = componentId;
-		this.componentType = componentType;
-		this.parentId = parentId;
-		this.startTime = startTime;
+		String statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+		int cloneId;
+		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
+			cloneId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
+		} else {
+			cloneId = -1;
+		}
+		statisticDataUnit = new StatisticDataUnit(statisticId, componentId, componentType, parentId, cloneId, startTime,
+		                                          messageContext.isResponse());
 	}
 
-	@Override
-	public void process() {
+	@Override public void process() {
 		RuntimeStatisticCollector
-				.recordStatisticCreateFaultLog(messageContext, componentId, componentType, parentId, startTime);
+				.recordStatisticCreateFaultLog(statisticDataUnit);
 	}
 }

@@ -91,9 +91,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
-        //Setting statistic trace ID for statistic collection
-        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
-
         //Statistic reporting
         reportStatistics(true, synCtx);
 
@@ -305,21 +302,29 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     }
 
     private void reportStatistics(boolean createStatisticLog, MessageContext messageContext) {
-        StatisticReportingLog statisticReportingLog;
-        if (proxy.getAspectConfiguration() != null && proxy.getAspectConfiguration().isStatisticsEnable()) {
-            if (createStatisticLog) {
-                statisticReportingLog =
-                        new CreateEntryStatisticLog(messageContext, this.name, ComponentType.PROXYSERVICE, null,
-                                                    System.currentTimeMillis());
+        if (RuntimeStatisticCollector.isStatisticsEnable()) {
+            StatisticReportingLog statisticReportingLog = null;
+            if (proxy.getAspectConfiguration() != null && proxy.getAspectConfiguration().isStatisticsEnable()) {
+                if (createStatisticLog) {
+                    RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
+                    statisticReportingLog =
+                            new CreateEntryStatisticLog(messageContext, this.name, ComponentType.PROXYSERVICE, null,
+                                                        System.currentTimeMillis());
 
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+                } else {
+                    if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
+                        statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
+                    } else {
+                        log.error("Trying close statistic entry without Statistic ID");
+                    }
+                }
+                if (statisticReportingLog != null) {
+                    StatisticEventReceiver.receive(statisticReportingLog);
+                }
             } else {
-                statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
+                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
             }
-            StatisticEventReceiver.receive(statisticReportingLog);
-        } else {
-            messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
         }
     }
-
 }

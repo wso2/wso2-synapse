@@ -74,65 +74,53 @@ public class StatisticsEntry {
 	 * according to given parameters. Statistic Event for creating statistic entry can be either
 	 * PROXY, API or SEQUENCE.
 	 *
-	 * @param componentId     componentId of the statistic reporting element
-	 * @param componentType   component Type of the statistic reporting element
-	 * @param msgId           msgId of the statistics reporting message context
-	 * @param parentId        parentId of the reporting statistic event
-	 * @param startTime       starting time of the statistics reporting event
-	 * @param isResponse      is message context belong to an response
-	 * @param localMemberHost localMemberHost in the cluster
-	 * @param localMemberPort localMemberPort in the cluster
+	 * @param statisticDataUnit statistic data unit with raw data
+	 * @param localMemberHost   localMemberHost in the cluster
+	 * @param localMemberPort   localMemberPort in the cluster
 	 */
-	public StatisticsEntry(String componentId, ComponentType componentType, int msgId, String parentId, long startTime,
-	                       boolean isResponse, String localMemberHost, String localMemberPort) {
+	public StatisticsEntry(StatisticDataUnit statisticDataUnit, String localMemberHost, String localMemberPort) {
 		this.localMemberHost = localMemberHost;
 		this.localMemberPort = localMemberPort;
-		StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, parentId, startTime);
-		statisticsLog.setIsResponse(isResponse);
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, -1, -1);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
-			log.debug("Created statistic Entry [Start|RootElement]|[ElementId|" + componentId +
-			          "]|[MsgId|" + msgId + "].");
+			log.debug("Created statistic Entry [Start|RootElement]|[ElementId|" + statisticDataUnit.getComponentId() +
+			          "]|[MsgId|" + statisticDataUnit.getCloneId() + "].");
 		}
 	}
 
 	/**
 	 * Create statistics log at the start of a statistic reporting element.
 	 *
-	 * @param componentId   componentId of the statistic reporting element
-	 * @param componentType component Type of the statistic reporting element
-	 * @param msgId         msgId of the statistics reporting message context
-	 * @param parentId      parentId of the reporting statistic event
-	 * @param startTime     starting time of the statistics reporting event
-	 * @param isResponse    is message context belong to an response
+	 * @param statisticDataUnit statistic data unit with raw data
 	 */
-	public synchronized void createLog(String componentId, ComponentType componentType, int msgId, String parentId,
-	                                   long startTime, boolean isResponse) {
+	public synchronized void createLog(StatisticDataUnit statisticDataUnit) {
 		if (openLogs.isEmpty()) {
-			StatisticsLog statisticsLog = new StatisticsLog(componentId, componentType, msgId, -1, -1, null, startTime);
+			statisticDataUnit.setParentId(null);
+			StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, -1, -1);
 			messageFlowLogs.add(statisticsLog);
 			openLogs.addFirst(messageFlowLogs.size() - 1);
 			if (log.isDebugEnabled()) {
-				log.debug("Starting statistic log at root level [ElementId|" + componentId +
-				          "]|[MsgId|" + msgId + "].");
+				log.debug("Starting statistic log at root level [ElementId|" + statisticDataUnit.getComponentId() +
+				          "]|[MsgId|" + statisticDataUnit.getCloneId() + "].");
 			}
 		} else {
 			if (openLogs.getFirst() == 0) {
-				if (messageFlowLogs.get(0).getComponentId().equals(componentId)) {
+				if (messageFlowLogs.get(0).getComponentId().equals(statisticDataUnit.getComponentId())) {
 					if (log.isDebugEnabled()) {
 						log.debug("Statistics event is ignored as it is a duplicate of root element.");
 					}
 					return;
 				}
 			}
-			if (parentId == null) {
-				int parentIndex = getFirstLogWithMsgId(msgId);
-				createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
+			if (statisticDataUnit.getParentId() == null) {
+				int parentIndex = getFirstLogWithMsgId(statisticDataUnit.getCloneId());
+				createNewLog(statisticDataUnit, parentIndex);
 			} else {
-				int parentIndex = getComponentIndex(parentId, msgId);
+				int parentIndex = getComponentIndex(statisticDataUnit.getParentId(), statisticDataUnit.getCloneId());
 				if (parentIndex > -1) {
-					createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
+					createNewLog(statisticDataUnit, parentIndex);
 				} else {
 					if (log.isDebugEnabled()) {
 						log.debug("Invalid stating element");
@@ -145,17 +133,11 @@ public class StatisticsEntry {
 	/**
 	 * Create statistics log at the start of a fault sequence.
 	 *
-	 * @param componentId   componentId of the statistic reporting element
-	 * @param componentType component Type of the statistic reporting element
-	 * @param msgId         msgId of the statistics reporting message context
-	 * @param parentId      parentId of the reporting statistic event
-	 * @param startTime     starting time of the statistics reporting event
-	 * @param isResponse    is message context belong to an response
+	 * @param statisticDataUnit statistic data unit with raw data
 	 */
-	public synchronized void createFaultLog(String componentId, ComponentType componentType, int msgId, String parentId,
-	                                        Long startTime, boolean isResponse) {
-		int parentIndex = getParentForFault(parentId, msgId);
-		createNewLog(componentId, componentType, msgId, parentIndex, startTime, isResponse);
+	public synchronized void createFaultLog(StatisticDataUnit statisticDataUnit) {
+		int parentIndex = getParentForFault(statisticDataUnit.getParentId(), statisticDataUnit.getCloneId());
+		createNewLog(statisticDataUnit, parentIndex);
 		addFaultsToParents(parentIndex);
 		openFaults += 1;
 	}
@@ -164,45 +146,45 @@ public class StatisticsEntry {
 	 * Close a opened statistics log after all the statistics collection relating to that statistics
 	 * component is ended.
 	 *
-	 * @param componentId componentId of the statistic event sender
-	 * @param msgId       message id of the message context
-	 * @param parentId    parent of the statistic event sender
-	 * @param endTime     endTime of the statistics event
+	 * @param statisticDataUnit statistic data unit with raw data
 	 * @return true if there are no open message logs in openLogs List
 	 */
-	public synchronized boolean closeLog(String componentId, int msgId, String parentId, long endTime) {
+	public synchronized boolean closeLog(StatisticDataUnit statisticDataUnit) {
 		int componentLevel;
-		if (parentId == null) {
-			componentLevel = deleteAndGetComponentIndex(componentId, msgId);
+		if (statisticDataUnit.getParentId() == null) {
+			componentLevel =
+					deleteAndGetComponentIndex(statisticDataUnit.getComponentId(), statisticDataUnit.getCloneId());
 		} else {
-			componentLevel = deleteAndGetComponentIndex(componentId, parentId, msgId);
+			componentLevel =
+					deleteAndGetComponentIndex(statisticDataUnit.getComponentId(), statisticDataUnit.getParentId(),
+					                           statisticDataUnit.getCloneId());
 		}
 		//not closing the root statistic log as it will be closed be endAll method
 		if (componentLevel > 0) {
-			closeStatisticLog(componentLevel, endTime);
+			closeStatisticLog(componentLevel, statisticDataUnit.getTime());
 		}
 		return openLogs.isEmpty();
 	}
 
-	/**
-	 * Close fault sequence after ending the fault sequence.
-	 *
-	 * @param componentId componentId of the fault sequence
-	 * @param msgId       message id of the message context
-	 * @param endTime     endTime of the fault sequence
-	 * @return true if message flow is ended
-	 */
-	public synchronized boolean closeFaultLog(String componentId, int msgId, Long endTime) {
-		int componentLevel = deleteAndGetComponentIndex(componentId, msgId);
-		if (componentLevel > -1) {
-			closeStatisticLog(componentLevel, endTime);
-			openFaults -= 1; // decrement number of faults
-			if (callbacks.isEmpty() && (openFaults == 0)) {
-				return true;
-			}
-		}
-		return false;
-	}
+//	/**
+//	 * Close fault sequence after ending the fault sequence.
+//	 *
+//	 * @param componentId componentId of the fault sequence
+//	 * @param msgId       message id of the message context
+//	 * @param endTime     endTime of the fault sequence
+//	 * @return true if message flow is ended
+//	 */
+//	public synchronized boolean closeFaultLog(String componentId, int msgId, Long endTime) {
+//		int componentLevel = deleteAndGetComponentIndex(componentId, msgId);
+//		if (componentLevel > -1) {
+//			closeStatisticLog(componentLevel, endTime);
+//			openFaults -= 1; // decrement number of faults
+//			if (callbacks.isEmpty() && (openFaults == 0)) {
+//				return true;
+//			}
+//		}
+//		return false;
+//	}
 
 	/**
 	 * Closes opened statistics log specified by the componentLevel.
@@ -229,7 +211,7 @@ public class StatisticsEntry {
 	 * @return true if message flow correctly ended
 	 */
 	public synchronized boolean endAll(long endTime, boolean closeForcefully) {
-		if ((callbacks.isEmpty() && (openFaults == 0) && (openLogs.size() <= 1)) | closeForcefully) {
+		if ((callbacks.isEmpty() && (openFaults == 0) && (openLogs.size() <= 1)) || closeForcefully) {
 			if (openLogs.isEmpty()) {
 				messageFlowLogs.get(0).setEndTime(endTime);
 			} else {
@@ -248,27 +230,20 @@ public class StatisticsEntry {
 	/**
 	 * Create a new statistics log for the reported statistic event for given parameters.
 	 *
-	 * @param componentId   componentId of the statistic log
-	 * @param componentType component Type of the statistic log
-	 * @param msgId         msgId of the statistic log
-	 * @param parentIndex   parentIndex of the statistic log
-	 * @param startTime     starting time of the statistic log
-	 * @param isResponse    is message log related to a response
+	 * @param statisticDataUnit statistic data unit with raw data
+	 * @param parentIndex       parentIndex of the statistic log
 	 */
-	private void createNewLog(String componentId, ComponentType componentType, int msgId, int parentIndex,
-	                          Long startTime, boolean isResponse) {
+	private void createNewLog(StatisticDataUnit statisticDataUnit, int parentIndex) {
 		StatisticsLog parentLog = messageFlowLogs.get(parentIndex);
 		parentLog.incrementNoOfChildren();
 		parentLog.setHasChildren(true);
-		StatisticsLog statisticsLog =
-				new StatisticsLog(componentId, componentType, msgId, parentIndex, parentLog.getMsgId(),
-				                  parentLog.getComponentId(), startTime);
-		statisticsLog.setIsResponse(isResponse);
+		statisticDataUnit.setParentId(parentLog.getComponentId());
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, parentLog.getMsgId(), parentIndex);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
-			log.debug("Created statistic log for [ElementId|" + componentId + "]|[MsgId|" +
-			          msgId + "]");
+			log.debug("Created statistic log for [ElementId|" + statisticDataUnit.getComponentId() + "]|[MsgId|" +
+			          statisticDataUnit.getCloneId() + "]");
 		}
 	}
 

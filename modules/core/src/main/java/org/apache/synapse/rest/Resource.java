@@ -28,6 +28,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
@@ -468,21 +469,17 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
      * @param isCreateLog    whether this is a start or end of a mediator execution
      */
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
-        StatisticReportingLog statisticLog;
-        if (isStatCollected != null) {
-            if (isStatCollected) {
-                if (isCreateLog) {
-                    statisticLog = new CreateEntryStatisticLog(messageContext, getResourceNameForStat(messageContext),
-                                                               ComponentType.RESOURCE, parentName,
-                                                               System.currentTimeMillis());
-                } else {
-                    statisticLog =
-                            new StatisticCloseLog(messageContext, getResourceNameForStat(messageContext), parentName,
-                                                  System.currentTimeMillis());
-                }
-                StatisticEventReceiver.receive(statisticLog);
+        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
+            StatisticReportingLog statisticLog;
+            if (isCreateLog) {
+                statisticLog = new CreateEntryStatisticLog(messageContext, getResourceNameForStat(messageContext),
+                                                           ComponentType.RESOURCE, parentName,
+                                                           System.currentTimeMillis());
+            } else {
+                statisticLog = new StatisticCloseLog(messageContext, getResourceNameForStat(messageContext), parentName,
+                                                     System.currentTimeMillis());
             }
+            StatisticEventReceiver.receive(statisticLog);
         }
     }
 

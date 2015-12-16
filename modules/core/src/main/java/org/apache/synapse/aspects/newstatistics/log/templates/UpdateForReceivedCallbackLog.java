@@ -19,22 +19,22 @@
 package org.apache.synapse.aspects.newstatistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
 
-	private MessageContext messageContext;
+	private final String statisticId;
 	private String callbackId;
 	private Long endTime;
 
 	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
-		this.messageContext = messageContext;
+		statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 		this.callbackId = callbackId;
 		this.endTime = endTime;
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.updateForReceivedCallback(messageContext, callbackId, endTime);
+	@Override public void process() {
+		RuntimeStatisticCollector.updateForReceivedCallback(statisticId, callbackId, endTime);
 	}
 }

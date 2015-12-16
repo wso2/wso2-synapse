@@ -225,7 +225,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (log.isDebugEnabled()) {
                 log.debug("Injecting MessageContext");
             }
-            RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
@@ -358,8 +357,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
-        //Setting Statistic Trace ID for statistic Collection
-        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
         synCtx.setEnvironment(this);
         executorService.execute(new MediatorWorker(seq, synCtx));
     }
@@ -384,8 +381,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
         }
-        //Setting Statistic Trace ID for statistic Collection
-        RuntimeStatisticCollector.setStatisticsTraceId(synCtx);
 
         /*
          * If the method is invoked by the inbound endpoint
@@ -1106,20 +1101,29 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     private void reportStatistics(boolean createStatisticLog, MessageContext messageContext, boolean statisticEnable,
                                   String inboundName) {
-        StatisticReportingLog statisticReportingLog;
-        if (statisticEnable && (inboundName != null)) {
-            if (createStatisticLog) {
-                statisticReportingLog =
-                        new CreateEntryStatisticLog(messageContext, inboundName, ComponentType.INBOUNDENDPOINT, null,
-                                                    System.currentTimeMillis());
+        if (RuntimeStatisticCollector.isStatisticsEnable()) {
+            StatisticReportingLog statisticReportingLog = null;
+            if (statisticEnable && (inboundName != null)) {
+                if (createStatisticLog) {
+                    RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
+                    statisticReportingLog =
+                            new CreateEntryStatisticLog(messageContext, inboundName, ComponentType.INBOUNDENDPOINT,
+                                                        null, System.currentTimeMillis());
 
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
+                } else {
+                    if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
+                        statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
+                    } else {
+                        log.error("Trying close statistic entry without Statistic ID");
+                    }
+                }
+                if (statisticReportingLog != null) {
+                    StatisticEventReceiver.receive(statisticReportingLog);
+                }
             } else {
-                statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
+                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
             }
-            StatisticEventReceiver.receive(statisticReportingLog);
-        } else {
-            messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
         }
     }
 

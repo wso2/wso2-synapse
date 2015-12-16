@@ -19,20 +19,21 @@
 package org.apache.synapse.aspects.newstatistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 
 public class RemoveCallbackLog implements StatisticReportingLog {
 
+	private final String statisticId;
 	private MessageContext messageContext;
 	private String callbackId;
 
 	public RemoveCallbackLog(MessageContext messageContext, String callbackId) {
-		this.messageContext = messageContext;
+		statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 		this.callbackId = callbackId;
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.removeCallback(messageContext, callbackId);
+	@Override public void process() {
+		RuntimeStatisticCollector.removeCallback(statisticId, callbackId);
 	}
 }

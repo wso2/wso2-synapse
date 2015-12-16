@@ -39,6 +39,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.*;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
@@ -111,14 +112,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         }
         //TODO Should we remove this
         org.apache.synapse.MessageContext synCntx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-        boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCntx.getProperty(SynapseConstants.OUT_ONLY)));
-        if (!isOutOnly) {
-            isOutOnly = (!Boolean.parseBoolean(String.valueOf(synCntx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+
+        if (RuntimeStatisticCollector.shouldReportStatistic(synCntx)) {
+            boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCntx.getProperty(SynapseConstants.OUT_ONLY)));
+            if (!isOutOnly) {
+                isOutOnly =
+                        (!Boolean.parseBoolean(String.valueOf(synCntx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
                          !synCntx.isResponse());
-        }
-        if (!isOutOnly) {
-            AddCallbacksLog addCallbacksLog = new AddCallbacksLog(synCntx, MsgID);
-            StatisticEventReceiver.receive(addCallbacksLog);
+            }
+            if (!isOutOnly) {
+                AddCallbacksLog addCallbacksLog = new AddCallbacksLog(synCntx, MsgID);
+                StatisticEventReceiver.receive(addCallbacksLog);
+            }
         }
     }
 
@@ -143,13 +148,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED))) {
             if (callbackStore.containsKey(messageCtx.getMessageID())) {
                 AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
-                UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
-                        new UpdateForReceivedCallbackLog(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID(),
-                                                         System.currentTimeMillis());
-                StatisticEventReceiver.receive(updateForReceivedCallbackLog);
-                RemoveCallbackLog removeCallbackLog =
-                        new RemoveCallbackLog(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
-                StatisticEventReceiver.receive(removeCallbackLog);
+
+                if (RuntimeStatisticCollector.shouldReportStatistic(callback.getSynapseOutMsgCtx())) {
+                    UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
+                            new UpdateForReceivedCallbackLog(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID(),
+                                                             System.currentTimeMillis());
+                    StatisticEventReceiver.receive(updateForReceivedCallbackLog);
+                    RemoveCallbackLog removeCallbackLog =
+                            new RemoveCallbackLog(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
+                    StatisticEventReceiver.receive(removeCallbackLog);
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
                             " removed from the " +
@@ -181,9 +190,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         ". Pending callbacks count : " + callbackStore.size());
             }
             org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-            UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
-                    new UpdateForReceivedCallbackLog(SynapseOutMsgCtx, messageID, System.currentTimeMillis());
-            StatisticEventReceiver.receive(updateForReceivedCallbackLog);
+            Boolean isStatCollected = RuntimeStatisticCollector.shouldReportStatistic(SynapseOutMsgCtx);
+            if (isStatCollected) {
+                UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
+                        new UpdateForReceivedCallbackLog(SynapseOutMsgCtx, messageID, System.currentTimeMillis());
+                StatisticEventReceiver.receive(updateForReceivedCallbackLog);
+            }
 
             RelatesTo[] relates = messageCtx.getRelationships();
             if (relates != null && relates.length > 1) {
@@ -198,41 +210,40 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 if (log.isDebugEnabled()) {
                     log.debug("Handled the callback");
                 }
-                RemoveCallbackLog statisticRemoveCallbackLog =
-                        new RemoveCallbackLog(SynapseOutMsgCtx, messageID);
-                StatisticEventReceiver.receive(statisticRemoveCallbackLog);
-                org.apache.synapse.MessageContext synMsgCtx =
-                        MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
-                String proxyName =
-                        (String) SynapseOutMsgCtx.getProperty(SynapseConstants.PROXY_SERVICE);
-                Boolean isContinuationCall =
-                        (Boolean) synMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
 
-                if (isContinuationCall == null || !isContinuationCall) {
-                    Object synapseRestApi = SynapseOutMsgCtx.getProperty(RESTConstants.REST_API_CONTEXT);
-                    Object restUrlPattern = SynapseOutMsgCtx.getProperty(RESTConstants.REST_URL_PATTERN);
-                    if (synapseRestApi != null) {
-                        String textualStringName;
-                        if (restUrlPattern != null) {
-                            textualStringName = (String) synapseRestApi + restUrlPattern;
-                        } else {
-                            textualStringName = (String) synapseRestApi;
+                if (isStatCollected) {
+                    RemoveCallbackLog statisticRemoveCallbackLog = new RemoveCallbackLog(SynapseOutMsgCtx, messageID);
+                    StatisticEventReceiver.receive(statisticRemoveCallbackLog);
+
+                    org.apache.synapse.MessageContext synMsgCtx =
+                            MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
+                    Boolean isContinuationCall = (Boolean) synMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+
+                    if (isContinuationCall == null || !isContinuationCall) {
+                        Object synapseRestApi = SynapseOutMsgCtx.getProperty(RESTConstants.REST_API_CONTEXT);
+                        Object restUrlPattern = SynapseOutMsgCtx.getProperty(RESTConstants.REST_URL_PATTERN);
+                        Object synapseResource = SynapseOutMsgCtx.getProperty(RESTConstants.SYNAPSE_RESOURCE);
+                        if (synapseRestApi != null) {
+                            String textualStringName;
+                            if (restUrlPattern != null) {
+                                textualStringName = (String) synapseRestApi + restUrlPattern;
+                            } else {
+                                textualStringName = (String) synapseRestApi;
+                            }
+                            StatisticCloseLog statisticCloseLog =
+                                    new StatisticCloseLog(SynapseOutMsgCtx, textualStringName, null,
+                                                          System.currentTimeMillis());
+                            StatisticEventReceiver.receive(statisticCloseLog);
+                        } else if (synapseResource != null) {
+                            StatisticCloseLog statisticCloseLog =
+                                    new StatisticCloseLog(SynapseOutMsgCtx, (String) synapseResource, null,
+                                                          System.currentTimeMillis());
+                            StatisticEventReceiver.receive(statisticCloseLog);
                         }
-                        StatisticCloseLog statisticCloseLog =
-                                new StatisticCloseLog(SynapseOutMsgCtx, textualStringName, null,
-                                                      System.currentTimeMillis());
-                        StatisticEventReceiver.receive(statisticCloseLog);
-                    } else {
-                        StatisticCloseLog statisticCloseLog = new StatisticCloseLog(SynapseOutMsgCtx,
-                                                                                    (String) SynapseOutMsgCtx
-                                                                                            .getProperty(
-                                                                                                    RESTConstants.SYNAPSE_RESOURCE),
-                                                                                    null, System.currentTimeMillis());
-                        StatisticEventReceiver.receive(statisticCloseLog);
+                        FinalizeEntryLog finalizeEntryLog =
+                                new FinalizeEntryLog(SynapseOutMsgCtx, System.currentTimeMillis());
+                        StatisticEventReceiver.receive(finalizeEntryLog);
                     }
-                    FinalizeEntryLog finalizeEntryLog =
-                            new FinalizeEntryLog(SynapseOutMsgCtx, System.currentTimeMillis());
-                    StatisticEventReceiver.receive(finalizeEntryLog);
                 }
                 
             } else {
