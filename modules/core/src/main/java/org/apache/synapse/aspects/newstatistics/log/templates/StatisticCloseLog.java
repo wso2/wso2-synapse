@@ -33,7 +33,7 @@ public class StatisticCloseLog implements StatisticReportingLog {
 		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
 			msgId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
 		} else {
-			msgId = -1;
+			msgId = 0;
 		}
 
 		statisticDataUnit =

@@ -35,7 +35,7 @@ public class CreateFaultStatisticLog implements StatisticReportingLog {
 		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
 			cloneId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
 		} else {
-			cloneId = -1;
+			cloneId = 0;
 		}
 		statisticDataUnit = new StatisticDataUnit(statisticId, componentId, componentType, parentId, cloneId, startTime,
 		                                          messageContext.isResponse());

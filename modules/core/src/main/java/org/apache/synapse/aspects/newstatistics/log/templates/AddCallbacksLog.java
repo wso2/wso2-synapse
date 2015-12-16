@@ -33,7 +33,7 @@ public class AddCallbacksLog implements StatisticReportingLog {
 		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
 			cloneId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
 		} else {
-			cloneId = -1;
+			cloneId = 0;
 		}
 		this.callbackId = callbackId;
 	}

@@ -81,7 +81,7 @@ public class StatisticsEntry {
 	public StatisticsEntry(StatisticDataUnit statisticDataUnit, String localMemberHost, String localMemberPort) {
 		this.localMemberHost = localMemberHost;
 		this.localMemberPort = localMemberPort;
-		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, -1, -1);
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, 0, -1);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
@@ -334,8 +334,8 @@ public class StatisticsEntry {
 			}
 		}
 		//No Log entry found for the msgID. So look for log IDs with default msgID
-		if (msgId != -1) {
-			msgId = -1;
+		if (msgId != 0) {
+			msgId = 0;
 			for (Integer index : openLogs) {
 				if (messageFlowLogs.get(index).getMsgId() == msgId) {
 					return index;
