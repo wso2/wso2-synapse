@@ -1,10 +1,10 @@
 package org.apache.synapse.flowtracer.data;
 
-import org.apache.synapse.aspects.data.MediationDataEntry;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 
-public class MessageFlowComponentEntry implements MediationDataEntry {
+import java.util.Map;
+
+public class MessageFlowComponentEntry implements MessageFlowDataEntry {
 
     private String messageId;
     private String componentId;
@@ -12,12 +12,12 @@ public class MessageFlowComponentEntry implements MediationDataEntry {
     private boolean response;
     private boolean start;
     private String timestamp;
-    private String propertySet;
     private String payload;
     private SynapseEnvironment synapseEnvironment;
+    private Map<String, String> propertyMap;
 
     public MessageFlowComponentEntry(String messageId, String componentId, String componentName, boolean response,
-                                     boolean start, String timestamp, String propertySet, String payload,
+                                     boolean start, String timestamp, Map<String, String> propertyMap, String payload,
                                      SynapseEnvironment synapseEnvironment) {
         this.messageId = messageId;
         this.componentId = componentId;
@@ -25,7 +25,7 @@ public class MessageFlowComponentEntry implements MediationDataEntry {
         this.response = response;
         this.start = start;
         this.timestamp = timestamp;
-        this.propertySet = propertySet;
+        this.propertyMap = propertyMap;
         this.payload = payload;
         this.synapseEnvironment = synapseEnvironment;
     }
@@ -34,8 +34,8 @@ public class MessageFlowComponentEntry implements MediationDataEntry {
         return payload;
     }
 
-    public String getPropertySet() {
-        return propertySet;
+    public Map<String, String> getPropertyMap() {
+        return propertyMap;
     }
 
     public String getComponentName() {

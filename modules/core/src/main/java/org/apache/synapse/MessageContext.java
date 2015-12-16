@@ -430,7 +430,5 @@ public OMElement getFormat(String key);
 	 */
 	public Mediator getDefaultConfiguration(String key);
 
-    public void addComponentToMessageFlow(String mediatorId);
-
     public String getMessageString();
 }

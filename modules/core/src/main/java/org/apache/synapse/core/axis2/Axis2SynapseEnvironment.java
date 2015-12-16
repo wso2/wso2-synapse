@@ -39,7 +39,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
@@ -280,10 +280,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     log.debug("Using Main Sequence for injected message");
                 }
 
-                if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
-                    MediationTracingDataCollector.setEntryPoint(synCtx,
-                                                                MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
-                                                                synCtx.getMessageID());
+                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    MessageFlowTracingDataCollector.setEntryPoint(synCtx,
+                                                                  MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
+                                                                  synCtx.getMessageID());
                 }
 
                 return synCtx.getMainSequence().mediate(synCtx);
@@ -350,11 +350,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
 
-        if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
-            MediationTracingDataCollector.setEntryPoint(synCtx,
-                                                        MessageFlowTracerConstants.ENTRY_TYPE_INBOUND_ENDPOINT +
-                                                        synCtx.getProperty("inbound.endpoint.name"),
-                                                        synCtx.getMessageID());
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+            MessageFlowTracingDataCollector.setEntryPoint(synCtx,
+                                                          MessageFlowTracerConstants.ENTRY_TYPE_INBOUND_ENDPOINT +
+                                                          synCtx.getProperty("inbound.endpoint.name"),
+                                                          synCtx.getMessageID());
         }
 
         if (log.isDebugEnabled()) {

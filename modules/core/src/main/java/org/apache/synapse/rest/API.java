@@ -26,8 +26,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -292,12 +291,12 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
 
-        if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
             if (!synCtx.isResponse()) {
-                MediationTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
-                                                                    synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
-                                                            synCtx.getMessageID());
-                mediatorId = MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
+                MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
+                                                                      synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
+                                                              synCtx.getMessageID());
+                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
             }
         }
 
@@ -403,9 +402,9 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             }
         }
 
-        if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
             if (!synCtx.isResponse()) {
-                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
+                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
             }
         }
     }

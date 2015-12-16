@@ -1,10 +1,8 @@
 package org.apache.synapse.flowtracer.data;
 
-import org.apache.synapse.aspects.data.MediationDataEntry;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 
-public class MessageFlowTraceEntry implements MediationDataEntry {
+public class MessageFlowTraceEntry implements MessageFlowDataEntry {
 
     private String messageId;
     private String entryType;

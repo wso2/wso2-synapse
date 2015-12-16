@@ -29,8 +29,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
@@ -40,7 +39,6 @@ import org.apache.synapse.endpoints.Endpoint;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * This is the MessageReceiver set to act on behalf of Proxy services.
@@ -119,17 +117,17 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         //trace message flow
-        if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
             if (mc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
-                MediationTracingDataCollector.setEntryPoint(synCtx, (String) mc.getProperty
+                MessageFlowTracingDataCollector.setEntryPoint(synCtx, (String) mc.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE), (String) mc.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ID));
             } else {
-                MediationTracingDataCollector.setEntryPoint(synCtx,
-                                                            MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name,
-                                                            synCtx.getMessageID());
+                MessageFlowTracingDataCollector.setEntryPoint(synCtx,
+                                                              MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name,
+                                                              synCtx.getMessageID());
             }
-            mediatorId = MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, true);
+            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, true);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -238,8 +236,8 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
-                MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
+            if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
             }
         }
     }

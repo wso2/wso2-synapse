@@ -31,12 +31,11 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
@@ -526,7 +525,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+        if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
             List<String> newMessageFlowTrace = new ArrayList<String>();
             for (MessageContext synCtx : aggregate.getMessages()) {
                 List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);

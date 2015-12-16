@@ -24,15 +24,13 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * This is the base class for all List mediators
@@ -84,19 +82,19 @@ public abstract class AbstractListMediator extends AbstractMediator
                 synCtx.setTracingState(myEffectiveTraceState);
 
                 Mediator mediator = mediators.get(i);
-                if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
                     componentId = mediator.setTraceFlow(synCtx, componentId, mediator, true);
                 }
 
                 if (!mediator.mediate(synCtx)) {
-                    if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
                         mediator.setTraceFlow(synCtx, componentId, mediator, false);
                     }
                     returnVal = false;
                     break;
                 }
 
-                if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
+                if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
                     mediator.setTraceFlow(synCtx, componentId, mediator, false);
                 }
             }

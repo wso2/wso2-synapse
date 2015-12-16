@@ -20,12 +20,10 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataConsumer;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataConsumer;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
 import org.wso2.securevault.PasswordManager;
 import org.wso2.securevault.SecurityConstants;
 
@@ -110,8 +108,8 @@ public class ServerManager {
         doInit();
         initialized = true;
 
-        MediationTracingDataCollector.init();
-        Thread t = new Thread(new MediationTracingDataConsumer());
+        MessageFlowTracingDataCollector.init();
+        Thread t = new Thread(new MessageFlowTracingDataConsumer());
         t.start();
 
 

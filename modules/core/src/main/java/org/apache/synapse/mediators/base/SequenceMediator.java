@@ -26,9 +26,8 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -40,7 +39,6 @@ import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.Value;
 
 import java.util.Stack;
-import java.util.UUID;
 
 /**
  * The Sequence mediator either refers to a named Sequence mediator instance
@@ -110,11 +108,11 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (key == null) {
             String mediatorId = null;
-            if (MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
-                mediatorId = MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " +
-                                                                                                 (name == null ?
-                                                                                                  this.sequenceType.name() :
-                                                                                                  name), true);
+            if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " +
+                                                                                                   (name == null ?
+                                                                                                    this.sequenceType.name() :
+                                                                                                    name), true);
             }
 
             // The onError sequence for handling errors which may occur during the
@@ -187,10 +185,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
 
-                if(MediationTracingDataCollector.isMessageFlowTracingEnabled()) {
-                    MediationTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ?
-                                                                                            this.sequenceType.name()
-                                                                                                         : name), false);
+                if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ?
+                                                                                                          this.sequenceType.name()
+                                                                                                                       : name), false);
                 }
 
                 return result;

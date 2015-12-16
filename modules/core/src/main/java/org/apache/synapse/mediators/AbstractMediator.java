@@ -19,7 +19,6 @@
 
 package org.apache.synapse.mediators;
 
-import org.apache.axiom.util.UIDGenerator;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
@@ -29,8 +28,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.data.tracing.MediationTracingDataCollector;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
+import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -413,6 +411,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     }
 
     public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
-        return MediationTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, mediator.getMediatorName(), isStart);
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, mediator.getMediatorName(), isStart);
     }
 }
