@@ -109,9 +109,6 @@ public class ServerManager {
         initialized = true;
 
         MessageFlowTracingDataCollector.init();
-        Thread t = new Thread(new MessageFlowTracingDataConsumer());
-        t.start();
-
 
         return this.serverContextInformation.getServerState();
     }
