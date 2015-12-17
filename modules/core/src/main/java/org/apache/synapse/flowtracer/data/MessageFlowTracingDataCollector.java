@@ -44,29 +44,32 @@ import java.util.concurrent.TimeUnit;
 public class MessageFlowTracingDataCollector {
 
     private static BlockingQueue<MessageFlowDataEntry> queue;
-    private static int defaultQueueSize;
+    private static int queueSize;
     private static boolean isMessageFlowTracingEnabled;
     private static Date date;
 
     public static void init() {
-        defaultQueueSize = Integer.parseInt(SynapsePropertiesLoader.getPropertyValue
-                (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE));
         isMessageFlowTracingEnabled = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue
                 (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLED, MessageFlowTracerConstants
                         .DEFAULT_TRACE_ENABLED));
-        queue = new ArrayBlockingQueue<MessageFlowDataEntry>(defaultQueueSize);
+        if (isMessageFlowTracingEnabled()) {
+            queueSize = Integer.parseInt(SynapsePropertiesLoader.getPropertyValue
+                    (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE));
 
-        //Thread to consume queue and update data structures for publishing
-        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        Thread t = new Thread(r);
-                        t.setName("Mediation Tracing " +
-                                  "Data consumer Task");
-                        return t;
-                    }
-                });
-        executor.scheduleAtFixedRate(new MessageFlowTracingDataConsumer(), 0, 1000, TimeUnit.MILLISECONDS);
+            queue = new ArrayBlockingQueue<MessageFlowDataEntry>(queueSize);
+
+            //Thread to consume queue and update data structures for publishing
+            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+                    new ThreadFactory() {
+                        public Thread newThread(Runnable r) {
+                            Thread t = new Thread(r);
+                            t.setName("Mediation Tracing " +
+                                      "Data consumer Task");
+                            return t;
+                        }
+                    });
+            executor.scheduleAtFixedRate(new MessageFlowTracingDataConsumer(), 0, 1000, TimeUnit.MILLISECONDS);
+        }
         date = new java.util.Date();
     }
 
