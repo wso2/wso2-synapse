@@ -1,3 +1,20 @@
+/*
+* Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+*
+* WSO2 Inc. licenses this file to you under the Apache License,
+* Version 2.0 (the "License"); you may not use this file except
+* in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing,
+* software distributed under the License is distributed on an
+* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+* KIND, either express or implied. See the License for the
+* specific language governing permissions and limitations
+* under the License.
+*/
 package org.apache.synapse.flowtracer.data;
 
 import org.apache.commons.logging.Log;
@@ -21,10 +38,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-
+/**
+ * Tracing Data Collector class which has a blocking queue to store collected data temporarily until been analyzed
+ */
 public class MessageFlowTracingDataCollector {
 
-    private static Log log = LogFactory.getLog(MessageFlowTracingDataCollector.class);
     private static BlockingQueue<MessageFlowDataEntry> queue;
     private static int defaultQueueSize;
     private static boolean isMessageFlowTracingEnabled;
@@ -37,6 +55,8 @@ public class MessageFlowTracingDataCollector {
                 (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLED, MessageFlowTracerConstants
                         .DEFAULT_TRACE_ENABLED));
         queue = new ArrayBlockingQueue<MessageFlowDataEntry>(defaultQueueSize);
+
+        //Thread to consume queue and update data structures for publishing
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactory() {
                     public Thread newThread(Runnable r) {
@@ -50,10 +70,19 @@ public class MessageFlowTracingDataCollector {
         date = new java.util.Date();
     }
 
+    /**
+     * Add MediationFlowDataEntry instance to the queue
+     * @param mediationDataEntry
+     */
     public static void enQueue(MessageFlowDataEntry mediationDataEntry){
             queue.add(mediationDataEntry);
     }
 
+    /**
+     * Removes and return MediationFlowDataEntry from the queue
+     * @return MediationFlowDataEntry instance
+     * @throws Exception
+     */
     public static MessageFlowDataEntry deQueue() throws Exception {
         try {
             return queue.take();
@@ -63,6 +92,10 @@ public class MessageFlowTracingDataCollector {
         }
     }
 
+    /**
+     * Collect message flow information from mediation and store it as a MessageFlowTraceEntry instance in the queue
+     * @param synCtx Synapse Message Context
+     */
     private static void addFlowInfoEntry(MessageContext synCtx) {
         java.util.Date date = new java.util.Date();
         List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
@@ -76,6 +109,13 @@ public class MessageFlowTracingDataCollector {
         }
     }
 
+    /**
+     * Collect component information from mediation and store it as a MessageFlowComponentEntry instance in the queue
+     * @param synCtx Synapse Message Context
+     * @param componentId Unique ID for the Component/Mediator
+     * @param componentName Name od the component/Mediator
+     * @param start True if it is a start of the flow for the particular component/mediator, False otherwise
+     */
     private static void addComponentInfoEntry(MessageContext synCtx, String componentId, String componentName,
                                               boolean start) {
         Set<String> propertySet = synCtx.getPropertyKeySet();
@@ -95,6 +135,14 @@ public class MessageFlowTracingDataCollector {
                                               payload, synCtx.getEnvironment()));
     }
 
+    /**
+     * Update mediation tracing information
+     * @param msgCtx Synapse message context
+     * @param componentId Component/Mediator ID
+     * @param mediatorName Component/Mediator Name
+     * @param isStart True if it is a start of the flow for the particular component/mediator, False otherwise
+     * @return String ID for the mediator/component generated
+     */
     public static String setTraceFlowEvent(MessageContext msgCtx, String componentId, String mediatorName,
                                                       boolean isStart) {
         String newComponentId = MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
@@ -109,6 +157,12 @@ public class MessageFlowTracingDataCollector {
         return newComponentId;
     }
 
+    /**
+     * Set properties of the entry point for the mediation flow such as API, Proxy, Sequence etc.
+     * @param synCtx Synapse Message Context
+     * @param entryType Type of the entry (API/Proxy etc)
+     * @param messageID Unique ID for the message
+     */
     public static void setEntryPoint(MessageContext synCtx, String entryType, String messageID){
         if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, messageID);
@@ -116,10 +170,19 @@ public class MessageFlowTracingDataCollector {
         }
     }
 
+    /**
+     * States whether message flow tracing is enabled
+     * @return True if enabled, False otherwise
+     */
     public static boolean isMessageFlowTracingEnabled(){
         return isMessageFlowTracingEnabled;
     }
 
+    /**
+     * Adds new component to the existing component list in message context.
+     * @param componentId Component/Mediator ID
+     * @param msgCtx Synapse Message Context
+     */
     private static void addComponentToMessageFlow(String componentId, MessageContext msgCtx) {
         if (msgCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW) != null) {
             List<String> messageFlowTrace = (List<String>) msgCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
