@@ -319,8 +319,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             }
 
             targetConfiguration.getWorkerPool().execute(
-                    new ClientWorker(targetConfiguration.getConfigurationContext(),
-                            requestMsgContext, targetResponse));
+                    new ClientWorker(targetConfiguration, requestMsgContext, targetResponse));
 
             targetConfiguration.getMetrics().incrementMessagesReceived();
 
@@ -404,8 +403,10 @@ public class TargetHandler implements NHttpClientEventHandler {
             TargetContext.updateState(conn, ProtocolState.RESPONSE_BODY);
 
             TargetResponse response = TargetContext.getResponse(conn);
+            int statusCode = -1;
 
 			if (response != null) {
+                statusCode = conn.getHttpResponse().getStatusLine().getStatusCode();
 				int responseRead = response.read(conn, decoder);
                 if (metrics.getLevel() == MetricsCollector.LEVEL_FULL) {
                     metrics.incrementBytesReceived(msgCtx, responseRead);
@@ -419,7 +420,9 @@ public class TargetHandler implements NHttpClientEventHandler {
                     metrics.notifyReceivedMessageSize(
                             msgCtx, conn.getMetrics().getReceivedBytesCount());
                     metrics.notifySentMessageSize(msgCtx, conn.getMetrics().getSentBytesCount());
-                    metrics.reportResponseCode(msgCtx, conn.getHttpResponse().getStatusLine().getStatusCode());
+                    if(statusCode != -1) {
+                        metrics.reportResponseCode(msgCtx, statusCode);
+                    }
                 } else {
                     metrics.incrementMessagesReceived();
                     metrics.notifyReceivedMessageSize(

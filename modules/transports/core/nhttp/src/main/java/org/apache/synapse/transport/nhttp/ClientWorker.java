@@ -40,6 +40,7 @@ import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.nhttp.debug.ClientConnectionDebug;
 
 import javax.xml.stream.XMLStreamException;
@@ -219,6 +220,7 @@ public class ClientWorker implements Runnable {
      */
     public void run() {
 
+        CustomLogSetter.getInstance().clearThreadLocalContent();
         setServerContextAttribute(NhttpConstants.CLIENT_WORKER_START_TIME,
                 System.currentTimeMillis(), outMsgCtx);
 

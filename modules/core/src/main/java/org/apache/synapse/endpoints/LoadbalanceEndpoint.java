@@ -19,6 +19,8 @@
 
 package org.apache.synapse.endpoints;
 
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.clustering.Member;
 import org.apache.axis2.context.ConfigurationContext;
@@ -32,6 +34,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -107,6 +110,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
 
     public void send(MessageContext synCtx) {
 
+        logSetter();
         if (log.isDebugEnabled()) {
             log.debug("Sending using Load-balance " + toString());
         }
@@ -132,6 +136,11 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 // may have to retry this message for failover support
                 if (failover) {
                     synCtx.getEnvelope().build();
+                    //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
+                    if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
+                            PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                        synCtx.setProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE, synCtx.getEnvelope());
+                    }
                 }
             } else {
                 if (metricsMBean != null) {
@@ -242,6 +251,15 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
     @Override
     public void onChildEndpointFail(Endpoint endpoint, MessageContext synMessageContext) {
 
+        //If there is a failure in child endpoint, restore the original message envelope from the message context
+        if (synMessageContext.getProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE) != null) {
+            try {
+                synMessageContext.setEnvelope(
+                        (SOAPEnvelope) synMessageContext.getProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE));
+            } catch (AxisFault ex) {
+                log.error("Couldn't restore the original message to the failover endpoint", ex);
+            }
+        }
         logOnChildEndpointFail(endpoint, synMessageContext);
         // resend (to a different endpoint) only if we support failover
         if (failover) {
@@ -314,6 +332,8 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         }
 
         public void onFault(MessageContext synCtx) {
+
+            logSetter();
             if (currentMember == null) {
                 return;
             }

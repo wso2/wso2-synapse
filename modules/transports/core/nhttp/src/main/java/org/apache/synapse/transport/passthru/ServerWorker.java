@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
 
@@ -59,6 +60,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -116,6 +118,7 @@ public class ServerWorker implements Runnable {
     }
 
     public void run() {
+        CustomLogSetter.getInstance().clearThreadLocalContent();
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
                 System.currentTimeMillis());
         if (log.isDebugEnabled()) {
@@ -124,6 +127,11 @@ public class ServerWorker implements Runnable {
         String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
 
         processHttpRequestUri(msgContext, method);
+
+        //For requests to fetch wsdl, return the message flow without going through the normal flow
+        if (isRequestToFetchWSDL()) {
+            return;
+        }
 		
 		//need special case to handle REST
 		boolean isRest = isRESTRequest(msgContext, method);
@@ -135,9 +143,25 @@ public class ServerWorker implements Runnable {
 			} else {
 				processNonEntityEnclosingRESTHandler(null, msgContext, true);
 			}
-		}
+		}else {
+            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
+            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
+            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
+        }
 
         sendAck(msgContext);
+    }
+
+    private boolean isRequestToFetchWSDL() {
+        //if WSDL done then moved out rather than hand over to entity handle methods.
+        SourceContext info = (SourceContext) request.getConnection().getContext().
+                getAttribute(SourceContext.CONNECTION_INFORMATION);
+        if (info != null && info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
+            (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null &&
+             Boolean.TRUE.equals((msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED))))) {
+            return true;
+        }
+        return false;
     }
 
 	/**
@@ -147,7 +171,7 @@ public class ServerWorker implements Runnable {
 	 * @return
 	 * @throws FactoryConfigurationError
 	 */
-	private SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
+	public SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
 	    SOAPEnvelope soapEnvelope = null;
 	    String contentType = contentTypeHdr!=null?TransportUtils.getContentType(contentTypeHdr, msgContext):null;
 	    if (contentType == null || "".equals(contentType) || HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType)) {
@@ -357,6 +381,11 @@ public class ServerWorker implements Runnable {
                     envelope = fac.getDefaultEnvelope();
                 }
 
+                if ((soapAction != null) && soapAction.startsWith("\"") && soapAction.endsWith("\"")) {
+                    soapAction = soapAction.substring(1, soapAction.length() - 1);
+                    msgContext.setSoapAction(soapAction);
+                }
+
                 msgContext.setEnvelope(envelope);
             }
             
@@ -423,11 +452,20 @@ public class ServerWorker implements Runnable {
                 .getTransportIn(Constants.TRANSPORT_HTTPS));
 			msgContext.setIncomingTransportName(sourceConfiguration.getInDescription() != null?
 			                                    sourceConfiguration.getInDescription().getName(): Constants.TRANSPORT_HTTPS);
-  
+
             SSLIOSession ssliosession = (SSLIOSession) (conn.getContext()).getAttribute(SSLIOSession.SESSION_KEY);
-            if (ssliosession != null) {
-                msgContext.setProperty("ssl.client.auth.cert.X509",
-                    ssliosession.getAttribute("ssl.client.auth.cert.X509"));            
+            //set SSL certificates to message context if SSLVerifyClient parameter is set
+            if (ssliosession != null && msgContext.getTransportIn() != null
+                && msgContext.getTransportIn().getParameter(NhttpConstants.SSL_VERIFY_CLIENT) != null) {
+                try {
+                    msgContext.setProperty(NhttpConstants.SSL_CLIENT_AUTH_CERT_X509,
+                                           ssliosession.getSSLSession().getPeerCertificateChain());
+                } catch (SSLPeerUnverifiedException e) {
+                    //Peer Certificate Chain may not be available always.(in case of Mutual SSL is not enabled)
+                    if (log.isTraceEnabled()) {
+                        log.trace("Peer certificate chain is not available for MsgContext " + msgContext.getMessageID());
+                    }
+                }
             }
         } else {
             msgContext.setTransportOut(cfgCtx.getAxisConfiguration()
@@ -599,9 +637,6 @@ public class ServerWorker implements Runnable {
             msgContext.setProperty(HTTPConstants.HTTP_METHOD, method);
             msgContext.setServerSide(true);
             msgContext.setDoingREST(true);
-            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
-            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
-            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
             return true;
         }
         return false;
@@ -652,15 +687,6 @@ public class ServerWorker implements Runnable {
 
             httpGetRequestProcessor.process(request.getRequest(), response,msgContext,
                     request.getConnection(), os, isRestDispatching);
-        }
-        //if WSDL done then moved out rather than hand over to entity handle methods.
-        SourceContext info = (SourceContext) request.getConnection().getContext().getAttribute
-                                                                                  (SourceContext.CONNECTION_INFORMATION);
-        if (info != null &&
-                info.getState().equals(ProtocolState.WSDL_RESPONSE_DONE) ||
-                (msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED) != null && Boolean.TRUE.equals
-                                                   ((msgContext.getProperty(PassThroughConstants.WSDL_GEN_HANDLED))))) {
-            return;
         }
     }
 

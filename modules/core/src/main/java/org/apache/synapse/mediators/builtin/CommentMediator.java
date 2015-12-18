@@ -33,6 +33,13 @@ public class CommentMediator extends AbstractMediator {
      * @return true since remaining mediators should be executed
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         return true;
     }
 
@@ -52,5 +59,10 @@ public class CommentMediator extends AbstractMediator {
      */
     public String getCommentText() {
         return commentText;
+    }
+
+    @Override
+    public boolean isContentAware() {
+        return false;
     }
 }

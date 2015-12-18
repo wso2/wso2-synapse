@@ -110,6 +110,11 @@ public class ServerHandler implements NHttpServerEventHandler {
     public static final String CONNECTION_CREATION_TIME = "synapse.connectionCreationTime";
     public static final String SERVER_CONNECTION_DEBUG = "synapse.server-connection-debug";
 
+    /**
+     * Used to obtain http request from context
+     */
+    public static final String HTTP_REQUEST = "http.request";
+
     public ServerHandler(
             final ConfigurationContext cfgCtx,
             final Scheme scheme,
@@ -394,7 +399,7 @@ public class ServerHandler implements NHttpServerEventHandler {
             BasicHttpEntity entity = (BasicHttpEntity) response.getEntity();
             Header[] headers = response.getAllHeaders();
             int contentLength = -1;
-            if (canResponseHaveBody(response)) {
+            if (canResponseHaveBody(response, conn)) {
                 if (entity == null) {
                     entity = new BasicHttpEntity();
                 }
@@ -743,7 +748,13 @@ public class ServerHandler implements NHttpServerEventHandler {
         } catch (InterruptedException ignore) {}
     }
 
-    private boolean canResponseHaveBody(final HttpResponse response) {
+    private boolean canResponseHaveBody(final HttpResponse response, final NHttpServerConnection conn) {
+        HttpRequest httpRequest = (HttpRequest) conn.getContext().getAttribute(HTTP_REQUEST);
+
+        if (httpRequest != null &&
+            NhttpConstants.HTTP_HEAD.equalsIgnoreCase(httpRequest.getRequestLine().getMethod())) {
+            return false;
+        }
         int status = response.getStatusLine().getStatusCode();
         return status >= HttpStatus.SC_OK
                && status != HttpStatus.SC_NO_CONTENT

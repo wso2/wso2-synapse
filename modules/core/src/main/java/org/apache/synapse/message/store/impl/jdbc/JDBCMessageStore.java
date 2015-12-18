@@ -21,18 +21,23 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.store.AbstractMessageStore;
-import org.apache.synapse.message.store.impl.jdbc.message.StorableMessage;
+import org.apache.synapse.message.store.impl.commons.MessageConverter;
+import org.apache.synapse.message.store.impl.commons.StorableMessage;
 import org.apache.synapse.message.store.impl.jdbc.util.JDBCConfiguration;
-import org.apache.synapse.message.store.impl.jdbc.util.JDBCMessageConverter;
 import org.apache.synapse.message.store.impl.jdbc.util.Statement;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -83,7 +88,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
         jdbcConfiguration = new JDBCConfiguration();
         jdbcConfiguration.buildDataSource(parameters);
 
-        JDBCMessageConverter.setSynapseEnvironment(synapseEnvironment);
+//        JDBCMessageConverter.setSynapseEnvironment(synapseEnvironment);
     }
 
     /**
@@ -155,9 +160,9 @@ public class JDBCMessageStore extends AbstractMessageStore {
             }
             rs = ps.executeQuery();
             while (rs.next()) {
-                final Object msgObj;
+                byte[] msgObj;
                 try {
-                    msgObj = rs.getObject("message");
+                    msgObj = rs.getBytes("message");
                 } catch (SQLException e) {
                     throw new SynapseException("Error executing statement : " + stmt.getRawStatement() +
                                                " against DataSource : " + jdbcConfiguration.getDSName(), e);
@@ -166,11 +171,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     ObjectInputStream ios = null;
                     try {
                         // Convert back to MessageContext and add to list
-                        ios = new ObjectInputStream(new ByteArrayInputStream((byte[]) msgObj));
+                        ios = new ObjectInputStream(new ByteArrayInputStream(msgObj));
                         Object msg = ios.readObject();
                         if (msg instanceof StorableMessage) {
                             StorableMessage jdbcMsg = (StorableMessage) msg;
-                            resultMsg = JDBCMessageConverter.createMessageContext(jdbcMsg);
+                            org.apache.axis2.context.MessageContext axis2Mc = this.newAxis2Mc();
+                            MessageContext synapseMc = this.newSynapseMc(axis2Mc);
+                            resultMsg = MessageConverter.toMessageContext(jdbcMsg, axis2Mc, synapseMc);
                         }
                     } catch (Exception e) {
                         throw new SynapseException("Error reading object input stream", e);
@@ -194,6 +201,17 @@ public class JDBCMessageStore extends AbstractMessageStore {
         return resultMsg;
     }
 
+    private org.apache.axis2.context.MessageContext newAxis2Mc() {
+        return ((Axis2SynapseEnvironment) synapseEnvironment)
+                .getAxis2ConfigurationContext().createMessageContext();
+    }
+
+    private org.apache.synapse.MessageContext newSynapseMc(
+            org.apache.axis2.context.MessageContext msgCtx) {
+        SynapseConfiguration configuration = synapseEnvironment.getSynapseConfiguration();
+        return new Axis2MessageContext(msgCtx, configuration, synapseEnvironment);
+    }
+
     /**
      * Process statements that do not give a ResultSet
      *
@@ -213,7 +231,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 if (param instanceof String) {
                     ps.setString(index, (String) param);
                 } else if (param instanceof StorableMessage) {
-                    ps.setObject(index, param);
+                    //Serialize the object into byteArray and update the statement
+                    ps.setBytes(index, serialize(param));
                 }
                 index++;
             }
@@ -222,7 +241,11 @@ public class JDBCMessageStore extends AbstractMessageStore {
         } catch (SQLException e) {
             throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
                                        " against DataSource : " + jdbcConfiguration.getDSName(), e);
-        } finally {
+        } catch(IOException ex) {
+            throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
+                    " against DataSource : " + jdbcConfiguration.getDSName(), ex);
+        }
+        finally {
             if (ps != null) {
                 try {
                     ps.close();
@@ -239,6 +262,13 @@ public class JDBCMessageStore extends AbstractMessageStore {
             }
         }
         return result;
+    }
+
+    public byte[] serialize(Object obj) throws IOException {
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        ObjectOutputStream o = new ObjectOutputStream(b);
+        o.writeObject(obj);
+        return b.toByteArray();
     }
 
     /**
@@ -272,8 +302,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 }
             }
             StorableMessage persistentMessage =
-                    JDBCMessageConverter.createStorableMessage(messageContext);
-            String msgId = persistentMessage.getAxis2Message().getMessageID();
+                    MessageConverter.toStorableMessage(messageContext);
+            String msgId = persistentMessage.getAxis2message().getMessageID();
             Statement stmt =
                     new Statement("INSERT INTO " + jdbcConfiguration.getTableName() + " (msg_id,message) VALUES (?,?)");
             stmt.addParameter(msgId);
@@ -389,10 +419,6 @@ public class JDBCMessageStore extends AbstractMessageStore {
     public MessageContext get(int position) {
         if (position < 0) {
             throw new IllegalArgumentException("Index:" + position + " out of table bound");
-        }
-        if (!"com.mysql.jdbc.Driver".
-                equals(this.getParameters().get(JDBCMessageStoreConstants.JDBC_CONNECTION_DRIVER))) {
-            throw new UnsupportedOperationException("Only support in MYSQL");
         }
         // Gets the minimum value of the sub-table which contains indexId values greater than given position ('position' has minimum of 0 while indexId has minimum of 1)
         Statement stmt = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() + " ORDER BY indexId ASC LIMIT ?,1 ");

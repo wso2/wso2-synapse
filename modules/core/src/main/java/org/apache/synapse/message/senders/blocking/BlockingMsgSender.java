@@ -47,7 +47,10 @@ import org.apache.synapse.endpoints.IndirectEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
+
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BlockingMsgSender {
     public final static String DEFAULT_CLIENT_REPO = "./repository/deployment/client";
@@ -60,6 +63,10 @@ public class BlockingMsgSender {
     boolean initClientOptions = true;
 
     private final static String LOCAL_ANON_SERVICE = "__LOCAL_ANON_SERVICE__";
+    
+    private Pattern errorMsgPattern = Pattern.compile("Transport error: \\d{3} .*");
+
+    private Pattern statusCodePattern = Pattern.compile("\\d{3}");
 
     public void init() {
         try {
@@ -113,7 +120,8 @@ public class BlockingMsgSender {
         } else {
             handleException("Service url, Endpoint or 'To' header is required");
         }
-        axisOutMsgCtx.setTo(new EndpointReference(endpointReferenceValue));
+        EndpointReference epr = new EndpointReference(endpointReferenceValue);
+        axisOutMsgCtx.setTo(epr);
 
         AxisService anonymousService;
         if (endpointReferenceValue != null &&
@@ -140,6 +148,8 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
         axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,
                 axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
+		axisOutMsgCtx.setProperty(SynapseConstants.DISABLE_CHUNKING,
+                axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING));
 		// Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
@@ -151,6 +161,7 @@ public class BlockingMsgSender {
             clientOptions = new Options();
         } else {
             clientOptions = axisInMsgCtx.getOptions();
+            clientOptions.setTo(epr);
         }
         // Fill Client options
         BlockingMsgSenderUtils.fillClientOptions(endpointDefinition, clientOptions, synapseInMsgCtx);
@@ -167,6 +178,14 @@ public class BlockingMsgSender {
         try {
             if (isOutOnly) {
                 sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
+                final String httpStatusCode =
+                                           String.valueOf(axisOutMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
+                                                                  .trim();
+                /*
+                 * Though this is OUT_ONLY operation, we need to set the
+                 * response Status code so that others can make use of it.
+                 */
+                axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, httpStatusCode);
             } else {
                 org.apache.axis2.context.MessageContext result =
                 sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
@@ -174,8 +193,13 @@ public class BlockingMsgSender {
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
                 }
-                Object statusCode = result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
-                synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                final String statusCode =
+                                          String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
+                                                .trim();
+                /*
+                 * We need to set the response status code so that users can
+                 * fetch it later.
+                 */
                 axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
                 if ("false".equals(synapseInMsgCtx.getProperty(
                         SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
@@ -188,6 +212,11 @@ public class BlockingMsgSender {
                 return synapseInMsgCtx;
             }
         } catch (Exception ex) {
+            /*
+             * Extract the HTTP status code from the Exception message.
+             */
+            final String errorStatusCode = extractStatusCodeFromException(ex);
+            axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, errorStatusCode);
             if (!isOutOnly) {
                 //axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "true");
@@ -303,4 +332,14 @@ public class BlockingMsgSender {
         throw new SynapseException(msg);
     }
 
+    private String extractStatusCodeFromException(Exception exception) {
+        String responseStatusCode = "";
+        Matcher errMsgMatcher = errorMsgPattern.matcher(exception.getMessage());
+        Matcher statusCodeMatcher = statusCodePattern.matcher(exception.getMessage());
+        while (errMsgMatcher.find() && statusCodeMatcher.find()) {
+            responseStatusCode = statusCodeMatcher.group().trim();
+            break;
+        }
+        return responseStatusCode;
+    }
 }

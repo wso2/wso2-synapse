@@ -25,7 +25,6 @@ import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseException;
 
 import java.net.URL;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -55,6 +54,10 @@ public class Entry implements SynapseArtifact {
     private String fileName;
     /** The description of the local entry */
     private String description;
+    /** The artifact container name of the local entry was deployed from */
+    private String artifactContainerName;
+    /** Whether the artifact edited via management console or not */
+    private boolean isEdited;
 
     /**
      * Registry resource properties
@@ -212,6 +215,22 @@ public class Entry implements SynapseArtifact {
     private void handleException(String msg) {
         log.error(msg);
         throw new SynapseException(msg);
+    }
+
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
+    }
+
+    public boolean getIsEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
     }
 
     public static final int INLINE_TEXT = 0;

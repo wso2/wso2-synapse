@@ -18,7 +18,7 @@
 
 package org.apache.synapse.commons.json;
 
-import de.odysseus.staxon.event.SimpleXMLEventWriter;
+import org.apache.synapse.commons.staxon.core.event.SimpleXMLEventWriter;
 
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
@@ -43,14 +43,15 @@ final class XMLEventWriterDelegate extends SimpleXMLEventWriter {
         super(delegate);
         this.delegate = delegate;
     }
+
     public void add(XMLEvent event) throws XMLStreamException {
         switch (event.getEventType()) {
             case XMLStreamConstants.ATTRIBUTE:
                 Attribute attribute = (Attribute) event;
                 QName attrName = attribute.getName();
                 delegate.writeAttribute(attrName.getPrefix(),
-                                        attrName.getNamespaceURI(),
-                                        attrName.getLocalPart(), attribute.getValue());
+                        attrName.getNamespaceURI(),
+                        attrName.getLocalPart(), attribute.getValue());
                 break;
             case XMLStreamConstants.END_DOCUMENT:
                 delegate.writeEndDocument();
@@ -76,11 +77,11 @@ final class XMLEventWriterDelegate extends SimpleXMLEventWriter {
                 delegate.writeStartElement(elemName.getPrefix(), elemName.getLocalPart(), elemName.getNamespaceURI());
                 Iterator<?> namespaces = startElement.getNamespaces();
                 while (namespaces.hasNext()) {
-                    add((Namespace)namespaces.next());
+                    add((Namespace) namespaces.next());
                 }
                 Iterator<?> attributes = startElement.getAttributes();
                 while (attributes.hasNext()) {
-                    add((Attribute)attributes.next());
+                    add((Attribute) attributes.next());
                 }
                 break;
             case XMLStreamConstants.CHARACTERS:

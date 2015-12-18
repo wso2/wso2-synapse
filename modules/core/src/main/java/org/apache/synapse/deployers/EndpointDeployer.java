@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
@@ -49,8 +50,13 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
             log.debug("Endpoint Deployment from file : " + fileName + " : Started");
         }
 
+        CustomLogSetter.getInstance().setLogAppender(customLogContent);
+
         try {
             Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
+
+            //Set the car name
+            ep.setArtifactContainerName(customLogContent);
             if (ep != null) {
                 ep.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
@@ -84,12 +90,15 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
     public String updateSynapseArtifact(OMElement artifactConfig, String fileName,
                                         String existingArtifactName, Properties properties) {
 
+        Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
+
+        CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
+
         if (log.isDebugEnabled()) {
             log.debug("Endpoint update from file : " + fileName + " has started");
         }
 
         try {
-            Endpoint ep = EndpointFactory.getEndpointFromElement(artifactConfig, false, properties);
             if (ep == null) {
                 handleSynapseArtifactDeploymentError("Endpoint update failed. The artifact " +
                         "defined in the file: " + fileName + " is not a valid endpoint.");
@@ -144,6 +153,9 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             Endpoint ep = getSynapseConfiguration().getDefinedEndpoints().get(artifactName);
             if (ep != null) {
+
+                CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
+
                 getSynapseConfiguration().removeEndpoint(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Destroying the endpoint named : " + artifactName);
@@ -173,6 +185,9 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
         try {
             Endpoint ep
                     = getSynapseConfiguration().getDefinedEndpoints().get(artifactName);
+
+            CustomLogSetter.getInstance().setLogAppender((ep != null) ? ep.getArtifactContainerName() : "");
+
             OMElement epElem = EndpointSerializer.getElementFromEndpoint(ep);
             if (ep.getFileName() != null) {
                 String fileName = getServerConfigurationInformation().getSynapseXMLLocation()

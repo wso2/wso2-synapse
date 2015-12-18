@@ -75,10 +75,20 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
             OMAttribute uriTemplateAttr = httpElement.getAttribute(new QName("uri-template"));
             if (uriTemplateAttr != null) {
 
+                    if (uriTemplateAttr.getAttributeValue().startsWith(HTTPEndpoint.legacyPrefix)) {
+                        httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(
+                                uriTemplateAttr.getAttributeValue().substring(HTTPEndpoint.legacyPrefix.length())));
+                        // Set the address to the initial template value.
+                        definition.setAddress(uriTemplateAttr.getAttributeValue().
+                                substring(HTTPEndpoint.legacyPrefix.length()));
+                        httpEndpoint.setLegacySupport(true);
+                    } else {
 
-                    httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(uriTemplateAttr.getAttributeValue()));
-                    // Set the address to the initial template value.
-                    definition.setAddress(uriTemplateAttr.getAttributeValue());
+                        httpEndpoint.setUriTemplate(UriTemplate.fromTemplate(uriTemplateAttr.getAttributeValue()));
+                        // Set the address to the initial template value.
+                        definition.setAddress(uriTemplateAttr.getAttributeValue());
+                        httpEndpoint.setLegacySupport(false);
+                    }
 
 
             }

@@ -632,7 +632,7 @@ public class ScriptMessageContext implements MessageContext {
     }
 
     private void serializeJSON_(Object obj, OutputStream out) throws IOException {
-        if (obj == null || out == null) {
+        if (out == null) {
             logger.warn("#serializeJSON_. Did not serialize JSON object. Object: " + obj + "  Stream: " + out);
             return;
         }
@@ -640,7 +640,10 @@ public class ScriptMessageContext implements MessageContext {
             obj = ((Wrapper) obj).unwrap();
         }
 
-        if (obj instanceof NativeObject) {
+        if(obj == null){
+            out.write("null".getBytes());
+        }
+        else if (obj instanceof NativeObject) {
             out.write('{');
             NativeObject o = (NativeObject) obj;
             Object[] ids = o.getIds();

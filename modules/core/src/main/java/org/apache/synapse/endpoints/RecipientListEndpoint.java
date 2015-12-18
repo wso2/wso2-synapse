@@ -34,12 +34,9 @@ import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-
-import javax.xml.stream.XMLStreamException;
 
 /**
  * @author nuwan
@@ -97,6 +94,7 @@ public class RecipientListEndpoint extends AbstractEndpoint {
 	@Override
 	public void send(MessageContext synCtx) {
 
+        logSetter();
 		if (log.isDebugEnabled()) {
 			log.debug("Sending using Recipient List " + toString());
 		}

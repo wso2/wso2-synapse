@@ -30,6 +30,7 @@ import org.snmp4j.agent.io.ImportModes;
 import org.snmp4j.agent.mo.MOTableRow;
 import org.snmp4j.agent.mo.snmp.*;
 import org.snmp4j.agent.security.MutableVACM;
+import org.snmp4j.log.Log4jLogFactory;
 import org.snmp4j.mp.MPv3;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.*;
@@ -37,6 +38,7 @@ import org.snmp4j.smi.*;
 import org.snmp4j.transport.TransportMappings;
 
 import javax.management.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -65,6 +67,11 @@ class SNMPAgent extends BaseAgent {
 
     private Set<OID> registeredOIDs = new HashSet<OID>();
     private int snmpVersion;
+    
+    // initialize Log4J logging
+    static {
+        org.snmp4j.log.LogFactory.setLogFactory(new Log4jLogFactory());
+    }
 
     public SNMPAgent(Properties properties) {
         super(new File(SNMPConstants.BC_FILE), new File(SNMPConstants.CONFIG_FILE),
@@ -80,6 +87,20 @@ class SNMPAgent extends BaseAgent {
             log.warn("Unsupported SNMP version: " + version + " - Using defaults");
             this.snmpVersion = SnmpConstants.version1;
         }
+        
+        // Override the default sysOID and set the WSO2 OID...
+        this.sysOID = new OID(SNMPConstants.SYNAPSE_OID_BRANCH);
+
+        setSysDescr(new OctetString(getProperty(SNMPConstants.SNMP_DESCRIPTION, SNMPConstants.SNMP_DEFAULT_DESCRIPTION)));
+    }
+    
+    @Override
+    protected void registerSnmpMIBs() {
+        this.snmpv2MIB.setContact(new OctetString(getProperty(SNMPConstants.SNMP_CONTACT_NAME, SNMPConstants.SNMP_DEFAULT_CONTACT_NAME)));
+        this.snmpv2MIB.setLocation(new OctetString(getProperty(SNMPConstants.SNMP_LOCATION, SNMPConstants.SNMP_DEFAULT_LOCATION)));
+        this.snmpv2MIB.setName(new OctetString(getProperty(SNMPConstants.SNMP_HOST, SNMPConstants.SNMP_DEFAULT_HOST)));
+
+        super.registerSnmpMIBs();
     }
 
     /**
@@ -236,6 +257,12 @@ class SNMPAgent extends BaseAgent {
                 new OctetString(),
                 VacmMIB.vacmViewIncluded,
                 StorageType.nonVolatile);
+        
+        vacm.addViewTreeFamily(new OctetString(FULL_READ_VIEW), new OID("1.3.6"),
+                               new OctetString(), VacmMIB.vacmViewIncluded, StorageType.nonVolatile);
+
+        vacm.addViewTreeFamily(new OctetString(FULL_READ_VIEW), new OID("1.3.6.1.2.1.1"),
+                               new OctetString(), VacmMIB.vacmViewIncluded, StorageType.nonVolatile);
     }
 
     @Override

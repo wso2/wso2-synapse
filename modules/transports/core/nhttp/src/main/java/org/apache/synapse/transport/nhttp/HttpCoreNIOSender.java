@@ -110,10 +110,8 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     private volatile NhttpMetricsCollector metrics;
     /** state of the listener */
     private volatile int state = BaseConstants.STOPPED;
-    /** Weather User-Agent header coming from client should be preserved */
-    private boolean preserveUserAgentHeader = false;
-    /** Weather Server header coming from server should be preserved */
-    private boolean preserveServerHeader = true;
+    /** NHttp transporter base configurations */
+    private NHttpConfiguration cfg;
     /** Proxy config */
     private volatile ProxyConfig proxyConfig;
     /** Http Params **/
@@ -137,7 +135,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     public void init(ConfigurationContext cfgCtx, TransportOutDescription transportOut) throws AxisFault {
         this.configurationContext = cfgCtx;
 
-        NHttpConfiguration cfg = NHttpConfiguration.getInstance();
+        cfg = NHttpConfiguration.getInstance();
         params = new BasicHttpParams();
         params
                 .setIntParameter(CoreConnectionPNames.SO_TIMEOUT,
@@ -180,9 +178,6 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         if (cfg.getBooleanValue("http.nio.interest-ops-queueing", false)) {
             ioReactorConfig.setInterestOpQueued(true);
         }
-
-        preserveUserAgentHeader = cfg.isPreserveUserAgentHeader();
-        preserveServerHeader = cfg.isPreserveServerHeader();
 
         try {
             String prefix = name + " I/O dispatcher";
@@ -292,11 +287,11 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         Map excessHeaders = (Map) msgContext.getProperty(NhttpConstants.EXCESS_TRANSPORT_HEADERS);
 
         if (transportHeaders != null && !transportHeaders.isEmpty()) {
-            removeUnwantedHeadersFromHeaderMap(transportHeaders);
+            removeUnwantedHeadersFromHeaderMap(transportHeaders, cfg);
         }
 
         if (excessHeaders != null && !excessHeaders.isEmpty()) {
-            removeUnwantedHeadersFromHeaderMap(excessHeaders);
+            removeUnwantedHeadersFromHeaderMap(excessHeaders, cfg);
         }
     }
 
@@ -304,27 +299,35 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
      * Remove unwanted headers from the given header map.
      *
      * @param headers Header map
+     * @param nHttpConfiguration NHttp transporter base configurations
      */
-    private void removeUnwantedHeadersFromHeaderMap(Map headers) {
+    private void removeUnwantedHeadersFromHeaderMap(Map headers, NHttpConfiguration nHttpConfiguration) {
 
         Iterator iter = headers.keySet().iterator();
         while (iter.hasNext()) {
             String headerName = (String) iter.next();
-            if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName) ||
-                HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName) ||
-                HTTP.DATE_HEADER.equalsIgnoreCase(headerName) ||
-                HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName) ||
-                HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName)
+                || HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName)
+                || HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)
+                || HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)) {
                 iter.remove();
             }
 
-            if (!preserveServerHeader && HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)) {
+            if (HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)
+                && !nHttpConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER)) {
                 iter.remove();
             }
 
-            if (!preserveUserAgentHeader && HTTP.USER_AGENT.equalsIgnoreCase(headerName)) {
+            if (HTTP.USER_AGENT.equalsIgnoreCase(headerName)
+                && !nHttpConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT)) {
                 iter.remove();
             }
+
+            if (HTTP.DATE_HEADER.equalsIgnoreCase(headerName)
+                && !nHttpConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER)) {
+                iter.remove();
+            }
+
         }
     }
 
@@ -425,6 +428,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         // remove unwanted HTTP headers (if any from the current message)
         removeUnwantedHeaders(msgContext);
+        Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
 
         ServerWorker worker = (ServerWorker) msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
         HttpResponse response = worker.getResponse();
@@ -440,6 +444,19 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         }else if( Boolean.TRUE == noEntityBody){
             ((BasicHttpEntity)response.getEntity()).setChunked(false);
             ((BasicHttpEntity)response.getEntity()).setContentLength(0);
+
+            // Since HTTP HEAD request doesn't contain message body content length of the is set to be 0. To handle
+            // content length 0 while serving head method, content length of the backend response is set as the content
+            // as synapse cannot calculate content length without providing message body.
+            if (transportHeaders.get(NhttpConstants.HTTP_REQUEST_METHOD) != null &&
+                NhttpConstants.HTTP_HEAD.equals(transportHeaders.get(NhttpConstants.HTTP_REQUEST_METHOD)) &&
+                transportHeaders.get(NhttpConstants.ORIGINAL_CONTENT_LEN) != null ) {
+
+                ((BasicHttpEntity) response.getEntity()).setContentLength(
+                        Long.parseLong(String.valueOf(transportHeaders.get(NhttpConstants.ORIGINAL_CONTENT_LEN))));
+                transportHeaders.remove(NhttpConstants.ORIGINAL_CONTENT_LEN);
+                transportHeaders.remove(NhttpConstants.HTTP_REQUEST_METHOD);
+            }
         }
         response.setStatusCode(determineHttpStatusCode(msgContext, response));
 
@@ -450,7 +467,6 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         }
 
         // set any transport headers
-        Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
         if (transportHeaders != null && !transportHeaders.values().isEmpty()) {
             Iterator iter = transportHeaders.keySet().iterator();
             while (iter.hasNext()) {

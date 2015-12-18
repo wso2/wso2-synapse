@@ -32,6 +32,13 @@ public class TestMediator extends AbstractMediator {
     }
 
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         if (handlerTest != null) {
             handlerTest.handle(synCtx);
         }

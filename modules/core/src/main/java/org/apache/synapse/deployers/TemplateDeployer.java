@@ -58,6 +58,11 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                 Template tm = templateFactory.createEndpointTemplate(artifactConfig, properties);
 
                 tm.setFileName(new File(fileName).getName());
+
+                /**
+                 * Set the artifact container name of the Template
+                 */
+                tm.setArtifactContainerName(customLogContent);
                 if (log.isDebugEnabled()) {
                     log.debug("Endpoint Template named '" + tm.getName()
                             + "' has been built from the file " + fileName);
@@ -79,6 +84,11 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
                             getMediator(artifactConfig, properties);
                     if (mediator instanceof TemplateMediator) {
                         TemplateMediator tm = (TemplateMediator) mediator;
+
+                        /**
+                         * Set the artifact container name of the Template
+                         */
+                        tm.setArtifactContainerName(customLogContent);
 
                         tm.setFileName((new File(fileName)).getName());
                         if (log.isDebugEnabled()) {

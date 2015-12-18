@@ -81,6 +81,10 @@ public class SimpleInMemoryRegistry extends AbstractRegistry {
         registry.put(key, new InMemoryRegistryEntry(key));
     }
 
+    public void newNonEmptyResource(String path, boolean isDirectory, String contentType, String content, String propertyName) {
+        //TODO
+    }
+
     public void updateResource(String key, Object value) {
         InMemoryRegistryEntry entry = registry.get(key);
         if (entry != null) {

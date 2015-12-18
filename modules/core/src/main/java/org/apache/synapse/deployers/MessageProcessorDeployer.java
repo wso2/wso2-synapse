@@ -45,7 +45,12 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
             MessageProcessor mp = MessageProcessorFactory.createMessageProcessor(artifactConfig);
             if(mp != null) {
                 mp.setFileName((new File(fileName)).getName());
-                 if (log.isDebugEnabled()) {
+
+                /**
+                 * Set the name of the artifact container from which the message processor deployed
+                 */
+                mp.setArtifactContainerName(customLogContent);
+                if (log.isDebugEnabled()) {
                     log.debug("Message Processor named '" + mp.getName()
                             + "' has been built from the file " + fileName);
                 }
@@ -133,11 +138,11 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
             MessageProcessor mp =
                     getSynapseConfiguration().getMessageProcessors().get(artifactName);
             if (mp != null) {
+                mp.destroy();
                 getSynapseConfiguration().removeMessageProcessor(artifactName);
                 if (log.isDebugEnabled()) {
                     log.debug("Destroying the MessageProcessor named : " + artifactName);
                 }
-                mp.destroy();
                 if (log.isDebugEnabled()) {
                     log.debug("MessageProcessor Undeployment of the endpoint named : "
                             + artifactName + " : Completed");

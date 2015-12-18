@@ -47,7 +47,10 @@ public class InboundEndpoint implements ManagedLifecycle {
     private String fileName;
     private SynapseEnvironment synapseEnvironment;
     private InboundRequestProcessor inboundRequestProcessor;
-
+    /** car file name which this endpoint deployed from */
+    private String artifactContainerName;
+    /** Whether the deployed inbound endpoint is edited via the management console */
+    private boolean isEdited;
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
@@ -203,4 +206,19 @@ public class InboundEndpoint implements ManagedLifecycle {
         this.classImpl = classImpl;
     }
 
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
+    }
+
+    public String getArtifactContainerName () {
+        return artifactContainerName;
+    }
+
+    public boolean getIsEdited() {
+        return isEdited;
+    }
+
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
 }

@@ -32,22 +32,24 @@ import javax.xml.namespace.QName;
  */
 public abstract class DynamicProfileReloader {
 
-    private static final Log LOG = LogFactory.getLog(DynamicProfileReloader.class);
+    private static final Log log = LogFactory.getLog(DynamicProfileReloader.class);
 
     /* XML parameter name for dynamic profiles in Axis2 config */
-    private final String profileConfigName = "dynamicSSLProfilesConfig";
+    private final String PROFILE_CONFIG_NAME = "dynamicSSLProfilesConfig";
 
     /* XML element name for dynamic profiles configuration path in Axis2 config */
-    private final String pathConfigName = "filePath";
+    private final String PATH_CONFIG_NAME = "filePath";
 
     /* XML element name for dynamic profiles file read interval in Axis2 config */
-    private final String intervalConfigName = "fileReadInterval";
+    private final String INTERVAL_CONFIG_NAME = "fileReadInterval";
+
+    private boolean invokedFromSchedule = true;
 
     private long lastUpdatedtime;
 
     private String filePath;
 
-    public abstract void notifyFileUpdate();
+    public abstract void notifyFileUpdate(boolean isScheduled);
 
     protected FileUpdateNotificationHandler fileUpdateNotificationHandler;
 
@@ -87,6 +89,24 @@ public abstract class DynamicProfileReloader {
     }
 
     /**
+     * Check whether the file is invoked from scheduled task
+     *
+     * @return true if invoked from schedule, false otherwise
+     */
+    public boolean isInvokedFromSchedule() {
+        return invokedFromSchedule;
+    }
+
+    /**
+     * Set whether the file is invoked from schedule
+     *
+     * @param invokedFromSchedule true if invoked from schedule, false otherwise
+     */
+    public void setInvokedFromSchedule(boolean invokedFromSchedule) {
+        this.invokedFromSchedule = invokedFromSchedule;
+    }
+
+    /**
      * Set the configuration file path from custom SSL config
      *
      * @param transportOut TransportOutDescription of the configuration
@@ -94,12 +114,11 @@ public abstract class DynamicProfileReloader {
      */
     protected String extractConfigurationFilePath(ParameterInclude transportOut) {
         String path = null;
-        Parameter profileParam = transportOut.getParameter(profileConfigName);
-
+        Parameter profileParam = transportOut.getParameter(PROFILE_CONFIG_NAME);
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profileParam != null) {
             OMElement profileParamElem = profileParam.getParameterElement();
-            path = profileParamElem.getFirstChildWithName(new QName(pathConfigName)).getText();
+            path = profileParamElem.getFirstChildWithName(new QName(PATH_CONFIG_NAME)).getText();
 
         }
         return path;
@@ -113,20 +132,17 @@ public abstract class DynamicProfileReloader {
      */
     protected long extractSleepInterval(ParameterInclude transportOut) {
         long fileReadInterval = -1;
-        Parameter profileParam = transportOut.getParameter(profileConfigName);
-
+        Parameter profileParam = transportOut.getParameter(PROFILE_CONFIG_NAME);
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profileParam != null) {
             OMElement profileParamElem = profileParam.getParameterElement();
-            String interval = profileParamElem.getFirstChildWithName(new QName(intervalConfigName)).getText();
+            String interval = profileParamElem.getFirstChildWithName(new QName(INTERVAL_CONFIG_NAME)).getText();
             if (interval != null) {
-                fileReadInterval = Long.valueOf(interval);
+                fileReadInterval = Long.parseLong(interval);
             }
         }
-
         return fileReadInterval;
     }
-
 
     /**
      * Register this Profile Loader in FileUpdateNotificationHandler for notifications
@@ -137,7 +153,6 @@ public abstract class DynamicProfileReloader {
         boolean notificationHandlerStarted = false;
         long configurationLoadingInterval = extractSleepInterval(transportDescription);
         String filePath = extractConfigurationFilePath(transportDescription);
-
         //Create File Update Notification Handler only if file path is configured
         if (filePath != null) {
             fileUpdateNotificationHandler = new FileUpdateNotificationHandler(configurationLoadingInterval);
@@ -147,7 +162,10 @@ public abstract class DynamicProfileReloader {
             fileUpdateNotificationHandler.registerListener(this);
             notificationHandlerStarted = true;
         } else {
-            LOG.debug("Configuration File path is not configured and SSL Profiles will not be loaded dynamically in " + this.getClass().getName());
+            if (log.isDebugEnabled()) {
+                log.debug("Configuration File path is not configured and SSL Profiles will not be loaded " +
+                          "dynamically in " + this.getClass().getName());
+            }
         }
         return notificationHandlerStarted;
     }

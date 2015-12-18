@@ -32,6 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.net.InetAddress;
 import java.net.SocketException;
@@ -105,12 +106,9 @@ public class PassThroughTransportUtils {
      * copied from the request messages
      *
      * @param msgContext the Axis2 Message context from which these headers should be removed
-     * @param preserveServerHeader if true preserve the original server header
-     * @param preserveUserAgentHeader if true preserve the original user-agent header
+     * @param targetConfiguration configuration for the passThrough handler
      */
-    public static void removeUnwantedHeaders(MessageContext msgContext,
-                                             boolean preserveServerHeader,
-                                             boolean preserveUserAgentHeader) {
+    public static void removeUnwantedHeaders(MessageContext msgContext, TargetConfiguration targetConfiguration) {
         Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
         Map excessHeaders = (Map) msgContext.getProperty(NhttpConstants.EXCESS_TRANSPORT_HEADERS);
 
@@ -121,11 +119,11 @@ public class PassThroughTransportUtils {
                                        transportHeaders.get(HTTP.CONTENT_LEN));
             }
 
-            removeUnwantedHeadersFromHeaderMap(transportHeaders, preserveServerHeader, preserveUserAgentHeader);
+            removeUnwantedHeadersFromHeaderMap(transportHeaders, targetConfiguration);
         }
 
         if (excessHeaders != null && !excessHeaders.isEmpty()) {
-            removeUnwantedHeadersFromHeaderMap(excessHeaders, preserveServerHeader, preserveUserAgentHeader);
+            removeUnwantedHeadersFromHeaderMap(excessHeaders, targetConfiguration);
         }
 
     }
@@ -134,29 +132,46 @@ public class PassThroughTransportUtils {
     /**
      * Remove unwanted headers from the given header map.
      *
-     * @param preserveServerHeader    if true preserve the original server header
-     * @param preserveUserAgentHeader if true preserve the original user-agent header
+     * @param headers             http header map
+     * @param targetConfiguration configurations for the passThrough transporter
      */
     private static void removeUnwantedHeadersFromHeaderMap(Map headers,
-                                                           boolean preserveServerHeader,
-                                                           boolean preserveUserAgentHeader) {
+                                                           TargetConfiguration targetConfiguration) {
         Iterator iter = headers.keySet().iterator();
         while (iter.hasNext()) {
             String headerName = (String) iter.next();
             if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName) ||
-                HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName) ||
-                HTTP.DATE_HEADER.equalsIgnoreCase(headerName) ||
-                HTTP.CONTENT_LEN.equalsIgnoreCase(headerName) ||
-                HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName) ||
-                HTTP.CONN_KEEP_ALIVE.equalsIgnoreCase(headerName)) {
+                HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName)) {
                 iter.remove();
             }
 
-            if (!preserveServerHeader && HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONN_KEEP_ALIVE.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONN_KEEP_ALIVE)) {
                 iter.remove();
             }
 
-            if (!preserveUserAgentHeader && HTTP.USER_AGENT.equalsIgnoreCase(headerName)) {
+            if (HTTP.CONTENT_LEN.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_LEN)) {
+                iter.remove();
+            }
+
+            if (HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
+                iter.remove();
+            }
+
+            if (HTTP.DATE_HEADER.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER)) {
+                iter.remove();
+            }
+
+            if (HTTP.SERVER_HEADER.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.SERVER_HEADER)) {
+                iter.remove();
+            }
+
+            if (HTTP.USER_AGENT.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.USER_AGENT)) {
                 iter.remove();
             }
         }
@@ -186,12 +201,13 @@ public class PassThroughTransportUtils {
             // is this a fault message
             boolean handleFault = msgContext.getEnvelope() != null ?
                 (msgContext.getEnvelope().getBody().hasFault() || msgContext.isProcessingFault()):false;
-
-            // shall faults be transmitted with HTTP 200
-            boolean faultsAsHttp200 =
-                PassThroughConstants.TRUE.equals(
-                    msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200));
-
+            boolean faultsAsHttp200 = false;
+            if (msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200) != null) {
+                // shall faults be transmitted with HTTP 200
+                faultsAsHttp200 =
+                        PassThroughConstants.TRUE.equals(
+                                msgContext.getProperty(PassThroughConstants.FAULTS_AS_HTTP_200).toString().toUpperCase());
+            }
             // Set HTTP status code to 500 if this is a fault case and we shall not use HTTP 200
             if (handleFault && !faultsAsHttp200) {
                 httpStatus = HttpStatus.SC_INTERNAL_SERVER_ERROR;

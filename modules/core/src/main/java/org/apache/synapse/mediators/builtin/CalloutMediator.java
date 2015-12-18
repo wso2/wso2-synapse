@@ -95,6 +95,12 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
 
     public boolean mediate(MessageContext synCtx) {
 
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         SynapseLog synLog = getLog(synCtx);
 
         if (synLog.isTraceOrDebugEnabled()) {
@@ -178,6 +184,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                     blockingMsgSender.send(endpoint, synapseOutMsgCtx);
                 } else {
                     resultMsgCtx = blockingMsgSender.send(endpoint, synapseOutMsgCtx);
+                    setResponseHttpSc(resultMsgCtx, synCtx);
                     if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
                         handleFault(synCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
                     }
@@ -261,9 +268,11 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             List<OMNode> newHeaderNodes = new ArrayList<OMNode>();
             while (iHeader.hasNext()) {
                 try {
-                    OMElement element = (OMElement) iHeader.next();
+                    Object element = iHeader.next();
                     iHeader.remove();
-                    newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock(element, fac));
+                    if (element instanceof  OMElement) {
+                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+                    }
                 } catch (OMException e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 } catch (Exception e) {
@@ -621,6 +630,16 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
      */
     public void setEndpoint(Endpoint endpoint) {
         this.endpoint = endpoint;
+    }
+    
+    private void setResponseHttpSc(MessageContext sourceSynCtx, MessageContext destinationSynCtx) {
+        if (sourceSynCtx != null) {
+            org.apache.axis2.context.MessageContext axis2MessageContext =
+                                                                          ((Axis2MessageContext) destinationSynCtx).getAxis2MessageContext();
+            axis2MessageContext.setProperty(SynapseConstants.HTTP_SC,
+                                            ((Axis2MessageContext) sourceSynCtx).getAxis2MessageContext()
+                                                                                .getProperty(SynapseConstants.HTTP_SC));
+        }
     }
 
 }

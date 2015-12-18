@@ -32,6 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -103,6 +104,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     private boolean contentAware = false;
     
     private boolean forceBuildMC =false;
+
+    protected String artifactContainerName;
+
+    private boolean isEdited = false;
 
     protected AbstractEndpoint() {
         log = LogFactory.getLog(this.getClass());
@@ -200,6 +205,38 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     /**
+     * Set the car File name which this endpoint deployed from
+     * @param name
+     */
+    public void setArtifactContainerName (String name) {
+        artifactContainerName = name;
+    }
+
+    /**
+     * Get the car File name which this endpoint deployed from
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName () {
+        return artifactContainerName;
+    }
+
+    /**
+     * Get the edit state of the endpoint
+     * @return
+     */
+    public boolean getIsEdited() {
+        return isEdited;
+    }
+
+    /**
+     * Set the edit state of the endpoint
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    /**
      * set whether this endpoint needs to be registered for JMX MBeans. some endpoints may not need
      * to register under MBean and setting false will cut the additional overhead.
      * @param flag set true/false
@@ -249,6 +286,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void send(MessageContext synCtx) {
+
+        logSetter();
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -472,6 +511,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @param synCtx the message at hand
      */
     public void onFault(MessageContext synCtx) {
+        logSetter();
         invokeNextFaultHandler(synCtx);
     }
 
@@ -739,5 +779,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         for (Map.Entry<String, MediatorProperty> e : propertySet) {
             e.getValue().evaluate(synCtx);
         }
+    }
+
+    public void logSetter() {
+        CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 }

@@ -53,6 +53,12 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     protected List<MessageConsumer> messageConsumers = new ArrayList<MessageConsumer>();
 
+    /** Name of the artifact container from which the message processor deployed */
+    protected String artifactContainerName;
+
+    /** Whether the message processor edited via the management console */
+    protected boolean isEdited;
+
     /** This attribute is only need for forwarding message processor. However, it here because
      * then we don't need to implement this in sampling processor with nothing */
     protected String targetEndpoint;
@@ -143,5 +149,37 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
     @Override
     public String getTargetEndpoint() {
         return targetEndpoint;
+    }
+
+    /**
+     * Whether the message processor edited through the management console
+     * @return isEdited
+     */
+    public boolean isEdited() {
+        return isEdited;
+    }
+
+    /**
+     * Set whether the message processor edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited) {
+        this.isEdited = isEdited;
+    }
+
+    /**
+     * Get the name of the artifact container from which the message processor deployed
+     * @return artifactContainerName
+     */
+    public String getArtifactContainerName() {
+        return artifactContainerName;
+    }
+
+    /**
+     * Set the name of the artifact container from which the message processor deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName) {
+        this.artifactContainerName = artifactContainerName;
     }
 }

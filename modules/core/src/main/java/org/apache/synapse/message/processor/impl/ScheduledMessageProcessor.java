@@ -20,11 +20,11 @@ package org.apache.synapse.message.processor.impl;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessorCleanupService;
@@ -82,14 +82,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public void init(SynapseEnvironment se) {
 		this.synapseEnvironment = se;
 		initMessageSender(parameters);
-		if (!isPinnedServer(se.getServerContextInformation().getServerConfigurationInformation()
-		                      .getServerName())) {
-			/*
-			 * If it is not a pinned server we do not start the message
-			 * processor. In that server.
-			 */
-			setActivated(false);
-		}
 		super.init(se);
 		/*
 		 * initialize the task manager only once to alleviate complexities
@@ -98,6 +90,11 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		if (taskManager == null) {
 			taskManager = synapseEnvironment.getSynapseConfiguration().getTaskManager();
 		}
+
+        if (taskManager == null) {
+            throw new SynapseException("Task Manager not defined in the configuration.");
+        }
+
 
 		/*
 		 * If the task manager is not initialized yet, subscribe to
@@ -108,12 +105,33 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			return;
 		}
 
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED))) &&
-		    !isDeactivated()) {
-			this.start();
-		}
+        /*
+         * Schedule the task despite if it is ACTIVATED OR DEACTIVATED
+         * initially. Eventhough the Message Processor is explicitly deactivated
+         * initially, we need to have a Task to handle subsequent updates.
+         */
+        this.start();
 
 	}
+
+    /*
+     * Fetches the value of the IsActivated Property of Message Processor. The
+     * IsActivated property resides under the Advanced parameters section of the
+     * Message Processor.
+     */
+    public boolean getIsActivatedParamValue() {
+        Object isActiveParam = parameters.get(MessageProcessorConstants.IS_ACTIVATED);
+        // Message Processor is ACTIVATED by default.
+        boolean isActivated = true;
+        if (isActiveParam != null) {
+            isActivated = Boolean.parseBoolean(String.valueOf(isActiveParam));
+        }
+        return isActivated;
+    }
+
+    protected boolean isProcessorStartAsDeactivated(){
+        return !getIsActivatedParamValue();
+    }
 
     @Override
     public boolean start() {
@@ -151,10 +169,20 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				taskDescription.setCronExpression(cronExpression);
 			}
 			taskManager.schedule(taskDescription);
+		
 		}
-		logger.info("Started message processor. [" + getName() + "].");
-
-		return true;
+		
+		
+        logger.info("Started message processor. [" + getName() + "].");
+        
+        /*
+         * If the Message Processor is Deactivated through the Advanced parameter 
+         * explicitly, then we deactivate the task immediately.
+         */
+        if (!getIsActivatedParamValue()) {
+            deactivate();
+        }
+        return true;
 	}
 
     @Override
@@ -201,6 +229,17 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * therefore not started but initiated.
 		 */
 		if (taskManager != null && taskManager.isInitialized()) {
+            /*
+             * If the task is already deleted, then it does not exist any more.
+             * Therefore no point of deleting it again. Hence merely returning.
+             * This situation arises when a MP is deleted from the manager node
+             * in a cluster setup. Then the deployment engine will eventually
+             * call the destroy method in all workers, leading to delete an
+             * already deleted task. This leads to unnecessary exceptions.
+             */
+            if (!taskManager.isTaskExist(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX)) {
+                return false;
+            }
 			for (int i = 0; i < memberCount; i++) {
 				/*
 				 * This is to immediately stop the scheduler to avoid firing new
@@ -238,11 +277,29 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         }
 
         finally {
+            /*
+             * If the Task is scheduled with an interval value < 1000 ms, it is
+             * executed outside Quartz. For an example Task with interval 200ms.
+             * Here we directly pause the task, move on and cleanup the JMS
+             * connection.But actual pausing the task through TaskManager takes
+             * few ms (say 300 ms). During this time the Task is executed
+             * outside Quartz and
+             * a new JMS connection is created (After the previous cleanup).
+             * Once
+             * the task is paused and destroyed successfully, we create a new
+             * task, for which a new JMS
+             * connection is created. This leads to multiple JMS connections and
+             * is a Bug. This 1000 ms sleep is used to make sure that the task
+             * is paused before cleaning up the JMS connection, which prevents
+             * multiple JMS connections being created.
+             */
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.error("The thread was interrupted while sleeping");
+            }
             if (getMessageConsumer() != null && messageConsumers.size() > 0) {
-                boolean success = getMessageConsumer().get(0).cleanup();
-                if (!success) {
-                    logger.error("[" + getName() + "] Could not cleanup message consumer.");
-                }
+                cleanupLocalResources();
             } else {
                 logger.warn("[" + getName() + "] Could not find the message consumer to cleanup.");
             }
@@ -275,9 +332,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
                  * This will close the connection with the JMS Provider/message
                  * store.
                  */
-                if (messageConsumers != null && messageConsumers.size() > 0) {
-                    messageConsumers.get(0).cleanup();
-                }
+                cleanupLocalResources();
 
                 /*
                  * Cleaning up the resources in the cluster mode here.
@@ -326,17 +381,18 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	public boolean isActive() {
-		/*
-		 * If the interval value is less than 1000 ms, then the task is run
-		 * inside the while loop. Due to that control is not returned back to
-		 * the taskmanager and hence the task is in BLOCKED state. This
-		 * situation is handled separately.
-		 */
-		if (isThrottling(interval)) {
-			return taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
-			       taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
-		}
-		return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
+        /*
+         * Sometimes when the backend is down, we may retry the delivery for a
+         * specified number of attempts. Due to that control is not returned
+         * back to the Quartz for some time (may be few secs depending on the
+         * config). Therefore the task is in Blocked
+         * state as far as Quartz is concerned. But we are running the execute
+         * method of the task in the meantime with our own logic. Therefore
+         * though the task is blocked from Quartz, still we are executing it. So
+         * that implies it is running.
+         */
+        return taskManager.isTaskRunning(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX) ||
+               taskManager.isTaskBlocked(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX);
 	}
 
     @Override
@@ -352,33 +408,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		parameters.put(MessageProcessorConstants.IS_ACTIVATED, String.valueOf(activated));
 	}
 
-    private boolean isPinnedServer(String serverName) {
-        boolean pinned = false;
-        Object pinnedServersObj = this.parameters.get(MessageProcessorConstants.PINNED_SERVER);
-
-        if (pinnedServersObj != null && pinnedServersObj instanceof String) {
-
-            String pinnedServers = (String) pinnedServersObj;
-            StringTokenizer st = new StringTokenizer(pinnedServers, " ,");
-
-            while (st.hasMoreTokens()) {
-                String token = st.nextToken().trim();
-                if (serverName.equals(token)) {
-                    pinned = true;
-                    break;
-                }
-            }
-            if (!pinned) {
-                logger.info("Message processor '" + name + "' pinned on '" + pinnedServers + "' not starting on" +
-                        " this server '" + serverName + "'");
-            }
-        } else {
-            // this means we have to use the default value that is to start the message processor
-            pinned = true;
-        }
-
-        return pinned;
-    }
 
 	/**
 	 * nTask does not except values less than 1000 for its schedule interval.
@@ -426,10 +455,8 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void update() {
-		if (Boolean.parseBoolean(String.valueOf(parameters.get(MessageProcessorConstants.IS_ACTIVATED)))) {
-			start();
-		}
-	}
+	    start();
+    }
 
     @Override
     public void cleanupLocalResources() {

@@ -51,6 +51,10 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
         try {
             Entry e = EntryFactory.createEntry(artifactConfig, properties);
             if (e != null) {
+                /**
+                 * Set the artifact container name of the local entry
+                 */
+                e.setArtifactContainerName(customLogContent);
                 e.setFileName((new File(fileName)).getName());
                 if (log.isDebugEnabled()) {
                     log.debug("LocalEntry with key '" + e.getKey()

@@ -130,4 +130,28 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      * @return Message with given ID
      */
     public MessageContext get(String messageId);
+
+    /**
+     * Whether the message store edited through the management console
+     * @return
+     */
+    public boolean isEdited();
+
+    /**
+     * Set whether the message store edited through the management console
+     * @param isEdited
+     */
+    public void setIsEdited(boolean isEdited);
+
+    /**
+     * Get the name of the artifact container from which the message store deployed
+     * @return
+     */
+    public String getArtifactContainerName();
+
+    /**
+     * Set the name of the artifact container from which the message store deployed
+     * @param artifactContainerName
+     */
+    public void setArtifactContainerName(String artifactContainerName);
 }

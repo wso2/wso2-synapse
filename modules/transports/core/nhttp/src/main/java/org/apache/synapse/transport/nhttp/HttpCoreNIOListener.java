@@ -193,6 +193,8 @@ public class HttpCoreNIOListener implements TransportListener, ManagementSupport
             if (cfg.getBooleanValue("http.nio.interest-ops-queueing", false)) {
                 ioReactorConfig.setInterestOpQueued(true);
             }
+            ioReactorConfig.setSoReuseAddress(cfg.getBooleanValue(CoreConnectionPNames.SO_REUSEADDR, false));
+
             ioReactor = new DefaultListeningIOReactor(
                     ioReactorConfig,
                     new NativeThreadFactory(new ThreadGroup(prefix + " thread group"), prefix));
