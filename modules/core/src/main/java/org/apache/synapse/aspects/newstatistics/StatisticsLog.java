@@ -20,6 +20,11 @@ package org.apache.synapse.aspects.newstatistics;
 
 import org.apache.synapse.aspects.ComponentType;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * StatisticsLog holds statistics logs during statistic collection. When message passes through each
  * mediator,API,sequence etc. StatisticsLog will be created for each and every component.
@@ -39,9 +44,12 @@ public class StatisticsLog {
 
 	private final int msgId;
 
-	private boolean hasChildren = false;
+	//private boolean hasChildren = false;
 
-	private int noOfChildren = 0;
+	//private int noOfChildren = 0;
+
+	List<Integer> children = new LinkedList<>();
+
 
 	private int noOfFaults = 0;
 
@@ -50,6 +58,12 @@ public class StatisticsLog {
 	private long endTime = -1;
 
 	private boolean isResponse;
+
+	private boolean cloneLog;
+
+	private boolean aggregateLog;
+
+	private Integer immediateChild = null;
 
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
@@ -60,15 +74,18 @@ public class StatisticsLog {
 		this.isResponse = statisticDataUnit.isResponse();
 		this.parentLevel = parentLevel;
 		this.parentMsgId = parentMsgId;
+		this.aggregateLog = statisticDataUnit.isAggregatePoint();
+		this.cloneLog = statisticDataUnit.isClonePoint();
+		this.immediateChild = null;
 	}
 
 	public int getParentMsgId() {
 		return parentMsgId;
 	}
 
-	public void setHasChildren(boolean hasChildren) {
-		this.hasChildren = hasChildren;
-	}
+//	//public void setHasChildren(boolean hasChildren) {
+//		this.hasChildren = hasChildren;
+//	}
 
 	public void setEndTime(long endTime) {
 		this.endTime = endTime;
@@ -78,9 +95,9 @@ public class StatisticsLog {
 		return parent;
 	}
 
-	public boolean isHasChildren() {
-		return hasChildren;
-	}
+//	public boolean isHasChildren() {
+//		return hasChildren;
+//	}
 
 	public int getParentLevel() {
 		return parentLevel;
@@ -90,9 +107,9 @@ public class StatisticsLog {
 		return componentType;
 	}
 
-	public int getNoOfChildren() {
-		return noOfChildren;
-	}
+//	public int getNoOfChildren() {
+//		return noOfChildren;
+//	}
 
 	public long getStartTime() {
 		return startTime;
@@ -106,9 +123,9 @@ public class StatisticsLog {
 		return endTime;
 	}
 
-	public void incrementNoOfChildren() {
-		noOfChildren += 1;
-	}
+//	public void incrementNoOfChildren() {
+//		noOfChildren += 1;
+//	}
 
 	public int getNoOfFaults() {
 		return noOfFaults;
@@ -128,5 +145,29 @@ public class StatisticsLog {
 
 	public void setIsResponse(boolean isResponse) {
 		this.isResponse = isResponse;
+	}
+
+	public boolean isCloneLog() {
+		return cloneLog;
+	}
+
+	public boolean isAggregateLog() {
+		return aggregateLog;
+	}
+
+	public void setCloneLog(boolean cloneLog) {
+		this.cloneLog = cloneLog;
+	}
+
+//	public void setChild(Integer child) {
+//		this.child = child;
+//	}
+
+	public void setImmediateChild(Integer immediateChild) {
+		this.immediateChild = immediateChild;
+	}
+
+	public void setChildren(Integer childrenIndex) {
+		this.children.add(childrenIndex);
 	}
 }

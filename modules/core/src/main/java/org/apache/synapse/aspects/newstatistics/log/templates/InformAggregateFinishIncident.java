@@ -23,37 +23,17 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.StatisticDataUnit;
 
-public class StatisticCloseLog implements StatisticReportingLog {
+public class InformAggregateFinishIncident implements StatisticReportingLog {
+	private final StatisticDataUnit statisticDataUnit;
 
-	private StatisticDataUnit statisticDataUnit;
-
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime) {
+	public InformAggregateFinishIncident(MessageContext messageContext) {
+		//Actually this should remove pending call backs
 		String statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
-		int msgId;
-		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
-			msgId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
-		} else {
-			msgId = 0;
-		}
-
 		statisticDataUnit =
-				new StatisticDataUnit(statisticId, componentId, parentId, msgId, endTime, messageContext.isResponse(),
-				                      messageContext.getEnvironment());
-	}
-
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime,
-	                         boolean isAggregateLog,boolean isCloneLog) {
-		this(messageContext, componentId, parentId, endTime);
-		if(isAggregateLog) {
-			statisticDataUnit.setAggregatePoint();
-		}
-
-		if(isCloneLog){
-			statisticDataUnit.setClonePoint();
-		}
+				new StatisticDataUnit(statisticId, messageContext.getEnvironment(), System.currentTimeMillis());
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.recordStatisticCloseLog(statisticDataUnit);
+		RuntimeStatisticCollector.informAggregateFinishOperation(statisticDataUnit);
 	}
 }

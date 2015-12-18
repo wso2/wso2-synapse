@@ -31,6 +31,13 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.StatisticCloneMessageCountHolder;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -105,6 +112,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
 
+    private boolean isAggregateComplete = false;
+
     public AggregateMediator() {
         try {
             aggregationExpression = new SynapseXPath("/s11:Envelope/s11:Body/child::*[position()=1] | " +
@@ -167,6 +176,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Aggregate mediator");
+
+            System.out.println("join from here");
 
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
@@ -321,8 +332,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 if (aggregate.isComplete(synLog)) {
                     synLog.traceOrDebug("Aggregation completed - invoking onComplete");
                     boolean onCompleteSeqResult = completeAggregate(aggregate);
-                    
                     synLog.traceOrDebug("End : Aggregate mediator");
+                    isAggregateComplete = onCompleteSeqResult;
                     return onCompleteSeqResult;
                 } else {
                     aggregate.releaseLock();
@@ -625,4 +636,33 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.enclosingElementPropertyName = enclosingElementPropertyName;
     }
 
+//    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+//        StatisticCloneMessageCountHolder cloneCount = (StatisticCloneMessageCountHolder) messageContext
+//                .getProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT);
+//        Integer msgID = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
+//        Integer parentID = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_PARENT_MESSAGE_ID);
+//        System.out.println("CloneCount: " + cloneCount.getCloneMessageCount() + "|clonemsgID:" +
+//                           msgID + "|parentID:" + parentID);
+//        if (isCreateLog) {
+//            System.out.println("Start Aggregate mediator is called this a join mediator");
+//
+//        } else {
+//            System.out.println("End Aggregate mediator is called this a join mediator");
+//        }
+//    }
+
+    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
+            StatisticReportingLog statisticLog;
+            if (isCreateLog) {
+                statisticLog = new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           parentName, System.currentTimeMillis(), true,false);
+            } else {
+                statisticLog =
+                        new StatisticCloseLog(messageContext, getMediatorName(), parentName, System.currentTimeMillis(),
+                                              isAggregateComplete,false);
+            }
+            StatisticEventReceiver.receive(statisticLog);
+        }
+    }
 }

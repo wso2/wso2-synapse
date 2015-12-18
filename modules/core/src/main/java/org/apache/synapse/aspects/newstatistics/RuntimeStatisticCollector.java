@@ -52,7 +52,6 @@ public class RuntimeStatisticCollector {
 
 	/**
 	 * Create statistic log for the the reporting component.
-
 	 */
 	public static void recordStatisticCreateEntry(StatisticDataUnit statisticDataUnit) {
 
@@ -190,11 +189,11 @@ public class RuntimeStatisticCollector {
 	//	 *
 	//	 * @param msgCtx Message context
 	//	 */
-		public static void setStatisticsTraceId(MessageContext msgCtx) {
-			if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) == null) {
-				msgCtx.setProperty(SynapseConstants.NEW_STATISTICS_ID, msgCtx.getMessageID());
-			}
+	public static void setStatisticsTraceId(MessageContext msgCtx) {
+		if (msgCtx.getProperty(SynapseConstants.NEW_STATISTICS_ID) == null) {
+			msgCtx.setProperty(SynapseConstants.NEW_STATISTICS_ID, msgCtx.getMessageID());
 		}
+	}
 	//
 	//	/**
 	//	 * Returns statistics trace id corresponding to the message context.
@@ -276,14 +275,29 @@ public class RuntimeStatisticCollector {
 		return isStatisticsEnable;
 	}
 
-	public static boolean shouldReportStatistic(MessageContext messageContext){
+	public static boolean shouldReportStatistic(MessageContext messageContext) {
 		Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
 		Object statID = messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 		return (statID != null && isStatCollected != null && isStatCollected && isStatisticsEnable);
 	}
 
-	public static boolean isStatisticsTraced(MessageContext messageContext){
+	public static boolean isStatisticsTraced(MessageContext messageContext) {
 		Object statID = messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 		return (statID != null && isStatisticsEnable);
+	}
+
+	public static void informCloneOperation(String statisticId) {
+		if (runningStatistics.containsKey(statisticId)) {
+			StatisticsEntry entry = runningStatistics.get(statisticId);
+			entry.setCloneLog(true);
+		}
+	}
+
+	public static void informAggregateFinishOperation(StatisticDataUnit statisticDataUnit) {
+		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			StatisticsEntry entry = runningStatistics.get(statisticDataUnit.getStatisticId());
+			entry.endHaveAggregateLogs();
+			RuntimeStatisticCollector.finalizeEntry(statisticDataUnit);
+		}
 	}
 }

@@ -32,6 +32,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
+import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -118,7 +124,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
 
             // get the iteration elements and iterate through the list,
-            // this call will also detach all the iteration elements 
+            // this call will also detach all the iteration elements
             List splitElements = EIPUtils.getDetachedMatchingElements(envelope, synCtx, expression);
 
             if (synLog.isTraceOrDebugEnabled()) {
@@ -188,7 +194,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
 
         // if the continuation of the parent message is stopped from here set the RESPONSE_WRITTEN
-        // property to SKIP to skip the blank http response 
+        // property to SKIP to skip the blank http response
         OperationContext opCtx
             = ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext();
         if (!continueParent && opCtx != null) {
@@ -271,8 +277,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         // clone the message context without cloning the SOAP envelope, for the mediation in iteration.
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false);
-        
-        
+
+
 		StatisticsRecord statRecord =
 		                              (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
 		if (statRecord != null) {
@@ -434,4 +440,18 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
+    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
+            StatisticReportingLog statisticLog;
+            if (isCreateLog) {
+                statisticLog = new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           parentName, System.currentTimeMillis(), false, true);
+            } else {
+                statisticLog =
+                        new StatisticCloseLog(messageContext, getMediatorName(), parentName, System.currentTimeMillis(),
+                                              false, true);
+            }
+            StatisticEventReceiver.receive(statisticLog);
+        }
+    }
 }

@@ -30,6 +30,9 @@ public class StatisticDataUnit {
 	private int cloneId;
 	private boolean isResponse;
 	private SynapseEnvironment synapseEnvironment;
+	private boolean aggregatePoint;
+	private boolean clonePoint;
+	private int parentMsgId;
 
 	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
 	                         int cloneId, Long time, boolean isResponse) {
@@ -40,6 +43,8 @@ public class StatisticDataUnit {
 		this.componentId = componentId;
 		this.cloneId = cloneId;
 		this.isResponse = isResponse;
+		this.aggregatePoint = false;
+		this.clonePoint = false;
 	}
 
 	public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
@@ -50,6 +55,8 @@ public class StatisticDataUnit {
 		this.componentId = componentId;
 		this.cloneId = cloneId;
 		this.isResponse = isResponse;
+		this.aggregatePoint = false;
+		this.clonePoint = false;
 	}
 
 	public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
@@ -67,6 +74,8 @@ public class StatisticDataUnit {
 		this.cloneId = cloneId;
 		this.isResponse = isResponse;
 		this.synapseEnvironment = synapseEnvironment;
+		this.aggregatePoint = false;
+		this.clonePoint = false;
 	}
 
 	public String getStatisticId() {
@@ -103,5 +112,24 @@ public class StatisticDataUnit {
 
 	public void setParentId(String parentId) {
 		this.parentId = parentId;
+	}
+
+	public boolean isAggregatePoint() {
+		return aggregatePoint;
+	}
+
+	public void setAggregatePoint() {
+		this.aggregatePoint = true;
+	}
+
+	public boolean isClonePoint() {
+		return clonePoint;
+	}
+
+	public void setClonePoint() {
+		this.clonePoint = true;
+	}
+	public int getParentMsgId() {
+		return parentMsgId;
 	}
 }

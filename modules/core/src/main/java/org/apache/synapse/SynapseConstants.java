@@ -238,6 +238,12 @@ public final class SynapseConstants {
         public static final String NEW_STATISTICS_MESSAGE_ID ="synapse.newStatistics.msgID";
 
         /** Key to message context statistic entry */
+        public static final String NEW_STATISTICS_PARENT_MESSAGE_ID ="synapse.newStatistics.parent.msg.id";
+
+        /** Key to message context statistic entry */
+        public static final String NEW_STATISTICS_CLONE_MSG_COUNT ="synapse.newStatistics.clone.count";
+
+        /** Key to message context statistic entry */
         public static final String NEW_STATISTICS_IS_FAULT_REPORTED ="synapse.newStatistics.fault.reported";
 
         /** Key to specify whether statistics should be reported */

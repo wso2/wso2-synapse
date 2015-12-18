@@ -42,6 +42,18 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 
 	}
 
+	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
+	                               String parentId, Long startTime, boolean isAggregateLog,boolean isCloneLog) {
+		this(messageContext, componentId, componentType, parentId, startTime);
+		if(isAggregateLog) {
+			statisticDataUnit.setAggregatePoint();
+		}
+
+		if(isCloneLog) {
+			statisticDataUnit.setClonePoint();
+		}
+	}
+
 	@Override public void process() {
 		RuntimeStatisticCollector.recordStatisticCreateEntry(statisticDataUnit);
 	}
