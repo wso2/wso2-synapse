@@ -310,16 +310,57 @@ public class StatisticsEntry {
 		//statisticDataUnit.setParentId(parentLog.getComponentId());
 
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, parentLog.getMsgId(), parentIndex);
-		messageFlowLogs.add(statisticsLog);
 
-		Integer immdiateparent = getImmediateParentFormMessageLogs(statisticsLog.getMsgId());
+		Integer immediateParentFormMessageLogs = getImmediateParentFormMessageLogs(statisticsLog.getMsgId());
 
-		if (immdiateparent != null && (messageFlowLogs.size() - 1) != immdiateparent) {
-			messageFlowLogs.get(immdiateparent).setImmediateChild(messageFlowLogs.size() - 1);
-		} else {
-			parentLog.setImmediateChild(messageFlowLogs.size() - 1);
+		//		if (immdiateparent != null && (messageFlowLogs.size() - 1) != immdiateparent) {
+		//			messageFlowLogs.get(immdiateparent).setImmediateChild(messageFlowLogs.size() - 1);
+		//		} else {
+		//			parentLog.setImmediateChild(messageFlowLogs.size() - 1);
+		//		}
+
+		if (immediateParentFormMessageLogs == null) {
+			immediateParentFormMessageLogs = parentIndex;
 		}
 
+		StatisticsLog possibleParent = messageFlowLogs.get(immediateParentFormMessageLogs);
+		Integer lastAggregateIndex = getImmediateAggregateIndex();
+		StatisticsLog lastAggregateLog = null;
+		if (lastAggregateIndex != null) {
+			lastAggregateLog = messageFlowLogs.get(getImmediateAggregateIndex());
+		}
+
+		if (possibleParent.getImmediateChild() == null) {
+			if (possibleParent.getChildren().size() == 0) {
+				possibleParent.setImmediateChild(messageFlowLogs.size());
+			} else {
+				if (lastAggregateLog != null && lastAggregateLog.getImmediateChild() == null) {
+					lastAggregateLog.setImmediateChild(messageFlowLogs.size());
+					lastAggregateLog.setMsgId(statisticsLog.getMsgId());
+				} else {
+					log.error("Trying to set branching tree for non clone ComponentId:" +
+					          statisticDataUnit.getComponentId());
+					possibleParent.setChildren(messageFlowLogs.size());
+				}
+			}
+		} else {
+			if (lastAggregateLog != null && lastAggregateLog.getImmediateChild() == null) {
+				lastAggregateLog.setImmediateChild(messageFlowLogs.size());
+				lastAggregateLog.setMsgId(statisticsLog.getMsgId());
+			} else {
+				if (possibleParent.getChildren().size() == 0) {
+					possibleParent.setChildren(possibleParent.getImmediateChild());
+					possibleParent.setImmediateChild(null);
+					possibleParent.setChildren(messageFlowLogs.size());
+					log.error("Setting immediate child of the component:" + possibleParent.getComponentId() +
+					          " as branching child");
+				} else {
+					log.error("Unexpected unrecoverable error happened during statistics collection");
+				}
+			}
+		}
+
+		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
 			log.debug("Created statistic log for [ElementId|" + statisticDataUnit.getComponentId() + "]|[MsgId|" +
@@ -340,6 +381,18 @@ public class StatisticsEntry {
 		if (log.isDebugEnabled()) {
 			log.debug("Created statistic log for [ElementId|" + statisticDataUnit.getComponentId() + "]|[MsgId|" +
 			          statisticDataUnit.getCloneId() + "]");
+		}
+	}
+
+	public void compensateForErrorTree(int parentIndex, StatisticsLog possibleParent) {
+		if (possibleParent.getImmediateChild() != null && possibleParent.getChildren().size() > 0) {
+			log.error("Serous error happened during statistics collection");
+		} else {
+			possibleParent.setChildren(possibleParent.getImmediateChild());
+			possibleParent.setChildren(messageFlowLogs.size());
+			possibleParent.setImmediateChild(null);
+			log.error("Setting immediate child of the component:" + possibleParent.getComponentId() +
+			          " as braching child");
 		}
 	}
 
@@ -574,7 +627,7 @@ public class StatisticsEntry {
 
 	private Integer getImmediateParentFormMessageLogs(int msgId) {
 		Integer immediateIndex = null;
-		for (int i = messageFlowLogs.size() - 2; i >= 0; i--) {
+		for (int i = messageFlowLogs.size() - 1; i >= 0; i--) {
 			StatisticsLog statisticsLog = messageFlowLogs.get(i);
 
 			if (statisticsLog.getMsgId() == msgId) {

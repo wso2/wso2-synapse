@@ -20,10 +20,8 @@ package org.apache.synapse.aspects.newstatistics;
 
 import org.apache.synapse.aspects.ComponentType;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * StatisticsLog holds statistics logs during statistic collection. When message passes through each
@@ -42,14 +40,13 @@ public class StatisticsLog {
 
 	private final String parent;
 
-	private final int msgId;
+	private  int msgId;
 
 	//private boolean hasChildren = false;
 
 	//private int noOfChildren = 0;
 
 	List<Integer> children = new LinkedList<>();
-
 
 	private int noOfFaults = 0;
 
@@ -64,6 +61,8 @@ public class StatisticsLog {
 	private boolean aggregateLog;
 
 	private Integer immediateChild = null;
+
+	private Integer treeMapping = null;
 
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
@@ -83,9 +82,9 @@ public class StatisticsLog {
 		return parentMsgId;
 	}
 
-//	//public void setHasChildren(boolean hasChildren) {
-//		this.hasChildren = hasChildren;
-//	}
+	//	//public void setHasChildren(boolean hasChildren) {
+	//		this.hasChildren = hasChildren;
+	//	}
 
 	public void setEndTime(long endTime) {
 		this.endTime = endTime;
@@ -95,9 +94,9 @@ public class StatisticsLog {
 		return parent;
 	}
 
-//	public boolean isHasChildren() {
-//		return hasChildren;
-//	}
+	//	public boolean isHasChildren() {
+	//		return hasChildren;
+	//	}
 
 	public int getParentLevel() {
 		return parentLevel;
@@ -107,9 +106,9 @@ public class StatisticsLog {
 		return componentType;
 	}
 
-//	public int getNoOfChildren() {
-//		return noOfChildren;
-//	}
+	//	public int getNoOfChildren() {
+	//		return noOfChildren;
+	//	}
 
 	public long getStartTime() {
 		return startTime;
@@ -123,9 +122,9 @@ public class StatisticsLog {
 		return endTime;
 	}
 
-//	public void incrementNoOfChildren() {
-//		noOfChildren += 1;
-//	}
+	//	public void incrementNoOfChildren() {
+	//		noOfChildren += 1;
+	//	}
 
 	public int getNoOfFaults() {
 		return noOfFaults;
@@ -137,6 +136,10 @@ public class StatisticsLog {
 
 	public int getMsgId() {
 		return msgId;
+	}
+
+	public void setMsgId(int msgId) {
+		 this.msgId = msgId;
 	}
 
 	public boolean isResponse() {
@@ -159,9 +162,9 @@ public class StatisticsLog {
 		this.cloneLog = cloneLog;
 	}
 
-//	public void setChild(Integer child) {
-//		this.child = child;
-//	}
+	//	public void setChild(Integer child) {
+	//		this.child = child;
+	//	}
 
 	public void setImmediateChild(Integer immediateChild) {
 		this.immediateChild = immediateChild;
@@ -169,5 +172,21 @@ public class StatisticsLog {
 
 	public void setChildren(Integer childrenIndex) {
 		this.children.add(childrenIndex);
+	}
+
+	public List<Integer> getChildren() {
+		return children;
+	}
+
+	public Integer getImmediateChild() {
+		return immediateChild;
+	}
+
+	public Integer getTreeMapping() {
+		return treeMapping;
+	}
+
+	public void setTreeMapping(int treeMapping) {
+		this.treeMapping = treeMapping;
 	}
 }
