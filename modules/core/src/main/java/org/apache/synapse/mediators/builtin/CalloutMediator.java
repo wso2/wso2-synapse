@@ -44,7 +44,6 @@ import org.apache.synapse.endpoints.AddressEndpoint;
 import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.flowtracer.MessageFlowDataHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.util.MessageHelper;

@@ -28,7 +28,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 
 import java.util.ArrayList;
 import java.util.List;

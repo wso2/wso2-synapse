@@ -18,7 +18,7 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.flowtracer.MessageFlowTracerConstants;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 
 /**

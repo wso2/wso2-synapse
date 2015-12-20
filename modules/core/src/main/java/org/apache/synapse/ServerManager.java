@@ -20,8 +20,7 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.flowtracer.data.MessageFlowTracingDataCollector;
-import org.apache.synapse.flowtracer.data.MessageFlowTracingDataConsumer;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.wso2.securevault.PasswordManager;
