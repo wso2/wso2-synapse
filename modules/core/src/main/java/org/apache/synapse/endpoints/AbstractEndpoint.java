@@ -35,6 +35,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.newstatistics.log.templates.EndpointLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
 import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -50,12 +51,7 @@ import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.transport.passthru.util.RelayConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * An abstract base class for all Endpoint implementations
@@ -107,7 +103,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     private boolean enableMBeanStats = true;
 
     private boolean contentAware = false;
-    
+
     private boolean forceBuildMC =false;
 
     protected String artifactContainerName;
@@ -294,6 +290,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         logSetter();
 
+        String endpointUuid = UUID.randomUUID().toString();
+
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
 
@@ -302,7 +300,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             throw new IllegalStateException("not initialized, " +
                     "endpoint must be in initialized state");
         }
-                reportStatistic(synCtx, null, true);
+        reportStatistic(synCtx, null, true,endpointUuid);
         prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
@@ -375,12 +373,12 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
-        reportStatistic(synCtx, null, false);
+        reportStatistic(synCtx, null, false, endpointUuid);
     }
 
     /**
      * Is this a leaf level endpoint? or parent endpoint that has children?
-     * @return true if there is no children - a leaf endpoint 
+     * @return true if there is no children - a leaf endpoint
      */
     public boolean isLeafEndpoint() {
         return children == null || children.size() == 0;
@@ -400,7 +398,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if this is defined as a timeout
      */
     protected boolean isTimeout(MessageContext synCtx) {
-        
+
 		Object error = synCtx.getProperty(SynapseConstants.ERROR_CODE);
 		Integer errorCode = 0;
 		if (error != null) {
@@ -705,7 +703,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * Add a property to the endpoint.
       * @param property property to be added
      */
-    public void addProperty(MediatorProperty property) {        
+    public void addProperty(MediatorProperty property) {
         properties.put(property.getName(), property);
     }
 
@@ -727,7 +725,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Return the <code>Collection</code> of properties specified
-     * 
+     *
      * @return <code>Collection</code> of properties
      */
     public Collection<MediatorProperty> getProperties() {
@@ -746,7 +744,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Add all the properties to the endpoint
-     * @param mediatorProperties <code>Collection</code> of properties to be added 
+     * @param mediatorProperties <code>Collection</code> of properties to be added
      */
     public void addProperties(Collection<MediatorProperty> mediatorProperties) {
         for (MediatorProperty property : mediatorProperties) {
@@ -761,14 +759,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void setErrorHandler(String errorHandler) {
         this.errorHandler = errorHandler;
     }
-    
-    
+
+
 
     public void setContentAware(boolean contentAware) {
     	this.contentAware = contentAware;
     }
-    
-    
+
+
 
 	public void setForceBuildMC(boolean forceBuildMC) {
     	this.forceBuildMC = forceBuildMC;
@@ -799,21 +797,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        if (RuntimeStatisticCollector.isStatisticsTraced(messageContext)) {
-            Boolean isStatCollected =
-                    (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
-            if (isStatCollected == null) {
-                log.error("Endpoint" + getName() + " received message context with no statistic identification.");
-            } else {
-                if (isStatCollected) {
-                    if (definition.getAspectConfiguration() != null &&
-                        definition.getAspectConfiguration().isStatisticsEnable()) {
-                        //set some parameter to indicate to collect individual statistics of this endpoint like boolean
-                    }
-                    createStatisticLog(messageContext, isCreateLog);
-                }
-            }
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog,
+                                String endpointUuid) {
+        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
+            createStatisticLog(messageContext, isCreateLog);
+        }
+
+        if (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
+            definition.getAspectConfiguration().isStatisticsEnable() &&
+            this.endpointName != null) {
+            createEndpointLog(messageContext, isCreateLog, endpointUuid);
         }
     }
 
@@ -830,4 +823,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
         StatisticEventReceiver.receive(statisticReportingLog);
     }
+
+	private void createEndpointLog(MessageContext messageContext, boolean isCreateLog, String endpointUuid) {
+		StatisticReportingLog statisticReportingLog;
+		if (isCreateLog) {
+            RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
+			statisticReportingLog = new EndpointLog(messageContext,endpointUuid, this.endpointName,true);
+		} else {
+			statisticReportingLog = new EndpointLog(messageContext,endpointUuid, this.endpointName,false);
+		} StatisticEventReceiver.receive(statisticReportingLog);
+	}
 }

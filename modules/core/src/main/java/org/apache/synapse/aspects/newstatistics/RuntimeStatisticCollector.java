@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
 import org.apache.synapse.aspects.newstatistics.util.ClusterInformationProvider;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -40,7 +39,9 @@ public class RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(RuntimeStatisticCollector.class);
 
-	private static Map<String, StatisticsEntry> runningStatistics = new HashMap<String, StatisticsEntry>();
+	private static Map<String, StatisticsEntry> runtimeStatistics = new HashMap<>();
+
+	private static Map<String, EndpointStatisticEntry> endpintStatistics = new HashMap<>();
 
 	private static boolean isStatisticsEnable = false;
 
@@ -55,13 +56,13 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void recordStatisticCreateEntry(StatisticDataUnit statisticDataUnit) {
 
-		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			runningStatistics.get(statisticDataUnit.getStatisticId()).createLog(statisticDataUnit);
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			runtimeStatistics.get(statisticDataUnit.getStatisticId()).createLog(statisticDataUnit);
 		} else {
 			StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit, localMemberHost, localMemberPort);
-			runningStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
+			runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
 			if (log.isDebugEnabled()) {
-				log.debug("Creating New Entry in Running Statistics: Current size :" + runningStatistics.size());
+				log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size());
 			}
 		}
 	}
@@ -70,8 +71,8 @@ public class RuntimeStatisticCollector {
 	 * Create fault log at the start of the fault sequence.
 	 */
 	public static void recordStatisticCreateFaultLog(StatisticDataUnit statisticDataUnit) {
-		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			runningStatistics.get(statisticDataUnit.getStatisticId()).createFaultLog(statisticDataUnit);
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			runtimeStatistics.get(statisticDataUnit.getStatisticId()).createFaultLog(statisticDataUnit);
 		}
 	}
 
@@ -80,8 +81,8 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void recordStatisticCloseLog(StatisticDataUnit statisticDataUnit) {
 
-		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			StatisticsEntry statisticsEntry = runningStatistics.get(statisticDataUnit.getStatisticId());
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			StatisticsEntry statisticsEntry = runtimeStatistics.get(statisticDataUnit.getStatisticId());
 			boolean finished = statisticsEntry.closeLog(statisticDataUnit);
 			if (finished) {
 				endMessageFlow(statisticDataUnit, statisticsEntry, false);
@@ -99,8 +100,12 @@ public class RuntimeStatisticCollector {
 	public static void addCallbacks(String statisticsTraceId, String callbackId, int msgId) {
 
 		if (statisticsTraceId != null) {
-			if (runningStatistics.containsKey(statisticsTraceId)) {
-				runningStatistics.get(statisticsTraceId).addCallback(callbackId, msgId);
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				runtimeStatistics.get(statisticsTraceId).addCallback(callbackId, msgId);
+			}
+			if (endpintStatistics.containsKey(statisticsTraceId)) {
+				endpintStatistics.get(statisticsTraceId).registerCallback(callbackId);
+				log.error("Call back added to endpoint");
 			}
 		}
 	}
@@ -109,14 +114,32 @@ public class RuntimeStatisticCollector {
 	 * Updates end time of the statistics logs after corresponding callback is removed from
 	 * SynapseCallbackReceiver.
 	 *
-	 * @param statisticsTraceId message context
-	 * @param callbackId        callback identification number
-	 * @param endTime           callback removal time at SynapseCallbackReceiver
+	 * @param statisticsTraceId  message context
+	 * @param callbackId         callback identification number
+	 * @param endTime            callback removal time at SynapseCallbackReceiver
+	 * @param synapseEnvironment
 	 */
-	public static void updateForReceivedCallback(String statisticsTraceId, String callbackId, Long endTime) {
+	public static void updateForReceivedCallback(String statisticsTraceId, String callbackId, Long endTime,
+	                                             SynapseEnvironment synapseEnvironment) {
 		if (statisticsTraceId != null) {
-			if (runningStatistics.containsKey(statisticsTraceId)) {
-				runningStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime);
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				runtimeStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime);
+			}
+
+			if (endpintStatistics.containsKey(statisticsTraceId)) {
+				EndpointStatisticEntry endpointStatisticEntry = endpintStatistics.get(statisticsTraceId);
+				EndpointStatisticLog endpointStatisticLog =
+						endpointStatisticEntry.unregisterCallback(callbackId, endTime);
+				if (endpointStatisticLog != null) {
+					log.error("Hurray Working for call back");
+					synapseEnvironment.getCompletedStatisticStore()
+					                  .putCompletedEndpointStatisticEntry(endpointStatisticLog);
+					if (endpointStatisticEntry.getSize() == 0) {
+						log.error("Removed from entries");
+						endpintStatistics.remove(statisticsTraceId);
+					}
+
+				}
 			}
 		}
 	}
@@ -130,8 +153,8 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void removeCallback(String statisticsTraceId, String callbackId) {
 		if (statisticsTraceId != null) {
-			if (runningStatistics.containsKey(statisticsTraceId)) {
-				runningStatistics.get(statisticsTraceId).removeCallback(callbackId);
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				runtimeStatistics.get(statisticsTraceId).removeCallback(callbackId);
 				if (log.isDebugEnabled()) {
 					log.debug("Removed callback from statistic entry");
 				}
@@ -144,8 +167,8 @@ public class RuntimeStatisticCollector {
 	 * to finish ending statistics collection for that entry.
 	 */
 	public static void finalizeEntry(StatisticDataUnit statisticDataUnit) {
-		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			StatisticsEntry entry = runningStatistics.get(statisticDataUnit.getStatisticId());
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			StatisticsEntry entry = runtimeStatistics.get(statisticDataUnit.getStatisticId());
 			endMessageFlow(statisticDataUnit, entry, false);
 		}
 	}
@@ -158,8 +181,8 @@ public class RuntimeStatisticCollector {
 	 * * @param endTime end time of the message flow
 	 */
 	public static void closeStatisticEntryForcefully(StatisticDataUnit statisticDataUnit) {
-		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			StatisticsEntry entry = runningStatistics.get(statisticDataUnit.getStatisticId());
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			StatisticsEntry entry = runtimeStatistics.get(statisticDataUnit.getStatisticId());
 			endMessageFlow(statisticDataUnit, entry, true);
 		}
 	}
@@ -180,7 +203,7 @@ public class RuntimeStatisticCollector {
 			//statisticsStore.update(statisticsEntry.getMessageFlowLogs());
 			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
 			                 .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
-			runningStatistics.remove(statisticDataUnit.getStatisticId());
+			runtimeStatistics.remove(statisticDataUnit.getStatisticId());
 		}
 	}
 
@@ -230,8 +253,8 @@ public class RuntimeStatisticCollector {
 	public static int getClonedMsgNumber(String statisticTraceId) {
 		//TODO remove this and collect it without contacting RuntimeStatCollector
 		if (statisticTraceId != null) {
-			if (runningStatistics.containsKey(statisticTraceId)) {
-				return runningStatistics.get(statisticTraceId).incrementAndGetClonedMsgCount();
+			if (runtimeStatistics.containsKey(statisticTraceId)) {
+				return runtimeStatistics.get(statisticTraceId).incrementAndGetClonedMsgCount();
 			}
 		}
 		return -1;
@@ -287,15 +310,47 @@ public class RuntimeStatisticCollector {
 	}
 
 	public static void informCloneOperation(String statisticId) {
-		if (runningStatistics.containsKey(statisticId)) {
-			StatisticsEntry entry = runningStatistics.get(statisticId);
+		if (runtimeStatistics.containsKey(statisticId)) {
+			StatisticsEntry entry = runtimeStatistics.get(statisticId);
 			entry.setCloneLog(true);
 		}
 	}
 
+	public static void createEndpointstatistics(String statId, String endpointUuid, String endpointName,
+	                                            boolean isCreateLog, long time, SynapseEnvironment synapseEnvironment) {
+		if (isCreateLog) {
+			EndpointStatisticEntry endpointStatisticEntry;
+			if (endpintStatistics.containsKey(statId)) {
+				endpointStatisticEntry = endpintStatistics.get(statId);
+			} else {
+				endpointStatisticEntry = new EndpointStatisticEntry();
+				endpintStatistics.put(statId, endpointStatisticEntry);
+			}
+			endpointStatisticEntry.createEndpointLog(endpointUuid, endpointName, time);
+		} else {
+			EndpointStatisticEntry endpointStatisticEntry;
+			if (endpintStatistics.containsKey(statId)) {
+				endpointStatisticEntry = endpintStatistics.get(statId);
+				EndpointStatisticLog endpointStatisticLog =
+						endpointStatisticEntry.closeEndpointLog(endpointUuid, endpointName, time);
+				if (endpointStatisticLog != null) {
+					log.error("Hurray completed collecting statistics for the endpoint:" + endpointName);
+					synapseEnvironment.getCompletedStatisticStore()
+					                  .putCompletedEndpointStatisticEntry(endpointStatisticLog);
+					if (endpointStatisticEntry.getSize() == 0) {
+						log.error("Removed statistic entry");
+						endpintStatistics.remove(statId);
+					}
+				}
+			}
+
+		}
+
+	}
+
 	public static void informAggregateFinishOperation(StatisticDataUnit statisticDataUnit) {
-		if (runningStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			StatisticsEntry entry = runningStatistics.get(statisticDataUnit.getStatisticId());
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			StatisticsEntry entry = runtimeStatistics.get(statisticDataUnit.getStatisticId());
 			entry.endHaveAggregateLogs();
 			RuntimeStatisticCollector.finalizeEntry(statisticDataUnit);
 		}

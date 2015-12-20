@@ -27,6 +27,7 @@ import java.util.List;
 public class CompletedStatisticStore {
 
 	private final List<List<StatisticsLog>> completedStatisticEntries = new LinkedList<>();
+	private final List<EndpointStatisticLog> completedEndpointStatisticEntries = new LinkedList<>();
 
 	public List<List<StatisticsLog>> getCompletedStatisticEntries() {
 		List<List<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
@@ -40,6 +41,21 @@ public class CompletedStatisticStore {
 	public void putCompletedStatisticEntry(List<StatisticsLog> statisticsLogs) {
 		synchronized (completedStatisticEntries) {
 			completedStatisticEntries.add(statisticsLogs);
+		}
+	}
+
+	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
+		List<EndpointStatisticLog>  cloneOfCompletedEndpointEntries = new LinkedList<>();
+		synchronized (completedEndpointStatisticEntries) {
+			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
+			completedEndpointStatisticEntries.clear();
+		}
+		return cloneOfCompletedEndpointEntries;
+	}
+
+	public void putCompletedEndpointStatisticEntry(EndpointStatisticLog endpointStatisticLog) {
+		synchronized (completedEndpointStatisticEntries) {
+			completedEndpointStatisticEntries.add(endpointStatisticLog);
 		}
 	}
 }

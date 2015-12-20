@@ -23,21 +23,26 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 
-public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
+public class EndpointLog implements StatisticReportingLog {
 
-	private final String statisticId;
-	private String callbackId;
-	private Long endTime;
+	private String endpointUuid;
+	private String endpointName;
+	private long time;
+	private boolean isCreateLog;
+	private String statisticId;
 	private SynapseEnvironment synapseEnvironment;
 
-	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
-		statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
-		this.callbackId = callbackId;
-		this.endTime = endTime;
+	public EndpointLog(MessageContext messageContext, String endpointUuid, String endpointName, boolean isCreateLog) {
+		this.endpointUuid = endpointUuid;
+		this.endpointName = endpointName;
+		this.isCreateLog = isCreateLog;
+		this.time = System.currentTimeMillis();
+		this.statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
 		this.synapseEnvironment = messageContext.getEnvironment();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.updateForReceivedCallback(statisticId, callbackId, endTime, synapseEnvironment);
+		RuntimeStatisticCollector.createEndpointstatistics(statisticId, endpointUuid, endpointName, isCreateLog, time,
+		                                                   synapseEnvironment);
 	}
 }
