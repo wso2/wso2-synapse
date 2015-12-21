@@ -30,7 +30,7 @@ public class MessageFlowTracingDataConsumer implements Runnable {
 
     public void run(){
         MessageFlowDataEntry mediationDataEntry;
-        while (!isStopped && MessageFlowTracingDataCollector.isEmpty()) {
+        while (!isStopped && !MessageFlowTracingDataCollector.isEmpty()) {
             try {
                 mediationDataEntry = MessageFlowTracingDataCollector.deQueue();
                 mediationDataEntry.process();
