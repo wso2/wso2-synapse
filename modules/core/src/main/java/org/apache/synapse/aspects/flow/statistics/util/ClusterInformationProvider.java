@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.util;
+package org.apache.synapse.aspects.flow.statistics.util;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;

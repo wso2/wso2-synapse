@@ -16,7 +16,12 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics;
+package org.apache.synapse.aspects.flow.statistics.log;
 
-public class EndpointStatistics {
+public interface StatisticReportingLog {
+
+	/**
+	 * Method that will call corresponding method in RuntimeStatisticCollector.
+	 */
+	void process();
 }

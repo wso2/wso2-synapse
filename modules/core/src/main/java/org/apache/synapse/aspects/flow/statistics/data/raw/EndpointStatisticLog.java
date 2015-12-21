@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics;
+package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 public class EndpointStatisticLog {
 

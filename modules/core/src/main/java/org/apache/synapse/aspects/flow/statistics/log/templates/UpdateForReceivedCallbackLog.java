@@ -16,33 +16,29 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 import org.apache.synapse.core.SynapseEnvironment;
 
-public class EndpointLog implements StatisticReportingLog {
+public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
 
-	private String endpointUuid;
-	private String endpointName;
-	private long time;
-	private boolean isCreateLog;
-	private String statisticId;
+	private final String statisticId;
+	private String callbackId;
+	private Long endTime;
 	private SynapseEnvironment synapseEnvironment;
 
-	public EndpointLog(MessageContext messageContext, String endpointUuid, String endpointName, boolean isCreateLog) {
-		this.endpointUuid = endpointUuid;
-		this.endpointName = endpointName;
-		this.isCreateLog = isCreateLog;
-		this.time = System.currentTimeMillis();
-		this.statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
+		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		this.callbackId = callbackId;
+		this.endTime = endTime;
 		this.synapseEnvironment = messageContext.getEnvironment();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.createEndpointstatistics(statisticId, endpointUuid, endpointName, isCreateLog, time,
-		                                                   synapseEnvironment);
+		RuntimeStatisticCollector.updateForReceivedCallback(statisticId, callbackId, endTime, synapseEnvironment);
 	}
 }

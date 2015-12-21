@@ -39,13 +39,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.CompletedStatisticStore;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -405,9 +400,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (!sequential) {
             try {
-                reportStatistics(true, synCtx, inboundStatistics, inboundName);
+                RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                reportStatistics(false, synCtx, inboundStatistics, inboundName);
+                RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -417,7 +412,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         
         // Following code is reached if the sequential==true or inbound is
         // reached max level
-        reportStatistics(true, synCtx, inboundStatistics, inboundName);
+        RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
         try {
 
             if (synCtx.getEnvironment().isDebugEnabled()) {
@@ -461,7 +456,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
-            reportStatistics(false, synCtx, inboundStatistics, inboundName);
+            RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -974,7 +969,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         try {
             if(inboundName != null){
-                reportStatistics(true, smc, inboundStatistics, inboundName);
+                RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, true);
             }
             seq.mediate(smc);
             return true;
@@ -1012,7 +1007,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }finally {
             if(inboundName != null){
-                reportStatistics(false, smc, inboundStatistics, inboundName);
+                RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, false);
             }
         }
     }
@@ -1097,34 +1092,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public void setDebugEnabled(boolean isDebugEnabled) {
         this.isDebugEnabled = isDebugEnabled;
-    }
-
-    private void reportStatistics(boolean createStatisticLog, MessageContext messageContext, boolean statisticEnable,
-                                  String inboundName) {
-        if (RuntimeStatisticCollector.isStatisticsEnable()) {
-            StatisticReportingLog statisticReportingLog = null;
-            if (statisticEnable && (inboundName != null)) {
-                if (createStatisticLog) {
-                    RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
-                    statisticReportingLog =
-                            new CreateEntryStatisticLog(messageContext, inboundName, ComponentType.INBOUNDENDPOINT,
-                                                        null, System.currentTimeMillis());
-
-                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
-                } else {
-                    if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
-                        statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
-                    } else {
-                        log.error("Trying close statistic entry without Statistic ID");
-                    }
-                }
-                if (statisticReportingLog != null) {
-                    StatisticEventReceiver.receive(statisticReportingLog);
-                }
-            } else {
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
-            }
-        }
     }
 
 }

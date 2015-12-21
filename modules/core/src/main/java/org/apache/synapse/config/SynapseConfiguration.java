@@ -22,13 +22,11 @@ package org.apache.synapse.config;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.context.*;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.*;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -1581,7 +1579,6 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 						+ "] " + e.getMessage());
 			}
         }
-        RuntimeStatisticCollector.init(getSynapseTimer());
         initImportedLibraries(se);
     }
 

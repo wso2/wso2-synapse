@@ -29,9 +29,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 
 /**
@@ -49,8 +47,8 @@ public class SynapseMessageReceiver implements MessageReceiver {
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
         StatisticsReporter.reportForComponent(synCtx,
-                AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
-                ComponentType.PROXYSERVICE);
+                                              AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
+                                              ComponentType.PROXYSERVICE);
 
         boolean traceOn = synCtx.getMainSequence().getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -96,19 +94,7 @@ public class SynapseMessageReceiver implements MessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-
-            if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
-                boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-                if (!isOutOnly) {
-                    isOutOnly = (!Boolean
-                            .parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                                 !synCtx.isResponse());
-                }
-                if (isOutOnly) {
-                    FinalizeEntryLog finalizeEntryLog = new FinalizeEntryLog(synCtx, System.currentTimeMillis());
-                    StatisticEventReceiver.receive(finalizeEntryLog);
-                }
-            }
+            RuntimeStatisticCollector.reportEndSynapseMessageReceiver(synCtx);
         }
     }
 

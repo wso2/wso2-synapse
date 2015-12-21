@@ -16,12 +16,24 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.util;
 
-public interface StatisticReportingLog {
+public class StatisticMessageCountHolder {
+	private int cloneMessageCount;
+	private int componentId;
 
-	/**
-	 * Method that will call corresponding method in RuntimeStatisticCollector.
-	 */
-	void process();
+	public StatisticMessageCountHolder() {
+		this.cloneMessageCount = 0;
+		this.componentId = 0;
+	}
+
+	public int incrementAndGetCloneCount() {
+		cloneMessageCount = cloneMessageCount + 1;
+		return cloneMessageCount;
+	}
+
+	public int incrementAndGetComponentId() {
+		return componentId++;
+	}
+
 }

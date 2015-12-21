@@ -29,11 +29,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 
 import java.util.ArrayList;
@@ -450,17 +446,9 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param isCreateLog    whether this is a start or end of a mediator execution
      */
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
-            StatisticReportingLog statisticLog;
-            if (isCreateLog) {
-                statisticLog = new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                           parentName, System.currentTimeMillis());
-            } else {
-                statisticLog = new StatisticCloseLog(messageContext, getMediatorName(), parentName,
-                                                     System.currentTimeMillis());
-            }
-            StatisticEventReceiver.receive(statisticLog);
-        }
+        RuntimeStatisticCollector
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, false, false);
     }
 
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint){this.flowPoint=flowPoint;}

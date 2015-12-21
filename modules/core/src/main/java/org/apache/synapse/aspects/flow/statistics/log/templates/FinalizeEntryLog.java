@@ -16,24 +16,24 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 
-public class InformAggregateFinishIncident implements StatisticReportingLog {
+public class FinalizeEntryLog implements StatisticReportingLog {
+
 	private final StatisticDataUnit statisticDataUnit;
 
-	public InformAggregateFinishIncident(MessageContext messageContext) {
-		//Actually this should remove pending call backs
-		String statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
-		statisticDataUnit =
-				new StatisticDataUnit(statisticId, messageContext.getEnvironment(), System.currentTimeMillis());
+	public FinalizeEntryLog(MessageContext messageContext, long endTime) {
+		String statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.informAggregateFinishOperation(statisticDataUnit);
+		RuntimeStatisticCollector.finalizeEntry(statisticDataUnit);
 	}
 }

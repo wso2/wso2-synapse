@@ -16,28 +16,24 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 
-public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
+public class RemoveCallbackLog implements StatisticReportingLog {
 
 	private final String statisticId;
 	private String callbackId;
-	private Long endTime;
-	private SynapseEnvironment synapseEnvironment;
 
-	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
-		statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+	public RemoveCallbackLog(MessageContext messageContext, String callbackId) {
+		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
 		this.callbackId = callbackId;
-		this.endTime = endTime;
-		this.synapseEnvironment = messageContext.getEnvironment();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.updateForReceivedCallback(statisticId, callbackId, endTime, synapseEnvironment);
+		RuntimeStatisticCollector.removeCallback(statisticId, callbackId);
 	}
 }

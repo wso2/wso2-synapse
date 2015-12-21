@@ -21,10 +21,6 @@ package org.apache.synapse.mediators.eip.aggregator;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.InformAggregateFinishIncident;
-import org.apache.synapse.aspects.newstatistics.log.templates.InformCloneIncident;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.commons.logging.Log;
@@ -280,10 +276,4 @@ public class Aggregate extends TimerTask {
         this.completed = completed;
     }
 
-    private static void reportStatisticAggregateTimeout(MessageContext messageContext) {
-
-        StatisticReportingLog   statisticLog = new InformAggregateFinishIncident(messageContext);
-
-        StatisticEventReceiver.receive(statisticLog);
-    }
 }

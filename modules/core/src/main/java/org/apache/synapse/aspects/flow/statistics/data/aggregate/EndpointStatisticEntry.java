@@ -16,10 +16,13 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics;
+package org.apache.synapse.aspects.flow.statistics.data.aggregate;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+
+import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
+
 import java.util.List;
 import java.util.Map;
 
@@ -36,17 +39,17 @@ public class EndpointStatisticEntry {
 		this.callbackMap = new HashMap<>();
 	}
 
-	public void createEndpointLog(String uuid, String endpointName, long startTime) {
+	public void createEndpointLog(String endpointId, String endpointName, long startTime) {
 		EndpointStatisticLog endpointstatisticLog = new EndpointStatisticLog(endpointName, startTime);
-		endpointMap.put(uuid, endpointstatisticLog);
-		lastEndpointUuid = uuid;
+		endpointMap.put(endpointId, endpointstatisticLog);
+		lastEndpointUuid = endpointId;
 	}
 
-	public EndpointStatisticLog closeEndpointLog(String uuid, String name, long endTime) {
-		EndpointStatisticLog endpointStatisticLog = endpointMap.get(uuid);
+	public EndpointStatisticLog closeEndpointLog(String endpointId, String name, long endTime) {
+		EndpointStatisticLog endpointStatisticLog = endpointMap.get(endpointId);
 		if (endpointStatisticLog != null && !endpointStatisticLog.isCallbackRegistered()) {
 			endpointStatisticLog.setEndTime(endTime);
-			endpointMap.remove(uuid);
+			endpointMap.remove(endpointId);
 			return endpointStatisticLog;
 		}
 		return null;
@@ -61,7 +64,7 @@ public class EndpointStatisticEntry {
 	}
 
 	public EndpointStatisticLog unregisterCallback(String callbackId, long endTime) {
-		if (callbackId.contains(callbackId)) {
+		if (callbackMap.containsKey(callbackId)) {
 			String uuid = callbackMap.remove(callbackId);
 			EndpointStatisticLog endpointStatisticLog = endpointMap.remove(uuid);
 			if (endpointStatisticLog != null) {
@@ -72,20 +75,7 @@ public class EndpointStatisticEntry {
 		return null;
 	}
 
-	public List<EndpointStatisticLog> closeAll(long endTime) {
-		List<EndpointStatisticLog> statisticLogs = new LinkedList<>();
-		for (Map.Entry<String, EndpointStatisticLog> endpointStatisticLogEntry : endpointMap.entrySet()) {
-			if (endpointStatisticLogEntry.getValue() != null) {
-				EndpointStatisticLog endpointStatisticLog = endpointStatisticLogEntry.getValue();
-				endpointStatisticLog.setEndTime(endTime);
-				endpointStatisticLog.setHasFault();
-				statisticLogs.add(endpointStatisticLog);
-			}
-		}
-		return statisticLogs;
-	}
-
-	public int getSize(){
+	public int getSize() {
 		return endpointMap.size();
 	}
 }

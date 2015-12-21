@@ -33,11 +33,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -441,17 +437,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     }
 
     @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
-            StatisticReportingLog statisticLog;
-            if (isCreateLog) {
-                statisticLog = new CreateEntryStatisticLog(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                           parentName, System.currentTimeMillis(), false, true);
-            } else {
-                statisticLog =
-                        new StatisticCloseLog(messageContext, getMediatorName(), parentName, System.currentTimeMillis(),
-                                              false, true);
-            }
-            StatisticEventReceiver.receive(statisticLog);
-        }
+        RuntimeStatisticCollector
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, true, false);
     }
 }

@@ -16,13 +16,14 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 
 public class CreateEntryStatisticLog implements StatisticReportingLog {
 
@@ -30,10 +31,10 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 
 	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
 	                               String parentId, Long startTime) {
-		String statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
+		String statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
 		int cloneId;
-		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
+		if (messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
+			cloneId = (Integer) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID);
 		} else {
 			cloneId = 0;
 		}
@@ -43,13 +44,13 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 	}
 
 	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
-	                               String parentId, Long startTime, boolean isAggregateLog,boolean isCloneLog) {
+	                               String parentId, Long startTime, boolean isCloneLog, boolean isAggregateLog) {
 		this(messageContext, componentId, componentType, parentId, startTime);
-		if(isAggregateLog) {
+		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();
 		}
 
-		if(isCloneLog) {
+		if (isCloneLog) {
 			statisticDataUnit.setClonePoint();
 		}
 	}

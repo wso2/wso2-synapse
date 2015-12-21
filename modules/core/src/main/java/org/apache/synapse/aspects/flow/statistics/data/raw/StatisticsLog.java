@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics;
+package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.aspects.ComponentType;
 
@@ -41,10 +41,6 @@ public class StatisticsLog {
 	private final String parent;
 
 	private  int msgId;
-
-	//private boolean hasChildren = false;
-
-	//private int noOfChildren = 0;
 
 	List<Integer> children = new LinkedList<>();
 
@@ -82,10 +78,6 @@ public class StatisticsLog {
 		return parentMsgId;
 	}
 
-	//	//public void setHasChildren(boolean hasChildren) {
-	//		this.hasChildren = hasChildren;
-	//	}
-
 	public void setEndTime(long endTime) {
 		this.endTime = endTime;
 	}
@@ -94,10 +86,6 @@ public class StatisticsLog {
 		return parent;
 	}
 
-	//	public boolean isHasChildren() {
-	//		return hasChildren;
-	//	}
-
 	public int getParentLevel() {
 		return parentLevel;
 	}
@@ -105,10 +93,6 @@ public class StatisticsLog {
 	public ComponentType getComponentType() {
 		return componentType;
 	}
-
-	//	public int getNoOfChildren() {
-	//		return noOfChildren;
-	//	}
 
 	public long getStartTime() {
 		return startTime;
@@ -121,10 +105,6 @@ public class StatisticsLog {
 	public long getEndTime() {
 		return endTime;
 	}
-
-	//	public void incrementNoOfChildren() {
-	//		noOfChildren += 1;
-	//	}
 
 	public int getNoOfFaults() {
 		return noOfFaults;
@@ -161,10 +141,6 @@ public class StatisticsLog {
 	public void setCloneLog(boolean cloneLog) {
 		this.cloneLog = cloneLog;
 	}
-
-	//	public void setChild(Integer child) {
-	//		this.child = child;
-	//	}
 
 	public void setImmediateChild(Integer immediateChild) {
 		this.immediateChild = immediateChild;

@@ -32,12 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.EndpointLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -289,8 +284,15 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void send(MessageContext synCtx) {
 
         logSetter();
-
-        String endpointUuid = UUID.randomUUID().toString();
+        String endpointId = null;
+        if (isStatisticCollected()) {
+            endpointId = String.valueOf(RuntimeStatisticCollector.getComponentUniqueId(synCtx));
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getStatisticReportingName(), true, true);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getStatisticReportingName(), false, true);
+        }
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -300,8 +302,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             throw new IllegalStateException("not initialized, " +
                     "endpoint must be in initialized state");
         }
-        reportStatistic(synCtx, null, true,endpointUuid);
-        prepareForEndpointStatistics(synCtx);
+
+	    prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
             String address = definition.getAddress();
@@ -373,7 +375,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
-        reportStatistic(synCtx, null, false, endpointUuid);
+
+        if (isStatisticCollected()) {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getStatisticReportingName(), true, false);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getStatisticReportingName(), false, false);
+        }
     }
 
     /**
@@ -789,7 +798,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 
-    public String getStatisticReportingName(MessageContext synCtx) {
+    public String getStatisticReportingName() {
         if (this.endpointName != null) {
             return this.endpointName;
         } else {
@@ -797,40 +806,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
     }
 
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog,
-                                String endpointUuid) {
-        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
-            createStatisticLog(messageContext, isCreateLog);
-        }
-
-        if (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
-            definition.getAspectConfiguration().isStatisticsEnable() &&
-            this.endpointName != null) {
-            createEndpointLog(messageContext, isCreateLog, endpointUuid);
-        }
+    private boolean isStatisticCollected() {
+        return (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
+                definition.getAspectConfiguration().isStatisticsEnable() &&
+                this.endpointName != null);
     }
-
-    private void createStatisticLog(MessageContext messageContext, boolean isCreateLog) {
-        StatisticReportingLog statisticReportingLog;
-        if (isCreateLog) {
-            statisticReportingLog =
-                    new CreateEntryStatisticLog(messageContext, getStatisticReportingName(messageContext),
-                                                ComponentType.ENDPOINT, null, System.currentTimeMillis());
-        } else {
-            statisticReportingLog =
-                    new StatisticCloseLog(messageContext, getStatisticReportingName(messageContext), null,
-                                          System.currentTimeMillis());
-        }
-        StatisticEventReceiver.receive(statisticReportingLog);
-    }
-
-	private void createEndpointLog(MessageContext messageContext, boolean isCreateLog, String endpointUuid) {
-		StatisticReportingLog statisticReportingLog;
-		if (isCreateLog) {
-            RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
-			statisticReportingLog = new EndpointLog(messageContext,endpointUuid, this.endpointName,true);
-		} else {
-			statisticReportingLog = new EndpointLog(messageContext,endpointUuid, this.endpointName,false);
-		} StatisticEventReceiver.receive(statisticReportingLog);
-	}
 }

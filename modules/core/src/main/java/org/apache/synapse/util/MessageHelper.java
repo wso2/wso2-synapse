@@ -35,15 +35,11 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.StatisticCloneMessageCountHolder;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.*;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
 import org.apache.synapse.aspects.statistics.ErrorLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
-import org.apache.synapse.aspects.statistics.StatisticsRecordFactory;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
@@ -194,28 +190,7 @@ public class MessageHelper {
                 }
             }
         }
-
-        if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
-            //reportStatistic(synCtx, true);
-            StatisticCloneMessageCountHolder cloneCount;
-            int parentMsgId;
-            if (synCtx.getProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT) != null) {
-                cloneCount = (StatisticCloneMessageCountHolder) synCtx
-                        .getProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT);
-                parentMsgId = (Integer) synCtx.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
-            } else {
-                parentMsgId = 0;
-                cloneCount = new StatisticCloneMessageCountHolder();
-                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID, 0);
-                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT, cloneCount);
-                synCtx.setProperty(SynapseConstants.NEW_STATISTICS_PARENT_MESSAGE_ID, null);
-            }
-
-            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID, cloneCount.incrementAndGetCloneCount());
-            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT, cloneCount);
-            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_PARENT_MESSAGE_ID, parentMsgId);
-        }
-
+        RuntimeStatisticCollector.setCloneProperties(synCtx, newCtx);
         return newCtx;
     }
 
@@ -335,14 +310,8 @@ public class MessageHelper {
                 }
             }
         }
-        if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
-            //reportStatistic(synCtx, false);
-            StatisticCloneMessageCountHolder cloneCount = (StatisticCloneMessageCountHolder) synCtx
-                    .getProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT);
-            int parentMsgId = (Integer) synCtx.getProperty(SynapseConstants.NEW_STATISTICS_PARENT_MESSAGE_ID);
-            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID, parentMsgId);
-            newCtx.setProperty(SynapseConstants.NEW_STATISTICS_CLONE_MSG_COUNT, cloneCount);
-        }
+
+        RuntimeStatisticCollector.setAggregateProperties(synCtx, newCtx);
 
         return newCtx;
     }
@@ -1010,14 +979,5 @@ public class MessageHelper {
         throw new SynapseException(e);
     }
 
-    private static void reportStatistic(MessageContext messageContext,boolean isClone) {
-        StatisticReportingLog statisticLog;
-        if (isClone) {
-            statisticLog = new InformCloneIncident(messageContext);
-        }else{
-            statisticLog = new InformAggregateFinishIncident(messageContext);
-        }
-        StatisticEventReceiver.receive(statisticLog);
-    }
 }
 

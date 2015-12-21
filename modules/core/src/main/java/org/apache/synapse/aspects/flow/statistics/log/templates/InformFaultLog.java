@@ -16,29 +16,28 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 
-public class AddCallbacksLog implements StatisticReportingLog {
+public class InformFaultLog implements StatisticReportingLog {
 
-	private final String statisticId;
-	private final Integer cloneId;
-	private String callbackId;
+	private String statisticId;
+	private int cloneId;
 
-	public AddCallbacksLog(MessageContext messageContext, String callbackId) {
-		statisticId = (String) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID);
-		if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_MESSAGE_ID);
+	public InformFaultLog(MessageContext messageContext) {
+		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		if (messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
+			cloneId = (Integer) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID);
 		} else {
 			cloneId = 0;
 		}
-		this.callbackId = callbackId;
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
+		RuntimeStatisticCollector.reportFault(statisticId, cloneId);
 	}
 }

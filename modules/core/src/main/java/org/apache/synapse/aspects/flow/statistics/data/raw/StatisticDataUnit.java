@@ -16,7 +16,7 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics;
+package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -129,6 +129,7 @@ public class StatisticDataUnit {
 	public void setClonePoint() {
 		this.clonePoint = true;
 	}
+
 	public int getParentMsgId() {
 		return parentMsgId;
 	}

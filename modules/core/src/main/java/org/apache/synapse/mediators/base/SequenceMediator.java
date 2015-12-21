@@ -26,11 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -499,48 +495,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         this.sequenceType = sequenceType;
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        if (RuntimeStatisticCollector.isStatisticsEnable()) {
-            Boolean isStatCollected =
-                    (Boolean) messageContext.getProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED);
-            if (isStatCollected == null) {
-                if (getAspectConfiguration() != null && getAspectConfiguration().isStatisticsEnable()) {
-                    if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) == null && !isCreateLog) {
-                        log.error("Trying close statistic entry without Statistic ID");
-                        return;
-                    }
-                    RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
-                    createStatistic(messageContext, isCreateLog);
-                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
-                } else {
-                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
-                }
-            } else {
-                if ((messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) && isStatCollected) {
-                    createStatistic(messageContext, isCreateLog);
-                }
-            }
-        }
-    }
-
-    private void createStatistic(MessageContext messageContext, boolean isCreateLog) {
-        StatisticReportingLog statisticReportingLog;
-        if (isCreateLog) {
-            statisticReportingLog =
-                    new CreateEntryStatisticLog(messageContext, getSequenceNameForStatistics(messageContext),
-                                                ComponentType.SEQUENCE, null, System.currentTimeMillis());
-            StatisticEventReceiver.receive(statisticReportingLog);
-        } else {
-            Boolean isContinuationCall = (Boolean) messageContext.getProperty(SynapseConstants.CONTINUATION_CALL);
-            if (isContinuationCall == null || !isContinuationCall) {
-                statisticReportingLog =
-                        new StatisticCloseLog(messageContext, getSequenceNameForStatistics(messageContext), null,
-                                              System.currentTimeMillis());
-                StatisticEventReceiver.receive(statisticReportingLog);
-            }
-        }
-    }
-
     private String getSequenceNameForStatistics(MessageContext synCtx) {
         if (this.name != null) {
             return this.name;
@@ -555,5 +509,11 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
             }
         }
+    }
+
+    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        RuntimeStatisticCollector
+                .reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext), parentName,
+                                            getAspectConfiguration(), isCreateLog);
     }
 }

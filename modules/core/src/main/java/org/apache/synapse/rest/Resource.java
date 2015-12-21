@@ -28,11 +28,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticCloseLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -270,7 +266,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
 
-            reportStatistic(synCtx, null, true);
+	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, true);
         }
 
         if (log.isDebugEnabled()) {
@@ -281,8 +277,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-                finishStatisticCollection(synCtx);
-                return;
+	            RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+	            return;
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
@@ -312,7 +308,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
-            finishStatisticCollection(synCtx);
+	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
             return;
         }
 
@@ -326,7 +322,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
-            finishStatisticCollection(synCtx);
+	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
             return;
         }
 
@@ -342,23 +338,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
             log.debug("No in-sequence configured. Dropping the request.");
         }
 
-        finishStatisticCollection(synCtx);
-    }
-
-    private void finishStatisticCollection(MessageContext synCtx) {
-        if (!synCtx.isResponse()) {
-            boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-            if (!isOutOnly) {
-                isOutOnly =
-                        (!Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                         !synCtx.isResponse());
-            }
-            if (isOutOnly) {
-                reportStatistic(synCtx, null, false);
-            }
-        } else {
-            reportStatistic(synCtx, null, false);
-        }
+	    RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
     }
 
     public void registerFaultHandler(MessageContext synCtx) {
@@ -459,42 +439,5 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (faultSequence != null && faultSequence.isInitialized()) {
             faultSequence.destroy();
         }
-    }
-
-    /**
-     * Report statistics for the mediator
-     *
-     * @param messageContext message context
-     * @param parentName     sequence name that mediator belong to
-     * @param isCreateLog    whether this is a start or end of a mediator execution
-     */
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        if (RuntimeStatisticCollector.shouldReportStatistic(messageContext)) {
-            StatisticReportingLog statisticLog;
-            if (isCreateLog) {
-                statisticLog = new CreateEntryStatisticLog(messageContext, getResourceNameForStat(messageContext),
-                                                           ComponentType.RESOURCE, parentName,
-                                                           System.currentTimeMillis());
-            } else {
-                statisticLog = new StatisticCloseLog(messageContext, getResourceNameForStat(messageContext), parentName,
-                                                     System.currentTimeMillis());
-            }
-            StatisticEventReceiver.receive(statisticLog);
-        }
-    }
-
-    private String getResourceNameForStat(MessageContext messageContext) {
-        Object synapseRestApi = messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
-        Object restUrlPattern = messageContext.getProperty(RESTConstants.REST_URL_PATTERN);
-        if (synapseRestApi != null) {
-            String textualStringName;
-            if (restUrlPattern != null) {
-                textualStringName = (String) synapseRestApi + restUrlPattern;
-            } else {
-                textualStringName = (String) synapseRestApi;
-            }
-            return textualStringName;
-        }
-        return name;
     }
 }

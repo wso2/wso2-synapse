@@ -16,7 +16,10 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.newstatistics;
+package org.apache.synapse.aspects.flow.statistics.store;
+
+import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -45,7 +48,7 @@ public class CompletedStatisticStore {
 	}
 
 	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
-		List<EndpointStatisticLog>  cloneOfCompletedEndpointEntries = new LinkedList<>();
+		List<EndpointStatisticLog> cloneOfCompletedEndpointEntries = new LinkedList<>();
 		synchronized (completedEndpointStatisticEntries) {
 			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
 			completedEndpointStatisticEntries.clear();

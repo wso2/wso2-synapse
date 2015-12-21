@@ -232,22 +232,28 @@ public final class SynapseConstants {
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
 
         /** Key to message context statistic entry */
-        public static final String NEW_STATISTICS_ID ="synapse.newStatistics";
+        public static final String FLOW_STATISTICS_ID ="synapse.synapse.flow.statistics.statistic.id";
 
         /** Key to message context statistic entry */
-        public static final String NEW_STATISTICS_MESSAGE_ID ="synapse.newStatistics.msgID";
+        public static final String FLOW_STATISTICS_MESSAGE_ID ="synapse.flow.statistics.msgID";
 
         /** Key to message context statistic entry */
-        public static final String NEW_STATISTICS_PARENT_MESSAGE_ID ="synapse.newStatistics.parent.msg.id";
+        public static final String FLOW_STATISTICS_PARENT_MESSAGE_ID ="synapse.flow.statistics.parent.msg.id";
 
         /** Key to message context statistic entry */
-        public static final String NEW_STATISTICS_CLONE_MSG_COUNT ="synapse.newStatistics.clone.count";
+        public static final String FLOW_STATISTICS_MSG_COUNT_HOLDER ="synapse.flow.statistics.count.holder";
 
         /** Key to message context statistic entry */
-        public static final String NEW_STATISTICS_IS_FAULT_REPORTED ="synapse.newStatistics.fault.reported";
+        public static final String FLOW_STATISTICS_IS_FAULT_REPORTED ="synapse.flow.statistics.fault.reported";
 
         /** Key to specify whether statistics should be reported */
-        public static final String NEW_STATISTICS_IS_COLLECTED ="synapse.newStatistics.fault.reported";
+        public static final String FLOW_STATISTICS_IS_COLLECTED ="synapse.flow.statistics.collected";
+
+        /** Flow statistic queue size */
+        public static final String FLOW_STATISTICS_QUEUE_SIZE ="synapse.flow.statistics.queue.size";
+
+        /** Flow statistic default queue size */
+        public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE ="10000";
 
         /** Default backend name used for statistic collection*/
         public static final String ANY ="any";

@@ -29,17 +29,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.aspects.newstatistics.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.newstatistics.event.reader.StatisticEventReceiver;
-import org.apache.synapse.aspects.newstatistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.FinalizeEntryLog;
-import org.apache.synapse.aspects.newstatistics.log.templates.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
-import org.apache.synapse.debug.constants.SynapseDebugManagerConstants;
 import org.apache.synapse.endpoints.Endpoint;
 
 import java.util.Iterator;
@@ -92,7 +87,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
         //Statistic reporting
-        reportStatistics(true, synCtx);
+        RuntimeStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration(), true);
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -235,15 +230,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             //Statistic reporting
-            boolean isOutOnly = Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-            if (!isOutOnly) {
-                isOutOnly =
-                        (!Boolean.parseBoolean(String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                         !synCtx.isResponse());
-            }
-            if (isOutOnly) {
-                reportStatistics(false, synCtx);
-            }
+            RuntimeStatisticCollector.reportEndProxy(synCtx, this.name, proxy.getAspectConfiguration());
             if(synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -299,32 +286,5 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             trace.error(msg);
         }
         throw new SynapseException(msg);
-    }
-
-    private void reportStatistics(boolean createStatisticLog, MessageContext messageContext) {
-        if (RuntimeStatisticCollector.isStatisticsEnable()) {
-            StatisticReportingLog statisticReportingLog = null;
-            if (proxy.getAspectConfiguration() != null && proxy.getAspectConfiguration().isStatisticsEnable()) {
-                if (createStatisticLog) {
-                    RuntimeStatisticCollector.setStatisticsTraceId(messageContext);
-                    statisticReportingLog =
-                            new CreateEntryStatisticLog(messageContext, this.name, ComponentType.PROXYSERVICE, null,
-                                                        System.currentTimeMillis());
-
-                    messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, true);
-                } else {
-                    if (messageContext.getProperty(SynapseConstants.NEW_STATISTICS_ID) != null) {
-                        statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
-                    } else {
-                        log.error("Trying close statistic entry without Statistic ID");
-                    }
-                }
-                if (statisticReportingLog != null) {
-                    StatisticEventReceiver.receive(statisticReportingLog);
-                }
-            } else {
-                messageContext.setProperty(SynapseConstants.NEW_STATISTICS_IS_COLLECTED, false);
-            }
-        }
     }
 }
