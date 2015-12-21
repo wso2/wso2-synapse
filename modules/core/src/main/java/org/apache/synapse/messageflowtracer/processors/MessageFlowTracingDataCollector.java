@@ -47,6 +47,7 @@ public class MessageFlowTracingDataCollector {
     private static boolean isMessageFlowTracingEnabled;
     private static Date date;
     private static MessageDataCollector tracingDataCollector;
+    private static MessageFlowTracingDataConsumer tracingDataConsumer;
 
     public static void init() {
         isMessageFlowTracingEnabled = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue
@@ -57,6 +58,7 @@ public class MessageFlowTracingDataCollector {
                     (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE));
 
             tracingDataCollector = new MessageDataCollector(queueSize);
+            tracingDataConsumer = new MessageFlowTracingDataConsumer();
             //Thread to consume queue and update data structures for publishing
             ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
                     new ThreadFactory() {
@@ -66,7 +68,7 @@ public class MessageFlowTracingDataCollector {
                             return t;
                         }
                     });
-            executor.scheduleAtFixedRate(new MessageFlowTracingDataConsumer(), 0, 1000, TimeUnit.MILLISECONDS);
+            executor.scheduleAtFixedRate(tracingDataConsumer, 0, 1000, TimeUnit.MILLISECONDS);
         }
         date = new java.util.Date();
     }
@@ -79,6 +81,15 @@ public class MessageFlowTracingDataCollector {
      */
     public static MessageFlowDataEntry deQueue() throws Exception {
         return tracingDataCollector.deQueue();
+    }
+
+    /**
+     * Checks whether the queue is empty
+     *
+     * @return Tru if empty/false otherwise
+     */
+    public static boolean isEmpty() {
+        return tracingDataCollector.isEmpty();
     }
 
     /**
@@ -190,4 +201,10 @@ public class MessageFlowTracingDataCollector {
         }
     }
 
+    /**
+     * Stop data consumer
+     */
+    public static void stopConsumer() {
+        tracingDataConsumer.setStopped(true);
+    }
 }

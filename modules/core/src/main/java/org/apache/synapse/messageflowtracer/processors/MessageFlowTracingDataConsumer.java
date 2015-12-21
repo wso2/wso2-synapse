@@ -30,7 +30,7 @@ public class MessageFlowTracingDataConsumer implements Runnable {
 
     public void run(){
         MessageFlowDataEntry mediationDataEntry;
-        while (!isStopped) {
+        while (!isStopped && MessageFlowTracingDataCollector.isEmpty()) {
             try {
                 mediationDataEntry = MessageFlowTracingDataCollector.deQueue();
                 mediationDataEntry.process();
@@ -38,5 +38,9 @@ public class MessageFlowTracingDataConsumer implements Runnable {
                 log.error("Error in Mediation Tracing data consumer while consuming data", exception);
             }
         }
+    }
+
+    public void setStopped(boolean isStopped) {
+        this.isStopped = isStopped;
     }
 }

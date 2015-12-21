@@ -52,9 +52,18 @@ public class MessageDataCollector {
     public MessageFlowDataEntry deQueue() throws Exception {
         try {
             return queue.take();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException exception) {
             String errorMsg = "Error consuming tracing data queue";
-            throw new Exception(errorMsg, e);
+            throw new Exception(errorMsg, exception);
         }
+    }
+
+    /**
+     * Checks whether the queue is empty
+     *
+     * @return Tru if empty/false otherwise
+     */
+    public boolean isEmpty(){
+        return queue.isEmpty();
     }
 }
