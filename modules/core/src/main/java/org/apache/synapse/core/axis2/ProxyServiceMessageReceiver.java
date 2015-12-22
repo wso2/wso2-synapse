@@ -30,13 +30,13 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
-import org.apache.synapse.debug.constants.SynapseDebugManagerConstants;
 import org.apache.synapse.endpoints.Endpoint;
 
 import java.util.Iterator;
@@ -88,6 +88,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
+
+        //Statistic reporting
+        RuntimeStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration(), true);
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -153,7 +156,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setTracingState(proxy.getTraceState());
 
         try {
-
             if(synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
@@ -245,6 +247,8 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
+            //Statistic reporting
+            RuntimeStatisticCollector.reportEndProxy(synCtx, this.name, proxy.getAspectConfiguration());
             if(synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -302,5 +306,4 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
         throw new SynapseException(msg);
     }
-
 }

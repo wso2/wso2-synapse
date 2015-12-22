@@ -39,6 +39,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -51,6 +52,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -106,6 +108,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (log.isDebugEnabled()) {
             log.debug("Callback added. Total callbacks waiting for : " + callbackStore.size());
         }
+        org.apache.synapse.MessageContext synCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
+        RuntimeStatisticCollector.addCallbackEntryForStatistics(synCtx, MsgID);
     }
 
     /**
@@ -128,11 +132,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED) != null && "true".equals(
                 messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED))) {
             if (callbackStore.containsKey(messageCtx.getMessageID())) {
-                callbackStore.remove(messageCtx.getMessageID());
+                AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
+                RuntimeStatisticCollector
+                        .reportCallbackReceived(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
-                            " removed from the " +
-                            "callback store since we got an accepted Notification");
+                              " removed from the " +
+                              "callback store since we got an accepted Notification");
                 }
             }
 
@@ -159,6 +165,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 log.debug("Callback removed for request message id : " + messageID +
                         ". Pending callbacks count : " + callbackStore.size());
             }
+            org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
+            RuntimeStatisticCollector.updateStatisticLogsForReceivedCallbackLog(SynapseOutMsgCtx, messageID);
 
             RelatesTo[] relates = messageCtx.getRelationships();
             if (relates != null && relates.length > 1) {
@@ -167,10 +175,15 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // gets duplicated, and we should remove it
                 removeDuplicateRelatesTo(messageCtx, relates);
             }
-            
+
             if (callback != null) {
-                handleMessage(messageID, messageCtx, ((AsyncCallback) callback).getSynapseOutMsgCtx(),
-                        (AsyncCallback)callback);
+                handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
+                if (log.isDebugEnabled()) {
+                    log.debug("Finished handling the callback.");
+                }
+                org.apache.synapse.MessageContext synMsgCtx =
+                        MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
+                RuntimeStatisticCollector.reportFinishingHandlingCallback(SynapseOutMsgCtx,synMsgCtx,messageID);
                 
             } else {
                 // TODO invoke a generic synapse error handler for this message

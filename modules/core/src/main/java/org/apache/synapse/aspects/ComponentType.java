@@ -24,6 +24,10 @@ package org.apache.synapse.aspects;
 public enum ComponentType {
     PROXYSERVICE,
     ENDPOINT,
+    INBOUNDENDPOINT,
     SEQUENCE,
+    MEDIATOR,
+    API,
+    RESOURCE,
     ANY
 }

@@ -108,4 +108,9 @@ public interface Mediator extends SynapseArtifact {
      * @return Generated unique ID
      */
     public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart);
+
+    /**
+     * Report Statistics for the Mediator
+     */
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog);
 }

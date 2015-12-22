@@ -35,6 +35,7 @@ public class RESTConstants {
     public static final String REST_ALL_SUPPORTED_METHODS = "GET, POST, PUT, DELETE";
     public static final String REST_URI_VARIABLE_PREFIX = "uri.var.";
     public static final String REST_QUERY_PARAM_PREFIX = "query.param.";
+    public static final String REST_URL_PATTERN = "rest.url.pattern";
 
     public static final String SYNAPSE_RESOURCE = "SYNAPSE_RESOURCE";
     public static final String SYNAPSE_REST_API = "SYNAPSE_REST_API";

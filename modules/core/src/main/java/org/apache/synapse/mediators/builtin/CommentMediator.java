@@ -68,7 +68,12 @@ public class CommentMediator extends AbstractMediator {
         return false;
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart){
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
         return MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
+    }
+
+    @Override
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog) {
+        //Do not report statistic for comment mediator
     }
 }

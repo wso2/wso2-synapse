@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml.rest;
 import org.apache.axiom.om.*;
 import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.rest.API;
 import org.apache.synapse.rest.Handler;
@@ -48,6 +49,12 @@ public class APISerializer {
         }
         if (api.getPort() != -1) {
             apiElt.addAttribute("port", String.valueOf(api.getPort()), null);
+        }
+
+        StatisticsConfigurable statisticsConfigurable = api.getAspectConfiguration();
+
+        if (statisticsConfigurable != null && statisticsConfigurable.isStatisticsEnable()) {
+            apiElt.addAttribute(XMLConfigConstants.STATISTICS_ATTRIB_NAME, XMLConfigConstants.STATISTICS_ENABLE, null);
         }
 
         Resource[] resources = api.getResources();

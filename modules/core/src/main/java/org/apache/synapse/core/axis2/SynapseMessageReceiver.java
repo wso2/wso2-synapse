@@ -29,8 +29,8 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
-import org.apache.synapse.mediators.MediatorFaultHandler;
 
 /**
  * This message receiver should be configured in the Axis2 configuration as the
@@ -47,8 +47,8 @@ public class SynapseMessageReceiver implements MessageReceiver {
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
         StatisticsReporter.reportForComponent(synCtx,
-                AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
-                ComponentType.PROXYSERVICE);
+                                              AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
+                                              ComponentType.PROXYSERVICE);
 
         boolean traceOn = synCtx.getMainSequence().getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -94,6 +94,7 @@ public class SynapseMessageReceiver implements MessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
+            RuntimeStatisticCollector.reportEndSynapseMessageReceiver(synCtx);
         }
     }
 

@@ -230,6 +230,36 @@ public final class SynapseConstants {
         public static final String STATISTICS_STACK ="synapse.statistics.stack";     
         
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
+
+        /** Key to message context statistic entry */
+        public static final String FLOW_STATISTICS_ID ="synapse.synapse.flow.statistics.statistic.id";
+
+        /** Key to message context statistic entry */
+        public static final String FLOW_STATISTICS_MESSAGE_ID ="synapse.flow.statistics.msgID";
+
+        /** Key to message context statistic entry */
+        public static final String FLOW_STATISTICS_PARENT_MESSAGE_ID ="synapse.flow.statistics.parent.msg.id";
+
+        /** Key to message context statistic entry */
+        public static final String FLOW_STATISTICS_MSG_COUNT_HOLDER ="synapse.flow.statistics.count.holder";
+
+        /** Key to message context statistic entry */
+        public static final String FLOW_STATISTICS_IS_FAULT_REPORTED ="synapse.flow.statistics.fault.reported";
+
+        /** Key to specify whether statistics should be reported */
+        public static final String FLOW_STATISTICS_IS_COLLECTED ="synapse.flow.statistics.collected";
+
+        /** Flow statistic queue size */
+        public static final String FLOW_STATISTICS_QUEUE_SIZE ="synapse.flow.statistics.queue.size";
+
+        /** Flow statistic default queue size */
+        public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE ="10000";
+
+        /** Default backend name used for statistic collection*/
+        public static final String ANY ="any";
+
+        /** Default backend name used for statistic collection*/
+        public static final String CURRENTSEQUENCE ="current.sequence";
     
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
 
@@ -295,6 +325,9 @@ public final class SynapseConstants {
 
     /**A name to use for anonymous proxyservice  */
     public static final String ANONYMOUS_PROXYSERVICE = "AnonymousProxyService";
+
+    /**A name to use for anonymous API  */
+    public static final String ANONYMOUS_API = "AnonymousApi";
 
     /* Constants related to the SAL endpoints */
 
@@ -494,6 +527,9 @@ public final class SynapseConstants {
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
     public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
     public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
+    public static final String INBOUND_ENDPOINT_NAME = "inbound.endpoint.name";
+    public static final String INBOUND_STATISTIC_ENABLE = "inbound.statistic.enable";
+    public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousInboundEndpoint";
     
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";

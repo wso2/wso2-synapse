@@ -32,6 +32,8 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -103,6 +105,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
     /** Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
+
+    private boolean isAggregateComplete = false;
 
     public AggregateMediator() {
         try {
@@ -320,9 +324,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 if (aggregate.isComplete(synLog)) {
                     synLog.traceOrDebug("Aggregation completed - invoking onComplete");
                     boolean onCompleteSeqResult = completeAggregate(aggregate);
-                    
                     synLog.traceOrDebug("End : Aggregate mediator");
-
+                    isAggregateComplete = onCompleteSeqResult;
                     return onCompleteSeqResult;
                 } else {
                     aggregate.releaseLock();
@@ -637,4 +640,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.enclosingElementPropertyName = enclosingElementPropertyName;
     }
 
+    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        RuntimeStatisticCollector
+                .reportStatisticForAggregateMediator(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                     parentName, isCreateLog, isAggregateComplete);
+    }
 }

@@ -23,6 +23,7 @@ import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -111,6 +112,14 @@ public interface SynapseEnvironment {
      * @return Returns the <code>StatisticsCollector</code>
      */
     public StatisticsCollector getStatisticsCollector();
+
+    /**
+     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
+     * instance.
+     *
+     * @return completedStatisticStore for this synapse instance
+     */
+    public CompletedStatisticStore getCompletedStatisticStore();
 
     /**
      * To set the StatisticsCollector to the environment

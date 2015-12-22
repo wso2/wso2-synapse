@@ -22,6 +22,7 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
@@ -57,7 +58,7 @@ public abstract class AbstractListMediator extends AbstractMediator
         // to pass it on; else, do nothing -> i.e. let the parents state flow
         setEffectiveTraceState(synCtx);
         int myEffectiveTraceState = synCtx.getTracingState();
-
+        String parentName = (String)synCtx.getProperty(SynapseConstants.CURRENTSEQUENCE);
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
@@ -79,22 +80,23 @@ public abstract class AbstractListMediator extends AbstractMediator
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 String componentId = null;
                 // ensure correct trace state after each invocation of a mediator
-                synCtx.setTracingState(myEffectiveTraceState);
-
                 Mediator mediator = mediators.get(i);
-                if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+                mediator.reportStatistic(synCtx, parentName, true);
+                synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, mediator.getMediatorName());
+                synCtx.setTracingState(myEffectiveTraceState);
+                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
                     componentId = mediator.setTraceFlow(synCtx, componentId, mediator, true);
                 }
-
                 if (!mediator.mediate(synCtx)) {
-                    if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+                    mediator.reportStatistic(synCtx, parentName, false);
+                    if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
                         mediator.setTraceFlow(synCtx, componentId, mediator, false);
                     }
                     returnVal = false;
                     break;
                 }
-
-                if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+                mediator.reportStatistic(synCtx, parentName, false);
+                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
                     mediator.setTraceFlow(synCtx, componentId, mediator, false);
                 }
             }
@@ -107,6 +109,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
+            synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE,parentName);
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
 

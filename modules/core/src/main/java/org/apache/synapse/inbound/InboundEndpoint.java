@@ -22,6 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfigurable;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import sun.misc.Service;
 
@@ -33,7 +35,7 @@ import java.util.Map;
  * Entity which is responsible for exposing ESB message flow as an endpoint which can be invoked
  * by Clients. InboundEndpoint is an artifact type which can be created/modified dynamically.
  */
-public class InboundEndpoint implements ManagedLifecycle {
+public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     protected static final Log log = LogFactory.getLog(InboundEndpoint.class);
 
     private String name;
@@ -51,6 +53,7 @@ public class InboundEndpoint implements ManagedLifecycle {
     private String artifactContainerName;
     /** Whether the deployed inbound endpoint is edited via the management console */
     private boolean isEdited;
+    private AspectConfiguration aspectConfiguration;
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
@@ -220,5 +223,15 @@ public class InboundEndpoint implements ManagedLifecycle {
 
     public void setIsEdited(boolean isEdited) {
         this.isEdited = isEdited;
+    }
+
+    @Override
+    public void configure(AspectConfiguration aspectConfiguration) {
+        this.aspectConfiguration = aspectConfiguration;
+    }
+
+    @Override
+    public AspectConfiguration getAspectConfiguration() {
+        return aspectConfiguration;
     }
 }
