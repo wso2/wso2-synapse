@@ -33,6 +33,8 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 
+import sun.util.logging.resources.logging;
+
 import javax.xml.namespace.QName;
 import java.util.Iterator;
 

@@ -402,13 +402,16 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void reportEndProxy(MessageContext messageContext, String proxyName,
 	                                  AspectConfiguration aspectConfiguration) {
-		boolean isOutOnly = Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-		if (!isOutOnly) {
-			isOutOnly = (!Boolean
-					.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) && !messageContext.isResponse());
-		}
-		if (isOutOnly) {
-			reportStatisticsForProxy(messageContext, proxyName, aspectConfiguration, false);
+		if (shouldReportStatistic(messageContext)) {
+			boolean isOutOnly =
+					Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
+			if (!isOutOnly) {
+				isOutOnly = (!Boolean
+						.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) && !messageContext.isResponse());
+			}
+			if (isOutOnly) {
+				reportStatisticsForProxy(messageContext, proxyName, aspectConfiguration, false);
+			}
 		}
 	}
 
@@ -678,7 +681,6 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void reportFinishingHandlingCallback(MessageContext synapseOutMsgCtx, MessageContext synNewCtx,
 	                                                   String callbackId) {
-
 		if (shouldReportStatistic(synapseOutMsgCtx)) {
 			createLogForRemoveCallback(synapseOutMsgCtx, callbackId);
 			Boolean isContinuationCall = (Boolean) synNewCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
