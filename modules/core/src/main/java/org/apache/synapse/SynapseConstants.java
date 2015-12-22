@@ -259,9 +259,6 @@ public final class SynapseConstants {
         public static final String ANY ="any";
 
         /** Default backend name used for statistic collection*/
-        public static final String FAULTHANDLER ="FaultHandler";
-
-        /** Default backend name used for statistic collection*/
         public static final String CURRENTSEQUENCE ="current.sequence";
     
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
@@ -532,7 +529,7 @@ public final class SynapseConstants {
     public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
     public static final String INBOUND_ENDPOINT_NAME = "inbound.endpoint.name";
     public static final String INBOUND_STATISTIC_ENABLE = "inbound.statistic.enable";
-    public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousApIInboundEndpoint";
+    public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousInboundEndpoint";
     
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";

@@ -25,9 +25,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -265,7 +263,6 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-
 	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, true);
         }
 
@@ -337,7 +334,6 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
-
 	    RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
     }
 

@@ -274,7 +274,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         // clone the message context without cloning the SOAP envelope, for the mediation in iteration.
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false);
 
-
 		StatisticsRecord statRecord =
 		                              (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
 		if (statRecord != null) {

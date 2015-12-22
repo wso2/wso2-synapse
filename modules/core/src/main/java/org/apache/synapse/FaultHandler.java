@@ -52,7 +52,6 @@ public abstract class FaultHandler {
 
         try {
             RuntimeStatisticCollector.reportFault(synCtx);
-
             synCtx.getServiceLog().info("FaultHandler executing impl: " + this.getClass().getName());
             onFault(synCtx);
 
@@ -104,9 +103,7 @@ public abstract class FaultHandler {
             if (traceOrDebugOn) {
                 traceOrDebugWarn(traceOn, "FaultHandler : " + this);
             }
-
             RuntimeStatisticCollector.reportFault(synCtx);
-
             onFault(synCtx);
         } catch (SynapseException se) {
 

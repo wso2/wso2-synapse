@@ -27,7 +27,6 @@ public enum ComponentType {
     INBOUNDENDPOINT,
     SEQUENCE,
     MEDIATOR,
-    FAULTHANDLER,
     API,
     RESOURCE,
     ANY

@@ -36,75 +36,75 @@ import java.util.*;
  */
 public class RESTRequestHandler {
 
-	private static final Log log = LogFactory.getLog(RESTRequestHandler.class);
+    private static final Log log = LogFactory.getLog(RESTRequestHandler.class);
 
-	/**
-	 * Attempt to process the given message through one of the available APIs. This method
-	 * will first try to locate a suitable API for the given message by running it through
-	 * the API validation routines available. If a matching API is found it will dispatch
-	 * the message to the located API. If a matching API cannot be found, message will be
-	 * left intact so any other handlers (eg: main sequence) can pick it up later.
-	 *
-	 * @param synCtx MessageContext of the request to be processed
-	 * @return true if the message was dispatched to an API and false otherwise
-	 */
-	public boolean process(MessageContext synCtx) {
-		if (synCtx.isResponse()) {
-			return dispatchToAPI(synCtx);
-		}
+    /**
+     * Attempt to process the given message through one of the available APIs. This method
+     * will first try to locate a suitable API for the given message by running it through
+     * the API validation routines available. If a matching API is found it will dispatch
+     * the message to the located API. If a matching API cannot be found, message will be
+     * left intact so any other handlers (eg: main sequence) can pick it up later.
+     *
+     * @param synCtx MessageContext of the request to be processed
+     * @return true if the message was dispatched to an API and false otherwise
+     */
+    public boolean process(MessageContext synCtx) {
+        if (synCtx.isResponse()) {
+            return dispatchToAPI(synCtx);
+        }
 
-		org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).
-				                                                                               getAxis2MessageContext();
-		String protocol = msgCtx.getIncomingTransportName();
-		if (!Constants.TRANSPORT_HTTP.equals(protocol) && !Constants.TRANSPORT_HTTPS.equals(protocol)) {
-			if (log.isDebugEnabled()) {
-				log.debug("Invalid protocol for REST API mediation: " + protocol);
-			}
-			return false;
-		}
+        org.apache.axis2.context.MessageContext msgCtx = ((Axis2MessageContext) synCtx).
+                getAxis2MessageContext();
+        String protocol = msgCtx.getIncomingTransportName();
+        if (!Constants.TRANSPORT_HTTP.equals(protocol) && !Constants.TRANSPORT_HTTPS.equals(protocol)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Invalid protocol for REST API mediation: " + protocol);
+            }
+            return false;
+        }
 
-		return dispatchToAPI(synCtx);
-	}
+        return dispatchToAPI(synCtx);
+    }
 
-	private boolean dispatchToAPI(MessageContext synCtx) {
-		Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
-		//Since swapping elements are not possible with sets, Collection is converted to a List
-		List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
+    private boolean dispatchToAPI(MessageContext synCtx) {
+        Collection<API> apiSet = synCtx.getEnvironment().getSynapseConfiguration().getAPIs();
+        //Since swapping elements are not possible with sets, Collection is converted to a List
+        List<API> defaultStrategyApiSet = new ArrayList<API>(apiSet);
 
-		API defaultAPI = null;
-		for (API api : apiSet) {
-			api.setLogSetterValue();
-			if ("/".equals(api.getContext())) {
-				defaultAPI = api;
-			} else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
-				//APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at last.
-				//Otherwise they will be always chosen to process the request without matching the version.
-				defaultStrategyApiSet.add(api);
-			} else if (api.canProcess(synCtx)) {
-				if (log.isDebugEnabled()) {
-					log.debug("Located specific API: " + api.getName() + " for processing message");
-				}
-				api.process(synCtx);
-				return true;
-			}
-		}
+        API defaultAPI = null;
+        for (API api : apiSet) {
+            api.setLogSetterValue();
+            if ("/".equals(api.getContext())) {
+                defaultAPI = api;
+            } else if (api.getVersionStrategy().getClass().getName().equals(DefaultStrategy.class.getName())) {
+                //APIs whose VersionStrategy is bound to an instance of DefaultStrategy, should be skipped and processed at last.
+                //Otherwise they will be always chosen to process the request without matching the version.
+                defaultStrategyApiSet.add(api);
+            } else if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+                api.process(synCtx);
+                return true;
+            }
+        }
 
-		for (API api : defaultStrategyApiSet) {
-			api.setLogSetterValue();
-			if (api.canProcess(synCtx)) {
-				if (log.isDebugEnabled()) {
-					log.debug("Located specific API: " + api.getName() + " for processing message");
-				}
-				apiProcess(synCtx, api);
-				return true;
-			}
-		}
+        for (API api : defaultStrategyApiSet) {
+            api.setLogSetterValue();
+            if (api.canProcess(synCtx)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Located specific API: " + api.getName() + " for processing message");
+                }
+	            apiProcess(synCtx, api);
+                return true;
+            }
+        }
 
-		if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
-			defaultAPI.setLogSetterValue();
-			apiProcess(synCtx, defaultAPI);
-			return true;
-		}
+        if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
+            defaultAPI.setLogSetterValue();
+	        apiProcess(synCtx, defaultAPI);
+            return true;
+        }
 
 		return false;
 	}
