@@ -388,15 +388,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
+        if (isStatisticCollected()) {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, false);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
+        }
+
         if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
             this.setTraceFlow(synCtx, componentId, getReportingName(), false);
-            if (isStatisticCollected()) {
-                RuntimeStatisticCollector
-                        .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, false);
-            } else {
-                RuntimeStatisticCollector
-                        .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
-            }
         }
     }
 
