@@ -35,11 +35,12 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
     private String timestamp;
     private String payload;
     private SynapseEnvironment synapseEnvironment;
-    private Map<String, String> propertyMap;
+    private Map<String, Object> propertyMap;
+    private Map<String, Object> transportPropertyMap;
 
     public MessageFlowComponentEntry(String messageId, String componentId, String componentName, boolean response,
-                                     boolean start, String timestamp, Map<String, String> propertyMap, String payload,
-                                     SynapseEnvironment synapseEnvironment) {
+                                     boolean start, String timestamp, Map<String, Object> propertyMap, Map<String,
+            Object> transportPropertyMap, String payload, SynapseEnvironment synapseEnvironment) {
         this.messageId = messageId;
         this.componentId = componentId;
         this.componentName = componentName;
@@ -47,6 +48,7 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
         this.start = start;
         this.timestamp = timestamp;
         this.propertyMap = propertyMap;
+        this.transportPropertyMap = transportPropertyMap;
         this.payload = payload;
         this.synapseEnvironment = synapseEnvironment;
     }
@@ -55,7 +57,7 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
         return payload;
     }
 
-    public Map<String, String> getPropertyMap() {
+    public Map<String, Object> getPropertyMap() {
         return propertyMap;
     }
 
@@ -81,6 +83,10 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
 
     public String getTimestamp() {
         return timestamp;
+    }
+
+    public Map<String, Object> getTransportPropertyMap() {
+        return transportPropertyMap;
     }
 
     @Override

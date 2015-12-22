@@ -124,15 +124,13 @@ public class MessageFlowTracingDataCollector {
     private static void addComponentInfoEntry(MessageContext synCtx, String componentId, String componentName,
                                               boolean start) {
         Set<String> propertySet = synCtx.getPropertyKeySet();
-        Map<String, String> propertyMap = new HashMap<String, String>();
+        Map<String, Object> propertyMap = new HashMap<>();
+        Map<String, Object> transportPropertyMap = new HashMap<>();
+
 
         for (String property : propertySet) {
             Object propertyValue = synCtx.getProperty(property);
-            if (propertyValue instanceof String) {
-                propertyMap.put(property, (String) propertyValue);
-            } else if (propertyValue instanceof Integer) {
-                propertyMap.put(property, String.valueOf(propertyValue));
-            }
+            propertyMap.put(property, propertyValue);
         }
 
         Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -143,9 +141,7 @@ public class MessageFlowTracingDataCollector {
             Map headersMap = (Map) headers;
             Set<String> axis2PropertySet = headersMap.keySet();
             for (String entry : axis2PropertySet) {
-                if (headersMap.get(entry) instanceof String) {
-                    propertyMap.put(entry, (String)headersMap.get(entry));
-                }
+                transportPropertyMap.put(entry, headersMap.get(entry));
             }
         }
 
@@ -155,7 +151,8 @@ public class MessageFlowTracingDataCollector {
                                                                            .toString(), componentId, componentName,
                                                                    synCtx.isResponse(), start,
                                                                    new Timestamp(date.getTime()).toString(),
-                                                                   propertyMap, payload, synCtx.getEnvironment()));
+                                                                   propertyMap, transportPropertyMap, payload, synCtx
+                                                                           .getEnvironment()));
     }
 
     /**
@@ -170,15 +167,17 @@ public class MessageFlowTracingDataCollector {
     public static String setTraceFlowEvent(MessageContext msgCtx, String componentId, String mediatorName,
                                            boolean isStart) {
         String updatedComponentId = null;
-        if (isStart) {
-            MessageFlowComponentId messageFlowComponentId = (MessageFlowComponentId) (msgCtx.getProperty
-                    (MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID));
-            updatedComponentId = messageFlowComponentId.getUpdatedId();
-            addComponentInfoEntry(msgCtx, updatedComponentId, mediatorName, true);
-            addComponentToMessageFlow(updatedComponentId, msgCtx);
-            addFlowInfoEntry(msgCtx);
-        } else {
-            addComponentInfoEntry(msgCtx, componentId, mediatorName, false);
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(msgCtx)) {
+            if (isStart) {
+                MessageFlowComponentId messageFlowComponentId = (MessageFlowComponentId) (msgCtx.getProperty
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID));
+                updatedComponentId = messageFlowComponentId.getUpdatedId();
+                addComponentInfoEntry(msgCtx, updatedComponentId, mediatorName, true);
+                addComponentToMessageFlow(updatedComponentId, msgCtx);
+                addFlowInfoEntry(msgCtx);
+            } else {
+                addComponentInfoEntry(msgCtx, componentId, mediatorName, false);
+            }
         }
         return updatedComponentId;
     }

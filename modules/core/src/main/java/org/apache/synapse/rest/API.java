@@ -402,10 +402,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             }
         }
 
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            if (!synCtx.isResponse()) {
-                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
-            }
+        if (!synCtx.isResponse()) {
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
         }
     }
 

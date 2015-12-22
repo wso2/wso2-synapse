@@ -108,12 +108,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (key == null) {
             String mediatorId = null;
-            if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " +
-                                                                                                   (name == null ?
-                                                                                                    this.sequenceType.name() :
-                                                                                                    name), true);
-            }
+            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " +
+                                                                                       (name == null ?
+                                                                                        this.sequenceType.name() :
+                                                                                        name), true);
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
@@ -185,11 +183,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                             "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
                 }
 
-                if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                    MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, "Sequence: " + (name == null ?
-                                                                                                          this.sequenceType.name()
-                                                                                                                       : name), false);
-                }
+
+                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx,
+                                                                  mediatorId, "Sequence: " + (name == null ? this
+                                                                .sequenceType.name() : name), false);
 
                 return result;
 

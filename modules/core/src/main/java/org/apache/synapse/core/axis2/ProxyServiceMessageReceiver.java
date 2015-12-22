@@ -236,9 +236,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
-            }
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
         }
     }
 
