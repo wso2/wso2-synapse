@@ -430,5 +430,10 @@ public OMElement getFormat(String key);
 	 */
 	public Mediator getDefaultConfiguration(String key);
 
+    /**
+     * Get Message properties as a String
+     *
+     * @return String with message property information
+     */
     public String getMessageString();
 }
