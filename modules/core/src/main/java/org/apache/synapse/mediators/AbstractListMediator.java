@@ -22,6 +22,7 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -56,7 +57,7 @@ public abstract class AbstractListMediator extends AbstractMediator
         // to pass it on; else, do nothing -> i.e. let the parents state flow
         setEffectiveTraceState(synCtx);
         int myEffectiveTraceState = synCtx.getTracingState();
-
+        String parentName = (String)synCtx.getProperty(SynapseConstants.CURRENTSEQUENCE);
         try {
             SynapseLog synLog = getLog(synCtx);
             if (synLog.isTraceOrDebugEnabled()) {
@@ -77,11 +78,16 @@ public abstract class AbstractListMediator extends AbstractMediator
 
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
+                Mediator mediator = mediators.get(i);
+                mediator.reportStatistic(synCtx, parentName, true);
+                synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, mediator.getMediatorName());
                 synCtx.setTracingState(myEffectiveTraceState);
-                if (!mediators.get(i).mediate(synCtx)) {
+                if (!mediator.mediate(synCtx)) {
+                    mediator.reportStatistic(synCtx, parentName, false);
                     returnVal = false;
                     break;
                 }
+                mediator.reportStatistic(synCtx, parentName, false);
             }
         } catch (SynapseException synEx) {
             throw synEx;
@@ -92,6 +98,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
+            synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE,parentName);
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
 

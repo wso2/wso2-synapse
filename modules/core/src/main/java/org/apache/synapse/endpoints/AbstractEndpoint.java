@@ -32,6 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -102,7 +103,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     private boolean enableMBeanStats = true;
 
     private boolean contentAware = false;
-    
+
     private boolean forceBuildMC =false;
 
     protected String artifactContainerName;
@@ -288,6 +289,15 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void send(MessageContext synCtx) {
 
         logSetter();
+        String endpointId = null;
+        if (isStatisticCollected()) {
+            endpointId = String.valueOf(RuntimeStatisticCollector.getComponentUniqueId(synCtx));
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getStatisticReportingName(), true, true);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getStatisticReportingName(), false, true);
+        }
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -298,7 +308,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                     "endpoint must be in initialized state");
         }
 
-        prepareForEndpointStatistics(synCtx);
+	    prepareForEndpointStatistics(synCtx);
 
         if (traceOrDebugOn) {
             String address = definition.getAddress();
@@ -370,11 +380,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
+
+        if (isStatisticCollected()) {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getStatisticReportingName(), true, false);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getStatisticReportingName(), false, false);
+        }
     }
 
     /**
      * Is this a leaf level endpoint? or parent endpoint that has children?
-     * @return true if there is no children - a leaf endpoint 
+     * @return true if there is no children - a leaf endpoint
      */
     public boolean isLeafEndpoint() {
         return children == null || children.size() == 0;
@@ -394,7 +412,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if this is defined as a timeout
      */
     protected boolean isTimeout(MessageContext synCtx) {
-        
+
 		Object error = synCtx.getProperty(SynapseConstants.ERROR_CODE);
 		Integer errorCode = 0;
 		if (error != null) {
@@ -699,7 +717,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * Add a property to the endpoint.
       * @param property property to be added
      */
-    public void addProperty(MediatorProperty property) {        
+    public void addProperty(MediatorProperty property) {
         properties.put(property.getName(), property);
     }
 
@@ -721,7 +739,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Return the <code>Collection</code> of properties specified
-     * 
+     *
      * @return <code>Collection</code> of properties
      */
     public Collection<MediatorProperty> getProperties() {
@@ -740,7 +758,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Add all the properties to the endpoint
-     * @param mediatorProperties <code>Collection</code> of properties to be added 
+     * @param mediatorProperties <code>Collection</code> of properties to be added
      */
     public void addProperties(Collection<MediatorProperty> mediatorProperties) {
         for (MediatorProperty property : mediatorProperties) {
@@ -755,14 +773,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void setErrorHandler(String errorHandler) {
         this.errorHandler = errorHandler;
     }
-    
-    
+
+
 
     public void setContentAware(boolean contentAware) {
     	this.contentAware = contentAware;
     }
-    
-    
+
+
 
 	public void setForceBuildMC(boolean forceBuildMC) {
     	this.forceBuildMC = forceBuildMC;
@@ -783,5 +801,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void logSetter() {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
+    }
+
+    public String getStatisticReportingName() {
+        if (this.endpointName != null) {
+            return this.endpointName;
+        } else {
+            return SynapseConstants.ANONYMOUS_ENDPOINT;
+        }
+    }
+
+    private boolean isStatisticCollected() {
+        return (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
+                definition.getAspectConfiguration().isStatisticsEnable() &&
+                this.endpointName != null);
     }
 }

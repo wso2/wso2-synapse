@@ -39,6 +39,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -94,6 +96,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** The StatisticsCollector object */
     private StatisticsCollector statisticsCollector = new StatisticsCollector();
+
+    /** The CompletedStatisticStore object*/
+    private CompletedStatisticStore completedStatisticStore = new CompletedStatisticStore();
 
     private ServerContextInformation contextInformation;
 
@@ -215,7 +220,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (log.isDebugEnabled()) {
                 log.debug("Injecting MessageContext");
             }
-
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
@@ -366,7 +370,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
-
+        boolean inboundStatistics = false;
+        String inboundName = null;
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
@@ -376,11 +381,15 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
          * If the method is invoked by the inbound endpoint
          * Then check for the endpoint name and then set the Log Appender Content
          */
-        if (synCtx.getProperty("inbound.endpoint.name") != null) {
+        if (synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
             InboundEndpoint inboundEndpoint = synCtx.getConfiguration().
-                    getInboundEndpoint((String) synCtx.getProperty("inbound.endpoint.name"));
+                    getInboundEndpoint((String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+                if (inboundEndpoint.getAspectConfiguration() != null) {
+                    inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
+                }
+                inboundName = (String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
             }
         }
 
@@ -391,7 +400,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (!sequential) {
             try {
+                RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
+                RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -401,6 +412,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         
         // Following code is reached if the sequential==true or inbound is
         // reached max level
+        RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
         try {
 
             if (synCtx.getEnvironment().isDebugEnabled()) {
@@ -444,6 +456,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
+            RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -634,6 +647,16 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public SynapseConfiguration getSynapseConfiguration() {
         return this.synapseConfig;
+    }
+
+    /**
+     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
+     * instance.
+     *
+     * @return completedStatisticStore for this synapse instance
+     */
+    public CompletedStatisticStore getCompletedStatisticStore() {
+        return completedStatisticStore;
     }
 
     /**
@@ -911,16 +934,22 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
+        boolean inboundStatistics = false;
+        String inboundName = null;
 
         /*
          * If the method is invoked by the inbound endpoint
          * Then check for the endpoint name and then set the Log Appender Content
          */
-        if (smc.getProperty("inbound.endpoint.name") != null) {
+        if (smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME) != null) {
             InboundEndpoint inboundEndpoint = smc.getConfiguration().
-                    getInboundEndpoint((String) smc.getProperty("inbound.endpoint.name"));
+                    getInboundEndpoint((String) smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
+                inboundName =(String) smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
+                if (inboundEndpoint.getAspectConfiguration() != null) {
+                    inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
+                }
             }
         }
 
@@ -937,6 +966,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }
         try {
+            if (inboundName != null) {
+                RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, true);
+            }
             seq.mediate(smc);
             return true;
         } catch (SynapseException syne) {
@@ -971,6 +1003,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 smc.getServiceLog().error(msg, e);
             }
             return false;
+        } finally {
+            if (inboundName != null) {
+                RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, false);
+            }
         }
     }
 

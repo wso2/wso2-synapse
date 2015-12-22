@@ -26,6 +26,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -257,6 +258,14 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     }
 
     void process(MessageContext synCtx) {
+
+        if (!synCtx.isResponse()) {
+            if (getDispatcherHelper() != null) {
+                synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
+            }
+	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, true);
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "resource: " + name);
@@ -265,7 +274,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-                return;
+	            RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+	            return;
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
@@ -295,6 +305,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
+	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
             return;
         }
 
@@ -308,6 +319,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
+	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
             return;
         }
 
@@ -322,6 +334,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
+	    RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
     }
 
     public void registerFaultHandler(MessageContext synCtx) {

@@ -65,4 +65,9 @@ public class CommentMediator extends AbstractMediator {
     public boolean isContentAware() {
         return false;
     }
+
+    @Override
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog) {
+        //Do not report statistic for comment mediator
+    }
 }

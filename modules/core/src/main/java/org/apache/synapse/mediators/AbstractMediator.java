@@ -28,6 +28,8 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 
 import java.util.ArrayList;
@@ -424,6 +426,29 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     public void setCommentsList(List<String> commentsList) {
         this.commentsList = commentsList;
+    }
+
+    /**
+     * Returns name of the mediator
+     *
+     * @return mediator name
+     */
+    public String getMediatorName() {
+        String cls = getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
+    }
+
+    /**
+     * Report statistics for the mediator
+     *
+     * @param messageContext message context
+     * @param parentName     sequence name that mediator belong to
+     * @param isCreateLog    whether this is a start or end of a mediator execution
+     */
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        RuntimeStatisticCollector
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, false, false);
     }
 
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint){this.flowPoint=flowPoint;}
