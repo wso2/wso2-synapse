@@ -40,15 +40,9 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * This is the MessageContext implementation that synapse uses almost all the time because Synapse
@@ -620,5 +614,43 @@ public class Axis2MessageContext implements MessageContext {
 
     public int getMediatorPosition() {
         return mediatorPosition;
+    }
+
+    public String getMessageString() {
+
+        StringBuffer sb = new StringBuffer();
+        String separator = "\n";
+
+        if (getTo() != null) {
+            sb.append("To : ").append(getTo().getAddress());
+        } else {
+            sb.append("To : ");
+        }
+
+        if (getFrom() != null) {
+            sb.append(separator).append("From : ").append(getFrom().getAddress());
+        }
+
+        if (getWSAAction() != null) {
+            sb.append(separator).append("WSAction : ").append(getWSAAction());
+        }
+
+        if (getSoapAction() != null) {
+            sb.append(separator).append("SOAPAction : ").append(getSoapAction());
+        }
+
+        if (getReplyTo() != null) {
+            sb.append(separator).append("ReplyTo : ").append(getReplyTo().getAddress());
+        }
+
+        if (getMessageID() != null) {
+            sb.append(separator).append("MessageID : ").append(getMessageID());
+        }
+
+        if (getEnvelope() != null) {
+            sb.append(separator).append("Body : ").append(getEnvelope().toString());
+        }
+
+        return sb.toString();
     }
 }

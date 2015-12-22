@@ -29,6 +29,7 @@ import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.messageflowtracer.data.MessageFlowDataHolder;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
@@ -258,6 +259,13 @@ public interface SynapseEnvironment {
     public long getGlobalTimeout();
 
     /**
+     * Get message flow data holder for message flow tracing
+     *
+     * @return MessageFlowDataHolder instance
+     */
+    public MessageFlowDataHolder getMessageFlowDataHolder();
+
+    /**
      * Whether debugging is enabled in the environment.
      *
      * @return whether debugging is enabled in the environment
@@ -271,5 +279,4 @@ public interface SynapseEnvironment {
      * @return SynapseDebugManager of this synapse environment
      */
     public SynapseDebugManager getSynapseDebugManager();
-
 }

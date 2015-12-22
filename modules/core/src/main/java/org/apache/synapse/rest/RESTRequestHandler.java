@@ -49,6 +49,7 @@ public class RESTRequestHandler {
      * @return true if the message was dispatched to an API and false otherwise
      */
     public boolean process(MessageContext synCtx) {
+
         if (synCtx.isResponse()) {
             return dispatchToAPI(synCtx);
         }

@@ -28,6 +28,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
@@ -429,15 +430,20 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     }
 
     /**
-     * Returns name of the mediator
-     *
-     * @return mediator name
+     * Returns the name of the class of respective mediator. This was introduced to provide a unique way to get the
+     * mediator name because getType is implemented in different ways in different mediators (e.g.
+     * PayloadFactoryMediator)
+     * @return
      */
-    public String getMediatorName() {
+    public String getMediatorName(){
         String cls = getClass().getName();
         return cls.substring(cls.lastIndexOf(".") + 1);
     }
 
+
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, mediator.getMediatorName(), isStart);
+    }
     /**
      * Report statistics for the mediator
      *
@@ -464,5 +470,4 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public void setBreakPoint(boolean isBreakPoint){this.isBreakPoint=isBreakPoint;}
 
     public void setSkipEnabled(boolean isSkipEnabled){this.isSkipEnabled=isSkipEnabled;}
-
 }

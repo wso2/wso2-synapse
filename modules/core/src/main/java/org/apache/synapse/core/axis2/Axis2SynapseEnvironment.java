@@ -39,9 +39,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.messageflowtracer.data.MessageFlowDataHolder;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -122,6 +125,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
 
+    private MessageFlowDataHolder messageFlowDataHolder;
+
     /** Debug mode is enabled/disabled*/
     private boolean isDebugEnabled = false;
 
@@ -181,6 +186,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
 
+        messageFlowDataHolder = new MessageFlowDataHolder();
+
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
     }
@@ -212,7 +219,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     .init(synapseConfig, contextInformation.getSynapseDebugInterface(), this, true);
         }
     }
-
 
     public boolean injectMessage(final MessageContext synCtx) {
         try {
@@ -274,6 +280,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 if (log.isDebugEnabled()) {
                     log.debug("Response received for the Continuation Call service invocation");
                 }
+
+                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+                    MessageFlowTracingDataCollector.setEntryPoint(synCtx,
+                                                                  MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
+                                                                  synCtx.getMessageID());
+                }
+
                 return mediateFromContinuationStateStack(synCtx);
             }
 
@@ -348,6 +361,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     public void injectAsync(final MessageContext synCtx, SequenceMediator seq) {
 
+//        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
+//            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
+//        }
+
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
@@ -370,6 +387,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
+
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+            MessageFlowTracingDataCollector.setEntryPoint(synCtx,
+                                                          MessageFlowTracerConstants.ENTRY_TYPE_INBOUND_ENDPOINT +
+                                                          synCtx.getProperty("inbound.endpoint.name"),
+                                                          synCtx.getMessageID());
+        }
         boolean inboundStatistics = false;
         String inboundName = null;
         if (log.isDebugEnabled()) {
@@ -409,7 +433,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
             }
         }
-        
+
         // Following code is reached if the sequential==true or inbound is
         // reached max level
         RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
@@ -957,6 +981,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.error("Please provide existing sequence");
             return false;
         }
+
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                     + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
@@ -1056,6 +1081,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return true;
     }
 
+    public MessageFlowDataHolder getMessageFlowDataHolder(){
+        return this.messageFlowDataHolder;
+    }
+
     /**
      * method to get the reference to debug manager instance which manages debug capabilities in synapse
      * kept in environment level, made available who ever has access to message context will be able to
@@ -1091,5 +1120,4 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public void setDebugEnabled(boolean isDebugEnabled) {
         this.isDebugEnabled = isDebugEnabled;
     }
-
 }

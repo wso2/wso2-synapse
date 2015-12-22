@@ -152,7 +152,8 @@
 							org.apache.synapse.libraries.*,
 							org.apache.synapse.carbonext.*,
                             org.apache.synapse.continuation.*,
-                            org.apache.synapse.debug.*
+                            org.apache.synapse.debug.*,
+                            org.apache.synapse.messageflowtracer.*
                         </Export-Package>
 						<Import-Package>
 							!javax.xml.namespace,

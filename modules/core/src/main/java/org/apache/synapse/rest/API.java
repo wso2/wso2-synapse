@@ -26,6 +26,8 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -283,6 +285,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     }
 
     void process(MessageContext synCtx) {
+        String mediatorId = null;
+
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
 
@@ -290,6 +294,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
+
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+            if (!synCtx.isResponse()) {
+                MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
+                                                                      synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
+                                                              synCtx.getMessageID());
+                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
+            }
+        }
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
@@ -344,7 +357,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             return;
         }
 
-
         String path = RESTUtils.getFullRequestPath(synCtx);
         String subPath;
         if (versionStrategy.getVersionType().equals(VersionStrategyFactory.TYPE_URL)) {
@@ -392,6 +404,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             if (sequence != null) {
                 sequence.mediate(synCtx);
             }
+        }
+
+        if (!synCtx.isResponse()) {
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
         }
     }
 
