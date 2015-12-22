@@ -301,7 +301,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         }
 
         // get API log for this message and attach to the message context
-                ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
+        ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
 
         // Calculate REST_URL_POSTFIX from full request path
         String restURLPostfix = (String) synCtx.getProperty(RESTConstants.REST_FULL_REQUEST_PATH);
@@ -402,7 +402,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             }
         }
 
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
             if (!synCtx.isResponse()) {
                 MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
             }

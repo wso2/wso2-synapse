@@ -27,9 +27,9 @@ import java.util.Map;
  */
 public class MessageFlowDataHolder {
 
-    private static Map<String, List<MessageFlowComponentEntry>> componentInfo = new HashMap<String,
+    private Map<String, List<MessageFlowComponentEntry>> componentInfo = new HashMap<String,
             List<MessageFlowComponentEntry>>();
-    private static Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<String,
+    private Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<String,
             List<MessageFlowTraceEntry>>();
 
     /**

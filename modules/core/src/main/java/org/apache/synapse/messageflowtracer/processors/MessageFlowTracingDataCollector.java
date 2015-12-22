@@ -18,8 +18,10 @@
 package org.apache.synapse.messageflowtracer.processors;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.messageflowtracer.data.MessageFlowComponentEntry;
+import org.apache.synapse.messageflowtracer.data.MessageFlowComponentId;
 import org.apache.synapse.messageflowtracer.data.MessageFlowDataEntry;
 import org.apache.synapse.messageflowtracer.data.MessageFlowTraceEntry;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
@@ -42,14 +44,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class MessageFlowTracingDataCollector {
 
-
-    private static int queueSize;
     private static boolean isMessageFlowTracingEnabled;
     private static Date date;
     private static MessageDataCollector tracingDataCollector;
     private static MessageFlowTracingDataConsumer tracingDataConsumer;
 
     public static void init() {
+        int queueSize;
         isMessageFlowTracingEnabled = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue
                 (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_ENABLED, MessageFlowTracerConstants
                         .DEFAULT_TRACE_ENABLED));
@@ -113,20 +114,23 @@ public class MessageFlowTracingDataCollector {
 
     /**
      * Collect component information from mediation and store it as a MessageFlowComponentEntry instance in the queue
-     * @param synCtx Synapse Message Context
-     * @param componentId Unique ID for the Component/Mediator
+     *
+     * @param synCtx        Synapse Message Context
+     * @param componentId   Unique ID for the Component/Mediator
      * @param componentName Name od the component/Mediator
-     * @param start True if it is a start of the flow for the particular component/mediator, False otherwise
+     * @param start         True if it is a start of the flow for the particular component/mediator, False otherwise
      */
     private static void addComponentInfoEntry(MessageContext synCtx, String componentId, String componentName,
                                               boolean start) {
         Set<String> propertySet = synCtx.getPropertyKeySet();
-        Map<String,String> propertyMap = new HashMap<String, String>();
+        Map<String, String> propertyMap = new HashMap<String, String>();
 
         for (String property : propertySet) {
             Object propertyValue = synCtx.getProperty(property);
             if (propertyValue instanceof String) {
-                propertyMap.put(property, (String)propertyValue);
+                propertyMap.put(property, (String) propertyValue);
+            } else if (propertyValue instanceof Integer) {
+                propertyMap.put(property, String.valueOf(propertyValue));
             }
         }
 
@@ -140,45 +144,63 @@ public class MessageFlowTracingDataCollector {
 
     /**
      * Update mediation tracing information
-     * @param msgCtx Synapse message context
-     * @param componentId Component/Mediator ID
+     *
+     * @param msgCtx       Synapse message context
+     * @param componentId  Component/Mediator ID
      * @param mediatorName Component/Mediator Name
-     * @param isStart True if it is a start of the flow for the particular component/mediator, False otherwise
+     * @param isStart      True if it is a start of the flow for the particular component/mediator, False otherwise
      * @return String ID for the mediator/component generated
      */
     public static String setTraceFlowEvent(MessageContext msgCtx, String componentId, String mediatorName,
-                                                      boolean isStart) {
-        String newComponentId = MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
+                                           boolean isStart) {
+        String updatedComponentId = null;
         if (isStart) {
-            newComponentId = UUID.randomUUID().toString();
-            addComponentInfoEntry(msgCtx, newComponentId, mediatorName, true);
-            addComponentToMessageFlow(newComponentId, msgCtx);
+            MessageFlowComponentId messageFlowComponentId = (MessageFlowComponentId) (msgCtx.getProperty
+                    (MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID));
+            updatedComponentId = messageFlowComponentId.getUpdatedId();
+            addComponentInfoEntry(msgCtx, updatedComponentId, mediatorName, true);
+            addComponentToMessageFlow(updatedComponentId, msgCtx);
             addFlowInfoEntry(msgCtx);
         } else {
             addComponentInfoEntry(msgCtx, componentId, mediatorName, false);
         }
-        return newComponentId;
+        return updatedComponentId;
     }
 
     /**
      * Set properties of the entry point for the mediation flow such as API, Proxy, Sequence etc.
-     * @param synCtx Synapse Message Context
+     *
+     * @param synCtx    Synapse Message Context
      * @param entryType Type of the entry (API/Proxy etc)
      * @param messageID Unique ID for the message
      */
-    public static void setEntryPoint(MessageContext synCtx, String entryType, String messageID){
+    public static void setEntryPoint(MessageContext synCtx, String entryType, String messageID) {
         if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, messageID);
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, entryType);
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID,
+                               new MessageFlowComponentId(MessageFlowTracerConstants.INITIAL_FLOW_INCREMENT_ID));
+            synCtx.setTracingState(SynapseConstants.TRACING_ON);
         }
     }
 
     /**
      * States whether message flow tracing is enabled
+     *
      * @return True if enabled, False otherwise
      */
-    public static boolean isMessageFlowTracingEnabled(){
+    public static boolean isMessageFlowTracingEnabled() {
         return isMessageFlowTracingEnabled;
+    }
+
+    /**
+     * States whether message flow tracing is enabled in given message context
+     *
+     * @param msgCtx Message Context to validate
+     * @return True if enabled, False otherwise
+     */
+    public static boolean isMessageFlowTracingEnabled(MessageContext msgCtx) {
+        return (msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
     }
 
     /**
@@ -191,12 +213,12 @@ public class MessageFlowTracingDataCollector {
             List<String> messageFlowTrace = (List<String>) msgCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
             List<String> newMessageFlow = new ArrayList<String>();
             for (String flowTrace : messageFlowTrace) {
-                newMessageFlow.add(flowTrace + componentId + " -> ");
+                newMessageFlow.add(flowTrace + componentId + MessageFlowTracerConstants.FLOW_PATH_SEPARATOR);
             }
             msgCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlow);
         } else {
             List<String> messageFlowTrace = new ArrayList<String>();
-            messageFlowTrace.add(componentId + " -> ");
+            messageFlowTrace.add(componentId + MessageFlowTracerConstants.FLOW_PATH_SEPARATOR);
             msgCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, messageFlowTrace);
         }
     }

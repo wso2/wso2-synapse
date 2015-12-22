@@ -117,7 +117,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         //trace message flow
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled() && traceOn) {
             if (mc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
                 MessageFlowTracingDataCollector.setEntryPoint(synCtx, (String) mc.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE), (String) mc.getProperty
@@ -236,7 +236,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+            if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
                 MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
             }
         }

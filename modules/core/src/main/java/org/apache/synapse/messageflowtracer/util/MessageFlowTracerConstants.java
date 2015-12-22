@@ -19,12 +19,15 @@ package org.apache.synapse.messageflowtracer.util;
 
 public class MessageFlowTracerConstants {
 
+    //message context properties
     public static final String MESSAGE_FLOW_ID = "MESSAGE_FLOW_ID";
     public static final String MESSAGE_FLOW = "MESSAGE_FLOW";
     public static final String MESSAGE_FLOW_ENTRY_TYPE = "MESSAGE_FLOW_ENTRY_TYPE";
+    public static final String MESSAGE_FLOW_INCREMENT_ID = "MESSAGE_FLOW_INCREMENT_ID";
+    public static final String MESSAGE_FLOW_TRACE_STATUS = "MESSAGE_FLOW_TRACE_STATUS";
+    //configurations
     public static final String MESSAGE_FLOW_TRACE_ENABLED = "message.flow.trace.enabled";
     public static final String MESSAGE_FLOW_TRACE_QUEUE_SIZE = "message.flow.tracer.queue.size";
-
     //Entry Types
     public  static final String ENTRY_TYPE_MAIN_SEQ = "Main Sequence:";
     public  static final String ENTRY_TYPE_PROXY_SERVICE = "Proxy:";
@@ -35,4 +38,8 @@ public class MessageFlowTracerConstants {
     public static final String DEFAULT_TRACE_ENABLED = "false";
 
     public static final String DEFAULT_COMPONENT_ID = "";
+
+    public static final String FLOW_PATH_SEPARATOR = ">";
+
+    public static final int INITIAL_FLOW_INCREMENT_ID = 0;
 }
