@@ -386,7 +386,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     getInboundEndpoint((String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME));
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
-                if(inboundEndpoint.getAspectConfiguration() != null) {
+                if (inboundEndpoint.getAspectConfiguration() != null) {
                     inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
                 }
                 inboundName = (String) synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
@@ -591,8 +591,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         return new OverflowBlob(numberOfChunks, chunkSize, tempPrefix, tempSuffix);
     }
-
-
 
     /**
      * This method returns the <code>StatisticsCollector</code> responsible for
@@ -949,7 +947,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (inboundEndpoint != null) {
                 CustomLogSetter.getInstance().setLogAppender(inboundEndpoint.getArtifactContainerName());
                 inboundName =(String) smc.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
-                if(inboundEndpoint.getAspectConfiguration() != null) {
+                if (inboundEndpoint.getAspectConfiguration() != null) {
                     inboundStatistics = inboundEndpoint.getAspectConfiguration().isStatisticsEnable();
                 }
             }
@@ -968,7 +966,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }
         try {
-            if(inboundName != null){
+            if (inboundName != null) {
                 RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, true);
             }
             seq.mediate(smc);
@@ -1005,8 +1003,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 smc.getServiceLog().error(msg, e);
             }
             return false;
-        }finally {
-            if(inboundName != null){
+        } finally {
+            if (inboundName != null) {
                 RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, false);
             }
         }
