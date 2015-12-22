@@ -20,6 +20,7 @@ package org.apache.synapse.messageflowtracer.processors;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.messageflowtracer.data.MessageFlowComponentEntry;
 import org.apache.synapse.messageflowtracer.data.MessageFlowComponentId;
 import org.apache.synapse.messageflowtracer.data.MessageFlowDataEntry;
@@ -134,12 +135,27 @@ public class MessageFlowTracingDataCollector {
             }
         }
 
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+        Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headers != null && headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            Set<String> axis2PropertySet = headersMap.keySet();
+            for (String entry : axis2PropertySet) {
+                if (headersMap.get(entry) instanceof String) {
+                    propertyMap.put(entry, (String)headersMap.get(entry));
+                }
+            }
+        }
+
         String payload = synCtx.getMessageString();
         tracingDataCollector.enQueue(new MessageFlowComponentEntry(synCtx.getProperty(MessageFlowTracerConstants
                                                                                               .MESSAGE_FLOW_ID)
-                                                                           .toString(), componentId, componentName, synCtx.isResponse(),
-                                                                   start, new Timestamp(date.getTime()).toString(), propertyMap,
-                                                                   payload, synCtx.getEnvironment()));
+                                                                           .toString(), componentId, componentName,
+                                                                   synCtx.isResponse(), start,
+                                                                   new Timestamp(date.getTime()).toString(),
+                                                                   propertyMap, payload, synCtx.getEnvironment()));
     }
 
     /**

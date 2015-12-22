@@ -27,10 +27,8 @@ import java.util.Map;
  */
 public class MessageFlowDataHolder {
 
-    private Map<String, List<MessageFlowComponentEntry>> componentInfo = new HashMap<String,
-            List<MessageFlowComponentEntry>>();
-    private Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<String,
-            List<MessageFlowTraceEntry>>();
+    private Map<String, List<MessageFlowComponentEntry>> componentInfo = new HashMap<>();
+    private Map<String, List<MessageFlowTraceEntry>> flowInfo = new HashMap<>();
 
     /**
      * Adds MessageFlowTraceEntry to the store
@@ -39,7 +37,7 @@ public class MessageFlowDataHolder {
     public void addFlowInfoEntry(MessageFlowTraceEntry messageFlowTraceEntry) {
         List<MessageFlowTraceEntry> traceList = flowInfo.get(messageFlowTraceEntry.getMessageId());
         if (traceList == null) {
-            traceList = new ArrayList<MessageFlowTraceEntry>();
+            traceList = new ArrayList<>();
             flowInfo.put(messageFlowTraceEntry.getMessageId(), traceList);
         }
         traceList.add(messageFlowTraceEntry);
@@ -52,7 +50,7 @@ public class MessageFlowDataHolder {
     public void addComponentInfoEntry(MessageFlowComponentEntry messageFlowComponentEntry) {
         List<MessageFlowComponentEntry> componentList = componentInfo.get(messageFlowComponentEntry.getMessageId());
         if (componentList == null) {
-            componentList = new ArrayList<MessageFlowComponentEntry>();
+            componentList = new ArrayList<>();
             componentInfo.put(messageFlowComponentEntry.getMessageId(), componentList);
         }
         componentList.add(messageFlowComponentEntry);

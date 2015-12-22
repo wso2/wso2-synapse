@@ -32,6 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -292,6 +293,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
 
+        String componentId = null;
+
+
+
         if (!initialized) {
             //can't send to a non-initialized endpoint. This is a program fault
             throw new IllegalStateException("not initialized, " +
@@ -356,7 +361,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         evaluateProperties(synCtx);
 
-
         // if the envelope preserving set build the envelope
         MediatorProperty preserveEnv = getProperty(SynapseConstants.PRESERVE_ENVELOPE);
         if (preserveEnv != null && JavaUtils.isTrueExplicitly(preserveEnv.getValue() != null ?
@@ -368,8 +372,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             synCtx.getEnvelope().build();
         }
 
+        if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+            componentId = this.setTraceFlow(synCtx, componentId, getReportingName(), true);
+        }
+
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
+
+        if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+            this.setTraceFlow(synCtx, componentId, getReportingName(), false);
+        }
     }
 
     /**
@@ -783,5 +795,17 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void logSetter() {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
+    }
+
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, String mediatorName, boolean isStart) {
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, mediatorName, isStart);
+    }
+
+    public String getReportingName() {
+        if (this.endpointName != null) {
+            return this.endpointName;
+        } else {
+            return SynapseConstants.ANONYMOUS_ENDPOINT;
+        }
     }
 }
