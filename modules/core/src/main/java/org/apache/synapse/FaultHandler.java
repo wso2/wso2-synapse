@@ -22,7 +22,6 @@ package org.apache.synapse;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.endpoints.AbstractEndpoint;
 
 import java.util.Stack;
 import java.io.StringWriter;
