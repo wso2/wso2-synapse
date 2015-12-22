@@ -215,6 +215,10 @@ public class SimpleURLRegistry extends AbstractRegistry implements Registry {
         //TODO
     }
 
+    public void newNonEmptyResource(String path, boolean isDirectory, String contentType, String content, String propertyName) {
+        //TODO
+    }
+
     public void updateResource(String path, Object value) {
         //TODO
     }

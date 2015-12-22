@@ -237,13 +237,14 @@ public abstract class ThrottleContext {
                         if (o instanceof CallerContext) { // In the case nextAccessTime is unique
                             CallerContext c = ((CallerContext) o);
                             String key = c.getId();
+                            String role = c.getRoleId();
                             if (key != null) {
                                 if (dataHolder != null && keyPrefix != null) {
                                     c = dataHolder.getCallerContext(keyPrefix + key);
                                 }
                                 if (c != null) {
                                     c.cleanUpCallers(
-                                            this.throttleConfiguration.getCallerConfiguration(key)
+                                            this.throttleConfiguration.getCallerConfiguration(role)
                                             , this
                                             , time);
                                 }
@@ -254,13 +255,14 @@ public abstract class ThrottleContext {
                             for (Iterator ite = callers.iterator(); ite.hasNext(); ) {
                                 CallerContext c = (CallerContext) ite.next();
                                 String key = c.getId();
+                                String role = c.getRoleId();
                                 if (key != null) {
                                     if (dataHolder != null && keyPrefix != null) {
                                         c = (CallerContext) dataHolder.getCallerContext(keyPrefix + key);
                                     }
                                     if (c != null) {
                                         c.cleanUpCallers(
-                                                this.throttleConfiguration.getCallerConfiguration(key)
+                                                this.throttleConfiguration.getCallerConfiguration(role)
                                                 , this
                                                 , time);
                                     }
@@ -421,6 +423,9 @@ public abstract class ThrottleContext {
     public void cleanupCallers(long time) {
 
         SortedMap map = ((ConcurrentNavigableMap) callersMap).headMap(new Long(time));
+        if (log.isDebugEnabled()) {
+            log.debug("CallerMap Size before cleanup process : " + map.size());
+        }
         if (map != null && map.size() > 0) {
             for (Iterator it = map.values().iterator(); it.hasNext(); ) {
                 Object o = it.next();
@@ -428,13 +433,14 @@ public abstract class ThrottleContext {
                     if (o instanceof CallerContext) { // In the case nextAccessTime is unique
                         CallerContext c = ((CallerContext) o);
                         String key = c.getId();
+                        String role = c.getRoleId();
                         if (key != null) {
                             if (dataHolder != null && keyPrefix != null) {
                                 c = dataHolder.getCallerContext(keyPrefix + key);
                             }
                             if (c != null) {
                                 c.cleanUpCallers(
-                                        this.throttleConfiguration.getCallerConfiguration(key), this, time);
+                                        this.throttleConfiguration.getCallerConfiguration(role), this, time);
                             }
                         }
                     }
@@ -444,19 +450,23 @@ public abstract class ThrottleContext {
                         while (ite.hasNext()) {
                             CallerContext c = (CallerContext) ite.next();
                             String key = c.getId();
+                            String role = c.getRoleId();
                             if (key != null) {
                                 if (dataHolder != null && keyPrefix != null) {
                                     c = (CallerContext) dataHolder.getCallerContext(keyPrefix + key);
                                 }
                                 if (c != null) {
                                     c.cleanUpCallers(
-                                            this.throttleConfiguration.getCallerConfiguration(key), this, time);
+                                            this.throttleConfiguration.getCallerConfiguration(role), this, time);
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("CallerMap Size after cleanup process : " + map.size());
         }
     }
 }

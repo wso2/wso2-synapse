@@ -88,6 +88,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         String format = formatRaw;
         return mediate(synCtx, format);
     }

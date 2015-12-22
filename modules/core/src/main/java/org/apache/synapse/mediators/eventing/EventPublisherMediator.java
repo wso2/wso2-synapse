@@ -29,6 +29,13 @@ public class EventPublisherMediator extends AbstractMediator {
     private String eventSourceName = null;
 
     public boolean mediate(MessageContext synCtx) {
+
+        if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (super.divertMediationRoute(synCtx)) {
+                return true;
+            }
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Mediation for Event Publisher started");
         }

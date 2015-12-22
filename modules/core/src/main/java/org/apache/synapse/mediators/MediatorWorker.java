@@ -22,6 +22,7 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.debug.SynapseDebugManager;
 
 /**
  * This class will be used as the executer for the injectAsync method for the
@@ -66,6 +67,13 @@ public class MediatorWorker implements Runnable {
      */
     public void run() {
         try {
+
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.acquireMediationFlowLock();
+                debugManager.advertiseMediationFlowStartPoint(synCtx);
+            }
+
             seq.mediate(synCtx);
             //((Axis2MessageContext)synCtx).getAxis2MessageContext().getEnvelope().discard();
 
@@ -98,6 +106,12 @@ public class MediatorWorker implements Runnable {
             log.error(msg, e);
             if (synCtx.getServiceLog() != null) {
                 synCtx.getServiceLog().error(msg, e);
+            }
+        } finally {
+            if (synCtx.getEnvironment().isDebugEnabled()) {
+                SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
+                debugManager.advertiseMediationFlowTerminatePoint(synCtx);
+                debugManager.releaseMediationFlowLock();
             }
         }
         synCtx = null;

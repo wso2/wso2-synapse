@@ -146,14 +146,12 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     writeFile(msgCtx, vfsOutInfo);
                 }
             }
-        } catch (AxisFault axisFault) {
-            throw axisFault;
-        } catch (Exception e) {
-            handleException("Exception occurred while sending output to the destination" + e.getMessage(), e);
         } finally {
             if (lockObject != null && (lockObject.decrementAndGetUsers() == 0)) {
                 lockingObjects.remove(baseUri);
-                log.debug("locking object removed for after Synchronous write|MapSize:" + lockingObjects.size());
+                if (log.isDebugEnabled()) {
+                    log.debug("locking object removed for after Synchronous write|MapSize:" + lockingObjects.size());
+                }
             }
         }
     }
