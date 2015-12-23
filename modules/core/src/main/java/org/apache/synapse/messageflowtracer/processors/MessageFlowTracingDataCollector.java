@@ -195,7 +195,7 @@ public class MessageFlowTracingDataCollector {
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, entryType);
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID,
                                new MessageFlowComponentId(MessageFlowTracerConstants.INITIAL_FLOW_INCREMENT_ID));
-            synCtx.setTracingState(SynapseConstants.TRACING_ON);
+            synCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
         }
     }
 
@@ -215,7 +215,7 @@ public class MessageFlowTracingDataCollector {
      * @return True if enabled, False otherwise
      */
     public static boolean isMessageFlowTracingEnabled(MessageContext msgCtx) {
-        return (msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
+        return (msgCtx.getMessageFlowTracingState() == SynapseConstants.TRACING_ON);
     }
 
     /**

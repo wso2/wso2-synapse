@@ -367,4 +367,11 @@ public class TestMessageContext implements MessageContext {
     public String getMessageString() {
         return null;
     }
+
+    public void setMessageFlowTracingState(int tracingState){
+    }
+
+    public int getMessageFlowTracingState(){
+        return SynapseConstants.TRACING_OFF;
+    }
 }

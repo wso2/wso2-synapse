@@ -116,6 +116,11 @@ public class Axis2MessageContext implements MessageContext {
      */
     private int mediatorPosition = 0;
 
+    /**
+     * Attribute of MC stating the message flow tracing state of the message
+     */
+    private int messageFlowTracingState = SynapseConstants.TRACING_UNSET;
+
     public SynapseConfiguration getConfiguration() {
         return synCfg;
     }
@@ -139,6 +144,7 @@ public class Axis2MessageContext implements MessageContext {
     public void setContextEntries(Map<String, Object> entries) {
         this.localEntries.putAll(entries);
     }
+
 
     public Mediator getMainSequence() {
         Object o = localEntries.get(SynapseConstants.MAIN_SEQUENCE_KEY);
@@ -652,5 +658,15 @@ public class Axis2MessageContext implements MessageContext {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public int getMessageFlowTracingState() {
+        return messageFlowTracingState;
+    }
+
+    @Override
+    public void setMessageFlowTracingState(int messageFlowTracingState) {
+        this.messageFlowTracingState = messageFlowTracingState;
     }
 }
