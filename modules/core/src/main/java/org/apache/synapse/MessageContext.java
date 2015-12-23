@@ -436,4 +436,16 @@ public OMElement getFormat(String key);
      * @return String with message property information
      */
     public String getMessageString();
+
+    /**
+     * This is used to check whether the message flow tracing enabled for current message context
+     * @return indicate whether message flow tracing is on, off or unset
+     */
+    public int getMessageFlowTracingState();
+
+    /**
+     * This is used to set the value of message flow tracing enable for a particular message
+     * @param tracingState Set whether the message flowtracing is enabled or not
+     */
+    public void setMessageFlowTracingState(int tracingState);
 }

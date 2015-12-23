@@ -39,6 +39,7 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -722,5 +723,12 @@ public class ScriptMessageContext implements MessageContext {
 
     public String getMessageString(){
         return null;
+    }
+
+    public void setMessageFlowTracingState(int state){
+    }
+
+    public int getMessageFlowTracingState(){
+        return SynapseConstants.TRACING_OFF;
     }
 }

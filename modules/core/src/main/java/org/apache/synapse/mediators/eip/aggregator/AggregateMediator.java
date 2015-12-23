@@ -469,7 +469,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 					destinationStatRecord =
 					                        (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
                     if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)){
-                        newCtx.setTracingState(SynapseConstants.TRACING_ON);
+                        newCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
                     }
                 } catch (AxisFault axisFault) {
                     handleException("Error creating a copy of the message", axisFault, synCtx);

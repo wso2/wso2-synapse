@@ -277,7 +277,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false);
 
         if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)){
-            newCtx.setTracingState(SynapseConstants.TRACING_ON);
+            newCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
         }
 
 		StatisticsRecord statRecord =
