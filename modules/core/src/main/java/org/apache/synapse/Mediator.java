@@ -90,4 +90,27 @@ public interface Mediator extends SynapseArtifact {
      * @return short description of the artifact
      */
     public String getShortDescription();
+
+    /**
+     * Returns name of the mediator class. This was introduced due to that getType is not uniquely implemented for
+     * all mediators to get the name.
+     * @return a String of the mediator class name
+     */
+    public String getMediatorName();
+
+    /**
+     * Set Trace flow information from mediators
+     *
+     * @param msgCtx     MessageContext of the mediator
+     * @param mediatorId Mediator/component id
+     * @param mediator   Mediator instance
+     * @param isStart    Is start of mediation
+     * @return Generated unique ID
+     */
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart);
+
+    /**
+     * Report Statistics for the Mediator
+     */
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog);
 }

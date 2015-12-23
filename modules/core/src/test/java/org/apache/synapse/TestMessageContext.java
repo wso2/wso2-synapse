@@ -360,4 +360,11 @@ public class TestMessageContext implements MessageContext {
 			return m;
 		}
 	}
+
+    public void addComponentToMessageFlow(String mediatorId){
+    }
+
+    public String getMessageString() {
+        return null;
+    }
 }

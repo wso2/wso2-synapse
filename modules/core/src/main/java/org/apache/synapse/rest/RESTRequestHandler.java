@@ -22,8 +22,9 @@ import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.DefaultStrategy;
 
 import java.util.*;
@@ -48,6 +49,7 @@ public class RESTRequestHandler {
      * @return true if the message was dispatched to an API and false otherwise
      */
     public boolean process(MessageContext synCtx) {
+
         if (synCtx.isResponse()) {
             return dispatchToAPI(synCtx);
         }
@@ -94,17 +96,25 @@ public class RESTRequestHandler {
                 if (log.isDebugEnabled()) {
                     log.debug("Located specific API: " + api.getName() + " for processing message");
                 }
-                api.process(synCtx);
+	            apiProcess(synCtx, api);
                 return true;
             }
         }
 
         if (defaultAPI != null && defaultAPI.canProcess(synCtx)) {
             defaultAPI.setLogSetterValue();
-            defaultAPI.process(synCtx);
+	        apiProcess(synCtx, defaultAPI);
             return true;
         }
 
-        return false;
-    }
+		return false;
+	}
+
+	private void apiProcess(MessageContext synCtx, API api) {
+		if (!synCtx.isResponse()) {
+			RuntimeStatisticCollector
+					.reportApiStatistics(synCtx, api.getAPIName(), api.getAspectConfiguration());
+		}
+		api.process(synCtx);
+	}
 }

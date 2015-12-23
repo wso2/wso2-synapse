@@ -716,4 +716,11 @@ public class ScriptMessageContext implements MessageContext {
 	    // TODO Auto-generated method stub
 	    return null;
     }
+
+    public void addComponentToMessageFlow(String mediatorId){
+    }
+
+    public String getMessageString(){
+        return null;
+    }
 }

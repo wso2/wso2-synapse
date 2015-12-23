@@ -46,6 +46,7 @@ public class LoopBackMediator extends AbstractMediator {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
         //If message flow is inflow this will be executed.
         if (!synCtx.isResponse()) {
 
@@ -64,6 +65,7 @@ public class LoopBackMediator extends AbstractMediator {
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Loopback Mediator");
         }
+
         return false;
     }
 

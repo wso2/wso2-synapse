@@ -26,6 +26,10 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
+import org.apache.synapse.aspects.AspectConfigurable;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -39,7 +43,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.util.*;
 
-public class API extends AbstractRESTProcessor implements ManagedLifecycle {
+public class API extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable {
 
     private String host;
     private int port = -1;
@@ -61,6 +65,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     private String artifactContainerName;
 
     private boolean isEdited = false;
+
+    private AspectConfiguration aspectConfiguration;
 
     public API(String name, String context) {
         super(name);
@@ -279,6 +285,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
     }
 
     void process(MessageContext synCtx) {
+        String mediatorId = null;
+
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
 
@@ -286,6 +294,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
+
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+            if (!synCtx.isResponse()) {
+                MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
+                                                                      synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
+                                                              synCtx.getMessageID());
+                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
+            }
+        }
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
@@ -340,7 +357,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             return;
         }
 
-
         String path = RESTUtils.getFullRequestPath(synCtx);
         String subPath;
         if (versionStrategy.getVersionType().equals(VersionStrategyFactory.TYPE_URL)) {
@@ -388,6 +404,10 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
             if (sequence != null) {
                 sequence.mediate(synCtx);
             }
+        }
+
+        if (!synCtx.isResponse()) {
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
         }
     }
 
@@ -503,5 +523,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle {
 
         }
 
+    }
+
+    @Override
+    public void configure(AspectConfiguration aspectConfiguration) {
+        this.aspectConfiguration = aspectConfiguration;
+    }
+
+    @Override
+    public AspectConfiguration getAspectConfiguration() {
+        return aspectConfiguration;
     }
 }

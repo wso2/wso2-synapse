@@ -16,7 +16,9 @@
 
 package org.apache.synapse.mediators.builtin;
 
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 
 /**
@@ -64,5 +66,14 @@ public class CommentMediator extends AbstractMediator {
     @Override
     public boolean isContentAware() {
         return false;
+    }
+
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+        return MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
+    }
+
+    @Override
+    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog) {
+        //Do not report statistic for comment mediator
     }
 }

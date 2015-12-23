@@ -37,6 +37,7 @@ public class RespondMediator extends AbstractMediator{
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("End : Respond Mediator");
         }
+
         return false;
     }
 
