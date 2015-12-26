@@ -23,11 +23,13 @@ import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.messageflowtracer.data.MessageFlowDataHolder;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
@@ -110,6 +112,14 @@ public interface SynapseEnvironment {
      * @return Returns the <code>StatisticsCollector</code>
      */
     public StatisticsCollector getStatisticsCollector();
+
+    /**
+     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
+     * instance.
+     *
+     * @return completedStatisticStore for this synapse instance
+     */
+    public CompletedStatisticStore getCompletedStatisticStore();
 
     /**
      * To set the StatisticsCollector to the environment
@@ -249,6 +259,13 @@ public interface SynapseEnvironment {
     public long getGlobalTimeout();
 
     /**
+     * Get message flow data holder for message flow tracing
+     *
+     * @return MessageFlowDataHolder instance
+     */
+    public MessageFlowDataHolder getMessageFlowDataHolder();
+
+    /**
      * Whether debugging is enabled in the environment.
      *
      * @return whether debugging is enabled in the environment
@@ -262,5 +279,4 @@ public interface SynapseEnvironment {
      * @return SynapseDebugManager of this synapse environment
      */
     public SynapseDebugManager getSynapseDebugManager();
-
 }

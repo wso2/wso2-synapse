@@ -20,10 +20,12 @@
 package org.apache.synapse.mediators.filters;
 
 import org.apache.synapse.ContinuationState;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 
@@ -113,6 +115,13 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
 
     public void init(SynapseEnvironment se) {
         super.init(se);
+    }
+
+    public String setTraceFlow(MessageContext msgCtx, String componentId, Mediator mediator, boolean isStart) {
+        if(test(msgCtx)){
+            return super.setTraceFlow(msgCtx, componentId, mediator, isStart);
+        }
+        return MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
     }
 
 }

@@ -32,7 +32,6 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -133,7 +132,6 @@ public class FilterMediator extends AbstractListMediator implements
 
         boolean result = false;
         if (test(synCtx)) {
-
             if (thenKey != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -167,11 +165,8 @@ public class FilterMediator extends AbstractListMediator implements
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
-
             }
-
         } else {
-
             if (elseKey != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {

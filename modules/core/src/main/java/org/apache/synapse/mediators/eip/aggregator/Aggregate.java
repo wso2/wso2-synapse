@@ -275,4 +275,5 @@ public class Aggregate extends TimerTask {
     public void setCompleted(boolean completed) {
         this.completed = completed;
     }
+
 }

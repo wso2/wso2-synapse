@@ -30,7 +30,6 @@ import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +114,6 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
                 return result;
-
             } else {
                 for (int i = 0; i < cases.size(); i++) {
                     SwitchCase swCase = cases.get(i);
@@ -153,7 +151,6 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
-
         synLog.traceOrDebug("End : Switch mediator");
         return true;
     }
