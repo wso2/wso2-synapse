@@ -479,7 +479,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             synapseInMessageContext.setTo(
                 new EndpointReference(AddressingConstants.Final.WSA_ANONYMOUS_URL));
             synapseInMessageContext.setTracingState(synapseOutMsgCtx.getTracingState());
-
+            synapseInMessageContext.setMessageFlowTracingState(synapseOutMsgCtx.getMessageFlowTracingState());
             // set the properties of the original MC to the new MC
 
             for (Object key : synapseOutMsgCtx.getPropertyKeySet()) {
