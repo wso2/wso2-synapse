@@ -80,8 +80,8 @@ public class TemplateDebugUtil {
                     }
                 } else {
                     if (((AbstractMediator) current_mediator).isBreakPoint()) {
-                        ((AbstractMediator) current_mediator).setBreakPoint(false);
                         ((AbstractMediator) current_mediator).unregisterMediationFlowPoint();
+                        ((AbstractMediator) current_mediator).setBreakPoint(false);
                         if (log.isDebugEnabled()) {
                             log.debug("Unregistered breakpoint at mediator position " + logMediatorPosition(breakPoint) +
                                     " for Template key " + breakPoint.getKey());
@@ -183,8 +183,8 @@ public class TemplateDebugUtil {
                     }
                 } else {
                     if (((AbstractMediator) current_mediator).isSkipEnabled()) {
-                        ((AbstractMediator) current_mediator).setSkipEnabled(false);
                         ((AbstractMediator) current_mediator).unregisterMediationFlowPoint();
+                        ((AbstractMediator) current_mediator).setSkipEnabled(false);
                         if (log.isDebugEnabled()) {
                             log.debug("Unregistered skip at mediator position " + logMediatorPosition(skipPoint) +
                                     " for Template key " + skipPoint.getKey());
