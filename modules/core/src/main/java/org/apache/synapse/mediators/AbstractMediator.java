@@ -489,5 +489,5 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public void setSkipEnabled(boolean isSkipEnabled) {
         this.isSkipEnabled = isSkipEnabled;
     }
-    
+
 }
