@@ -26,9 +26,7 @@ import org.apache.synapse.debug.constructs.SynapseMediationComponent;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import org.apache.synapse.debug.constructs.SynapseSequenceType;
 import org.apache.synapse.debug.constructs.APIMediationFlowPoint;
-import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.mediators.template.InvokeMediator;
 import org.apache.synapse.rest.API;
 import org.apache.synapse.rest.Resource;
 
@@ -81,7 +79,19 @@ public class APIDebugUtil {
         }
         Resource[] resource_array = api.getResources();
         for (int counter = 0; counter < resource_array.length; counter++) {
-            if (mapping.equals(resource_array[counter].getDispatcherHelper().getString())) {
+            if (resource_array[counter].getDispatcherHelper() != null && mapping != null) {
+                if (mapping.equals(resource_array[counter].getDispatcherHelper().getString())) {
+                    for (String m1 : resource_array[counter].getMethods()) {
+                        if (m1.equals(method)) {
+                            api_resource = resource_array[counter];
+                            break;
+                        }
+                    }
+                    if (api_resource != null) {
+                        break;
+                    }
+                }
+            } else if (resource_array[counter].getDispatcherHelper() == null && mapping == null) {
                 for (String m1 : resource_array[counter].getMethods()) {
                     if (m1.equals(method)) {
                         api_resource = resource_array[counter];
@@ -114,18 +124,7 @@ public class APIDebugUtil {
         }
         if (seqMediator != null) {
             Mediator current_mediator = null;
-            for (int counter = 0; counter < position.length; counter++) {
-                if (counter == 0) {
-                    current_mediator = ((AbstractListMediator) seqMediator).getChild(position[counter]);
-                }
-                if (current_mediator != null && counter != 0) {
-                    if (current_mediator instanceof InvokeMediator) {
-                        current_mediator = synCfg.getSequenceTemplate(((InvokeMediator) current_mediator)
-                                .getTargetTemplate());
-                    }
-                    current_mediator = ((AbstractListMediator) current_mediator).getChild(position[counter]);
-                }
-            }
+            current_mediator = MediatorTreeTraverseUtil.getMediatorReference(synCfg, seqMediator, position);
             if (current_mediator != null) {
                 breakPoint.setMediatorReference(current_mediator);
                 if (registerMode) {
@@ -277,7 +276,19 @@ public class APIDebugUtil {
         }
         Resource[] resource_array = api.getResources();
         for (int counter = 0; counter < resource_array.length; counter++) {
-            if (mapping.equals(resource_array[counter].getDispatcherHelper().getString())) {
+            if (resource_array[counter].getDispatcherHelper() != null && mapping != null) {
+                if (mapping.equals(resource_array[counter].getDispatcherHelper().getString())) {
+                    for (String m1 : resource_array[counter].getMethods()) {
+                        if (m1.equals(method)) {
+                            api_resource = resource_array[counter];
+                            break;
+                        }
+                    }
+                    if (api_resource != null) {
+                        break;
+                    }
+                }
+            } else if (resource_array[counter].getDispatcherHelper() == null && mapping == null) {
                 for (String m1 : resource_array[counter].getMethods()) {
                     if (m1.equals(method)) {
                         api_resource = resource_array[counter];
@@ -310,18 +321,7 @@ public class APIDebugUtil {
         }
         if (seqMediator != null) {
             Mediator current_mediator = null;
-            for (int counter = 0; counter < position.length; counter++) {
-                if (counter == 0) {
-                    current_mediator = ((AbstractListMediator) seqMediator).getChild(position[counter]);
-                }
-                if (current_mediator != null && counter != 0) {
-                    if (current_mediator instanceof InvokeMediator) {
-                        current_mediator = synCfg.getSequenceTemplate(((InvokeMediator) current_mediator)
-                                .getTargetTemplate());
-                    }
-                    current_mediator = ((AbstractListMediator) current_mediator).getChild(position[counter]);
-                }
-            }
+            current_mediator = MediatorTreeTraverseUtil.getMediatorReference(synCfg, seqMediator, position);
             if (current_mediator != null) {
                 skipPoint.setMediatorReference(current_mediator);
                 if (registerMode) {

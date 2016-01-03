@@ -26,9 +26,7 @@ import org.apache.synapse.debug.constants.SynapseDebugManagerConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationComponent;
 import org.apache.synapse.debug.constructs.ConnectorMediationFlowPoint;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
-import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.mediators.template.InvokeMediator;
 
 /**
  * Utility class that handle persisting Connector related breakpoint/skip information at mediator level as
@@ -64,19 +62,7 @@ public class ConnectorDebugUtil {
         templateMediator = synCfg.getSequenceTemplate(template_key);
         if (templateMediator != null) {
             Mediator current_mediator = null;
-            for (int counter = 0; counter < position.length; counter++) {
-                if (counter == 0) {
-                    current_mediator = ((AbstractListMediator) templateMediator).
-                            getChild(position[counter]);
-                }
-                if (current_mediator != null && counter != 0) {
-                    if (current_mediator instanceof InvokeMediator) {
-                        current_mediator = synCfg
-                                .getSequenceTemplate(((InvokeMediator) current_mediator).getTargetTemplate());
-                    }
-                    current_mediator = ((AbstractListMediator) current_mediator).getChild(position[counter]);
-                }
-            }
+            current_mediator = MediatorTreeTraverseUtil.getMediatorReference(synCfg, templateMediator, position);
             if (current_mediator != null) {
                 breakPoint.setMediatorReference(current_mediator);
                 if (registerMode) {
@@ -183,17 +169,7 @@ public class ConnectorDebugUtil {
         templateMediator = synCfg.getSequenceTemplate(template_key);
         if (templateMediator != null) {
             Mediator current_mediator = null;
-            for (int counter = 0; counter < position.length; counter++) {
-                if (counter == 0) {
-                    current_mediator = ((AbstractListMediator) templateMediator).getChild(position[counter]);
-                }
-                if (current_mediator != null && counter != 0) {
-                    if (current_mediator instanceof InvokeMediator) {
-                        current_mediator = synCfg.getSequenceTemplate(((InvokeMediator) current_mediator).getTargetTemplate());
-                    }
-                    current_mediator = ((AbstractListMediator) current_mediator).getChild(position[counter]);
-                }
-            }
+            current_mediator = MediatorTreeTraverseUtil.getMediatorReference(synCfg, templateMediator, position);
             if (current_mediator != null) {
                 skipPoint.setMediatorReference(current_mediator);
                 if (registerMode) {
