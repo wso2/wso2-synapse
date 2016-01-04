@@ -39,10 +39,8 @@ public class Base64DecodeFunction implements Function {
 
     public Object call(Context context, List args) throws FunctionCallException {
 
-        boolean debugOn = log.isDebugEnabled();
-
         if (args == null || args.size() == 0) {
-            if (debugOn) {
+            if (log.isDebugEnabled()) {
                 log.debug("Property key value for lookup is not specified");
             }
             return NULL_STRING;
@@ -54,7 +52,7 @@ public class Base64DecodeFunction implements Function {
             String encodedValue = StringFunction.evaluate(args.get(0), context.getNavigator());
 
             // use the default UTF-8 decoding.
-            return decode(debugOn, DEFAULT_CHARSET, encodedValue);
+            return decode(log.isDebugEnabled(), DEFAULT_CHARSET, encodedValue);
         } else if (size == 2) {
             // get the first argument, it can be a function returning a string as well
             String encodedValue = StringFunction.evaluate(args.get(0), context.getNavigator());
@@ -62,15 +60,14 @@ public class Base64DecodeFunction implements Function {
             // charset is in the second argument
             String charset = StringFunction.evaluate(args.get(1), context.getNavigator());
 
-            return decode(debugOn, charset, encodedValue);
+            return decode(log.isDebugEnabled(), charset, encodedValue);
         } else {
-            if (debugOn) {
+            if (log.isDebugEnabled()) {
                 log.debug("base64Decode function expects only two arguments maximum, returning empty string");
             }
         }
         // return empty string if the arguments are wrong
         return NULL_STRING;
-
     }
 
 
@@ -109,5 +106,4 @@ public class Base64DecodeFunction implements Function {
 
         return decodedString;
     }
-
 }
