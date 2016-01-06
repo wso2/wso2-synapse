@@ -185,11 +185,6 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());
 
-            // Set message tracing state
-            if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)){
-                newCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
-            }
-
             if (id != null) {
                 // set the parent correlation details to the cloned MC -
                 //                              for the use of aggregation like tasks
