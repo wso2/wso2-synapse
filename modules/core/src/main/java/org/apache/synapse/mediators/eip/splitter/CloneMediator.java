@@ -41,6 +41,7 @@ import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -183,6 +184,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             // Set isServerSide property in the cloned message context
             ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());
+
+            // Set message tracing state
+            if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)){
+                newCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
+            }
+
             if (id != null) {
                 // set the parent correlation details to the cloned MC -
                 //                              for the use of aggregation like tasks
