@@ -31,37 +31,37 @@ public class StatisticsConstants {
 	/**
 	 * Flow statistic queue size
 	 */
-	public static final String FLOW_STATISTICS_QUEUE_SIZE = "synapse.flow.statistics.queue.size";
+	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";
 
 	/**
 	 * Key to message context statistic entry
 	 */
-	public static final String FLOW_STATISTICS_ID = "synapse.synapse.flow.statistics.statistic.id";
+	public static final String FLOW_STATISTICS_ID = "mediation.flow.statistics.statistic.id";
 
 	/**
 	 * Key to message context statistic entry
 	 */
-	public static final String FLOW_STATISTICS_MESSAGE_ID = "synapse.flow.statistics.msgID";
+	public static final String FLOW_STATISTICS_MESSAGE_ID = "mediation.flow.statistics.msgID";
 
 	/**
 	 * Key to message context statistic entry
 	 */
-	public static final String FLOW_STATISTICS_PARENT_MESSAGE_ID = "synapse.flow.statistics.parent.msg.id";
+	public static final String FLOW_STATISTICS_PARENT_MESSAGE_ID = "mediation.flow.statistics.parent.msg.id";
 
 	/**
 	 * Key to message context statistic entry
 	 */
-	public static final String FLOW_STATISTICS_MSG_COUNT_HOLDER = "synapse.flow.statistics.count.holder";
+	public static final String FLOW_STATISTICS_MSG_COUNT_HOLDER = "mediation.flow.statistics.count.holder";
 
 	/**
 	 * Key to message context statistic entry
 	 */
-	public static final String FLOW_STATISTICS_IS_FAULT_REPORTED = "synapse.flow.statistics.fault.reported";
+	public static final String FLOW_STATISTICS_IS_FAULT_REPORTED = "mediation.flow.statistics.fault.reported";
 
 	/**
 	 * Key to specify whether statistics should be reported
 	 */
-	public static final String FLOW_STATISTICS_IS_COLLECTED = "synapse.flow.statistics.collected";
+	public static final String FLOW_STATISTICS_IS_COLLECTED = "mediation.flow.statistics.collected";
 
 	/**
 	 * Flow statistic default queue size

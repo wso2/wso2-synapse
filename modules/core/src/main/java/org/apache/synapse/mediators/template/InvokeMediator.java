@@ -154,45 +154,42 @@ public class InvokeMediator extends AbstractMediator implements
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         if (subBranch == 0) {
-             // Default flow
-            TemplateMediator templateMediator =
-                                        (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
+	        // Default flow
+	        TemplateMediator templateMediator = (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
 	        RuntimeStatisticCollector.openLogForContinuation(synCtx, templateMediator.getMediatorName());
-            if (!continuationState.hasChild()) {
-                result = templateMediator.mediate(synCtx, continuationState.getPosition() + 1);
-                if (result) {
-                    templateMediator.popFuncContextFrom(synCtx);
-                }
-            } else {
-                FlowContinuableMediator mediator =
-                        (FlowContinuableMediator) templateMediator.getChild(
-                                continuationState.getPosition());
-	            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+	        if (!continuationState.hasChild()) {
+		        result = templateMediator.mediate(synCtx, continuationState.getPosition() + 1);
+		        if (result) {
+			        templateMediator.popFuncContextFrom(synCtx);
+		        }
+	        } else {
+		        FlowContinuableMediator mediator =
+				        (FlowContinuableMediator) templateMediator.getChild(continuationState.getPosition());
+		        RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
-                result = mediator.mediate(synCtx, continuationState.getChildContState());
+		        result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-	            ((Mediator) mediator).reportStatistic(synCtx, null, false);
-            }
+		        ((Mediator) mediator).reportStatistic(synCtx, null, false);
+	        }
 	        templateMediator.reportStatistic(synCtx, null, false);
         } else {
-            // Pre fetching invoke mediator flow
-            String prefetchInvokeKey = key.evaluateValue(synCtx);
-            InvokeMediator prefetchInvoke =
-                    (InvokeMediator) synCtx.getDefaultConfiguration(prefetchInvokeKey);
+	        // Pre fetching invoke mediator flow
+	        String prefetchInvokeKey = key.evaluateValue(synCtx);
+	        InvokeMediator prefetchInvoke = (InvokeMediator) synCtx.getDefaultConfiguration(prefetchInvokeKey);
 	        RuntimeStatisticCollector.openLogForContinuation(synCtx, prefetchInvoke.getMediatorName());
 
-            ContinuationState childContinuationState = continuationState.getChildContState();
-            result = prefetchInvoke.mediate(synCtx, childContinuationState);
+	        ContinuationState childContinuationState = continuationState.getChildContState();
+	        result = prefetchInvoke.mediate(synCtx, childContinuationState);
 
-            if (result && !childContinuationState.hasChild()) {
-                // Pre fetching invoke mediator flow completed.
-                // Remove ContinuationState represent the prefetchInvoke mediator and
-                // flip the subbranch to default flow
-                continuationState.removeLeafChild();
-                ((ReliantContinuationState) continuationState).setSubBranch(0);
-                // after prefetch invoke mediator flow, execute default flow
-                result = mediate(synCtx, false);
-            }
+	        if (result && !childContinuationState.hasChild()) {
+		        // Pre fetching invoke mediator flow completed.
+		        // Remove ContinuationState represent the prefetchInvoke mediator and
+		        // flip the subbranch to default flow
+		        continuationState.removeLeafChild();
+		        ((ReliantContinuationState) continuationState).setSubBranch(0);
+		        // after prefetch invoke mediator flow, execute default flow
+		        result = mediate(synCtx, false);
+	        }
 	        prefetchInvoke.reportStatistic(synCtx, null, false);
         }
         return result;

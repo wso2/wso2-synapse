@@ -772,7 +772,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         boolean result;
         do {
-            //open seq
             SeqContinuationState seqContinuationState =
                     (SeqContinuationState) synCtx.getContinuationStateStack().peek();
             SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
@@ -780,7 +779,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             RuntimeStatisticCollector.openLogForContinuation(synCtx, sequenceMediator.getSequenceNameForStatistics(synCtx));
             result = sequenceMediator.mediate(synCtx, seqContinuationState);
             sequenceMediator.reportStatistic(synCtx, null, false);
-            //for any result close the sequence as it will be handled by the call back method in statj
+            //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
         RuntimeStatisticCollector.removeContinuationState(synCtx);
         return result;

@@ -42,16 +42,6 @@ public class StatisticsEntry {
 	private final List<StatisticsLog> messageFlowLogs = new ArrayList<>();
 
 	/**
-	 * LocalMemberHost to use if this is a clustered environment
-	 */
-	private String localMemberHost = null;
-
-	/**
-	 * LocalMemberPort if this is a clustered environment
-	 */
-	private String localMemberPort = null;
-
-	/**
 	 * Map to hold all the remaining callbacks related to the message flow
 	 */
 	private final Map<String, Integer> callbacks = new HashMap<>();
@@ -82,12 +72,8 @@ public class StatisticsEntry {
 	 * PROXY, API or SEQUENCE.
 	 *
 	 * @param statisticDataUnit statistic data unit with raw data
-	 * @param localMemberHost   localMemberHost in the cluster
-	 * @param localMemberPort   localMemberPort in the cluster
 	 */
-	public StatisticsEntry(StatisticDataUnit statisticDataUnit, String localMemberHost, String localMemberPort) {
-		this.localMemberHost = localMemberHost;
-		this.localMemberPort = localMemberPort;
+	public StatisticsEntry(StatisticDataUnit statisticDataUnit) {
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, DEFAULT_MSG_ID, PARENT_LEVEL_OF_ROOT);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);

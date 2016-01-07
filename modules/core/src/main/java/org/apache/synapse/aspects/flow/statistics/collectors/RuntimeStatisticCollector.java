@@ -41,7 +41,6 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.RemoveCallbackLo
 import org.apache.synapse.aspects.flow.statistics.log.templates.RemoveContinuationStateLog;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticCloseLog;
 import org.apache.synapse.aspects.flow.statistics.log.templates.UpdateForReceivedCallbackLog;
-import org.apache.synapse.aspects.flow.statistics.util.ClusterInformationProvider;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -57,8 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * RuntimeStatisticCollector receives statistic events and responsible for handling each of these
- * events. It holds statistic store which contains the in memory statistics for the message
- * mediation happened in the ESB.
+ * events.
  */
 public class RuntimeStatisticCollector {
 
@@ -70,28 +68,17 @@ public class RuntimeStatisticCollector {
 
 	private static boolean isStatisticsEnable = false;
 
-	private static String localMemberPort = null;
-
-	private static String localMemberHost = null;
-
 	private static MessageDataCollector messageDataCollector;
 
 	/**
-	 * Initialize statistics collection when ESB starts. If statistic cleaning is enabled in
-	 * synapse.properties file this method will schedule a timer event to clean statistics at
-	 * that specified time interval.
+	 * Initialize statistics collection when ESB starts.
 	 */
 	public static void init() {
 		isStatisticsEnable = Boolean.parseBoolean(
 				SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.STATISTICS_ENABLE, String.valueOf(false)));
 		if (isStatisticsEnable) {
 			if (log.isDebugEnabled()) {
-				log.debug("Flow statistics collection is enabled.");
-			}
-			ClusterInformationProvider clusterInformationProvider = new ClusterInformationProvider();
-			if (clusterInformationProvider.isClusteringEnabled()) {
-				localMemberHost = clusterInformationProvider.getLocalMemberHostName();
-				localMemberPort = clusterInformationProvider.getLocalMemberPort();
+				log.debug("Mediation statistics collection is enabled.");
 			}
 			int queueSize = Integer.parseInt(SynapsePropertiesLoader
 					                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
@@ -123,7 +110,7 @@ public class RuntimeStatisticCollector {
 		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
 			runtimeStatistics.get(statisticDataUnit.getStatisticId()).createLog(statisticDataUnit);
 		} else {
-			StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit, localMemberHost, localMemberPort);
+			StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit);
 			runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
 			if (log.isDebugEnabled()) {
 				log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size());
