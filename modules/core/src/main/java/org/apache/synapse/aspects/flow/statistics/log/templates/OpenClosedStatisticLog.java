@@ -19,9 +19,9 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class OpenClosedStatisticLog implements StatisticReportingLog {
 	private final String statisticId;
@@ -29,7 +29,7 @@ public class OpenClosedStatisticLog implements StatisticReportingLog {
 	private String newMessageId;
 
 	public OpenClosedStatisticLog(MessageContext messageContext, String componentId) {
-		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		this.componentId = componentId;
 		this.newMessageId = messageContext.getMessageID();
 	}

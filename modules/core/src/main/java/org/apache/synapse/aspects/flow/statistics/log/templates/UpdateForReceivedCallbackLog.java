@@ -22,6 +22,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 
 public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
@@ -33,7 +34,7 @@ public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
 	private Boolean isContinuationCall;
 
 	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
-		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		this.callbackId = callbackId;
 		this.endTime = endTime;
 		this.synapseEnvironment = messageContext.getEnvironment();

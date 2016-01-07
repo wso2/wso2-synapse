@@ -43,6 +43,7 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticCloseLo
 import org.apache.synapse.aspects.flow.statistics.log.templates.UpdateForReceivedCallbackLog;
 import org.apache.synapse.aspects.flow.statistics.util.ClusterInformationProvider;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.rest.RESTConstants;
@@ -69,8 +70,6 @@ public class RuntimeStatisticCollector {
 
 	private static boolean isStatisticsEnable = false;
 
-	private final static String STATISTICS_ENABLE = "new.statistics.enable";
-
 	private static String localMemberPort = null;
 
 	private static String localMemberHost = null;
@@ -84,7 +83,7 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void init() {
 		isStatisticsEnable = Boolean.parseBoolean(
-				SynapsePropertiesLoader.getPropertyValue(STATISTICS_ENABLE, String.valueOf(false)));
+				SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.STATISTICS_ENABLE, String.valueOf(false)));
 		if (isStatisticsEnable) {
 			if (log.isDebugEnabled()) {
 				log.debug("Flow statistics collection is enabled.");
@@ -95,8 +94,8 @@ public class RuntimeStatisticCollector {
 				localMemberPort = clusterInformationProvider.getLocalMemberPort();
 			}
 			int queueSize = Integer.parseInt(SynapsePropertiesLoader
-					                                 .getPropertyValue(SynapseConstants.FLOW_STATISTICS_QUEUE_SIZE,
-					                                                   SynapseConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
+					                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
+					                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
 			messageDataCollector = new MessageDataCollector(queueSize);
 			//Thread to consume queue and update data structures for publishing
 			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -372,9 +371,9 @@ public class RuntimeStatisticCollector {
 			if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
 				setStatisticsTraceId(messageContext);
 				createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false);
-				messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, true);
+				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 			} else {
-				messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 			}
 		}
 	}
@@ -395,16 +394,16 @@ public class RuntimeStatisticCollector {
 					setStatisticsTraceId(messageContext);
 					createLogForMessageCheckpoint(messageContext, inboundName, ComponentType.INBOUNDENDPOINT, null,
 					                              true, false, false);
-					messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, true);
+					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
-					if (messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID) != null) {
+					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
 						createLogForFinalize(messageContext);
 					} else {
 						log.error("Trying close statistic entry without Statistic ID");
 					}
 				}
 			} else {
-				messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 			}
 		}
 	}
@@ -425,16 +424,16 @@ public class RuntimeStatisticCollector {
 					setStatisticsTraceId(messageContext);
 					createLogForMessageCheckpoint(messageContext, proxyName, ComponentType.PROXYSERVICE, null, true,
 					                              false, false);
-					messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, true);
+					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
-					if (messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID) != null) {
+					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
 						createLogForFinalize(messageContext);
 					} else {
 						log.error("Trying close statistic entry without Statistic ID");
 					}
 				}
 			} else {
-				messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 			}
 		}
 	}
@@ -496,21 +495,21 @@ public class RuntimeStatisticCollector {
 	                                              AspectConfiguration aspectConfiguration, boolean isCreateLog) {
 		if (isStatisticsEnable()) {
 			Boolean isStatCollected =
-					(Boolean) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED);
+					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 			if (isStatCollected == null) {
 				if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
-					if (messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID) == null && !isCreateLog) {
+					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && !isCreateLog) {
 						log.error("Trying close statistic entry without Statistic ID");
 						return;
 					}
 					setStatisticsTraceId(messageContext);
 					createStatisticForSequence(messageContext, sequenceName, isCreateLog);
-					messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, true);
+					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
-					messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 				}
 			} else {
-				if ((messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID) != null) && isStatCollected) {
+				if ((messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) && isStatCollected) {
 					createStatisticForSequence(messageContext, sequenceName, isCreateLog);
 				}
 			}
@@ -658,12 +657,12 @@ public class RuntimeStatisticCollector {
 	 */
 	public static int getComponentUniqueId(MessageContext synCtx) {
 		StatisticMessageCountHolder statisticMessageCountHolder;
-		if (synCtx.getProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER) != null) {
-			statisticMessageCountHolder =
-					(StatisticMessageCountHolder) synCtx.getProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
+		if (synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER) != null) {
+			statisticMessageCountHolder = (StatisticMessageCountHolder) synCtx
+					.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
 		} else {
 			statisticMessageCountHolder = new StatisticMessageCountHolder();
-			synCtx.setProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, statisticMessageCountHolder);
+			synCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, statisticMessageCountHolder);
 		}
 		return statisticMessageCountHolder.incrementAndGetComponentId();
 	}
@@ -777,14 +776,14 @@ public class RuntimeStatisticCollector {
 				InformFaultLog informFaultLog = new InformFaultLog(messageContext);
 				messageDataCollector.enQueue(informFaultLog);
 			}
-			messageContext.setProperty(SynapseConstants.FLOW_STATISTICS_IS_FAULT_REPORTED, !isFaultCreated);
+			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_FAULT_REPORTED, !isFaultCreated);
 			return true;
 		}
 		return false;
 	}
 
 	private static boolean isFaultAlreadyReported(MessageContext synCtx) {
-		Object object = synCtx.getProperty(SynapseConstants.FLOW_STATISTICS_IS_FAULT_REPORTED);
+		Object object = synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_FAULT_REPORTED);
 		if (object == null) {
 			return false;
 		} else if ((Boolean) object) {
@@ -845,32 +844,32 @@ public class RuntimeStatisticCollector {
 		if (shouldReportStatistic(oldMessageContext)) {
 			StatisticMessageCountHolder cloneCount;
 			int parentMsgId;
-			if (oldMessageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER) != null) {
+			if (oldMessageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER) != null) {
 				cloneCount = (StatisticMessageCountHolder) oldMessageContext
-						.getProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
-				parentMsgId = (Integer) oldMessageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID);
+						.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
+				parentMsgId = (Integer) oldMessageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
 			} else {
 				parentMsgId = 0;
 				cloneCount = new StatisticMessageCountHolder();
-				oldMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID, 0);
-				oldMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
-				oldMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID, null);
+				oldMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID, 0);
+				oldMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
+				oldMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID, null);
 			}
-			newMessageContext
-					.setProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID, cloneCount.incrementAndGetCloneCount());
-			newMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
-			newMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID, parentMsgId);
+			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID,
+			                              cloneCount.incrementAndGetCloneCount());
+			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
+			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID, parentMsgId);
 		}
 	}
 
 	public static void setAggregateProperties(MessageContext oldMessageContext, MessageContext newMessageContext) {
 		if (shouldReportStatistic(oldMessageContext)) {
 			StatisticMessageCountHolder cloneCount = (StatisticMessageCountHolder) oldMessageContext
-					.getProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
+					.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
 			int parentMsgId =
-					(Integer) oldMessageContext.getProperty(SynapseConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID);
-			newMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID, parentMsgId);
-			newMessageContext.setProperty(SynapseConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
+					(Integer) oldMessageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID);
+			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID, parentMsgId);
+			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
 		}
 	}
 
@@ -887,8 +886,8 @@ public class RuntimeStatisticCollector {
 	}
 
 	private static void setStatisticsTraceId(MessageContext msgCtx) {
-		if (msgCtx.getProperty(SynapseConstants.FLOW_STATISTICS_ID) == null) {
-			msgCtx.setProperty(SynapseConstants.FLOW_STATISTICS_ID, msgCtx.getMessageID());
+		if (msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null) {
+			msgCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_ID, msgCtx.getMessageID());
 		}
 	}
 
@@ -899,13 +898,14 @@ public class RuntimeStatisticCollector {
 	}
 
 	private static boolean shouldReportStatistic(MessageContext messageContext) {
-		Boolean isStatCollected = (Boolean) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_IS_COLLECTED);
-		Object statID = messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		Boolean isStatCollected =
+				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		return (statID != null && isStatCollected != null && isStatCollected && isStatisticsEnable);
 	}
 
 	private static boolean isStatisticsTraced(MessageContext messageContext) {
-		Object statID = messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		return (statID != null && isStatisticsEnable);
 	}
 

@@ -19,9 +19,9 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class RemoveCallbackLog implements StatisticReportingLog {
 
@@ -29,7 +29,7 @@ public class RemoveCallbackLog implements StatisticReportingLog {
 	private String callbackId;
 
 	public RemoveCallbackLog(MessageContext messageContext, String callbackId) {
-		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		this.callbackId = callbackId;
 	}
 
