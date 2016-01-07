@@ -28,6 +28,7 @@ import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -46,7 +47,6 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.messageflowtracer.data.MessageFlowDataHolder;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
@@ -246,14 +246,20 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
 
         boolean result;
+        SequenceMediator branchSequence = target.getSequence();
+        RuntimeStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
         if (!continuationState.hasChild()) {
-            result = target.getSequence().mediate(synCtx, continuationState.getPosition() + 1);
+            result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
-                    (FlowContinuableMediator) target.getSequence().
-                            getChild(continuationState.getPosition());
+                    (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
             result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+            ((Mediator) mediator).reportStatistic(synCtx, null, false);
         }
+        branchSequence.reportStatistic(synCtx, null, false);
         return result;
     }
 

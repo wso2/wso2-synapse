@@ -25,19 +25,30 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.aggregate.EndpointStatisticEntry;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.*;
-import org.apache.synapse.aspects.flow.statistics.util.ClusterInformationProvider;
+import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.AddCallbacksLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.CloseStatisticEntryForcefullyLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.CreateEntryStatisticLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.EndpointLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.FinalizeEntryLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.InformFaultLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.OpenClosedStatisticLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.RemoveCallbackLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.RemoveContinuationStateLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticCloseLog;
+import org.apache.synapse.aspects.flow.statistics.log.templates.UpdateForReceivedCallbackLog;
+import org.apache.synapse.aspects.flow.statistics.util.ClusterInformationProvider;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.rest.RESTConstants;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -213,16 +224,17 @@ public class RuntimeStatisticCollector {
 	 * Updates end time of the statistics logs after corresponding callback is removed from
 	 * SynapseCallbackReceiver.
 	 *
-	 * @param statisticsTraceId  message context
+	 * @param statisticsTraceId  Statistic Id for the message flow
 	 * @param callbackId         callback identification number
 	 * @param endTime            callback removal time at SynapseCallbackReceiver
+	 * @param isContinuation     whether this callback entry was a continuation call
 	 * @param synapseEnvironment Synapse environment of the message flow
 	 */
 	public static void updateForReceivedCallback(String statisticsTraceId, String callbackId, Long endTime,
-	                                             SynapseEnvironment synapseEnvironment) {
+	                                             Boolean isContinuation, SynapseEnvironment synapseEnvironment) {
 		if (statisticsTraceId != null) {
 			if (runtimeStatistics.containsKey(statisticsTraceId)) {
-				runtimeStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime);
+				runtimeStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime, isContinuation);
 			}
 
 			if (endpointStatistics.containsKey(statisticsTraceId)) {
@@ -238,6 +250,40 @@ public class RuntimeStatisticCollector {
 					if (log.isDebugEnabled()) {
 						log.debug("Endpoint statistic collected for Endpoint:" + endpointStatisticLog.getComponentId());
 					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Put respective mediator to the open entries due to continuation call.
+	 *
+	 * @param statisticsTraceId Statistic Id for the message flow.
+	 * @param messageId         message Id correspoding to continuation flow
+	 * @param componentId       component name
+	 */
+	public static void putComponentToOpenLogs(String statisticsTraceId, String messageId, String componentId) {
+		if (statisticsTraceId != null) {
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				if (runtimeStatistics.containsKey(statisticsTraceId)) {
+					runtimeStatistics.get(statisticsTraceId).openLogForContinuation(messageId, componentId);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Removes specified continuation state for a message flow after all the processing that continuation entry
+	 *
+	 * @param statisticsTraceId message context
+	 * @param messageId         message uuid
+	 */
+	public static void removeContinuationState(String statisticsTraceId, String messageId) {
+		if (statisticsTraceId != null) {
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				runtimeStatistics.get(statisticsTraceId).removeContinuationEntry(messageId);
+				if (log.isDebugEnabled()) {
+					log.debug("Removed continuation state from the statistic entry.");
 				}
 			}
 		}
@@ -410,7 +456,7 @@ public class RuntimeStatisticCollector {
 						.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) && !messageContext.isResponse());
 			}
 			if (isOutOnly) {
-				reportStatisticsForProxy(messageContext, proxyName, aspectConfiguration, false);
+				createLogForFinalize(messageContext);
 			}
 		}
 	}
@@ -477,11 +523,8 @@ public class RuntimeStatisticCollector {
 			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, true, false,
 			                              false);
 		} else {
-			Boolean isContinuationCall = (Boolean) messageContext.getProperty(SynapseConstants.CONTINUATION_CALL);
-			if (isContinuationCall == null || !isContinuationCall) {
-				createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
-				                              false);
-			}
+			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
+			                              false);
 		}
 	}
 
@@ -626,16 +669,16 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Report callback recived for message flow.
+	 * Report callback received for message flow.
 	 *
-	 * @param synOutCtx  Current MessageContext of the flow.
-	 * @param callbackId Callback Id.
+	 * @param oldMessageContext Current MessageContext of the flow.
+	 * @param callbackId        Callback Id.
 	 */
-	public static void reportCallbackReceived(MessageContext synOutCtx, String callbackId) {
-		if (isStatisticsTraced(synOutCtx)) {
-			createLogForCallbackReceived(synOutCtx, callbackId);
-			createLogForRemoveCallback(synOutCtx, callbackId);
-			createLogForFinalize(synOutCtx);
+	public static void reportCallbackReceived(MessageContext oldMessageContext, String callbackId) {
+		if (isStatisticsTraced(oldMessageContext)) {
+			createLogForCallbackReceived(oldMessageContext, callbackId);
+			createLogForRemoveCallback(oldMessageContext, callbackId);
+			createLogForFinalize(oldMessageContext);
 		}
 	}
 
@@ -663,12 +706,12 @@ public class RuntimeStatisticCollector {
 	/**
 	 * Updates parents after callback received for message flow.
 	 *
-	 * @param messageContext Current MessageContext of the flow.
-	 * @param callbackId     Callback Id.
+	 * @param oldMessageContext Current MessageContext of the flow.
+	 * @param callbackId        Callback Id.
 	 */
-	public static void updateStatisticLogsForReceivedCallbackLog(MessageContext messageContext, String callbackId) {
-		if (isStatisticsTraced(messageContext)) {
-			createLogForCallbackReceived(messageContext, callbackId);
+	public static void updateStatisticLogsForReceivedCallbackLog(MessageContext oldMessageContext, String callbackId) {
+		if (isStatisticsTraced(oldMessageContext)) {
+			createLogForCallbackReceived(oldMessageContext, callbackId);
 		}
 	}
 
@@ -707,6 +750,18 @@ public class RuntimeStatisticCollector {
 	}
 
 	/**
+	 * Asynchronously remove continuation state from the message flow.
+	 *
+	 * @param messageContext message context
+	 */
+	public static void removeContinuationState(MessageContext messageContext) {
+		if (shouldReportStatistic(messageContext)) {
+			StatisticReportingLog statisticReportingLog = new RemoveContinuationStateLog(messageContext);
+			messageDataCollector.enQueue(statisticReportingLog);
+		}
+	}
+
+	/**
 	 * Reports fault in message flow.
 	 *
 	 * @param messageContext Current MessageContext of the flow.
@@ -738,6 +793,14 @@ public class RuntimeStatisticCollector {
 		return false;
 	}
 
+	public static void openLogForContinuation(MessageContext messageContext, String componentId) {
+		if (shouldReportStatistic(messageContext)) {
+			StatisticReportingLog statisticReportingLog;
+			statisticReportingLog = new OpenClosedStatisticLog(messageContext, componentId);
+			messageDataCollector.enQueue(statisticReportingLog);
+		}
+	}
+
 	//Creating Statistic Logs to report statistic events
 
 	private static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
@@ -765,9 +828,9 @@ public class RuntimeStatisticCollector {
 		messageDataCollector.enQueue(removeCallbackLog);
 	}
 
-	private static void createLogForCallbackReceived(MessageContext synOutCtx, String msgID) {
+	private static void createLogForCallbackReceived(MessageContext oldMessageContext, String msgID) {
 		UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
-				new UpdateForReceivedCallbackLog(synOutCtx, msgID, System.currentTimeMillis());
+				new UpdateForReceivedCallbackLog(oldMessageContext, msgID, System.currentTimeMillis());
 		messageDataCollector.enQueue(updateForReceivedCallbackLog);
 	}
 

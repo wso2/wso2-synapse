@@ -20,6 +20,8 @@
 package org.apache.synapse.mediators.filters;
 
 import org.apache.synapse.ContinuationState;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
@@ -174,7 +176,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) defaultCase.getCaseMediator().
                                 getChild(continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
         } else {
             if (!continuationState.hasChild()) {
@@ -184,7 +190,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) cases.get(subBranch - 1).getCaseMediator().
                                 getChild(continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
         }
         return result;

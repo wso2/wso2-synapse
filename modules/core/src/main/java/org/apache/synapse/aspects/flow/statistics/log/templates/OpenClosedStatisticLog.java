@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -22,27 +22,19 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
-import org.apache.synapse.core.SynapseEnvironment;
 
-public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
-
+public class OpenClosedStatisticLog implements StatisticReportingLog {
 	private final String statisticId;
-	private String callbackId;
-	private Long endTime;
-	private SynapseEnvironment synapseEnvironment;
-	private Boolean isContinuationCall;
+	private String componentId;
+	private String newMessageId;
 
-	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
+	public OpenClosedStatisticLog(MessageContext messageContext, String componentId) {
 		statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
-		this.callbackId = callbackId;
-		this.endTime = endTime;
-		this.synapseEnvironment = messageContext.getEnvironment();
-		isContinuationCall = (Boolean) messageContext.getProperty(SynapseConstants.CONTINUATION_CALL);
-
+		this.componentId = componentId;
+		this.newMessageId = messageContext.getMessageID();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector
-				.updateForReceivedCallback(statisticId, callbackId, endTime, isContinuationCall, synapseEnvironment);
+		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
 	}
 }
