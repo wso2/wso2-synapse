@@ -281,12 +281,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     log.debug("Response received for the Continuation Call service invocation");
                 }
 
-                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
-                    MessageFlowTracingDataCollector.setEntryPoint(synCtx,
-                                                                  MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
-                                                                  synCtx.getMessageID());
-                }
-
                 return mediateFromContinuationStateStack(synCtx);
             }
 
@@ -317,6 +311,14 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     if (log.isDebugEnabled()) {
                         log.debug("Using Main Sequence for injected message");
                     }
+
+
+                    if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+                        MessageFlowTracingDataCollector.setEntryPoint(synCtx,
+                                                                      MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
+                                                                      synCtx.getMessageID());
+                    }
+
                     return synCtx.getMainSequence().mediate(synCtx);
                 }
             }

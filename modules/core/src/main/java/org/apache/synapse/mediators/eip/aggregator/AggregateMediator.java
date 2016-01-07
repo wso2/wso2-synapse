@@ -468,9 +468,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
 					destinationStatRecord =
 					                        (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
-                    if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)){
-                        newCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
-                    }
                 } catch (AxisFault axisFault) {
                     handleException("Error creating a copy of the message", axisFault, synCtx);
                 }
@@ -541,7 +538,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             List<String> newMessageFlowTrace = new ArrayList<String>();
             for (MessageContext synCtx : aggregate.getMessages()) {
                 List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
-                newMessageFlowTrace.addAll(messageFlowTrace);
+                if (null != messageFlowTrace) {
+                    newMessageFlowTrace.addAll(messageFlowTrace);
+                }
             }
             newCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlowTrace);
         }

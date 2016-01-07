@@ -190,6 +190,7 @@ public class MessageHelper {
                 }
             }
         }
+        newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
         RuntimeStatisticCollector.setCloneProperties(synCtx, newCtx);
         return newCtx;
     }
@@ -311,6 +312,7 @@ public class MessageHelper {
             }
         }
 
+        newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
         RuntimeStatisticCollector.setAggregateProperties(synCtx, newCtx);
 
         return newCtx;
