@@ -34,6 +34,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -815,7 +816,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public String setTraceFlow(MessageContext msgCtx, String mediatorId, String mediatorName, boolean isStart) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, mediatorName, isStart);
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName, isStart);
     }
 
     public String getReportingName() {

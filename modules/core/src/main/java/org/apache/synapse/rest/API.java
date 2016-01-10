@@ -300,7 +300,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
                                                                       synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
                                                               synCtx.getMessageID());
-                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), true);
+                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName(), true);
             }
         }
 
@@ -407,7 +407,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         }
 
         if (!synCtx.isResponse()) {
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, getName(), false);
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName(), false);
         }
     }
 

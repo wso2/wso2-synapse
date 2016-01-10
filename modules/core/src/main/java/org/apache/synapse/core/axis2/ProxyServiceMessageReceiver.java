@@ -132,7 +132,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                                                               MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name,
                                                               synCtx.getMessageID());
             }
-            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, true);
+            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, true);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -246,7 +246,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, name, false);
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, false);
             //Statistic reporting
             RuntimeStatisticCollector.reportEndProxy(synCtx, this.name, proxy.getAspectConfiguration());
             if(synCtx.getEnvironment().isDebugEnabled()) {
