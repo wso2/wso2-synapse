@@ -21,6 +21,7 @@ package org.apache.synapse.inbound;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -54,6 +55,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     /** Whether the deployed inbound endpoint is edited via the management console */
     private boolean isEdited;
     private AspectConfiguration aspectConfiguration;
+    private int traceState = SynapseConstants.TRACING_UNSET;
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
@@ -233,5 +235,13 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     @Override
     public AspectConfiguration getAspectConfiguration() {
         return aspectConfiguration;
+    }
+
+    public int getTraceState() {
+        return traceState;
+    }
+
+    public void setTraceState(int traceState) {
+        this.traceState = traceState;
     }
 }
