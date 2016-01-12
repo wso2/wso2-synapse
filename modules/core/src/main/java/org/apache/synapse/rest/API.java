@@ -295,7 +295,8 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
 
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
+        boolean tracing = (traceState == SynapseConstants.TRACING_ON);
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled() & tracing) {
             if (!synCtx.isResponse()) {
                 MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
                                                                       synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
