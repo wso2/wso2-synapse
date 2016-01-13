@@ -21,7 +21,6 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 
 import java.util.Stack;
 import java.io.StringWriter;
@@ -50,7 +49,6 @@ public abstract class FaultHandler {
         }
 
         try {
-            RuntimeStatisticCollector.reportFault(synCtx);
             synCtx.getServiceLog().info("FaultHandler executing impl: " + this.getClass().getName());
             onFault(synCtx);
 
@@ -60,8 +58,6 @@ public abstract class FaultHandler {
             if (faultStack != null && !faultStack.isEmpty()) {
                 ((FaultHandler) faultStack.pop()).handleFault(synCtx);
             }
-        } finally {
-            RuntimeStatisticCollector.reportFault(synCtx);
         }
     }
 
@@ -102,7 +98,6 @@ public abstract class FaultHandler {
             if (traceOrDebugOn) {
                 traceOrDebugWarn(traceOn, "FaultHandler : " + this);
             }
-            RuntimeStatisticCollector.reportFault(synCtx);
             onFault(synCtx);
         } catch (SynapseException se) {
 
@@ -112,8 +107,6 @@ public abstract class FaultHandler {
             } else{
             	throw new RuntimeException(se);
             }
-        } finally {
-            RuntimeStatisticCollector.reportFault(synCtx);
         }
     }
 

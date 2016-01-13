@@ -248,7 +248,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, false);
             //Statistic reporting
-            RuntimeStatisticCollector.reportEndProxy(synCtx, this.name, proxy.getAspectConfiguration());
+            RuntimeStatisticCollector.reportEndProxy(synCtx);
             if(synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);

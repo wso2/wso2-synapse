@@ -132,7 +132,6 @@ public class RuntimeStatisticCollector {
 				endMessageFlow(statisticDataUnit, statisticsEntry, false);
 			}
 		}
-
 	}
 
 	/**
@@ -428,12 +427,9 @@ public class RuntimeStatisticCollector {
 	/**
 	 * End Statistic Flow for Proxy if Message Flow is Out_Only.
 	 *
-	 * @param messageContext      Current MessageContext of the flow.
-	 * @param proxyName           Proxy Name
-	 * @param aspectConfiguration Aspect Configuration for the Proxy.
+	 * @param messageContext Current MessageContext of the flow.
 	 */
-	public static void reportEndProxy(MessageContext messageContext, String proxyName,
-	                                  AspectConfiguration aspectConfiguration) {
+	public static void reportEndProxy(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
 			boolean isOutOnly =
 					Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
@@ -713,25 +709,23 @@ public class RuntimeStatisticCollector {
 		if (shouldReportStatistic(synapseOutMsgCtx)) {
 			createLogForRemoveCallback(synapseOutMsgCtx, callbackId);
 			Boolean isContinuationCall = (Boolean) synNewCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
-			if (isContinuationCall == null || !isContinuationCall) {
-				Object synapseRestApi = synapseOutMsgCtx.getProperty(RESTConstants.REST_API_CONTEXT);
-				Object restUrlPattern = synapseOutMsgCtx.getProperty(RESTConstants.REST_URL_PATTERN);
-				Object synapseResource = synapseOutMsgCtx.getProperty(RESTConstants.SYNAPSE_RESOURCE);
-				if (synapseRestApi != null) {
-					String textualStringName;
-					if (restUrlPattern != null) {
-						textualStringName = (String) synapseRestApi + restUrlPattern;
-					} else {
-						textualStringName = (String) synapseRestApi;
-					}
-					createLogForMessageCheckpoint(synapseOutMsgCtx, textualStringName, ComponentType.RESOURCE, null,
-					                              false, false, false);
-				} else if (synapseResource != null) {
-					createLogForMessageCheckpoint(synapseOutMsgCtx, (String) synapseResource, ComponentType.RESOURCE,
-					                              null, false, false, false);
+			Object synapseRestApi = synapseOutMsgCtx.getProperty(RESTConstants.REST_API_CONTEXT);
+			Object restUrlPattern = synapseOutMsgCtx.getProperty(RESTConstants.REST_URL_PATTERN);
+			Object synapseResource = synapseOutMsgCtx.getProperty(RESTConstants.SYNAPSE_RESOURCE);
+			if (synapseRestApi != null) {
+				String textualStringName;
+				if (restUrlPattern != null) {
+					textualStringName = (String) synapseRestApi + restUrlPattern;
+				} else {
+					textualStringName = (String) synapseRestApi;
 				}
-				createLogForFinalize(synapseOutMsgCtx);
+				createLogForMessageCheckpoint(synapseOutMsgCtx, textualStringName, ComponentType.RESOURCE, null, false,
+				                              false, false);
+			} else if (synapseResource != null) {
+				createLogForMessageCheckpoint(synapseOutMsgCtx, (String) synapseResource, ComponentType.RESOURCE, null,
+				                              false, false, false);
 			}
+			createLogForFinalize(synapseOutMsgCtx);
 		}
 	}
 
