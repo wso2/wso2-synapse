@@ -203,7 +203,7 @@ public class MessageFlowTracingDataCollector {
      */
     public static void setEntryPoint(MessageContext synCtx, String entryType, String messageID) {
         if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, messageID);
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, messageID.replace(":", "_"));
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, entryType);
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID,
                                new MessageFlowComponentId(MessageFlowTracerConstants.INITIAL_FLOW_INCREMENT_ID));
