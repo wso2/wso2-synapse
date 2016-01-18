@@ -102,6 +102,10 @@ public class StatisticDataUnit {
 		return cloneId;
 	}
 
+	public void setCloneId(int cloneId) {
+		this.cloneId = cloneId;
+	}
+
 	public boolean isResponse() {
 		return isResponse;
 	}

@@ -60,6 +60,8 @@ public class StatisticsLog {
 
 	private Integer treeMapping = null;
 
+	private boolean isOpenedByContinuation;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
 		this.componentType = statisticDataUnit.getComponentType();
@@ -164,5 +166,13 @@ public class StatisticsLog {
 
 	public void setTreeMapping(int treeMapping) {
 		this.treeMapping = treeMapping;
+	}
+
+	public boolean isOpenedByContinuation() {
+		return isOpenedByContinuation;
+	}
+
+	public void setIsOpenedByContinuation(boolean isOpenedByContinuation) {
+		this.isOpenedByContinuation = isOpenedByContinuation;
 	}
 }

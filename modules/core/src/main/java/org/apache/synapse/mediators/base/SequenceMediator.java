@@ -113,9 +113,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
-
         reportStatistic(synCtx, null, true);
-        synCtx.setProperty(SynapseConstants.CURRENTSEQUENCE, getSequenceNameForStatistics(synCtx));
 
         if (key == null) {
             String mediatorId = null;
@@ -287,8 +285,12 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             do {
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) getChild(continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx,
                                           continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
                 if (result) {
                     // if flow completed remove leaf child
                     continuationState.removeLeafChild();
@@ -320,7 +322,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
             }
         }
-        reportStatistic(synCtx, null, false);
         return result;
     }
 
@@ -507,7 +508,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         this.sequenceType = sequenceType;
     }
 
-    private String getSequenceNameForStatistics(MessageContext synCtx) {
+    public String getSequenceNameForStatistics(MessageContext synCtx) {
         if (this.name != null) {
             return this.name;
         } else {
@@ -524,8 +525,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     }
 
     @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
-                .reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext), parentName,
-                                            getAspectConfiguration(), isCreateLog);
+	    RuntimeStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
+                                                parentName, getAspectConfiguration(), isCreateLog);
     }
 }

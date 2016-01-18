@@ -40,25 +40,25 @@ public class MessageDataCollector implements Runnable {
 	}
 
 	/**
-	 * Add MediationFlowDataEntry instance to the queue
+	 * Add StatisticReportingLog instance to the queue
 	 *
-	 * @param mediationDataEntry MediationFlowDataEntry to be stored in the queue
+	 * @param statisticReportingLog StatisticReportingLog to be stored in the queue
 	 */
-	public void enQueue(StatisticReportingLog mediationDataEntry) {
-		queue.add(mediationDataEntry);
+	public void enQueue(StatisticReportingLog statisticReportingLog) {
+		queue.add(statisticReportingLog);
 	}
 
 	/**
-	 * Removes and return MediationFlowDataEntry from the queue
+	 * Removes and return StatisticReportingLog from the queue
 	 *
-	 * @return MediationFlowDataEntry instance
+	 * @return StatisticReportingLog instance
 	 * @throws Exception
 	 */
 	public StatisticReportingLog deQueue() throws Exception {
 		try {
 			return queue.take();
 		} catch (InterruptedException exception) {
-			String errorMsg = "Error consuming tracing data queue";
+			String errorMsg = "Error consuming statistic data queue";
 			throw new Exception(errorMsg, exception);
 		}
 	}
@@ -75,13 +75,13 @@ public class MessageDataCollector implements Runnable {
 	private boolean isStopped = false;
 
 	public void run() {
-		StatisticReportingLog mediationDataEntry;
+		StatisticReportingLog statisticReportingLog;
 		while (!isStopped && !isEmpty()) {
 			try {
-				mediationDataEntry = deQueue();
-				mediationDataEntry.process();
+				statisticReportingLog = deQueue();
+				statisticReportingLog.process();
 			} catch (Exception exception) {
-				log.error("Error in Mediation Tracing data consumer while consuming data", exception);
+				log.error("Error in mediation flow statistic data consumer while consuming data", exception);
 			}
 		}
 	}

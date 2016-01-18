@@ -774,10 +774,14 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         do {
             SeqContinuationState seqContinuationState =
                     (SeqContinuationState) synCtx.getContinuationStateStack().peek();
-            result = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState).
-                    mediate(synCtx, seqContinuationState);
+            SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
+            //Report Statistics for this continuation call
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, sequenceMediator.getSequenceNameForStatistics(synCtx));
+            result = sequenceMediator.mediate(synCtx, seqContinuationState);
+            sequenceMediator.reportStatistic(synCtx, null, false);
+            //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
-
+        RuntimeStatisticCollector.removeContinuationState(synCtx);
         return result;
     }
 

@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -23,23 +23,18 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class AddCallbacksLog implements StatisticReportingLog {
-
+public class OpenClosedStatisticLog implements StatisticReportingLog {
 	private final String statisticId;
-	private final Integer cloneId;
-	private String callbackId;
+	private String componentId;
+	private String newMessageId;
 
-	public AddCallbacksLog(MessageContext messageContext, String callbackId) {
+	public OpenClosedStatisticLog(MessageContext messageContext, String componentId) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
-		this.callbackId = callbackId;
+		this.componentId = componentId;
+		this.newMessageId = messageContext.getMessageID();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
+		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
 	}
 }
