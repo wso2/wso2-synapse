@@ -19,6 +19,7 @@ import org.apache.synapse.commons.throttle.core.*;
 import org.apache.synapse.commons.throttle.core.impl.domainbase.DomainBaseThrottleContext;
 import org.apache.synapse.commons.throttle.core.impl.ipbase.IPBaseThrottleContext;
 import org.apache.synapse.commons.throttle.core.impl.rolebase.RoleBaseThrottleContext;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
 /**
  * Factory for creating a ThrottleContext - holds all callers runtime data - the current state
@@ -30,6 +31,7 @@ public class ThrottleContextFactory {
     private static final ThrottleReplicator throttleReplicator = new ThrottleReplicator();
     private static final ThrottleWindowReplicator throttleWindowReplicator = new ThrottleWindowReplicator();
     private static final ThrottleContextCleanupTask throttleContextCleanupTask = new ThrottleContextCleanupTask();
+    private static final ThrottleDistributedInstancesCleanupTask distributedObjectsCleanupTask = new ThrottleDistributedInstancesCleanupTask();
     /**
      * To create a ThrottleContext for the given throttle type
      * Needs to provide a throttle configuration

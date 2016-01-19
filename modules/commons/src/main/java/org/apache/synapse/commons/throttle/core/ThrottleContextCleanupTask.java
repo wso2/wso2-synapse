@@ -19,6 +19,7 @@ package org.apache.synapse.commons.throttle.core;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,6 @@ public class ThrottleContextCleanupTask {
 
 	private static final Log log = LogFactory.getLog(ThrottleContextCleanupTask.class);
 
-	private static final String THROTTLE_CONTEXT_CLEANUP_TASK_FREQUENCY = "throttling.context.cleanup.frequency";
 	private List<ThrottleContext> throttleContexts = new ArrayList<ThrottleContext>();
 
 	public ThrottleContextCleanupTask() {
@@ -50,10 +50,8 @@ public class ThrottleContextCleanupTask {
 					}
 				});
 
-		String throttleFrequency = System.getProperty(THROTTLE_CONTEXT_CLEANUP_TASK_FREQUENCY);
-		if (throttleFrequency == null) {
-			throttleFrequency = "3600000";
-		}
+		String throttleFrequency = ThrottleServiceDataHolder.getInstance().getThrottleProperties().getThrottleFrequency();
+
 
 		if (log.isDebugEnabled()) {
 			log.debug("Throttling Cleanup Task Frequency set to " + throttleFrequency);
