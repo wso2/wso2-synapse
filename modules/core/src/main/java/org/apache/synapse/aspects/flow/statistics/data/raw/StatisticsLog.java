@@ -19,6 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -34,13 +35,17 @@ public class StatisticsLog {
 
 	private final int parentMsgId;
 
+	private String timeStamp;
+
+	private String messageFlowId;
+
 	private final ComponentType componentType;
 
 	private final String componentId;
 
 	private final String parent;
 
-	private  int msgId;
+	private int msgId;
 
 	List<Integer> children = new LinkedList<>();
 
@@ -121,7 +126,7 @@ public class StatisticsLog {
 	}
 
 	public void setMsgId(int msgId) {
-		 this.msgId = msgId;
+		this.msgId = msgId;
 	}
 
 	public boolean isResponse() {
@@ -174,5 +179,42 @@ public class StatisticsLog {
 
 	public void setIsOpenedByContinuation(boolean isOpenedByContinuation) {
 		this.isOpenedByContinuation = isOpenedByContinuation;
+	}
+
+	public String getTimeStamp() {
+		return timeStamp;
+	}
+
+	public void setTimeStamp(String timeStamp) {
+		this.timeStamp = timeStamp;
+	}
+
+	public String getMessageFlowId() {
+		return messageFlowId;
+	}
+
+	public void setMessageFlowId(String messageFlowId) {
+		this.messageFlowId = messageFlowId;
+	}
+
+	public String getComponentTypeToString() {
+		switch (componentType) {
+			case PROXYSERVICE:
+				return StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE;
+			case ENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_ENDPOINT;
+			case INBOUNDENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT;
+			case SEQUENCE:
+				return StatisticsConstants.FLOW_STATISTICS_SEQUENCE;
+			case MEDIATOR:
+				return StatisticsConstants.FLOW_STATISTICS_MEDIATOR;
+			case API:
+				return StatisticsConstants.FLOW_STATISTICS_API;
+			case RESOURCE:
+				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
+			default:
+				return StatisticsConstants.FLOW_STATISTICS_ANY;
+		}
 	}
 }

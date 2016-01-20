@@ -151,13 +151,14 @@ public class RuntimeStatisticCollector {
 	 * Creates Endpoint Statistics for the endpoint.
 	 *
 	 * @param statisticId        Statistic ID of the message flow.
+	 * @param timestamp          Time of the statistic event.
 	 * @param endpointId         Endpoint unique identification Number.
 	 * @param endpointName       Endpoint name.
 	 * @param synapseEnvironment Synapse environment of the message flow.
 	 * @param time               Time of the Stat reporting.
 	 * @param isCreateLog        Is this a creation of a log.
 	 */
-	public static void createEndpointStatistics(String statisticId, String endpointId, String endpointName,
+	public static void createEndpointStatistics(String statisticId, String timestamp, String endpointId, String endpointName,
 	                                            SynapseEnvironment synapseEnvironment, long time, boolean isCreateLog) {
 		if (isCreateLog) {
 			EndpointStatisticEntry endpointStatisticEntry;
@@ -167,7 +168,7 @@ public class RuntimeStatisticCollector {
 				endpointStatisticEntry = new EndpointStatisticEntry();
 				endpointStatistics.put(statisticId, endpointStatisticEntry);
 			}
-			endpointStatisticEntry.createEndpointLog(endpointId, endpointName, time);
+			endpointStatisticEntry.createEndpointLog(endpointId, statisticId, timestamp, endpointName, time);
 		} else {
 			EndpointStatisticEntry endpointStatisticEntry;
 			if (endpointStatistics.containsKey(statisticId)) {
