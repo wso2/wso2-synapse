@@ -28,12 +28,18 @@ public class EndpointStatisticLog {
 
 	private long endTime;
 
+	private String messageFlowId;
+
+	private String timestamp;
+
 	private boolean isCallbackRegistered;
 
-	public EndpointStatisticLog(String componentId, long startTime) {
+	public EndpointStatisticLog(String uuid, String timestamp, String componentId, long startTime) {
 		this.componentId = componentId;
 		this.startTime = startTime;
 		this.isCallbackRegistered = false;
+		this.messageFlowId = uuid;
+		this.timestamp = timestamp;
 	}
 
 	public String getComponentId() {
@@ -67,4 +73,13 @@ public class EndpointStatisticLog {
 	public void setIsCallbackRegistered() {
 		this.isCallbackRegistered = true;
 	}
+
+	public String getMessageFlowId() {
+		return messageFlowId;
+	}
+
+	public String getTimestamp() {
+		return timestamp;
+	}
+
 }
