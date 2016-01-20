@@ -67,4 +67,20 @@ public class StatisticsConstants {
 	 * Flow statistic default queue size
 	 */
 	public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE = "10000";
+
+	public static final String FLOW_STATISTICS_PROXYSERVICE = "Proxy Service";
+
+	public static final String FLOW_STATISTICS_ENDPOINT = "Endpoint";
+
+	public static final String FLOW_STATISTICS_INBOUNDENDPOINT = "Inbound EndPoint";
+
+	public static final String FLOW_STATISTICS_SEQUENCE = "Sequence";
+
+	public static final String FLOW_STATISTICS_MEDIATOR = "Mediator";
+
+	public static final String FLOW_STATISTICS_API = "API";
+
+	public static final String FLOW_STATISTICS_RESOURCE = "API Resource";
+
+	public static final String FLOW_STATISTICS_ANY = "Other Type";
 }
