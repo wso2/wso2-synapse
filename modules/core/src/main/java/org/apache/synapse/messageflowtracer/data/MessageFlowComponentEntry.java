@@ -102,5 +102,7 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
      */
     public void process(){
         this.synapseEnvironment.getMessageFlowDataHolder().addComponentInfoEntry(this);
+        this.synapseEnvironment.getMessageDataCollector().enQueue(this);
+
     }
 }

@@ -29,6 +29,7 @@ import org.apache.synapse.messageflowtracer.data.MessageFlowDataEntry;
 import org.apache.synapse.messageflowtracer.data.MessageFlowTraceEntry;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -65,15 +66,15 @@ public class MessageFlowTracingDataCollector {
             tracingDataCollector = new MessageDataCollector(queueSize);
             tracingDataConsumer = new MessageFlowTracingDataConsumer();
             //Thread to consume queue and update data structures for publishing
-            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-                    new ThreadFactory() {
-                        public Thread newThread(Runnable r) {
-                            Thread t = new Thread(r);
-                            t.setName("Mediation Tracing Data consumer Task");
-                            return t;
-                        }
-                    });
-            executor.scheduleAtFixedRate(tracingDataConsumer, 0, 1000, TimeUnit.MILLISECONDS);
+//            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
+//                    new ThreadFactory() {
+//                        public Thread newThread(Runnable r) {
+//                            Thread t = new Thread(r);
+//                            t.setName("Mediation Tracing Data consumer Task");
+//                            return t;
+//                        }
+//                    });
+//            executor.scheduleAtFixedRate(tracingDataConsumer, 0, 1000, TimeUnit.MILLISECONDS);
         }
         date = new java.util.Date();
     }
@@ -109,6 +110,9 @@ public class MessageFlowTracingDataCollector {
         for (String flow : messageFlowTrace) {
             if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
                 tracingDataCollector.enQueue(new MessageFlowTraceEntry(synCtx.getProperty
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), flow, synCtx.getProperty
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(), dateFormatter.format(new Date()), synCtx.getEnvironment()));
+                synCtx.getEnvironment().getMessageDataCollector().enQueue(new MessageFlowTraceEntry(synCtx.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), flow, synCtx.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(), dateFormatter.format(new Date()), synCtx.getEnvironment()));
             } else {
@@ -158,6 +162,12 @@ public class MessageFlowTracingDataCollector {
                     (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx
                     .isResponse(), start, dateFormatter.format(new Date()), propertyMap,
                                                                        transportPropertyMap, payload, synCtx
+                    .getEnvironment()));
+
+            synCtx.getEnvironment().getMessageDataCollector().enQueue(new MessageFlowComponentEntry(synCtx.getProperty
+                    (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx
+                    .isResponse(), start, dateFormatter.format(new Date()), propertyMap,
+                    transportPropertyMap, payload, synCtx
                     .getEnvironment()));
         } else {
             if (log.isTraceEnabled()) {

@@ -68,5 +68,6 @@ public class MessageFlowTraceEntry implements MessageFlowDataEntry {
      */
     public void process(){
         this.synapseEnvironment.getMessageFlowDataHolder().addFlowInfoEntry(this);
+        this.synapseEnvironment.getMessageDataCollector().enQueue(this);
     }
 }
