@@ -38,8 +38,6 @@ public class EndpointLog implements StatisticReportingLog {
 	private String timeStamp;
 	private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
-
-
 	public EndpointLog(MessageContext messageContext, String endpointId, String endpointName, boolean isCreateLog) {
 		this.endpointId = endpointId;
 		this.endpointName = endpointName;
