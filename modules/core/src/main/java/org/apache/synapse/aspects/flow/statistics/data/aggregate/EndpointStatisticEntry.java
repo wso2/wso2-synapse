@@ -19,11 +19,9 @@
 package org.apache.synapse.aspects.flow.statistics.data.aggregate;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
 
-import java.util.List;
 import java.util.Map;
 
 public class EndpointStatisticEntry {
@@ -39,8 +37,9 @@ public class EndpointStatisticEntry {
 		this.callbackMap = new HashMap<>();
 	}
 
-	public void createEndpointLog(String endpointId, String endpointName, long startTime) {
-		EndpointStatisticLog endpointstatisticLog = new EndpointStatisticLog(endpointName, startTime);
+	public void createEndpointLog(String endpointId, String uuid, String timestamp, String endpointName,
+	                              long startTime) {
+		EndpointStatisticLog endpointstatisticLog = new EndpointStatisticLog(uuid, timestamp, endpointName, startTime);
 		endpointMap.put(endpointId, endpointstatisticLog);
 		lastEndpointUuid = endpointId;
 	}

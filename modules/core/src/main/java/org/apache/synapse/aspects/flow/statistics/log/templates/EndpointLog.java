@@ -24,6 +24,9 @@ import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class EndpointLog implements StatisticReportingLog {
 
 	private String endpointId;
@@ -32,6 +35,10 @@ public class EndpointLog implements StatisticReportingLog {
 	private boolean isCreateLog;
 	private String statisticId;
 	private SynapseEnvironment synapseEnvironment;
+	private String timeStamp;
+	private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+
+
 
 	public EndpointLog(MessageContext messageContext, String endpointId, String endpointName, boolean isCreateLog) {
 		this.endpointId = endpointId;
@@ -40,10 +47,12 @@ public class EndpointLog implements StatisticReportingLog {
 		this.time = System.currentTimeMillis();
 		this.statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		this.synapseEnvironment = messageContext.getEnvironment();
+		this.timeStamp = dateFormatter.format(new Date());
 	}
 
 	@Override public void process() {
 		RuntimeStatisticCollector
-				.createEndpointStatistics(statisticId, endpointId, endpointName, synapseEnvironment, time, isCreateLog);
+				.createEndpointStatistics(statisticId, timeStamp, endpointId, endpointName, synapseEnvironment, time,
+				                          isCreateLog);
 	}
 }
