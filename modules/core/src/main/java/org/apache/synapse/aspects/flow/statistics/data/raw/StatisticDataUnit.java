@@ -21,6 +21,9 @@ package org.apache.synapse.aspects.flow.statistics.data.raw;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.core.SynapseEnvironment;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class StatisticDataUnit {
 	private String statisticId;
 	private Long time;
@@ -33,6 +36,8 @@ public class StatisticDataUnit {
 	private boolean aggregatePoint;
 	private boolean clonePoint;
 	private int parentMsgId;
+	private String timeStamp;
+	private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
 	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
 	                         int cloneId, Long time, boolean isResponse) {
@@ -45,18 +50,7 @@ public class StatisticDataUnit {
 		this.isResponse = isResponse;
 		this.aggregatePoint = false;
 		this.clonePoint = false;
-	}
-
-	public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
-	                         boolean isResponse) {
-		this.statisticId = statisticId;
-		this.time = time;
-		this.parentId = parentId;
-		this.componentId = componentId;
-		this.cloneId = cloneId;
-		this.isResponse = isResponse;
-		this.aggregatePoint = false;
-		this.clonePoint = false;
+		this.timeStamp = dateFormatter.format(new Date());
 	}
 
 	public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
@@ -76,6 +70,7 @@ public class StatisticDataUnit {
 		this.synapseEnvironment = synapseEnvironment;
 		this.aggregatePoint = false;
 		this.clonePoint = false;
+		this.timeStamp = dateFormatter.format(new Date());
 	}
 
 	public String getStatisticId() {
@@ -136,5 +131,9 @@ public class StatisticDataUnit {
 
 	public int getParentMsgId() {
 		return parentMsgId;
+	}
+
+	public String getTimeStamp() {
+		return timeStamp;
 	}
 }

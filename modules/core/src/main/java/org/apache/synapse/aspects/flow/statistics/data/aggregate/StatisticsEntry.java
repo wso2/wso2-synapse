@@ -75,6 +75,8 @@ public class StatisticsEntry {
 	 */
 	public StatisticsEntry(StatisticDataUnit statisticDataUnit) {
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, DEFAULT_MSG_ID, PARENT_LEVEL_OF_ROOT);
+		statisticsLog.setTimeStamp(statisticDataUnit.getTimeStamp());
+		statisticsLog.setMessageFlowId(statisticDataUnit.getStatisticId());
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
