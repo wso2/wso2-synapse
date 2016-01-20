@@ -42,6 +42,11 @@ public class SynapseMessage implements Serializable {
 
     private int tracingState = SynapseConstants.TRACING_UNSET;
 
+    /**
+     * Attribute of MC stating the message flow tracing state of the message
+     */
+    private int messageFlowTracingState = SynapseConstants.TRACING_UNSET;
+
     public boolean isResponse() {
         return response;
     }
@@ -88,5 +93,13 @@ public class SynapseMessage implements Serializable {
 
     public void addLocalEntry(String key) {
         localEntries.add(key);
+    }
+
+    public int getMessageFlowTracingState() {
+        return messageFlowTracingState;
+    }
+
+    public void setMessageFlowTracingState(int messageFlowTracingState) {
+        this.messageFlowTracingState = messageFlowTracingState;
     }
 }

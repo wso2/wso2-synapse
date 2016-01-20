@@ -662,6 +662,11 @@ public class SynapseDebugManager {
     public void acquireMediationFlowPointProperties(String propertyOrProperties,
                                                     String propertyContext,
                                                     JSONObject property_arguments) {
+        if (!(this.medFlowState == MediationFlowState.SUSPENDED)) {
+            this.advertiseCommandResponse(createDebugCommandResponse(false,
+                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES).toString());
+            return;
+        }
         try {
             if (propertyOrProperties.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTIES)) {
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_ALL)) {
@@ -902,6 +907,8 @@ public class SynapseDebugManager {
             }
         } catch (JSONException e) {
             log.error("Failed to set or remove property in the scope " + propertyContext, e);
+            this.advertiseCommandResponse(createDebugCommandResponse(false,
+                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY).toString());
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }

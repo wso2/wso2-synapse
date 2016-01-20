@@ -29,14 +29,13 @@ import org.apache.synapse.messageflowtracer.data.MessageFlowDataEntry;
 import org.apache.synapse.messageflowtracer.data.MessageFlowTraceEntry;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
-import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -52,6 +51,7 @@ public class MessageFlowTracingDataCollector {
     private static Date date;
     private static MessageDataCollector tracingDataCollector;
     private static MessageFlowTracingDataConsumer tracingDataConsumer;
+    private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
     public static void init() {
         int queueSize;
@@ -110,8 +110,7 @@ public class MessageFlowTracingDataCollector {
             if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
                 tracingDataCollector.enQueue(new MessageFlowTraceEntry(synCtx.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), flow, synCtx.getProperty
-                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(), new Timestamp(date.getTime()
-                ).toString(), synCtx.getEnvironment()));
+                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(), dateFormatter.format(new Date()), synCtx.getEnvironment()));
             } else {
                 if (log.isTraceEnabled()) {
                     log.trace("Message Flow ID is null, Flow Entry Data will not be updated for " + synCtx.getMessageID
@@ -157,7 +156,7 @@ public class MessageFlowTracingDataCollector {
         if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
             tracingDataCollector.enQueue(new MessageFlowComponentEntry(synCtx.getProperty
                     (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx
-                    .isResponse(), start, new Timestamp(date.getTime()).toString(), propertyMap,
+                    .isResponse(), start, dateFormatter.format(new Date()), propertyMap,
                                                                        transportPropertyMap, payload, synCtx
                     .getEnvironment()));
         } else {
@@ -204,7 +203,7 @@ public class MessageFlowTracingDataCollector {
      */
     public static void setEntryPoint(MessageContext synCtx, String entryType, String messageID) {
         if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) == null) {
-            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, messageID);
+            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, messageID.replace(":", "_"));
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE, entryType);
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID,
                                new MessageFlowComponentId(MessageFlowTracerConstants.INITIAL_FLOW_INCREMENT_ID));

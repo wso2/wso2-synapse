@@ -44,9 +44,11 @@ import org.apache.axis2.context.OperationContext;
 import org.apache.axis2.i18n.Messages;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -200,14 +202,20 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Aggregate mediator : Mediating from ContinuationState");
         }
-
+        RuntimeStatisticCollector
+                .openLogForContinuation(synCtx, onCacheHitSequence.getSequenceNameForStatistics(synCtx));
         if (!contState.hasChild()) {
             onCacheHitSequence.mediate(synCtx, contState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator = (FlowContinuableMediator) onCacheHitSequence.
                     getChild(contState.getPosition());
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
             mediator.mediate(synCtx, contState.getChildContState());
+
+            ((Mediator) mediator).reportStatistic(synCtx, null, false);
         }
+        onCacheHitSequence.reportStatistic(synCtx, null, false);
         return false;
     }
 

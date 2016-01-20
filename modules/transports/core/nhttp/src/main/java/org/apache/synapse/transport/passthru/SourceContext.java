@@ -18,8 +18,8 @@ package org.apache.synapse.transport.passthru;
 
 import org.apache.http.nio.NHttpConnection;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -99,7 +99,7 @@ public class SourceContext {
 
 		if (writer != null) {
 			if (!isError) {      // If there is an error we do not release the buffer to the factory
-                ByteBuffer buffer = writer.getBuffer();
+                ControlledByteBuffer buffer = writer.getBuffer();
 				sourceConfiguration.getBufferFactory().release(buffer);
 			}
 		}

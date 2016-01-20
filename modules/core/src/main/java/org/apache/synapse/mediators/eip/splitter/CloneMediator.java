@@ -24,6 +24,7 @@ import org.apache.axis2.Constants;
 import org.apache.axis2.context.OperationContext;
 import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
@@ -41,6 +42,7 @@ import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -139,15 +141,20 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
+        SequenceMediator branchSequence = targets.get(subBranch).getSequence();
+        RuntimeStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
         if (!continuationState.hasChild()) {
-            result = targets.get(subBranch).getSequence().
-                    mediate(synCtx, continuationState.getPosition() + 1);
+            result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
-                    (FlowContinuableMediator) targets.get(subBranch).getSequence().
-                    getChild(continuationState.getPosition());
+                    (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
             result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+            ((Mediator) mediator).reportStatistic(synCtx, null, false);
         }
+        branchSequence.reportStatistic(synCtx, null, false);
         return result;
     }
 
@@ -183,6 +190,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             // Set isServerSide property in the cloned message context
             ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());
+
             if (id != null) {
                 // set the parent correlation details to the cloned MC -
                 //                              for the use of aggregation like tasks

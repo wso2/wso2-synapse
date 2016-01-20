@@ -23,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.util.ContinuationStateHolder;
 
 import java.util.*;
 
@@ -41,19 +42,14 @@ public class StatisticsEntry {
 	private final List<StatisticsLog> messageFlowLogs = new ArrayList<>();
 
 	/**
-	 * LocalMemberHost to use if this is a clustered environment
-	 */
-	private String localMemberHost = null;
-
-	/**
-	 * LocalMemberPort if this is a clustered environment
-	 */
-	private String localMemberPort = null;
-
-	/**
 	 * Map to hold all the remaining callbacks related to the message flow
 	 */
 	private final Map<String, Integer> callbacks = new HashMap<>();
+
+	/**
+	 * Map to hold continuation call details of the message flow
+	 */
+	private final Map<String, ContinuationStateHolder> continuationStateMap = new HashMap<>();
 
 	/**
 	 * Map to hold all the opened statistic logs related to the message flow
@@ -64,19 +60,21 @@ public class StatisticsEntry {
 
 	private boolean hasFault;
 
+	private static final int DEFAULT_MSG_ID = 0;
+
+	private static final int PARENT_LEVEL_OF_ROOT = -1;
+
+	private static final int ROOT_LEVEL = 0;
+
 	/**
 	 * This overloaded constructor will create the root statistic log og the Statistic Entry
 	 * according to given parameters. Statistic Event for creating statistic entry can be either
 	 * PROXY, API or SEQUENCE.
 	 *
 	 * @param statisticDataUnit statistic data unit with raw data
-	 * @param localMemberHost   localMemberHost in the cluster
-	 * @param localMemberPort   localMemberPort in the cluster
 	 */
-	public StatisticsEntry(StatisticDataUnit statisticDataUnit, String localMemberHost, String localMemberPort) {
-		this.localMemberHost = localMemberHost;
-		this.localMemberPort = localMemberPort;
-		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, 0, -1);
+	public StatisticsEntry(StatisticDataUnit statisticDataUnit) {
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, DEFAULT_MSG_ID, PARENT_LEVEL_OF_ROOT);
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
 		if (log.isDebugEnabled()) {
@@ -93,7 +91,7 @@ public class StatisticsEntry {
 	public synchronized void createLog(StatisticDataUnit statisticDataUnit) {
 		if (openLogs.isEmpty()) {
 			statisticDataUnit.setParentId(null);
-			StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, -1, -1);
+			StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, DEFAULT_MSG_ID, PARENT_LEVEL_OF_ROOT);
 			messageFlowLogs.add(statisticsLog);
 			openLogs.addFirst(messageFlowLogs.size() - 1);
 			if (log.isDebugEnabled()) {
@@ -113,10 +111,15 @@ public class StatisticsEntry {
 				haveAggregateLogs = true;
 			}
 
-			int parentIndex;
+			Integer parentIndex;
 			if (isCloneFlow(statisticDataUnit.getCloneId())) {
 				parentIndex = getImmediateCloneIndex();
-				createNewCloneLog(statisticDataUnit, parentIndex);
+				if (parentIndex == null) {
+					parentIndex = getParentForNormalOperation(statisticDataUnit.getCloneId());
+					createNewLog(statisticDataUnit, parentIndex);
+				} else {
+					createNewCloneLog(statisticDataUnit, parentIndex);
+				}
 			} else if (haveAggregateLogs) {
 				if (statisticDataUnit.isAggregatePoint()) {
 					parentIndex = getParentForAggregateOperation(statisticDataUnit.getCloneId());
@@ -138,10 +141,13 @@ public class StatisticsEntry {
 	}
 
 	public synchronized void reportFault(int cloneId) {
-		if (!hasFault) {
-			hasFault = true;
-			int parentIndex = getParentFormOpenLogs(cloneId);
+		hasFault = true;
+		Integer parentIndex = getImmediateParentFromMessageLogs(cloneId);
+		if (parentIndex != null) {
 			addFaultsToParents(parentIndex);
+		} else {
+			//If no parent for the msg Id found add fault to root log
+			addFaultsToParents(ROOT_LEVEL);
 		}
 	}
 
@@ -157,6 +163,11 @@ public class StatisticsEntry {
 
 		if (haveAggregateLogs && statisticDataUnit.isAggregatePoint()) {
 			haveAggregateLogs = false;
+			Integer aggregateIndex = deleteAndGetAggregateIndexFromOpenLogs();
+			if (aggregateIndex != null) {
+				closeStatisticLog(aggregateIndex, statisticDataUnit.getTime());
+				return openLogs.isEmpty();
+			}
 		}
 		if (statisticDataUnit.getParentId() == null) {
 			componentLevel =
@@ -167,8 +178,13 @@ public class StatisticsEntry {
 					                           statisticDataUnit.getCloneId());
 		}
 		//not closing the root statistic log as it will be closed be endAll method
-		if (componentLevel > 0) {
+		if (componentLevel > ROOT_LEVEL) {
 			closeStatisticLog(componentLevel, statisticDataUnit.getTime());
+		} else {
+			componentLevel = deleteAndGetComponentIndex(statisticDataUnit.getComponentId());
+			if (componentLevel > ROOT_LEVEL) {
+				closeStatisticLog(componentLevel, statisticDataUnit.getTime());
+			}
 		}
 		return openLogs.isEmpty();
 	}
@@ -202,9 +218,9 @@ public class StatisticsEntry {
 		/*
 	  Number of faults waiting to be handled by a fault sequence
 	 */
-		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && !haveAggregateLogs || closeForcefully) {
+		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && !haveAggregateLogs && !hasFault || closeForcefully) {
 			if (openLogs.isEmpty()) {
-				messageFlowLogs.get(0).setEndTime(endTime);
+				messageFlowLogs.get(ROOT_LEVEL).setEndTime(endTime);
 			} else {
 				for (Integer index : openLogs) {
 					messageFlowLogs.get(index).setEndTime(endTime);
@@ -229,13 +245,13 @@ public class StatisticsEntry {
 
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit, parentLog.getMsgId(), parentIndex);
 
-		Integer immediateParentFormMessageLogs = getImmediateParentFormMessageLogs(statisticsLog.getMsgId());
+		Integer immediateParentFromMessageLogs = getImmediateParentFromMessageLogs(statisticsLog.getMsgId());
 
-		if (immediateParentFormMessageLogs == null) {
-			immediateParentFormMessageLogs = parentIndex;
+		if (immediateParentFromMessageLogs == null) {
+			immediateParentFromMessageLogs = parentIndex;
 		}
 
-		StatisticsLog possibleParent = messageFlowLogs.get(immediateParentFormMessageLogs);
+		StatisticsLog possibleParent = messageFlowLogs.get(immediateParentFromMessageLogs);
 		Integer lastAggregateIndex = getImmediateAggregateIndex();
 		StatisticsLog lastAggregateLog = null;
 		if (lastAggregateIndex != null) {
@@ -300,7 +316,7 @@ public class StatisticsEntry {
 	 */
 	public void addCallback(String callbackId, int msgId) {
 		//id simple
-		int callbackIndex = getFirstLogWithMsgId(msgId, false);
+		int callbackIndex = getParentFromOpenLogs(msgId);
 		callbacks.put(callbackId, callbackIndex);
 		if (log.isDebugEnabled()) {
 			log.debug("Callback stored for this message flow [CallbackId|" + callbackId + "]");
@@ -328,16 +344,72 @@ public class StatisticsEntry {
 	/**
 	 * Updates the ArrayList after an response for that callback is received.
 	 *
-	 * @param callbackId callback id
-	 * @param endTime    response received time
+	 * @param callbackId     callback id
+	 * @param endTime        response received time
+	 * @param isContinuation whether call back related to a continuation call
 	 */
-	public synchronized void updateCallbackReceived(String callbackId, Long endTime) {
+	public synchronized void updateCallbackReceived(String callbackId, Long endTime, Boolean isContinuation) {
 		if (callbacks.containsKey(callbackId)) {
 			int closedIndex = callbacks.get(callbackId);
 			updateParentLogs(closedIndex, endTime);
+			if (isContinuation == null || isContinuation) {
+				continuationStateMap.put(callbackId, new ContinuationStateHolder(closedIndex, PARENT_LEVEL_OF_ROOT));
+			}
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("No stored callback information found in statistic trace.");
+			}
+		}
+	}
+
+	/**
+	 * Opens respective mediator logs in case of a continuation call.
+	 *
+	 * @param messageId   message uuid which corresponds to the continuation flow.
+	 * @param componentId component name
+	 */
+	public void openLogForContinuation(String messageId, String componentId) {
+		if (continuationStateMap.containsKey(messageId)) {
+			ContinuationStateHolder continuationStateHolder = continuationStateMap.get(messageId);
+			int continuationIndex = continuationStateHolder.getCallbackPoint();
+			Integer componentIndex = null;
+			while (continuationIndex > continuationStateHolder.getContinuationStackPosition()) {
+				StatisticsLog statisticsLog = messageFlowLogs.get(continuationIndex);
+				if (statisticsLog.getComponentId().equals(componentId)) {
+					componentIndex = continuationIndex;
+				}
+				continuationIndex = statisticsLog.getParentLevel();
+			}
+			if (componentIndex != null) {
+				openLogs.addFirst(componentIndex);
+				messageFlowLogs.get(componentIndex).setIsOpenedByContinuation(true);
+				continuationStateHolder.setContinuationStackPosition(componentIndex);
+			} else {
+				if (log.isDebugEnabled()) {
+					log.error("No log found to match the continuation component Id:" + componentId);
+				}
+			}
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug("No continuation information found in statistic trace for this message Id.");
+			}
+		}
+	}
+
+	/**
+	 * Removes the message Id entry from the continuation map belonging to this message flow.
+	 *
+	 * @param messageId message Id
+	 */
+	public void removeContinuationEntry(String messageId) {
+		if (continuationStateMap.containsKey(messageId)) {
+			continuationStateMap.remove(messageId);
+			if (log.isDebugEnabled()) {
+				log.debug("Continuation state removed for the received Id:" + messageId);
+			}
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug("No Continuation state entry found for the Id:" + messageId);
 			}
 		}
 	}
@@ -355,7 +427,7 @@ public class StatisticsEntry {
 			//if log is closed end time will be different than -1
 			while (!(updatingLog.getEndTime() == -1)) {
 				updatingLog.setEndTime(endTime);
-				if (updatingLog.getParentLevel() == -1) {
+				if (updatingLog.getParentLevel() == PARENT_LEVEL_OF_ROOT) {
 					break;
 				}
 				updatingLog = messageFlowLogs.get(updatingLog.getParentLevel());
@@ -377,6 +449,20 @@ public class StatisticsEntry {
 			}
 		}
 		return immediateIndex;
+	}
+
+	private Integer deleteAndGetAggregateIndexFromOpenLogs() {
+		Integer aggregateIndex = null;
+		Iterator<Integer> StatLog = openLogs.listIterator(); // set Iterator at specified index
+		while (StatLog.hasNext()) {
+			int index = StatLog.next();
+			if (messageFlowLogs.get(index).isAggregateLog()) {
+				aggregateIndex = index;
+				StatLog.remove(); //if it is not root element remove
+				break;
+			}
+		}
+		return aggregateIndex;
 	}
 
 	private Integer getImmediateCloneIndex() {
@@ -404,32 +490,10 @@ public class StatisticsEntry {
 		return true;
 	}
 
-	private Integer getFirstLogWithMsgIdFromOpenLogs(int msgId) {
-
-		Integer immediateIndex = null;
-		Integer immediateCloneIndex = getImmediateCloneIndex();
-
-		if (immediateCloneIndex != null) {
-			for (Integer index : openLogs) {
-				StatisticsLog statisticsLog = messageFlowLogs.get(index);
-
-				if (immediateCloneIndex >= index) {
-					break;
-				}
-
-				if (statisticsLog.getMsgId() == msgId) {
-					immediateIndex = index;
-					break;
-				}
-			}
-		}
-		return immediateIndex;
-	}
-
-	private int getParentForNormalOperation(int msgId) {
-		Integer parentIndex = getParentFormOpenLogs(msgId);
+	private Integer getParentForNormalOperation(int msgId) {
+		Integer parentIndex = getParentFromOpenLogs(msgId);
 		if (parentIndex == null) {
-			parentIndex = getParentFormMessageLogs(msgId);
+			parentIndex = getParentForClosedMsgFlow(msgId);
 			if (parentIndex == null) {
 				if (openLogs.isEmpty()) {
 					parentIndex = 0;
@@ -441,12 +505,25 @@ public class StatisticsEntry {
 		return parentIndex;
 	}
 
+	private Integer getParentForClosedMsgFlow(int msgId) {
+		Integer sameMsgIdLastLog = getParentFromMessageLogs(msgId);
+		StatisticsLog lastLog = messageFlowLogs.get(sameMsgIdLastLog);
+		while (lastLog.getParentMsgId() > DEFAULT_MSG_ID) {
+			Integer parentIndex = getParentFromOpenLogs(lastLog.getParentMsgId());
+			if (parentIndex != null) {
+				return parentIndex;
+			}
+			lastLog = messageFlowLogs.get(lastLog.getParentLevel());
+		}
+		return getParentFromOpenLogs(DEFAULT_MSG_ID);
+	}
+
 	private int getParentForAggregateOperation(int msgId) {
 		Integer immediateAggregateIndex = getImmediateAggregateIndex();
 		Integer immediateCloneIndex = getImmediateCloneIndex();
-		Integer parentIndex = getParentFormOpenLogs(msgId, immediateCloneIndex);
+		Integer parentIndex = getParentFromOpenLogs(msgId, immediateCloneIndex);
 		if (parentIndex == null) {
-			parentIndex = getParentFormMessageLogs(msgId, immediateCloneIndex);
+			parentIndex = getParentFromMessageLogs(msgId, immediateCloneIndex);
 			if (parentIndex == null) {
 				if (immediateAggregateIndex != null) {
 					parentIndex = immediateAggregateIndex;
@@ -458,7 +535,7 @@ public class StatisticsEntry {
 		return parentIndex;
 	}
 
-	private Integer getParentFormOpenLogs(int msgId) {
+	private Integer getParentFromOpenLogs(int msgId) {
 		Integer immediateIndex = null;
 		for (Integer index : openLogs) {
 			StatisticsLog statisticsLog = messageFlowLogs.get(index);
@@ -471,7 +548,7 @@ public class StatisticsEntry {
 		return immediateIndex;
 	}
 
-	private Integer getParentFormOpenLogs(int msgId, int limit) {
+	private Integer getParentFromOpenLogs(int msgId, int limit) {
 		Integer immediateIndex = null;
 		for (Integer index : openLogs) {
 			if (limit >= index) {
@@ -487,7 +564,7 @@ public class StatisticsEntry {
 		return immediateIndex;
 	}
 
-	private Integer getParentFormMessageLogs(int msgId) {
+	private Integer getParentFromMessageLogs(int msgId) {
 		Integer immediateIndex = null;
 		for (int i = messageFlowLogs.size() - 1; i >= 0; i--) {
 			StatisticsLog statisticsLog = messageFlowLogs.get(i);
@@ -500,7 +577,7 @@ public class StatisticsEntry {
 		return immediateIndex;
 	}
 
-	private Integer getImmediateParentFormMessageLogs(int msgId) {
+	private Integer getImmediateParentFromMessageLogs(int msgId) {
 		Integer immediateIndex = null;
 		for (int i = messageFlowLogs.size() - 1; i >= 0; i--) {
 			StatisticsLog statisticsLog = messageFlowLogs.get(i);
@@ -513,7 +590,7 @@ public class StatisticsEntry {
 		return immediateIndex;
 	}
 
-	private Integer getParentFormMessageLogs(int msgId, int limit) {
+	private Integer getParentFromMessageLogs(int msgId, int limit) {
 		Integer immediateIndex = null;
 		for (int i = messageFlowLogs.size() - 1; i >= 0; i--) {
 			StatisticsLog statisticsLog = messageFlowLogs.get(i);
@@ -524,38 +601,6 @@ public class StatisticsEntry {
 			}
 		}
 		return immediateIndex;
-	}
-
-	private int getFirstLogWithMsgId(int msgId, boolean cloneAware) {
-
-		Integer immediateParent = getFirstLogWithMsgIdFromOpenLogs(msgId);
-		if (immediateParent != null) {
-			return immediateParent;
-		}
-		Integer immediateAggregateIndex = null;
-		Integer immediateCloneIndex = null;
-
-		for (int i = messageFlowLogs.size() - 1; i >= 0; i--) {
-			StatisticsLog statisticsLog = messageFlowLogs.get(i);
-
-			if (statisticsLog.isCloneLog()) {
-				immediateCloneIndex = i;
-				break;
-			}
-			if (statisticsLog.getMsgId() == msgId) {
-				return i;
-			}
-			if (statisticsLog.isAggregateLog() && (immediateAggregateIndex == null)) {
-				immediateAggregateIndex = i;
-			}
-		}
-		if (immediateAggregateIndex != null) {
-			return immediateAggregateIndex;
-		} else if (immediateCloneIndex != null) {
-			return immediateCloneIndex;
-		}
-
-		return 0;
 	}
 
 	/**
@@ -568,7 +613,7 @@ public class StatisticsEntry {
 	 * @return index of the statistic log
 	 */
 	private int deleteAndGetComponentIndex(String componentId, String parentId, int msgId) {
-		int parentIndex = -1;
+		int parentIndex = PARENT_LEVEL_OF_ROOT;
 		Iterator<Integer> StatLog = openLogs.listIterator(); // set Iterator at specified index
 		while (StatLog.hasNext()) {
 			int index = StatLog.next();
@@ -592,12 +637,34 @@ public class StatisticsEntry {
 	 * @return index of the statistic log
 	 */
 	private int deleteAndGetComponentIndex(String componentId, int msgId) {
-		int parentIndex = -1;
+		int parentIndex = PARENT_LEVEL_OF_ROOT;
 		Iterator<Integer> StatLog = openLogs.listIterator(); // set Iterator at specified index
 		while (StatLog.hasNext()) {
 			int index = StatLog.next();
 			if (componentId.equals(messageFlowLogs.get(index).getComponentId()) &&
 			    (msgId == messageFlowLogs.get(index).getMsgId())) {
+				parentIndex = index;
+				StatLog.remove(); //if it is not root element remove
+				break;
+			}
+		}
+		return parentIndex;
+	}
+
+	/**
+	 * Get first occurrence of the statistic log related to componentId for continuation call, if it s present
+	 * in the openLogs list and delete it from the openLogs list.
+	 *
+	 * @param componentId componentId of the statistic log
+	 * @return index of the statistic log
+	 */
+	private int deleteAndGetComponentIndex(String componentId) {
+		int parentIndex = PARENT_LEVEL_OF_ROOT;
+		Iterator<Integer> StatLog = openLogs.listIterator(); // set Iterator at specified index
+		while (StatLog.hasNext()) {
+			int index = StatLog.next();
+			if (componentId.equals(messageFlowLogs.get(index).getComponentId()) &&
+			    (messageFlowLogs.get(index).isOpenedByContinuation())) {
 				parentIndex = index;
 				StatLog.remove(); //if it is not root element remove
 				break;
@@ -613,12 +680,10 @@ public class StatisticsEntry {
 	 * @param parentIndexOfFault parent Index of the fault log
 	 */
 	private void addFaultsToParents(int parentIndexOfFault) {
-		if (parentIndexOfFault > -1) {
-			while (parentIndexOfFault > -1) {
-				StatisticsLog updatingLog = messageFlowLogs.get(parentIndexOfFault);
-				updatingLog.incrementNoOfFaults();
-				parentIndexOfFault = updatingLog.getParentLevel();
-			}
+		while (parentIndexOfFault > PARENT_LEVEL_OF_ROOT) {
+			StatisticsLog updatingLog = messageFlowLogs.get(parentIndexOfFault);
+			updatingLog.incrementNoOfFaults();
+			parentIndexOfFault = updatingLog.getParentLevel();
 		}
 	}
 

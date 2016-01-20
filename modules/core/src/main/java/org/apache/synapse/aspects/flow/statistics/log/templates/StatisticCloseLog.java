@@ -19,20 +19,20 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class StatisticCloseLog implements StatisticReportingLog {
 
 	private StatisticDataUnit statisticDataUnit;
 
 	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime) {
-		String statisticId = (String) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_ID);
+		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		int msgId;
-		if (messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			msgId = (Integer) messageContext.getProperty(SynapseConstants.FLOW_STATISTICS_MESSAGE_ID);
+		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
+			msgId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
 		} else {
 			msgId = 0;
 		}

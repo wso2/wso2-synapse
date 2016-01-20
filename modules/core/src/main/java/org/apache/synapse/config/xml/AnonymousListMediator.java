@@ -27,6 +27,13 @@ import org.apache.synapse.MessageContext;
 public class AnonymousListMediator extends AbstractListMediator {
 
      public boolean mediate(MessageContext synCtx) {
+
+         if (synCtx.getEnvironment().isDebugEnabled()) {
+             if (super.divertMediationRoute(synCtx)) {
+                 return true;
+             }
+         }
+
          return super.mediate(synCtx);
      }
 }

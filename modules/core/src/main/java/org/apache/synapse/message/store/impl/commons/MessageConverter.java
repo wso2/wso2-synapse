@@ -40,9 +40,11 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.UUIDGenerator;
 
 import javax.xml.stream.XMLStreamException;
@@ -169,6 +171,7 @@ public final class MessageConverter {
             }
             SynapseMessage synMsg = message.getSynapseMessage();
             synCtx.setTracingState(synMsg.getTracingState());
+            synCtx.setMessageFlowTracingState(synMsg.getMessageFlowTracingState());
             Iterator<String> properties = synMsg.getProperties().keySet().iterator();
             while (properties.hasNext()) {
                 String key = properties.next();
@@ -287,6 +290,7 @@ public final class MessageConverter {
             message.setAxis2message(axis2msg);
             synMsg.setFaultResponse(synCtx.isFaultResponse());
             synMsg.setTracingState(synCtx.getTracingState());
+            synMsg.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
             synMsg.setResponse(synCtx.isResponse());
             properties = synCtx.getPropertyKeySet().iterator();
             while (properties.hasNext()) {

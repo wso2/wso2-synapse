@@ -19,8 +19,7 @@ package org.apache.synapse.transport.passthru;
 import org.apache.axis2.context.MessageContext;
 import org.apache.http.nio.NHttpConnection;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
-
-import java.nio.ByteBuffer;
+import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
 /**
  * When a connection is created, an object of this class is stored in the Connection Context.
@@ -119,7 +118,7 @@ public class TargetContext {
 
         if (writer != null) {
             if (!isError) {      // If there is an error we do not release the buffer to the factory
-                ByteBuffer buffer = writer.getBuffer();
+                ControlledByteBuffer buffer = writer.getBuffer();
                 targetConfiguration.getBufferFactory().release(buffer);
             }
         }
