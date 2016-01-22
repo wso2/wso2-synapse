@@ -18,7 +18,6 @@
 package org.apache.synapse.messageflowtracer.data;
 
 public interface MessageFlowDataEntry {
-    void process();
 }
 
 

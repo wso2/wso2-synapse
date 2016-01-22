@@ -63,11 +63,4 @@ public class MessageFlowTraceEntry implements MessageFlowDataEntry {
         return messageFlow;
     }
 
-    /**
-     * This adds current instance to the MessageFlowDataHolder data store for publishing
-     */
-    public void process(){
-        this.synapseEnvironment.getMessageFlowDataHolder().addFlowInfoEntry(this);
-        this.synapseEnvironment.getMessageDataCollector().enQueue(this);
-    }
 }
