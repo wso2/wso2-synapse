@@ -45,7 +45,6 @@ import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCol
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.messageflowtracer.data.MessageFlowDataHolder;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -127,8 +126,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
 
-    private MessageFlowDataHolder messageFlowDataHolder;
-
     private MessageDataCollector messageDataCollector;
 
     /** Debug mode is enabled/disabled*/
@@ -189,8 +186,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         restHandler = new RESTRequestHandler();
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
-
-        messageFlowDataHolder = new MessageFlowDataHolder();
 
         messageDataCollector = new MessageDataCollector(Integer.parseInt(SynapsePropertiesLoader.getPropertyValue
                 (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE)));
@@ -1092,10 +1087,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
         }
         return true;
-    }
-
-    public MessageFlowDataHolder getMessageFlowDataHolder(){
-        return this.messageFlowDataHolder;
     }
 
     /**
