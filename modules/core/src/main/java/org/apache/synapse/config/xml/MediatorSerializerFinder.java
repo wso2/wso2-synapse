@@ -56,6 +56,7 @@ public class MediatorSerializerFinder {
             AggregateMediatorSerializer.class,
             DBLookupMediatorSerializer.class,
             DBReportMediatorSerializer.class,
+            CacheMediatorSerializer.class,
             CalloutMediatorSerializer.class,
             EventPublisherMediatorSerializer.class,
             TransactionMediatorSerializer.class,
