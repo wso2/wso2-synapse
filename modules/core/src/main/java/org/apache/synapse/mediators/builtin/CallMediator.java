@@ -144,6 +144,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
                 synLog.traceOrDebug("Service returned a null response");
             }
         }
+
         return true;
     }
 

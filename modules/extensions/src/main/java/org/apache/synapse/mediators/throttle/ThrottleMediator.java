@@ -24,12 +24,15 @@ import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.*;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.Entry;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.debug.constructs.EnclosedInlinedSequence;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -57,7 +60,7 @@ import org.apache.synapse.commons.throttle.core.ThrottleFactory;
  */
 
 public class ThrottleMediator extends AbstractMediator implements ManagedLifecycle,
-        FlowContinuableMediator {
+        FlowContinuableMediator, EnclosedInlinedSequence {
 
     /* The key for getting the throttling policy - key refers to a/an [registry] entry */
     private String policyKey = null;
@@ -236,6 +239,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
         if (subBranch == 0) {
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, onAcceptMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onAcceptMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
@@ -243,9 +247,15 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) ((SequenceMediator) onAcceptMediator).
                                 getChild(continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
+            onAcceptMediator.reportStatistic(synCtx, null, false);
         } else {
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, onRejectMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onRejectMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
@@ -253,8 +263,13 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) ((SequenceMediator) onRejectMediator).getChild(
                                 continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
+            onRejectMediator.reportStatistic(synCtx, null, false);
         }
 
         return result;
@@ -704,4 +719,23 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
     public boolean isContentAware() {
         return false;
     }
+
+    @Override
+    public Mediator getInlineSequence(SynapseConfiguration synCfg, int inlinedSeqIdentifier) {
+        if (inlinedSeqIdentifier == 0) {
+            if (onRejectMediator != null) {
+                return onRejectMediator;
+            } else if (onRejectSeqKey != null) {
+                return synCfg.getSequence(onRejectSeqKey);
+            }
+        } else if (inlinedSeqIdentifier == 1) {
+            if (onAcceptMediator != null) {
+                return onAcceptMediator;
+            } else if (onAcceptSeqKey != null) {
+                return synCfg.getSequence(onAcceptSeqKey);
+            }
+        }
+        return null;
+    }
+
 }

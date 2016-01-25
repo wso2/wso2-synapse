@@ -75,7 +75,6 @@ public class OCSPVerifierTest extends TestCase {
 
         //Create OCSP response saying that certificate with given serialNumber is revoked.
         //CertificateID revokedID = new CertificateID(CertificateID.HASH_SHA1, caCert, revokedSerialNumber);
-
         byte[] issuerCertEnc = caCert.getEncoded();
         X509CertificateHolder certificateHolder = new X509CertificateHolder(issuerCertEnc);
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
@@ -83,7 +82,6 @@ public class OCSPVerifierTest extends TestCase {
         // CertID structure is used to uniquely identify certificates that are the subject of
         // an OCSP request or response and has an ASN.1 definition. CertID structure is defined in RFC 2560
         CertificateID revokedID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), certificateHolder, revokedSerialNumber);
-
         OCSPResp response = generateOCSPResponse(request, certificateHolder, caKeyPair.getPrivate(), caKeyPair.getPublic(), revokedID);
         SingleResp singleResp = ((BasicOCSPResp)response.getResponseObject()).getResponses()[0];
 

@@ -202,7 +202,6 @@ public class OCSPVerifier implements RevocationVerifier {
             builder.setRequestExtensions(new Extensions(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce,false, new DEROctetString(nonce.toByteArray()))));
 
             return builder.build();
-
         } catch (Exception e) {
             throw new CertificateVerificationException("Cannot generate OSCP Request with the given certificate", e);
         }
@@ -224,7 +223,6 @@ public class OCSPVerifier implements RevocationVerifier {
         byte[] aiaExtensionValue = cert.getExtensionValue(Extension.authorityInfoAccess.getId());
         if (aiaExtensionValue == null)
             throw new CertificateVerificationException("Certificate Doesn't have Authority Information Access points");
-
         AuthorityInformationAccess authorityInformationAccess;
 
         try {

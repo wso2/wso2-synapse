@@ -25,6 +25,7 @@ import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
@@ -66,6 +67,23 @@ public class InboundEndpointSerializer {
 		} else {
 			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_CLASS,
 	                inboundEndpoint.getClassImpl(), null);
+		}
+
+		StatisticsConfigurable statisticsConfigurable = inboundEndpoint.getAspectConfiguration();
+
+		if (statisticsConfigurable != null && statisticsConfigurable.isStatisticsEnable()) {
+			inboundEndpointElt
+					.addAttribute(XMLConfigConstants.STATISTICS_ATTRIB_NAME, XMLConfigConstants.STATISTICS_ENABLE,
+					              null);
+		}
+
+		if (inboundEndpoint.getTraceState() != SynapseConstants.TRACING_UNSET) {
+			if (inboundEndpoint.getTraceState() == SynapseConstants.TRACING_ON) {
+				inboundEndpointElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);
+			}
+			else if (inboundEndpoint.getTraceState() == SynapseConstants.TRACING_OFF) {
+				inboundEndpointElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_DISABLE, null);
+			}
 		}
 		
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND,

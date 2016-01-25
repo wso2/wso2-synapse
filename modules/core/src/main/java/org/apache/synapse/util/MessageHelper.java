@@ -35,10 +35,11 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
 import org.apache.synapse.aspects.statistics.ErrorLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
-import org.apache.synapse.aspects.statistics.StatisticsRecordFactory;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
@@ -77,8 +78,8 @@ public class MessageHelper {
      * @return cloned Synapse MessageContext
      * @throws AxisFault if there is a failure in creating the new Synapse MC or in a failure in
      *          clonning the underlying axis2 MessageContext
-     * 
-     * @see MessageHelper#cloneAxis2MessageContext 
+     *
+     * @see MessageHelper#cloneAxis2MessageContext
      */
     public static MessageContext cloneMessageContext(MessageContext synCtx, boolean cloneSoapEnvelope) throws AxisFault {
 
@@ -150,14 +151,14 @@ public class MessageHelper {
                 newCtx.setProperty(strkey, obj);
             }
         }
-        
+
         // Make deep copy of fault stack so that parent will not be lost it's fault stack
         Stack<FaultHandler> faultStack = synCtx.getFaultStack();
         if (!faultStack.isEmpty()) {
-            
+
             List<FaultHandler> newFaultStack = new ArrayList<FaultHandler>();
             newFaultStack.addAll(faultStack);
-            
+
             for (FaultHandler faultHandler : newFaultStack) {
                 if (faultHandler != null) {
                     newCtx.pushFaultHandler(faultHandler);
@@ -169,8 +170,8 @@ public class MessageHelper {
 		                                       (Stack) synCtx.getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
 		if (functionStack != null) {
 			newCtx.setProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK, functionStack.clone());
-		}      
-        
+		}
+
         if (log.isDebugEnabled()) {
             log.info("Parent's Fault Stack : " + faultStack
                      + " : Child's Fault Stack :" + newCtx.getFaultStack());
@@ -189,7 +190,8 @@ public class MessageHelper {
                 }
             }
         }
-
+        newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
+        RuntimeStatisticCollector.setCloneProperties(synCtx, newCtx);
         return newCtx;
     }
 
@@ -206,7 +208,7 @@ public class MessageHelper {
     }
 
     public static MessageContext cloneMessageContextForAggregateMediator(MessageContext synCtx) throws AxisFault {
-    	
+
     	// creates the new MessageContext and clone the internal axis2 MessageContext
         // inside the synapse message context and place that in the new one
         MessageContext newCtx = synCtx.getEnvironment().createMessageContext();
@@ -251,12 +253,12 @@ public class MessageHelper {
 					} else if (obj instanceof ArrayList) {
 				        if (log.isDebugEnabled()) {
 				            log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
-				        } 						
+				        }
 						// Call this method to deep clone ArrayList
 						obj = cloneArrayList((ArrayList) obj);
 				        if (log.isDebugEnabled()) {
 				            log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
-				        } 						
+				        }
 					} else {
 						/**
 						 * Need to add conditions according to type if found in
@@ -271,21 +273,21 @@ public class MessageHelper {
 				}
 			}
 		}
-        
+
         // Make deep copy of fault stack so that parent will not be lost it's fault stack
         Stack<FaultHandler> faultStack = synCtx.getFaultStack();
         if (!faultStack.isEmpty()) {
-            
+
             List<FaultHandler> newFaultStack = new ArrayList<FaultHandler>();
             newFaultStack.addAll(faultStack);
-            
+
             for (FaultHandler faultHandler : newFaultStack) {
                 if (faultHandler != null) {
                     newCtx.pushFaultHandler(faultHandler);
                 }
             }
         }
-        
+
         Stack<TemplateContext> functionStack = (Stack) synCtx
                 .getProperty(SynapseConstants.SYNAPSE__FUNCTION__STACK);
         if (functionStack != null) {
@@ -309,6 +311,10 @@ public class MessageHelper {
                 }
             }
         }
+
+        newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
+        RuntimeStatisticCollector.setAggregateProperties(synCtx, newCtx);
+
         return newCtx;
     }
 
@@ -383,7 +389,7 @@ public class MessageHelper {
         }
         return clonedRecord;
     }
-     /* 
+     /*
      * This method will deep clone array list by creating a new ArrayList and cloning and adding each element in it
      * */
 	public static ArrayList<Object> cloneArrayList(ArrayList<Object> arrayList) {
@@ -415,7 +421,7 @@ public class MessageHelper {
 		}
 		return newArrayList;
 	}
-    
+
     /**
      * This method will simulate cloning the message context and creating an exact copy of the
      * passed message. One should use this method with care; that is because, inside the new MC,
@@ -443,7 +449,7 @@ public class MessageHelper {
         // That is to get the existing headers into the new envelope.
         JsonUtil.cloneJsonPayload(mc, newMC);
         newMC.setOptions(cloneOptions(mc.getOptions()));
-        
+
         newMC.setServiceContext(mc.getServiceContext());
         newMC.setOperationContext(mc.getOperationContext());
         newMC.setAxisMessage(mc.getAxisMessage());
@@ -460,7 +466,7 @@ public class MessageHelper {
 
         newMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
             getClonedTransportHeaders(mc));
-  
+
         if(newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null){
         	//clone passthrough pipe here..writer...
         	//newMC.setProperty(PassThroughConstants.CLONE_PASS_THROUGH_PIPE_REQUEST,true);
@@ -490,14 +496,14 @@ public class MessageHelper {
                org.apache.axis2.context.MessageContext mc) throws AxisFault {
         return cloneAxis2MessageContext(mc, true);
     }
-    
+
     private static org.apache.axis2.context.MessageContext cloneAxis2MessageContextForAggregate(
 			org.apache.axis2.context.MessageContext mc) throws AxisFault {
-		
+
     	org.apache.axis2.context.MessageContext newMC = clonePartiallyForAggregate(mc);
         newMC.setEnvelope(cloneSOAPEnvelope(mc.getEnvelope()));
         newMC.setOptions(cloneOptions(mc.getOptions()));
-        
+
         newMC.setServiceContext(mc.getServiceContext());
         newMC.setOperationContext(mc.getOperationContext());
         newMC.setAxisMessage(mc.getAxisMessage());
@@ -514,7 +520,7 @@ public class MessageHelper {
 
         newMC.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
             getClonedTransportHeaders(mc));
-  
+
         if(newMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null){
         	//clone passthrough pipe here..writer...
         	//newMC.setProperty(PassThroughConstants.CLONE_PASS_THROUGH_PIPE_REQUEST,true);
@@ -528,12 +534,12 @@ public class MessageHelper {
         }
 
         return newMC;
-    	
+
 	}
-    
-    
+
+
     public static Map getClonedTransportHeaders(org.apache.axis2.context.MessageContext msgCtx) {
-        
+
         Map headers = (Map) msgCtx.
                 getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         Map<String, Object> clonedHeaders;
@@ -562,7 +568,7 @@ public class MessageHelper {
 
         org.apache.axis2.context.MessageContext newMC
             = new org.apache.axis2.context.MessageContext();
-        
+
         // do not copy options from the original
         newMC.setConfigurationContext(ori.getConfigurationContext());
         newMC.setMessageID(UIDGenerator.generateURNString());
@@ -614,13 +620,13 @@ public class MessageHelper {
         return newMC;
     }
 
-    
+
     public static org.apache.axis2.context.MessageContext clonePartiallyForAggregate(
             org.apache.axis2.context.MessageContext ori) throws AxisFault {
 
             org.apache.axis2.context.MessageContext newMC
                 = new org.apache.axis2.context.MessageContext();
-            
+
             // do not copy options from the original
             newMC.setConfigurationContext(ori.getConfigurationContext());
             newMC.setMessageID(UIDGenerator.generateURNString());
@@ -671,7 +677,7 @@ public class MessageHelper {
 
             return newMC;
         }
-    
+
     /**
      * This method will clone the provided SOAPEnvelope and returns the cloned envelope
      * as an exact copy of the provided envelope
@@ -833,7 +839,7 @@ public class MessageHelper {
 
     /**
      * Get the Policy object for the given name from the Synapse configuration at runtime
-     * 
+     *
      * @param synCtx the current synapse configuration to get to the synapse configuration
      * @param propertyKey the name of the property which holds the Policy required
      * @return the Policy object with the given name, from the configuration
@@ -852,7 +858,7 @@ public class MessageHelper {
      * Clones the SOAPFault, fault cloning is not the same as cloning the OMElement because if the
      * Fault is accessed through the SOAPEnvelope.getBody().getFault() method it will lead to a
      * class cast because the cloned element is just an OMElement but not a Fault.
-     * 
+     *
      * @param fault that needs to be cloned
      * @return the cloned fault
      */
@@ -923,7 +929,7 @@ public class MessageHelper {
     /**
      * Remove the headers that are marked as processed.
      * @param axisMsgCtx the Axis2 Message context
-     * @param preserveAddressing if true preserve the addressing headers     
+     * @param preserveAddressing if true preserve the addressing headers
      */
     public static void removeProcessedHeaders(org.apache.axis2.context.MessageContext axisMsgCtx,
                                               boolean preserveAddressing) {
@@ -951,7 +957,7 @@ public class MessageHelper {
                     }
                 }
             }
-        }        
+        }
     }
 
     /**
@@ -974,5 +980,6 @@ public class MessageHelper {
         log.error(e);
         throw new SynapseException(e);
     }
+
 }
 
