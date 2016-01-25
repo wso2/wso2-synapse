@@ -97,10 +97,4 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
                 ", timestamp='" + timestamp ;
     }
 
-    /**
-     * This adds current instance to the MessageFlowDataHolder data store for publishing
-     */
-    public void process(){
-        this.synapseEnvironment.getMessageFlowDataHolder().addComponentInfoEntry(this);
-    }
 }

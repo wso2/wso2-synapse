@@ -29,6 +29,7 @@ import org.apache.synapse.messageflowtracer.data.MessageFlowDataEntry;
 import org.apache.synapse.messageflowtracer.data.MessageFlowTraceEntry;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,8 +50,6 @@ public class MessageFlowTracingDataCollector {
     private static final Log log = LogFactory.getLog(MessageFlowTracingDataCollector.class.getName());
     private static boolean isMessageFlowTracingEnabled;
     private static Date date;
-    private static MessageDataCollector tracingDataCollector;
-    private static MessageFlowTracingDataConsumer tracingDataConsumer;
     private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
     public static void init() {
@@ -62,39 +61,8 @@ public class MessageFlowTracingDataCollector {
             queueSize = Integer.parseInt(SynapsePropertiesLoader.getPropertyValue
                     (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE));
 
-            tracingDataCollector = new MessageDataCollector(queueSize);
-            tracingDataConsumer = new MessageFlowTracingDataConsumer();
-            //Thread to consume queue and update data structures for publishing
-            ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(
-                    new ThreadFactory() {
-                        public Thread newThread(Runnable r) {
-                            Thread t = new Thread(r);
-                            t.setName("Mediation Tracing Data consumer Task");
-                            return t;
-                        }
-                    });
-            executor.scheduleAtFixedRate(tracingDataConsumer, 0, 1000, TimeUnit.MILLISECONDS);
         }
         date = new java.util.Date();
-    }
-
-    /**
-     * Removes and return MediationFlowDataEntry from the queue
-     *
-     * @return MediationFlowDataEntry instance
-     * @throws Exception
-     */
-    public static MessageFlowDataEntry deQueue() throws Exception {
-        return tracingDataCollector.deQueue();
-    }
-
-    /**
-     * Checks whether the queue is empty
-     *
-     * @return Tru if empty/false otherwise
-     */
-    public static boolean isEmpty() {
-        return tracingDataCollector.isEmpty();
     }
 
     /**
@@ -108,7 +76,7 @@ public class MessageFlowTracingDataCollector {
 
         for (String flow : messageFlowTrace) {
             if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
-                tracingDataCollector.enQueue(new MessageFlowTraceEntry(synCtx.getProperty
+                synCtx.getEnvironment().getMessageDataCollector().enQueue(new MessageFlowTraceEntry(synCtx.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), flow, synCtx.getProperty
                         (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString(), dateFormatter.format(new Date()), synCtx.getEnvironment()));
             } else {
@@ -154,10 +122,10 @@ public class MessageFlowTracingDataCollector {
 
         String payload = synCtx.getMessageString();
         if (synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
-            tracingDataCollector.enQueue(new MessageFlowComponentEntry(synCtx.getProperty
+            synCtx.getEnvironment().getMessageDataCollector().enQueue(new MessageFlowComponentEntry(synCtx.getProperty
                     (MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString(), componentId, componentName, synCtx
                     .isResponse(), start, dateFormatter.format(new Date()), propertyMap,
-                                                                       transportPropertyMap, payload, synCtx
+                    transportPropertyMap, payload, synCtx
                     .getEnvironment()));
         } else {
             if (log.isTraceEnabled()) {
@@ -250,10 +218,4 @@ public class MessageFlowTracingDataCollector {
         }
     }
 
-    /**
-     * Stop data consumer
-     */
-    public static void stopConsumer() {
-        tracingDataConsumer.setStopped(true);
-    }
 }

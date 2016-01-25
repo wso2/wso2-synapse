@@ -39,11 +39,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.messageflowtracer.processors.MessageDataCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.messageflowtracer.data.MessageFlowDataHolder;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -125,7 +126,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
 
-    private MessageFlowDataHolder messageFlowDataHolder;
+    private MessageDataCollector messageDataCollector;
 
     /** Debug mode is enabled/disabled*/
     private boolean isDebugEnabled = false;
@@ -186,7 +187,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
 
-        messageFlowDataHolder = new MessageFlowDataHolder();
+        messageDataCollector = new MessageDataCollector(Integer.parseInt(SynapsePropertiesLoader.getPropertyValue
+                (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE)));
 
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
@@ -1087,10 +1089,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return true;
     }
 
-    public MessageFlowDataHolder getMessageFlowDataHolder(){
-        return this.messageFlowDataHolder;
-    }
-
     /**
      * method to get the reference to debug manager instance which manages debug capabilities in synapse
      * kept in environment level, made available who ever has access to message context will be able to
@@ -1125,5 +1123,16 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public void setDebugEnabled(boolean isDebugEnabled) {
         this.isDebugEnabled = isDebugEnabled;
+    }
+
+    /**
+     * method to get the reference to messageFlowDataCollector instance which collects tracing data in synapse
+     * kept in environment level, made available who ever has access to message context will be able to
+     * get access to the messageFlowDataCollector
+     *
+     * @return messageFlowDataCollector instance
+     */
+    public MessageDataCollector getMessageDataCollector() {
+        return this.messageDataCollector;
     }
 }
