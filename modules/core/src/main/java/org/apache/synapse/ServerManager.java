@@ -156,7 +156,6 @@ public class ServerManager {
         this.serverConfigurationInformation = null;
         RuntimeStatisticCollector.stopConsumer();
         this.initialized = false;
-        MessageFlowTracingDataCollector.stopConsumer();
         return ServerState.UNDETERMINED;
     }
 
