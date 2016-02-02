@@ -485,7 +485,6 @@ public class TargetHandler implements NHttpClientEventHandler {
             log.warn("Connection closed by target host while receiving the response");
             isFault = true;
         } else if (state == ProtocolState.REQUEST_DONE) {
-            informWriterError(conn);
             log.warn("Connection closed by target host before receiving the response");
             isFault = true;
         }
@@ -660,7 +659,6 @@ public class TargetHandler implements NHttpClientEventHandler {
             informReaderError(conn);
             log.warn("Exception occured while reading the response");
         } else if (state == ProtocolState.REQUEST_DONE) {
-            informWriterError(conn);
             log.warn("Exception occured while before reading the response");
         }
         
