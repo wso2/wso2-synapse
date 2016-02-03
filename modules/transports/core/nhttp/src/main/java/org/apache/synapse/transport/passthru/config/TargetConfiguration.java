@@ -137,14 +137,10 @@ public class TargetConfiguration extends BaseConfiguration {
     private void populatePreserveHttpHeaders(String preserveHeaders) {
 
         preserveHttpHeaders = new ArrayList<String>();
-
         if (preserveHeaders != null && !preserveHeaders.isEmpty()) {
             String[] presHeaders = preserveHeaders.trim().toUpperCase().split(",");
-
             if (presHeaders != null && presHeaders.length > 0) {
-
                 preserveHttpHeaders.addAll(Arrays.asList(presHeaders));
-
             }
         }
 

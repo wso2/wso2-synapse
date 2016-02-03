@@ -276,8 +276,13 @@ public class TargetRequest {
 
         // Pre-process HTTP request
         conn.getContext().setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
-        conn.getContext().setAttribute(ExecutionContext.HTTP_TARGET_HOST,
-                new HttpHost(url.getHost(), port));
+
+        if (port == -1) {
+            conn.getContext().setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost()));
+        } else {
+            conn.getContext().setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost(), port));
+        }
+
         conn.getContext().setAttribute(ExecutionContext.HTTP_REQUEST, request);
 
         // start the request

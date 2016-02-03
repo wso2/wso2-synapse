@@ -104,6 +104,8 @@ public class RelayUtils {
             if (log.isDebugEnabled()) {
                 log.debug("Content Type is null and the message is not build");
             }
+            messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
+                    Boolean.TRUE);
             return;
         }
     }

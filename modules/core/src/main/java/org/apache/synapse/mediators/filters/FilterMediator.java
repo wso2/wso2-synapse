@@ -23,6 +23,7 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -32,7 +33,6 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -133,7 +133,6 @@ public class FilterMediator extends AbstractListMediator implements
 
         boolean result = false;
         if (test(synCtx)) {
-
             if (thenKey != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -167,11 +166,8 @@ public class FilterMediator extends AbstractListMediator implements
                 if (result) {
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
-
             }
-
         } else {
-
             if (elseKey != null) {
 
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -237,17 +233,27 @@ public class FilterMediator extends AbstractListMediator implements
            } else {
                FlowContinuableMediator mediator =
                        (FlowContinuableMediator) getChild(continuationState.getPosition());
+               RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+               ((Mediator) mediator).reportStatistic(synCtx, null, false);
            }
         } else {
+            RuntimeStatisticCollector.openLogForContinuation(synCtx, elseMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = elseMediator.mediate(synCtx, continuationState.getPosition() + 1);
             } else {
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) elseMediator.getChild(
                                 continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
+            elseMediator.reportStatistic(synCtx, null, false);
         }
 
         return result;

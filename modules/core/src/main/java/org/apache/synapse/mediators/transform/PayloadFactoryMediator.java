@@ -43,7 +43,6 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.xml.namespace.QName;
@@ -140,6 +139,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     private boolean mediate(MessageContext synCtx, String format) {
+
         if (!isDoingXml(synCtx) && !isDoingJson(synCtx)) {
             log.error("#mediate. Could not identify the payload format of the existing payload prior to mediate.");
             return false;

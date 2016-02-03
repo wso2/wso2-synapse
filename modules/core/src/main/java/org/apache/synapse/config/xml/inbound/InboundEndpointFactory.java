@@ -19,12 +19,15 @@
 package org.apache.synapse.config.xml.inbound;
 
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
@@ -77,6 +80,36 @@ public class InboundEndpointFactory {
         }
         if (inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE) != null) {
             inboundEndpoint.setOnErrorSeq(inboundEndpointElem.getAttributeValue(ATT_ERROR_SEQUENCE));
+        }
+        String nameString = inboundEndpoint.getName();
+        if (nameString == null || "".equals(nameString)) {
+            nameString = SynapseConstants.INBOUND_ENDPOINT_NAME;
+        }
+        AspectConfiguration aspectConfiguration = new AspectConfiguration(nameString);
+        inboundEndpoint.configure(aspectConfiguration);
+
+        OMAttribute statistics = inboundEndpointElem
+                .getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.STATISTICS_ATTRIB_NAME));
+        if (statistics != null) {
+            String statisticsValue = statistics.getAttributeValue();
+            if (statisticsValue != null) {
+                if (XMLConfigConstants.STATISTICS_ENABLE.equals(statisticsValue)) {
+                    aspectConfiguration.enableStatistics();
+                }
+            }
+        }
+
+        OMAttribute tracing = inboundEndpointElem
+                .getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
+        if (tracing != null) {
+            String tracingValue = tracing.getAttributeValue();
+            if (tracingValue != null) {
+                if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
+                    inboundEndpoint.setTraceState(org.apache.synapse.SynapseConstants.TRACING_ON);
+                } else if (XMLConfigConstants.TRACE_DISABLE.equals(tracingValue)) {
+                    inboundEndpoint.setTraceState(org.apache.synapse.SynapseConstants.TRACING_OFF);
+                }
+            }
         }
 
         // Set parameters

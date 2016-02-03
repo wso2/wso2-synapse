@@ -360,4 +360,18 @@ public class TestMessageContext implements MessageContext {
 			return m;
 		}
 	}
+
+    public void addComponentToMessageFlow(String mediatorId){
+    }
+
+    public String getMessageString() {
+        return null;
+    }
+
+    public void setMessageFlowTracingState(int tracingState){
+    }
+
+    public int getMessageFlowTracingState(){
+        return SynapseConstants.TRACING_OFF;
+    }
 }
