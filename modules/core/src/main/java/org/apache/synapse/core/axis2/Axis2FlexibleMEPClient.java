@@ -204,7 +204,7 @@ public class Axis2FlexibleMEPClient {
                             //ESBJAVA-3447, Appending charset, if exist in property
                             ContentType contentType = new ContentType(trpContentType);
                             if (contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING) != null) {
-                                strCharSetEncoding = ";" + contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING);
+                                strCharSetEncoding = "; charset=" + contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING);
                             }
                         } catch (ParseException e) {
                             log.warn("Error occurred while parsing ContentType header, using default: "
@@ -239,7 +239,7 @@ public class Axis2FlexibleMEPClient {
                             //ESBJAVA-3447, Appending charset, if exist in property
                             ContentType contentType = new ContentType(trpContentType);
                             if (contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING) != null) {
-                                strCharSetEncoding = ";" + contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING);
+                                strCharSetEncoding = "; charset=" + contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING);
                             }
                         } catch (ParseException e) {
                             log.warn("Error occurred while parsing ContentType header in property, using default: "
