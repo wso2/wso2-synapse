@@ -165,8 +165,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 log.debug("Callback removed for request message id : " + messageID +
                         ". Pending callbacks count : " + callbackStore.size());
             }
-            org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-            RuntimeStatisticCollector.updateStatisticLogsForReceivedCallbackLog(SynapseOutMsgCtx, messageID);
 
             RelatesTo[] relates = messageCtx.getRelationships();
             if (relates != null && relates.length > 1) {
@@ -177,6 +175,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
+                org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
+                RuntimeStatisticCollector.updateStatisticLogsForReceivedCallbackLog(SynapseOutMsgCtx, messageID);
                 handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
                 if (log.isDebugEnabled()) {
                     log.debug("Finished handling the callback.");
