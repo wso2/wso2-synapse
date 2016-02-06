@@ -304,9 +304,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
 
-        String componentId = null;
-
-
         if (!initialized) {
             //can't send to a non-initialized endpoint. This is a program fault
             throw new IllegalStateException("not initialized, " +
@@ -383,7 +380,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
 
         if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            componentId = this.setTraceFlow(synCtx, componentId, getReportingName(), true);
+            this.setTraceFlow(synCtx, getReportingName());
         }
 
         // Send the message through this endpoint
@@ -395,10 +392,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         } else {
             RuntimeStatisticCollector
                     .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
-        }
-
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            this.setTraceFlow(synCtx, componentId, getReportingName(), false);
         }
     }
 
@@ -815,8 +808,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, String mediatorName, boolean isStart) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName, isStart);
+    public String setTraceFlow(MessageContext msgCtx, String mediatorName) {
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName);
     }
 
     public String getReportingName() {

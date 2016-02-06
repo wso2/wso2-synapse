@@ -17,9 +17,17 @@
 */
 package org.apache.synapse.messageflowtracer.data;
 
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * This class represents state of each stage in mediation flow. It stores all the synapse properties and payload at
@@ -27,34 +35,40 @@ import java.util.Map;
  */
 public class MessageFlowComponentEntry implements MessageFlowDataEntry {
 
+    private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+
     private String messageId;
     private String componentId;
     private String componentName;
-    private boolean response;
-    private boolean start;
     private String timestamp;
     private String payload;
-    private SynapseEnvironment synapseEnvironment;
+    private String parent;
+    private String entryType;
     private Map<String, Object> propertyMap;
     private Map<String, Object> transportPropertyMap;
 
-    public MessageFlowComponentEntry(String messageId, String componentId, String componentName, boolean response,
-                                     boolean start, String timestamp, Map<String, Object> propertyMap, Map<String,
-            Object> transportPropertyMap, String payload, SynapseEnvironment synapseEnvironment) {
-        this.messageId = messageId;
+    public MessageFlowComponentEntry(MessageContext synCtx, String componentId, String componentName) {
+        this.messageId = synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString();
         this.componentId = componentId;
         this.componentName = componentName;
-        this.response = response;
-        this.start = start;
-        this.timestamp = timestamp;
-        this.propertyMap = propertyMap;
-        this.transportPropertyMap = transportPropertyMap;
-        this.payload = payload;
-        this.synapseEnvironment = synapseEnvironment;
+        this.timestamp = dateFormatter.format(new Date());
+        this.propertyMap = this.extractContextProperties(synCtx);
+        this.transportPropertyMap = this.extractTransportProperties(synCtx);
+        this.payload = synCtx.getEnvelope().toString();
+        this.parent = (String) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT);
+        this.entryType = synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString();
     }
 
     public String getPayload() {
         return payload;
+    }
+
+    public String getParent() {
+        return parent;
+    }
+
+    public String getEntryType() {
+        return entryType;
     }
 
     public Map<String, Object> getPropertyMap() {
@@ -73,14 +87,6 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
         return componentId;
     }
 
-    public boolean isResponse() {
-        return response;
-    }
-
-    public boolean isStart() {
-        return start;
-    }
-
     public String getTimestamp() {
         return timestamp;
     }
@@ -92,9 +98,83 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
     @Override
     public String toString() {
         return ", componentName='" + componentName + '\'' +
-                ", response=" + response +
-                ", start=" + start +
                 ", timestamp='" + timestamp ;
     }
 
+    /**
+     * Extract message context properties
+     *
+     * @param synCtx
+     * @return
+     */
+    private Map<String, Object> extractContextProperties(MessageContext synCtx) {
+        Set<String> propertySet = synCtx.getPropertyKeySet();
+        Map<String, Object> propertyMap = new TreeMap<>();
+
+        for (String property : propertySet) {
+            Object propertyValue = synCtx.getProperty(property);
+            propertyMap.put(property, propertyValue);
+        }
+
+        // Remove message-flow-tracer properties
+        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT);
+        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID);
+        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE);
+
+        return propertyMap;
+    }
+
+    /**
+     * Extract transport headers from context
+     *
+     * @param synCtx
+     * @return
+     */
+    private Map<String, Object> extractTransportProperties(MessageContext synCtx) {
+        Map<String, Object> transportPropertyMap = new TreeMap<>();
+
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+        Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headers != null && headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            Set<String> axis2PropertySet = headersMap.keySet();
+            for (String entry : axis2PropertySet) {
+                transportPropertyMap.put(entry, headersMap.get(entry));
+            }
+        }
+
+        // Adding important transport related properties
+        if (axis2MessageCtx.getTo() != null) {
+            transportPropertyMap.put("To", axis2MessageCtx.getTo().getAddress());
+        }
+
+        if (axis2MessageCtx.getFrom() != null) {
+            transportPropertyMap.put("From", axis2MessageCtx.getFrom().getAddress());
+        }
+
+        if (axis2MessageCtx.getWSAAction() != null) {
+            transportPropertyMap.put("WSAction", axis2MessageCtx.getWSAAction());
+        }
+
+        if (axis2MessageCtx.getSoapAction() != null) {
+            transportPropertyMap.put("SOAPAction", axis2MessageCtx.getSoapAction());
+        }
+
+        if (axis2MessageCtx.getReplyTo() != null) {
+            transportPropertyMap.put("ReplyTo", axis2MessageCtx.getReplyTo().getAddress());
+        }
+
+        if (axis2MessageCtx.getMessageID() != null) {
+            transportPropertyMap.put("MessageID", axis2MessageCtx.getMessageID());
+        }
+
+        // Remove unnecessary properties
+        if (transportPropertyMap.get("Cookie") != null) {
+            transportPropertyMap.remove("Cookie");
+        }
+
+        return transportPropertyMap;
+    }
 }

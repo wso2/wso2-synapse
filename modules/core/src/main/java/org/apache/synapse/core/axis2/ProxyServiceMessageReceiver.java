@@ -56,7 +56,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     private ProxyService proxy = null;
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
-        String mediatorId = null;
 
         boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -132,7 +131,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                                                               MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name,
                                                               synCtx.getMessageID());
             }
-            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, true);
+            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
@@ -246,7 +245,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, false);
             //Statistic reporting
             RuntimeStatisticCollector.reportEndProxy(synCtx);
             if(synCtx.getEnvironment().isDebugEnabled()) {

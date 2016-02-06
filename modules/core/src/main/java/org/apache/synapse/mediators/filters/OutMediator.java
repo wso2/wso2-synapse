@@ -122,9 +122,9 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
         super.init(se);
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String componentId, Mediator mediator, boolean isStart) {
+    public String setTraceFlow(MessageContext msgCtx, Mediator mediator) {
         if(test(msgCtx)){
-            return super.setTraceFlow(msgCtx, componentId, mediator, isStart);
+            return super.setTraceFlow(msgCtx, mediator);
         }
         return MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
     }

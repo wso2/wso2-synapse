@@ -285,7 +285,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     }
 
     void process(MessageContext synCtx) {
-        String mediatorId = null;
 
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
@@ -301,7 +300,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
                                                                       synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
                                                               synCtx.getMessageID());
-                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName(), true);
+                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName());
             }
         }
 
@@ -405,10 +404,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             if (sequence != null) {
                 sequence.mediate(synCtx);
             }
-        }
-
-        if (!synCtx.isResponse()) {
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName(), false);
         }
     }
 
