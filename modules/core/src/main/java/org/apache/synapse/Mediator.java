@@ -102,12 +102,10 @@ public interface Mediator extends SynapseArtifact {
      * Set Trace flow information from mediators
      *
      * @param msgCtx     MessageContext of the mediator
-     * @param mediatorId Mediator/component id
      * @param mediator   Mediator instance
-     * @param isStart    Is start of mediation
      * @return Generated unique ID
      */
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart);
+    public String setTraceFlow(MessageContext msgCtx, Mediator mediator);
 
     /**
      * Report Statistics for the Mediator

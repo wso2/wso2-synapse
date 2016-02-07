@@ -24,7 +24,7 @@ public class MessageFlowTracerConstants {
     public static final String MESSAGE_FLOW = "MESSAGE_FLOW";
     public static final String MESSAGE_FLOW_ENTRY_TYPE = "MESSAGE_FLOW_ENTRY_TYPE";
     public static final String MESSAGE_FLOW_INCREMENT_ID = "MESSAGE_FLOW_INCREMENT_ID";
-    public static final String MESSAGE_FLOW_TRACE_STATUS = "MESSAGE_FLOW_TRACE_STATUS";
+    public static final String MESSAGE_FLOW_PARENT = "MESSAGE_FLOW_PARENT";
     //configurations
     public static final String MESSAGE_FLOW_TRACE_ENABLED = "message.flow.tracer.enable";
     public static final String MESSAGE_FLOW_TRACE_QUEUE_SIZE = "message.flow.tracer.queue.size";

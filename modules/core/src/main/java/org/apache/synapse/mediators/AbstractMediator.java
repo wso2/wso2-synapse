@@ -442,8 +442,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         return cls.substring(cls.lastIndexOf(".") + 1);
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_MEDIATOR + mediator.getMediatorName(), isStart);
+    public String setTraceFlow(MessageContext msgCtx, Mediator mediator) {
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, MessageFlowTracerConstants.COMPONENT_TYPE_MEDIATOR + mediator.getMediatorName());
     }
 
     /**
