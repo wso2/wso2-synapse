@@ -122,6 +122,7 @@ public class LogMediator extends AbstractMediator {
         }
 
         synLog.traceOrDebug("End : Log mediator");
+
         return true;
     }
 

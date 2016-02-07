@@ -16,15 +16,16 @@
 
 package org.apache.synapse.transport.passthru;
 
-import org.apache.http.nio.IOControl;
+import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
-import org.apache.http.MalformedChunkCodingException;
+import org.apache.http.nio.IOControl;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
+import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -41,17 +42,17 @@ public class Pipe {
     private IOControl consumerIoControl;
 
     /** Fixed size buffer to read and write data */
-    private ByteBuffer buffer;
+    private ControlledByteBuffer buffer;
 
-    private ByteBuffer outputBuffer;
+    private ControlledByteBuffer outputBuffer;
 
     private boolean producerCompleted = false;
 
     public boolean isProducerCompleted() {
-		return producerCompleted;
-	}
+        return producerCompleted;
+    }
 
-	/** Lock to synchronize the producers and consumers */
+    /** Lock to synchronize the producers and consumers */
     private Lock lock = new ReentrantLock();
 
     private Condition readCondition = lock.newCondition();
@@ -67,18 +68,15 @@ public class Pipe {
     private BaseConfiguration baseConfig;
 
     private boolean serializationComplete = false;
-    
+
     private boolean rawSerializationComplete = false;
 
-  	private boolean hasHttpProducer = true;
-
-    private AtomicBoolean inBufferInputMode = new AtomicBoolean(true);
-    private AtomicBoolean outBufferInputMode;
+    private boolean hasHttpProducer = true;
 
     private ByteBufferInputStream inputStream;
     private ByteBufferOutputStream outputStream;
 
-    public Pipe(IOControl producerIoControl, ByteBuffer buffer,
+    public Pipe(IOControl producerIoControl, ControlledByteBuffer buffer,
                 String name, BaseConfiguration baseConfig) {
         this.producerIoControl = producerIoControl;
         this.buffer = buffer;
@@ -86,7 +84,7 @@ public class Pipe {
         this.baseConfig = baseConfig;
     }
 
-    public Pipe(ByteBuffer buffer, String name, BaseConfiguration baseConfig) {
+    public Pipe(ControlledByteBuffer buffer, String name, BaseConfiguration baseConfig) {
         this.buffer = buffer;
         this.name += "_" + name;
         this.baseConfig = baseConfig;
@@ -120,14 +118,11 @@ public class Pipe {
         }
 
         lock.lock();
-        ByteBuffer consumerBuffer;
-        AtomicBoolean inputMode;
+        ControlledByteBuffer consumerBuffer;
         if (outputBuffer != null) {
             consumerBuffer = outputBuffer;
-            inputMode = outBufferInputMode;
         } else {
             consumerBuffer = buffer;
-            inputMode = inBufferInputMode;
         }
         try {
             // if producer at error we have to stop the encoding and return immediately
@@ -136,9 +131,9 @@ public class Pipe {
                 return -1;
             }
 
-            setOutputMode(consumerBuffer, inputMode);
-            int bytesWritten = encoder.write(consumerBuffer);
-            setInputMode(consumerBuffer, inputMode);
+            setOutputMode(consumerBuffer);
+            int bytesWritten = encoder.write(consumerBuffer.getByteBuffer());
+            setInputMode(consumerBuffer);
 
             if (consumerBuffer.position() == 0) {
                 if (outputBuffer == null) {
@@ -181,18 +176,18 @@ public class Pipe {
 
         lock.lock();
         try {
-            setInputMode(buffer, inBufferInputMode);
+            setInputMode(buffer);
             int bytesRead=0;
             try{
-                bytesRead = decoder.read(buffer);
+                bytesRead = decoder.read(buffer.getByteBuffer());
             } catch(MalformedChunkCodingException ignore) {
-            	// we assume that this is a truncated chunk, hence simply ignore the exception
-            	// https://issues.apache.org/jira/browse/HTTPCORE-195
-            	// we should add the EoF character
-            	buffer.putInt(-1);
-            	// now the buffer's position should give us the bytes read.
-            	bytesRead = buffer.position();
-            	
+                // we assume that this is a truncated chunk, hence simply ignore the exception
+                // https://issues.apache.org/jira/browse/HTTPCORE-195
+                // we should add the EoF character
+                buffer.putInt(-1);
+                // now the buffer's position should give us the bytes read.
+                bytesRead = buffer.position();
+
             }
 
             // if consumer is at error we have to let the producer complete
@@ -217,7 +212,7 @@ public class Pipe {
             if (decoder.isCompleted()) {
                 producerCompleted = true;
             }
-           return bytesRead;
+            return bytesRead;
         } finally {
             lock.unlock();
         }
@@ -271,13 +266,12 @@ public class Pipe {
     public synchronized OutputStream getOutputStream() {
         if (outputStream == null) {
             outputBuffer = baseConfig.getBufferFactory().getBuffer();
-            outBufferInputMode = new AtomicBoolean(true);
             outputStream = new ByteBufferOutputStream();
         }
         return outputStream;
     }
-    
-    
+
+
     /**
      * Creates a separate ByteBuffer for the output data and returns an OutputStream
      * on top of it.
@@ -285,8 +279,7 @@ public class Pipe {
      * @return An OutputStream object
      */
     public synchronized OutputStream resetOutputStream() {
-    	outputBuffer = baseConfig.getBufferFactory().getBuffer();
-        outBufferInputMode = new AtomicBoolean(true);
+        outputBuffer = baseConfig.getBufferFactory().getBuffer();
         outputStream = new ByteBufferOutputStream();
         return outputStream;
     }
@@ -294,37 +287,37 @@ public class Pipe {
     public synchronized void setSerializationComplete(boolean serializationComplete) {
         if (!this.serializationComplete) {
             this.serializationComplete = serializationComplete;
-            if (consumerIoControl != null && hasData(outputBuffer, outBufferInputMode)) {
+            if (consumerIoControl != null && hasData(outputBuffer)) {
                 consumerIoControl.requestOutput();
             }
         }
     }
-    
+
     public synchronized void setSerializationCompleteWithoutData(boolean serializationComplete) {
         if (!this.serializationComplete) {
             this.serializationComplete = serializationComplete;
             consumerIoControl.requestOutput();
         }
     }
-    
+
     public void setRawSerializationComplete(boolean rawSerializationComplete) {
-    	this.rawSerializationComplete = rawSerializationComplete;
-    }
-    
-    public void forceSetSerializationRest(){
-    	if(this.serializationComplete){
-    		this.serializationComplete = false;
-    	}
+        this.rawSerializationComplete = rawSerializationComplete;
     }
 
-    
-    
+    public void forceSetSerializationRest(){
+        if(this.serializationComplete){
+            this.serializationComplete = false;
+        }
+    }
+
+
+
 
     public boolean isSerializationComplete() {
-		return serializationComplete;
-	}
+        return serializationComplete;
+    }
 
-	public ByteBuffer getBuffer() {
+    public ControlledByteBuffer getBuffer() {
         return buffer;
     }
 
@@ -332,8 +325,8 @@ public class Pipe {
         return hasHttpProducer;
     }
 
-    private void setInputMode(ByteBuffer buffer, AtomicBoolean inputMode) {
-        if (inputMode.compareAndSet(false, true)) {
+    private void setInputMode(ControlledByteBuffer buffer) {
+        if (buffer.setInputMode()) {
             if (buffer.hasRemaining()) {
                 buffer.compact();
             } else {
@@ -342,16 +335,16 @@ public class Pipe {
         }
     }
 
-    private void setOutputMode(ByteBuffer buffer, AtomicBoolean inputMode) {
-        if (inputMode.compareAndSet(true, false)) {
+    private void setOutputMode(ControlledByteBuffer buffer) {
+        if (buffer.setOutputMode()) {
             buffer.flip();
         }
     }
 
-    private boolean hasData(ByteBuffer buffer, AtomicBoolean inputMode) {
+    private boolean hasData(ControlledByteBuffer buffer) {
         lock.lock();
         try {
-            setOutputMode(buffer, inputMode);
+            setOutputMode(buffer);
             return buffer.hasRemaining();
         } finally {
             lock.unlock();
@@ -364,7 +357,7 @@ public class Pipe {
         public int read() throws IOException {
             lock.lock();
             try {
-                if (!hasData(buffer, inBufferInputMode)) {
+                if (!hasData(buffer)) {
                     waitForData();
                     if(producerError){
                         return -1;
@@ -386,7 +379,7 @@ public class Pipe {
 
             lock.lock();
             try {
-                if (!hasData(buffer, inBufferInputMode)) {
+                if (!hasData(buffer)) {
                     waitForData();
                     if(producerError){
                         return -1;
@@ -395,7 +388,7 @@ public class Pipe {
                 if (isEndOfStream()) {
                     return -1;
                 }
-                setOutputMode(buffer, inBufferInputMode);
+                setOutputMode(buffer);
                 int chunk = len;
                 if (chunk > buffer.remaining()) {
                     chunk = buffer.remaining();
@@ -411,7 +404,7 @@ public class Pipe {
             lock.lock();
             try {
                 try {
-                    while (!hasData(buffer, inBufferInputMode) && !producerCompleted) {
+                    while (!hasData(buffer) && !producerCompleted) {
                         if(producerError){
                             break;
                         }
@@ -427,7 +420,7 @@ public class Pipe {
         }
 
         private boolean isEndOfStream() {
-            return !hasData(buffer, inBufferInputMode) && producerCompleted;
+            return !hasData(buffer) && producerCompleted;
         }
     }
 
@@ -437,10 +430,10 @@ public class Pipe {
         public void write(int b) throws IOException {
             lock.lock();
             try {
-                setInputMode(outputBuffer, outBufferInputMode);
+                setInputMode(outputBuffer);
                 if (!outputBuffer.hasRemaining()) {
                     flushContent();
-                    setInputMode(outputBuffer, outBufferInputMode);
+                    setInputMode(outputBuffer);
                 }
                 outputBuffer.put((byte) b);
             } finally {
@@ -454,7 +447,7 @@ public class Pipe {
             }
             lock.lock();
             try {
-                setInputMode(outputBuffer, outBufferInputMode);
+                setInputMode(outputBuffer);
                 int remaining = len;
                 while (remaining > 0 && !consumerError) {
                     if (!outputBuffer.hasRemaining()) {
@@ -463,7 +456,7 @@ public class Pipe {
                             buffer.clear();
                             break;
                         }
-                        setInputMode(outputBuffer, outBufferInputMode);
+                        setInputMode(outputBuffer);
                     }
                     int chunk = Math.min(remaining, outputBuffer.remaining());
                     outputBuffer.put(b, off, chunk);
@@ -477,23 +470,23 @@ public class Pipe {
 
         private void flushContent() throws IOException {
             lock.lock();
-           
+
             if(rawSerializationComplete){
-            	return;
+                return;
             }
-            
+
             try {
                 try {
-					while (hasData(outputBuffer, outBufferInputMode) && !consumerError) {
+                    while (hasData(outputBuffer) && !consumerError) {
                         if(consumerError){
                             break;
                         }
-						if (consumerIoControl != null && writeCondition != null) {
-							consumerIoControl.requestOutput();
-							writeCondition.await();
-						}
-					}
-                     	
+                        if (consumerIoControl != null && writeCondition != null) {
+                            consumerIoControl.requestOutput();
+                            writeCondition.await();
+                        }
+                    }
+
                 } catch (InterruptedException ex) {
                     throw new IOException("Interrupted while flushing the content buffer");
                 }

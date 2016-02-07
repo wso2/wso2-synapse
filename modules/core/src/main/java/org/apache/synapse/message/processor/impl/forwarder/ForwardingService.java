@@ -18,14 +18,13 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPEnvelope;
@@ -42,13 +41,14 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.processor.impl.ScheduledMessageProcessor;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
-import org.apache.synapse.message.store.impl.jms.JmsConsumer;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.MessageHelper;
 
@@ -86,7 +86,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	private String deactivateSeq = null;
 
     private String targetEndpoint = null;
-    
+
 	/*
 	 * The cron expression under which the message processor runs.
 	 */
@@ -137,20 +137,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * Specifies whether the service should be started as deactivated or not
      */
     private boolean isDeactivatedAtStartup= false;
-	
-    /*
-     * Defines HTTP Status code prefixes which are defined as errors. For an
-     * example 400 and 500 status codes are considered as errors in general.
-     */
-    private static final List<String> ERROR_HTTP_SC_PREFIX =
-                                                             new ArrayList<String>(
-                                                                                   Arrays.asList("4",
-                                                                                                 "5"));
-    /*
-     * Defines other HTTP status codes which are considered as errors which does
-     * not belong to 400 or 500 errors.
-     */
-    private static final List<String> ERROR_HTTP_SC = new ArrayList<String>(Arrays.asList("301"));
+    
+    private boolean isNonHTTP = false;
+    
+    Pattern httpPattern = Pattern.compile("^http:");
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
@@ -437,6 +427,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 		if (targetEndpoint != null) {
 			Endpoint ep = messageContext.getEndpoint(targetEndpoint);
+			AbstractEndpoint abstractEndpoint = (AbstractEndpoint) ep;
+			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
+			String endpointReferenceValue = null;
+	        if (endpointDefinition.getAddress() != null) {
+	            endpointReferenceValue = endpointDefinition.getAddress();
+	            isNonHTTP = !isHTTPEndPoint(endpointReferenceValue);
+	        } 
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
@@ -471,13 +468,42 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							outCtx = sender.send(ep, messageContext);
 						}
 
-						isSuccessful = true; //isSuccessfull is true even session is not available because of avoiding the unwanted retries
+                        if (isNonHTTP) {
+                            /*
+                             * There is no status codes to deal with JMS eps. So
+                             * merely set it as a success if there's no any
+                             * exceptions.
+                             */
+                            isSuccessful = true;
+                        } else {
+                            String responseSc =
+                                                ((String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                                                                                                .getProperty(SynapseConstants.HTTP_SC));
+                            isSuccessful =
+                                           getHTTPStatusCodeFamily(
+                                                                   Integer.parseInt(responseSc.trim())).equals(HTTPStatusCodeFamily.SUCCESSFUL) ||
+                                                   isNonRetryErrorCode(responseSc);
+                        }
 					} catch (Exception e) {
-						// this means send has failed due to some reason so we
-						// have to retry it
-						if (e instanceof SynapseException) {
-							isSuccessful = isNonRetryErrorCode(e.getCause().getMessage());
-						}
+                        // this means send has failed due to some reason so we
+                        // have to retry it
+                        /*
+                         * If an exception is thrown in a JMS scenario then we
+                         * have to consider it as a failure.
+                         */
+                        if (isNonHTTP) {
+                            isSuccessful = false;
+                        } else {
+                            if (e instanceof SynapseException) {
+                                String responseSc =
+                                                    ((String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
+                                                                                                    .getProperty(SynapseConstants.HTTP_SC));
+                                isSuccessful =
+                                               getHTTPStatusCodeFamily(
+                                                                       Integer.parseInt(responseSc.trim())).equals(HTTPStatusCodeFamily.SUCCESSFUL) ||
+                                                       isNonRetryErrorCode(responseSc);
+                            }
+                        }
 						if (!isSuccessful) {
 							log.error("BlockingMessageSender of message processor [" +
 							          this.messageProcessor.getName() +
@@ -489,64 +515,48 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							sendThroughFaultSeq(messageContext);
 						}
 					}
-					if (isSuccessful) {
-						if (outCtx != null) {
-							if ("true".equals(outCtx.getProperty(ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
-								// this means send has failed due to some reason
-								// so we have to retry it
-								isSuccessful =
-								               isNonRetryErrorCode((String) outCtx.getProperty(SynapseConstants.ERROR_MESSAGE));
 
-								if (isSuccessful) {
-									sendThroughReplySeq(outCtx);
-								} else {
-									// This means some error has occurred so
-									// must try to send down the fault sequence.
-									log.error("BlockingMessageSender of message processor [" +
-									          this.messageProcessor.getName() +
-									          "] failed to send message to the endpoint");
-									sendThroughFaultSeq(outCtx);
-								}
-							} else {
-	                             isSuccessful = !isErrorHttpSC(String.valueOf(outCtx.getProperty(SynapseConstants.HTTP_SC)));
-								// Send the message down the reply sequence if
-								// there is one
-							    
-                                if (isSuccessful) {
-	                                sendThroughReplySeq(outCtx);
-	                                messageConsumer.ack();
-	                                attemptCount = 0;
-	                                isSuccessful = true;
+                    if (outCtx != null) {
+                        if (isSuccessful) {
+                            sendThroughReplySeq(outCtx);
+                            messageConsumer.ack();
+                            attemptCount = 0;
+                            isSuccessful = true;
+                            if (log.isDebugEnabled()) {
+                                log.debug("Successfully sent the message to endpoint [" +
+                                          ep.getName() + "]" + " with message processor [" +
+                                          messageProcessor.getName() + "]");
+                            }
+                        } else {
+                            // This means some error has occurred so
+                            // must try to send down the fault sequence.
+                            log.error("BlockingMessageSender of message processor [" +
+                                      this.messageProcessor.getName() +
+                                      "] failed to send message to the endpoint");
+                            sendThroughFaultSeq(outCtx);
+                        }
+                    } else {
+                        if (isSuccessful) {
+                            // This Means we have invoked an out only operation
+                            // remove the message and reset the count
+                            messageConsumer.ack();
+                            attemptCount = 0;
+                            isSuccessful = true;
 
-	                                if (log.isDebugEnabled()) {
-	                                    log.debug("Successfully sent the message to endpoint [" +
-	                                              ep.getName() + "]" + " with message processor [" +
-	                                              messageProcessor.getName() + "]");
-	                                }
-                                } else {
-                                    // This means some error has occurred so
-                                    // must try to send down the fault sequence.
-                                    log.error("BlockingMessageSender of message processor [" +
-                                              this.messageProcessor.getName() +
-                                              " received the ERROR HTTP SC: " + outCtx.getProperty(SynapseConstants.HTTP_SC));
-                                    sendThroughFaultSeq(outCtx);
-                                }
+                            if (log.isDebugEnabled()) {
+                                log.debug("Successfully sent the message to endpoint [" +
+                                          ep.getName() + "]" + " with message processor [" +
+                                          messageProcessor.getName() + "]");
+                            }
 
-							}
-						} else {
-							// This Means we have invoked an out only operation
-							// remove the message and reset the count
-							messageConsumer.ack();
-							attemptCount = 0;
-							isSuccessful = true;
-
-							if (log.isDebugEnabled()) {
-								log.debug("Successfully sent the message to endpoint [" +
-								          ep.getName() + "]" + " with message processor [" +
-								          messageProcessor.getName() + "]");
-							}
-						}
-					}
+                        } else {
+                            // This means some error has occurred.
+                            log.error("BlockingMessageSender of message processor [" +
+                                      this.messageProcessor.getName() +
+                                      "] failed to send message to the endpoint");
+                        }
+                    }
+					
 					if (!isSuccessful) {
 						// Then we have to retry sending the message to the
 						// client.
@@ -608,13 +618,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			return;
 		}
 		Mediator mediator = msgCtx.getSequence(deactivateSeq);
-
 		if (mediator == null) {
 			log.warn("Failed to send the message through the deactivate sequence. Sequence [" +
 			         deactivateSeq + "] does not Exist.");
 			return;
 		}
-
 		mediator.mediate(msgCtx);
 	}
 
@@ -675,7 +683,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		if (maxDeliverAttempts > 0) {
             this.attemptCount++;
             if (attemptCount >= maxDeliverAttempts) {
-          
+
                 if (this.isMaxDeliveryAttemptDropEnabled) {
                     dropMessageAndContinueMessageProcessor();
                     if (log.isDebugEnabled()) {
@@ -727,29 +735,15 @@ public class ForwardingService implements Task, ManagedLifecycle {
         attemptCount = 0;
     }
 
-    private boolean isNonRetryErrorCode(String errorMsg) {
-        boolean isSuccess = false;
-        if (nonRetryStatusCodes != null) {
-            for (String code : nonRetryStatusCodes) {
-                if (errorMsg != null && errorMsg.contains(code)) {
-                    isSuccess = true;
-                    break;
-                }
+    private boolean isNonRetryErrorCode(final String responseHttpSc) {
+        boolean isNonRetryErrCode = false;
+        for (String nonretrySc : nonRetryStatusCodes) {
+            if (nonretrySc.trim().contains(responseHttpSc.trim())) {
+                isNonRetryErrCode = true;
+                break;
             }
         }
-
-        return isSuccess;
-    }
-    
-    /*
-     * Checks whether a given HTTP status code is an error code or not. All the
-     * 400 status codes are client errors and 500 status codes are server
-     * errors. If the given status code is within 400 or 500 range it is
-     * considered as an error code in general.
-     */
-    private boolean isErrorHttpSC(String responseSC) {
-        return responseSC.startsWith(ERROR_HTTP_SC_PREFIX.get(0)) ||
-               responseSC.startsWith(ERROR_HTTP_SC_PREFIX.get(1)) || ERROR_HTTP_SC.contains(responseSC);
+        return isNonRetryErrCode;
     }
 
 	private boolean isRunningUnderCronExpression() {
@@ -801,5 +795,42 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		terminate();
 
 	}
+    
+    private boolean isHTTPEndPoint(String epAddress) {
+        Matcher match = httpPattern.matcher(epAddress);
+        return match.find();
+    }
+    
+    /**
+     * + * Used to determine the family of HTTP status codes to which the given
+     * code
+     * + * belongs.
+     * + *
+     * + * @param statusCode - The HTTP status code
+     * +
+     */
+    private HTTPStatusCodeFamily getHTTPStatusCodeFamily(int statusCode) {
+        switch (statusCode / 100) {
+            case 1:
+                return HTTPStatusCodeFamily.INFORMATIONAL;
+            case 2:
+                return HTTPStatusCodeFamily.SUCCESSFUL;
+            case 3:
+                return HTTPStatusCodeFamily.REDIRECTION;
+            case 4:
+                return HTTPStatusCodeFamily.CLIENT_ERROR;
+            case 5:
+                return HTTPStatusCodeFamily.SERVER_ERROR;
+            default:
+                return HTTPStatusCodeFamily.OTHER;
+        }
+    }
+
+    /**
+     * The set of HTTP status code families.
+     */
+    private enum HTTPStatusCodeFamily {
+        INFORMATIONAL, SUCCESSFUL, REDIRECTION, CLIENT_ERROR, SERVER_ERROR, OTHER
+    }
 
 }

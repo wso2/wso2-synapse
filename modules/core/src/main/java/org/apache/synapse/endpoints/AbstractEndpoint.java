@@ -32,6 +32,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -102,7 +105,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     private boolean enableMBeanStats = true;
 
     private boolean contentAware = false;
-    
+
     private boolean forceBuildMC =false;
 
     protected String artifactContainerName;
@@ -288,14 +291,26 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void send(MessageContext synCtx) {
 
         logSetter();
+        String endpointId = null;
+        if (isStatisticCollected()) {
+            endpointId = String.valueOf(RuntimeStatisticCollector.getComponentUniqueId(synCtx));
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, true);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, true);
+        }
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
 
+        String componentId = null;
+
+
         if (!initialized) {
             //can't send to a non-initialized endpoint. This is a program fault
             throw new IllegalStateException("not initialized, " +
-                    "endpoint must be in initialized state");
+                                            "endpoint must be in initialized state");
         }
 
         prepareForEndpointStatistics(synCtx);
@@ -308,11 +323,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             }
 
             traceOrDebug(traceOn, "Sending message through endpoint : " +
-                    getName() + " resolving to address = " + address);
+                                  getName() + " resolving to address = " + address);
             traceOrDebug(traceOn, "SOAPAction: " + (synCtx.getSoapAction() != null ?
-                    synCtx.getSoapAction() : "null"));
+                                                    synCtx.getSoapAction() : "null"));
             traceOrDebug(traceOn, "WSA-Action: " + (synCtx.getWSAAction() != null ?
-                    synCtx.getWSAAction() : "null"));
+                                                    synCtx.getWSAAction() : "null"));
             if (traceOn && trace.isTraceEnabled()) {
                 trace.trace("Envelope : \n" + synCtx.getEnvelope());
             }
@@ -324,13 +339,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             if (errorHandlerMediator != null) {
                 if (traceOrDebugOn) {
                     traceOrDebug(traceOn, "Setting the onError handler : " +
-                            errorHandler + " for the endpoint : " + endpointName);
+                                          errorHandler + " for the endpoint : " + endpointName);
                 }
                 synCtx.pushFaultHandler(
                         new MediatorFaultHandler(errorHandlerMediator));
             } else {
                 log.warn("onError handler sequence : " + errorHandler + " for : " +
-                        endpointName + " cannot be found");
+                         endpointName + " cannot be found");
             }
         }
 
@@ -344,10 +359,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         if (contentAware) {
             try {
-                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(),false);
+                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
                 axis2Ctx.setProperty(RelayConstants.FORCE_RESPONSE_EARLY_BUILD, Boolean.TRUE);
-                if(forceBuildMC){
-                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().getEnvelope().build();
+                if (forceBuildMC) {
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext().getEnvelope().build();
                 }
             } catch (Exception e) {
                 handleException("Error while building message", e);
@@ -356,25 +371,40 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         evaluateProperties(synCtx);
 
-
         // if the envelope preserving set build the envelope
         MediatorProperty preserveEnv = getProperty(SynapseConstants.PRESERVE_ENVELOPE);
         if (preserveEnv != null && JavaUtils.isTrueExplicitly(preserveEnv.getValue() != null ?
-                preserveEnv.getValue() : preserveEnv.getEvaluatedExpression(synCtx))) {
+                                                              preserveEnv.getValue() : preserveEnv.getEvaluatedExpression(synCtx))) {
             if (traceOrDebugOn) {
                 traceOrDebug(traceOn, "Preserving the envelope by building it before " +
-                        "sending, since it is explicitly set");
+                                      "sending, since it is explicitly set");
             }
             synCtx.getEnvelope().build();
         }
 
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+            componentId = this.setTraceFlow(synCtx, componentId, getReportingName(), true);
+        }
+
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
+
+        if (isStatisticCollected()) {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, false);
+        } else {
+            RuntimeStatisticCollector
+                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
+        }
+
+        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
+            this.setTraceFlow(synCtx, componentId, getReportingName(), false);
+        }
     }
 
     /**
      * Is this a leaf level endpoint? or parent endpoint that has children?
-     * @return true if there is no children - a leaf endpoint 
+     * @return true if there is no children - a leaf endpoint
      */
     public boolean isLeafEndpoint() {
         return children == null || children.size() == 0;
@@ -394,7 +424,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if this is defined as a timeout
      */
     protected boolean isTimeout(MessageContext synCtx) {
-        
+
 		Object error = synCtx.getProperty(SynapseConstants.ERROR_CODE);
 		Integer errorCode = 0;
 		if (error != null) {
@@ -699,7 +729,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * Add a property to the endpoint.
       * @param property property to be added
      */
-    public void addProperty(MediatorProperty property) {        
+    public void addProperty(MediatorProperty property) {
         properties.put(property.getName(), property);
     }
 
@@ -721,7 +751,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Return the <code>Collection</code> of properties specified
-     * 
+     *
      * @return <code>Collection</code> of properties
      */
     public Collection<MediatorProperty> getProperties() {
@@ -740,7 +770,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     /**
      * Add all the properties to the endpoint
-     * @param mediatorProperties <code>Collection</code> of properties to be added 
+     * @param mediatorProperties <code>Collection</code> of properties to be added
      */
     public void addProperties(Collection<MediatorProperty> mediatorProperties) {
         for (MediatorProperty property : mediatorProperties) {
@@ -755,14 +785,14 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void setErrorHandler(String errorHandler) {
         this.errorHandler = errorHandler;
     }
-    
-    
+
+
 
     public void setContentAware(boolean contentAware) {
     	this.contentAware = contentAware;
     }
-    
-    
+
+
 
 	public void setForceBuildMC(boolean forceBuildMC) {
     	this.forceBuildMC = forceBuildMC;
@@ -783,5 +813,23 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void logSetter() {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
+    }
+
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, String mediatorName, boolean isStart) {
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName, isStart);
+    }
+
+    public String getReportingName() {
+        if (this.endpointName != null) {
+            return this.endpointName;
+        } else {
+            return SynapseConstants.ANONYMOUS_ENDPOINT;
+        }
+    }
+
+    private boolean isStatisticCollected() {
+        return (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
+                definition.getAspectConfiguration().isStatisticsEnable() &&
+                this.endpointName != null);
     }
 }

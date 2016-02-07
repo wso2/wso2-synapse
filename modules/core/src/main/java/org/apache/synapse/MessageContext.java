@@ -30,6 +30,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -428,4 +429,23 @@ public OMElement getFormat(String key);
 	 * @return the sequence mediator mapped to the key
 	 */
 	public Mediator getDefaultConfiguration(String key);
+
+    /**
+     * Get Message properties as a String
+     *
+     * @return String with message property information
+     */
+    public String getMessageString();
+
+    /**
+     * This is used to check whether the message flow tracing enabled for current message context
+     * @return indicate whether message flow tracing is on, off or unset
+     */
+    public int getMessageFlowTracingState();
+
+    /**
+     * This is used to set the value of message flow tracing enable for a particular message
+     * @param tracingState Set whether the message flowtracing is enabled or not
+     */
+    public void setMessageFlowTracingState(int tracingState);
 }

@@ -20,6 +20,8 @@
 package org.apache.synapse.mediators.filters;
 
 import org.apache.synapse.ContinuationState;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
@@ -30,7 +32,6 @@ import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
-import org.apache.synapse.util.xpath.SynapseXPath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,7 +116,6 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                     ContinuationStackManager.removeReliantContinuationState(synCtx);
                 }
                 return result;
-
             } else {
                 for (int i = 0; i < cases.size(); i++) {
                     SwitchCase swCase = cases.get(i);
@@ -153,7 +153,6 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
-
         synLog.traceOrDebug("End : Switch mediator");
         return true;
     }
@@ -177,7 +176,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) defaultCase.getCaseMediator().
                                 getChild(continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
         } else {
             if (!continuationState.hasChild()) {
@@ -187,7 +190,11 @@ public class SwitchMediator extends AbstractMediator implements ManagedLifecycle
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) cases.get(subBranch - 1).getCaseMediator().
                                 getChild(continuationState.getPosition());
+                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
+
+                ((Mediator) mediator).reportStatistic(synCtx, null, false);
             }
         }
         return result;

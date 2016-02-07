@@ -149,6 +149,7 @@ public class ThrottleWindowReplicator {
 									//Reset global counter here as throttle replicator task may have updated global counter
 									//with dirty value
 									callerContext.resetGlobalCounter();
+									callerContext.setLocalCounter(1);//Local counter will be set to one as new time window starts
 									if (log.isDebugEnabled()) {
 										log.debug("Complete resetting time window of=" + callerId);
 									}

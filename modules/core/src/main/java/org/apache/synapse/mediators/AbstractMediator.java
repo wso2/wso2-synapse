@@ -28,7 +28,11 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,16 +79,17 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     /**
      * Comment Texts List associated with the mediator
      */
-    private List<String> commentsList = new ArrayList<String>(); 
+    private List<String> commentsList = new ArrayList<String>();
 
     /**
-     * this method is invoked mediation happens either in debug mode or normal running mode,
-     * branches execution to the debug manager if only in debug mode
-     * @return true if the mediation should be continued after this method call, false if mediation
+     * This method is invoked when mediation happens in debug mode, branches execution to
+     * the Debug Manager, further behavior is governed by the Debug Manager.
+     *
+     * @return false if the mediation should be continued after this method call, true if mediation
      * of current child mediator position should be skipped
      */
-    public boolean divertMediationRoute(MessageContext synCtx){
-        if(synCtx.getEnvironment().isDebugEnabled()) {
+    public boolean divertMediationRoute(MessageContext synCtx) {
+        if (synCtx.getEnvironment().isDebugEnabled()) {
             if (isSkipEnabled()) {
                 synCtx.getEnvironment().getSynapseDebugManager()
                         .advertiseMediationFlowSkip(synCtx, getRegisteredMediationFlowPoint());
@@ -426,18 +431,64 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         this.commentsList = commentsList;
     }
 
-    public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint){this.flowPoint=flowPoint;}
+    /**
+     * Returns the name of the class of respective mediator. This was introduced to provide a unique way to get the
+     * mediator name because getType is implemented in different ways in different mediators (e.g.
+     * PayloadFactoryMediator)
+     * @return
+     */
+    public String getMediatorName(){
+        String cls = getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
+    }
 
-    public void unregisterMediationFlowPoint(){if(this.flowPoint!=null)this.flowPoint=null;}
+    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
+        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_MEDIATOR + mediator.getMediatorName(), isStart);
+    }
 
-    public SynapseMediationFlowPoint getRegisteredMediationFlowPoint(){return flowPoint;}
+    /**
+     * Report statistics for the mediator
+     *
+     * @param messageContext message context
+     * @param parentName     sequence name that mediator belong to
+     * @param isCreateLog    whether this is a start or end of a mediator execution
+     */
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        RuntimeStatisticCollector
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, false, false);
+    }
 
-    public boolean isBreakPoint(){return isBreakPoint;}
+    public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
+        this.flowPoint = flowPoint;
+    }
 
-    public boolean isSkipEnabled(){return isSkipEnabled;}
+    public void unregisterMediationFlowPoint() {
+        if (this.flowPoint != null) {
+            if (!(isBreakPoint && isSkipEnabled)) {
+                this.flowPoint = null;
+            }
+        }
+    }
 
-    public void setBreakPoint(boolean isBreakPoint){this.isBreakPoint=isBreakPoint;}
+    public SynapseMediationFlowPoint getRegisteredMediationFlowPoint() {
+        return flowPoint;
+    }
 
-    public void setSkipEnabled(boolean isSkipEnabled){this.isSkipEnabled=isSkipEnabled;}
+    public boolean isBreakPoint() {
+        return isBreakPoint;
+    }
+
+    public boolean isSkipEnabled() {
+        return isSkipEnabled;
+    }
+
+    public void setBreakPoint(boolean isBreakPoint) {
+        this.isBreakPoint = isBreakPoint;
+    }
+
+    public void setSkipEnabled(boolean isSkipEnabled) {
+        this.isSkipEnabled = isSkipEnabled;
+    }
 
 }

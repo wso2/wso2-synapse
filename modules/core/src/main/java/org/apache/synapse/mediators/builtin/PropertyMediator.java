@@ -241,6 +241,7 @@ public class PropertyMediator extends AbstractMediator {
             }
         }
         synLog.traceOrDebug("End : Property mediator");
+
         return true;
     }
 

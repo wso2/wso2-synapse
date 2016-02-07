@@ -74,6 +74,8 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_RESPONSE_FAILED_REASON = "failed-reason";
     public static final String DEBUG_COMMAND_RESPONSE_COMMAND_NOT_FOUND = "command not found";
     public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_REGISTER_FLOW_POINT = "unable to register mediation flow point";
+    public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES = "unable to acquire message context properties";
+    public static final String DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY = "unable to alter message context property";
     public static final String DEBUG_COMMAND_RESPONSE_API_RESOURCE_NOT_FOUND = "api resource not found";
     public static final String DEBUG_COMMAND_RESPONSE_API_NOT_FOUND = "api not found";
     public static final String DEBUG_COMMAND_RESPONSE_PROXY_NOT_FOUND = "proxy not found";

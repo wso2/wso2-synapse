@@ -278,8 +278,14 @@ public class TargetRequest {
         // Pre-process HTTP request
         HttpContext httpContext = conn.getContext();
         httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
-        httpContext.setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost(), port));
-        httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, request);
+
+        if (port == -1) {
+            httpContext.setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost()));
+        } else {
+            httpContext.setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost(), port));
+        }
+
+        conn.getContext().setAttribute(ExecutionContext.HTTP_REQUEST, request);
         httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST,
                 requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
 

@@ -230,7 +230,7 @@ public final class SynapseConstants {
         public static final String STATISTICS_STACK ="synapse.statistics.stack";     
         
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
-    
+
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
 
         public static final String SYNAPSE_ASPECTS ="synapse.aspects";
@@ -295,6 +295,9 @@ public final class SynapseConstants {
 
     /**A name to use for anonymous proxyservice  */
     public static final String ANONYMOUS_PROXYSERVICE = "AnonymousProxyService";
+
+    /**A name to use for anonymous API  */
+    public static final String ANONYMOUS_API = "AnonymousApi";
 
     /* Constants related to the SAL endpoints */
 
@@ -494,6 +497,9 @@ public final class SynapseConstants {
     public static final String IS_CXF_WS_RM="is_cxf_ws_rm";
     public static final String INBOUND_PROXY_SERVICE_PARAM="inbound.only";
     public static final String INBOUND_JMS_PROTOCOL = "INBOUND_JMS_PROTOCOL";
+    public static final String INBOUND_ENDPOINT_NAME = "inbound.endpoint.name";
+    public static final String INBOUND_STATISTIC_ENABLE = "inbound.statistic.enable";
+    public static final String ANNONYMOUS_INBOUND_ENDPOINT_NAME = "AnonymousInboundEndpoint";
     
     //Sandesha
     public static final String SANDESHA2_SEQUENCE_KEY = "Sandesha2SequenceKey";

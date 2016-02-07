@@ -169,7 +169,6 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				taskDescription.setCronExpression(cronExpression);
 			}
 			taskManager.schedule(taskDescription);
-		
 		}
 		
 		
