@@ -18,13 +18,10 @@
 package org.apache.synapse.messageflowtracer.data;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -35,12 +32,10 @@ import java.util.TreeMap;
  */
 public class MessageFlowComponentEntry implements MessageFlowDataEntry {
 
-    private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
-
     private String messageId;
     private String componentId;
     private String componentName;
-    private String timestamp;
+    private long timestamp;
     private String payload;
     private String parent;
     private String entryType;
@@ -51,7 +46,7 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
         this.messageId = synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID).toString();
         this.componentId = componentId;
         this.componentName = componentName;
-        this.timestamp = dateFormatter.format(new Date());
+        this.timestamp = new Date().getTime();
         this.propertyMap = this.extractContextProperties(synCtx);
         this.transportPropertyMap = this.extractTransportProperties(synCtx);
         this.payload = synCtx.getEnvelope().toString();
@@ -87,7 +82,7 @@ public class MessageFlowComponentEntry implements MessageFlowDataEntry {
         return componentId;
     }
 
-    public String getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 

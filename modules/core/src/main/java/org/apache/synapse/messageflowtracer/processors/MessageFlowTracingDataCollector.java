@@ -24,6 +24,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.messageflowtracer.data.MessageFlowComponentEntry;
 import org.apache.synapse.messageflowtracer.data.MessageFlowComponentId;
+import org.apache.synapse.messageflowtracer.data.MessageFlowTraceEntry;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
 /**
@@ -94,6 +95,9 @@ public class MessageFlowTracingDataCollector {
             synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID,
                                new MessageFlowComponentId(MessageFlowTracerConstants.INITIAL_FLOW_INCREMENT_ID));
             synCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
+            synCtx.getEnvironment().getMessageDataCollector().enQueue(
+                    new MessageFlowTraceEntry(synCtx)
+            );
         }
     }
 
