@@ -365,6 +365,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     //to ignore any entity enclosed methods available.
                     if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
                         pipe.setSerializationCompleteWithoutData(true);
+                    } else if (messageSize == 0 &&
+                               (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                                (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
+                        pipe.setSerializationCompleteWithoutData(true);
                     } else {
                         pipe.setSerializationComplete(true);
                     }
