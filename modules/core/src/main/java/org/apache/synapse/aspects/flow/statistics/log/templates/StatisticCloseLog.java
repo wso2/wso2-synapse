@@ -39,7 +39,7 @@ public class StatisticCloseLog implements StatisticReportingLog {
 
 		statisticDataUnit =
 				new StatisticDataUnit(statisticId, componentId, parentId, msgId, endTime, messageContext.isResponse(),
-				                      messageContext.getEnvironment());
+				                      messageContext.getEnvironment(), messageContext);
 	}
 
 	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime,

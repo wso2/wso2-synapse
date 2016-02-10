@@ -23,6 +23,7 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * StatisticsLog holds statistics logs during statistic collection. When message passes through each
@@ -35,7 +36,7 @@ public class StatisticsLog {
 
 	private final int parentMsgId;
 
-	private String timeStamp;
+	private long timestamp;
 
 	private String messageFlowId;
 
@@ -67,6 +68,10 @@ public class StatisticsLog {
 
 	private boolean isOpenedByContinuation;
 
+	private String entryType;
+	private Map<String, Object> contextPropertyMap;
+	private Map<String, Object> transportPropertyMap;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
 		this.componentType = statisticDataUnit.getComponentType();
@@ -79,6 +84,9 @@ public class StatisticsLog {
 		this.aggregateLog = statisticDataUnit.isAggregatePoint();
 		this.cloneLog = statisticDataUnit.isClonePoint();
 		this.immediateChild = null;
+		this.entryType = statisticDataUnit.getEntryType();
+		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
+		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 	}
 
 	public int getParentMsgId() {
@@ -181,12 +189,12 @@ public class StatisticsLog {
 		this.isOpenedByContinuation = isOpenedByContinuation;
 	}
 
-	public String getTimeStamp() {
-		return timeStamp;
+	public long getTimestamp() {
+		return timestamp;
 	}
 
-	public void setTimeStamp(String timeStamp) {
-		this.timeStamp = timeStamp;
+	public void setTimestamp(long timestamp) {
+		this.timestamp = timestamp;
 	}
 
 	public String getMessageFlowId() {
@@ -195,6 +203,30 @@ public class StatisticsLog {
 
 	public void setMessageFlowId(String messageFlowId) {
 		this.messageFlowId = messageFlowId;
+	}
+
+	public String getEntryType() {
+		return entryType;
+	}
+
+	public void setEntryType(String entryType) {
+		this.entryType = entryType;
+	}
+
+	public Map<String, Object> getContextPropertyMap() {
+		return contextPropertyMap;
+	}
+
+	public void setContextPropertyMap(Map<String, Object> contextPropertyMap) {
+		this.contextPropertyMap = contextPropertyMap;
+	}
+
+	public Map<String, Object> getTransportPropertyMap() {
+		return transportPropertyMap;
+	}
+
+	public void setTransportPropertyMap(Map<String, Object> transportPropertyMap) {
+		this.transportPropertyMap = transportPropertyMap;
 	}
 
 	public String getComponentTypeToString() {

@@ -39,7 +39,7 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 			cloneId = 0;
 		}
 		statisticDataUnit = new StatisticDataUnit(statisticId, componentId, componentType, parentId, cloneId, startTime,
-		                                          messageContext.isResponse());
+		                                          messageContext.isResponse(), messageContext);
 
 	}
 
