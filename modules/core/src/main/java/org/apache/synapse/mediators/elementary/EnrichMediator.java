@@ -116,4 +116,10 @@ public class EnrichMediator extends AbstractMediator {
     public void setTarget(Target target) {
         this.target = target;
     }
+
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

@@ -689,4 +689,9 @@ public class XQueryMediator extends AbstractMediator {
     public void setUseDOMSource(boolean useDOMSource) {
         this.useDOMSource = useDOMSource;
     }
+
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

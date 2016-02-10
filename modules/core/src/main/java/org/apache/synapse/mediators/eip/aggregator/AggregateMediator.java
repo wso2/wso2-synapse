@@ -656,7 +656,13 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.enclosingElementPropertyName = enclosingElementPropertyName;
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         RuntimeStatisticCollector
                 .reportStatisticForAggregateMediator(messageContext, getMediatorName(), ComponentType.MEDIATOR,
                                                      parentName, isCreateLog, isAggregationMessageCollected);

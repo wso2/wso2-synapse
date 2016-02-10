@@ -136,4 +136,9 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
     public boolean isContentAware() {
         return mediator.isContentAware();
     }
+
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
 }

@@ -401,6 +401,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         this.id = id;
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
+
     public void init(SynapseEnvironment se) {
 
         synapseEnv = se;
@@ -447,7 +453,8 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         RuntimeStatisticCollector
                 .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
                                                     parentName, isCreateLog, true, false);

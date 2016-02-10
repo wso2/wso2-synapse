@@ -397,6 +397,10 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         return true;
     }
 
+    public boolean isContentAltering() {
+        return false;
+    }
+
     public int getMediatorPosition() {
        return mediatorPosition;
     }
