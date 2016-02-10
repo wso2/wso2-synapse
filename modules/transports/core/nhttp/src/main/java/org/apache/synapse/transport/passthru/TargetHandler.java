@@ -122,6 +122,8 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             ProxyTunnelHandler tunnelHandler = (ProxyTunnelHandler) context.getAttribute(PassThroughConstants.TUNNEL_HANDLER);
             if (tunnelHandler != null && !tunnelHandler.isCompleted()) {
+                Object targetHost = TargetContext.get(conn).getRequestMsgCtx().getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST);
+                context.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST, targetHost);
                 if (!tunnelHandler.isRequested()) {
                     HttpRequest request = tunnelHandler.generateRequest(context);
                     if (targetConfiguration.getProxyAuthenticator() != null) {

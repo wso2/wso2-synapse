@@ -48,7 +48,6 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.auth.Credentials;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -77,6 +76,7 @@ import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 import org.apache.synapse.commons.jmx.ThreadingView;
+import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
@@ -168,14 +168,14 @@ public class ClientHandler implements NHttpClientEventHandler {
     public ClientHandler(
             final ConnectionPool connpool,
             final ClientConnFactory connFactory,
-            final Credentials proxycreds,
+            final ProxyConfig proxyConfig,
             final ConfigurationContext cfgCtx,
             final HttpParams params,
-            final NhttpMetricsCollector metrics) {
+            final NhttpMetricsCollector metrics) throws AxisFault {
         super();
         this.connpool = connpool;
         this.connFactory = connFactory;
-        this.proxyauthenticator = proxycreds != null ? new ProxyAuthenticator(proxycreds) : null;
+        this.proxyauthenticator = proxyConfig.createProxyAuthenticator();
         this.cfgCtx = cfgCtx;
         this.params = params;
         this.httpProcessor = getHttpProcessor();

@@ -45,7 +45,6 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
-import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -143,15 +142,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         MBeanRegistrar.getInstance().registerMBean(view, "Transport",
                  "passthru-" + namePrefix.toLowerCase() + "-sender");
         
-        proxyConfig = new ProxyConfigBuilder().parse(transportOutDescription).build();
-        if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
-            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " + 
-                proxyConfig.getProxyBypass());
-        }
-        
+        proxyConfig = new ProxyConfigBuilder().build(transportOutDescription);
+        log.info(proxyConfig.logProxyConfig());
+
         targetConfiguration = new TargetConfiguration(configurationContext,
-                transportOutDescription, workerPool, metrics, 
-                proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);
+                transportOutDescription, workerPool, metrics,
+                proxyConfig.createProxyAuthenticator());
         targetConfiguration.build();
 
         PassThroughSenderManager.registerPassThroughHttpSender(this);

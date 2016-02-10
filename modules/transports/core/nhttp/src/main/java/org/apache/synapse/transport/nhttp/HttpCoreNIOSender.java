@@ -155,12 +155,9 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         connpool = new ConnectionPool();
 
-        proxyConfig = new ProxyConfigBuilder().parse(transportOut).build();
-        if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
-            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " + 
-                proxyConfig.getProxyBypass());
-        }
-        
+        proxyConfig = new ProxyConfigBuilder().build(transportOut);
+        log.info(proxyConfig.logProxyConfig());
+
         Parameter param = transportOut.getParameter("warnOnHTTP500");
         if (param != null) {
             String[] warnOnHttp500 = ((String) param.getValue()).split("\\|");
@@ -203,7 +200,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         }
 
         metrics = new NhttpMetricsCollector(false, transportOut.getName());
-        handler = new ClientHandler(connpool, connFactory, proxyConfig.getCreds(), cfgCtx, params, metrics);
+        handler = new ClientHandler(connpool, connFactory, proxyConfig, cfgCtx, params, metrics);
         iodispatch = new ClientIODispatch(handler, connFactory);
         final IOEventDispatch ioEventDispatch = iodispatch;
 
@@ -355,6 +352,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
             HttpHost proxy = proxyConfig.selectProxy(target);
+
             HttpRoute route;
             if (proxy != null) {
                 route = new HttpRoute(target, null, proxy, secure);

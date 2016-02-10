@@ -122,6 +122,8 @@ public class DeliveryAgent {
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
             HttpHost proxy = proxyConfig.selectProxy(target);
+            msgContext.setProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST, target.getHostName());
+
             HttpRoute route;
             if (proxy != null) {
                 route = new HttpRoute(target, null, proxy, secure);
