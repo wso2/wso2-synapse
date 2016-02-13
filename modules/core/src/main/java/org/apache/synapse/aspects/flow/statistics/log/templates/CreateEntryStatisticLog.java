@@ -30,7 +30,7 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 	private StatisticDataUnit statisticDataUnit;
 
 	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
-	                               String parentId, Long startTime) {
+	                               String parentId, Long startTime, boolean isAlteringContent) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		int cloneId;
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
@@ -39,13 +39,13 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 			cloneId = 0;
 		}
 		statisticDataUnit = new StatisticDataUnit(statisticId, componentId, componentType, parentId, cloneId, startTime,
-		                                          messageContext.isResponse(), messageContext);
+		                                          messageContext.isResponse(), messageContext, isAlteringContent);
 
 	}
 
 	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
-	                               String parentId, Long startTime, boolean isCloneLog, boolean isAggregateLog) {
-		this(messageContext, componentId, componentType, parentId, startTime);
+	                               String parentId, Long startTime, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
+		this(messageContext, componentId, componentType, parentId, startTime, isAlteringContent);
 		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();
 		}

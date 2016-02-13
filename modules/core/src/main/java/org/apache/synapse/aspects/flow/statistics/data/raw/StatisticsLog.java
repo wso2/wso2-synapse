@@ -68,9 +68,11 @@ public class StatisticsLog {
 
 	private boolean isOpenedByContinuation;
 
-	private String entryType;
 	private Map<String, Object> contextPropertyMap;
+
 	private Map<String, Object> transportPropertyMap;
+
+	private String payload;
 
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
@@ -84,9 +86,9 @@ public class StatisticsLog {
 		this.aggregateLog = statisticDataUnit.isAggregatePoint();
 		this.cloneLog = statisticDataUnit.isClonePoint();
 		this.immediateChild = null;
-		this.entryType = statisticDataUnit.getEntryType();
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
+		this.payload = statisticDataUnit.getPayload();
 	}
 
 	public int getParentMsgId() {
@@ -205,12 +207,12 @@ public class StatisticsLog {
 		this.messageFlowId = messageFlowId;
 	}
 
-	public String getEntryType() {
-		return entryType;
+	public String getPayload() {
+		return payload;
 	}
 
-	public void setEntryType(String entryType) {
-		this.entryType = entryType;
+	public void setPayload(String payload) {
+		this.payload = payload;
 	}
 
 	public Map<String, Object> getContextPropertyMap() {

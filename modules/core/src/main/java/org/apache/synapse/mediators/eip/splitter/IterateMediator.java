@@ -457,6 +457,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         RuntimeStatisticCollector
                 .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, true, false);
+                                                    parentName, isCreateLog, true, false, isContentAltering());
     }
 }

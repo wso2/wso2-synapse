@@ -42,23 +42,22 @@ public class StatisticDataUnit {
 	private boolean clonePoint;
 	private int parentMsgId;
 	private long timestamp;
-	private String entryType;
 	private Map<String, Object> contextPropertyMap;
 	private Map<String, Object> transportPropertyMap;
+	private String payload;
+
+	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
+	                         int cloneId, Long time, boolean isResponse, MessageContext messageContext, boolean isAlteringContent) {
+		this(statisticId, componentId, componentType, parentId, cloneId, time, isResponse, messageContext);
+		if (isAlteringContent) {
+			payload = messageContext.getEnvelope().toString();
+		}
+	}
 
 	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
 	                         int cloneId, Long time, boolean isResponse, MessageContext messageContext) {
 		this(statisticId, componentId, parentId, cloneId, time, isResponse, null, messageContext);
 		this.componentType = componentType;
-//		this.statisticId = statisticId;
-//		this.time = time;
-//		this.parentId = parentId;
-//		this.componentId = componentId;
-//		this.cloneId = cloneId;
-//		this.isResponse = isResponse;
-//		this.aggregatePoint = false;
-//		this.clonePoint = false;
-//		this.timestamp = new Date().getTime();
 	}
 
 	public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
@@ -80,7 +79,6 @@ public class StatisticDataUnit {
 		this.clonePoint = false;
 		this.timestamp = new Date().getTime();
 
-		this.entryType = messageContext.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE).toString();
 		this.contextPropertyMap = this.extractContextProperties(messageContext);
 		this.transportPropertyMap = this.extractTransportProperties(messageContext);
 
@@ -150,16 +148,16 @@ public class StatisticDataUnit {
 		return timestamp;
 	}
 
-	public String getEntryType() {
-		return entryType;
-	}
-
 	public Map<String, Object> getContextPropertyMap() {
 		return contextPropertyMap;
 	}
 
 	public Map<String, Object> getTransportPropertyMap() {
 		return transportPropertyMap;
+	}
+
+	public String getPayload() {
+		return payload;
 	}
 
 	/**

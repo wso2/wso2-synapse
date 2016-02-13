@@ -460,7 +460,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         RuntimeStatisticCollector
                 .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, false, false);
+                                                    parentName, isCreateLog, false, false, isContentAltering());
     }
 
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {

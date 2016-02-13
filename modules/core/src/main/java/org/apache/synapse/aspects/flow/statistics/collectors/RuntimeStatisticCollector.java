@@ -357,7 +357,7 @@ public class RuntimeStatisticCollector {
 		if (isStatisticsEnable()) {
 			if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
 				setStatisticsTraceId(messageContext);
-				createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false);
+				createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false, false);
 				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 			} else {
 				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
@@ -380,7 +380,7 @@ public class RuntimeStatisticCollector {
 				if (createStatisticLog) {
 					setStatisticsTraceId(messageContext);
 					createLogForMessageCheckpoint(messageContext, inboundName, ComponentType.INBOUNDENDPOINT, null,
-					                              true, false, false);
+					                              true, false, false, false);
 					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
 					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
@@ -410,7 +410,7 @@ public class RuntimeStatisticCollector {
 				if (createStatisticLog) {
 					setStatisticsTraceId(messageContext);
 					createLogForMessageCheckpoint(messageContext, proxyName, ComponentType.PROXYSERVICE, null, true,
-					                              false, false);
+					                              false, false, false);
 					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
 					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
@@ -504,10 +504,10 @@ public class RuntimeStatisticCollector {
 	                                               boolean isCreateLog) {
 		if (isCreateLog) {
 			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, true, false,
-			                              false);
+			                              false, false);
 		} else {
 			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
-			                              false);
+			                              false, false);
 		}
 	}
 
@@ -524,7 +524,7 @@ public class RuntimeStatisticCollector {
 	                                              boolean individualStatisticCollected, boolean isCreateLog) {
 		if (shouldReportStatistic(messageContext)) {
 			createLogForMessageCheckpoint(messageContext, endpointName, ComponentType.ENDPOINT, null, isCreateLog,
-			                              false, false);
+			                              false, false, false);
 		}
 		if (individualStatisticCollected) {
 			StatisticReportingLog statisticReportingLog;
@@ -552,10 +552,10 @@ public class RuntimeStatisticCollector {
 		if (shouldReportStatistic(messageContext)) {
 			if (isCreateLog) {
 				createLogForMessageCheckpoint(messageContext, componentName, componentType, parentName, true, false,
-				                              true);
+				                              true, true);
 			} else {
 				createLogForMessageCheckpoint(messageContext, componentName, componentType, parentName, false, false,
-				                              isAggregateComplete);
+				                              isAggregateComplete, true);
 			}
 		}
 	}
@@ -574,10 +574,10 @@ public class RuntimeStatisticCollector {
 	public static void reportStatisticForMessageComponent(MessageContext messageContext, String componentName,
 	                                                      ComponentType componentType, String parentName,
 	                                                      boolean isCreateLog, boolean isCloneLog,
-	                                                      boolean isAggregateLog) {
+	                                                      boolean isAggregateLog, boolean isAlteringContent) {
 		if (shouldReportStatistic(messageContext)) {
 			createLogForMessageCheckpoint(messageContext, componentName, componentType, parentName, isCreateLog,
-			                              isCloneLog, isAggregateLog);
+			                              isCloneLog, isAggregateLog, isAlteringContent);
 		}
 	}
 
@@ -595,7 +595,7 @@ public class RuntimeStatisticCollector {
 			String resourceName = getResourceNameForStatistics(messageContext, resourceId);
 			if (isCreateLog) {
 				createLogForMessageCheckpoint(messageContext, resourceName, ComponentType.RESOURCE, parentName, true,
-				                              false, false);
+				                              false, false, true);
 			} else {
 				if (!messageContext.isResponse()) {
 					boolean isOutOnly =
@@ -607,12 +607,12 @@ public class RuntimeStatisticCollector {
 					}
 					if (isOutOnly) {
 						reportStatisticForMessageComponent(messageContext, resourceName, ComponentType.RESOURCE,
-						                                   parentName, false, false, false);
+						                                   parentName, false, false, false, false);
 					}
 				} else {
 					RuntimeStatisticCollector
 							.reportStatisticForMessageComponent(messageContext, resourceName, ComponentType.RESOURCE,
-							                                    parentName, false, false, false);
+							                                    parentName, false, false, false, false);
 				}
 			}
 		}
@@ -721,10 +721,10 @@ public class RuntimeStatisticCollector {
 					textualStringName = (String) synapseRestApi;
 				}
 				createLogForMessageCheckpoint(synapseOutMsgCtx, textualStringName, ComponentType.RESOURCE, null, false,
-				                              false, false);
+				                              false, false, false);
 			} else if (synapseResource != null) {
 				createLogForMessageCheckpoint(synapseOutMsgCtx, (String) synapseResource, ComponentType.RESOURCE, null,
-				                              false, false, false);
+				                              false, false, false, false);
 			}
 			createLogForFinalize(synapseOutMsgCtx);
 		}
@@ -786,11 +786,11 @@ public class RuntimeStatisticCollector {
 
 	private static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
 	                                                  ComponentType componentType, String parentName,
-	                                                  boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog) {
+	                                                  boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
 		StatisticReportingLog statisticLog;
 		if (isCreateLog) {
 			statisticLog = new CreateEntryStatisticLog(messageContext, componentName, componentType, parentName,
-			                                           System.currentTimeMillis(), isCloneLog, isAggregateLog);
+			                                           System.currentTimeMillis(), isCloneLog, isAggregateLog, isAlteringContent);
 		} else {
 			statisticLog = new StatisticCloseLog(messageContext, componentName, parentName, System.currentTimeMillis(),
 			                                     isCloneLog, isAggregateLog);
