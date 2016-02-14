@@ -61,14 +61,14 @@ public class StatisticDataUnit {
 	}
 
 	public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
-		this.statisticId = statisticId;
+		this.statisticId = statisticId.replace(':', '_');
 		this.synapseEnvironment = synapseEnvironment;
 		this.time = time;
 	}
 
 	public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
 	                         boolean isResponse, SynapseEnvironment synapseEnvironment, MessageContext messageContext) {
-		this.statisticId = statisticId;
+		this.statisticId = statisticId.replace(':', '_');
 		this.time = time;
 		this.parentId = parentId;
 		this.componentId = componentId;

@@ -357,7 +357,7 @@ public class RuntimeStatisticCollector {
 		if (isStatisticsEnable()) {
 			if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
 				setStatisticsTraceId(messageContext);
-				createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false, false);
+				createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false, true);
 				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 			} else {
 				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
@@ -380,7 +380,7 @@ public class RuntimeStatisticCollector {
 				if (createStatisticLog) {
 					setStatisticsTraceId(messageContext);
 					createLogForMessageCheckpoint(messageContext, inboundName, ComponentType.INBOUNDENDPOINT, null,
-					                              true, false, false, false);
+					                              true, false, false, true);
 					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
 					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
@@ -410,7 +410,7 @@ public class RuntimeStatisticCollector {
 				if (createStatisticLog) {
 					setStatisticsTraceId(messageContext);
 					createLogForMessageCheckpoint(messageContext, proxyName, ComponentType.PROXYSERVICE, null, true,
-					                              false, false, false);
+					                              false, false, true);
 					messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				} else {
 					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
@@ -504,10 +504,10 @@ public class RuntimeStatisticCollector {
 	                                               boolean isCreateLog) {
 		if (isCreateLog) {
 			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, true, false,
-			                              false, false);
+			                              false, true);
 		} else {
 			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
-			                              false, false);
+			                              false, true);
 		}
 	}
 
@@ -532,7 +532,7 @@ public class RuntimeStatisticCollector {
 				setStatisticsTraceId(messageContext);
 			}
 			statisticReportingLog = new EndpointLog(messageContext, endpointId, endpointName, isCreateLog);
-			messageDataCollector.enQueue(statisticReportingLog);
+			messageDataCollector.enqueue(statisticReportingLog);
 		}
 	}
 
@@ -738,7 +738,7 @@ public class RuntimeStatisticCollector {
 	public static void removeContinuationState(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticReportingLog statisticReportingLog = new RemoveContinuationStateLog(messageContext);
-			messageDataCollector.enQueue(statisticReportingLog);
+			messageDataCollector.enqueue(statisticReportingLog);
 		}
 	}
 
@@ -753,10 +753,10 @@ public class RuntimeStatisticCollector {
 			if (isFaultCreated) {
 				CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
 						new CloseStatisticEntryForcefullyLog(messageContext, System.currentTimeMillis());
-				messageDataCollector.enQueue(closeStatisticEntryForcefullyLog);
+				messageDataCollector.enqueue(closeStatisticEntryForcefullyLog);
 			} else {
 				InformFaultLog informFaultLog = new InformFaultLog(messageContext);
-				messageDataCollector.enQueue(informFaultLog);
+				messageDataCollector.enqueue(informFaultLog);
 			}
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_FAULT_REPORTED, !isFaultCreated);
 			return true;
@@ -778,7 +778,7 @@ public class RuntimeStatisticCollector {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticReportingLog statisticReportingLog;
 			statisticReportingLog = new OpenClosedStatisticLog(messageContext, componentId);
-			messageDataCollector.enQueue(statisticReportingLog);
+			messageDataCollector.enqueue(statisticReportingLog);
 		}
 	}
 
@@ -795,29 +795,29 @@ public class RuntimeStatisticCollector {
 			statisticLog = new StatisticCloseLog(messageContext, componentName, parentName, System.currentTimeMillis(),
 			                                     isCloneLog, isAggregateLog);
 		}
-		messageDataCollector.enQueue(statisticLog);
+		messageDataCollector.enqueue(statisticLog);
 	}
 
 	private static void createLogForFinalize(MessageContext messageContext) {
 		StatisticReportingLog statisticReportingLog;
 		statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
-		messageDataCollector.enQueue(statisticReportingLog);
+		messageDataCollector.enqueue(statisticReportingLog);
 	}
 
 	private static void createLogForRemoveCallback(MessageContext synOutCtx, String msgID) {
 		RemoveCallbackLog removeCallbackLog = new RemoveCallbackLog(synOutCtx, msgID);
-		messageDataCollector.enQueue(removeCallbackLog);
+		messageDataCollector.enqueue(removeCallbackLog);
 	}
 
 	private static void createLogForCallbackReceived(MessageContext oldMessageContext, String msgID) {
 		UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
 				new UpdateForReceivedCallbackLog(oldMessageContext, msgID, System.currentTimeMillis());
-		messageDataCollector.enQueue(updateForReceivedCallbackLog);
+		messageDataCollector.enqueue(updateForReceivedCallbackLog);
 	}
 
 	private static void createLogForCallbackRegister(MessageContext messageContext, String MsgId) {
 		AddCallbacksLog addCallbacksLog = new AddCallbacksLog(messageContext, MsgId);
-		messageDataCollector.enQueue(addCallbacksLog);
+		messageDataCollector.enqueue(addCallbacksLog);
 	}
 
 	//Setting properties for branching operation

@@ -44,7 +44,7 @@ public class MessageDataCollector implements Runnable {
 	 *
 	 * @param statisticReportingLog StatisticReportingLog to be stored in the queue
 	 */
-	public void enQueue(StatisticReportingLog statisticReportingLog) {
+	public void enqueue(StatisticReportingLog statisticReportingLog) {
 		queue.add(statisticReportingLog);
 	}
 
@@ -54,7 +54,7 @@ public class MessageDataCollector implements Runnable {
 	 * @return StatisticReportingLog instance
 	 * @throws Exception
 	 */
-	public StatisticReportingLog deQueue() throws Exception {
+	public StatisticReportingLog dequeue() throws Exception {
 		try {
 			return queue.take();
 		} catch (InterruptedException exception) {
@@ -78,7 +78,7 @@ public class MessageDataCollector implements Runnable {
 		StatisticReportingLog statisticReportingLog;
 		while (!isStopped && !isEmpty()) {
 			try {
-				statisticReportingLog = deQueue();
+				statisticReportingLog = dequeue();
 				statisticReportingLog.process();
 			} catch (Exception exception) {
 				log.error("Error in mediation flow statistic data consumer while consuming data", exception);
