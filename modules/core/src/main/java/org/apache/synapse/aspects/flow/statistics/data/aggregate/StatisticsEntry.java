@@ -23,6 +23,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
 import org.apache.synapse.aspects.flow.statistics.util.ContinuationStateHolder;
 
 import java.util.*;
@@ -65,6 +69,10 @@ public class StatisticsEntry {
 	private static final int PARENT_LEVEL_OF_ROOT = -1;
 
 	private static final int ROOT_LEVEL = 0;
+
+	private PublishingFlow publishingFlow = new PublishingFlow();
+	private Map<String, PublishingPayload> payloadMap = new HashMap<>();
+
 
 	/**
 	 * This overloaded constructor will create the root statistic log og the Statistic Entry
@@ -167,7 +175,7 @@ public class StatisticsEntry {
 			haveAggregateLogs = false;
 			Integer aggregateIndex = deleteAndGetAggregateIndexFromOpenLogs();
 			if (aggregateIndex != null) {
-				closeStatisticLog(aggregateIndex, statisticDataUnit.getTime());
+				closeStatisticLog(aggregateIndex, statisticDataUnit.getTime(), statisticDataUnit.getPayload());
 				return openLogs.isEmpty();
 			}
 		}
@@ -181,11 +189,11 @@ public class StatisticsEntry {
 		}
 		//not closing the root statistic log as it will be closed be endAll method
 		if (componentLevel > ROOT_LEVEL) {
-			closeStatisticLog(componentLevel, statisticDataUnit.getTime());
+			closeStatisticLog(componentLevel, statisticDataUnit.getTime(), statisticDataUnit.getPayload());
 		} else {
 			componentLevel = deleteAndGetComponentIndex(statisticDataUnit.getComponentId());
 			if (componentLevel > ROOT_LEVEL) {
-				closeStatisticLog(componentLevel, statisticDataUnit.getTime());
+				closeStatisticLog(componentLevel, statisticDataUnit.getTime(), statisticDataUnit.getPayload());
 			}
 		}
 		return openLogs.isEmpty();
@@ -198,13 +206,15 @@ public class StatisticsEntry {
 	 * @param endTime        endTime of the closing statistics log
 	 */
 
-	private void closeStatisticLog(int componentLevel, Long endTime) {
+	private void closeStatisticLog(int componentLevel, Long endTime, String payload) {
 		StatisticsLog currentLog = messageFlowLogs.get(componentLevel);
 		if (log.isDebugEnabled()) {
 			log.debug("Closed statistic log of [ElementId" + currentLog.getComponentId() +
 			          "][MsgId" + currentLog.getParentMsgId());
 		}
 		currentLog.setEndTime(endTime);
+		// TODO: add after payload
+		currentLog.setAfterPayload(payload);
 		updateParentLogs(currentLog.getParentLevel(), endTime);
 	}
 
@@ -694,7 +704,63 @@ public class StatisticsEntry {
 	 *
 	 * @return Message flow logs of the message flow
 	 */
-	public List<StatisticsLog> getMessageFlowLogs() {
-		return messageFlowLogs;
+	public PublishingFlow getMessageFlowLogs() {
+
+		String entryPoint = messageFlowLogs.get(0).getComponentId();
+
+		for (int index = 0; index < messageFlowLogs.size(); index++) {
+			StatisticsLog currentStatLog = messageFlowLogs.get(index);
+
+			if (currentStatLog.getBeforePayload() != null && currentStatLog.getAfterPayload() == null) {
+				currentStatLog.setAfterPayload(currentStatLog.getBeforePayload());
+			}
+
+			if (currentStatLog.getBeforePayload() == null) {
+				int parentIndex = currentStatLog.getParentLevel();
+				StatisticsLog parentStatLog = messageFlowLogs.get(parentIndex);
+
+				if (parentStatLog.getAfterPayload().startsWith("#REFER:")){
+					// Parent also referring to after-payload
+					currentStatLog.setBeforePayload(parentStatLog.getAfterPayload());
+					currentStatLog.setAfterPayload(parentStatLog.getAfterPayload());
+
+					String referringIndex = parentStatLog.getAfterPayload().split(":")[1];
+
+					this.payloadMap.get("after-"+referringIndex).addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+					this.payloadMap.get("after-"+referringIndex).addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+
+				} else {
+					// Create a new after-payload reference
+					currentStatLog.setBeforePayload("#REFER:" + parentIndex);
+					currentStatLog.setAfterPayload("#REFER:" + parentIndex);
+
+					this.payloadMap.get("after-"+parentIndex).addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+					this.payloadMap.get("after-"+parentIndex).addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+				}
+
+			} else {
+
+				// For content altering components
+				PublishingPayload publishingPayloadBefore = new PublishingPayload();
+				publishingPayloadBefore.setPayload(currentStatLog.getBeforePayload());
+				publishingPayloadBefore.addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+				this.payloadMap.put("before-" + index, publishingPayloadBefore);
+
+				PublishingPayload publishingPayloadAfter = new PublishingPayload();
+				publishingPayloadAfter.setPayload(currentStatLog.getAfterPayload());
+				publishingPayloadAfter.addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+				this.payloadMap.put("after-" + index, publishingPayloadAfter);
+
+			}
+
+			// Add each event to Publishing Flow
+			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
+		}
+
+		// Move all payloads to publishingFlow object
+		this.publishingFlow.setPayloads(this.payloadMap.values());
+
+		return this.publishingFlow;
+//		return messageFlowLogs;
 	}
 }

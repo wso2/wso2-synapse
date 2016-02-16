@@ -252,6 +252,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         this.sequential = sequential;
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
     public void init(SynapseEnvironment se) {
 
         synapseEnv = se;

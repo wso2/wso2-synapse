@@ -28,7 +28,7 @@ public class StatisticCloseLog implements StatisticReportingLog {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime) {
+	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime, boolean isAlteringContent) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		int msgId;
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
@@ -43,14 +43,18 @@ public class StatisticCloseLog implements StatisticReportingLog {
 	}
 
 	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime,
-	                         boolean isCloneLog, boolean isAggregateLog) {
-		this(messageContext, componentId, parentId, endTime);
+	                         boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
+		this(messageContext, componentId, parentId, endTime, isAlteringContent);
 		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();
 		}
 
 		if (isCloneLog) {
 			statisticDataUnit.setClonePoint();
+		}
+
+		if (isAlteringContent) {
+			statisticDataUnit.setPayload(messageContext.getEnvelope().toString());
 		}
 	}
 

@@ -56,6 +56,8 @@ public class StatisticsLog {
 
 	private long endTime = -1;
 
+	private long duration = 0;
+
 	private boolean isResponse;
 
 	private boolean cloneLog;
@@ -72,7 +74,9 @@ public class StatisticsLog {
 
 	private Map<String, Object> transportPropertyMap;
 
-	private String payload;
+	private String beforePayload;
+
+	private String afterPayload;
 
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
@@ -88,7 +92,7 @@ public class StatisticsLog {
 		this.immediateChild = null;
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
-		this.payload = statisticDataUnit.getPayload();
+		this.beforePayload = statisticDataUnit.getPayload();
 	}
 
 	public int getParentMsgId() {
@@ -97,6 +101,7 @@ public class StatisticsLog {
 
 	public void setEndTime(long endTime) {
 		this.endTime = endTime;
+		this.duration = this.endTime - this.startTime;
 	}
 
 	public String getParent() {
@@ -121,6 +126,10 @@ public class StatisticsLog {
 
 	public long getEndTime() {
 		return endTime;
+	}
+
+	public long getDuration() {
+		return duration;
 	}
 
 	public int getNoOfFaults() {
@@ -207,12 +216,12 @@ public class StatisticsLog {
 		this.messageFlowId = messageFlowId;
 	}
 
-	public String getPayload() {
-		return payload;
+	public String getBeforePayload() {
+		return beforePayload;
 	}
 
-	public void setPayload(String payload) {
-		this.payload = payload;
+	public void setBeforePayload(String beforePayload) {
+		this.beforePayload = beforePayload;
 	}
 
 	public Map<String, Object> getContextPropertyMap() {
@@ -229,6 +238,14 @@ public class StatisticsLog {
 
 	public void setTransportPropertyMap(Map<String, Object> transportPropertyMap) {
 		this.transportPropertyMap = transportPropertyMap;
+	}
+
+	public void setAfterPayload(String afterPayload) {
+		this.afterPayload = afterPayload;
+	}
+
+	public String getAfterPayload() {
+		return afterPayload;
 	}
 
 	public String getComponentTypeToString() {

@@ -793,7 +793,7 @@ public class RuntimeStatisticCollector {
 			                                           System.currentTimeMillis(), isCloneLog, isAggregateLog, isAlteringContent);
 		} else {
 			statisticLog = new StatisticCloseLog(messageContext, componentName, parentName, System.currentTimeMillis(),
-			                                     isCloneLog, isAggregateLog);
+			                                     isCloneLog, isAggregateLog, isAlteringContent);
 		}
 		messageDataCollector.enqueue(statisticLog);
 	}

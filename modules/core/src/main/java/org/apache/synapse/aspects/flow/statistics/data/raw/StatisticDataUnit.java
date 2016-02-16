@@ -160,6 +160,10 @@ public class StatisticDataUnit {
 		return payload;
 	}
 
+	public void setPayload(String payload) {
+		this.payload = payload;
+	}
+
 	/**
 	 * Extract message context properties
 	 *
