@@ -338,7 +338,7 @@ public class RuntimeStatisticCollector {
 				          "trace Id :" + statisticDataUnit.getStatisticId());
 			}
 			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
-			                 .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
+			                 .enqueue(statisticsEntry.getMessageFlowLogs());
 			runtimeStatistics.remove(statisticDataUnit.getStatisticId());
 		}
 	}

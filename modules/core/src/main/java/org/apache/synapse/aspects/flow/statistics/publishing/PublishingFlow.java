@@ -19,6 +19,8 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PublishingFlow {
 
@@ -61,5 +63,14 @@ public class PublishingFlow {
 
     public void setPayloads(Collection<PublishingPayload> values) {
         payloads = new ArrayList<>(values);
+    }
+
+    public Map<String, Object> getObjectAsMap() {
+        Map<String, Object> objectMap = new HashMap<String, Object>();
+        objectMap.put("messageFlowId", this.messageFlowId);
+        objectMap.put("events", events);
+        objectMap.put("payloads", payloads);
+
+        return objectMap;
     }
 }

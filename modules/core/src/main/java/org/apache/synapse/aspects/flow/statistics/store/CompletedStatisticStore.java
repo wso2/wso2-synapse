@@ -21,41 +21,72 @@ package org.apache.synapse.aspects.flow.statistics.store;
 import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * This class will hold completed statistic entries till they are collected for storage.
  */
 public class CompletedStatisticStore {
 
-	private final List<PublishingFlow> completedStatisticEntries = new LinkedList<>();
+	private final BlockingQueue<PublishingFlow> completedStatisticEntries;
+
 	private final List<EndpointStatisticLog> completedEndpointStatisticEntries = new LinkedList<>();
 
-	public List<PublishingFlow> getCompletedStatisticEntries() {
-		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
-		synchronized (completedStatisticEntries) {
-			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
-			completedStatisticEntries.clear();
-		}
-		return cloneOfCompletedStatisticEntries;
+//	public List<PublishingFlow> getCompletedStatisticEntries() {
+//		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
+//		synchronized (completedStatisticEntries) {
+//			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
+//			completedStatisticEntries.clear();
+//		}
+//		return cloneOfCompletedStatisticEntries;
+//	}
+
+
+	public CompletedStatisticStore() {
+		int queueSize = Integer.parseInt(SynapsePropertiesLoader
+				                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
+				                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
+
+		completedStatisticEntries = new ArrayBlockingQueue<PublishingFlow>(queueSize);
+
 	}
 
-	public void putCompletedStatisticEntry(PublishingFlow statisticsLogs) {
+	public void enqueue(PublishingFlow statisticsLogs) {
 		synchronized (completedStatisticEntries) {
 			completedStatisticEntries.add(statisticsLogs);
 		}
 	}
 
-	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
-		List<EndpointStatisticLog> cloneOfCompletedEndpointEntries = new LinkedList<>();
-		synchronized (completedEndpointStatisticEntries) {
-			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
-			completedEndpointStatisticEntries.clear();
+	public PublishingFlow dequeue() throws Exception {
+		try {
+			return completedStatisticEntries.take();
+		} catch (InterruptedException exception) {
+			String errorMsg = "Error consuming statistic data queue";
+			throw new Exception(errorMsg, exception);
 		}
-		return cloneOfCompletedEndpointEntries;
 	}
+
+
+	public boolean isEmpty() {
+		return completedStatisticEntries.isEmpty();
+	}
+
+
+
+//	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
+//		List<EndpointStatisticLog> cloneOfCompletedEndpointEntries = new LinkedList<>();
+//		synchronized (completedEndpointStatisticEntries) {
+//			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
+//			completedEndpointStatisticEntries.clear();
+//		}
+//		return cloneOfCompletedEndpointEntries;
+//	}
 
 	public void putCompletedEndpointStatisticEntry(EndpointStatisticLog endpointStatisticLog) {
 		synchronized (completedEndpointStatisticEntries) {
