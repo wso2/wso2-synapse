@@ -27,6 +27,7 @@ public class SynapseHTTPRequestFactory implements HttpRequestFactory {
             "CONNECT"
     };
 
+    public static final String ENDPOINT_URL = "endPointURI";
 
     public SynapseHTTPRequestFactory() {
         super();

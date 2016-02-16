@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.http.conn.SynapseHTTPRequestFactory;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -83,6 +84,7 @@ public class HostConnections {
         ctx.removeAttribute(ExecutionContext.HTTP_REQUEST);
         ctx.removeAttribute(ExecutionContext.HTTP_RESPONSE);
 
+        ctx.removeAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
         lock.lock();
         try {
             if (busyConnections.remove(conn)) {

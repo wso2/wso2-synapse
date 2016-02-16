@@ -33,6 +33,7 @@ import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.transport.http.conn.SynapseHTTPRequestFactory;
 
 public class ConnectionPool {
 
@@ -136,6 +137,7 @@ public class ConnectionPool {
         ctx.removeAttribute(ExecutionContext.HTTP_REQUEST);
         ctx.removeAttribute(ExecutionContext.HTTP_RESPONSE);
 
+        ctx.removeAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
         conn.resetOutput();
     }
 
