@@ -19,6 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -183,6 +184,7 @@ public class StatisticDataUnit {
 		propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT);
 		propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID);
 		propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE);
+		propertyMap.remove(SynapseConstants.STATISTICS_STACK);
 
 		return propertyMap;
 	}

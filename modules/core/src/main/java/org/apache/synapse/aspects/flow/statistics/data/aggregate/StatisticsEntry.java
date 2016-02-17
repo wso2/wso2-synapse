@@ -707,6 +707,7 @@ public class StatisticsEntry {
 	public PublishingFlow getMessageFlowLogs() {
 
 		String entryPoint = messageFlowLogs.get(0).getComponentId();
+		String flowId = messageFlowLogs.get(0).getMessageFlowId();
 
 		for (int index = 0; index < messageFlowLogs.size(); index++) {
 			StatisticsLog currentStatLog = messageFlowLogs.get(index);
@@ -757,6 +758,7 @@ public class StatisticsEntry {
 			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
 		}
 
+		this.publishingFlow.setMessageFlowId(flowId);
 		// Move all payloads to publishingFlow object
 		this.publishingFlow.setPayloads(this.payloadMap.values());
 

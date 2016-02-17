@@ -17,7 +17,6 @@
  */
 package org.apache.synapse.aspects.flow.statistics.publishing;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 
 import java.util.Map;
@@ -37,7 +36,7 @@ public class PublishingEvent {
     private Map contextPropertyMap;
     private Map transportPropertyMap;
 
-    private String children;
+    private Integer[] children;
     private String entryPoint;
 
     public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
@@ -52,11 +51,13 @@ public class PublishingEvent {
         this.transportPropertyMap = statisticsLog.getTransportPropertyMap();
 
         if (statisticsLog.getImmediateChild() == null && (statisticsLog.getChildren().size() > 0)) {
-            this.children = StringUtils.join(statisticsLog.getChildren(), ',');
+            this.children = new Integer[statisticsLog.getChildren().size()];
+            this.children = statisticsLog.getChildren().toArray(this.children);
         } else if (statisticsLog.getImmediateChild() != null) {
-            this.children = statisticsLog.getImmediateChild().toString();
+            this.children = new Integer[1];
+            this.children[0] = statisticsLog.getImmediateChild();
         } else {
-            this.children = "";
+//            this.children = new String[];
         }
 
         this.entryPoint = entryPoint;
@@ -135,11 +136,11 @@ public class PublishingEvent {
         this.transportPropertyMap = transportPropertyMap;
     }
 
-    public String getChildren() {
+    public Integer[] getChildren() {
         return children;
     }
 
-    public void setChildren(String children) {
+    public void setChildren(Integer[] children) {
         this.children = children;
     }
 
