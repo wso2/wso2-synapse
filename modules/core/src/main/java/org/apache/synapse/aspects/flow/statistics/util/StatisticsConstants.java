@@ -28,6 +28,8 @@ public class StatisticsConstants {
 	 */
 	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
 
+	public final static String TRACER_ENABLE = "message.flow.tracer.enable";
+
 	/**
 	 * Flow statistic queue size
 	 */

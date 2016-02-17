@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -19,11 +19,11 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 public class PublishingPayloadEvent {
     private int eventIndex;
-    private String attributes;
+    private String attribute;
 
-    public PublishingPayloadEvent(int eventIndex, String attributes) {
+    public PublishingPayloadEvent(int eventIndex, String attribute) {
         this.eventIndex = eventIndex;
-        this.attributes = attributes;
+        this.attribute = attribute;
     }
 
     public int getEventIndex() {
@@ -35,15 +35,15 @@ public class PublishingPayloadEvent {
     }
 
     public String getAttributes() {
-        return attributes;
+        return attribute;
     }
 
-    public void setAttributes(String attributes) {
-        this.attributes = attributes;
+    public void setAttributes(String attribute) {
+        this.attribute = attribute;
     }
 
     @Override
     public String toString() {
-        return "event- " + eventIndex + " , attribute- " + attributes;
+        return "event- " + eventIndex + " , attribute- " + attribute;
     }
 }

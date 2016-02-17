@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -29,6 +29,10 @@ public class PublishingFlow {
     private ArrayList<PublishingEvent> events = new ArrayList<>();
 
     private ArrayList<PublishingPayload> payloads;
+
+    private String MESSAGE_FLOW_ID = "messageFlowId";
+    private String EVENTS = "events";
+    private String PAYLOADS = "payloads";
 
 
     public PublishingEvent getEvent(int index) {
@@ -67,9 +71,9 @@ public class PublishingFlow {
 
     public Map<String, Object> getObjectAsMap() {
         Map<String, Object> objectMap = new HashMap<String, Object>();
-        objectMap.put("messageFlowId", this.messageFlowId);
-        objectMap.put("events", events);
-        objectMap.put("payloads", payloads);
+        objectMap.put(MESSAGE_FLOW_ID, this.messageFlowId);
+        objectMap.put(EVENTS, events);
+        objectMap.put(PAYLOADS, payloads);
 
         return objectMap;
     }

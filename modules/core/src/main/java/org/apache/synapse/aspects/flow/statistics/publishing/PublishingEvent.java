@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -39,6 +39,8 @@ public class PublishingEvent {
     private Integer[] children;
     private String entryPoint;
 
+    private int faultCount;
+
     public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
         this.componentType = statisticsLog.getComponentTypeToString();
         this.componentId = statisticsLog.getComponentId();
@@ -56,11 +58,11 @@ public class PublishingEvent {
         } else if (statisticsLog.getImmediateChild() != null) {
             this.children = new Integer[1];
             this.children[0] = statisticsLog.getImmediateChild();
-        } else {
-//            this.children = new String[];
         }
 
         this.entryPoint = entryPoint;
+
+        this.faultCount = statisticsLog.getNoOfFaults();
     }
 
 
@@ -150,6 +152,14 @@ public class PublishingEvent {
 
     public void setEntryPoint(String entryPoint) {
         this.entryPoint = entryPoint;
+    }
+
+    public int getFaultCount() {
+        return faultCount;
+    }
+
+    public void setFaultCount(int faultCount) {
+        this.faultCount = faultCount;
     }
 
     @Override

@@ -34,43 +34,50 @@ import java.util.concurrent.BlockingQueue;
  */
 public class CompletedStatisticStore {
 
-	private final BlockingQueue<PublishingFlow> completedStatisticEntries;
+	private final List<PublishingFlow> completedStatisticEntries;
 
 	private final List<EndpointStatisticLog> completedEndpointStatisticEntries = new LinkedList<>();
 
-//	public List<PublishingFlow> getCompletedStatisticEntries() {
-//		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
-//		synchronized (completedStatisticEntries) {
-//			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
-//			completedStatisticEntries.clear();
-//		}
-//		return cloneOfCompletedStatisticEntries;
-//	}
+	public List<PublishingFlow> getCompletedStatisticEntries() {
+		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
+		synchronized (completedStatisticEntries) {
+			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
+			completedStatisticEntries.clear();
+		}
+		return cloneOfCompletedStatisticEntries;
+	}
 
 
 	public CompletedStatisticStore() {
-		int queueSize = Integer.parseInt(SynapsePropertiesLoader
-				                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
-				                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
+//		int queueSize = Integer.parseInt(SynapsePropertiesLoader
+//				                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
+//				                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
 
-		completedStatisticEntries = new ArrayBlockingQueue<PublishingFlow>(queueSize);
+		completedStatisticEntries = new LinkedList<PublishingFlow>();
 
 	}
 
-	public void enqueue(PublishingFlow statisticsLogs) {
+
+	public void putCompletedStatisticEntry(PublishingFlow publishingFlow) {
 		synchronized (completedStatisticEntries) {
-			completedStatisticEntries.add(statisticsLogs);
+			completedStatisticEntries.add(publishingFlow);
 		}
 	}
 
-	public PublishingFlow dequeue() throws Exception {
-		try {
-			return completedStatisticEntries.take();
-		} catch (InterruptedException exception) {
-			String errorMsg = "Error consuming statistic data queue";
-			throw new Exception(errorMsg, exception);
-		}
-	}
+//	public void enqueue(PublishingFlow statisticsLogs) {
+//		synchronized (completedStatisticEntries) {
+//			completedStatisticEntries.add(statisticsLogs);
+//		}
+//	}
+//
+//	public PublishingFlow dequeue() throws Exception {
+//		try {
+//			return completedStatisticEntries.take();
+//		} catch (InterruptedException exception) {
+//			String errorMsg = "Error consuming statistic data queue";
+//			throw new Exception(errorMsg, exception);
+//		}
+//	}
 
 
 	public boolean isEmpty() {

@@ -21,6 +21,7 @@ package org.apache.synapse.aspects.flow.statistics.data.aggregate;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
@@ -712,6 +713,14 @@ public class StatisticsEntry {
 		for (int index = 0; index < messageFlowLogs.size(); index++) {
 			StatisticsLog currentStatLog = messageFlowLogs.get(index);
 
+			// Add each event to Publishing Flow
+			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
+
+			// Skip the rest of things, if message tracing is disabled
+			if (!RuntimeStatisticCollector.isTracingEnabled()) {
+				continue;
+			}
+
 			if (currentStatLog.getBeforePayload() != null && currentStatLog.getAfterPayload() == null) {
 				currentStatLog.setAfterPayload(currentStatLog.getBeforePayload());
 			}
@@ -754,8 +763,6 @@ public class StatisticsEntry {
 
 			}
 
-			// Add each event to Publishing Flow
-			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
 		}
 
 		this.publishingFlow.setMessageFlowId(flowId);
@@ -763,6 +770,5 @@ public class StatisticsEntry {
 		this.publishingFlow.setPayloads(this.payloadMap.values());
 
 		return this.publishingFlow;
-//		return messageFlowLogs;
 	}
 }

@@ -66,7 +66,9 @@ public class RuntimeStatisticCollector {
 
 	private static Map<String, EndpointStatisticEntry> endpointStatistics = new HashMap<>();
 
-	private static boolean isStatisticsEnable = false;
+	private static boolean isStatisticsEnabled;
+
+	private static boolean isTracingEnabled;
 
 	private static MessageDataCollector messageDataCollector;
 
@@ -74,9 +76,9 @@ public class RuntimeStatisticCollector {
 	 * Initialize statistics collection when ESB starts.
 	 */
 	public static void init() {
-		isStatisticsEnable = Boolean.parseBoolean(
+		isStatisticsEnabled = Boolean.parseBoolean(
 				SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.STATISTICS_ENABLE, String.valueOf(false)));
-		if (isStatisticsEnable) {
+		if (isStatisticsEnabled) {
 			if (log.isDebugEnabled()) {
 				log.debug("Mediation statistics collection is enabled.");
 			}
@@ -99,6 +101,14 @@ public class RuntimeStatisticCollector {
 			}
 		}
 
+		isTracingEnabled = Boolean.parseBoolean(
+				SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.TRACER_ENABLE, String.valueOf(false)));
+
+		if (!isTracingEnabled) {
+			if (log.isDebugEnabled()) {
+				log.debug("Tracer is not enabled in \'synapse.properties\' file.");
+			}
+		}
 	}
 
 	/**
@@ -338,7 +348,7 @@ public class RuntimeStatisticCollector {
 				          "trace Id :" + statisticDataUnit.getStatisticId());
 			}
 			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
-			                 .enqueue(statisticsEntry.getMessageFlowLogs());
+			                 .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
 			runtimeStatistics.remove(statisticDataUnit.getStatisticId());
 		}
 	}
@@ -864,7 +874,7 @@ public class RuntimeStatisticCollector {
 	 * @return true if statistics collection is enabled
 	 */
 	public static boolean isStatisticsEnable() {
-		return isStatisticsEnable;
+		return isStatisticsEnabled;
 	}
 
 	private static void setStatisticsTraceId(MessageContext msgCtx) {
@@ -874,7 +884,7 @@ public class RuntimeStatisticCollector {
 	}
 
 	public static void stopConsumer() {
-		if (isStatisticsEnable) {
+		if (isStatisticsEnabled) {
 			messageDataCollector.setStopped();
 		}
 	}
@@ -883,12 +893,15 @@ public class RuntimeStatisticCollector {
 		Boolean isStatCollected =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		return (statID != null && isStatCollected != null && isStatCollected && isStatisticsEnable);
+		return (statID != null && isStatCollected != null && isStatCollected && isStatisticsEnabled);
 	}
 
 	private static boolean isStatisticsTraced(MessageContext messageContext) {
 		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		return (statID != null && isStatisticsEnable);
+		return (statID != null && isStatisticsEnabled);
 	}
 
+	public static boolean isTracingEnabled() {
+		return isTracingEnabled;
+	}
 }
