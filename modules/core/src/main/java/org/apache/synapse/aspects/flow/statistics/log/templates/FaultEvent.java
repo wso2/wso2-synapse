@@ -19,7 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -41,6 +41,6 @@ public class FaultEvent implements StatisticsReportingEvent {
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.reportFault(statisticId, cloneId);
+		FaultStatisticCollector.reportFault(statisticId, cloneId);
 	}
 }

@@ -58,7 +58,8 @@ public class StatisticsOpenEvent implements StatisticsReportingEvent {
 		}
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.recordStatisticCreateEntry(statisticDataUnit);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.recordStatisticsOpenEvent(statisticDataUnit);
 	}
 }

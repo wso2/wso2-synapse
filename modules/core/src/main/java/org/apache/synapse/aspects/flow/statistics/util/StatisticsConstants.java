@@ -93,4 +93,11 @@ public class StatisticsConstants {
 	public static final String FLOW_STATISTICS_RESOURCE = "API Resource";
 
 	public static final String FLOW_STATISTICS_ANY = "Other Type";
+
+	/**
+	 * Modes of closing statistic entry
+	 */
+	public static final int GRACEFULLY_CLOSE = 0;
+	public static final int ATTEMPT_TO_CLOSE = 1;
+	public static final int FORECEFULLY_CLOSE = 2;
 }

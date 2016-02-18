@@ -28,9 +28,9 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
@@ -458,7 +458,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * @param isCreateLog    whether this is a start or end of a mediator execution
      */
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
+        MediatorStatisticCollector
                 .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
                                                     parentName, isCreateLog, false, false, isContentAltering());
     }

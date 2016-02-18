@@ -26,7 +26,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
 
@@ -68,7 +68,7 @@ public class MediatorFaultHandler extends FaultHandler {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
-        RuntimeStatisticCollector.reportFault(synCtx);
+        FaultStatisticCollector.reportFault(synCtx);
 
         String name = null;
         if (faultMediator instanceof SequenceMediator) {
@@ -86,7 +86,7 @@ public class MediatorFaultHandler extends FaultHandler {
 
         synCtx.getServiceLog().warn("Executing fault sequence mediator : " + name);
         this.faultMediator.mediate(synCtx);
-        RuntimeStatisticCollector.reportFault(synCtx);
+        FaultStatisticCollector.reportFault(synCtx);
     }
 
     /**

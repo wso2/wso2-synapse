@@ -26,8 +26,9 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.SequenceStatisticCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
@@ -280,7 +281,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             do {
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) getChild(continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+                MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx,
                                           continuationState.getChildContState());
@@ -519,8 +520,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         }
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-	    RuntimeStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
-                                                parentName, getAspectConfiguration(), isCreateLog);
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        SequenceStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
+                                                              parentName, getAspectConfiguration(), isCreateLog);
     }
 }

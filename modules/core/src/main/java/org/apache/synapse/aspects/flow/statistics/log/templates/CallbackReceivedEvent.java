@@ -20,7 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -47,7 +47,7 @@ public class CallbackReceivedEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector
+		CallbackStatisticCollector
 				.updateForReceivedCallback(statisticId, callbackId, endTime, isContinuationCall, synapseEnvironment);
 	}
 }

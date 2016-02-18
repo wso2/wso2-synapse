@@ -23,7 +23,7 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -233,21 +233,21 @@ public class FilterMediator extends AbstractListMediator implements
            } else {
                FlowContinuableMediator mediator =
                        (FlowContinuableMediator) getChild(continuationState.getPosition());
-               RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+               MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                result = mediator.mediate(synCtx, continuationState.getChildContState());
 
                ((Mediator) mediator).reportStatistic(synCtx, null, false);
            }
         } else {
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, elseMediator.getMediatorName());
+            MediatorStatisticCollector.openLogForContinuation(synCtx, elseMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = elseMediator.mediate(synCtx, continuationState.getPosition() + 1);
             } else {
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) elseMediator.getChild(
                                 continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+                MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 

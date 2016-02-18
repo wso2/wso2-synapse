@@ -61,7 +61,8 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 		}
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.recordStatisticCloseLog(statisticDataUnit);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.GRACEFULLY_CLOSE);
 	}
 }
