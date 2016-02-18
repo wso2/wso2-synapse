@@ -548,4 +548,9 @@ public class ScriptMediator extends AbstractMediator {
     public void setLoader(ClassLoader loader) {
         this.loader = loader;
     }
+
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

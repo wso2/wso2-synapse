@@ -32,9 +32,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.AggregateMediatorStatisticCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -363,14 +363,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         boolean result;
 
         SequenceMediator onCompleteSequence = getOnCompleteSequence();
-        RuntimeStatisticCollector.openLogForContinuation(synCtx,
+        AggregateMediatorStatisticCollector.openLogForContinuation(synCtx,
                                                          onCompleteSequence.getSequenceNameForStatistics(synCtx));
         if (!contState.hasChild()) {
             result = onCompleteSequence.mediate(synCtx, contState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) onCompleteSequence.getChild(contState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+            AggregateMediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, contState.getChildContState());
 
@@ -656,8 +656,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.enclosingElementPropertyName = enclosingElementPropertyName;
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        AggregateMediatorStatisticCollector
                 .reportStatisticForAggregateMediator(messageContext, getMediatorName(), ComponentType.MEDIATOR,
                                                      parentName, isCreateLog, isAggregationMessageCollected);
     }

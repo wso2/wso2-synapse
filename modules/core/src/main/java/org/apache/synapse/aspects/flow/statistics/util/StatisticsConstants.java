@@ -29,6 +29,16 @@ public class StatisticsConstants {
 	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
 
 	/**
+	 * Enable collecting message payloads
+	 */
+	public final static String COLLECT_MESSAGE_PAYLOADS = "mediation.flow.statistics.collect.payloads";
+
+	/**
+	 * Enable collecting transport and message-context properties
+	 */
+	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.collect.properties";
+
+	/**
 	 * Flow statistic queue size
 	 */
 	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";
@@ -83,4 +93,11 @@ public class StatisticsConstants {
 	public static final String FLOW_STATISTICS_RESOURCE = "API Resource";
 
 	public static final String FLOW_STATISTICS_ANY = "Other Type";
+
+	/**
+	 * Modes of closing statistic entry
+	 */
+	public static final int GRACEFULLY_CLOSE = 0;
+	public static final int ATTEMPT_TO_CLOSE = 1;
+	public static final int FORECEFULLY_CLOSE = 2;
 }

@@ -19,25 +19,25 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class InformFaultLog implements StatisticReportingLog {
+/**
+ * Remove callback after received
+ */
+public class CallbackHandledEvent implements StatisticsReportingEvent {
 
-	private String statisticId;
-	private int cloneId;
+	private final String statisticId;
+	private String callbackId;
 
-	public InformFaultLog(MessageContext messageContext) {
+	public CallbackHandledEvent(MessageContext messageContext, String callbackId) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
+		this.callbackId = callbackId;
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.reportFault(statisticId, cloneId);
+	@Override
+	public void process() {
+		CallbackStatisticCollector.removeCallback(statisticId, callbackId);
 	}
 }

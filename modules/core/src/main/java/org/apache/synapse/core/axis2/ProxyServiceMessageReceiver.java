@@ -29,8 +29,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.aspects.flow.statistics.collectors.ProxyStatisticCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
@@ -89,7 +89,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
         //Statistic reporting
-        RuntimeStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration(), true);
+        ProxyStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration(), true);
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -246,7 +246,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             //Statistic reporting
-            RuntimeStatisticCollector.reportEndProxy(synCtx);
+            ProxyStatisticCollector.reportEndProxy(synCtx);
             if(synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);

@@ -29,7 +29,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.SplittingMediatorsStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -42,7 +42,6 @@ import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -142,13 +141,13 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         SequenceMediator branchSequence = targets.get(subBranch).getSequence();
-        RuntimeStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
+        SplittingMediatorsStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
         if (!continuationState.hasChild()) {
             result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+            SplittingMediatorsStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
@@ -252,6 +251,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         this.sequential = sequential;
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
     public void init(SynapseEnvironment se) {
 
         synapseEnv = se;
@@ -297,10 +301,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         }
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        SplittingMediatorsStatisticCollector
                 .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, true, false);
+                                                    parentName, isCreateLog, true, false, isContentAltering());
     }
 
 }

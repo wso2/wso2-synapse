@@ -545,6 +545,11 @@ public class FaultMediator extends AbstractMediator {
         faultDetailElements.add(element);
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
     private void handleException(String msg) {
         log.error(msg);
         throw new SynapseException(msg);

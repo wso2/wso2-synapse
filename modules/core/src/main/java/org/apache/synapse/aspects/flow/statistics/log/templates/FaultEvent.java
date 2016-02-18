@@ -19,27 +19,28 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class AddCallbacksLog implements StatisticReportingLog {
+/**
+ * Add fault to existing logs
+ */
+public class FaultEvent implements StatisticsReportingEvent {
 
-	private final String statisticId;
-	private final Integer cloneId;
-	private String callbackId;
+	private String statisticId;
+	private int cloneId;
 
-	public AddCallbacksLog(MessageContext messageContext, String callbackId) {
+	public FaultEvent(MessageContext messageContext) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
 			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
 		} else {
 			cloneId = 0;
 		}
-		this.callbackId = callbackId;
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
+		FaultStatisticCollector.reportFault(statisticId, cloneId);
 	}
 }

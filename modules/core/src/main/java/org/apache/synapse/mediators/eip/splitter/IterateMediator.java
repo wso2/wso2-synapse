@@ -34,7 +34,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.SplittingMediatorsStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -247,13 +247,13 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         boolean result;
         SequenceMediator branchSequence = target.getSequence();
-        RuntimeStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
+        SplittingMediatorsStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
         if (!continuationState.hasChild()) {
             result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+            SplittingMediatorsStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
@@ -401,6 +401,12 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         this.id = id;
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
+
     public void init(SynapseEnvironment se) {
 
         synapseEnv = se;
@@ -447,9 +453,10 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        SplittingMediatorsStatisticCollector
                 .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, true, false);
+                                                    parentName, isCreateLog, true, false, isContentAltering());
     }
 }

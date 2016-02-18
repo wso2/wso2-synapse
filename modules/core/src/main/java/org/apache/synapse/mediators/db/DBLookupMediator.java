@@ -120,4 +120,9 @@ public class DBLookupMediator extends AbstractDBMediator {
         }
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

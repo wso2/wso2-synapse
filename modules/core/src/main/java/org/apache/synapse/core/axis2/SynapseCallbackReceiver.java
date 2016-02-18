@@ -39,7 +39,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -109,7 +109,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             log.debug("Callback added. Total callbacks waiting for : " + callbackStore.size());
         }
         org.apache.synapse.MessageContext synCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-        RuntimeStatisticCollector.addCallbackEntryForStatistics(synCtx, MsgID);
+        CallbackStatisticCollector.addCallbackEntryForStatistics(synCtx, MsgID);
     }
 
     /**
@@ -133,7 +133,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED))) {
             if (callbackStore.containsKey(messageCtx.getMessageID())) {
                 AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
-                RuntimeStatisticCollector
+                CallbackStatisticCollector
                         .reportCallbackReceived(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
@@ -176,14 +176,14 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             if (callback != null) {
                 org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-                RuntimeStatisticCollector.updateStatisticLogsForReceivedCallbackLog(SynapseOutMsgCtx, messageID);
+                CallbackStatisticCollector.updateStatisticLogsForReceivedCallbackLog(SynapseOutMsgCtx, messageID);
                 handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
                 if (log.isDebugEnabled()) {
                     log.debug("Finished handling the callback.");
                 }
                 org.apache.synapse.MessageContext synMsgCtx =
                         MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
-                RuntimeStatisticCollector.reportFinishingHandlingCallback(SynapseOutMsgCtx,synMsgCtx,messageID);
+                CallbackStatisticCollector.reportFinishingHandlingCallback(SynapseOutMsgCtx,synMsgCtx,messageID);
                 
             } else {
                 // TODO invoke a generic synapse error handler for this message

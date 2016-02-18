@@ -32,6 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.EndpointStatisticCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
@@ -294,10 +295,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         String endpointId = null;
         if (isStatisticCollected()) {
             endpointId = String.valueOf(RuntimeStatisticCollector.getComponentUniqueId(synCtx));
-            RuntimeStatisticCollector
+            EndpointStatisticCollector
                     .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, true);
         } else {
-            RuntimeStatisticCollector
+            EndpointStatisticCollector
                     .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, true);
         }
 
@@ -387,10 +388,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         synCtx.getEnvironment().send(definition, synCtx);
 
         if (isStatisticCollected()) {
-            RuntimeStatisticCollector
+            EndpointStatisticCollector
                     .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, false);
         } else {
-            RuntimeStatisticCollector
+            EndpointStatisticCollector
                     .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
         }
     }
@@ -821,7 +822,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     private boolean isStatisticCollected() {
-        return (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
+        return (RuntimeStatisticCollector.isStatisticsEnabled() && definition.getAspectConfiguration() != null &&
                 definition.getAspectConfiguration().isStatisticsEnable() &&
                 this.endpointName != null);
     }

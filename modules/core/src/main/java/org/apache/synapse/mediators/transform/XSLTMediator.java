@@ -606,6 +606,12 @@ public class XSLTMediator extends AbstractMediator {
     public void setResourceMap(ResourceMap resourceMap) {
         this.resourceMap = resourceMap;
     }
+
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }
 
 	

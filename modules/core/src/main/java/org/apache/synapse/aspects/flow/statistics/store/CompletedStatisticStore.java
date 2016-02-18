@@ -19,7 +19,7 @@
 package org.apache.synapse.aspects.flow.statistics.store;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -29,11 +29,12 @@ import java.util.List;
  */
 public class CompletedStatisticStore {
 
-	private final List<List<StatisticsLog>> completedStatisticEntries = new LinkedList<>();
+	private final List<PublishingFlow> completedStatisticEntries;
+
 	private final List<EndpointStatisticLog> completedEndpointStatisticEntries = new LinkedList<>();
 
-	public List<List<StatisticsLog>> getCompletedStatisticEntries() {
-		List<List<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
+	public List<PublishingFlow> getCompletedStatisticEntries() {
+		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
 		synchronized (completedStatisticEntries) {
 			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
 			completedStatisticEntries.clear();
@@ -41,20 +42,33 @@ public class CompletedStatisticStore {
 		return cloneOfCompletedStatisticEntries;
 	}
 
-	public void putCompletedStatisticEntry(List<StatisticsLog> statisticsLogs) {
+
+	public CompletedStatisticStore() {
+		completedStatisticEntries = new LinkedList<PublishingFlow>();
+
+	}
+
+
+	public void putCompletedStatisticEntry(PublishingFlow publishingFlow) {
 		synchronized (completedStatisticEntries) {
-			completedStatisticEntries.add(statisticsLogs);
+			completedStatisticEntries.add(publishingFlow);
 		}
 	}
 
-	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
-		List<EndpointStatisticLog> cloneOfCompletedEndpointEntries = new LinkedList<>();
-		synchronized (completedEndpointStatisticEntries) {
-			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
-			completedEndpointStatisticEntries.clear();
-		}
-		return cloneOfCompletedEndpointEntries;
+	public boolean isEmpty() {
+		return completedStatisticEntries.isEmpty();
 	}
+
+
+
+//	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
+//		List<EndpointStatisticLog> cloneOfCompletedEndpointEntries = new LinkedList<>();
+//		synchronized (completedEndpointStatisticEntries) {
+//			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
+//			completedEndpointStatisticEntries.clear();
+//		}
+//		return cloneOfCompletedEndpointEntries;
+//	}
 
 	public void putCompletedEndpointStatisticEntry(EndpointStatisticLog endpointStatisticLog) {
 		synchronized (completedEndpointStatisticEntries) {

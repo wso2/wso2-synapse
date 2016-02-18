@@ -222,4 +222,9 @@ public class EJBMediator extends AbstractMediator implements ManagedLifecycle {
         argumentList.add(argument);
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

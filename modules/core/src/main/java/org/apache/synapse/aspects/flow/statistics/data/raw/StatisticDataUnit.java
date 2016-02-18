@@ -18,122 +18,228 @@
 
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 public class StatisticDataUnit {
-	private String statisticId;
-	private Long time;
-	private ComponentType componentType;
-	private String parentId;
-	private String componentId;
-	private int cloneId;
-	private boolean isResponse;
-	private SynapseEnvironment synapseEnvironment;
-	private boolean aggregatePoint;
-	private boolean clonePoint;
-	private int parentMsgId;
-	private String timeStamp;
-	private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+    private String statisticId;
+    private Long time;
+    private ComponentType componentType;
+    private String parentId;
+    private String componentId;
+    private int cloneId;
+    private boolean isResponse;
+    private SynapseEnvironment synapseEnvironment;
+    private boolean aggregatePoint;
+    private boolean clonePoint;
+    private long timestamp;
+    private Map<String, Object> contextPropertyMap;
+    private Map<String, Object> transportPropertyMap;
+    private String payload;
 
-	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
-	                         int cloneId, Long time, boolean isResponse) {
-		this.statisticId = statisticId;
-		this.time = time;
-		this.componentType = componentType;
-		this.parentId = parentId;
-		this.componentId = componentId;
-		this.cloneId = cloneId;
-		this.isResponse = isResponse;
-		this.aggregatePoint = false;
-		this.clonePoint = false;
-		this.timeStamp = dateFormatter.format(new Date());
-	}
+    public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
+                             int cloneId, Long time, boolean isResponse, MessageContext messageContext,
+                             boolean isAlteringContent) {
+        this(statisticId, componentId, componentType, parentId, cloneId, time, isResponse, messageContext);
 
-	public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
-		this.statisticId = statisticId;
-		this.synapseEnvironment = synapseEnvironment;
-		this.time = time;
-	}
+        if (RuntimeStatisticCollector.isCollectingPayloads() && isAlteringContent) {
+            payload = messageContext.getEnvelope().toString();
+        }
+    }
 
-	public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
-	                         boolean isResponse, SynapseEnvironment synapseEnvironment) {
-		this.statisticId = statisticId;
-		this.time = time;
-		this.parentId = parentId;
-		this.componentId = componentId;
-		this.cloneId = cloneId;
-		this.isResponse = isResponse;
-		this.synapseEnvironment = synapseEnvironment;
-		this.aggregatePoint = false;
-		this.clonePoint = false;
-		this.timeStamp = dateFormatter.format(new Date());
-	}
+    public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
+                             int cloneId, Long time, boolean isResponse, MessageContext messageContext) {
+        this(statisticId, componentId, parentId, cloneId, time, isResponse, null, messageContext);
+        this.componentType = componentType;
+    }
 
-	public String getStatisticId() {
-		return statisticId;
-	}
+    public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
+        this.statisticId = statisticId;
+        this.synapseEnvironment = synapseEnvironment;
+        this.time = time;
+    }
 
-	public Long getTime() {
-		return time;
-	}
+    public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
+                             boolean isResponse, SynapseEnvironment synapseEnvironment, MessageContext messageContext) {
+        this.statisticId = statisticId;
+        this.time = time;
+        this.parentId = parentId;
+        this.componentId = componentId;
+        this.cloneId = cloneId;
+        this.isResponse = isResponse;
+        this.synapseEnvironment = synapseEnvironment;
+        this.aggregatePoint = false;
+        this.clonePoint = false;
+        this.timestamp = new Date().getTime();
 
-	public ComponentType getComponentType() {
-		return componentType;
-	}
+        if (RuntimeStatisticCollector.isCollectingProperties()) {
+            this.contextPropertyMap = this.extractContextProperties(messageContext);
+            this.transportPropertyMap = this.extractTransportProperties(messageContext);
+        }
 
-	public String getParentId() {
-		return parentId;
-	}
+    }
 
-	public String getComponentId() {
-		return componentId;
-	}
+    public String getStatisticId() {
+        return statisticId;
+    }
 
-	public int getCloneId() {
-		return cloneId;
-	}
+    public Long getTime() {
+        return time;
+    }
 
-	public void setCloneId(int cloneId) {
-		this.cloneId = cloneId;
-	}
+    public ComponentType getComponentType() {
+        return componentType;
+    }
 
-	public boolean isResponse() {
-		return isResponse;
-	}
+    public String getParentId() {
+        return parentId;
+    }
 
-	public SynapseEnvironment getSynapseEnvironment() {
-		return synapseEnvironment;
-	}
+    public String getComponentId() {
+        return componentId;
+    }
 
-	public void setParentId(String parentId) {
-		this.parentId = parentId;
-	}
+    public int getCloneId() {
+        return cloneId;
+    }
 
-	public boolean isAggregatePoint() {
-		return aggregatePoint;
-	}
+    public void setCloneId(int cloneId) {
+        this.cloneId = cloneId;
+    }
 
-	public void setAggregatePoint() {
-		this.aggregatePoint = true;
-	}
+    public boolean isResponse() {
+        return isResponse;
+    }
 
-	public boolean isClonePoint() {
-		return clonePoint;
-	}
+    public SynapseEnvironment getSynapseEnvironment() {
+        return synapseEnvironment;
+    }
 
-	public void setClonePoint() {
-		this.clonePoint = true;
-	}
+    public void setParentId(String parentId) {
+        this.parentId = parentId;
+    }
 
-	public int getParentMsgId() {
-		return parentMsgId;
-	}
+    public boolean isAggregatePoint() {
+        return aggregatePoint;
+    }
 
-	public String getTimeStamp() {
-		return timeStamp;
-	}
+    public void setAggregatePoint() {
+        this.aggregatePoint = true;
+    }
+
+    public boolean isClonePoint() {
+        return clonePoint;
+    }
+
+    public void setClonePoint() {
+        this.clonePoint = true;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public Map<String, Object> getContextPropertyMap() {
+        return contextPropertyMap;
+    }
+
+    public Map<String, Object> getTransportPropertyMap() {
+        return transportPropertyMap;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
+    }
+
+    /**
+     * Extract message context properties
+     *
+     * @param synCtx
+     * @return
+     */
+    private Map<String, Object> extractContextProperties(MessageContext synCtx) {
+        Set<String> propertySet = synCtx.getPropertyKeySet();
+        Map<String, Object> propertyMap = new TreeMap<>();
+
+        for (String property : propertySet) {
+            Object propertyValue = synCtx.getProperty(property);
+            propertyMap.put(property, propertyValue);
+        }
+
+        // Remove message-flow-tracer properties
+        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT);
+        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID);
+        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE);
+        propertyMap.remove(SynapseConstants.STATISTICS_STACK);
+
+        return propertyMap;
+    }
+
+    /**
+     * Extract transport headers from context
+     *
+     * @param synCtx
+     * @return
+     */
+    private Map<String, Object> extractTransportProperties(MessageContext synCtx) {
+        Map<String, Object> transportPropertyMap = new TreeMap<>();
+
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+        Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headers != null && headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            Set<String> axis2PropertySet = headersMap.keySet();
+            for (String entry : axis2PropertySet) {
+                transportPropertyMap.put(entry, headersMap.get(entry));
+            }
+        }
+
+        // Adding important transport related properties
+        if (axis2MessageCtx.getTo() != null) {
+            transportPropertyMap.put(SynapseConstants.HEADER_TO, axis2MessageCtx.getTo().getAddress());
+        }
+
+        if (axis2MessageCtx.getFrom() != null) {
+            transportPropertyMap.put(SynapseConstants.HEADER_FROM, axis2MessageCtx.getFrom().getAddress());
+        }
+
+        if (axis2MessageCtx.getWSAAction() != null) {
+            transportPropertyMap.put("WSAction", axis2MessageCtx.getWSAAction());
+        }
+
+        if (axis2MessageCtx.getSoapAction() != null) {
+            transportPropertyMap.put("SOAPAction", axis2MessageCtx.getSoapAction());
+        }
+
+        if (axis2MessageCtx.getReplyTo() != null) {
+            transportPropertyMap.put(SynapseConstants.HEADER_REPLY_TO, axis2MessageCtx.getReplyTo().getAddress());
+        }
+
+        if (axis2MessageCtx.getMessageID() != null) {
+            transportPropertyMap.put(SynapseConstants.HEADER_MESSAGE_ID, axis2MessageCtx.getMessageID());
+        }
+
+        // Remove unnecessary properties
+        if (transportPropertyMap.get("Cookie") != null) {
+            transportPropertyMap.remove("Cookie");
+        }
+
+        return transportPropertyMap;
+    }
 }

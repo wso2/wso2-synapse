@@ -20,21 +20,23 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class OpenClosedStatisticLog implements StatisticReportingLog {
-	private final String statisticId;
-	private String componentId;
-	private String newMessageId;
+/**
+ * Remove reference when continuation done
+ */
+public class ContinuationEndEvent implements StatisticsReportingEvent {
 
-	public OpenClosedStatisticLog(MessageContext messageContext, String componentId) {
+	private final String statisticId;
+	private String messageId;
+
+	public ContinuationEndEvent(MessageContext messageContext) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.componentId = componentId;
-		this.newMessageId = messageContext.getMessageID();
+		this.messageId = messageContext.getMessageID();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
+		RuntimeStatisticCollector.removeContinuationState(statisticId, messageId);
 	}
 }

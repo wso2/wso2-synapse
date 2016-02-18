@@ -175,6 +175,10 @@ public class SpringMediator extends AbstractMediator implements ManagedLifecycle
         this.appContext = appContext;
     }
 
+    public boolean isContentAltering() {
+        return true;
+    }
+
     public void init(SynapseEnvironment se) {
         MessageContext synCtx = se.createMessageContext();
         buildAppContext(synCtx, getLog(synCtx));

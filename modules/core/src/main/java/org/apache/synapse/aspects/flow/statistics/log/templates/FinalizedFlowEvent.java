@@ -21,19 +21,23 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class FinalizeEntryLog implements StatisticReportingLog {
+/**
+ * Try to finish message flow, unless callback or open logs exists
+ */
+public class FinalizedFlowEvent implements StatisticsReportingEvent {
 
 	private final StatisticDataUnit statisticDataUnit;
 
-	public FinalizeEntryLog(MessageContext messageContext, long endTime) {
+	public FinalizedFlowEvent(MessageContext messageContext, long endTime) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.finalizeEntry(statisticDataUnit);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
 }

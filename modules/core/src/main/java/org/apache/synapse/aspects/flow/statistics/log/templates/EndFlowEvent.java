@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -20,20 +20,24 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class RemoveContinuationStateLog implements StatisticReportingLog {
+/**
+ * End message-flow forcefully without considering open logs
+ */
+public class EndFlowEvent implements StatisticsReportingEvent {
 
-	private final String statisticId;
-	private String messageId;
+	private final StatisticDataUnit statisticDataUnit;
 
-	public RemoveContinuationStateLog(MessageContext messageContext) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.messageId = messageContext.getMessageID();
+	public EndFlowEvent(MessageContext messageContext, long endTime) {
+		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.removeContinuationState(statisticId, messageId);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.FORECEFULLY_CLOSE);
 	}
 }

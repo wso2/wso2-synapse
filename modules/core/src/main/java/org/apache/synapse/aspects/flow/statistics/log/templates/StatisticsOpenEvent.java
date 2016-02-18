@@ -19,32 +19,36 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class StatisticCloseLog implements StatisticReportingLog {
+/**
+ * Handling Open Event
+ */
+public class StatisticsOpenEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime) {
+	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
+	                           String parentId, Long startTime, boolean isAlteringContent) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		int msgId;
+		int cloneId;
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			msgId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
+			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
 		} else {
-			msgId = 0;
+			cloneId = 0;
 		}
+		statisticDataUnit = new StatisticDataUnit(statisticId, componentId, componentType, parentId, cloneId, startTime,
+		                                          messageContext.isResponse(), messageContext, isAlteringContent);
 
-		statisticDataUnit =
-				new StatisticDataUnit(statisticId, componentId, parentId, msgId, endTime, messageContext.isResponse(),
-				                      messageContext.getEnvironment());
 	}
 
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime,
-	                         boolean isCloneLog, boolean isAggregateLog) {
-		this(messageContext, componentId, parentId, endTime);
+	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
+	                           String parentId, Long startTime, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
+		this(messageContext, componentId, componentType, parentId, startTime, isAlteringContent);
 		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();
 		}
@@ -54,7 +58,8 @@ public class StatisticCloseLog implements StatisticReportingLog {
 		}
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.recordStatisticCloseLog(statisticDataUnit);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.recordStatisticsOpenEvent(statisticDataUnit);
 	}
 }

@@ -19,21 +19,31 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class RemoveCallbackLog implements StatisticReportingLog {
+/**
+ * If callback sent, mention in continuation
+ */
+public class CallbackSentEvent implements StatisticsReportingEvent {
 
 	private final String statisticId;
+	private final Integer cloneId;
 	private String callbackId;
 
-	public RemoveCallbackLog(MessageContext messageContext, String callbackId) {
+	public CallbackSentEvent(MessageContext messageContext, String callbackId) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
+			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
+		} else {
+			cloneId = 0;
+		}
 		this.callbackId = callbackId;
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.removeCallback(statisticId, callbackId);
+	@Override
+	public void process() {
+		CallbackStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
 	}
 }

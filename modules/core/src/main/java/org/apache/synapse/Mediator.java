@@ -66,6 +66,12 @@ public interface Mediator extends SynapseArtifact {
     public boolean isContentAware();
 
     /**
+     * This is used to indicate whether message payload get modified during mediation
+     * @return whether mediator modify the payload
+     */
+    public boolean isContentAltering();
+
+    /**
      * Get the position of the mediator in sequence flow.
      * @return position of the mediator in sequence
      */

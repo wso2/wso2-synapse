@@ -607,4 +607,10 @@ public class PayloadFactoryMediator extends AbstractMediator {
         textElement.setText(content);
         return textElement;
     }
+
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

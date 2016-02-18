@@ -23,7 +23,7 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
@@ -94,7 +94,7 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) getChild(continuationState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+            MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 

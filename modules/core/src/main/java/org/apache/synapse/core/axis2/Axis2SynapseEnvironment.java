@@ -39,11 +39,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.InboundEPStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.messageflowtracer.processors.MessageDataCollector;
 import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
@@ -428,9 +429,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (!sequential) {
             try {
-                RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
+                InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
+                InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -440,7 +441,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         // Following code is reached if the sequential==true or inbound is
         // reached max level
-        RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
+        InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, true);
         try {
 
             if (synCtx.getEnvironment().isDebugEnabled()) {
@@ -484,7 +485,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
-            RuntimeStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
+            InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundStatistics, false);
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -778,12 +779,12 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     (SeqContinuationState) synCtx.getContinuationStateStack().peek();
             SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
             //Report Statistics for this continuation call
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, sequenceMediator.getSequenceNameForStatistics(synCtx));
+            MediatorStatisticCollector.openLogForContinuation(synCtx, sequenceMediator.getSequenceNameForStatistics(synCtx));
             result = sequenceMediator.mediate(synCtx, seqContinuationState);
             sequenceMediator.reportStatistic(synCtx, null, false);
             //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
-        RuntimeStatisticCollector.removeContinuationState(synCtx);
+        MediatorStatisticCollector.removeContinuationState(synCtx);
         return result;
     }
 
@@ -1000,7 +1001,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         try {
             if (inboundName != null) {
-                RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, true);
+                InboundEPStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, true);
             }
             seq.mediate(smc);
             return true;
@@ -1038,7 +1039,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         } finally {
             if (inboundName != null) {
-                RuntimeStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, false);
+                InboundEPStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundStatistics, false);
             }
         }
     }
