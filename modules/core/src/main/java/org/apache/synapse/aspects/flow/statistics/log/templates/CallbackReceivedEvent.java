@@ -35,9 +35,14 @@ public class CallbackReceivedEvent implements StatisticsReportingEvent {
 	private Long endTime;
 	private SynapseEnvironment synapseEnvironment;
 	private Boolean isContinuationCall;
+	private boolean isOutOnlyFlow;
 
 	public CallbackReceivedEvent(MessageContext messageContext, String callbackId, Long endTime) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		boolean isOutOnly = Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
+		if (isOutOnly) {
+			isOutOnlyFlow = true;
+		}
 		this.callbackId = callbackId;
 		this.endTime = endTime;
 		this.synapseEnvironment = messageContext.getEnvironment();
@@ -48,6 +53,6 @@ public class CallbackReceivedEvent implements StatisticsReportingEvent {
 	@Override
 	public void process() {
 		CallbackStatisticCollector
-				.updateForReceivedCallback(statisticId, callbackId, endTime, isContinuationCall, synapseEnvironment);
+				.updateForReceivedCallback(statisticId, callbackId, endTime, isContinuationCall, synapseEnvironment, isOutOnlyFlow);
 	}
 }

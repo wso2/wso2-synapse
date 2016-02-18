@@ -63,6 +63,8 @@ public class StatisticsEntry {
 
 	private boolean haveAggregateLogs;
 
+	private int expectedFaults = 0;
+
 	private boolean hasFault;
 
 	private static final int DEFAULT_MSG_ID = 0;
@@ -123,6 +125,10 @@ public class StatisticsEntry {
 				haveAggregateLogs = true;
 			}
 
+			if (hasFault) {
+				hasFault = false;
+			}
+
 			Integer parentIndex;
 			if (isCloneFlow(statisticDataUnit.getCloneId())) {
 				parentIndex = getImmediateCloneIndex();
@@ -132,6 +138,7 @@ public class StatisticsEntry {
 				} else {
 					createNewCloneLog(statisticDataUnit, parentIndex);
 				}
+				expectedFaults += 1;
 			} else if (haveAggregateLogs) {
 				if (statisticDataUnit.isAggregatePoint()) {
 					parentIndex = getParentForAggregateOperation(statisticDataUnit.getCloneId());
@@ -180,6 +187,7 @@ public class StatisticsEntry {
 				closeStatisticLog(aggregateIndex, statisticDataUnit.getTime(), statisticDataUnit.getPayload());
 				return openLogs.isEmpty();
 			}
+			expectedFaults -= 1;
 		}
 		if (statisticDataUnit.getParentId() == null) {
 			componentLevel =
@@ -232,7 +240,11 @@ public class StatisticsEntry {
 		/*
 	  Number of faults waiting to be handled by a fault sequence
 	 */
-		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && !haveAggregateLogs && !hasFault || closeForcefully) {
+		if (closeForcefully) {
+			expectedFaults -= 1;
+		}
+		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && !haveAggregateLogs && (expectedFaults <= 0) ||
+		    (closeForcefully && (expectedFaults <= 0))) {
 			if (openLogs.isEmpty()) {
 				messageFlowLogs.get(ROOT_LEVEL).setEndTime(endTime);
 			} else {
@@ -279,6 +291,7 @@ public class StatisticsEntry {
 				if (lastAggregateLog != null && lastAggregateLog.getImmediateChild() == null) {
 					lastAggregateLog.setImmediateChild(messageFlowLogs.size());
 					lastAggregateLog.setMsgId(statisticsLog.getMsgId());
+					expectedFaults = 0;
 				} else {
 					log.error("Trying to set branching tree for non clone ComponentId:" +
 					          statisticDataUnit.getComponentId());
@@ -289,6 +302,7 @@ public class StatisticsEntry {
 			if (lastAggregateLog != null && lastAggregateLog.getImmediateChild() == null) {
 				lastAggregateLog.setImmediateChild(messageFlowLogs.size());
 				lastAggregateLog.setMsgId(statisticsLog.getMsgId());
+				expectedFaults = 0;
 			} else {
 				if (possibleParent.getChildren().size() == 0) {
 					possibleParent.setChildren(possibleParent.getImmediateChild());
@@ -362,10 +376,13 @@ public class StatisticsEntry {
 	 * @param endTime        response received time
 	 * @param isContinuation whether call back related to a continuation call
 	 */
-	public synchronized void updateCallbackReceived(String callbackId, Long endTime, Boolean isContinuation) {
+	public synchronized void updateCallbackReceived(String callbackId, Long endTime, Boolean isContinuation,
+	                                                boolean isOutOnlyFlow) {
 		if (callbacks.containsKey(callbackId)) {
 			int closedIndex = callbacks.get(callbackId);
-			updateParentLogs(closedIndex, endTime);
+			if (!isOutOnlyFlow) {
+				updateParentLogs(closedIndex, endTime);
+			}
 			if (isContinuation == null || isContinuation) {
 				continuationStateMap.put(callbackId, new ContinuationStateHolder(closedIndex, PARENT_LEVEL_OF_ROOT));
 			}

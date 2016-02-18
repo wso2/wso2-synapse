@@ -57,16 +57,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
      */
     public static void addCallbackEntryForStatistics(MessageContext messageContext, String callbackId) {
         if (isStatisticsTraced(messageContext)) {
-            boolean isOutOnly =
-                    Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-            if (!isOutOnly) {
-                isOutOnly = (!Boolean
-                        .parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-                             !messageContext.isResponse());
-            }
-            if (!isOutOnly) {
-                createLogForCallbackRegister(messageContext, callbackId);
-            }
+            createLogForCallbackRegister(messageContext, callbackId);
         }
     }
 
@@ -142,16 +133,18 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
      * @param synapseEnvironment Synapse environment of the message flow
      */
     public static void updateForReceivedCallback(String statisticsTraceId, String callbackId, Long endTime,
-                                                 Boolean isContinuation, SynapseEnvironment synapseEnvironment) {
+                                                 Boolean isContinuation, SynapseEnvironment synapseEnvironment,
+                                                 boolean isOutOnlyFlow) {
         if (statisticsTraceId != null) {
             if (runtimeStatistics.containsKey(statisticsTraceId)) {
-                runtimeStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime, isContinuation);
+                runtimeStatistics.get(statisticsTraceId)
+                        .updateCallbackReceived(callbackId, endTime, isContinuation, isOutOnlyFlow);
             }
 
             if (endpointStatistics.containsKey(statisticsTraceId)) {
                 EndpointStatisticEntry endpointStatisticEntry = endpointStatistics.get(statisticsTraceId);
                 EndpointStatisticLog endpointStatisticLog =
-                        endpointStatisticEntry.unregisterCallback(callbackId, endTime);
+                        endpointStatisticEntry.unregisterCallback(callbackId, endTime, isOutOnlyFlow);
                 if (endpointStatisticLog != null) {
                     synapseEnvironment.getCompletedStatisticStore()
                             .putCompletedEndpointStatisticEntry(endpointStatisticLog);
