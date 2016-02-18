@@ -24,7 +24,7 @@ import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.*;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -239,7 +239,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
         if (subBranch == 0) {
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, onAcceptMediator.getMediatorName());
+            MediatorStatisticCollector.openLogForContinuation(synCtx, onAcceptMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onAcceptMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
@@ -247,7 +247,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) ((SequenceMediator) onAcceptMediator).
                                 getChild(continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+                MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
@@ -255,7 +255,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             }
             onAcceptMediator.reportStatistic(synCtx, null, false);
         } else {
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, onRejectMediator.getMediatorName());
+            MediatorStatisticCollector.openLogForContinuation(synCtx, onRejectMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onRejectMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
@@ -263,7 +263,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) ((SequenceMediator) onRejectMediator).getChild(
                                 continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
+                MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
