@@ -350,10 +350,13 @@ public class StatisticsEntry {
 	 * @param endTime        response received time
 	 * @param isContinuation whether call back related to a continuation call
 	 */
-	public synchronized void updateCallbackReceived(String callbackId, Long endTime, Boolean isContinuation) {
+	public synchronized void updateCallbackReceived(String callbackId, Long endTime, Boolean isContinuation,
+	                                                boolean isOutOnlyFlow) {
 		if (callbacks.containsKey(callbackId)) {
 			int closedIndex = callbacks.get(callbackId);
-			updateParentLogs(closedIndex, endTime);
+			if (!isOutOnlyFlow) {
+				updateParentLogs(closedIndex, endTime);
+			}
 			if (isContinuation == null || isContinuation) {
 				continuationStateMap.put(callbackId, new ContinuationStateHolder(closedIndex, PARENT_LEVEL_OF_ROOT));
 			}

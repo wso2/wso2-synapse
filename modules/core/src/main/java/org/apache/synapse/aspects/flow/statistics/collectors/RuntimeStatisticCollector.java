@@ -158,8 +158,9 @@ public class RuntimeStatisticCollector {
 	 * @param time               Time of the Stat reporting.
 	 * @param isCreateLog        Is this a creation of a log.
 	 */
-	public static void createEndpointStatistics(String statisticId, String timestamp, String endpointId, String endpointName,
-	                                            SynapseEnvironment synapseEnvironment, long time, boolean isCreateLog) {
+	public static void createEndpointStatistics(String statisticId, String timestamp, String endpointId,
+	                                            String endpointName, SynapseEnvironment synapseEnvironment, long time,
+	                                            boolean isCreateLog) {
 		if (isCreateLog) {
 			EndpointStatisticEntry endpointStatisticEntry;
 			if (endpointStatistics.containsKey(statisticId)) {
@@ -217,16 +218,18 @@ public class RuntimeStatisticCollector {
 	 * @param synapseEnvironment Synapse environment of the message flow
 	 */
 	public static void updateForReceivedCallback(String statisticsTraceId, String callbackId, Long endTime,
-	                                             Boolean isContinuation, SynapseEnvironment synapseEnvironment) {
+	                                             Boolean isContinuation, SynapseEnvironment synapseEnvironment,
+	                                             boolean isOutOnlyFlow) {
 		if (statisticsTraceId != null) {
 			if (runtimeStatistics.containsKey(statisticsTraceId)) {
-				runtimeStatistics.get(statisticsTraceId).updateCallbackReceived(callbackId, endTime, isContinuation);
+				runtimeStatistics.get(statisticsTraceId)
+				                 .updateCallbackReceived(callbackId, endTime, isContinuation, isOutOnlyFlow);
 			}
 
 			if (endpointStatistics.containsKey(statisticsTraceId)) {
 				EndpointStatisticEntry endpointStatisticEntry = endpointStatistics.get(statisticsTraceId);
 				EndpointStatisticLog endpointStatisticLog =
-						endpointStatisticEntry.unregisterCallback(callbackId, endTime);
+						endpointStatisticEntry.unregisterCallback(callbackId, endTime, isOutOnlyFlow);
 				if (endpointStatisticLog != null) {
 					synapseEnvironment.getCompletedStatisticStore()
 					                  .putCompletedEndpointStatisticEntry(endpointStatisticLog);
@@ -673,16 +676,7 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void addCallbackEntryForStatistics(MessageContext messageContext, String callbackId) {
 		if (isStatisticsTraced(messageContext)) {
-			boolean isOutOnly =
-					Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-			if (!isOutOnly) {
-				isOutOnly = (!Boolean
-						.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-				             !messageContext.isResponse());
-			}
-			if (!isOutOnly) {
-				createLogForCallbackRegister(messageContext, callbackId);
-			}
+			createLogForCallbackRegister(messageContext, callbackId);
 		}
 	}
 
