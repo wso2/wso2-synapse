@@ -34,11 +34,11 @@ public class PublishingPayloadEvent {
         this.eventIndex = eventIndex;
     }
 
-    public String getAttributes() {
+    public String getAttribute() {
         return attribute;
     }
 
-    public void setAttributes(String attribute) {
+    public void setAttribute(String attribute) {
         this.attribute = attribute;
     }
 
