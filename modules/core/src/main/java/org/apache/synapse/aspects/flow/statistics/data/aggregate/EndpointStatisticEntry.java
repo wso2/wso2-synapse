@@ -46,10 +46,12 @@ public class EndpointStatisticEntry {
 
 	public EndpointStatisticLog closeEndpointLog(String endpointId, String name, long endTime) {
 		EndpointStatisticLog endpointStatisticLog = endpointMap.get(endpointId);
-		if (endpointStatisticLog != null && !endpointStatisticLog.isCallbackRegistered()) {
+		if (endpointStatisticLog != null) {
 			endpointStatisticLog.setEndTime(endTime);
-			endpointMap.remove(endpointId);
-			return endpointStatisticLog;
+			if (!endpointStatisticLog.isCallbackRegistered()) {
+				endpointMap.remove(endpointId);
+				return endpointStatisticLog;
+			}
 		}
 		return null;
 	}
@@ -62,12 +64,14 @@ public class EndpointStatisticEntry {
 		}
 	}
 
-	public EndpointStatisticLog unregisterCallback(String callbackId, long endTime) {
+	public EndpointStatisticLog unregisterCallback(String callbackId, long endTime, boolean isOutOnlyFlow) {
 		if (callbackMap.containsKey(callbackId)) {
 			String uuid = callbackMap.remove(callbackId);
 			EndpointStatisticLog endpointStatisticLog = endpointMap.remove(uuid);
 			if (endpointStatisticLog != null) {
-				endpointStatisticLog.setEndTime(endTime);
+				if (!isOutOnlyFlow) {
+					endpointStatisticLog.setEndTime(endTime);
+				}
 				return endpointStatisticLog;
 			}
 		}
