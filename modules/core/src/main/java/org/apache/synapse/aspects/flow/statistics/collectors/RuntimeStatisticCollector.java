@@ -69,7 +69,9 @@ public class RuntimeStatisticCollector {
 
 	private static boolean isStatisticsEnabled;
 
-	private static boolean isTracingEnabled;
+	private static boolean isCollectingPayloads;
+
+	private static boolean isCollectingProperties;
 
 	private static MessageDataStore messageDataStore;
 
@@ -87,11 +89,18 @@ public class RuntimeStatisticCollector {
 					                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
 					                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
 
-			isTracingEnabled = Boolean.parseBoolean(
-					SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.TRACER_ENABLE, String.valueOf(false)));
+			isCollectingPayloads = Boolean.parseBoolean(
+					SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, String.valueOf(false)));
 
-			if (!isTracingEnabled && log.isDebugEnabled()) {
-                log.debug("Tracer is not enabled in \'synapse.properties\' file.");
+			if (!isCollectingPayloads && log.isDebugEnabled()) {
+                log.debug("Payload collecting is not enabled in \'synapse.properties\' file.");
+			}
+
+			isCollectingProperties = Boolean.parseBoolean(
+					SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, String.valueOf(false)));
+
+			if (!isCollectingProperties && log.isDebugEnabled()) {
+				log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
 			}
 
 			messageDataStore = new MessageDataStore(queueSize);
@@ -903,7 +912,11 @@ public class RuntimeStatisticCollector {
 		return (statID != null && isStatisticsEnabled);
 	}
 
-	public static boolean isTracingEnabled() {
-		return isTracingEnabled;
+	public static boolean isCollectingPayloads() {
+		return isCollectingPayloads;
+	}
+
+	public static boolean isCollectingProperties() {
+		return isCollectingProperties;
 	}
 }

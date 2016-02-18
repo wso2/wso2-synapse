@@ -52,7 +52,7 @@ public class StatisticDataUnit {
                              boolean isAlteringContent) {
         this(statisticId, componentId, componentType, parentId, cloneId, time, isResponse, messageContext);
 
-        if (RuntimeStatisticCollector.isTracingEnabled() && isAlteringContent) {
+        if (RuntimeStatisticCollector.isCollectingPayloads() && isAlteringContent) {
             payload = messageContext.getEnvelope().toString();
         }
     }
@@ -82,7 +82,7 @@ public class StatisticDataUnit {
         this.clonePoint = false;
         this.timestamp = new Date().getTime();
 
-        if (RuntimeStatisticCollector.isTracingEnabled()) {
+        if (RuntimeStatisticCollector.isCollectingProperties()) {
             this.contextPropertyMap = this.extractContextProperties(messageContext);
             this.transportPropertyMap = this.extractTransportProperties(messageContext);
         }

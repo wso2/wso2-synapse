@@ -718,7 +718,7 @@ public class StatisticsEntry {
 			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
 
 			// Skip the rest of things, if message tracing is disabled
-			if (!RuntimeStatisticCollector.isTracingEnabled()) {
+			if (!RuntimeStatisticCollector.isCollectingPayloads()) {
 				continue;
 			}
 

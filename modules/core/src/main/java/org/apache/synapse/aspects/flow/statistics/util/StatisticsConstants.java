@@ -28,10 +28,13 @@ public class StatisticsConstants {
 	 */
 	public final static String STATISTICS_ENABLE = "mediation.flow.statistics.enable";
 
-	public final static String TRACER_ENABLE = "message.flow.tracer.enable";
+	/**
+	 * Enable collecting message payloads
+	 */
+	public final static String COLLECT_MESSAGE_PAYLOADS = "mediation.flow.statistics.collect.payloads";
 
 	/**
-	 * Enabling collect transport and message-context properties
+	 * Enable collecting transport and message-context properties
 	 */
 	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.collect.properties";
 
