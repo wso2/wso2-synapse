@@ -72,6 +72,7 @@ public class StatisticsEntry {
 	private static final int ROOT_LEVEL = 0;
 
 	private PublishingFlow publishingFlow = new PublishingFlow();
+
 	private Map<String, PublishingPayload> payloadMap = new HashMap<>();
 
 

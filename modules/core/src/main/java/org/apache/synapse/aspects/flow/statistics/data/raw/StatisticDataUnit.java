@@ -53,7 +53,6 @@ public class StatisticDataUnit {
         this(statisticId, componentId, componentType, parentId, cloneId, time, isResponse, messageContext);
 
         if (RuntimeStatisticCollector.isTracingEnabled() && isAlteringContent) {
-
             payload = messageContext.getEnvelope().toString();
         }
     }
@@ -65,14 +64,14 @@ public class StatisticDataUnit {
     }
 
     public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
-        this.statisticId = statisticId.replace(':', '_');
+        this.statisticId = statisticId;
         this.synapseEnvironment = synapseEnvironment;
         this.time = time;
     }
 
     public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
                              boolean isResponse, SynapseEnvironment synapseEnvironment, MessageContext messageContext) {
-        this.statisticId = statisticId.replace(':', '_');
+        this.statisticId = statisticId;
         this.time = time;
         this.parentId = parentId;
         this.componentId = componentId;
@@ -213,11 +212,11 @@ public class StatisticDataUnit {
 
         // Adding important transport related properties
         if (axis2MessageCtx.getTo() != null) {
-            transportPropertyMap.put("To", axis2MessageCtx.getTo().getAddress());
+            transportPropertyMap.put(SynapseConstants.HEADER_TO, axis2MessageCtx.getTo().getAddress());
         }
 
         if (axis2MessageCtx.getFrom() != null) {
-            transportPropertyMap.put("From", axis2MessageCtx.getFrom().getAddress());
+            transportPropertyMap.put(SynapseConstants.HEADER_FROM, axis2MessageCtx.getFrom().getAddress());
         }
 
         if (axis2MessageCtx.getWSAAction() != null) {
@@ -229,11 +228,11 @@ public class StatisticDataUnit {
         }
 
         if (axis2MessageCtx.getReplyTo() != null) {
-            transportPropertyMap.put("ReplyTo", axis2MessageCtx.getReplyTo().getAddress());
+            transportPropertyMap.put(SynapseConstants.HEADER_REPLY_TO, axis2MessageCtx.getReplyTo().getAddress());
         }
 
         if (axis2MessageCtx.getMessageID() != null) {
-            transportPropertyMap.put("MessageID", axis2MessageCtx.getMessageID());
+            transportPropertyMap.put(SynapseConstants.HEADER_MESSAGE_ID, axis2MessageCtx.getMessageID());
         }
 
         // Remove unnecessary properties

@@ -85,6 +85,14 @@ public class RuntimeStatisticCollector {
 			int queueSize = Integer.parseInt(SynapsePropertiesLoader
 					                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
 					                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
+
+			isTracingEnabled = Boolean.parseBoolean(
+					SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.TRACER_ENABLE, String.valueOf(false)));
+
+			if (!isTracingEnabled && log.isDebugEnabled()) {
+                log.debug("Tracer is not enabled in \'synapse.properties\' file.");
+			}
+
 			messageDataCollector = new MessageDataCollector(queueSize);
 			//Thread to consume queue and update data structures for publishing
 			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -98,15 +106,6 @@ public class RuntimeStatisticCollector {
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is not enabled in \'synapse.properties\' file.");
-			}
-		}
-
-		isTracingEnabled = Boolean.parseBoolean(
-				SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.TRACER_ENABLE, String.valueOf(false)));
-
-		if (!isTracingEnabled) {
-			if (log.isDebugEnabled()) {
-				log.debug("Tracer is not enabled in \'synapse.properties\' file.");
 			}
 		}
 	}
@@ -255,7 +254,7 @@ public class RuntimeStatisticCollector {
 	 * Put respective mediator to the open entries due to continuation call.
 	 *
 	 * @param statisticsTraceId Statistic Id for the message flow.
-	 * @param messageId         message Id correspoding to continuation flow
+	 * @param messageId         message Id corresponding to continuation flow
 	 * @param componentId       component name
 	 */
 	public static void putComponentToOpenLogs(String statisticsTraceId, String messageId, String componentId) {
@@ -878,8 +877,10 @@ public class RuntimeStatisticCollector {
 	}
 
 	private static void setStatisticsTraceId(MessageContext msgCtx) {
-		if (msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null) {
-			msgCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_ID, msgCtx.getMessageID());
+		if (msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && msgCtx.getMessageID() != null) {
+			msgCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_ID, msgCtx.getMessageID().replace(':', '_'));
+		} else if (msgCtx.getMessageID() == null) {
+			log.error("Message ID is null");
 		}
 	}
 

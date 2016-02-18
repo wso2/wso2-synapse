@@ -56,8 +56,6 @@ public class StatisticsLog {
 
 	private long endTime = -1;
 
-	private long duration = 0;
-
 	private boolean isResponse;
 
 	private boolean cloneLog;
@@ -101,7 +99,6 @@ public class StatisticsLog {
 
 	public void setEndTime(long endTime) {
 		this.endTime = endTime;
-		this.duration = this.endTime - this.startTime;
 	}
 
 	public String getParent() {
@@ -126,10 +123,6 @@ public class StatisticsLog {
 
 	public long getEndTime() {
 		return endTime;
-	}
-
-	public long getDuration() {
-		return duration;
 	}
 
 	public int getNoOfFaults() {
