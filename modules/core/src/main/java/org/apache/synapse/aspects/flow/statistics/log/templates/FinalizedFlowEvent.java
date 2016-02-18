@@ -20,26 +20,24 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class AddCallbacksLog implements StatisticReportingLog {
+/**
+ * Try to finish message flow, unless callback or open logs exists
+ */
+public class FinalizedFlowEvent implements StatisticsReportingEvent {
 
-	private final String statisticId;
-	private final Integer cloneId;
-	private String callbackId;
+	private final StatisticDataUnit statisticDataUnit;
 
-	public AddCallbacksLog(MessageContext messageContext, String callbackId) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
-		this.callbackId = callbackId;
+	public FinalizedFlowEvent(MessageContext messageContext, long endTime) {
+		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.finalizeEntry(statisticDataUnit);
 	}
 }

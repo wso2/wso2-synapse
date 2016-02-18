@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -20,21 +20,24 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class OpenClosedStatisticLog implements StatisticReportingLog {
-	private final String statisticId;
-	private String componentId;
-	private String newMessageId;
+/**
+ * Remove callback after received
+ */
+public class CallbackHandledEvent implements StatisticsReportingEvent {
 
-	public OpenClosedStatisticLog(MessageContext messageContext, String componentId) {
+	private final String statisticId;
+	private String callbackId;
+
+	public CallbackHandledEvent(MessageContext messageContext, String callbackId) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.componentId = componentId;
-		this.newMessageId = messageContext.getMessageID();
+		this.callbackId = callbackId;
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.removeCallback(statisticId, callbackId);
 	}
 }

@@ -29,18 +29,19 @@ import org.apache.synapse.aspects.flow.statistics.data.aggregate.EndpointStatist
 import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.AddCallbacksLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.CloseStatisticEntryForcefullyLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.CreateEntryStatisticLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.EndpointLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.FinalizeEntryLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.InformFaultLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.OpenClosedStatisticLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.RemoveCallbackLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.RemoveContinuationStateLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticCloseLog;
-import org.apache.synapse.aspects.flow.statistics.log.templates.UpdateForReceivedCallbackLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackSentEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.EndpointEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.FinalizedFlowEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.FaultEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackHandledEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.ContinuationEndEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.CallbackReceivedEvent;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -70,7 +71,7 @@ public class RuntimeStatisticCollector {
 
 	private static boolean isTracingEnabled;
 
-	private static MessageDataCollector messageDataCollector;
+	private static MessageDataStore messageDataStore;
 
 	/**
 	 * Initialize statistics collection when ESB starts.
@@ -93,7 +94,7 @@ public class RuntimeStatisticCollector {
                 log.debug("Tracer is not enabled in \'synapse.properties\' file.");
 			}
 
-			messageDataCollector = new MessageDataCollector(queueSize);
+			messageDataStore = new MessageDataStore(queueSize);
 			//Thread to consume queue and update data structures for publishing
 			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 				public Thread newThread(Runnable r) {
@@ -102,7 +103,7 @@ public class RuntimeStatisticCollector {
 					return t;
 				}
 			});
-			executor.scheduleAtFixedRate(messageDataCollector, 0, 1000, TimeUnit.MILLISECONDS);
+			executor.scheduleAtFixedRate(messageDataStore, 0, 1000, TimeUnit.MILLISECONDS);
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is not enabled in \'synapse.properties\' file.");
@@ -536,12 +537,12 @@ public class RuntimeStatisticCollector {
 			                              false, false, false);
 		}
 		if (individualStatisticCollected) {
-			StatisticReportingLog statisticReportingLog;
+			StatisticsReportingEvent statisticsReportingEvent;
 			if (isCreateLog) {
 				setStatisticsTraceId(messageContext);
 			}
-			statisticReportingLog = new EndpointLog(messageContext, endpointId, endpointName, isCreateLog);
-			messageDataCollector.enqueue(statisticReportingLog);
+			statisticsReportingEvent = new EndpointEvent(messageContext, endpointId, endpointName, isCreateLog);
+			messageDataStore.enqueue(statisticsReportingEvent);
 		}
 	}
 
@@ -746,8 +747,8 @@ public class RuntimeStatisticCollector {
 	 */
 	public static void removeContinuationState(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
-			StatisticReportingLog statisticReportingLog = new RemoveContinuationStateLog(messageContext);
-			messageDataCollector.enqueue(statisticReportingLog);
+			StatisticsReportingEvent statisticsReportingEvent = new ContinuationEndEvent(messageContext);
+			messageDataStore.enqueue(statisticsReportingEvent);
 		}
 	}
 
@@ -760,12 +761,12 @@ public class RuntimeStatisticCollector {
 		if (shouldReportStatistic(messageContext)) {
 			boolean isFaultCreated = isFaultAlreadyReported(messageContext);
 			if (isFaultCreated) {
-				CloseStatisticEntryForcefullyLog closeStatisticEntryForcefullyLog =
-						new CloseStatisticEntryForcefullyLog(messageContext, System.currentTimeMillis());
-				messageDataCollector.enqueue(closeStatisticEntryForcefullyLog);
+				EndFlowEvent endFlowEvent =
+						new EndFlowEvent(messageContext, System.currentTimeMillis());
+				messageDataStore.enqueue(endFlowEvent);
 			} else {
-				InformFaultLog informFaultLog = new InformFaultLog(messageContext);
-				messageDataCollector.enqueue(informFaultLog);
+				FaultEvent faultEvent = new FaultEvent(messageContext);
+				messageDataStore.enqueue(faultEvent);
 			}
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_FAULT_REPORTED, !isFaultCreated);
 			return true;
@@ -785,9 +786,9 @@ public class RuntimeStatisticCollector {
 
 	public static void openLogForContinuation(MessageContext messageContext, String componentId) {
 		if (shouldReportStatistic(messageContext)) {
-			StatisticReportingLog statisticReportingLog;
-			statisticReportingLog = new OpenClosedStatisticLog(messageContext, componentId);
-			messageDataCollector.enqueue(statisticReportingLog);
+			StatisticsReportingEvent statisticsReportingEvent;
+			statisticsReportingEvent = new ParentReopenEvent(messageContext, componentId);
+			messageDataStore.enqueue(statisticsReportingEvent);
 		}
 	}
 
@@ -796,37 +797,37 @@ public class RuntimeStatisticCollector {
 	private static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
 	                                                  ComponentType componentType, String parentName,
 	                                                  boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
-		StatisticReportingLog statisticLog;
+		StatisticsReportingEvent statisticLog;
 		if (isCreateLog) {
-			statisticLog = new CreateEntryStatisticLog(messageContext, componentName, componentType, parentName,
-			                                           System.currentTimeMillis(), isCloneLog, isAggregateLog, isAlteringContent);
+			statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName,
+			                                       System.currentTimeMillis(), isCloneLog, isAggregateLog, isAlteringContent);
 		} else {
-			statisticLog = new StatisticCloseLog(messageContext, componentName, parentName, System.currentTimeMillis(),
-			                                     isCloneLog, isAggregateLog, isAlteringContent);
+			statisticLog = new StatisticsCloseEvent(messageContext, componentName, parentName, System.currentTimeMillis(),
+			                                        isCloneLog, isAggregateLog, isAlteringContent);
 		}
-		messageDataCollector.enqueue(statisticLog);
+		messageDataStore.enqueue(statisticLog);
 	}
 
 	private static void createLogForFinalize(MessageContext messageContext) {
-		StatisticReportingLog statisticReportingLog;
-		statisticReportingLog = new FinalizeEntryLog(messageContext, System.currentTimeMillis());
-		messageDataCollector.enqueue(statisticReportingLog);
+		StatisticsReportingEvent statisticsReportingEvent;
+		statisticsReportingEvent = new FinalizedFlowEvent(messageContext, System.currentTimeMillis());
+		messageDataStore.enqueue(statisticsReportingEvent);
 	}
 
 	private static void createLogForRemoveCallback(MessageContext synOutCtx, String msgID) {
-		RemoveCallbackLog removeCallbackLog = new RemoveCallbackLog(synOutCtx, msgID);
-		messageDataCollector.enqueue(removeCallbackLog);
+		CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(synOutCtx, msgID);
+		messageDataStore.enqueue(callbackHandledEvent);
 	}
 
 	private static void createLogForCallbackReceived(MessageContext oldMessageContext, String msgID) {
-		UpdateForReceivedCallbackLog updateForReceivedCallbackLog =
-				new UpdateForReceivedCallbackLog(oldMessageContext, msgID, System.currentTimeMillis());
-		messageDataCollector.enqueue(updateForReceivedCallbackLog);
+		CallbackReceivedEvent callbackReceivedEvent =
+				new CallbackReceivedEvent(oldMessageContext, msgID, System.currentTimeMillis());
+		messageDataStore.enqueue(callbackReceivedEvent);
 	}
 
 	private static void createLogForCallbackRegister(MessageContext messageContext, String MsgId) {
-		AddCallbacksLog addCallbacksLog = new AddCallbacksLog(messageContext, MsgId);
-		messageDataCollector.enqueue(addCallbacksLog);
+		CallbackSentEvent callbackSentEvent = new CallbackSentEvent(messageContext, MsgId);
+		messageDataStore.enqueue(callbackSentEvent);
 	}
 
 	//Setting properties for branching operation
@@ -886,7 +887,7 @@ public class RuntimeStatisticCollector {
 
 	public static void stopConsumer() {
 		if (isStatisticsEnabled) {
-			messageDataCollector.setStopped();
+			messageDataStore.setStopped();
 		}
 	}
 

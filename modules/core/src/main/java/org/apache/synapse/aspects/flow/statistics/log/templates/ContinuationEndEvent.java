@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -20,24 +20,23 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class InformFaultLog implements StatisticReportingLog {
+/**
+ * Remove reference when continuation done
+ */
+public class ContinuationEndEvent implements StatisticsReportingEvent {
 
-	private String statisticId;
-	private int cloneId;
+	private final String statisticId;
+	private String messageId;
 
-	public InformFaultLog(MessageContext messageContext) {
+	public ContinuationEndEvent(MessageContext messageContext) {
 		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
+		this.messageId = messageContext.getMessageID();
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.reportFault(statisticId, cloneId);
+		RuntimeStatisticCollector.removeContinuationState(statisticId, messageId);
 	}
 }

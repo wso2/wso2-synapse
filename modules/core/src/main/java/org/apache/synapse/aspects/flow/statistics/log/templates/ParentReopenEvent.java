@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *   WSO2 Inc. licenses this file to you under the Apache License,
  *   Version 2.0 (the "License"); you may not use this file except
@@ -20,20 +20,25 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class CloseStatisticEntryForcefullyLog implements StatisticReportingLog {
+/**
+ * Reopen sequence for continuation (eg: call mediator)
+ */
+public class ParentReopenEvent implements StatisticsReportingEvent {
+	private final String statisticId;
+	private String componentId;
+	private String newMessageId;
 
-	private final StatisticDataUnit statisticDataUnit;
-
-	public CloseStatisticEntryForcefullyLog(MessageContext messageContext, long endTime) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
+	public ParentReopenEvent(MessageContext messageContext, String componentId) {
+		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		this.componentId = componentId;
+		this.newMessageId = messageContext.getMessageID();
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.closeStatisticEntryForcefully(statisticDataUnit);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
 	}
 }

@@ -22,15 +22,18 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class CreateEntryStatisticLog implements StatisticReportingLog {
+/**
+ * Handling Open Event
+ */
+public class StatisticsOpenEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
-	                               String parentId, Long startTime, boolean isAlteringContent) {
+	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
+	                           String parentId, Long startTime, boolean isAlteringContent) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		int cloneId;
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
@@ -43,8 +46,8 @@ public class CreateEntryStatisticLog implements StatisticReportingLog {
 
 	}
 
-	public CreateEntryStatisticLog(MessageContext messageContext, String componentId, ComponentType componentType,
-	                               String parentId, Long startTime, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
+	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
+	                           String parentId, Long startTime, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
 		this(messageContext, componentId, componentType, parentId, startTime, isAlteringContent);
 		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();

@@ -18,7 +18,7 @@
 
 package org.apache.synapse.aspects.flow.statistics.log;
 
-public interface StatisticReportingLog {
+public interface StatisticsReportingEvent {
 
 	/**
 	 * Method that will call corresponding method in RuntimeStatisticCollector.

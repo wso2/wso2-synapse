@@ -19,31 +19,38 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 
-public class UpdateForReceivedCallbackLog implements StatisticReportingLog {
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-	private final String statisticId;
-	private String callbackId;
-	private Long endTime;
+public class EndpointEvent implements StatisticsReportingEvent {
+
+	private String endpointId;
+	private String endpointName;
+	private long time;
+	private boolean isCreateLog;
+	private String statisticId;
 	private SynapseEnvironment synapseEnvironment;
-	private Boolean isContinuationCall;
+	private String timeStamp;
+	private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
-	public UpdateForReceivedCallbackLog(MessageContext messageContext, String callbackId, Long endTime) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.callbackId = callbackId;
-		this.endTime = endTime;
+	public EndpointEvent(MessageContext messageContext, String endpointId, String endpointName, boolean isCreateLog) {
+		this.endpointId = endpointId;
+		this.endpointName = endpointName;
+		this.isCreateLog = isCreateLog;
+		this.time = System.currentTimeMillis();
+		this.statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		this.synapseEnvironment = messageContext.getEnvironment();
-		isContinuationCall = (Boolean) messageContext.getProperty(SynapseConstants.CONTINUATION_CALL);
-
+		this.timeStamp = dateFormatter.format(new Date());
 	}
 
 	@Override public void process() {
 		RuntimeStatisticCollector
-				.updateForReceivedCallback(statisticId, callbackId, endTime, isContinuationCall, synapseEnvironment);
+				.createEndpointStatistics(statisticId, timeStamp, endpointId, endpointName, synapseEnvironment, time,
+				                          isCreateLog);
 	}
 }

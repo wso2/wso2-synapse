@@ -31,6 +31,11 @@ public class StatisticsConstants {
 	public final static String TRACER_ENABLE = "message.flow.tracer.enable";
 
 	/**
+	 * Enabling collect transport and message-context properties
+	 */
+	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.collect.properties";
+
+	/**
 	 * Flow statistic queue size
 	 */
 	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";

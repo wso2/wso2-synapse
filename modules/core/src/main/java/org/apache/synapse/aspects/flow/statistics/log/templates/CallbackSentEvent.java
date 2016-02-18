@@ -20,20 +20,30 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class FinalizeEntryLog implements StatisticReportingLog {
+/**
+ * If callback sent, mention in continuation
+ */
+public class CallbackSentEvent implements StatisticsReportingEvent {
 
-	private final StatisticDataUnit statisticDataUnit;
+	private final String statisticId;
+	private final Integer cloneId;
+	private String callbackId;
 
-	public FinalizeEntryLog(MessageContext messageContext, long endTime) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
+	public CallbackSentEvent(MessageContext messageContext, String callbackId) {
+		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
+			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
+		} else {
+			cloneId = 0;
+		}
+		this.callbackId = callbackId;
 	}
 
-	@Override public void process() {
-		RuntimeStatisticCollector.finalizeEntry(statisticDataUnit);
+	@Override
+	public void process() {
+		RuntimeStatisticCollector.addCallbacks(statisticId, callbackId, cloneId);
 	}
 }

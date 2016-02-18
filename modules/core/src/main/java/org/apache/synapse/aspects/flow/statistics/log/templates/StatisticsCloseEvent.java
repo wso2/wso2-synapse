@@ -21,14 +21,17 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticReportingLog;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class StatisticCloseLog implements StatisticReportingLog {
+/**
+ * Handling Close Event
+ */
+public class StatisticsCloseEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime, boolean isAlteringContent) {
+	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, Long endTime, boolean isAlteringContent) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		int msgId;
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
@@ -42,8 +45,8 @@ public class StatisticCloseLog implements StatisticReportingLog {
 				                      messageContext.getEnvironment(), messageContext);
 	}
 
-	public StatisticCloseLog(MessageContext messageContext, String componentId, String parentId, Long endTime,
-	                         boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
+	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, Long endTime,
+	                            boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
 		this(messageContext, componentId, parentId, endTime, isAlteringContent);
 		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();
