@@ -20,6 +20,8 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.axis2.context.OperationContext;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
@@ -29,6 +31,7 @@ import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.registry.Registry;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
@@ -110,7 +113,16 @@ public class PropertyMediator extends AbstractMediator {
             // if the result value is a String we can apply a reguar expression to
             // choose part of it
             if (resultValue instanceof String && pattern != null) {
-                resultValue = getMatchedValue((String) resultValue, synLog);
+                if(NhttpConstants.REST_URL_POSTFIX.equals(name)) {
+                    try {
+                        String rawValue = URIUtil.decode(getMatchedValue((String) resultValue, synLog),"UTF-8");
+                        resultValue = URIUtil.encodePathQuery(rawValue,"UTF-8");
+                    } catch (URIException e) {
+                        handleException("exception while encoding the URL POST FIX", e, synCtx);
+                    }
+                } else {
+                    resultValue = getMatchedValue((String) resultValue, synLog);
+                }
             }
 
             if (synLog.isTraceOrDebugEnabled()) {

@@ -33,6 +33,8 @@ import org.apache.axis2.transport.base.MetricsCollector;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
 import org.apache.commons.collections.map.MultiValueMap;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.*;
@@ -48,7 +50,9 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -269,11 +273,21 @@ public class ServerWorker implements Runnable {
             handleException("Unsupported method : " + method, null);
         }
 
-        //String uri = request.getRequestLine().getUri();
+        String encodedRestUrlPostfix = null;
+        try {
+            encodedRestUrlPostfix = URIUtil.decode(request.getRequestLine().getUri(),"UTF-8");
+        } catch (URIException e) {
+            handleException("exception while the URL POST FIX", e);
+        }
         String oriUri = request.getRequestLine().getUri();
         String restUrlPostfix = NhttpUtil.getRestUrlPostfix(oriUri, cfgCtx.getServicePath());
+        try {
+            encodedRestUrlPostfix=URIUtil.encodePathQuery(encodedRestUrlPostfix,"UTF-8");
+        } catch (URIException e) {
+            handleException("exception while encoding the URL POST FIX", e);
+        }
 
-        msgContext.setProperty(NhttpConstants.REST_URL_POSTFIX, restUrlPostfix);
+        msgContext.setProperty(NhttpConstants.REST_URL_POSTFIX, encodedRestUrlPostfix);
         String servicePrefix = oriUri.substring(0, oriUri.indexOf(restUrlPostfix));
         if (servicePrefix.indexOf("://") == -1) {
             HttpInetConnection inetConn = (HttpInetConnection) conn;

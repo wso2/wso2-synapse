@@ -21,9 +21,12 @@ package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -79,7 +82,16 @@ public class PropertyMediatorFactory extends AbstractMediatorFactory {
         }
 
         if (value != null) {
-            propMediator.setValue(value.getAttributeValue(), dataType);
+            if(NhttpConstants.REST_URL_POSTFIX.equals(name.getAttributeValue())) {
+                try {
+                    String rawValue = URIUtil.decode(value.getAttributeValue(),"UTF-8");
+                    propMediator.setValue(URIUtil.encodePathQuery(rawValue,"UTF-8"), dataType);
+                } catch (URIException e) {
+                    handleException("exception while encoding the URL POST FIX", e);
+                }
+            } else {
+                propMediator.setValue(value.getAttributeValue(), dataType);
+            }
         } else if (valueElement != null) {
             propMediator.setValueElement(valueElement);
         } else if (expression != null) {
