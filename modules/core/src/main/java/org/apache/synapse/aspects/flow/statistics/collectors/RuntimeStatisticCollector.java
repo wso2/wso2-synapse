@@ -232,7 +232,7 @@ public abstract class RuntimeStatisticCollector {
      * @return true if need to collect payloads
      */
     public static boolean isCollectingPayloads() {
-        return isCollectingPayloads;
+        return isStatisticsEnabled & isCollectingPayloads;
     }
 
     /**
@@ -241,7 +241,7 @@ public abstract class RuntimeStatisticCollector {
      * @return true if need to collect message-properties
      */
     public static boolean isCollectingProperties() {
-        return isCollectingProperties;
+        return isStatisticsEnabled & isCollectingProperties;
     }
 
     /**
@@ -262,9 +262,9 @@ public abstract class RuntimeStatisticCollector {
         StatisticsReportingEvent statisticLog;
         if (isCreateLog) {
             statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName,
-                                                   System.currentTimeMillis(), isCloneLog, isAggregateLog, isAlteringContent);
+                                                   isCloneLog, isAggregateLog, isAlteringContent);
         } else {
-            statisticLog = new StatisticsCloseEvent(messageContext, componentName, parentName, System.currentTimeMillis(),
+            statisticLog = new StatisticsCloseEvent(messageContext, componentName, parentName,
                                                     isCloneLog, isAggregateLog, isAlteringContent);
         }
         messageDataStore.enqueue(statisticLog);

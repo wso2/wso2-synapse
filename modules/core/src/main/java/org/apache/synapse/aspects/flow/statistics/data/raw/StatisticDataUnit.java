@@ -22,6 +22,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
@@ -48,31 +49,25 @@ public class StatisticDataUnit {
     private String payload;
 
     public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
-                             int cloneId, Long time, boolean isResponse, MessageContext messageContext,
+                             int cloneId, boolean isResponse, MessageContext messageContext,
                              boolean isAlteringContent) {
-        this(statisticId, componentId, componentType, parentId, cloneId, time, isResponse, messageContext);
+        this(statisticId, componentId, componentType, parentId, cloneId, isResponse, messageContext);
 
-        if (RuntimeStatisticCollector.isCollectingPayloads() && isAlteringContent) {
+        if (RuntimeStatisticCollector.isCollectingPayloads() && shouldCaptureTracing(messageContext) && isAlteringContent) {
             payload = messageContext.getEnvelope().toString();
         }
     }
 
     public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
-                             int cloneId, Long time, boolean isResponse, MessageContext messageContext) {
-        this(statisticId, componentId, parentId, cloneId, time, isResponse, null, messageContext);
+                             int cloneId, boolean isResponse, MessageContext messageContext) {
+        this(statisticId, componentId, parentId, cloneId, isResponse, null, messageContext);
         this.componentType = componentType;
     }
 
-    public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
-        this.statisticId = statisticId;
-        this.synapseEnvironment = synapseEnvironment;
-        this.time = time;
-    }
-
-    public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
+    public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId,
                              boolean isResponse, SynapseEnvironment synapseEnvironment, MessageContext messageContext) {
         this.statisticId = statisticId;
-        this.time = time;
+        this.time = System.currentTimeMillis();
         this.parentId = parentId;
         this.componentId = componentId;
         this.cloneId = cloneId;
@@ -80,13 +75,19 @@ public class StatisticDataUnit {
         this.synapseEnvironment = synapseEnvironment;
         this.aggregatePoint = false;
         this.clonePoint = false;
-        this.timestamp = new Date().getTime();
+        this.timestamp = System.currentTimeMillis();
 
-        if (RuntimeStatisticCollector.isCollectingProperties()) {
+        if (RuntimeStatisticCollector.isCollectingProperties() && shouldCaptureTracing(messageContext)) {
             this.contextPropertyMap = this.extractContextProperties(messageContext);
             this.transportPropertyMap = this.extractTransportProperties(messageContext);
         }
 
+    }
+
+    public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
+        this.statisticId = statisticId;
+        this.synapseEnvironment = synapseEnvironment;
+        this.time = time;
     }
 
     public String getStatisticId() {
@@ -241,5 +242,22 @@ public class StatisticDataUnit {
         }
 
         return transportPropertyMap;
+    }
+
+    /**
+     * Decide whether to collect tracing data per message flow
+     *
+     * @param synCtx
+     * @return true, if need to collect tracing data.
+     */
+    private boolean shouldCaptureTracing(MessageContext synCtx) {
+        Boolean isCollectingTraces = (Boolean) synCtx.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
+
+        if (isCollectingTraces == null) {
+            return false;
+        }
+        else {
+            return isCollectingTraces;
+        }
     }
 }

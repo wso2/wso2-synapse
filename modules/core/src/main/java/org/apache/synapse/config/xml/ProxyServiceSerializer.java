@@ -236,6 +236,11 @@ public class ProxyServiceSerializer {
                     XMLConfigConstants.STATISTICS_ATTRIB_NAME, nullNS,
                     XMLConfigConstants.STATISTICS_ENABLE));
         }
+        if (statisticsConfigurable != null && statisticsConfigurable.isTracingEnabled()) {
+            proxy.addAttribute(fac.createOMAttribute(
+                    XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS,
+                    XMLConfigConstants.TRACE_ENABLE));
+        }
 
         if (parent != null) {
             parent.addChild(proxy);

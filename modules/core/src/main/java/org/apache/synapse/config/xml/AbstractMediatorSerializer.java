@@ -154,6 +154,14 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
                         XMLConfigConstants.STATISTICS_ATTRIB_NAME, nullNS,
                         XMLConfigConstants.STATISTICS_ENABLE));
             }
+
+            if (statisticsConfigurable != null &&
+                statisticsConfigurable.isTracingEnabled()) {
+
+                mediatorOmElement.addAttribute(fac.createOMAttribute(
+                        XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS,
+                        XMLConfigConstants.TRACE_ENABLE));
+            }
         }
 
     }

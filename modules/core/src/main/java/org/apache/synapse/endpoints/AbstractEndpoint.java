@@ -621,13 +621,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
             AspectConfiguration oldConfiguration = definition.getAspectConfiguration();
             if (opName != null) {
+                AspectConfiguration newConfiguration = new AspectConfiguration(
+                        oldConfiguration.getId() + SynapseConstants.STATISTICS_KEY_SEPARATOR +
+                        opName);
                 if (oldConfiguration.isStatisticsEnable()) {
-                    AspectConfiguration newConfiguration = new AspectConfiguration(
-                            oldConfiguration.getId() + SynapseConstants.STATISTICS_KEY_SEPARATOR +
-                                    opName);
                     newConfiguration.enableStatistics();
                     StatisticsReporter.reportForComponent(synCtx, newConfiguration,
                             ComponentType.ENDPOINT);
+                }
+                if (oldConfiguration.isTracingEnabled()) {
+                    newConfiguration.enableTracing();
                 }
             } else {
                 StatisticsReporter.reportForComponent(synCtx, oldConfiguration,

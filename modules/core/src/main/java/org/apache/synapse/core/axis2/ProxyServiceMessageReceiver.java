@@ -89,7 +89,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
 
         //Statistic reporting
-        ProxyStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration(), true);
+        ProxyStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration());
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);

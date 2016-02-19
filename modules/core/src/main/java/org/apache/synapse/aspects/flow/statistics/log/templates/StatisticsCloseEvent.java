@@ -31,7 +31,7 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, Long endTime, boolean isAlteringContent) {
+	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId) {
 		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		int msgId;
 		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
@@ -41,13 +41,13 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 		}
 
 		statisticDataUnit =
-				new StatisticDataUnit(statisticId, componentId, parentId, msgId, endTime, messageContext.isResponse(),
+				new StatisticDataUnit(statisticId, componentId, parentId, msgId, messageContext.isResponse(),
 				                      messageContext.getEnvironment(), messageContext);
 	}
 
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, Long endTime,
+	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId,
 	                            boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
-		this(messageContext, componentId, parentId, endTime, isAlteringContent);
+		this(messageContext, componentId, parentId);
 		if (isAggregateLog) {
 			statisticDataUnit.setAggregatePoint();
 		}

@@ -32,29 +32,32 @@ public class SequenceStatisticCollector extends RuntimeStatisticCollector {
      *
      * @param messageContext      Current MessageContext of the flow.
      * @param sequenceName        Sequence name.
-     * @param parentName          Parent component name.
      * @param aspectConfiguration Aspect Configuration for the Sequence.
      * @param isCreateLog         It is statistic flow start or end.
      */
-    public static void reportStatisticForSequence(MessageContext messageContext, String sequenceName, String parentName,
+    public static void reportStatisticForSequence(MessageContext messageContext, String sequenceName,
                                                   AspectConfiguration aspectConfiguration, boolean isCreateLog) {
         if (isStatisticsEnabled()) {
-            Boolean isStatCollected =
+            Boolean isStatsAlreadyCollected =
                     (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
-            if (isStatCollected == null) {
-                if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
+
+            if (isStatsAlreadyCollected == null) {
+                boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+                boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+
+                messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+                messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+
+                if (isCollectingStatistics) {
                     if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && !isCreateLog) {
                         log.error("Trying close statistic entry without Statistic ID");
                         return;
                     }
                     setStatisticsTraceId(messageContext);
                     createStatisticForSequence(messageContext, sequenceName, isCreateLog);
-                    messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
-                } else {
-                    messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
                 }
             } else {
-                if ((messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) && isStatCollected) {
+                if ((messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) && isStatsAlreadyCollected) {
                     createStatisticForSequence(messageContext, sequenceName, isCreateLog);
                 }
             }

@@ -523,6 +523,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     @Override
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         SequenceStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
-                                                              parentName, getAspectConfiguration(), isCreateLog);
+                                                              getAspectConfiguration(), isCreateLog);
     }
 }

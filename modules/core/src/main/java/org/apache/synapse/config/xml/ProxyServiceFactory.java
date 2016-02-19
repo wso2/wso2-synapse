@@ -338,6 +338,17 @@ public class ProxyServiceFactory {
             }
         }
 
+        OMAttribute tracing = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,
+                                                             XMLConfigConstants.TRACE_ATTRIB_NAME));
+        if (statistics != null) {
+            String tracingValue = tracing.getAttributeValue();
+            if (tracingValue != null) {
+                if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
+                    aspectConfiguration.enableTracing();
+                }
+            }
+        }
+
         Iterator props = elem.getChildrenWithName(
                 new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "parameter"));
         while (props.hasNext()) {

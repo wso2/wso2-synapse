@@ -27,30 +27,46 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
  */
 public class AspectConfigurationDetectionStrategy {
 
-     /**
+    /**
      * Factory method to create the AspectConfiguration when there is no a defined main sequence and
      * only there is a set of mediators. This is useful when collecting stats for messages going
      * through the main sequence
-     *  //TODO cache
+     * //TODO cache
+     *
      * @param synCtx Message Context
      * @return an AspectConfiguration instance
      */
-     public static AspectConfiguration getAspectConfiguration(MessageContext synCtx) {
+    public static AspectConfiguration getAspectConfiguration(MessageContext synCtx) {
 
-       boolean statisticsEnable = false;
+        boolean statisticsEnable = false;
+        boolean tracingEnabled = false;
 
         if (XMLConfigConstants.STATISTICS_ENABLE.equals(
                 synCtx.getConfiguration().getProperty(
                         SynapseConstants.SYNAPSE_STATISTICS_STATE))) {
             statisticsEnable = true;
         }
+        if (XMLConfigConstants.TRACE_ENABLE.equals(
+                synCtx.getConfiguration().getProperty(
+                        SynapseConstants.SYNAPSE_TRACE_STATE))) {
+            tracingEnabled = true;
+        }
 
+
+        AspectConfiguration configuration = new AspectConfiguration(
+                SynapseConstants.SYNAPSE_ASPECTS);
         if (statisticsEnable) {
-            AspectConfiguration configuration = new AspectConfiguration(
-                    SynapseConstants.SYNAPSE_ASPECTS);
             configuration.enableStatistics();
+        }
+        if (tracingEnabled) {
+            configuration.enableTracing();
+        }
+
+        if (statisticsEnable || tracingEnabled) {
             return configuration;
         }
+
+
         return null;
     }
 }

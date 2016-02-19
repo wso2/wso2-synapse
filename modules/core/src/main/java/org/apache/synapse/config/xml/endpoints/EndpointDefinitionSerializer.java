@@ -51,6 +51,14 @@ public class EndpointDefinitionSerializer {
                     XMLConfigConstants.STATISTICS_ENABLE));
         }
 
+        if (statisticsConfigurable != null &&
+            statisticsConfigurable.isTracingEnabled()) {
+
+            element.addAttribute(fac.createOMAttribute(
+                    XMLConfigConstants.TRACE_ATTRIB_NAME, null,
+                    XMLConfigConstants.TRACE_ENABLE));
+        }
+
         if (endpointDefinition.isUseSwa()) {
             element.addAttribute(fac.createOMAttribute("optimize", null, "swa"));
         } else if (endpointDefinition.isUseMTOM()) {

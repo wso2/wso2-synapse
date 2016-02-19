@@ -35,26 +35,20 @@ public class ProxyStatisticCollector extends RuntimeStatisticCollector {
      * @param messageContext      Current MessageContext of the flow.
      * @param proxyName           Proxy name.
      * @param aspectConfiguration Aspect Configuration for the Proxy.
-     * @param createStatisticLog  It is statistic flow start or end.
      */
     public static void reportStatisticsForProxy(MessageContext messageContext, String proxyName,
-                                                AspectConfiguration aspectConfiguration, boolean createStatisticLog) {
+                                                AspectConfiguration aspectConfiguration) {
         if (isStatisticsEnabled()) {
-            if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
-                if (createStatisticLog) {
-                    setStatisticsTraceId(messageContext);
-                    createLogForMessageCheckpoint(messageContext, proxyName, ComponentType.PROXYSERVICE, null, true,
-                                                  false, false, true);
-                    messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
-                } else {
-                    if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
-                        createLogForFinalize(messageContext);
-                    } else {
-                        log.error("Trying close statistic entry without Statistic ID");
-                    }
-                }
-            } else {
-                messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+            boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+            boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+
+            messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+            messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+
+            if (isCollectingStatistics) {
+                setStatisticsTraceId(messageContext);
+                createLogForMessageCheckpoint(messageContext, proxyName, ComponentType.PROXYSERVICE, null, true,
+                                              false, false, true);
             }
         }
     }

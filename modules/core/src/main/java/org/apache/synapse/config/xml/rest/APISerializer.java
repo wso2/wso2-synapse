@@ -57,6 +57,10 @@ public class APISerializer {
             apiElt.addAttribute(XMLConfigConstants.STATISTICS_ATTRIB_NAME, XMLConfigConstants.STATISTICS_ENABLE, null);
         }
 
+        if (statisticsConfigurable != null && statisticsConfigurable.isTracingEnabled()) {
+            apiElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);
+        }
+
         if (api.getTraceState() != SynapseConstants.TRACING_UNSET) {
             if (api.getTraceState() == SynapseConstants.TRACING_ON) {
                 apiElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);

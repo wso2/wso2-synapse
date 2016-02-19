@@ -72,6 +72,7 @@ public class StatisticsConstants {
 	 * Key to specify whether statistics should be reported
 	 */
 	public static final String FLOW_STATISTICS_IS_COLLECTED = "mediation.flow.statistics.collected";
+	public static final String FLOW_TRACE_IS_COLLECTED = "mediation.flow.trace.collected";
 
 	/**
 	 * Flow statistic default queue size

@@ -29,6 +29,10 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 
     /* Whether statistics enable */
     private boolean statisticsEnable = false;
+
+    /* Whether tracing (collecting payload + message context properties) enabled */
+    private boolean tracingEnabled = false;
+
     /* Identifier for a particular aspects configuration */
     private String id;
 
@@ -49,6 +53,22 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
     public void enableStatistics() {
         if (!statisticsEnable) {
             statisticsEnable = true;
+        }
+    }
+
+    public boolean isTracingEnabled() {
+        return tracingEnabled;
+    }
+
+    public void disableTracing() {
+        if (tracingEnabled) {
+            this.tracingEnabled = false;
+        }
+    }
+
+    public void enableTracing() {
+        if (!tracingEnabled) {
+            this.tracingEnabled = true;
         }
     }
 

@@ -666,6 +666,22 @@ public class EndpointDefinition implements AspectConfigurable {
         }
     }
 
+    public boolean isTracingEnabled() {
+        return this.aspectConfiguration != null && this.aspectConfiguration.isTracingEnabled();
+    }
+
+    public void disableTracing() {
+        if (this.aspectConfiguration != null) {
+            this.aspectConfiguration.disableTracing();
+        }
+    }
+
+    public void enableTracing() {
+        if (this.aspectConfiguration != null) {
+            this.aspectConfiguration.enableTracing();
+        }
+    }
+
     public void configure(AspectConfiguration aspectConfiguration) {
         this.aspectConfiguration = aspectConfiguration;
     }

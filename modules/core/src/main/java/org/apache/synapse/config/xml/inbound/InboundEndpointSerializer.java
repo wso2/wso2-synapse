@@ -76,6 +76,11 @@ public class InboundEndpointSerializer {
 					.addAttribute(XMLConfigConstants.STATISTICS_ATTRIB_NAME, XMLConfigConstants.STATISTICS_ENABLE,
 					              null);
 		}
+		if (statisticsConfigurable != null && statisticsConfigurable.isTracingEnabled()) {
+			inboundEndpointElt
+					.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE,
+					              null);
+		}
 
 		if (inboundEndpoint.getTraceState() != SynapseConstants.TRACING_UNSET) {
 			if (inboundEndpoint.getTraceState() == SynapseConstants.TRACING_ON) {

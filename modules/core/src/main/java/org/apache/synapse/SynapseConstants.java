@@ -230,6 +230,7 @@ public final class SynapseConstants {
         public static final String STATISTICS_STACK ="synapse.statistics.stack";     
         
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
+        public static final String SYNAPSE_TRACE_STATE = "synapse.trace.state";
 
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
 
