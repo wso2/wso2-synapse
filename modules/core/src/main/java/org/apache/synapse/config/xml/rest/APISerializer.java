@@ -61,15 +61,6 @@ public class APISerializer {
             apiElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);
         }
 
-        if (api.getTraceState() != SynapseConstants.TRACING_UNSET) {
-            if (api.getTraceState() == SynapseConstants.TRACING_ON) {
-                apiElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);
-            }
-            else if (api.getTraceState() == SynapseConstants.TRACING_OFF) {
-                apiElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_DISABLE, null);
-            }
-        }
-
         Resource[] resources = api.getResources();
         for (Resource r : resources) {
             OMElement resourceElt = ResourceSerializer.serializeResource(r);

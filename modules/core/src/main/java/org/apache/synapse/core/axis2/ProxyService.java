@@ -219,11 +219,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     public static final String ALL_TRANSPORTS = "all";
    
-    /**
-     * The variable that indicate tracing on or off for the current mediator
-     */
-    private int traceState = SynapseConstants.TRACING_UNSET;
-
     private AspectConfiguration aspectConfiguration;
 
     private String fileName;
@@ -917,7 +912,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      * @return true if tracing is enabled for this service
      */
     private boolean trace() {
-        return traceState == SynapseConstants.TRACING_ON;
+        return aspectConfiguration.isTracingEnabled();
     }
 
     public String getName() {
@@ -1034,18 +1029,18 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      *
      * @return Returns the int value that indicate the tracing state
      */
-    public int getTraceState() {
-        return traceState;
-    }
+//    public int getTraceState() {
+//        return traceState;
+//    }
 
     /**
      * Set the tracing State variable
      *
-     * @param traceState tracing state
+     *
      */
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
+//    public void setTraceState(int traceState) {
+//        this.traceState = traceState;
+//    }
 
     public String getTargetFaultSequence() {
         return targetFaultSequence;

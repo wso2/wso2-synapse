@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
 
@@ -48,19 +49,21 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
         OMAttribute encoding
                 = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "encoding"));
 
+/*
         OMAttribute trace = elem.getAttribute(new QName(
                 XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
         if (trace != null && trace.getAttributeValue() != null) {
             String traceValue = trace.getAttributeValue();
             if (XMLConfigConstants.TRACE_ENABLE.equals(traceValue)) {
-                definition.setTraceState(SynapseConstants.TRACING_ON);
-            } else if (XMLConfigConstants.TRACE_DISABLE.equals(traceValue)) {
-                definition.setTraceState(SynapseConstants.TRACING_OFF);
+                AspectConfiguration aspectConfiguration = definition.getAspectConfiguration();
+                if (aspectConfiguration == null) {
+                    aspectConfiguration = new AspectConfiguration(null);
+                }
+                aspectConfiguration.enableTracing();
+                definition.configure(aspectConfiguration);
             }
-        } else {
-            definition.setTraceState(SynapseConstants.TRACING_UNSET);
         }
-
+*/
 
         if (optimize != null && optimize.getAttributeValue().length() > 0) {
             String method = optimize.getAttributeValue().trim();

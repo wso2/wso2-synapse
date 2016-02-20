@@ -124,18 +124,6 @@ public class ProxyServiceFactory {
             }
         }
         
-        OMAttribute trace = elem.getAttribute(
-                new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
-        if (trace != null) {
-            String traceValue = trace.getAttributeValue();
-            if (traceValue != null) {
-                if (traceValue.equals(XMLConfigConstants.TRACE_ENABLE)) {
-                    proxy.setTraceState(org.apache.synapse.SynapseConstants.TRACING_ON);
-                } else if (traceValue.equals(XMLConfigConstants.TRACE_DISABLE)) {
-                    proxy.setTraceState(org.apache.synapse.SynapseConstants.TRACING_OFF);
-                }
-            }
-        }
         OMAttribute startOnLoad = elem.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "startOnLoad"));
         if (startOnLoad != null) {
@@ -340,7 +328,7 @@ public class ProxyServiceFactory {
 
         OMAttribute tracing = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,
                                                              XMLConfigConstants.TRACE_ATTRIB_NAME));
-        if (statistics != null) {
+        if (tracing != null) {
             String tracingValue = tracing.getAttributeValue();
             if (tracingValue != null) {
                 if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {

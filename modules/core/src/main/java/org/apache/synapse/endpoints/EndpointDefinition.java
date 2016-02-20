@@ -170,10 +170,6 @@ public class EndpointDefinition implements AspectConfigurable {
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
 
     private AspectConfiguration aspectConfiguration;
-    /**
-     * The variable that indicate tracing on or off for the current mediator
-     */
-    private int traceState = SynapseConstants.TRACING_UNSET;
 
     /** A list of error codes which permit the retries */
     private final List<Integer> retryDisabledErrorCodes = new ArrayList<Integer>();
@@ -550,13 +546,13 @@ public class EndpointDefinition implements AspectConfigurable {
         this.initialSuspendDuration = initialSuspendDuration;
     }
 
-    public int getTraceState() {
-        return traceState;
-    }
-
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
+//    public int getTraceState() {
+//        return traceState;
+//    }
+//
+//    public void setTraceState(int traceState) {
+//        this.traceState = traceState;
+//    }
 
     public float getSuspendProgressionFactor() {
         return suspendProgressionFactor;

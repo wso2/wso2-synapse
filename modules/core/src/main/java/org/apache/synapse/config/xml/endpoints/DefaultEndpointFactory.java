@@ -170,7 +170,7 @@ public class DefaultEndpointFactory extends EndpointFactory {
         if (tracing != null) {
             String tracingValue = tracing.getAttributeValue();
             if (tracingValue != null) {
-                if (XMLConfigConstants.STATISTICS_ENABLE.equals(tracingValue)) {
+                if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
                     aspectConfiguration.enableTracing();
                 }
             }

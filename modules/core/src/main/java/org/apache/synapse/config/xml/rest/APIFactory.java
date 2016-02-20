@@ -144,9 +144,6 @@ public class APIFactory {
             if (tracingValue != null) {
                 if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
                     aspectConfiguration.enableTracing();
-                    api.setTraceState(org.apache.synapse.SynapseConstants.TRACING_ON);
-                } else if (XMLConfigConstants.TRACE_DISABLE.equals(tracingValue)) {
-                    api.setTraceState(org.apache.synapse.SynapseConstants.TRACING_OFF);
                 }
             }
         }

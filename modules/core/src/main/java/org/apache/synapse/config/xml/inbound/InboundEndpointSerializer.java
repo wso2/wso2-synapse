@@ -82,15 +82,6 @@ public class InboundEndpointSerializer {
 					              null);
 		}
 
-		if (inboundEndpoint.getTraceState() != SynapseConstants.TRACING_UNSET) {
-			if (inboundEndpoint.getTraceState() == SynapseConstants.TRACING_ON) {
-				inboundEndpointElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);
-			}
-			else if (inboundEndpoint.getTraceState() == SynapseConstants.TRACING_OFF) {
-				inboundEndpointElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_DISABLE, null);
-			}
-		}
-		
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SUSPEND,
 		                                Boolean.toString(inboundEndpoint.isSuspend()), null);
 

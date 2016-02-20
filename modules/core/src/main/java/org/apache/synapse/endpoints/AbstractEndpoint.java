@@ -556,10 +556,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if tracing should be performed
      */
     protected boolean isTraceOn(MessageContext msgCtx) {
-        return definition != null &&
+        /*return definition != null &&
                ((definition.getTraceState() == SynapseConstants.TRACING_ON) ||
                 (definition.getTraceState() == SynapseConstants.TRACING_UNSET &&
-                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));
+                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));*/
+        return definition.getAspectConfiguration().isTracingEnabled();
     }
 
     /**

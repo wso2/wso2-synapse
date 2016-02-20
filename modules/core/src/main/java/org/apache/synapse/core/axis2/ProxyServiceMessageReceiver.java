@@ -57,7 +57,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
 
-        boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
+        boolean traceOn = proxy.getAspectConfiguration().isTracingEnabled();
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
         CustomLogSetter.getInstance().setLogAppender(proxy.getArtifactContainerName());
@@ -152,7 +152,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
 
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
-        synCtx.setTracingState(proxy.getTraceState());
+//        synCtx.setTracingState(proxy.getTraceState());
 
         try {
             if(synCtx.getEnvironment().isDebugEnabled()) {
@@ -299,7 +299,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
-        if (proxy.getTraceState() == SynapseConstants.TRACING_ON) {
+        if (proxy.getAspectConfiguration().isTracingEnabled()) {
             trace.error(msg);
         }
         throw new SynapseException(msg);
