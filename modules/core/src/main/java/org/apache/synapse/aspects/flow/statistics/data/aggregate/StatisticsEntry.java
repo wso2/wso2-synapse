@@ -77,6 +77,9 @@ public class StatisticsEntry {
 
 	private Map<String, PublishingPayload> payloadMap = new HashMap<>();
 
+	private boolean aspectConfigTraceEnabled = false;
+	private boolean aspectConfigStatsEnabled = false;
+
 
 	/**
 	 * This overloaded constructor will create the root statistic log og the Statistic Entry
@@ -91,6 +94,8 @@ public class StatisticsEntry {
 		statisticsLog.setMessageFlowId(statisticDataUnit.getStatisticId());
 		messageFlowLogs.add(statisticsLog);
 		openLogs.addFirst(messageFlowLogs.size() - 1);
+		aspectConfigTraceEnabled = statisticDataUnit.isAspectConfigTraceEnabled();
+		aspectConfigStatsEnabled = statisticDataUnit.isAspectConfigStatsEnabled();
 		if (log.isDebugEnabled()) {
 			log.debug("Created statistic Entry [Start|RootElement]|[ElementId|" + statisticDataUnit.getComponentId() +
 			          "]|[MsgId|" + statisticDataUnit.getCloneId() + "].");
@@ -445,6 +450,22 @@ public class StatisticsEntry {
 		}
 	}
 
+	public boolean isAspectConfigStatsEnabled() {
+		return aspectConfigStatsEnabled;
+	}
+
+	public void setAspectConfigStatsEnabled(boolean aspectConfigStatsEnabled) {
+		this.aspectConfigStatsEnabled = aspectConfigStatsEnabled;
+	}
+
+	public boolean isAspectConfigTraceEnabled() {
+		return aspectConfigTraceEnabled;
+	}
+
+	public void setAspectConfigTraceEnabled(boolean aspectConfigTraceEnabled) {
+		this.aspectConfigTraceEnabled = aspectConfigTraceEnabled;
+	}
+
 	/**
 	 * Updates parent logs from the specified element after an notification is received. It updates
 	 * all the ended parent logs from specified index.
@@ -735,7 +756,7 @@ public class StatisticsEntry {
 			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
 
 			// Skip the rest of things, if message tracing is disabled
-			if (!RuntimeStatisticCollector.isCollectingPayloads()) {
+			if (!RuntimeStatisticCollector.isCollectingPayloads() || !aspectConfigTraceEnabled) {
 				continue;
 			}
 

@@ -47,6 +47,8 @@ public class StatisticDataUnit {
     private Map<String, Object> contextPropertyMap;
     private Map<String, Object> transportPropertyMap;
     private String payload;
+    private boolean aspectConfigStatsEnabled = false;
+    private boolean aspectConfigTraceEnabled = false;
 
     public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
                              int cloneId, boolean isResponse, MessageContext messageContext,
@@ -54,7 +56,13 @@ public class StatisticDataUnit {
         this(statisticId, componentId, componentType, parentId, cloneId, isResponse, messageContext);
 
         if (RuntimeStatisticCollector.isCollectingPayloads() && shouldCaptureTracing(messageContext) && isAlteringContent) {
-            payload = messageContext.getEnvelope().toString();
+            try {
+                payload = messageContext.getEnvelope().toString();
+            } catch (Exception e) {
+                // SOAP envelop is not created yet
+                payload = "NONE";
+            }
+
         }
     }
 
@@ -82,6 +90,8 @@ public class StatisticDataUnit {
             this.transportPropertyMap = this.extractTransportProperties(messageContext);
         }
 
+        this.aspectConfigTraceEnabled = shouldCaptureTracing(messageContext);
+        this.aspectConfigStatsEnabled = shouldCaptureStats(messageContext);
     }
 
     public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
@@ -164,6 +174,22 @@ public class StatisticDataUnit {
 
     public void setPayload(String payload) {
         this.payload = payload;
+    }
+
+    public boolean isAspectConfigTraceEnabled() {
+        return aspectConfigTraceEnabled;
+    }
+
+    public void setAspectConfigTraceEnabled(boolean aspectConfigTraceEnabled) {
+        this.aspectConfigTraceEnabled = aspectConfigTraceEnabled;
+    }
+
+    public boolean isAspectConfigStatsEnabled() {
+        return aspectConfigStatsEnabled;
+    }
+
+    public void setAspectConfigStatsEnabled(boolean aspectConfigStatsEnabled) {
+        this.aspectConfigStatsEnabled = aspectConfigStatsEnabled;
     }
 
     /**
@@ -258,6 +284,18 @@ public class StatisticDataUnit {
         }
         else {
             return isCollectingTraces;
+        }
+    }
+
+
+    private boolean shouldCaptureStats(MessageContext synCtx) {
+        Boolean isCollectingStats = (Boolean) synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+
+        if (isCollectingStats == null) {
+            return false;
+        }
+        else {
+            return isCollectingStats;
         }
     }
 }
