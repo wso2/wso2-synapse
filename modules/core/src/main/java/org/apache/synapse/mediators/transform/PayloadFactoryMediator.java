@@ -322,15 +322,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 } else {
                     // No conversion required, as path evaluates to regular String.
                     replacementValue = replacementEntry.getKey();
+                    String trimmedReplacementValue = replacementValue.trim();
                     // This is to replace " with \" and \\ with \\\\
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
-                            (!replacementValue.startsWith("{") && !replacementValue.startsWith("["))) {
+                            (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = replacementValue
                                 .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
                                 .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES);
                     }
                     else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
-                            (!replacementValue.startsWith("{") && !replacementValue.startsWith("["))) {
+                            (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         // This is to handle only the string value
                         replacementValue = replacementValue.replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES);
                     }
