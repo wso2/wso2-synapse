@@ -243,6 +243,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public ProxyService(String name) {
         this.name = name;
         serviceLog = LogFactory.getLog(SynapseConstants.SERVICE_LOGGER_PREFIX + name);
+        aspectConfiguration = new AspectConfiguration(name);
     }
 
     /**
