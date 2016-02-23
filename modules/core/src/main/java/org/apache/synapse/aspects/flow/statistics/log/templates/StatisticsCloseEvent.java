@@ -56,8 +56,13 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 			statisticDataUnit.setClonePoint();
 		}
 
-		if (isAlteringContent) {
-			statisticDataUnit.setPayload(messageContext.getEnvelope().toString());
+		if (RuntimeStatisticCollector.isCollectingPayloads() && statisticDataUnit.isAspectConfigTraceEnabled() && isAlteringContent) {
+			try {
+				statisticDataUnit.setPayload(messageContext.getEnvelope().toString());
+			} catch (Exception e) {
+				// SOAP envelop is not created yet
+				statisticDataUnit.setPayload("NONE");
+			}
 		}
 	}
 
