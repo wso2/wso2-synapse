@@ -112,7 +112,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
-        reportStatistic(synCtx, null, true);
 
         if (key == null) {
 
@@ -120,6 +119,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             // mediation through this sequence
             Mediator errorHandlerMediator = null;
 
+            reportStatistic(synCtx, null, true);
             // Setting Required property to reportForComponent the sequence aspects
 
             try {
@@ -227,7 +227,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("End : Sequence key=<" + key + ">");
                 }
-                reportStatistic(synCtx, null, false); //end Statistics
                 return result;
             }
         }
@@ -516,7 +515,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     @Override
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        SequenceStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
-                                                              getAspectConfiguration(), isCreateLog);
+        if (key == null) {
+            SequenceStatisticCollector
+                    .reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
+                                                getAspectConfiguration(), isCreateLog);
+        }
     }
 }

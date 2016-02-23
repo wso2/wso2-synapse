@@ -95,6 +95,10 @@ public class StatisticsConstants {
 
 	public static final String FLOW_STATISTICS_ANY = "Other Type";
 
+	public static final int DEFAULT_MSG_ID = 0;
+
+	public static final String IMAGINARY_COMPONENT_ID = "ImaginaryName";
+
 	/**
 	 * Modes of closing statistic entry
 	 */

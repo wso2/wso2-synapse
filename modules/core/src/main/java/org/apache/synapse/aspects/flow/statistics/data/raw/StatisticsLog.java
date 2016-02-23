@@ -32,7 +32,7 @@ import java.util.Map;
 
 public class StatisticsLog {
 
-	private final int parentLevel;
+	private int parentLevel;
 
 	private final int parentMsgId;
 
@@ -91,6 +91,16 @@ public class StatisticsLog {
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 		this.beforePayload = statisticDataUnit.getPayload();
+	}
+
+	public StatisticsLog(ComponentType componentType, String componentId, int parentMsgId, int parentLevel) {
+		this.componentType = componentType;
+		this.componentId = componentId;
+		this.parent = null;
+		this.msgId = StatisticsConstants.DEFAULT_MSG_ID;
+		this.parentLevel = parentLevel;
+		this.parentMsgId = parentMsgId;
+		this.immediateChild = null;
 	}
 
 	public int getParentMsgId() {
@@ -259,6 +269,22 @@ public class StatisticsLog {
 				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
 			default:
 				return StatisticsConstants.FLOW_STATISTICS_ANY;
+		}
+	}
+
+	public void decrementParentLevel() {
+		this.parentLevel--;
+	}
+
+	public void decrementChildren() {
+		if (immediateChild != null) {
+			immediateChild--;
+		}
+
+		if (children.size() > 0) {
+			for (Integer child : children) {
+				child -= 1;
+			}
 		}
 	}
 }

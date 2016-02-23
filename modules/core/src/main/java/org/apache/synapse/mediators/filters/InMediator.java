@@ -121,4 +121,11 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         super.init(se);
     }
 
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        if (!messageContext.isResponse()) {
+            super.reportStatistic(messageContext, parentName, isCreateLog);
+        }
+    }
+
 }
