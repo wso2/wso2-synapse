@@ -30,7 +30,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.messageflowtracer.processors.MessageDataCollector;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
@@ -257,13 +256,6 @@ public interface SynapseEnvironment {
      * @return global timeout interval
      */
     public long getGlobalTimeout();
-
-    /**
-     * Get message flow data collector for message flow tracing
-     *
-     * @return MessageDataCollector instance
-     */
-    public MessageDataCollector getMessageDataCollector();
 
     /**
      * Whether debugging is enabled in the environment.

@@ -55,7 +55,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     /** Whether the deployed inbound endpoint is edited via the management console */
     private boolean isEdited;
     private AspectConfiguration aspectConfiguration;
-    private int traceState = SynapseConstants.TRACING_UNSET;
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
@@ -237,11 +236,4 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         return aspectConfiguration;
     }
 
-    public int getTraceState() {
-        return traceState;
-    }
-
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
 }

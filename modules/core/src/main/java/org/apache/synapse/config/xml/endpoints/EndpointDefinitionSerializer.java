@@ -32,13 +32,6 @@ public class EndpointDefinitionSerializer {
 
     public void serializeEndpointDefinition(EndpointDefinition endpointDefinition,
                                                  OMElement element) {
-        if (endpointDefinition.getTraceState() == SynapseConstants.TRACING_ON) {
-            element.addAttribute(fac.createOMAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME,
-                    null, XMLConfigConstants.TRACE_ENABLE));
-        } else if (endpointDefinition.getTraceState() == SynapseConstants.TRACING_OFF) {
-            element.addAttribute(fac.createOMAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME,
-                    null, XMLConfigConstants.TRACE_DISABLE));
-        }
 
         StatisticsConfigurable statisticsConfigurable =
                 endpointDefinition.getAspectConfiguration();
@@ -49,6 +42,14 @@ public class EndpointDefinitionSerializer {
             element.addAttribute(fac.createOMAttribute(
                     XMLConfigConstants.STATISTICS_ATTRIB_NAME, null,
                     XMLConfigConstants.STATISTICS_ENABLE));
+        }
+
+        if (statisticsConfigurable != null &&
+            statisticsConfigurable.isTracingEnabled()) {
+
+            element.addAttribute(fac.createOMAttribute(
+                    XMLConfigConstants.TRACE_ATTRIB_NAME, null,
+                    XMLConfigConstants.TRACE_ENABLE));
         }
 
         if (endpointDefinition.isUseSwa()) {

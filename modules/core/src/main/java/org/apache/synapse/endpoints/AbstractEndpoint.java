@@ -33,9 +33,7 @@ import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.EndpointStatisticCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -380,10 +378,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             synCtx.getEnvelope().build();
         }
 
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            this.setTraceFlow(synCtx, getReportingName());
-        }
-
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
@@ -556,10 +550,11 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if tracing should be performed
      */
     protected boolean isTraceOn(MessageContext msgCtx) {
-        return definition != null &&
+        /*return definition != null &&
                ((definition.getTraceState() == SynapseConstants.TRACING_ON) ||
                 (definition.getTraceState() == SynapseConstants.TRACING_UNSET &&
-                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));
+                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));*/
+        return definition.getAspectConfiguration().isTracingEnabled();
     }
 
     /**
@@ -621,13 +616,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
             AspectConfiguration oldConfiguration = definition.getAspectConfiguration();
             if (opName != null) {
+                AspectConfiguration newConfiguration = new AspectConfiguration(
+                        oldConfiguration.getId() + SynapseConstants.STATISTICS_KEY_SEPARATOR +
+                        opName);
                 if (oldConfiguration.isStatisticsEnable()) {
-                    AspectConfiguration newConfiguration = new AspectConfiguration(
-                            oldConfiguration.getId() + SynapseConstants.STATISTICS_KEY_SEPARATOR +
-                                    opName);
                     newConfiguration.enableStatistics();
                     StatisticsReporter.reportForComponent(synCtx, newConfiguration,
                             ComponentType.ENDPOINT);
+                }
+                if (oldConfiguration.isTracingEnabled()) {
+                    newConfiguration.enableTracing();
                 }
             } else {
                 StatisticsReporter.reportForComponent(synCtx, oldConfiguration,
@@ -807,10 +805,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void logSetter() {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
-    }
-
-    public String setTraceFlow(MessageContext msgCtx, String mediatorName) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName);
     }
 
     public String getReportingName() {

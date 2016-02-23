@@ -216,18 +216,6 @@ public class ProxyServiceSerializer {
             proxy.addChild(fac.createOMElement("enableSec", synNS));
         }        
 
-        int traceState = service.getTraceState();
-        String traceValue = null;
-        if (traceState == org.apache.synapse.SynapseConstants.TRACING_ON) {
-            traceValue = XMLConfigConstants.TRACE_ENABLE;
-        } else if (traceState == org.apache.synapse.SynapseConstants.TRACING_OFF) {
-            traceValue = XMLConfigConstants.TRACE_DISABLE;
-        }
-        if (traceValue != null) {
-            proxy.addAttribute(fac.createOMAttribute(
-                    XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS, traceValue));
-        }
-
         StatisticsConfigurable statisticsConfigurable =
                 service.getAspectConfiguration();
 
@@ -235,6 +223,11 @@ public class ProxyServiceSerializer {
             proxy.addAttribute(fac.createOMAttribute(
                     XMLConfigConstants.STATISTICS_ATTRIB_NAME, nullNS,
                     XMLConfigConstants.STATISTICS_ENABLE));
+        }
+        if (statisticsConfigurable != null && statisticsConfigurable.isTracingEnabled()) {
+            proxy.addAttribute(fac.createOMAttribute(
+                    XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS,
+                    XMLConfigConstants.TRACE_ENABLE));
         }
 
         if (parent != null) {

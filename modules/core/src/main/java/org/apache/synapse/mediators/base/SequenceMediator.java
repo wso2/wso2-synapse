@@ -28,8 +28,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.SequenceStatisticCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -117,10 +115,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         reportStatistic(synCtx, null, true);
 
         if (key == null) {
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, MessageFlowTracerConstants.COMPONENT_TYPE_SEQUENCE +
-                                                                                               (name == null ?
-                                                                                        this.sequenceType.name() :
-                                                                                        name));
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
@@ -523,6 +517,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     @Override
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         SequenceStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
-                                                              parentName, getAspectConfiguration(), isCreateLog);
+                                                              getAspectConfiguration(), isCreateLog);
     }
 }

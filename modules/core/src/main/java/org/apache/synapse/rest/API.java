@@ -26,8 +26,6 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -159,14 +157,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         this.fileName = fileName;
     }
 
-    public int getTraceState() {
-        return traceState;
-    }
-
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
-
     public void addResource(Resource resource) {
         DispatcherHelper dispatcherHelper = resource.getDispatcherHelper();
         if (dispatcherHelper != null) {
@@ -293,16 +283,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
-
-        boolean tracing = (traceState == SynapseConstants.TRACING_ON);
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled() & tracing) {
-            if (!synCtx.isResponse()) {
-                MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
-                                                                      synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
-                                                              synCtx.getMessageID());
-                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName());
-            }
-        }
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
@@ -486,7 +466,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
 
     private boolean trace() {
-        return traceState == SynapseConstants.TRACING_ON;
+        return this.aspectConfiguration.isTracingEnabled();
     }
 
     /**

@@ -47,7 +47,6 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -281,10 +280,6 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
 
         // clone the message context without cloning the SOAP envelope, for the mediation in iteration.
         MessageContext newCtx = MessageHelper.cloneMessageContext(synCtx, false);
-
-        if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)){
-            newCtx.setMessageFlowTracingState(SynapseConstants.TRACING_ON);
-        }
 
 		StatisticsRecord statRecord =
 		                              (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);

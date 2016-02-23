@@ -31,12 +31,12 @@ public class StatisticsConstants {
 	/**
 	 * Enable collecting message payloads
 	 */
-	public final static String COLLECT_MESSAGE_PAYLOADS = "mediation.flow.statistics.collect.payloads";
+	public final static String COLLECT_MESSAGE_PAYLOADS = "mediation.flow.statistics.tracer.collect.payloads";
 
 	/**
 	 * Enable collecting transport and message-context properties
 	 */
-	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.collect.properties";
+	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.tracer.collect.properties";
 
 	/**
 	 * Flow statistic queue size
@@ -72,6 +72,7 @@ public class StatisticsConstants {
 	 * Key to specify whether statistics should be reported
 	 */
 	public static final String FLOW_STATISTICS_IS_COLLECTED = "mediation.flow.statistics.collected";
+	public static final String FLOW_TRACE_IS_COLLECTED = "mediation.flow.trace.collected";
 
 	/**
 	 * Flow statistic default queue size

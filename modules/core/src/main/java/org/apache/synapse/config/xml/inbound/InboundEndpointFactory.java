@@ -105,9 +105,7 @@ public class InboundEndpointFactory {
             String tracingValue = tracing.getAttributeValue();
             if (tracingValue != null) {
                 if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
-                    inboundEndpoint.setTraceState(org.apache.synapse.SynapseConstants.TRACING_ON);
-                } else if (XMLConfigConstants.TRACE_DISABLE.equals(tracingValue)) {
-                    inboundEndpoint.setTraceState(org.apache.synapse.SynapseConstants.TRACING_OFF);
+                    aspectConfiguration.enableTracing();
                 }
             }
         }

@@ -38,12 +38,15 @@ public class APIStatisticCollector extends RuntimeStatisticCollector{
     public static void reportApiStatistics(MessageContext messageContext, String apiName,
                                            AspectConfiguration aspectConfiguration) {
         if (isStatisticsEnabled()) {
-            if (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable()) {
+            boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+            boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+
+            messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+            messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+
+            if (isCollectingStatistics) {
                 setStatisticsTraceId(messageContext);
                 createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false, true);
-                messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
-            } else {
-                messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
             }
         }
     }
