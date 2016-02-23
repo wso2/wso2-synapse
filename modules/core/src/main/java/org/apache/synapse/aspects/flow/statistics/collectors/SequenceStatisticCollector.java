@@ -26,52 +26,54 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class SequenceStatisticCollector extends RuntimeStatisticCollector {
 
-    private static final Log log = LogFactory.getLog(SequenceStatisticCollector.class);
-    /**
-     * Reports statistics for the Sequence.
-     *
-     * @param messageContext      Current MessageContext of the flow.
-     * @param sequenceName        Sequence name.
-     * @param aspectConfiguration Aspect Configuration for the Sequence.
-     * @param isCreateLog         It is statistic flow start or end.
-     */
-    public static void reportStatisticForSequence(MessageContext messageContext, String sequenceName,
-                                                  AspectConfiguration aspectConfiguration, boolean isCreateLog) {
-        if (isStatisticsEnabled()) {
-            Boolean isStatsAlreadyCollected =
-                    (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+	private static final Log log = LogFactory.getLog(SequenceStatisticCollector.class);
 
-            if (isStatsAlreadyCollected == null) {
-                boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
-                boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+	/**
+	 * Reports statistics for the Sequence.
+	 *
+	 * @param messageContext      Current MessageContext of the flow.
+	 * @param sequenceName        Sequence name.
+	 * @param aspectConfiguration Aspect Configuration for the Sequence.
+	 * @param isCreateLog         It is statistic flow start or end.
+	 */
+	public static void reportStatisticForSequence(MessageContext messageContext, String sequenceName,
+	                                              AspectConfiguration aspectConfiguration, boolean isCreateLog) {
+		if (isStatisticsEnabled()) {
+			Boolean isStatsAlreadyCollected =
+					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 
-                messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
-                messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+			if (isStatsAlreadyCollected == null || !isStatsAlreadyCollected) {
+				boolean isCollectingStatistics =
+						(aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+				boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
 
-                if (isCollectingStatistics) {
-                    if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && !isCreateLog) {
-                        log.error("Trying close statistic entry without Statistic ID");
-                        return;
-                    }
-                    setStatisticsTraceId(messageContext);
-                    createStatisticForSequence(messageContext, sequenceName, isCreateLog);
-                }
-            } else {
-                if ((messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) && isStatsAlreadyCollected) {
-                    createStatisticForSequence(messageContext, sequenceName, isCreateLog);
-                }
-            }
-        }
-    }
+				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+				messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
 
-    private static void createStatisticForSequence(MessageContext messageContext, String sequenceName,
-                                                     boolean isCreateLog) {
-        if (isCreateLog) {
-            createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, true, false,
-                                          false, true);
-        } else {
-            createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
-                                          false, true);
-        }
-    }
+				if (isCollectingStatistics) {
+					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && !isCreateLog) {
+						log.error("Trying close statistic entry without Statistic ID");
+						return;
+					}
+					setStatisticsTraceId(messageContext);
+					createStatisticForSequence(messageContext, sequenceName, isCreateLog, true);
+				}
+			} else {
+				if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
+					createStatisticForSequence(messageContext, sequenceName, isCreateLog, false);
+				}
+			}
+		}
+	}
+
+	private static void createStatisticForSequence(MessageContext messageContext, String sequenceName,
+	                                               boolean isCreateLog, boolean individualStatisticCollected) {
+		if (isCreateLog) {
+			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, true, false,
+			                              false, true, individualStatisticCollected);
+		} else {
+			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
+			                              false, true);
+		}
+	}
 }

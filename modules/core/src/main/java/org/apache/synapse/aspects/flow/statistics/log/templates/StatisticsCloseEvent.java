@@ -45,18 +45,13 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 				                      messageContext.getEnvironment(), messageContext);
 	}
 
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId,
-	                            boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
+	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, boolean isCloneLog,
+	                            boolean isAggregateLog, boolean isAlteringContent) {
 		this(messageContext, componentId, parentId);
-		if (isAggregateLog) {
-			statisticDataUnit.setAggregatePoint();
-		}
-
-		if (isCloneLog) {
-			statisticDataUnit.setClonePoint();
-		}
-
-		if (RuntimeStatisticCollector.isCollectingPayloads() && statisticDataUnit.isAspectConfigTraceEnabled() && isAlteringContent) {
+		statisticDataUnit.setAggregatePoint(isAggregateLog);
+		statisticDataUnit.setClonePoint(isCloneLog);
+		if (RuntimeStatisticCollector.isCollectingPayloads() && statisticDataUnit.isAspectConfigTraceEnabled() &&
+		    isAlteringContent) {
 			try {
 				statisticDataUnit.setPayload(messageContext.getEnvelope().toString());
 			} catch (Exception e) {

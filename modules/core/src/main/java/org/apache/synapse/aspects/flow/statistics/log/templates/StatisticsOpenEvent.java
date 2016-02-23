@@ -49,13 +49,17 @@ public class StatisticsOpenEvent implements StatisticsReportingEvent {
 	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
 	                           String parentId, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
 		this(messageContext, componentId, componentType, parentId, isAlteringContent);
-		if (isAggregateLog) {
-			statisticDataUnit.setAggregatePoint();
-		}
+		statisticDataUnit.setAggregatePoint(isAggregateLog);
+		statisticDataUnit.setClonePoint(isCloneLog);
+	}
 
-		if (isCloneLog) {
-			statisticDataUnit.setClonePoint();
-		}
+	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
+	                           String parentId, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent,
+	                           boolean isIndividualStatistic) {
+		this(messageContext, componentId, componentType, parentId, isAlteringContent);
+		statisticDataUnit.setAggregatePoint(isAggregateLog);
+		statisticDataUnit.setClonePoint(isCloneLog);
+		statisticDataUnit.setIsIndividualStatisticCollected(isIndividualStatistic);
 	}
 
 	@Override

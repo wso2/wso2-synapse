@@ -18,7 +18,6 @@
 
 package org.apache.synapse.aspects.flow.statistics.store;
 
-import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
 import java.util.LinkedList;
@@ -31,8 +30,6 @@ public class CompletedStatisticStore {
 
 	private final List<PublishingFlow> completedStatisticEntries;
 
-	private final List<EndpointStatisticLog> completedEndpointStatisticEntries = new LinkedList<>();
-
 	public List<PublishingFlow> getCompletedStatisticEntries() {
 		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
 		synchronized (completedStatisticEntries) {
@@ -42,12 +39,10 @@ public class CompletedStatisticStore {
 		return cloneOfCompletedStatisticEntries;
 	}
 
-
 	public CompletedStatisticStore() {
 		completedStatisticEntries = new LinkedList<PublishingFlow>();
 
 	}
-
 
 	public void putCompletedStatisticEntry(PublishingFlow publishingFlow) {
 		synchronized (completedStatisticEntries) {
@@ -57,22 +52,5 @@ public class CompletedStatisticStore {
 
 	public boolean isEmpty() {
 		return completedStatisticEntries.isEmpty();
-	}
-
-
-
-//	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
-//		List<EndpointStatisticLog> cloneOfCompletedEndpointEntries = new LinkedList<>();
-//		synchronized (completedEndpointStatisticEntries) {
-//			cloneOfCompletedEndpointEntries.addAll(completedEndpointStatisticEntries);
-//			completedEndpointStatisticEntries.clear();
-//		}
-//		return cloneOfCompletedEndpointEntries;
-//	}
-
-	public void putCompletedEndpointStatisticEntry(EndpointStatisticLog endpointStatisticLog) {
-		synchronized (completedEndpointStatisticEntries) {
-			completedEndpointStatisticEntries.add(endpointStatisticLog);
-		}
 	}
 }

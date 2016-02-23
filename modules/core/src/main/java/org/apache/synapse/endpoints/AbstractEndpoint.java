@@ -33,7 +33,6 @@ import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.EndpointStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -290,15 +289,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void send(MessageContext synCtx) {
 
         logSetter();
-        String endpointId = null;
-        if (isStatisticCollected()) {
-            endpointId = String.valueOf(RuntimeStatisticCollector.getComponentUniqueId(synCtx));
-            EndpointStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, true);
-        } else {
-            EndpointStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, true);
-        }
+
+        EndpointStatisticCollector.reportStatisticForEndpoint(synCtx, getReportingName(), isStatisticCollected(), true);
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -381,13 +373,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
-        if (isStatisticCollected()) {
-            EndpointStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, false);
-        } else {
-            EndpointStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
-        }
+        EndpointStatisticCollector
+                .reportStatisticForEndpoint(synCtx, getReportingName(), isStatisticCollected(), false);
     }
 
     /**
@@ -550,10 +537,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if tracing should be performed
      */
     protected boolean isTraceOn(MessageContext msgCtx) {
-        /*return definition != null &&
-               ((definition.getTraceState() == SynapseConstants.TRACING_ON) ||
-                (definition.getTraceState() == SynapseConstants.TRACING_UNSET &&
-                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));*/
         return definition.getAspectConfiguration().isTracingEnabled();
     }
 
@@ -816,8 +799,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     private boolean isStatisticCollected() {
-        return (RuntimeStatisticCollector.isStatisticsEnabled() && definition.getAspectConfiguration() != null &&
-                definition.getAspectConfiguration().isStatisticsEnable() &&
-                this.endpointName != null);
+        return (definition.getAspectConfiguration() != null &&
+                definition.getAspectConfiguration().isStatisticsEnable() && this.endpointName != null);
     }
 }

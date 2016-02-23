@@ -121,4 +121,10 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
         super.init(se);
     }
 
+    @Override
+    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+        if (messageContext.isResponse()) {
+            super.reportStatistic(messageContext, parentName, isCreateLog);
+        }
+    }
 }

@@ -23,7 +23,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.data.aggregate.EndpointStatisticEntry;
 import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
@@ -52,8 +51,6 @@ public abstract class RuntimeStatisticCollector {
 
 	protected static Map<String, StatisticsEntry> runtimeStatistics = new HashMap<>();
 
-	protected static Map<String, EndpointStatisticEntry> endpointStatistics = new HashMap<>();
-
 	private static boolean isStatisticsEnabled;
 
 	private static boolean isCollectingPayloads;
@@ -76,15 +73,15 @@ public abstract class RuntimeStatisticCollector {
 					                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
 					                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
 
-			isCollectingPayloads = Boolean.parseBoolean(
-					SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, String.valueOf(false)));
+			isCollectingPayloads = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
+					StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, String.valueOf(false)));
 
 			if (!isCollectingPayloads && log.isDebugEnabled()) {
-                log.debug("Payload collecting is not enabled in \'synapse.properties\' file.");
+				log.debug("Payload collecting is not enabled in \'synapse.properties\' file.");
 			}
 
-			isCollectingProperties = Boolean.parseBoolean(
-					SynapsePropertiesLoader.getPropertyValue(StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, String.valueOf(false)));
+			isCollectingProperties = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
+					StatisticsConstants.COLLECT_MESSAGE_PROPERTIES, String.valueOf(false)));
 
 			if (!isCollectingProperties && log.isDebugEnabled()) {
 				log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
@@ -124,151 +121,169 @@ public abstract class RuntimeStatisticCollector {
 		}
 	}
 
-    /**
-     * Removes specified continuation state for a message flow after all the processing that continuation entry
-     *
-     * @param statisticsTraceId message context
-     * @param messageId         message uuid
-     */
-    public static void removeContinuationState(String statisticsTraceId, String messageId) {
-        if (statisticsTraceId != null) {
-            if (runtimeStatistics.containsKey(statisticsTraceId)) {
-                runtimeStatistics.get(statisticsTraceId).removeContinuationEntry(messageId);
-                if (log.isDebugEnabled()) {
-                    log.debug("Removed continuation state from the statistic entry.");
-                }
-            }
-        }
-    }
+	/**
+	 * Removes specified continuation state for a message flow after all the processing that continuation entry
+	 *
+	 * @param statisticsTraceId message context
+	 * @param messageId         message uuid
+	 */
+	public static void removeContinuationState(String statisticsTraceId, String messageId) {
+		if (statisticsTraceId != null) {
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				runtimeStatistics.get(statisticsTraceId).removeContinuationEntry(messageId);
+				if (log.isDebugEnabled()) {
+					log.debug("Removed continuation state from the statistic entry.");
+				}
+			}
+		}
+	}
 
-    /**
-     * Ends statistic collection log
-     *
-     * @param statisticDataUnit     StatisticDataUnit containing id relevant for closing
-     * @param mode                  Mode of closing GRACEFULLY_CLOSE, ATTEMPT_TO_CLOSE or FORECEFULLY_CLOSE
-     */
-    public static void closeStatisticEntry(StatisticDataUnit statisticDataUnit, int mode) {
-        if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-            StatisticsEntry statisticsEntry = runtimeStatistics.get(statisticDataUnit.getStatisticId());
+	/**
+	 * Ends statistic collection log
+	 *
+	 * @param statisticDataUnit StatisticDataUnit containing id relevant for closing
+	 * @param mode              Mode of closing GRACEFULLY_CLOSE, ATTEMPT_TO_CLOSE or FORECEFULLY_CLOSE
+	 */
+	public static void closeStatisticEntry(StatisticDataUnit statisticDataUnit, int mode) {
+		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			StatisticsEntry statisticsEntry = runtimeStatistics.get(statisticDataUnit.getStatisticId());
 
-            if (StatisticsConstants.GRACEFULLY_CLOSE == mode) {
-                /**
-                 * Ends statistics collection log for the reported statistics component.
-                 */
-                boolean finished = statisticsEntry.closeLog(statisticDataUnit);
-                if (finished) {
-                    endMessageFlow(statisticDataUnit, statisticsEntry, false);
-                }
+			if (StatisticsConstants.GRACEFULLY_CLOSE == mode) {
+				/**
+				 * Ends statistics collection log for the reported statistics component.
+				 */
+				boolean finished = statisticsEntry.closeLog(statisticDataUnit);
+				if (finished) {
+					endMessageFlow(statisticDataUnit, statisticsEntry, false);
+				}
 
-            } else if (StatisticsConstants.ATTEMPT_TO_CLOSE == mode) {
-                /**
-                 * Check whether Statistics entry present for the message flow and if there is an entry try
-                 * to finish ending statistics collection for that entry.
-                 */
-                endMessageFlow(statisticDataUnit, statisticsEntry, false);
+			} else if (StatisticsConstants.ATTEMPT_TO_CLOSE == mode) {
+				/**
+				 * Check whether Statistics entry present for the message flow and if there is an entry try
+				 * to finish ending statistics collection for that entry.
+				 */
+				endMessageFlow(statisticDataUnit, statisticsEntry, false);
 
-            } else if (StatisticsConstants.FORECEFULLY_CLOSE == mode) {
-                /**
-                 * Close the statistic log after finishing the message flow forcefully. When we try to use this method to end
-                 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
-                 * will send the completed statistic entry for collection.
-                 */
-                endMessageFlow(statisticDataUnit, statisticsEntry, true);
+			} else if (StatisticsConstants.FORECEFULLY_CLOSE == mode) {
+				/**
+				 * Close the statistic log after finishing the message flow forcefully. When we try to use this method to end
+				 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
+				 * will send the completed statistic entry for collection.
+				 */
+				endMessageFlow(statisticDataUnit, statisticsEntry, true);
 
-            } else {
-                log.error("Invalid mode for closing statistic entry");
-            }
-        }
-    }
+			} else {
+				log.error("Invalid mode for closing statistic entry");
+			}
+		}
+	}
 
-    /**
-     * Put respective mediator to the open entries due to continuation call.
-     *
-     * @param statisticsTraceId Statistic Id for the message flow.
-     * @param messageId         message Id corresponding to continuation flow
-     * @param componentId       component name
-     */
-    public static void putComponentToOpenLogs(String statisticsTraceId, String messageId, String componentId) {
-        if (statisticsTraceId != null) {
-            if (runtimeStatistics.containsKey(statisticsTraceId)) {
-                if (runtimeStatistics.containsKey(statisticsTraceId)) {
-                    runtimeStatistics.get(statisticsTraceId).openLogForContinuation(messageId, componentId);
-                }
-            }
-        }
-    }
+	/**
+	 * Put respective mediator to the open entries due to continuation call.
+	 *
+	 * @param statisticsTraceId Statistic Id for the message flow.
+	 * @param messageId         message Id corresponding to continuation flow
+	 * @param componentId       component name
+	 */
+	public static void putComponentToOpenLogs(String statisticsTraceId, String messageId, String componentId) {
+		if (statisticsTraceId != null) {
+			if (runtimeStatistics.containsKey(statisticsTraceId)) {
+				if (runtimeStatistics.containsKey(statisticsTraceId)) {
+					runtimeStatistics.get(statisticsTraceId).openLogForContinuation(messageId, componentId);
+				}
+			}
+		}
+	}
 
-    /**
-     * Return unique ID in message flow for the component.
-     *
-     * @param synCtx Current MessageContext of the flow.
-     * @return Returns unique ID.
-     */
-    public static int getComponentUniqueId(MessageContext synCtx) {
-        StatisticMessageCountHolder statisticMessageCountHolder;
-        if (synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER) != null) {
-            statisticMessageCountHolder = (StatisticMessageCountHolder) synCtx
-                    .getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
-        } else {
-            statisticMessageCountHolder = new StatisticMessageCountHolder();
-            synCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, statisticMessageCountHolder);
-        }
-        return statisticMessageCountHolder.incrementAndGetComponentId();
-    }
+	/**
+	 * Return unique ID in message flow for the component.
+	 *
+	 * @param synCtx Current MessageContext of the flow.
+	 * @return Returns unique ID.
+	 */
+	public static int getComponentUniqueId(MessageContext synCtx) {
+		StatisticMessageCountHolder statisticMessageCountHolder;
+		if (synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER) != null) {
+			statisticMessageCountHolder = (StatisticMessageCountHolder) synCtx
+					.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
+		} else {
+			statisticMessageCountHolder = new StatisticMessageCountHolder();
+			synCtx.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, statisticMessageCountHolder);
+		}
+		return statisticMessageCountHolder.incrementAndGetComponentId();
+	}
 
-    /**
-     * Returns whether statistics collection is enabled globally for the esb as specified in the
-     * synapse.properties file.
-     *
-     * @return true if statistics collection is enabled
-     */
-    public static boolean isStatisticsEnabled() {
-        return isStatisticsEnabled;
-    }
+	/**
+	 * Returns whether statistics collection is enabled globally for the esb as specified in the
+	 * synapse.properties file.
+	 *
+	 * @return true if statistics collection is enabled
+	 */
+	public static boolean isStatisticsEnabled() {
+		return isStatisticsEnabled;
+	}
 
-    /**
-     * Return whether collecting payloads is enabled
-     *
-     * @return true if need to collect payloads
-     */
-    public static boolean isCollectingPayloads() {
-        return isStatisticsEnabled & isCollectingPayloads;
-    }
+	/**
+	 * Return whether collecting payloads is enabled
+	 *
+	 * @return true if need to collect payloads
+	 */
+	public static boolean isCollectingPayloads() {
+		return isStatisticsEnabled & isCollectingPayloads;
+	}
 
-    /**
-     * Return whether collecting message-properties is enabled
-     *
-     * @return true if need to collect message-properties
-     */
-    public static boolean isCollectingProperties() {
-        return isStatisticsEnabled & isCollectingProperties;
-    }
+	/**
+	 * Return whether collecting message-properties is enabled
+	 *
+	 * @return true if need to collect message-properties
+	 */
+	public static boolean isCollectingProperties() {
+		return isStatisticsEnabled & isCollectingProperties;
+	}
 
-    /**
-     * Stops the MessageDataStore execution
-     */
-    public static void stopConsumer() {
-        if (isStatisticsEnabled) {
-            messageDataStore.setStopped();
-        }
-    }
+	/**
+	 * Stops the MessageDataStore execution
+	 */
+	public static void stopConsumer() {
+		if (isStatisticsEnabled) {
+			messageDataStore.setStopped();
+		}
+	}
 
-    /**
-     * Creating Statistic Logs to report statistic events
-     */
-    protected static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
-                                                        ComponentType componentType, String parentName,
-                                                        boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
-        StatisticsReportingEvent statisticLog;
-        if (isCreateLog) {
-            statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName,
-                                                   isCloneLog, isAggregateLog, isAlteringContent);
-        } else {
-            statisticLog = new StatisticsCloseEvent(messageContext, componentName, parentName,
-                                                    isCloneLog, isAggregateLog, isAlteringContent);
-        }
-        messageDataStore.enqueue(statisticLog);
-    }
+	/**
+	 * Creating Statistic Logs to report statistic events
+	 */
+	protected static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
+	                                                    ComponentType componentType, String parentName,
+	                                                    boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog,
+	                                                    boolean isAlteringContent) {
+		StatisticsReportingEvent statisticLog;
+		if (isCreateLog) {
+			statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName, isCloneLog,
+			                                       isAggregateLog, isAlteringContent);
+		} else {
+			statisticLog =
+					new StatisticsCloseEvent(messageContext, componentName, parentName, isCloneLog, isAggregateLog,
+					                         isAlteringContent);
+		}
+		messageDataStore.enqueue(statisticLog);
+	}
+
+	protected static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
+	                                                    ComponentType componentType, String parentName,
+	                                                    boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog,
+	                                                    boolean isAlteringContent, boolean isIndividualCollection) {
+		StatisticsReportingEvent statisticLog;
+		if (isCreateLog) {
+			statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName, isCloneLog,
+			                                       isAggregateLog, isAlteringContent, isIndividualCollection);
+		} else {
+			statisticLog =
+					new StatisticsCloseEvent(messageContext, componentName, parentName, isCloneLog, isAggregateLog,
+					                         isAlteringContent);
+		}
+		messageDataStore.enqueue(statisticLog);
+	}
 
 	protected static void createLogForFinalize(MessageContext messageContext) {
 		StatisticsReportingEvent statisticsReportingEvent;
@@ -291,28 +306,27 @@ public abstract class RuntimeStatisticCollector {
 		return (statID != null && isStatCollected != null && isStatCollected && isStatisticsEnabled);
 	}
 
-
-    /**
-     * End the statistics collection for the message flow. If entry is successfully completed ending
-     * its statistics collection statistics store is updated with new statistics data. Then entry
-     * is removed from the running statistic map.
-     *
-     * @param statisticDataUnit Statistics raw data object.
-     * @param statisticsEntry   Statistic entry for the message flow.
-     * @param closeForceFully   Whether to close statistics forcefully.
-     */
-    private synchronized static void endMessageFlow(StatisticDataUnit statisticDataUnit,
-                                                    StatisticsEntry statisticsEntry, boolean closeForceFully) {
-        boolean isMessageFlowEnded = statisticsEntry.endAll(statisticDataUnit.getTime(), closeForceFully);
-        if (isMessageFlowEnded) {
-            if (log.isDebugEnabled()) {
-                log.debug("Statistic collection is ended for the message flow with statistic " +
-                          "trace Id :" + statisticDataUnit.getStatisticId());
-            }
-            statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
-                    .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
-            runtimeStatistics.remove(statisticDataUnit.getStatisticId());
-        }
-    }
+	/**
+	 * End the statistics collection for the message flow. If entry is successfully completed ending
+	 * its statistics collection statistics store is updated with new statistics data. Then entry
+	 * is removed from the running statistic map.
+	 *
+	 * @param statisticDataUnit Statistics raw data object.
+	 * @param statisticsEntry   Statistic entry for the message flow.
+	 * @param closeForceFully   Whether to close statistics forcefully.
+	 */
+	private synchronized static void endMessageFlow(StatisticDataUnit statisticDataUnit,
+	                                                StatisticsEntry statisticsEntry, boolean closeForceFully) {
+		boolean isMessageFlowEnded = statisticsEntry.endAll(statisticDataUnit.getTime(), closeForceFully);
+		if (isMessageFlowEnded) {
+			if (log.isDebugEnabled()) {
+				log.debug("Statistic collection is ended for the message flow with statistic " +
+				          "trace Id :" + statisticDataUnit.getStatisticId());
+			}
+			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
+			                 .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
+			runtimeStatistics.remove(statisticDataUnit.getStatisticId());
+		}
+	}
 
 }
