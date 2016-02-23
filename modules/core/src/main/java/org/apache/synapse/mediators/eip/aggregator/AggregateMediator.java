@@ -33,13 +33,11 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.AggregateMediatorStatisticCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
@@ -544,22 +542,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 handleException("Enclosing Element property: " +
                                 enclosingElementPropertyName + " not found ", newCtx);
             }
-        }
-
-        if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
-            List<String> newMessageFlowTrace = new ArrayList<String>();
-            String newParentString = "";
-            for (MessageContext synCtx : aggregate.getMessages()) {
-                List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
-                if (null != messageFlowTrace) {
-                    newMessageFlowTrace.addAll(messageFlowTrace);
-                }
-                newParentString += (String) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT) + ",";
-            }
-            newCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlowTrace);
-
-            newParentString = (newParentString.length()>0 ? newParentString.substring(0, newParentString.length()-1) : "");
-            newCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT, newParentString);
         }
 
         return newCtx;

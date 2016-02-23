@@ -30,9 +30,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.collectors.ProxyStatisticCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -118,20 +116,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 }
                 return;
             }
-        }
-
-        //trace message flow
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled() && traceOn) {
-            if (mc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
-                MessageFlowTracingDataCollector.setEntryPoint(synCtx, (String) mc.getProperty
-                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE), (String) mc.getProperty
-                        (MessageFlowTracerConstants.MESSAGE_FLOW_ID));
-            } else {
-                MessageFlowTracingDataCollector.setEntryPoint(synCtx,
-                                                              MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name,
-                                                              synCtx.getMessageID());
-            }
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name);
         }
 
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();

@@ -43,11 +43,8 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.collectors.InboundEPStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.config.SynapsePropertiesLoader;
-import org.apache.synapse.messageflowtracer.processors.MessageDataCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -128,8 +125,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     /** Unavailable Artifacts referred in the configuration */
     private List<String> unavailableArtifacts = new ArrayList<String>();
 
-    private MessageDataCollector messageDataCollector;
-
     /** Debug mode is enabled/disabled*/
     private boolean isDebugEnabled = false;
 
@@ -188,9 +183,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         restHandler = new RESTRequestHandler();
 
         synapseHandlers = SynapseHandlersLoader.loadHandlers();
-
-        messageDataCollector = new MessageDataCollector(Integer.parseInt(SynapsePropertiesLoader.getPropertyValue
-                (MessageFlowTracerConstants.MESSAGE_FLOW_TRACE_QUEUE_SIZE, MessageFlowTracerConstants.DEFAULT_QUEUE_SIZE)));
 
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
 
@@ -317,12 +309,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                     }
 
 
-                    if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
-                        MessageFlowTracingDataCollector.setEntryPoint(synCtx,
-                                                                      MessageFlowTracerConstants.ENTRY_TYPE_MAIN_SEQ,
-                                                                      synCtx.getMessageID());
-                    }
-
                     return synCtx.getMainSequence().mediate(synCtx);
                 }
             }
@@ -394,12 +380,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
 
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
-            MessageFlowTracingDataCollector.setEntryPoint(synCtx,
-                                                          MessageFlowTracerConstants.ENTRY_TYPE_INBOUND_ENDPOINT +
-                                                          synCtx.getProperty("inbound.endpoint.name"),
-                                                          synCtx.getMessageID());
-        }
 //        boolean inboundStatistics = false;
         String inboundName = null;
         AspectConfiguration inboundAspectConfiguration = null;
@@ -1130,14 +1110,4 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         this.isDebugEnabled = isDebugEnabled;
     }
 
-    /**
-     * method to get the reference to messageFlowDataCollector instance which collects tracing data in synapse
-     * kept in environment level, made available who ever has access to message context will be able to
-     * get access to the messageFlowDataCollector
-     *
-     * @return messageFlowDataCollector instance
-     */
-    public MessageDataCollector getMessageDataCollector() {
-        return this.messageDataCollector;
-    }
 }

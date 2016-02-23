@@ -24,7 +24,6 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
@@ -80,9 +79,6 @@ public abstract class AbstractListMediator extends AbstractMediator
                 Mediator mediator = mediators.get(i);
                 mediator.reportStatistic(synCtx, null, true);
                 synCtx.setTracingState(myEffectiveTraceState);
-                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                    mediator.setTraceFlow(synCtx, mediator);
-                }
                 if (!mediator.mediate(synCtx)) {
                     mediator.reportStatistic(synCtx, null, false);
                     returnVal = false;

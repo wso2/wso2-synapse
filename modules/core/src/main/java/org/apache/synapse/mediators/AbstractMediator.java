@@ -29,10 +29,8 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -461,10 +459,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public String getMediatorName(){
         String cls = getClass().getName();
         return cls.substring(cls.lastIndexOf(".") + 1);
-    }
-
-    public String setTraceFlow(MessageContext msgCtx, Mediator mediator) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, MessageFlowTracerConstants.COMPONENT_TYPE_MEDIATOR + mediator.getMediatorName());
     }
 
     /**

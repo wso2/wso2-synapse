@@ -25,9 +25,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -208,9 +206,6 @@ public class StatisticDataUnit {
         }
 
         // Remove message-flow-tracer properties
-        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_PARENT);
-        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_INCREMENT_ID);
-        propertyMap.remove(MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE);
         propertyMap.remove(SynapseConstants.STATISTICS_STACK);
 
         return propertyMap;

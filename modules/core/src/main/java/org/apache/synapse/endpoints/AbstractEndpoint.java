@@ -33,9 +33,7 @@ import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.EndpointStatisticCollector;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -378,10 +376,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                                       "sending, since it is explicitly set");
             }
             synCtx.getEnvelope().build();
-        }
-
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            this.setTraceFlow(synCtx, getReportingName());
         }
 
         // Send the message through this endpoint
@@ -811,10 +805,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public void logSetter() {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
-    }
-
-    public String setTraceFlow(MessageContext msgCtx, String mediatorName) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName);
     }
 
     public String getReportingName() {
