@@ -537,7 +537,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if tracing should be performed
      */
     protected boolean isTraceOn(MessageContext msgCtx) {
-        return definition.getAspectConfiguration().isTracingEnabled();
+        return (definition.getAspectConfiguration() != null && definition.getAspectConfiguration().isTracingEnabled());
     }
 
     /**
