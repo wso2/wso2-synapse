@@ -325,6 +325,8 @@ public abstract class RuntimeStatisticCollector {
 			}
 			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
 			                 .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
+			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore().putCompletedStatisticEntryForTesting(
+					statisticsEntry.getMessageFlowLogsForStatisticTesting());
 			runtimeStatistics.remove(statisticDataUnit.getStatisticId());
 		}
 	}

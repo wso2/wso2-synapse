@@ -18,6 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.store;
 
+import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
 import java.util.LinkedList;
@@ -29,6 +31,7 @@ import java.util.List;
 public class CompletedStatisticStore {
 
 	private final List<PublishingFlow> completedStatisticEntries;
+	private final List<List<StatisticsLog>> completedEndpointStatisticEntriesForTesting = new LinkedList<>();
 
 	public List<PublishingFlow> getCompletedStatisticEntries() {
 		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
@@ -37,6 +40,25 @@ public class CompletedStatisticStore {
 			completedStatisticEntries.clear();
 		}
 		return cloneOfCompletedStatisticEntries;
+	}
+
+	public List<List<StatisticsLog>> getCompletedStatisticEntriesForTesting() {
+		List<List<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
+		synchronized (completedEndpointStatisticEntriesForTesting) {
+			cloneOfCompletedStatisticEntries.addAll(completedEndpointStatisticEntriesForTesting);
+			completedEndpointStatisticEntriesForTesting.clear();
+		}
+		return cloneOfCompletedStatisticEntries;
+	}
+
+	public void putCompletedStatisticEntryForTesting(List<StatisticsLog> statisticsLogs) {
+		synchronized (completedEndpointStatisticEntriesForTesting) {
+			completedEndpointStatisticEntriesForTesting.add(statisticsLogs);
+		}
+	}
+
+	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
+		return null;
 	}
 
 	public CompletedStatisticStore() {
