@@ -37,7 +37,7 @@ public class ThrottleMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testThrottleMediatorSerializationSenarioOne() throws Exception {
-        String inputXml = "<throttle id=\"A\" xmlns=\"http://ws.apache.org/ns/synapse\" >" +
+        String inputXml = "<throttle id=\"A\" xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
                 "<policy key=\"thottleKey\"/></throttle>";
         assertTrue(serialization(inputXml, throttleMediatorFactory, throttleMediatorSerializer));
         assertTrue(serialization(inputXml, throttleMediatorSerializer));

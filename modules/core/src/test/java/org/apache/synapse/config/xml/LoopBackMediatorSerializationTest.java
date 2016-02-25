@@ -31,7 +31,7 @@ public class LoopBackMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testRespondMediatorSerializationOne() throws Exception {
-        String inputXml = "<loopback xmlns=\"http://ws.apache.org/ns/synapse\" />";
+        String inputXml = "<loopback xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\"/>";
         assertTrue(serialization(inputXml, loopBackMediatorFactory, loopBackMediatorSerializer));
         assertTrue(serialization(inputXml, loopBackMediatorSerializer));
     }

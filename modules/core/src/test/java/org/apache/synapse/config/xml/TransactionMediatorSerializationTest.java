@@ -31,7 +31,7 @@ public class TransactionMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testTransactionMediatorSerializationSenarioOne() throws Exception {
-        String inputXml = "<transaction action=\"new\" xmlns=\"http://ws.apache.org/ns/synapse\" />";
+        String inputXml = "<transaction action=\"new\" xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\"/>";
         assertTrue(serialization(inputXml, transactionMediatorFactory,
                 transactionMediatorSerializer));
         assertTrue(serialization(inputXml, transactionMediatorSerializer));

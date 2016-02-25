@@ -34,21 +34,22 @@ public class AggregateMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testAggregateMediatorSerialization() {
-        String inputXml = "<aggregate xmlns=\"http://ws.apache.org/ns/synapse\">" +
+        String inputXml = "<aggregate xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"14572\">" +
                           "<correlateOn expression=\"get-property('To')\" /><completeCondition timeout=\"10\">" +
-                          "<messageCount min=\"1\" max=\"10\" /></completeCondition><onComplete " +
-                          "expression=\"get-property('To')\"><send /></onComplete></aggregate>";
+                          "<messageCount min=\"1\" max=\"10\" />" +
+                          "</completeCondition><onComplete expression=\"get-property('To')\">" +
+                          "<send statisticId=\"14763\" />" +
+                          "</onComplete></aggregate>";
         assertTrue(serialization(inputXml, aggregateMediatorFactory, aggregateMediatorSerializer));
         assertTrue(serialization(inputXml, aggregateMediatorSerializer));
     }
 
     public void testAggregateMediatorSerializationWithComments() {
-        String inputXml = "<aggregate xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                          "<!--TestComment-->" +
+        String inputXml = "<aggregate xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"213296\">" +
                           "<correlateOn expression=\"get-property('To')\" /><completeCondition timeout=\"10\">" +
-                          "<messageCount min=\"1\" max=\"10\" /></completeCondition><onComplete expression=\"get-property('To')\">" +
-                          "<!--TestComment--><send />" +
-                          "</onComplete></aggregate>";
+                          "<messageCount min=\"1\" max=\"10\" /></completeCondition>" +
+                          "<onComplete expression=\"get-property('To')\"><!--TestComment-->" +
+                          "<send statisticId=\"213362\" /></onComplete><!--TestComment--></aggregate>";
         assertTrue(serialization(inputXml, aggregateMediatorFactory, aggregateMediatorSerializer));
         assertTrue(serialization(inputXml, aggregateMediatorSerializer));
 

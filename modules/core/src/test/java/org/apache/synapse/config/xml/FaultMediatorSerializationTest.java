@@ -70,14 +70,14 @@ public class FaultMediatorSerializationTest extends AbstractTestCase {
 
     private String getXmlOfMediatorForSOAP11(String version, String attrOfCode, String attrOfReasion
             , String role, String details) throws Exception {
-        return "<makefault  version=\"" + version + "\" xmlns=\"http://ws.apache.org/ns/synapse\"><code value=\"" + attrOfCode + "\" xmlns:ns2=\"http://ws.apache.org/ns/synapse\"/><reason value=\"" + attrOfReasion + "\"/>" +
+        return "<makefault statisticId=\"186104\"  version=\"" + version + "\" xmlns=\"http://ws.apache.org/ns/synapse\"><code value=\"" + attrOfCode + "\" xmlns:ns2=\"http://ws.apache.org/ns/synapse\"/><reason value=\"" + attrOfReasion + "\"/>" +
                 "<role>" + role + "</role><detail>" + details + "</detail></makefault>";
 
     }
 
     private String getXmlOfMediatorForSOAP12(String version, String attrOfCode, String attrOfReasion
             , String node, String role, String details, String response) throws Exception {
-        return "<makefault xmlns=\"http://ws.apache.org/ns/synapse\" version=\"" + version + "\" response=\"" + response + "\"><code value=\"" + attrOfCode + "\" xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\"/><reason value=\"" + attrOfReasion + "\"/>" +
+        return "<makefault statisticId=\"186104\" xmlns=\"http://ws.apache.org/ns/synapse\" version=\"" + version + "\" response=\"" + response + "\"><code value=\"" + attrOfCode + "\" xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\"/><reason value=\"" + attrOfReasion + "\"/>" +
                 "<node>" + node + "</node><role>" + role + "</role><detail>" + details + "</detail></makefault>";
 
     }
