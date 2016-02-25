@@ -101,7 +101,7 @@ public class StatisticsConstants {
 
 	public static final String IMAGINARY_COMPONENT_ID = "ImaginaryName";
 
-	public static final String UNIQUE_STATISTIC_REPORTING_ID = "UniqueId";
+	public static final String UNIQUE_STATISTIC_REPORTING_ID = "id";
 
 	public static final QName UNIQUE_ID = new QName(UNIQUE_STATISTIC_REPORTING_ID);
 
