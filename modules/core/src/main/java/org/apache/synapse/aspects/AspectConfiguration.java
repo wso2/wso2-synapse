@@ -37,7 +37,7 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
     private String id;
 
     /* Unique Identification number to identify each component in the configuration */
-    private String uniqueId;
+    private String uniqueId = null;
 
     public AspectConfiguration(String id) {
         this.id = id;
