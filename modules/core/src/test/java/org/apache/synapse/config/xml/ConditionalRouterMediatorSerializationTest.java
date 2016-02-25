@@ -30,43 +30,45 @@ public class ConditionalRouterMediatorSerializationTest extends AbstractTestCase
         factory = new ConditionalRouterMediatorFactory();
     }
 
-    public void testRouterMediatorSerializationSenarioOne() throws Exception {
-        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<conditionalRoute><condition><equal type=\"url\" value=\"http://localhost:9000.*\"/></condition>" +
-                "<target><sequence><log level=\"full\"/></sequence></target></conditionalRoute>" +
-                "</conditionalRouter>";
+    public void testRouterMediatorSerializationScenarioOne() throws Exception {
+        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
+                          "<conditionalRoute><condition><equal type=\"url\" value=\"http://localhost:9000.*\" />" +
+                          "</condition><target><sequence statisticId=\"86116\">" +
+                          "<log statisticId=\"186215\" level=\"full\" /></sequence></target>" +
+                          "</conditionalRoute></conditionalRouter>";
         
         assertTrue(serialization(inputXml, factory, serializer));
         assertTrue(serialization(inputXml, serializer));
     }
 
-    public void testRouterMediatorSerializationSenarioTwo() throws Exception {
-        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<conditionalRoute><condition><and ><equal type=\"url\" value=\"http://localhost:9000.*\"/>" +
-                "<match type=\"url\" regex=\"http://localhost:9000.*\"/></and></condition>" +
-                "<target><sequence><log level=\"full\"/></sequence></target></conditionalRoute>" +
-                "</conditionalRouter>";
+    public void testRouterMediatorSerializationScenarioTwo() throws Exception {
+        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"41112\">" +
+                          "<conditionalRoute><condition><and><equal type=\"url\" value=\"http://localhost:9000.*\" />" +
+                          "<match type=\"url\" regex=\"http://localhost:9000.*\" /></and></condition><target>" +
+                          "<sequence statisticId=\"251153\"><log statisticId=\"51156\" level=\"full\" />" +
+                          "</sequence></target></conditionalRoute></conditionalRouter>";
 
         assertTrue(serialization(inputXml, factory, serializer));
         assertTrue(serialization(inputXml, serializer));
     }
 
-    public void testRouterMediatorSerializationSenarioThree() throws Exception {
-        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<conditionalRoute><condition><or><equal type=\"url\" value=\"http://localhost:9000.*\"/>" +
-                "<match type=\"url\" regex=\"http://localhost:9000.*\"/></or></condition><target>" +
-                "<sequence><log level=\"full\"/></sequence></target></conditionalRoute>" +
-                "</conditionalRouter>";
+    public void testRouterMediatorSerializationScenarioThree() throws Exception {
+        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"1334919\">" +
+                          "<conditionalRoute><condition><or><equal type=\"url\" value=\"http://localhost:9000.*\" />" +
+                          "<match type=\"url\" regex=\"http://localhost:9000.*\" /></or></condition><target>" +
+                          "<sequence statisticId=\"34938\"><log statisticId=\"334941\" level=\"full\" /></sequence>" +
+                          "</target></conditionalRoute></conditionalRouter>";
 
         assertTrue(serialization(inputXml, factory, serializer));
         assertTrue(serialization(inputXml, serializer));
     }
 
-    public void testRouterMediatorSerializationSenarioFour() throws Exception {
-        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<conditionalRoute><condition><not><equal type=\"url\" value=\"http://localhost:9000.*\"/></not>" +
-                "</condition><target><sequence><log level=\"full\"/></sequence></target></conditionalRoute>" +
-                "</conditionalRouter>";
+    public void testRouterMediatorSerializationScenarioFour() throws Exception {
+        String inputXml = "<conditionalRouter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"406413\">" +
+                          "<conditionalRoute><condition><not><equal type=\"url\" value=\"http://localhost:9000.*\" />" +
+                          "</not></condition><target><sequence statisticId=\"06431\">" +
+                          "<log statisticId=\"406434\" level=\"full\" /></sequence>" +
+                          "</target></conditionalRoute></conditionalRouter>";
 
         assertTrue(serialization(inputXml, factory, serializer));
         assertTrue(serialization(inputXml, serializer));

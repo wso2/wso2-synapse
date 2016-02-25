@@ -27,7 +27,7 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
 
     public void testAddressEndpointScenarioOne() throws Exception {
         String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" />" +
+                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" statisticId=\"186104\"/>" +
                 "</endpoint>" ;
 
         OMElement inputElement = createOMElement(inputXML);
@@ -43,7 +43,7 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
         String inputXML =
                 "<endpoint name=\"testEndpoint\" onError=\"foo\" xmlns=" +
                         "\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
+                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" statisticId=\"186104\">" +
                 "</address>"+
                 "</endpoint>" ;
 
@@ -57,7 +57,7 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
 
     public void testAddressEndpointScenarioThree() throws Exception {
         String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
+                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" statisticId=\"186104\">" +
                 "<markForSuspension>" +
                 "<errorCodes>101507,101508</errorCodes>" +
                 "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +
@@ -87,7 +87,7 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
     public void testAddressEndpointScenarioFour() throws Exception {
          String inputXML =
                 "<endpoint xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
+                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" statisticId=\"186104\">" +
                 "</address>"+
                 "</endpoint>" ;
 
@@ -102,7 +102,7 @@ public class AddressEndpointSerializationTest extends AbstractTestCase {
 
     public void testAddressEndpointScenarioDe() throws Exception {
         String inputXML = "<endpoint  xmlns=\"http://ws.apache.org/ns/synapse\">" +
-                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" >" +
+                "<address uri=\"http://localhost:9000/services/SimpleStockQuoteService\" statisticId=\"186104\">" +
                 "<markForSuspension>" +
                 "<errorCodes>101507,101508</errorCodes>" +
                 "<retriesBeforeSuspension>3</retriesBeforeSuspension>" +

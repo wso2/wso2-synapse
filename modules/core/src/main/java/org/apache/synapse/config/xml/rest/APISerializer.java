@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml.rest;
 import org.apache.axiom.om.*;
 import org.apache.axis2.Constants;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.rest.API;
@@ -59,6 +60,11 @@ public class APISerializer {
 
         if (statisticsConfigurable != null && statisticsConfigurable.isTracingEnabled()) {
             apiElt.addAttribute(XMLConfigConstants.TRACE_ATTRIB_NAME, XMLConfigConstants.TRACE_ENABLE, null);
+        }
+
+        if (statisticsConfigurable != null) {
+            apiElt.addAttribute(StatisticsConstants.UNIQUE_STATISTIC_REPORTING_ID, statisticsConfigurable.getUniqueId(),
+                                null);
         }
 
         Resource[] resources = api.getResources();

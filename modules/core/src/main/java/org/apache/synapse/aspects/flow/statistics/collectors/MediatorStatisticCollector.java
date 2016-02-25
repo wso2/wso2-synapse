@@ -25,45 +25,45 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEven
 
 public class MediatorStatisticCollector extends RuntimeStatisticCollector {
 
-    /**
-     * Report statistics for the Component
-     *
-     * @param messageContext Current MessageContext of the flow.
-     * @param componentName  Component name.
-     * @param componentType  Component type of the component.
-     * @param parentName     Parent of the component.
-     * @param isCreateLog    It is statistic flow start or end.
-     * @param isCloneLog     is this a clone incident
-     * @param isAggregateLog is this a Aggregate incident
-     */
-    public static void reportStatisticForMessageComponent(MessageContext messageContext, String componentName,
-                                                          ComponentType componentType, String parentName,
-                                                          boolean isCreateLog, boolean isCloneLog,
-                                                          boolean isAggregateLog, boolean isAlteringContent) {
-        if (shouldReportStatistic(messageContext)) {
-            createLogForMessageCheckpoint(messageContext, componentName, componentType, parentName, isCreateLog,
-                                          isCloneLog, isAggregateLog, isAlteringContent);
-        }
-    }
+	/**
+	 * Report statistics for the Component
+	 *
+	 * @param messageContext Current MessageContext of the flow.
+	 * @param componentName  Component name.
+	 * @param componentType  Component type of the component.
+	 * @param parentName     Parent of the component.
+	 * @param isCreateLog    It is statistic flow start or end.
+	 * @param isCloneLog     is this a clone incident
+	 * @param isAggregateLog is this a Aggregate incident
+	 */
+	public static void reportStatisticForMessageComponent(MessageContext messageContext, String reportingId,
+	                                                      String componentName, ComponentType componentType,
+	                                                      String parentName, boolean isCreateLog, boolean isCloneLog,
+	                                                      boolean isAggregateLog, boolean isAlteringContent) {
+		if (shouldReportStatistic(messageContext)) {
+			createLogForMessageCheckpoint(messageContext, reportingId, componentName, componentType, parentName,
+			                              isCreateLog, isCloneLog, isAggregateLog, isAlteringContent);
+		}
+	}
 
-    public static void openLogForContinuation(MessageContext messageContext, String componentId) {
-        if (shouldReportStatistic(messageContext)) {
-            StatisticsReportingEvent statisticsReportingEvent;
-            statisticsReportingEvent = new ParentReopenEvent(messageContext, componentId);
-            messageDataStore.enqueue(statisticsReportingEvent);
-        }
-    }
+	public static void openLogForContinuation(MessageContext messageContext, String componentId) {
+		if (shouldReportStatistic(messageContext)) {
+			StatisticsReportingEvent statisticsReportingEvent;
+			statisticsReportingEvent = new ParentReopenEvent(messageContext, componentId);
+			messageDataStore.enqueue(statisticsReportingEvent);
+		}
+	}
 
-    /**
-     * Asynchronously remove continuation state from the message flow.
-     *
-     * @param messageContext message context
-     */
-    public static void removeContinuationState(MessageContext messageContext) {
-        if (shouldReportStatistic(messageContext)) {
-            StatisticsReportingEvent statisticsReportingEvent = new ContinuationEndEvent(messageContext);
-            messageDataStore.enqueue(statisticsReportingEvent);
-        }
-    }
+	/**
+	 * Asynchronously remove continuation state from the message flow.
+	 *
+	 * @param messageContext message context
+	 */
+	public static void removeContinuationState(MessageContext messageContext) {
+		if (shouldReportStatistic(messageContext)) {
+			StatisticsReportingEvent statisticsReportingEvent = new ContinuationEndEvent(messageContext);
+			messageDataStore.enqueue(statisticsReportingEvent);
+		}
+	}
 
 }

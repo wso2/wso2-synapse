@@ -38,6 +38,7 @@ public class EJBMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         EJBMediator mediator = new EJBMediator();
+        processAuditStatus(mediator, elem);
 
         String attributeValue;
 

@@ -56,24 +56,26 @@ public class SequenceStatisticCollector extends RuntimeStatisticCollector {
 						return;
 					}
 					setStatisticsTraceId(messageContext);
-					createStatisticForSequence(messageContext, sequenceName, isCreateLog, true);
+					createStatisticForSequence(messageContext, aspectConfiguration, sequenceName, isCreateLog, true);
 				}
 			} else {
 				if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
-					createStatisticForSequence(messageContext, sequenceName, isCreateLog, false);
+					createStatisticForSequence(messageContext, aspectConfiguration, sequenceName, isCreateLog, false);
 				}
 			}
 		}
 	}
 
-	private static void createStatisticForSequence(MessageContext messageContext, String sequenceName,
+	private static void createStatisticForSequence(MessageContext messageContext,
+	                                               AspectConfiguration aspectConfiguration, String sequenceName,
 	                                               boolean isCreateLog, boolean individualStatisticCollected) {
 		if (isCreateLog) {
-			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, true, false,
-			                              false, true, individualStatisticCollected);
+			String reportingId = (aspectConfiguration == null) ? null : aspectConfiguration.getUniqueId();
+			createLogForMessageCheckpoint(messageContext, reportingId, sequenceName, ComponentType.SEQUENCE, null, true,
+			                              false, false, true, individualStatisticCollected);
 		} else {
-			createLogForMessageCheckpoint(messageContext, sequenceName, ComponentType.SEQUENCE, null, false, false,
-			                              false, true);
+			createLogForMessageCheckpoint(messageContext, null, sequenceName, ComponentType.SEQUENCE, null, false,
+			                              false, false, true);
 		}
 	}
 }

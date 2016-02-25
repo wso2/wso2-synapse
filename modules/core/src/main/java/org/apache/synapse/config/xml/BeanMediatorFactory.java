@@ -36,6 +36,7 @@ public class BeanMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         BeanMediator mediator = new BeanMediator();
+        processAuditStatus(mediator, elem);
 
         String attributeValue;
 

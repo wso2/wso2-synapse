@@ -218,7 +218,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
                             Double minMsg = Double.parseDouble(minMessagesToComplete.evaluateValue(synCtx));
                             Double maxMsg = Double.parseDouble(maxMessagesToComplete.evaluateValue(synCtx));
-                    
+
                             aggregate = new Aggregate(
                                     synCtx.getEnvironment(),
                                     correlateExpression.toString(),
@@ -295,7 +295,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                             }
                         }
                     }
-                    
+
                 } else {
                     synLog.traceOrDebug("Unable to find aggrgation correlation property");
                     return true;
@@ -307,7 +307,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
             // if there is an aggregate continue on aggregation
             if (aggregate != null) {
-            	//this is a temporary fix           	
+            	//this is a temporary fix
                 synCtx.getEnvelope().build();
                 boolean collected = aggregate.addMessage(synCtx);
                 if (synLog.isTraceOrDebugEnabled()) {
@@ -318,7 +318,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                         }
                     }
                 }
-                
+
                 // check the completeness of the aggregate and if completed aggregate the messages
                 // if not completed return false and block the message sequence till it completes
 
@@ -361,8 +361,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         boolean result;
 
         SequenceMediator onCompleteSequence = getOnCompleteSequence();
-        AggregateMediatorStatisticCollector.openLogForContinuation(synCtx,
-                                                         onCompleteSequence.getSequenceNameForStatistics(synCtx));
+        AggregateMediatorStatisticCollector
+                .openLogForContinuation(synCtx, onCompleteSequence.getSequenceNameForStatistics(synCtx));
         if (!contState.hasChild()) {
             result = onCompleteSequence.mediate(synCtx, contState.getPosition() + 1);
         } else {
@@ -407,7 +407,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         if (!markedCompletedNow) {
             return false;
         }
-        
+
         MessageContext newSynCtx = getAggregatedMessage(aggregate);
 
         if (newSynCtx == null) {
@@ -472,7 +472,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         StatisticsRecord destinationStatRecord = null;
 
         for (MessageContext synCtx : aggregate.getMessages()) {
-            
+
             if (newCtx == null) {
                 try {
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
@@ -547,7 +547,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         return newCtx;
     }
 
-    
+
 	/*
 	 * Merges the statistics logs of the ESB artifacts that are not already
 	 * collected by the request flow.
@@ -646,7 +646,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     @Override
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         AggregateMediatorStatisticCollector
-                .reportStatisticForAggregateMediator(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                     parentName, isCreateLog, isAggregationMessageCollected);
+                .reportStatisticForAggregateMediator(messageContext, getStatisticReportingId(), getMediatorName(),
+                                                     ComponentType.MEDIATOR, parentName, isCreateLog,
+                                                     isAggregationMessageCollected);
     }
 }

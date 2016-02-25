@@ -34,11 +34,11 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorFactory = new ValidateMediatorFactory();
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
-        String validateConfiguration = "<syn:validate xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"//regRequest\">" +
+        String validateConfiguration = "<syn:validate xmlns:syn=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"//regRequest\">" +
                                        "<syn:schema key=\"file:synapse_repository/conf/sample/validate.xsd\"/>" +
                                        "<syn:feature name=\"http://javax.xml.XMLConstants/feature/secure-processing\" value=\"true\"/>" +
                                        "<syn:on-fail>" +
-                                       "<syn:drop/>" +
+                                       "<syn:drop statisticId=\"186104\"/>" +
                                        "</syn:on-fail>" +
                                        "</syn:validate>";
 
@@ -50,13 +50,13 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorFactory = new ValidateMediatorFactory();
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
-        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" " +
+        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" " +
                                        "source=\"//regRequest\">" +
                                        "<schema key=\"file:synapse_repository/conf/sample/validate.xsd\" />" +
                                        "<resource location=\"resource2.xsd\" key=\"resource2_xsd\" />" +
                                        "<resource location=\"resource1.xsd\" key=\"resource1_xsd\" />" +
                                        "<feature name=\"http://javax.xml.XMLConstants/feature/secure-processing\" value=\"true\" />" +
-                                       "<on-fail><drop /></on-fail>" +
+                                       "<on-fail><drop statisticId=\"186104\"/></on-fail>" +
                                        "</validate>";
         assertTrue(serialization(validateConfiguration, validateMediatorFactory, validateMediatorSerializer));
     }
@@ -67,13 +67,13 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorFactory = new ValidateMediatorFactory();
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
-        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" " +
+        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" " +
                                        "source=\"//regRequest\">" +
                                        "<schema key=\"file:synapse_repository/conf/sample/validate.xsd\" />" +
                                        "<resource location=\"resource2.xsd\" key=\"resource2_xsd\" />" +
                                        "<resource location=\"resource1.xsd\" key=\"resource1_xsd\" />" +
                                        "<feature name=\"http://javax.xml.XMLConstants/feature/secure-processing\" value=\"true\" />" +
-                                       "<on-fail><!--Test Comment--><drop /></on-fail>" +
+                                       "<on-fail><!--Test Comment--><drop statisticId=\"186104\"/></on-fail>" +
                                        "</validate>";
         assertTrue(serialization(validateConfiguration, validateMediatorFactory, validateMediatorSerializer));
 

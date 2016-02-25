@@ -33,7 +33,7 @@ public class DBLookupMediatorSerializationTest extends AbstractTestCase {
     public void testDBLookupMediatorSerializationScenarioOne() throws Exception {
 
         String inputXml = 
-            "<syn:dblookup xmlns:syn=\"http://ws.apache.org/ns/synapse\">" +
+            "<syn:dblookup xmlns:syn=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
                     "<syn:connection><syn:pool><syn:driver>com.some.driver.JDBCDriver</syn:driver>" +
                     "<syn:url>jdbc:/some/url</syn:url><syn:user>user</syn:user>" +
                     "<syn:password>pass</syn:password><syn:property name=\"name1\" value=\"value1\"/>" +
@@ -50,7 +50,7 @@ public class DBLookupMediatorSerializationTest extends AbstractTestCase {
     public void testDBLookupMediatorSerializationScenarioTwo() throws Exception {
 
         String inputXml =
-            "<syn:dblookup xmlns:syn=\"http://ws.apache.org/ns/synapse\">" +
+            "<syn:dblookup xmlns:syn=\"http://ws.apache.org/ns/synapse\"  statisticId=\"186104\">" +
                     "<syn:connection><syn:pool><syn:dsName>lookupdb</syn:dsName>" +                    
                     "</syn:pool></syn:connection><syn:statement><syn:sql>" +
                     "<![CDATA[insert into table values (?, ?, ..)]]></syn:sql>" +
@@ -65,7 +65,7 @@ public class DBLookupMediatorSerializationTest extends AbstractTestCase {
     public void testDBLookupMediatorSerializationScenarioThree() throws Exception {
 
         String inputXml =
-            "<syn:dblookup xmlns:syn=\"http://ws.apache.org/ns/synapse\">" +
+            "<syn:dblookup xmlns:syn=\"http://ws.apache.org/ns/synapse\"  statisticId=\"186104\">" +
                     "<syn:connection><syn:pool><syn:dsName>lookupdb</syn:dsName>" +
                     "<syn:icClass>com.sun.jndi.rmi.registry.RegistryContextFactory</syn:icClass>" +
                     "<syn:url>rmi://localhost:2199</syn:url>" +

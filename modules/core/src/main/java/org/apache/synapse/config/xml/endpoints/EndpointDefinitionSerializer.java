@@ -23,6 +23,7 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -50,6 +51,11 @@ public class EndpointDefinitionSerializer {
             element.addAttribute(fac.createOMAttribute(
                     XMLConfigConstants.TRACE_ATTRIB_NAME, null,
                     XMLConfigConstants.TRACE_ENABLE));
+        }
+
+        if (statisticsConfigurable != null) {
+            element.addAttribute(fac.createOMAttribute(StatisticsConstants.UNIQUE_STATISTIC_REPORTING_ID, null,
+                                                       statisticsConfigurable.getUniqueId()));
         }
 
         if (endpointDefinition.isUseSwa()) {

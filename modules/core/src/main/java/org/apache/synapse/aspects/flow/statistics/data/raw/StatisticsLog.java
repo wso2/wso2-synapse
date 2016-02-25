@@ -76,6 +76,8 @@ public class StatisticsLog {
 
 	private String afterPayload;
 
+	private String reportingId;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
 		this.startTime = statisticDataUnit.getTime();
 		this.componentType = statisticDataUnit.getComponentType();
@@ -91,6 +93,7 @@ public class StatisticsLog {
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 		this.beforePayload = statisticDataUnit.getPayload();
+		this.reportingId = statisticDataUnit.getReportingID();
 	}
 
 	public StatisticsLog(ComponentType componentType, String componentId, int parentMsgId, int parentLevel) {
@@ -286,5 +289,9 @@ public class StatisticsLog {
 				child -= 1;
 			}
 		}
+	}
+
+	public String getReportingId() {
+		return reportingId;
 	}
 }

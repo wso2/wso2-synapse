@@ -304,8 +304,9 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
     @Override
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         SplittingMediatorsStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, true, false, isContentAltering());
+                .reportStatisticForMessageComponent(messageContext, getStatisticReportingId(), getMediatorName(),
+                                                    ComponentType.MEDIATOR, parentName, isCreateLog, true, false,
+                                                    isContentAltering());
     }
 
 }

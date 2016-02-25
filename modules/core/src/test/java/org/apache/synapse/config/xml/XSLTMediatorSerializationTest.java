@@ -30,13 +30,13 @@ public class XSLTMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testRMSequenceSerializationTestScenarioOne() {
-        String inputXml = "<xslt xmlns=\"http://ws.apache.org/ns/synapse\" key=\"xslt-key-req\"/>";
+        String inputXml = "<xslt xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" key=\"xslt-key-req\"/>";
         assertTrue(serialization(inputXml, xsltMediatorFactory, xsltMediatorSerializer));
         assertTrue(serialization(inputXml, xsltMediatorSerializer));
     }
 
     public void testRMSequenceSerializationTestScenarioTwo() {
-        String inputXml = "<xslt xmlns=\"http://ws.apache.org/ns/synapse\" " +
+        String inputXml = "<xslt xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" " +
                           "key=\"xslt-key-req\" source=\"get-property('To')\">" +
                           "<property name=\"propName\" value=\"val\"/>" +
                           "<feature name=\"http://javax.xml.XMLConstants/feature/secure-processing\" value=\"true\" />" +
@@ -46,7 +46,7 @@ public class XSLTMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testRMSequenceSerializationTestScenarioThree() {
-        String inputXml = "<xslt xmlns=\"http://ws.apache.org/ns/synapse\" " +
+        String inputXml = "<xslt xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" " +
                           "key=\"xslt-key-req\" source=\"get-property('To')\">" +
                           "<property name=\"propName0\" value=\"val\"/>" +
                           "<property name=\"propName1\" expression=\"get-property('To')\"/>" +

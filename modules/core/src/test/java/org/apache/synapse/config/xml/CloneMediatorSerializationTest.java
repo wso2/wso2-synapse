@@ -34,38 +34,40 @@ public class CloneMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testCloneMediatorSerializationScenarioOne() throws Exception {
-        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\" " +
-            "continueParent=\"true\"><target sequence=\"sequenceRef1\" " +
-            "endpoint=\"endpointRef1\"/><target sequence=\"sequenceRef2\" " +
-            "endpoint=\"endpointRef2\"/></clone> ";
+        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"47211\" " +
+                          "continueParent=\"true\"><target sequence=\"sequenceRef1\" endpoint=\"endpointRef1\" />" +
+                          "<target sequence=\"sequenceRef2\" endpoint=\"endpointRef2\" /></clone>";
         assertTrue(serialization(inputXml, cloneMediatorFactory, cloneMediatorSerializer));
         assertTrue(serialization(inputXml, cloneMediatorSerializer));
     }
 
     public void testCloneMediatorSerializationScenarioTwo() throws Exception {
-        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\">" +
-            "<target endpoint=\"endpointRef1\"><sequence><log/></sequence></target>" +
-            "<target sequence=\"sequenceRef2\"><endpoint><address uri=\"http://testURL\"/>" +
-            "</endpoint></target></clone> ";
+        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"84679\">" +
+                          "<target endpoint=\"endpointRef1\"><sequence statisticId=\"84681\">" +
+                          "<log statisticId=\"784813\" /></sequence></target><target sequence=\"sequenceRef2\">" +
+                          "<endpoint><address uri=\"http://testURL\" statisticId=\"785552\" /></endpoint></target>" +
+                          "</clone>";
         assertTrue(serialization(inputXml, cloneMediatorFactory, cloneMediatorSerializer));
         assertTrue(serialization(inputXml, cloneMediatorSerializer));
     }
 
     public void testCloneMediatorSerializationScenarioThree() throws Exception {
-        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\">" +
-            "<target><sequence><send/></sequence><endpoint><address uri=\"http://testURL2\"/>" +
-            "</endpoint></target><target sequence=\"sequenceRef2\" " +
-            "endpoint=\"endpointRef2\"/></clone> ";
+        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"354062\">" +
+                          "<target><sequence statisticId=\"ac54066\"><send statisticId=\"54070\" />" +
+                          "</sequence><endpoint><address uri=\"http://testURL2\" statisticId=\"554076\" />" +
+                          "</endpoint></target><target sequence=\"sequenceRef2\" endpoint=\"endpointRef2\" />" +
+                          "</clone>";
         assertTrue(serialization(inputXml, cloneMediatorFactory, cloneMediatorSerializer));
         assertTrue(serialization(inputXml, cloneMediatorSerializer));
     }
 
     public void testCloneMediatorSerializationScenarioFour() throws Exception {
-        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\" " +
-            "continueParent=\"true\"><target to=\"http://localhost:7777\"><sequence><send/>" +
-            "</sequence><endpoint><address uri=\"http://testURL2\"/></endpoint></target>" +
-            "<target soapAction=\"urn:test\" sequence=\"sequenceRef2\" " +
-            "endpoint=\"endpointRef2\"/></clone> ";
+        String inputXml = "<clone xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"119\" continueParent=\"true\">" +
+                          "<target to=\"http://localhost:7777\"><sequence statisticId=\"f21122\">" +
+                          "<send statisticId=\"021124\" /></sequence><endpoint>" +
+                          "<address uri=\"http://testURL2\" statisticId=\"21128\" />" +
+                          "</endpoint></target><target soapAction=\"urn:test\" sequence=\"sequenceRef2\" " +
+                          "endpoint=\"endpointRef2\" /></clone>";
         assertTrue(serialization(inputXml, cloneMediatorFactory, cloneMediatorSerializer));
         assertTrue(serialization(inputXml, cloneMediatorSerializer));
     }

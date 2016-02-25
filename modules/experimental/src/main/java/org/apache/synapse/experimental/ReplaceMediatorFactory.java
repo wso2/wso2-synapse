@@ -42,6 +42,7 @@ public class ReplaceMediatorFactory extends AbstractMediatorFactory {
 
     public ReplaceMediator createSpecificMediator(OMElement elem, Properties properties) {
         ReplaceMediator mediator = new ReplaceMediator();
+        processAuditStatus(mediator, elem);
 
         OMAttribute attTarget = elem.getAttribute(ATT_TARGET);
         OMAttribute attProperty = elem.getAttribute(ATT_PROPERTY);

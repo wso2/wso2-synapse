@@ -31,7 +31,7 @@ public class DBReportMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testDBReportMediatorSerializationScenarioWithConnectionPool() throws Exception {
-        String inputXml = "<dbreport xmlns=\"http://ws.apache.org/ns/synapse\">" +
+        String inputXml = "<dbreport xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
                           "<connection><pool><driver>org.apache.derby.jdbc.ClientDriver</driver>" +
                           "<url>jdbc:derby://localhost:1527/synapsedb;create=false</url>" +
                           "<password>synapse</password><user>synapse</user>" +
@@ -46,7 +46,7 @@ public class DBReportMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testDBReportMediatorSerializationWithExternalDataSource() throws Exception {
-        String inputXml = "<dbreport xmlns=\"http://ws.apache.org/ns/synapse\">" +
+        String inputXml = "<dbreport xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
                           "<connection><pool><icClass>ClassName</icClass>" +
                           "<url>jdbc:derby://localhost:1527/synapsedb;create=false</url>" +
                           "<password>synapse</password><user>synapse</user>" +
@@ -61,7 +61,7 @@ public class DBReportMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testDBReportMediatorSerializationWithExternalDataSource2() throws Exception {
-        String inputXml = "<dbreport xmlns=\"http://ws.apache.org/ns/synapse\">" +
+        String inputXml = "<dbreport xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
                           "<connection><pool>" +
                           "<dsName>DataServiceName</dsName></pool>" +
                           "</connection><statement><sql><![CDATA[update company set price=? " +

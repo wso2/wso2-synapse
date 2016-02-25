@@ -108,4 +108,9 @@ public interface Mediator extends SynapseArtifact {
      * Report Statistics for the Mediator
      */
     public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog);
+
+    /**
+     * Send unique id for each Mediator
+     */
+    public String getStatisticReportingId();
 }

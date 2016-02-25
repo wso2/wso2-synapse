@@ -25,6 +25,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticUniqueIdProvider;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.xml.SequenceMediatorFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -46,10 +49,28 @@ public class ResourceFactory {
 
     public static Resource createResource(OMElement resourceElt, Properties properties) {
         Resource resource = new Resource();
+        configureUniqueId(resource, resourceElt);
         configureURLMappings(resource, resourceElt);
         configureSequences(resource, resourceElt, properties);
         configureFilters(resource, resourceElt);
         return resource;
+    }
+
+    private static void configureUniqueId(Resource resource, OMElement resourceElt) {
+        AspectConfiguration aspectConfiguration = new AspectConfiguration(resource.getName());
+        resource.configure(aspectConfiguration);
+
+        OMAttribute uniqueId = resourceElt.getAttribute(StatisticsConstants.UNIQUE_ID);
+        if (uniqueId != null) {
+            String uniqueIdAttributeValue = uniqueId.getAttributeValue();
+            if (uniqueIdAttributeValue != null) {
+                aspectConfiguration.setUniqueId(uniqueIdAttributeValue);
+            } else {
+                aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
+            }
+        } else {
+            aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
+        }
     }
 
     private static void configureFilters(Resource resource, OMElement resourceElt) {
