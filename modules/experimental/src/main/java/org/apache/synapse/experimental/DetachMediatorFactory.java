@@ -42,6 +42,7 @@ public class DetachMediatorFactory extends AbstractMediatorFactory {
 
     public DetachMediator createSpecificMediator(OMElement elem, Properties properties) {
         DetachMediator mediator = new DetachMediator();
+        processAuditStatus(mediator, elem);
 
         OMAttribute attSource = elem.getAttribute(ATT_SOURCE);
         OMAttribute attProperty = elem.getAttribute(ATT_PROPERTY);

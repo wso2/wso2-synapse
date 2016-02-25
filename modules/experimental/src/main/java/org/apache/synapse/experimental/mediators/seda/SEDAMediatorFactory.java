@@ -37,6 +37,7 @@ public class SEDAMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         final SEDAMediator mediator = new SEDAMediator();
+        processAuditStatus(mediator, elem);
         String mediatorKey = elem.getAttributeValue(ATT_KEY);
 
         if (mediatorKey != null && !"".equals(mediatorKey.trim())) {

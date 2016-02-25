@@ -56,6 +56,7 @@ public class InvokeMediatorFactory extends AbstractMediatorFactory {
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         invoker = new InvokeMediator();
+        processAuditStatus(invoker, elem);
         OMAttribute targetTemplateAttr = elem.getAttribute(ATT_TARGET);
         if (targetTemplateAttr != null) {
             invoker.setTargetTemplate(targetTemplateAttr.getAttributeValue());

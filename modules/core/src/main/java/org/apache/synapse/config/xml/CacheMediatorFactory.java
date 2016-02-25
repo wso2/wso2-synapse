@@ -70,6 +70,7 @@ public class CacheMediatorFactory extends AbstractMediatorFactory {
         }
 
         CacheMediator cache = new CacheMediator();
+        processAuditStatus(cache, elem);
 
         OMAttribute idAttr = elem.getAttribute(ATT_ID);
         if (idAttr != null && idAttr.getAttributeValue() != null) {

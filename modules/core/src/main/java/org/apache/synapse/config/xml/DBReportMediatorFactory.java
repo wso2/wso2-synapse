@@ -64,6 +64,7 @@ public class DBReportMediatorFactory extends AbstractDBMediatorFactory {
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
         DBReportMediator mediator = new DBReportMediator();
+        processAuditStatus(mediator, elem);
 
         OMAttribute useTx = elem.getAttribute(DBREPORT_USE_TX);
         if (useTx != null && useTx.getAttributeValue() != null) {

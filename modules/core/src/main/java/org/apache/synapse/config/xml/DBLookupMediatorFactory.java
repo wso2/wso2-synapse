@@ -66,6 +66,7 @@ public class DBLookupMediatorFactory extends AbstractDBMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         DBLookupMediator mediator = new DBLookupMediator();
+        processAuditStatus(mediator, elem);
         buildDataSource(elem, mediator);
         processStatements(elem, mediator);
         return mediator;

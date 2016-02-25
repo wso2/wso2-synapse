@@ -77,6 +77,7 @@ public class CalloutMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         CalloutMediator callout = new CalloutMediator();
+        processAuditStatus(callout, elem);
 
         OMAttribute attServiceURL = elem.getAttribute(ATT_URL);
         OMAttribute attEndpoint = elem.getAttribute(ATT_ENDPOINT);
