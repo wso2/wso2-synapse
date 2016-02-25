@@ -26,38 +26,40 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class InboundEPStatisticCollector extends RuntimeStatisticCollector {
 
-    private static final Log log = LogFactory.getLog(InboundEPStatisticCollector.class);
+	private static final Log log = LogFactory.getLog(InboundEPStatisticCollector.class);
 
-    /**
-     * Reports statistics for Inbound.
-     *
-     * @param messageContext      Current MessageContext of the flow.
-     * @param inboundName         Inbound name.
-     * @param aspectConfiguration Aspect Configuration for the inbound EP.
-     * @param createStatisticLog  It is statistic flow start or end.
-     */
-    public static void reportStatisticsForInbound(MessageContext messageContext, String inboundName,
-                                                  AspectConfiguration aspectConfiguration, boolean createStatisticLog) {
-        if (isStatisticsEnabled()) {
-            boolean isCollectingStatistics = (inboundName != null && aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
-            boolean isCollectingTracing = (inboundName != null && aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+	/**
+	 * Reports statistics for Inbound.
+	 *
+	 * @param messageContext      Current MessageContext of the flow.
+	 * @param inboundName         Inbound name.
+	 * @param aspectConfiguration Aspect Configuration for the inbound EP.
+	 * @param createStatisticLog  It is statistic flow start or end.
+	 */
+	public static void reportStatisticsForInbound(MessageContext messageContext, String inboundName,
+	                                              AspectConfiguration aspectConfiguration, boolean createStatisticLog) {
+		if (isStatisticsEnabled()) {
+			boolean isCollectingStatistics =
+					(inboundName != null && aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+			boolean isCollectingTracing =
+					(inboundName != null && aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
 
-            messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
-            messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+			messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
 
-            if (isCollectingStatistics) {
-                if (createStatisticLog) {
-                    setStatisticsTraceId(messageContext);
-                    createLogForMessageCheckpoint(messageContext, inboundName, ComponentType.INBOUNDENDPOINT, null,
-                                                  true, false, false, true);
-                } else {
-                    if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
-                        createLogForFinalize(messageContext);
-                    } else {
-                        log.error("Trying close statistic entry without Statistic ID");
-                    }
-                }
-            }
-        }
-    }
+			if (isCollectingStatistics) {
+				if (createStatisticLog) {
+					setStatisticsTraceId(messageContext);
+					createLogForMessageCheckpoint(messageContext, aspectConfiguration.getUniqueId(), inboundName,
+					                              ComponentType.INBOUNDENDPOINT, null, true, false, false, true);
+				} else {
+					if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) != null) {
+						createLogForFinalize(messageContext);
+					} else {
+						log.error("Trying close statistic entry without Statistic ID");
+					}
+				}
+			}
+		}
+	}
 }

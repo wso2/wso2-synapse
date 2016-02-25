@@ -29,6 +29,8 @@ import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticUniqueIdProvider;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.xml.endpoints.EndpointFactory;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -324,6 +326,18 @@ public class ProxyServiceFactory {
                     aspectConfiguration.enableStatistics();
                 }
             }
+        }
+
+        OMAttribute uniqueId = elem.getAttribute(StatisticsConstants.UNIQUE_ID);
+        if (uniqueId != null) {
+            String uniqueIdAttributeValue = uniqueId.getAttributeValue();
+            if (uniqueIdAttributeValue != null) {
+                aspectConfiguration.setUniqueId(uniqueIdAttributeValue);
+            } else {
+                aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
+            }
+        } else {
+            aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
         }
 
         OMAttribute tracing = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,

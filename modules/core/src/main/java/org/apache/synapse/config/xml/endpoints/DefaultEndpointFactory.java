@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticUniqueIdProvider;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
@@ -174,6 +176,18 @@ public class DefaultEndpointFactory extends EndpointFactory {
                     aspectConfiguration.enableTracing();
                 }
             }
+        }
+
+        OMAttribute uniqueId = epOmElement.getAttribute(StatisticsConstants.UNIQUE_ID);
+        if (uniqueId != null) {
+            String uniqueIdAttributeValue = uniqueId.getAttributeValue();
+            if (uniqueIdAttributeValue != null) {
+                aspectConfiguration.setUniqueId(uniqueIdAttributeValue);
+            } else {
+                aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
+            }
+        } else {
+            aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
         }
     }   
 }

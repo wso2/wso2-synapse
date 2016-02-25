@@ -26,6 +26,8 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfigurable;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.collectors.ResourceStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -41,7 +43,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Resource extends AbstractRESTProcessor implements ManagedLifecycle {
+public class Resource extends AbstractRESTProcessor implements AspectConfigurable, ManagedLifecycle {
 
     /**
      * List of HTTP methods applicable on this method. Empty list means all methods
@@ -73,6 +75,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
 
     private String faultSequenceKey;
 
+    private AspectConfiguration aspectConfiguration;
+
     /**
      * DispatcherHelper instance which is  used to determine whether a particular resource
      * should be dispatched to this resource or not
@@ -83,7 +87,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         super(UIDGenerator.generateUID());
     }
 
-    protected String getName() {
+    public String getName() {
         return name;
     }
 
@@ -259,11 +263,12 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
 
     void process(MessageContext synCtx) {
 
+        String reportingId = (aspectConfiguration == null) ? null : aspectConfiguration.getUniqueId();
         if (!synCtx.isResponse()) {
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-            ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, true);
+            ResourceStatisticCollector.reportStatisticForResource(synCtx, reportingId, name, null, true);
         }
 
         if (log.isDebugEnabled()) {
@@ -274,8 +279,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-                ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
-	            return;
+                ResourceStatisticCollector.reportStatisticForResource(synCtx, reportingId, name, null, false);
+                return;
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
@@ -305,7 +310,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
-            ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+            ResourceStatisticCollector.reportStatisticForResource(synCtx, reportingId, name, null, false);
             return;
         }
 
@@ -319,7 +324,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
-            ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+            ResourceStatisticCollector.reportStatisticForResource(synCtx, reportingId, name, null, false);
             return;
         }
 
@@ -334,7 +339,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
-        ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+        ResourceStatisticCollector.reportStatisticForResource(synCtx, reportingId, name, null, false);
     }
 
     public void registerFaultHandler(MessageContext synCtx) {
@@ -435,5 +440,15 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (faultSequence != null && faultSequence.isInitialized()) {
             faultSequence.destroy();
         }
+    }
+
+    @Override
+    public void configure(AspectConfiguration aspectConfiguration) {
+        this.aspectConfiguration = aspectConfiguration;
+    }
+
+    @Override
+    public AspectConfiguration getAspectConfiguration() {
+        return aspectConfiguration;
     }
 }

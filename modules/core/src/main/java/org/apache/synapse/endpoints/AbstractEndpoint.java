@@ -290,7 +290,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         logSetter();
 
-        EndpointStatisticCollector.reportStatisticForEndpoint(synCtx, getReportingName(), isStatisticCollected(), true);
+        EndpointStatisticCollector
+                .reportStatisticForEndpoint(synCtx, definition.getAspectConfiguration(), getReportingName(),
+                                            isStatisticCollected(), true);
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -374,7 +376,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         synCtx.getEnvironment().send(definition, synCtx);
 
         EndpointStatisticCollector
-                .reportStatisticForEndpoint(synCtx, getReportingName(), isStatisticCollected(), false);
+                .reportStatisticForEndpoint(synCtx, null, getReportingName(), isStatisticCollected(), false);
     }
 
     /**

@@ -22,6 +22,8 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.SequenceMediatorSerializer;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.rest.Resource;
@@ -54,6 +56,12 @@ public class ResourceSerializer {
             resourceElt.addAttribute("protocol", "http", null);
         } else if (resource.getProtocol() == RESTConstants.PROTOCOL_HTTPS_ONLY) {
             resourceElt.addAttribute("protocol", "https", null);
+        }
+        StatisticsConfigurable statisticsConfigurable = resource.getAspectConfiguration();
+
+        if (statisticsConfigurable != null) {
+            resourceElt.addAttribute(StatisticsConstants.UNIQUE_STATISTIC_REPORTING_ID,
+                                     statisticsConfigurable.getUniqueId(), null);
         }
 
         DispatcherHelper helper = resource.getDispatcherHelper();

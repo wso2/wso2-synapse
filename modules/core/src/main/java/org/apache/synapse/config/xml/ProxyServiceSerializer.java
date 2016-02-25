@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.config.xml.endpoints.EndpointSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -228,6 +229,11 @@ public class ProxyServiceSerializer {
             proxy.addAttribute(fac.createOMAttribute(
                     XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS,
                     XMLConfigConstants.TRACE_ENABLE));
+        }
+
+        if (statisticsConfigurable != null) {
+            proxy.addAttribute(fac.createOMAttribute(StatisticsConstants.UNIQUE_STATISTIC_REPORTING_ID, nullNS,
+                                                     statisticsConfigurable.getUniqueId()));
         }
 
         if (parent != null) {
