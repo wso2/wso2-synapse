@@ -74,6 +74,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES = "\\\\\\\\\"";
     private final static String ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES = "\\\\\\$";
     private final static String ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES = "\\\\\\\\\\$";
+    private final static String ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\b";
+    private final static String ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\f";
+    private final static String ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\n";
+    private final static String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
+    private final static String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
@@ -295,7 +300,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
                         // a special character and for JSON " is a special character.
                         replacementValue = JsonUtil.toJsonString(omXML).toString()
                                 .replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES, ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
-                                .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES);
+                                .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
+                                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
                     } catch (XMLStreamException e) {
                         handleException("Error parsing XML for JSON conversion, please check your xPath expressions return valid XML: ", synCtx);
                     } catch (AxisFault e) {
@@ -328,7 +338,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = replacementValue
                                 .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
-                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES);
+                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES)
+                                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
                     }
                     else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
