@@ -31,7 +31,7 @@ public class RespondMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testRespondMediatorSerializationOne() throws Exception {
-        String inputXml = "<respond xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\"/>";
+        String inputXml = "<respond xmlns=\"http://ws.apache.org/ns/synapse\" />";
         assertTrue(serialization(inputXml, respondMediatorFactory, respondMediatorSerializer));
         assertTrue(serialization(inputXml, respondMediatorSerializer));
     }

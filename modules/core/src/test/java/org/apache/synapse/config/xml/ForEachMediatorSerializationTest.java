@@ -32,15 +32,15 @@ public class ForEachMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testForEachMediatorSerialization_SequenceRef_ID() throws Exception {
-        String inputXml = "<foreach expression=\".\" id=\"id\" sequence=\"sequenceRef1\" xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\"/>";
+        String inputXml = "<foreach expression=\".\" id=\"id\" sequence=\"sequenceRef1\" xmlns=\"http://ws.apache.org/ns/synapse\"/>";
         assertTrue(serialization(inputXml, foreachMediatorFactory, foreachMediatorSerializer));
         assertTrue(serialization(inputXml, foreachMediatorSerializer));
     }
 
     public void testForEachMediatorSerialization_Sequence_ID() throws Exception {
-        String inputXml = "<foreach expression=\".\" id=\"id\" xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                "<sequence  statisticId=\"186104\">" +
-                "<log level=\"full\"  statisticId=\"186104\"/>" +
+        String inputXml = "<foreach expression=\".\" id=\"id\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<sequence>" +
+                "<log level=\"full\"/>" +
                 "</sequence>" +
                 "</foreach>";
         assertTrue(serialization(inputXml, foreachMediatorFactory, foreachMediatorSerializer));
@@ -48,9 +48,9 @@ public class ForEachMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testForEachMediatorSerialization_Sequence_ID_Comments() throws Exception {
-        String inputXml = "<foreach expression=\".\" id=\"id\" xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                "<sequence statisticId=\"186104\">" +
-                "<log level=\"full\" statisticId=\"186104\"/>" +
+        String inputXml = "<foreach expression=\".\" id=\"id\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<sequence>" +
+                "<log level=\"full\"/>" +
                 "<!--test comment -->" +
                 "</sequence>" +
                 "</foreach>";

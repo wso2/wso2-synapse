@@ -125,27 +125,27 @@ public class LogMediatorSerializationTest extends AbstractTestCase {
     }
 
     private String getXmlOfMediatorScenarioOne(String level) {
-        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" level=\"" + level + "\" statisticId=\"186104\">" +
-               "<property name=\"Text\" value=\"Sending quote request\"/></log>";
+        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" level=\"" +
+                level + "\"><property name=\"Text\" value=\"Sending quote request\"/></log>";
 
     }
 
     private String getXmlOfMediatorScenarioOneA(String level) {
-        return "<log level=\"" + level + "\" statisticId=\"186104\">" +
-               "<property name=\"Text\" value=\"Sending quote request\"/></log>";
+        return "<log level=\"" +
+                level + "\"><property name=\"Text\" value=\"Sending quote request\"/></log>";
 
     }
 
     private String getXmlOfMediatorScenarioTwo(String level, String seperator) {
-        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" level=\"" + level + "\" separator=\"" + seperator +
-               "\" statisticId=\"186104\">" +
-               "<property name=\"Text\" value=\"Sending quote request\"/></log>";
+        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" level=\"" +
+                level + "\" separator=\"" + seperator +
+                "\"><property name=\"Text\" value=\"Sending quote request\"/></log>";
 
     }
 
     private String getXmlOfMediatorScenarioThree(String category) {
-        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" category=\"" + category + "\" statisticId=\"186104\">" +
-               "<property name=\"Text\" value=\"Sending quote request\"/></log>";
+        return "<log xmlns=\"http://ws.apache.org/ns/synapse\" category=\"" +
+                category + "\"><property name=\"Text\" value=\"Sending quote request\"/></log>";
 
     }
 

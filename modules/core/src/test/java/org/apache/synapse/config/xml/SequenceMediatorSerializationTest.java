@@ -36,29 +36,19 @@ public class SequenceMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testSequenceMediatorSerializationSenarioOne() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\" statisticId=\"186104\">" +
-                     "<header statisticId=\"186104\" name=\"To\" value=\"http://localhost:9000/services/TestService\"/>" +
-                     "<send statisticId=\"186104\"/>" +
-                     "</sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><send/></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioTwo() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                     "name=\"namedsequence\"  onError=\"ErrorHandler\" statisticId=\"186104\">" +
-                     "<header statisticId=\"186104\" name=\"To\" value=\"http://localhost:9000/services/TestService\"/>" +
-                     "<send statisticId=\"186104\"/></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"  onError=\"ErrorHandler\"><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><send/></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioTwoWithDescription() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                     "name=\"namedsequence\"  onError=\"ErrorHandler\" statisticId=\"186104\">" +
-                     "<description>Test documentation</description>" +
-                     "<header statisticId=\"186104\" name=\"To\" value=\"http://localhost:9000/services/TestService\"/>" +
-                     "<send statisticId=\"186104\"/></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"  onError=\"ErrorHandler\"><description>Test documentation</description><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><send/></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
@@ -70,61 +60,49 @@ public class SequenceMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testSequenceMediatorSerializationSenarioThreeWithDescription() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" key=\"sequenceone\">" +
-                     "<description>Test description</description></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" key=\"sequenceone\"><description>Test description</description></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioFour() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" " +
-                     "onError=\"ErrorHandler\" statisticId=\"186104\"></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" onError=\"ErrorHandler\"></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioFive() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" key=\"sequenceone\"></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" key=\"sequenceone\" ></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioSix() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" statisticId=\"186104\"" +
-                     " description=\"short description\"></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" description=\"short description\"></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioOneWithComments() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\" statisticId=\"186104\">" +
-                     "<header statisticId=\"186104\" name=\"To\" value=\"http://localhost:9000/services/TestService\"/>" +
-                     "<!--Test Comment--><send statisticId=\"186104\"/></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><!--Test Comment--><send/></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioTwoWithComments() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                     "name=\"namedsequence\"  onError=\"ErrorHandler\" statisticId=\"186104\">" +
-                     "<header statisticId=\"186104\" name=\"To\" value=\"http://localhost:9000/services/TestService\"/>" +
-                     "<!--Test Comment--><send statisticId=\"186104\"/></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"namedsequence\"  onError=\"ErrorHandler\"><header name=\"To\" value=\"http://localhost:9000/services/TestService\"/><!--Test Comment--><send/></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioFourWithComments() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                     "name=\"sequenceone\" onError=\"ErrorHandler\" statisticId=\"186104\">" +
-                     "<!--Test Comment--></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" onError=\"ErrorHandler\"><!--Test Comment--></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }
 
     public void testSequenceMediatorSerializationSenarioSixWithComments() throws Exception {
-        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" " +
-                     " statisticId=\"186104\" description=\"short description\">" +
-                     "<!--Test Comment--></sequence>";
+        String xml = "<sequence xmlns=\"http://ws.apache.org/ns/synapse\" name=\"sequenceone\" description=\"short description\"><!--Test Comment--></sequence>";
         assertTrue(serialization(xml, sequenceMediatorFactory, sequenceMediatorSerializer));
         assertTrue(serialization(xml, sequenceMediatorSerializer));
     }

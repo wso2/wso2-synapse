@@ -27,70 +27,70 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class ProxyStatisticCollector extends RuntimeStatisticCollector {
 
-	private static final Log log = LogFactory.getLog(ProxyStatisticCollector.class);
+    private static final Log log = LogFactory.getLog(ProxyStatisticCollector.class);
 
-	/**
-	 * Reports statistics for the Proxy.
-	 *
-	 * @param messageContext      Current MessageContext of the flow.
-	 * @param proxyName           Proxy name.
-	 * @param aspectConfiguration Aspect Configuration for the Proxy.
-	 */
-	public static void reportStatisticsForProxy(MessageContext messageContext, String proxyName,
-	                                            AspectConfiguration aspectConfiguration) {
-		if (isStatisticsEnabled()) {
-			boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
-			boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+    /**
+     * Reports statistics for the Proxy.
+     *
+     * @param messageContext      Current MessageContext of the flow.
+     * @param proxyName           Proxy name.
+     * @param aspectConfiguration Aspect Configuration for the Proxy.
+     */
+    public static void reportStatisticsForProxy(MessageContext messageContext, String proxyName,
+                                                AspectConfiguration aspectConfiguration) {
+        if (isStatisticsEnabled()) {
+            boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+            boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
 
-			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
-			messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+            messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+            messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
 
-			if (isCollectingStatistics) {
-				setStatisticsTraceId(messageContext);
-				createLogForMessageCheckpoint(messageContext, aspectConfiguration.getUniqueId(), proxyName,
-				                              ComponentType.PROXYSERVICE, null, true, false, false, true);
-			}
-		}
-	}
+            if (isCollectingStatistics) {
+                setStatisticsTraceId(messageContext);
+                createLogForMessageCheckpoint(messageContext, proxyName, ComponentType.PROXYSERVICE, null, true,
+                                              false, false, true);
+            }
+        }
+    }
 
-	/**
-	 * End Statistic Flow for Proxy if Message Flow is Out_Only.
-	 *
-	 * @param messageContext Current MessageContext of the flow.
-	 */
-	public static void reportEndProxy(MessageContext messageContext) {
-		if (shouldReportStatistic(messageContext)) {
-			boolean isOutOnly =
-					Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-			if (!isOutOnly) {
-				isOutOnly = (!Boolean
-						.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) && !messageContext.isResponse());
-			}
-			if (isOutOnly) {
-				createLogForFinalize(messageContext);
-			}
-		}
-	}
+    /**
+     * End Statistic Flow for Proxy if Message Flow is Out_Only.
+     *
+     * @param messageContext Current MessageContext of the flow.
+     */
+    public static void reportEndProxy(MessageContext messageContext) {
+        if (shouldReportStatistic(messageContext)) {
+            boolean isOutOnly =
+                    Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
+            if (!isOutOnly) {
+                isOutOnly = (!Boolean
+                        .parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) && !messageContext.isResponse());
+            }
+            if (isOutOnly) {
+                createLogForFinalize(messageContext);
+            }
+        }
+    }
 
-	/**
-	 * End Statistic Flow for Proxy if Message Flow is Out_Only and there is no Sending Fault.
-	 *
-	 * @param messageContext Current MessageContext of the flow.
-	 */
-	public static void reportEndSynapseMessageReceiver(MessageContext messageContext) {
-		if (shouldReportStatistic(messageContext)) {
-			boolean isOutOnly =
-					Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-			boolean isFault =
-					Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_FAULT)));
-			if (!isOutOnly && !isFault) {
-				isOutOnly = !Boolean.parseBoolean(
-						String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) &&
-				            !messageContext.isResponse();
-			}
-			if (isOutOnly && !isFault) {
-				createLogForFinalize(messageContext);
-			}
-		}
-	}
+    /**
+     * End Statistic Flow for Proxy if Message Flow is Out_Only and there is no Sending Fault.
+     *
+     * @param messageContext Current MessageContext of the flow.
+     */
+    public static void reportEndSynapseMessageReceiver(MessageContext messageContext) {
+        if (shouldReportStatistic(messageContext)) {
+            boolean isOutOnly =
+                    Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
+            boolean isFault =
+                    Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_FAULT)));
+            if (!isOutOnly && !isFault) {
+                isOutOnly = !Boolean.parseBoolean(
+                        String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                            !messageContext.isResponse();
+            }
+            if (isOutOnly && !isFault) {
+                createLogForFinalize(messageContext);
+            }
+        }
+    }
 }

@@ -26,42 +26,41 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 public class AggregateMediatorStatisticCollector extends MediatorStatisticCollector {
 
-	private static final Log log = LogFactory.getLog(AggregateMediatorStatisticCollector.class);
+    private static final Log log = LogFactory.getLog(AggregateMediatorStatisticCollector.class);
 
-	public static void setAggregateProperties(MessageContext oldMessageContext, MessageContext newMessageContext) {
-		if (shouldReportStatistic(oldMessageContext)) {
-			StatisticMessageCountHolder cloneCount = (StatisticMessageCountHolder) oldMessageContext
-					.getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
-			int parentMsgId =
-					(Integer) oldMessageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID);
-			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID, parentMsgId);
-			newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
-		}
-	}
+    public static void setAggregateProperties(MessageContext oldMessageContext, MessageContext newMessageContext) {
+        if (shouldReportStatistic(oldMessageContext)) {
+            StatisticMessageCountHolder cloneCount = (StatisticMessageCountHolder) oldMessageContext
+                    .getProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER);
+            int parentMsgId =
+                    (Integer) oldMessageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_PARENT_MESSAGE_ID);
+            newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID, parentMsgId);
+            newMessageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_MSG_COUNT_HOLDER, cloneCount);
+        }
+    }
 
-	/**
-	 * Reports statistics for aggregation.
-	 *
-	 * @param messageContext      Current MessageContext of the flow.
-	 * @param componentName       Component name.
-	 * @param componentType       Component type of the component.
-	 * @param parentName          Parent of the component.
-	 * @param isCreateLog         It is statistic flow start or end.
-	 * @param isAggregateComplete Whether aggregate completed.
-	 */
-	public static void reportStatisticForAggregateMediator(MessageContext messageContext, String reportingId,
-	                                                       String componentName, ComponentType componentType,
-	                                                       String parentName, boolean isCreateLog,
-	                                                       boolean isAggregateComplete) {
-		if (shouldReportStatistic(messageContext)) {
-			if (isCreateLog) {
-				createLogForMessageCheckpoint(messageContext, reportingId, componentName, componentType, parentName,
-				                              true, false, true, true);
-			} else {
-				createLogForMessageCheckpoint(messageContext, reportingId, componentName, componentType, parentName,
-				                              false, false, isAggregateComplete, true);
-			}
-		}
-	}
+    /**
+     * Reports statistics for aggregation.
+     *
+     * @param messageContext      Current MessageContext of the flow.
+     * @param componentName       Component name.
+     * @param componentType       Component type of the component.
+     * @param parentName          Parent of the component.
+     * @param isCreateLog         It is statistic flow start or end.
+     * @param isAggregateComplete Whether aggregate completed.
+     */
+    public static void reportStatisticForAggregateMediator(MessageContext messageContext, String componentName,
+                                                           ComponentType componentType, String parentName,
+                                                           boolean isCreateLog, boolean isAggregateComplete) {
+        if (shouldReportStatistic(messageContext)) {
+            if (isCreateLog) {
+                createLogForMessageCheckpoint(messageContext, componentName, componentType, parentName, true, false,
+                                              true, true);
+            } else {
+                createLogForMessageCheckpoint(messageContext, componentName, componentType, parentName, false, false,
+                                              isAggregateComplete, true);
+            }
+        }
+    }
 
 }

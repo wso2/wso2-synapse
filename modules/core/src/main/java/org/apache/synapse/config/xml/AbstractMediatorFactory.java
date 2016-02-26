@@ -31,8 +31,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticUniqueIdProvider;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -170,18 +168,6 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
                         configuration.enableTracing();
                     }
                 }
-            }
-
-            OMAttribute uniqueId = mediatorOmElement.getAttribute(StatisticsConstants.UNIQUE_ID);
-            if (uniqueId != null) {
-                String uniqueIdAttributeValue = uniqueId.getAttributeValue();
-                if (uniqueIdAttributeValue != null) {
-                    configuration.setUniqueId(uniqueIdAttributeValue);
-                } else {
-                    configuration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
-                }
-            } else {
-                configuration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
             }
         }
     }

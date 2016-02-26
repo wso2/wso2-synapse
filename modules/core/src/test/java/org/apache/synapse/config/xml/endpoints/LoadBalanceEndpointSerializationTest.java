@@ -30,17 +30,17 @@ public class LoadBalanceEndpointSerializationTest extends AbstractTestCase {
                 "<session type=\"simpleClientSession\"/>" +
                 "<loadbalance algorithm=\"org.apache.synapse.endpoints.algorithms.RoundRobin\">" +
                 "<endpoint>" +
-                "<address uri=\"http://localhost:9001/soap/LBService1\" statisticId=\"186104\">" +
+                "<address uri=\"http://localhost:9001/soap/LBService1\">" +
                 "<enableAddressing/>" +
                 "</address>" +
                 "</endpoint>" +
                 "<endpoint>" +
-                "<address uri=\"http://localhost:9002/soap/LBService1\" statisticId=\"186104\">" +
+                "<address uri=\"http://localhost:9002/soap/LBService1\">" +
                 "<enableAddressing/>" +
                 "</address>" +
                 "</endpoint>" +
                 "<endpoint>" +
-                "<address uri=\"http://localhost:9003/soap/LBService1\" statisticId=\"186104\">" +
+                "<address uri=\"http://localhost:9003/soap/LBService1\">" +
                 "<enableAddressing/>" +
                 "</address>" +
                 "</endpoint>" +

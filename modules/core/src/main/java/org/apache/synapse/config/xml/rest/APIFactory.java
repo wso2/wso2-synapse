@@ -27,8 +27,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticUniqueIdProvider;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.rest.API;
@@ -137,18 +135,6 @@ public class APIFactory {
                     aspectConfiguration.enableStatistics();
                 }
             }
-        }
-
-        OMAttribute uniqueId = apiElt.getAttribute(StatisticsConstants.UNIQUE_ID);
-        if (uniqueId != null) {
-            String uniqueIdAttributeValue = uniqueId.getAttributeValue();
-            if (uniqueIdAttributeValue != null) {
-                aspectConfiguration.setUniqueId(uniqueIdAttributeValue);
-            } else {
-                aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
-            }
-        } else {
-            aspectConfiguration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
         }
 
         OMAttribute tracing = apiElt.getAttribute(

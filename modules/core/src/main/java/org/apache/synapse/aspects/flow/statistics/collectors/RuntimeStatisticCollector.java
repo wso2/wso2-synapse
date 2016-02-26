@@ -253,15 +253,14 @@ public abstract class RuntimeStatisticCollector {
 	/**
 	 * Creating Statistic Logs to report statistic events
 	 */
-	protected static void createLogForMessageCheckpoint(MessageContext messageContext, String reportingId,
-	                                                    String componentName, ComponentType componentType,
-	                                                    String parentName, boolean isCreateLog, boolean isCloneLog,
-	                                                    boolean isAggregateLog, boolean isAlteringContent) {
+	protected static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
+	                                                    ComponentType componentType, String parentName,
+	                                                    boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog,
+	                                                    boolean isAlteringContent) {
 		StatisticsReportingEvent statisticLog;
 		if (isCreateLog) {
-			statisticLog =
-					new StatisticsOpenEvent(messageContext, reportingId, componentName, componentType, parentName,
-					                        isCloneLog, isAggregateLog, isAlteringContent);
+			statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName, isCloneLog,
+			                                       isAggregateLog, isAlteringContent);
 		} else {
 			statisticLog =
 					new StatisticsCloseEvent(messageContext, componentName, parentName, isCloneLog, isAggregateLog,
@@ -270,16 +269,14 @@ public abstract class RuntimeStatisticCollector {
 		messageDataStore.enqueue(statisticLog);
 	}
 
-	protected static void createLogForMessageCheckpoint(MessageContext messageContext, String reportingId,
-	                                                    String componentName, ComponentType componentType,
-	                                                    String parentName, boolean isCreateLog, boolean isCloneLog,
-	                                                    boolean isAggregateLog, boolean isAlteringContent,
-	                                                    boolean isIndividualCollection) {
+	protected static void createLogForMessageCheckpoint(MessageContext messageContext, String componentName,
+	                                                    ComponentType componentType, String parentName,
+	                                                    boolean isCreateLog, boolean isCloneLog, boolean isAggregateLog,
+	                                                    boolean isAlteringContent, boolean isIndividualCollection) {
 		StatisticsReportingEvent statisticLog;
 		if (isCreateLog) {
-			statisticLog =
-					new StatisticsOpenEvent(messageContext, reportingId, componentName, componentType, parentName,
-					                        isCloneLog, isAggregateLog, isAlteringContent, isIndividualCollection);
+			statisticLog = new StatisticsOpenEvent(messageContext, componentName, componentType, parentName, isCloneLog,
+			                                       isAggregateLog, isAlteringContent, isIndividualCollection);
 		} else {
 			statisticLog =
 					new StatisticsCloseEvent(messageContext, componentName, parentName, isCloneLog, isAggregateLog,
@@ -328,6 +325,8 @@ public abstract class RuntimeStatisticCollector {
 			}
 			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore()
 			                 .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
+			statisticDataUnit.getSynapseEnvironment().getCompletedStatisticStore().putCompletedStatisticEntryForTesting(
+					statisticsEntry.getMessageFlowLogsForStatisticTesting());
 			runtimeStatistics.remove(statisticDataUnit.getStatisticId());
 		}
 	}

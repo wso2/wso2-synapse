@@ -20,7 +20,6 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 
 public class EndpointStatisticCollector extends RuntimeStatisticCollector {
@@ -35,8 +34,7 @@ public class EndpointStatisticCollector extends RuntimeStatisticCollector {
 	 * @param individualStatisticCollected Whether individual statistic of this endpoint is collected.
 	 * @param isCreateLog                  It is statistic flow start or end.
 	 */
-	public static void reportStatisticForEndpoint(MessageContext messageContext,
-	                                              AspectConfiguration aspectConfiguration, String endpointName,
+	public static void reportStatisticForEndpoint(MessageContext messageContext, String endpointName,
 	                                              boolean individualStatisticCollected, boolean isCreateLog) {
 		if (RuntimeStatisticCollector.isStatisticsEnabled()) {
 			if (individualStatisticCollected) {
@@ -45,9 +43,8 @@ public class EndpointStatisticCollector extends RuntimeStatisticCollector {
 				}
 			}
 			if (shouldReportStatistic(messageContext) || individualStatisticCollected) {
-				String reportingId = (aspectConfiguration == null) ? null : aspectConfiguration.getUniqueId();
-				createLogForMessageCheckpoint(messageContext, reportingId, endpointName, ComponentType.ENDPOINT, null,
-				                              isCreateLog, false, false, false, individualStatisticCollected);
+				createLogForMessageCheckpoint(messageContext, endpointName, ComponentType.ENDPOINT, null, isCreateLog,
+				                              false, false, false, individualStatisticCollected);
 			}
 		}
 	}

@@ -26,10 +26,8 @@ import org.apache.synapse.rest.API;
 public class APISerializationTest extends AbstractTestCase {
 
     public void testAPISerialization1() throws Exception {
-        String xml =
-                "<api name=\"test\" context=\"/dictionary\" transports=\"https\" xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                "<resource url-mapping=\"/admin/view\" inSequence=\"in\" outSequence=\"out\" statisticId=\"186104\"/>" +
-                "</api>";
+        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" xmlns=\"http://ws.apache.org/ns/synapse\">" +
+                "<resource url-mapping=\"/admin/view\" inSequence=\"in\" outSequence=\"out\"/></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
         OMElement out = APISerializer.serializeAPI(api);
@@ -37,11 +35,9 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization2() throws Exception {
-        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" " +
-                     "port=\"8243\"" +
-                     " xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                     "<resource url-mapping=\"/admin/view\" statisticId=\"186104\" inSequence=\"in\" outSequence=\"out\"/>" +
-                     "</api>";
+        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view\" " +
+                "inSequence=\"in\" outSequence=\"out\"/></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
         OMElement out = APISerializer.serializeAPI(api);
@@ -49,16 +45,9 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization3() throws Exception {
-        String xml =
-                "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                "<resource url-mapping=\"/admin/view\" inSequence=\"in\" statisticId=\"186104\">" +
-                "<outSequence statisticId=\"186104\">" +
-                "<log statisticId=\"186104\"/>" +
-                "<send statisticId=\"186104\"/>" +
-                "</outSequence>" +
-                "</resource>" +
-                "</api>";
+        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view\" " +
+                "inSequence=\"in\"><outSequence><log/><send/></outSequence></resource></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
         OMElement out = APISerializer.serializeAPI(api);
@@ -66,16 +55,9 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization4() throws Exception {
-        String xml =
-                "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                "<resource url-mapping=\"/admin/view\" outSequence=\"out\" statisticId=\"186104\">" +
-                "<inSequence statisticId=\"186104\">" +
-                "<log statisticId=\"186104\"/>" +
-                "<send statisticId=\"186104\"/>" +
-                "</inSequence>" +
-                "</resource>" +
-                "</api>";
+        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view\" " +
+                "outSequence=\"out\"><inSequence><log/><send/></inSequence></resource></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
         OMElement out = APISerializer.serializeAPI(api);
@@ -83,38 +65,13 @@ public class APISerializationTest extends AbstractTestCase {
     }
 
     public void testAPISerialization5() throws Exception {
-        String xml =
-                "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
-                " xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\">" +
-                "<resource url-mapping=\"/admin/view/*\" statisticId=\"186104\">" +
-                "<inSequence statisticId=\"186104\">" +
-                "<log statisticId=\"186104\"/>" +
-                "<send statisticId=\"186104\"/>" +
-                "</inSequence>" +
-                "<outSequence statisticId=\"186104\">" +
-                "<log statisticId=\"186104\"/>" +
-                "<send statisticId=\"186104\"/>" +
-                "</outSequence>" +
-                "</resource>" +
-                "<resource url-mapping=\"/admin/*\" statisticId=\"186104\">" +
-                "<inSequence statisticId=\"186104\">" +
-                "<log statisticId=\"186104\"/>" +
-                "<send statisticId=\"186104\"/>" +
-                "</inSequence>" +
-                "<outSequence statisticId=\"186104\">" +
-                "<log statisticId=\"186104\"/>" +
-                "<send statisticId=\"186104\"/>" +
-                "</outSequence>" +
-                "</resource>" +
-                "<resource uri-template=\"/{char}/{word}\" statisticId=\"186104\">" +
-                "<inSequence statisticId=\"186104\">" +
-                "<send statisticId=\"186104\"/>" +
-                "</inSequence>" +
-                "<faultSequence statisticId=\"186104\">" +
-                "<log level=\"full\" statisticId=\"186104\"/>" +
-                "</faultSequence>" +
-                "</resource>" +
-                "</api>";
+        String xml = "<api name=\"test\" context=\"/dictionary\" transports=\"https\" hostname=\"apache.org\" port=\"8243\"" +
+                " xmlns=\"http://ws.apache.org/ns/synapse\"><resource url-mapping=\"/admin/view/*\" " +
+                "><inSequence><log/><send/></inSequence><outSequence><log/><send/></outSequence></resource>" +
+                "<resource url-mapping=\"/admin/*\"><inSequence><log/><send/></inSequence><outSequence>" +
+                "<log/><send/></outSequence></resource><resource uri-template=\"/{char}/{word}\">" +
+                "<inSequence><send/></inSequence><faultSequence><log level=\"full\"/></faultSequence>" +
+                "</resource></api>";
         OMElement om = AXIOMUtil.stringToOM(xml);
         API api = APIFactory.createAPI(om);
         OMElement out = APISerializer.serializeAPI(api);

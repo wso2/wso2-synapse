@@ -476,9 +476,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         MediatorStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getStatisticReportingId(), getMediatorName(),
-                                                    ComponentType.MEDIATOR, parentName, isCreateLog, false, false,
-                                                    isContentAltering());
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, false, false, isContentAltering());
     }
 
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
@@ -511,11 +510,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     public void setSkipEnabled(boolean isSkipEnabled) {
         this.isSkipEnabled = isSkipEnabled;
-    }
-
-    @Override
-    public String getStatisticReportingId() {
-        return (aspectConfiguration == null) ? null : aspectConfiguration.getUniqueId();
     }
 
     protected boolean shouldCaptureTracing(MessageContext synCtx) {

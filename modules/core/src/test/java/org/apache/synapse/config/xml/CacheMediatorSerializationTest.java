@@ -34,47 +34,47 @@ public class CacheMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testCacheMediatorSerializationScenarioOne() {
-        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"7c1797ca\" id=\"string\" " +
-                          "scope=\"per-host\" collector=\"false\" " +
-                          "hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" timeout=\"10\" " +
-                          "maxMessageSize=\"10000\"><onCacheHit><send statisticId=\"72307\" />" +
-                          "</onCacheHit><implementation type=\"memory\" maxSize=\"10\" /></cache>";
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                          "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
+                          "timeout=\"10\" scope=\"per-host\" collector=\"false\" " +
+                          "maxMessageSize=\"10000\"><onCacheHit><send/></onCacheHit><implementation " +
+                          "type=\"memory\" maxSize=\"10\"/></cache>";
         assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
         assertTrue(serialization(inputXml, cacheMediatorSerializer));
     }
 
     public void testCacheMediatorSerializationScenarioOneWithComment() {
-        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"586725\" id=\"string\" " +
-                          "scope=\"per-host\" collector=\"false\" " +
-                          "hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" timeout=\"10\" " +
-                          "maxMessageSize=\"10000\"><onCacheHit><!--Test Comment--><send statisticId=\"86752\" />" +
-                          "</onCacheHit><implementation type=\"memory\" maxSize=\"10\" /><!--Test Comment--></cache>";
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                          "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
+                          "timeout=\"10\" scope=\"per-host\" collector=\"false\" " +
+                          "maxMessageSize=\"10000\"><!--Test Comment--><onCacheHit><!--Test Comment--><send/></onCacheHit><implementation " +
+                          "type=\"memory\" maxSize=\"10\"/></cache>";
         assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
         assertTrue(serialization(inputXml, cacheMediatorSerializer));
     }
 
     public void testCacheMediatorSerializationScenarioTwo() {
-        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"09518\" id=\"string\" " +
-                          "scope=\"per-mediator\" collector=\"false\" " +
-                          "hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" timeout=\"10\" " +
-                          "maxMessageSize=\"10000\"><onCacheHit sequence=\"seq\" />" +
-                          "<implementation type=\"memory\" maxSize=\"10\" /></cache>";
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                          "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
+                          "timeout=\"10\" scope=\"per-mediator\" collector=\"false\" " +
+                          "maxMessageSize=\"10000\"><onCacheHit sequence=\"seq\"></onCacheHit>" +
+                          "<implementation type=\"memory\" maxSize=\"10\"/></cache>";
         assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
         assertTrue(serialization(inputXml, cacheMediatorSerializer));
     }
 
     public void testCacheMediatorSerializationScenarioTwoWithComments() {
-        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"22123\" id=\"string\" " +
-                          "scope=\"per-mediator\" collector=\"false\" " +
-                          "hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" timeout=\"10\" " +
-                          "maxMessageSize=\"10000\"><onCacheHit sequence=\"seq\" />" +
-                          "<implementation type=\"memory\" maxSize=\"10\" /><!--Test Comment--></cache>";
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                          "id=\"string\" hashGenerator=\"org.wso2.caching.digest.DOMHASHGenerator\" " +
+                          "timeout=\"10\" scope=\"per-mediator\" collector=\"false\" " +
+                          "maxMessageSize=\"10000\"><!--Test Comment--><onCacheHit sequence=\"seq\"></onCacheHit>" +
+                          "<implementation type=\"memory\" maxSize=\"10\"/></cache>";
         assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
         assertTrue(serialization(inputXml, cacheMediatorSerializer));
     }
 
     public void testCacheMediatorSerializationResponseCache() {
-        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"32575\" " +
+        String inputXml = "<cache xmlns=\"http://ws.apache.org/ns/synapse\" " +
                           "id=\"string\" scope=\"per-host\" collector=\"true\" />";
         assertTrue(serialization(inputXml, cacheMediatorFactory, cacheMediatorSerializer));
         assertTrue(serialization(inputXml, cacheMediatorSerializer));
