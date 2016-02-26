@@ -199,6 +199,10 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
                 parentTraceState == SynapseConstants.TRACING_ON);
     }
 
+    public boolean shouldTrace(MessageContext msgCtx){
+        return isTracingEnabled() || shouldCaptureTracing(msgCtx);
+    }
+
     /**
      * Should this mediator perform tracing? True if its explicitly asked to
      * trace, or its parent has been asked to trace and it does not reject it
@@ -296,7 +300,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().info(msg);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext.getTracingState()) || shouldTrace(msgContext)) {
             trace.info(msg);
         }
     }
@@ -312,7 +316,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.error(msg);
         }
         throw new SynapseException(msg);
@@ -335,7 +339,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.warn(msg);
         }
     }
@@ -352,7 +356,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg, e);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.error(msg, e);
         }
         throw new SynapseException(msg, e);
@@ -514,7 +518,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         return (aspectConfiguration == null) ? null : aspectConfiguration.getUniqueId();
     }
 
-    private boolean shouldCaptureTracing(MessageContext synCtx) {
+    protected boolean shouldCaptureTracing(MessageContext synCtx) {
         Boolean isCollectingTraces = (Boolean) synCtx.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
 
         if (isCollectingTraces == null) {

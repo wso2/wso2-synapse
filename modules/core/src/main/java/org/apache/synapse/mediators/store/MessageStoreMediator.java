@@ -139,7 +139,7 @@ public class MessageStoreMediator extends AbstractMediator{
                                             + "] in failover store [" + failoverMessageStoreName + "].", synCtx);
                         }
 
-                        if (shouldTrace(synCtx.getTracingState())) {
+                        if (shouldTrace(synCtx)) {
                             trace.error("Message [" + synCtx.getMessageID() + "] store in the failover message store [" + failoverMessageStoreName + "]");
                         }
 
