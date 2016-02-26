@@ -48,7 +48,6 @@ public class StatisticDataUnit {
 	private boolean aspectConfigStatsEnabled = false;
 	private boolean aspectConfigTraceEnabled = false;
 	private boolean isIndividualStatisticCollected;
-	private String reportingID;
 
 	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
 	                         int cloneId, boolean isResponse, MessageContext messageContext,
@@ -199,14 +198,6 @@ public class StatisticDataUnit {
 
 	public void setIsIndividualStatisticCollected(boolean isIndividualStatisticCollected) {
 		this.isIndividualStatisticCollected = isIndividualStatisticCollected;
-	}
-
-	public String getReportingID() {
-		return reportingID;
-	}
-
-	public void setReportingID(String reportingID) {
-		this.reportingID = reportingID;
 	}
 
 	/**

@@ -55,14 +55,4 @@ public interface StatisticsConfigurable {
      * To enable tracing
      */
     public void enableTracing();
-
-    /**
-     * Returns unique Id to keep track
-     */
-    public String getUniqueId();
-
-    /**
-     * Sets unique Id to keep track
-     */
-    public void setUniqueId(String uniqueId);
 }

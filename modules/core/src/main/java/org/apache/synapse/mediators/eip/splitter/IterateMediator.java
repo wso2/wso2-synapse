@@ -451,8 +451,7 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     @Override
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         SplittingMediatorsStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getStatisticReportingId(), getMediatorName(),
-                                                    ComponentType.MEDIATOR, parentName, isCreateLog, true, false,
-                                                    isContentAltering());
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, true, false, isContentAltering());
     }
 }

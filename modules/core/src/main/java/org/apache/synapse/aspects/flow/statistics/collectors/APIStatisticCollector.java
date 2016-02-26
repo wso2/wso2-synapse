@@ -24,31 +24,30 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class APIStatisticCollector extends RuntimeStatisticCollector {
+public class APIStatisticCollector extends RuntimeStatisticCollector{
 
-	private static final Log log = LogFactory.getLog(APIStatisticCollector.class);
+    private static final Log log = LogFactory.getLog(APIStatisticCollector.class);
 
-	/**
-	 * Reports statistics for API.
-	 *
-	 * @param messageContext      Current MessageContext of the flow.
-	 * @param apiName             API name.
-	 * @param aspectConfiguration Aspect Configuration for the API.
-	 */
-	public static void reportApiStatistics(MessageContext messageContext, String apiName,
-	                                       AspectConfiguration aspectConfiguration) {
-		if (isStatisticsEnabled()) {
-			boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
-			boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+    /**
+     * Reports statistics for API.
+     *
+     * @param messageContext      Current MessageContext of the flow.
+     * @param apiName             API name.
+     * @param aspectConfiguration Aspect Configuration for the API.
+     */
+    public static void reportApiStatistics(MessageContext messageContext, String apiName,
+                                           AspectConfiguration aspectConfiguration) {
+        if (isStatisticsEnabled()) {
+            boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+            boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
 
-			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
-			messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
+            messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, isCollectingStatistics);
+            messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, isCollectingTracing);
 
-			if (isCollectingStatistics) {
-				setStatisticsTraceId(messageContext);
-				createLogForMessageCheckpoint(messageContext, aspectConfiguration.getUniqueId(), apiName,
-				                              ComponentType.API, null, true, false, false, true);
-			}
-		}
-	}
+            if (isCollectingStatistics) {
+                setStatisticsTraceId(messageContext);
+                createLogForMessageCheckpoint(messageContext, apiName, ComponentType.API, null, true, false, false, true);
+            }
+        }
+    }
 }

@@ -36,9 +36,6 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
     /* Identifier for a particular aspects configuration */
     private String id;
 
-    /* Unique Identification number to identify each component in the configuration */
-    private String uniqueId = null;
-
     public AspectConfiguration(String id) {
         this.id = id;
     }
@@ -77,13 +74,5 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 
     public String getId() {
         return id;
-    }
-
-    public String getUniqueId() {
-        return uniqueId;
-    }
-
-    public void setUniqueId(String uniqueId) {
-        this.uniqueId = uniqueId;
     }
 }

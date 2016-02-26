@@ -30,7 +30,6 @@ import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 
 import java.util.ArrayList;
@@ -199,10 +198,6 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
                 parentTraceState == SynapseConstants.TRACING_ON);
     }
 
-    public boolean shouldTrace(MessageContext msgCtx){
-        return isTracingEnabled() || shouldCaptureTracing(msgCtx);
-    }
-
     /**
      * Should this mediator perform tracing? True if its explicitly asked to
      * trace, or its parent has been asked to trace and it does not reject it
@@ -217,11 +212,10 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     @Deprecated
     protected boolean isTraceOn(MessageContext msgCtx) {
-        return isTracingEnabled() || shouldCaptureTracing(msgCtx);
-//        return
-//            (traceState == SynapseConstants.TRACING_ON) ||
-//            (traceState == SynapseConstants.TRACING_UNSET &&
-//                msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
+        return
+            (traceState == SynapseConstants.TRACING_ON) ||
+            (traceState == SynapseConstants.TRACING_UNSET &&
+                msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
     }
 
     /**
@@ -300,7 +294,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().info(msg);
         }
-        if (shouldTrace(msgContext)) {
+        if (shouldTrace(msgContext.getTracingState())) {
             trace.info(msg);
         }
     }
@@ -316,7 +310,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
-        if (shouldTrace(msgContext)) {
+        if (shouldTrace(msgContext.getTracingState())) {
             trace.error(msg);
         }
         throw new SynapseException(msg);
@@ -339,7 +333,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }
-        if (shouldTrace(msgContext)) {
+        if (shouldTrace(msgContext.getTracingState())) {
             trace.warn(msg);
         }
     }
@@ -356,7 +350,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg, e);
         }
-        if (shouldTrace(msgContext)) {
+        if (shouldTrace(msgContext.getTracingState())) {
             trace.error(msg, e);
         }
         throw new SynapseException(msg, e);
@@ -476,9 +470,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
         MediatorStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getStatisticReportingId(), getMediatorName(),
-                                                    ComponentType.MEDIATOR, parentName, isCreateLog, false, false,
-                                                    isContentAltering());
+                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                    parentName, isCreateLog, false, false, isContentAltering());
     }
 
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
@@ -513,19 +506,4 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         this.isSkipEnabled = isSkipEnabled;
     }
 
-    @Override
-    public String getStatisticReportingId() {
-        return (aspectConfiguration == null) ? null : aspectConfiguration.getUniqueId();
-    }
-
-    protected boolean shouldCaptureTracing(MessageContext synCtx) {
-        Boolean isCollectingTraces = (Boolean) synCtx.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
-
-        if (isCollectingTraces == null) {
-            return false;
-        }
-        else {
-            return isCollectingTraces;
-        }
-    }
 }

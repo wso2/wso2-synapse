@@ -94,11 +94,11 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 					} else {
 						textualStringName = (String) synapseRestApi;
 					}
-					createLogForMessageCheckpoint(synapseOutMsgCtx, null, textualStringName, ComponentType.RESOURCE,
-					                              null, false, false, false, false);
+					createLogForMessageCheckpoint(synapseOutMsgCtx, textualStringName, ComponentType.RESOURCE, null,
+					                              false, false, false, false);
 				} else if (synapseResource != null) {
-					createLogForMessageCheckpoint(synapseOutMsgCtx, null, (String) synapseResource,
-					                              ComponentType.RESOURCE, null, false, false, false, false);
+					createLogForMessageCheckpoint(synapseOutMsgCtx, (String) synapseResource, ComponentType.RESOURCE,
+					                              null, false, false, false, false);
 				}
 			}
 			createLogForFinalize(synapseOutMsgCtx);

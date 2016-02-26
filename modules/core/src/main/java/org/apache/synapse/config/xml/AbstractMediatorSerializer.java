@@ -31,7 +31,6 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.builtin.CommentMediator;
@@ -162,12 +161,6 @@ public abstract class AbstractMediatorSerializer implements MediatorSerializer {
                 mediatorOmElement.addAttribute(fac.createOMAttribute(
                         XMLConfigConstants.TRACE_ATTRIB_NAME, nullNS,
                         XMLConfigConstants.TRACE_ENABLE));
-            }
-
-            if (statisticsConfigurable != null && statisticsConfigurable.getUniqueId() != null) {
-                mediatorOmElement.addAttribute(
-                        fac.createOMAttribute(StatisticsConstants.UNIQUE_STATISTIC_REPORTING_ID, nullNS,
-                                              statisticsConfigurable.getUniqueId()));
             }
         }
 

@@ -31,8 +31,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticUniqueIdProvider;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
@@ -139,6 +137,20 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
      */
     protected void processAuditStatus(Mediator mediator, OMElement mediatorOmElement) {
 
+        OMAttribute trace = mediatorOmElement.getAttribute(
+            new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
+
+        if (trace != null) {
+            String traceValue = trace.getAttributeValue();
+            if (traceValue != null) {
+                if (traceValue.equals(XMLConfigConstants.TRACE_ENABLE)) {
+                    mediator.setTraceState(org.apache.synapse.SynapseConstants.TRACING_ON);
+                } else if (traceValue.equals(XMLConfigConstants.TRACE_DISABLE)) {
+                    mediator.setTraceState(org.apache.synapse.SynapseConstants.TRACING_OFF);
+                }
+            }
+        }
+
         String name = null;
         if (mediator instanceof Nameable) {
             name = ((Nameable) mediator).getName();
@@ -159,29 +171,6 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
                         configuration.enableStatistics();
                     }
                 }
-            }
-
-            OMAttribute trace = mediatorOmElement.getAttribute(
-                    new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
-            if (trace != null) {
-                String traceValue = trace.getAttributeValue();
-                if (traceValue != null) {
-                    if (traceValue.equals(XMLConfigConstants.TRACE_ENABLE)) {
-                        configuration.enableTracing();
-                    }
-                }
-            }
-
-            OMAttribute uniqueId = mediatorOmElement.getAttribute(StatisticsConstants.UNIQUE_ID);
-            if (uniqueId != null) {
-                String uniqueIdAttributeValue = uniqueId.getAttributeValue();
-                if (uniqueIdAttributeValue != null) {
-                    configuration.setUniqueId(uniqueIdAttributeValue);
-                } else {
-                    configuration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
-                }
-            } else {
-                configuration.setUniqueId(StatisticUniqueIdProvider.getIdForComponent());
             }
         }
     }

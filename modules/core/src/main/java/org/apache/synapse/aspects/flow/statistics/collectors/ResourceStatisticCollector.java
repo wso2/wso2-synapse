@@ -26,59 +26,58 @@ import org.apache.synapse.rest.RESTConstants;
 
 public class ResourceStatisticCollector extends RuntimeStatisticCollector {
 
-	private static final Log log = LogFactory.getLog(ResourceStatisticCollector.class);
+    private static final Log log = LogFactory.getLog(ResourceStatisticCollector.class);
 
-	/**
-	 * Reports statistics for Resource.
-	 *
-	 * @param messageContext Current MessageContext of the flow.
-	 * @param resourceId     Resource Id.
-	 * @param parentName     parent name.
-	 * @param isCreateLog    It is statistic flow start or end.
-	 */
-	public static void reportStatisticForResource(MessageContext messageContext, String reportingId, String resourceId,
-	                                              String parentName, boolean isCreateLog) {
-		if (shouldReportStatistic(messageContext)) {
-			String resourceName = getResourceNameForStatistics(messageContext, resourceId);
-			if (isCreateLog) {
-				createLogForMessageCheckpoint(messageContext, reportingId, resourceName, ComponentType.RESOURCE,
-				                              parentName, true, false, false, true);
-			} else {
-				if (!messageContext.isResponse()) {
-					boolean isOutOnly =
-							Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-					if (!isOutOnly) {
-						isOutOnly = (!Boolean.parseBoolean(
-								String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) && !messageContext.isResponse());
-					}
-					if (isOutOnly) {
-						MediatorStatisticCollector
-								.reportStatisticForMessageComponent(messageContext, reportingId, resourceName,
-								                                    ComponentType.RESOURCE, parentName, false, false,
-								                                    false, false);
-					}
-				} else {
-					MediatorStatisticCollector
-							.reportStatisticForMessageComponent(messageContext, reportingId, resourceName,
-							                                    ComponentType.RESOURCE, parentName, false, false, false,
-							                                    false);
-				}
-			}
-		}
-	}
+    /**
+     * Reports statistics for Resource.
+     *
+     * @param messageContext Current MessageContext of the flow.
+     * @param resourceId     Resource Id.
+     * @param parentName     parent name.
+     * @param isCreateLog    It is statistic flow start or end.
+     */
+    public static void reportStatisticForResource(MessageContext messageContext, String resourceId, String parentName,
+                                                  boolean isCreateLog) {
+        if (shouldReportStatistic(messageContext)) {
+            String resourceName = getResourceNameForStatistics(messageContext, resourceId);
+            if (isCreateLog) {
+                createLogForMessageCheckpoint(messageContext, resourceName, ComponentType.RESOURCE, parentName, true,
+                                              false, false, true);
+            } else {
+                if (!messageContext.isResponse()) {
+                    boolean isOutOnly =
+                            Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
+                    if (!isOutOnly) {
+                        isOutOnly = (!Boolean.parseBoolean(
+                                String.valueOf(messageContext.getProperty(SynapseConstants.SENDING_REQUEST))) &&
+                                     !messageContext.isResponse());
+                    }
+                    if (isOutOnly) {
+                        MediatorStatisticCollector
+                                .reportStatisticForMessageComponent(messageContext, resourceName, ComponentType.RESOURCE,
+                                                           parentName, false, false, false, false);
+                    }
+                } else {
+                    MediatorStatisticCollector
+                            .reportStatisticForMessageComponent(messageContext, resourceName, ComponentType.RESOURCE,
+                                                                parentName, false, false, false, false);
+                }
+            }
+        }
+    }
 
-	private static String getResourceNameForStatistics(MessageContext messageContext, String resourceId) {
-		Object synapseRestApi = messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
-		Object restUrlPattern = messageContext.getProperty(RESTConstants.REST_URL_PATTERN);
-		if (synapseRestApi != null) {
-			String textualStringName;
-			if (restUrlPattern != null) {
-				textualStringName = (String) synapseRestApi + restUrlPattern;
-			} else {
-				textualStringName = (String) synapseRestApi;
-			}
-			return textualStringName;
-		}
-		return resourceId;
-	}
+    private static String getResourceNameForStatistics(MessageContext messageContext, String resourceId) {
+        Object synapseRestApi = messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
+        Object restUrlPattern = messageContext.getProperty(RESTConstants.REST_URL_PATTERN);
+        if (synapseRestApi != null) {
+            String textualStringName;
+            if (restUrlPattern != null) {
+                textualStringName = (String) synapseRestApi + restUrlPattern;
+            } else {
+                textualStringName = (String) synapseRestApi;
+            }
+            return textualStringName;
+        }
+        return resourceId;
+    }
 }

@@ -18,8 +18,6 @@
 
 package org.apache.synapse.aspects.flow.statistics.util;
 
-import javax.xml.namespace.QName;
-
 /**
  * This class holds constants related to  mediation flow statistics collection.
  */
@@ -100,10 +98,6 @@ public class StatisticsConstants {
 	public static final int DEFAULT_MSG_ID = 0;
 
 	public static final String IMAGINARY_COMPONENT_ID = "ImaginaryName";
-
-	public static final String UNIQUE_STATISTIC_REPORTING_ID = "statisticId";
-
-	public static final QName UNIQUE_ID = new QName(UNIQUE_STATISTIC_REPORTING_ID);
 
 	/**
 	 * Modes of closing statistic entry
