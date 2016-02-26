@@ -35,14 +35,13 @@ public class HeaderMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testHeaderMediatorSerializationSenarioOne() throws Exception {
-        String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                          "name=\"To\" value=\"http://127.0.0.1:10001/services/Services\"  statisticId=\"186104\"/>";
+        String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" name=\"To\" value=\"http://127.0.0.1:10001/services/Services\"/>";
         assertTrue(serialization(inputXml, headerMediatorFactory, headerMediatorSerializer));
         assertTrue(serialization(inputXml, headerMediatorSerializer));
     }
 
     public void testHeaderMediatorSerializationSenarioTwo() throws Exception {
-        String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" name=\"To\" action=\"remove\" statisticId=\"186104\"/>";
+        String inputXml = "<header xmlns=\"http://ws.apache.org/ns/synapse\" name=\"To\" action=\"remove\"/>";
         assertTrue(serialization(inputXml, headerMediatorFactory, headerMediatorSerializer));
         assertTrue(serialization(inputXml, headerMediatorSerializer));
     }

@@ -33,10 +33,10 @@ public class SwitchMediatorSerializationTest extends AbstractTestCase {
 
     public void testSwitchMediatorSerializationScenarioOne() {
 
-        String switchConfiguration = "<syn:switch xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"synapse:get-property('to')\" statisticId=\"186104\">" +
-                "<syn:case regex=\"MyService1\"><syn:drop statisticId=\"186104\"/></syn:case>" +
-                "<syn:case regex=\"MyService2\"><syn:drop statisticId=\"186104\"/></syn:case>" +
-                "<syn:default><syn:drop statisticId=\"186104\"/></syn:default>" +
+        String switchConfiguration = "<syn:switch xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"synapse:get-property('to')\">" +
+                "<syn:case regex=\"MyService1\"><syn:drop/></syn:case>" +
+                "<syn:case regex=\"MyService2\"><syn:drop/></syn:case>" +
+                "<syn:default><syn:drop/></syn:default>" +
                 "</syn:switch>";
 
         try {
@@ -48,9 +48,9 @@ public class SwitchMediatorSerializationTest extends AbstractTestCase {
 
     public void testSwitchMediatorSerializationScenarioTwo() {
 
-        String switchConfiguration = "<syn:switch xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"synapse:get-property('to')\" statisticId=\"186104\">" +
-                "<syn:case regex=\"MyService1\"><syn:drop statisticId=\"186104\"/></syn:case>" +
-                "<syn:case regex=\"MyService2\"><syn:drop statisticId=\"186104\"/></syn:case>" +
+        String switchConfiguration = "<syn:switch xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"synapse:get-property('to')\">" +
+                "<syn:case regex=\"MyService1\"><syn:drop/></syn:case>" +
+                "<syn:case regex=\"MyService2\"><syn:drop/></syn:case>" +
                 "</syn:switch>";
 
         try {

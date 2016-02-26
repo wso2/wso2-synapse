@@ -36,7 +36,7 @@ public class CalloutMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testCalloutMediatorSerializationScenarioOne() {
-        String inputXml = "<callout xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"555295fd\" " +
+        String inputXml = "<callout xmlns=\"http://ws.apache.org/ns/synapse\" " +
                           "serviceURL=\"http://localhost:9000/soap/SimpleStockQuoteService\" " +
                           "action=\"urn:getQuote\" ><source xmlns:s11=\"http://schemas.xmlsoap.org/" +
                           "soap/envelope/\" xmlns:s12=\"http://www.w3.org/2003/05/soap-envelope\" " +
@@ -51,7 +51,7 @@ public class CalloutMediatorSerializationTest extends AbstractTestCase {
     public void testCalloutMediatorSerializationScenarioTwo() throws Exception {
         File axis2xml = new File("axis2.xml");
         axis2xml.createNewFile();
-        String inputXml = "<callout xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"555295\" " +
+        String inputXml = "<callout xmlns=\"http://ws.apache.org/ns/synapse\" " +
                           "serviceURL=\"http://localhost:9000/soap/SimpleStockQuoteService\" " +
                           "action=\"urn:getQuote\"><configuration axis2xml=\"axis2.xml\" " +
                           "repository=\".\"/><source xmlns:s11=\"http://schemas.xmlsoap.org/soap/envelope/\" " +
@@ -63,7 +63,7 @@ public class CalloutMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testCalloutMediatorSerializationScenarioThree() {
-        String inputXml = "<callout xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"555295fd\" " +
+        String inputXml = "<callout xmlns=\"http://ws.apache.org/ns/synapse\" " +
                           "serviceURL=\"http://localhost:9000/soap/SimpleStockQuoteService\" " +
                           "action=\"urn:getQuote\" initAxis2ClientOptions=\"false\"><source xmlns:s11=\"http://schemas.xmlsoap.org/" +
                           "soap/envelope/\" xmlns:s12=\"http://www.w3.org/2003/05/soap-envelope\" " +

@@ -35,67 +35,67 @@ public class FilterMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testFilterMediatorSerializationSenarioOne() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" xpath=\"//*[wsx:symbol='MSFT']\" xmlns:wsx=\"http://services.samples/xsd\"/>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" xpath=\"//*[wsx:symbol='MSFT']\" xmlns:wsx=\"http://services.samples/xsd\"/>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioTwo() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioThree() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><send statisticId=\"186104\"/></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><send/></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioFour() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><send statisticId=\"186104\"/></then></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><send/></then></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioFive() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><send statisticId=\"186104\"/></then><else><drop statisticId=\"186104\"/></else></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><send/></then><else><drop/></else></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioSix() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then sequence=\"test\"/></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then sequence=\"test\"/></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioSeven() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then sequence=\"test\"/><else sequence=\"test2\"/></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then sequence=\"test\"/><else sequence=\"test2\"/></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioEight() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><!--Test Comment--></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><!--Test Comment--></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioNine() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><!--Test Comment--><send statisticId=\"186104\"/></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><!--Test Comment--><send/></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioTen() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><!--Test Comment--><send statisticId=\"186104\"/></then></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><!--Test Comment--><send/></then></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }
 
     public void testFilterMediatorSerializationSenarioEleven() throws Exception {
-        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"186104\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><!--Test Comment--><send statisticId=\"186104\"/></then><else><!--Test Comment--><drop statisticId=\"186104\"/></else></filter>";
+        String inputXml = "<filter xmlns=\"http://ws.apache.org/ns/synapse\" source=\"get-property('To')\" regex=\".*/StockQuote.*\"><then><!--Test Comment--><send/></then><else><!--Test Comment--><drop/></else></filter>";
         assertTrue(serialization(inputXml, filterMediatorFactory, filterMediatorSerializer));
         assertTrue(serialization(inputXml, filterMediatorSerializer));
     }

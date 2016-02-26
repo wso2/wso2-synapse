@@ -35,14 +35,14 @@ public class ClassMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testClassMediatorSerializationScenarioOne() throws Exception {
-        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"555295\" " +
+        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" " +
                 "name=\"org.apache.synapse.config.xml.TestMediator\"></class> ";
         assertTrue(serialization(inputXml, classMediatorFactory, classMediatorSerializer));
         assertTrue(serialization(inputXml, classMediatorSerializer));
     }
 
     public void testClassMediatorSerializationWithProperty() throws Exception {
-        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"555295\" " +
+        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" " +
                 "name=\"org.apache.synapse.config.xml.TestMediator\"><property name=\"testProp\" " +
                 "value=\"This is a test\"/></class> ";
         assertTrue(serialization(inputXml, classMediatorFactory, classMediatorSerializer));
@@ -50,7 +50,7 @@ public class ClassMediatorSerializationTest extends AbstractTestCase {
     }
 
     public void testClassMediatorSerializationWithInlineProperty() throws Exception {
-        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" statisticId=\"555295\" " +
+        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" " +
                 "name=\"org.apache.synapse.config.xml.TestMediator\">" +
                 "<property name=\"testElemProp\"><test/></property></class> ";
         assertTrue(serialization(inputXml, classMediatorFactory, classMediatorSerializer));
