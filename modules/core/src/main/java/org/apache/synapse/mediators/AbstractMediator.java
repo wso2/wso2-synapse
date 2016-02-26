@@ -300,7 +300,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().info(msg);
         }
-        if (shouldTrace(msgContext.getTracingState()) || shouldTrace(msgContext)) {
+        if (shouldTrace(msgContext)) {
             trace.info(msg);
         }
     }
