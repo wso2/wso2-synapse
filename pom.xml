@@ -438,7 +438,7 @@
              <version>${jruby.version}</version>
          </dependency>
          <dependency>
-             <groupId>org.apache.bsf</groupId>
+             <groupId>org.apache.bsf.wso2</groupId>
              <artifactId>bsf-all</artifactId>
              <version>${bsf.version}</version>
          </dependency>
@@ -1043,7 +1043,7 @@
       <wso2caching.version>4.0.3</wso2caching.version>
       <wso2eventing-api.version>2.1</wso2eventing-api.version>
       <xbean.version>2.2.0</xbean.version>
-      <bsf.version>3.0</bsf.version>
+      <bsf.version>3.0.0.wso2v5</bsf.version>
       <groovy.version>1.1-rc-1</groovy.version>
       <servlet-api.version>2.3</servlet-api.version>
       <commons-lang.version>2.4</commons-lang.version>
