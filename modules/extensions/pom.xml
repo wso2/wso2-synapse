@@ -111,7 +111,7 @@
             <artifactId>xbean</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.bsf</groupId>
+            <groupId>org.apache.bsf.wso2</groupId>
             <artifactId>bsf-all</artifactId>
         </dependency>
         <dependency>
