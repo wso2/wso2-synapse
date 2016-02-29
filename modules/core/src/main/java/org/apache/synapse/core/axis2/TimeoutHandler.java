@@ -211,7 +211,7 @@ public class TimeoutHandler extends TimerTask {
                                 "timeout of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
                     }
                     callbackStore.remove(key);
-                    CallbackStatisticCollector.reportCallbackReceived(callback.getSynapseOutMsgCtx(), (String) key);
+                    CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
                 }
             }
         }

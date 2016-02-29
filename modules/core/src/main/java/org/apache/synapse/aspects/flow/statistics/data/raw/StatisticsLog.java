@@ -32,65 +32,50 @@ import java.util.Map;
 
 public class StatisticsLog {
 
-	private int parentLevel;
-
-	private final int parentMsgId;
-
-	private long timestamp;
-
-	private String messageFlowId;
-
 	private final ComponentType componentType;
-
 	private final String componentId;
-
 	private final String parent;
-
-	private int msgId;
-
-	List<Integer> children = new LinkedList<>();
-
-	private int noOfFaults = 0;
-
-	private long startTime = -1;
-
-	private long endTime = -1;
-
-	private boolean isResponse;
-
-	private boolean cloneLog;
-
-	private boolean aggregateLog;
-
-	private Integer immediateChild = null;
-
-	private Integer treeMapping = null;
-
-	private boolean isOpenedByContinuation;
-
-	private Map<String, Object> contextPropertyMap;
-
-	private Map<String, Object> transportPropertyMap;
-
+	private final int parentMsgId = 0;
+	private String messageFlowId;
 	private String beforePayload;
-
 	private String afterPayload;
+	private List<Integer> children = new LinkedList<>();
+	private Integer immediateChild = null;
+	private Integer treeMapping = null;
+	private Map<String, Object> contextPropertyMap;
+	private Map<String, Object> transportPropertyMap;
+	private int parentLevel;
+	private int msgId = 0;
+	private int noOfFaults = 0;
+	private long startTime = -1;
+	private long endTime = -1;
+	private long timestamp;
+	private boolean isResponse;
+	private boolean isOpenedByContinuation;
+	private int numberOpenTimes;
+	private int currentIndex;
+	private boolean isFlowContinuable;
+	private boolean isFlowSplittingMediator;
+	private boolean isFlowAggregateMediator;
 
-	public StatisticsLog(StatisticDataUnit statisticDataUnit, int parentMsgId, int parentLevel) {
+	public StatisticsLog(StatisticDataUnit statisticDataUnit) {
 		this.startTime = statisticDataUnit.getTime();
 		this.componentType = statisticDataUnit.getComponentType();
 		this.componentId = statisticDataUnit.getComponentId();
-		this.parent = statisticDataUnit.getParentId();
-		this.msgId = statisticDataUnit.getCloneId();
-		this.isResponse = statisticDataUnit.isResponse();
-		this.parentLevel = parentLevel;
-		this.parentMsgId = parentMsgId;
-		this.aggregateLog = statisticDataUnit.isAggregatePoint();
-		this.cloneLog = statisticDataUnit.isClonePoint();
+		this.parent = null;
+		this.msgId = statisticDataUnit.getFlowId();
+		parentLevel = statisticDataUnit.getParentIndex();
 		this.immediateChild = null;
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 		this.beforePayload = statisticDataUnit.getPayload();
+		this.currentIndex = statisticDataUnit.getCurrentIndex();
+		this.numberOpenTimes = 1;
+		timestamp = System.currentTimeMillis();
+		this.messageFlowId = statisticDataUnit.getStatisticId();
+		this.isFlowContinuable = statisticDataUnit.isFlowContinuableMediator();
+		this.isFlowSplittingMediator = statisticDataUnit.isFlowSplittingMediator();
+		this.isFlowAggregateMediator = statisticDataUnit.isFlowAggregateMediator();
 	}
 
 	public StatisticsLog(ComponentType componentType, String componentId, int parentMsgId, int parentLevel) {
@@ -99,8 +84,44 @@ public class StatisticsLog {
 		this.parent = null;
 		this.msgId = StatisticsConstants.DEFAULT_MSG_ID;
 		this.parentLevel = parentLevel;
-		this.parentMsgId = parentMsgId;
 		this.immediateChild = null;
+	}
+
+	public void decrementParentLevel() {
+		this.parentLevel--;
+	}
+
+	public void decrementChildren() {
+		if (immediateChild != null) {
+			immediateChild--;
+		}
+
+		if (children.size() > 0) {
+			for (Integer child : children) {
+				child -= 1;
+			}
+		}
+	}
+
+	public String getComponentTypeToString() {
+		switch (componentType) {
+			case PROXYSERVICE:
+				return StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE;
+			case ENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_ENDPOINT;
+			case INBOUNDENDPOINT:
+				return StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT;
+			case SEQUENCE:
+				return StatisticsConstants.FLOW_STATISTICS_SEQUENCE;
+			case MEDIATOR:
+				return StatisticsConstants.FLOW_STATISTICS_MEDIATOR;
+			case API:
+				return StatisticsConstants.FLOW_STATISTICS_API;
+			case RESOURCE:
+				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
+			default:
+				return StatisticsConstants.FLOW_STATISTICS_ANY;
+		}
 	}
 
 	public int getParentMsgId() {
@@ -157,22 +178,6 @@ public class StatisticsLog {
 
 	public void setIsResponse(boolean isResponse) {
 		this.isResponse = isResponse;
-	}
-
-	public boolean isCloneLog() {
-		return cloneLog;
-	}
-
-	public boolean isAggregateLog() {
-		return aggregateLog;
-	}
-
-	public void setCloneLog(boolean cloneLog) {
-		this.cloneLog = cloneLog;
-	}
-
-	public void setImmediateChild(Integer immediateChild) {
-		this.immediateChild = immediateChild;
 	}
 
 	public void setChildren(Integer childrenIndex) {
@@ -251,40 +256,67 @@ public class StatisticsLog {
 		return afterPayload;
 	}
 
-	public String getComponentTypeToString() {
-		switch (componentType) {
-			case PROXYSERVICE:
-				return StatisticsConstants.FLOW_STATISTICS_PROXYSERVICE;
-			case ENDPOINT:
-				return StatisticsConstants.FLOW_STATISTICS_ENDPOINT;
-			case INBOUNDENDPOINT:
-				return StatisticsConstants.FLOW_STATISTICS_INBOUNDENDPOINT;
-			case SEQUENCE:
-				return StatisticsConstants.FLOW_STATISTICS_SEQUENCE;
-			case MEDIATOR:
-				return StatisticsConstants.FLOW_STATISTICS_MEDIATOR;
-			case API:
-				return StatisticsConstants.FLOW_STATISTICS_API;
-			case RESOURCE:
-				return StatisticsConstants.FLOW_STATISTICS_RESOURCE;
-			default:
-				return StatisticsConstants.FLOW_STATISTICS_ANY;
-		}
+	public boolean isOpenLog() {
+		return numberOpenTimes > 0;
 	}
 
-	public void decrementParentLevel() {
-		this.parentLevel--;
+	public void incrementOpenTimes() {
+		this.numberOpenTimes++;
 	}
 
-	public void decrementChildren() {
-		if (immediateChild != null) {
-			immediateChild--;
-		}
+	public void decrementOpenTimes() {
+		this.numberOpenTimes--;
+	}
 
-		if (children.size() > 0) {
-			for (Integer child : children) {
-				child -= 1;
-			}
-		}
+	public void setParentLevel(int parentLevel) {
+		this.parentLevel = parentLevel;
+	}
+
+	public int getCurrentIndex() {
+		return currentIndex;
+	}
+
+	public void setCurrentIndex(int currentIndex) {
+		this.currentIndex = currentIndex;
+	}
+
+	public void setChildren(List<Integer> children) {
+		this.children = children;
+	}
+
+	public void setTreeMapping(Integer treeMapping) {
+		this.treeMapping = treeMapping;
+	}
+
+	public void setNoOfFaults(int noOfFaults) {
+		this.noOfFaults = noOfFaults;
+	}
+
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
+	}
+
+	public boolean isFlowContinuable() {
+		return isFlowContinuable;
+	}
+
+	public void setIsFlowContinuable(boolean isFlowContinuable) {
+		this.isFlowContinuable = isFlowContinuable;
+	}
+
+	public boolean isFlowSplittingMediator() {
+		return isFlowSplittingMediator;
+	}
+
+	public void setIsFlowSplittingMediator(boolean isFlowSplittingMediator) {
+		this.isFlowSplittingMediator = isFlowSplittingMediator;
+	}
+
+	public boolean isFlowAggregateMediator() {
+		return isFlowAggregateMediator;
+	}
+
+	public void setIsFlowAggregateMediator(boolean isFlowAggregateMediator) {
+		this.isFlowAggregateMediator = isFlowAggregateMediator;
 	}
 }

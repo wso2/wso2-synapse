@@ -18,27 +18,22 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
  * Reopen sequence for continuation (eg: call mediator)
  */
-public class ParentReopenEvent implements StatisticsReportingEvent {
-	private final String statisticId;
-	private String componentId;
-	private String newMessageId;
 
-	public ParentReopenEvent(MessageContext messageContext, String componentId) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.componentId = componentId;
-		this.newMessageId = messageContext.getMessageID();
+public class ParentReopenEvent implements StatisticsReportingEvent {
+	private BasicStatisticDataUnit basicStatisticDataUnit;
+
+	public ParentReopenEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
+		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
+	@Override public void process() {
+		RuntimeStatisticCollector.openParents(basicStatisticDataUnit);
 	}
 }

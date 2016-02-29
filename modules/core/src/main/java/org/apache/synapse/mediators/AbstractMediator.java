@@ -28,8 +28,9 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 
@@ -467,19 +468,21 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         return cls.substring(cls.lastIndexOf(".") + 1);
     }
 
-    /**
-     * Report statistics for the mediator
-     *
-     * @param messageContext message context
-     * @param parentName     sequence name that mediator belong to
-     * @param isCreateLog    whether this is a start or end of a mediator execution
-     */
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        MediatorStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, false, false, isContentAltering());
+    public Integer reportOpenStatistics(MessageContext messageContext) {
+        if (this instanceof FlowContinuableMediator) {
+            return OpenEventCollector
+                    .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                isContentAltering());
+        } else {
+            return OpenEventCollector.reportChildEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                            isContentAltering());
+        }
     }
 
+    public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
+        ClosingEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
+                                              isContentAltering());
+    }
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
         this.flowPoint = flowPoint;
     }

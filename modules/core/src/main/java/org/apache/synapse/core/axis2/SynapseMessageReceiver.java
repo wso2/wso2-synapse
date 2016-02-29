@@ -29,7 +29,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.ProxyStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 
 /**
@@ -94,7 +93,6 @@ public class SynapseMessageReceiver implements MessageReceiver {
             }
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            ProxyStatisticCollector.reportEndSynapseMessageReceiver(synCtx);
         }
     }
 

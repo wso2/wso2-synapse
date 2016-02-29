@@ -26,7 +26,7 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 /**
  * Remove reference when continuation done
  */
-public class ContinuationEndEvent implements StatisticsReportingEvent {
+@Deprecated public class ContinuationEndEvent implements StatisticsReportingEvent {
 
 	private final String statisticId;
 	private String messageId;

@@ -32,8 +32,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.flow.statistics.collectors.AggregateMediatorStatisticCollector;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -361,20 +362,17 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         boolean result;
 
         SequenceMediator onCompleteSequence = getOnCompleteSequence();
-        AggregateMediatorStatisticCollector.openLogForContinuation(synCtx,
-                                                         onCompleteSequence.getSequenceNameForStatistics(synCtx));
         if (!contState.hasChild()) {
             result = onCompleteSequence.mediate(synCtx, contState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) onCompleteSequence.getChild(contState.getPosition());
-            AggregateMediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, contState.getChildContState());
 
-            ((Mediator) mediator).reportStatistic(synCtx, null, false);
+            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
         }
-        onCompleteSequence.reportStatistic(synCtx, null, false);
+        onCompleteSequence.reportCloseStatistics(synCtx, null);
         return result;
     }
 
@@ -544,6 +542,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
+        StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
         return newCtx;
     }
 
@@ -644,9 +643,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     }
 
     @Override
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        AggregateMediatorStatisticCollector
-                .reportStatisticForAggregateMediator(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                     parentName, isCreateLog, isAggregationMessageCollected);
+    public Integer reportOpenStatistics(MessageContext messageContext) {
+        return OpenEventCollector.reportFlowAggregateEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           isContentAltering());
     }
 }

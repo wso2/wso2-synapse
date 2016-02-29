@@ -105,7 +105,12 @@ public interface Mediator extends SynapseArtifact {
     public String getMediatorName();
 
     /**
-     * Report Statistics for the Mediator
+     * Report Open Statistic Event for the Mediator
      */
-    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog);
+    public Integer reportOpenStatistics(MessageContext synCtx);
+
+    /**
+     * Report Close Statistic Event for the Mediator
+     */
+    public void reportCloseStatistics(MessageContext synCtx, Integer currentIndex);
 }

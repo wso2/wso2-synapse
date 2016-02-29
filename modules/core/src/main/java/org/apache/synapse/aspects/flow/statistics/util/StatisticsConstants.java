@@ -68,6 +68,11 @@ public class StatisticsConstants {
 	 */
 	public static final String FLOW_STATISTICS_IS_FAULT_REPORTED = "mediation.flow.statistics.fault.reported";
 
+	public static final String MEDIATION_FLOW_STATISTICS_INDEXING_OBJECT = "mediation.flow.statistics.index.object";
+
+	public static final String MEDIATION_FLOW_STATISTICS_PARENT_LIST = "mediation.flow.statistics.parent.list";
+	public static final String MEDIATION_FLOW_STATISTICS_PARENT_INDEX = "mediation.flow.statistics.parent.index";
+
 	/**
 	 * Key to specify whether statistics should be reported
 	 */
@@ -96,6 +101,7 @@ public class StatisticsConstants {
 	public static final String FLOW_STATISTICS_ANY = "Other Type";
 
 	public static final int DEFAULT_MSG_ID = 0;
+	public static final int DEFAULT_PARENT_INDEX = -1;
 
 	public static final String IMAGINARY_COMPONENT_ID = "ImaginaryName";
 

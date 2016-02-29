@@ -23,7 +23,8 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractListMediator;
@@ -93,11 +94,10 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) getChild(continuationState.getPosition());
-            MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            ((Mediator) mediator).reportStatistic(synCtx, null, false);
+            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
         }
         return result;
     }
@@ -121,11 +121,12 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         super.init(se);
     }
 
-    @Override
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
+    @Override public Integer reportOpenStatistics(MessageContext messageContext) {
         if (!messageContext.isResponse()) {
-            super.reportStatistic(messageContext, parentName, isCreateLog);
+            return OpenEventCollector
+                    .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                isContentAltering());
         }
+        return null;
     }
-
 }

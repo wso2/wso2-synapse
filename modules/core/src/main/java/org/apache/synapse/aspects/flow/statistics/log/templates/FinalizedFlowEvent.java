@@ -18,9 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -29,15 +28,14 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
  */
 public class FinalizedFlowEvent implements StatisticsReportingEvent {
 
-	private final StatisticDataUnit statisticDataUnit;
+	private BasicStatisticDataUnit basicStatisticDataUnit;
 
-	public FinalizedFlowEvent(MessageContext messageContext, long endTime) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
+	public FinalizedFlowEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
+		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
+		RuntimeStatisticCollector.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
 }

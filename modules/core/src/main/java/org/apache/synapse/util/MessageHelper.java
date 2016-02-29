@@ -35,7 +35,6 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.AggregateMediatorStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.SplittingMediatorsStatisticCollector;
 import org.apache.synapse.aspects.statistics.ErrorLog;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
@@ -313,8 +312,6 @@ public class MessageHelper {
         }
 
         newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
-        AggregateMediatorStatisticCollector.setAggregateProperties(synCtx, newCtx);
-
         return newCtx;
     }
 

@@ -32,7 +32,8 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.EndpointStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -290,7 +291,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
         logSetter();
 
-        EndpointStatisticCollector.reportStatisticForEndpoint(synCtx, getReportingName(), isStatisticCollected(), true);
+        Integer statisticReportingIndex = OpenEventCollector
+                .reportEntryEvent(synCtx, getReportingName(), definition.getAspectConfiguration(),
+                                  ComponentType.ENDPOINT);
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
@@ -373,8 +376,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
-        EndpointStatisticCollector
-                .reportStatisticForEndpoint(synCtx, getReportingName(), isStatisticCollected(), false);
+        ClosingEventCollector
+                .closeEntryEvent(synCtx, getReportingName(), ComponentType.ENDPOINT, statisticReportingIndex, false);
     }
 
     /**

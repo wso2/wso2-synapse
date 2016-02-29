@@ -18,7 +18,6 @@
 
 package org.apache.synapse.aspects.flow.statistics.store;
 
-import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
@@ -55,10 +54,6 @@ public class CompletedStatisticStore {
 		synchronized (completedEndpointStatisticEntriesForTesting) {
 			completedEndpointStatisticEntriesForTesting.add(statisticsLogs);
 		}
-	}
-
-	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
-		return null;
 	}
 
 	public CompletedStatisticStore() {

@@ -18,29 +18,22 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
  * Add fault to existing logs
  */
 public class FaultEvent implements StatisticsReportingEvent {
 
-	private String statisticId;
-	private int cloneId;
+	private BasicStatisticDataUnit basicStatisticDataUnit;
 
-	public FaultEvent(MessageContext messageContext) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
+	public FaultEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
+		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
 	@Override public void process() {
-		FaultStatisticCollector.reportFault(statisticId, cloneId);
+		FaultStatisticCollector.reportFault(basicStatisticDataUnit);
 	}
 }

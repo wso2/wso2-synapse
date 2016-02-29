@@ -68,7 +68,8 @@ public class CommentMediator extends AbstractMediator {
     }
 
     @Override
-    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog) {
+    public Integer reportOpenStatistics(MessageContext synCtx) {
         //Do not report statistic for comment mediator
+        return null;
     }
 }

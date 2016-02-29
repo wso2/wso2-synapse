@@ -18,12 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
  * Handling Open Event
@@ -32,38 +29,11 @@ public class StatisticsOpenEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
-	                           String parentId, boolean isAlteringContent) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		int cloneId;
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
-		statisticDataUnit = new StatisticDataUnit(statisticId, componentId, componentType, parentId, cloneId,
-		                                          messageContext.isResponse(), messageContext, isAlteringContent);
-
+	public StatisticsOpenEvent(StatisticDataUnit statisticDataUnit) {
+		this.statisticDataUnit = statisticDataUnit;
 	}
 
-	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
-	                           String parentId, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent) {
-		this(messageContext, componentId, componentType, parentId, isAlteringContent);
-		statisticDataUnit.setAggregatePoint(isAggregateLog);
-		statisticDataUnit.setClonePoint(isCloneLog);
-	}
-
-	public StatisticsOpenEvent(MessageContext messageContext, String componentId, ComponentType componentType,
-	                           String parentId, boolean isCloneLog, boolean isAggregateLog, boolean isAlteringContent,
-	                           boolean isIndividualStatistic) {
-		this(messageContext, componentId, componentType, parentId, isAlteringContent);
-		statisticDataUnit.setAggregatePoint(isAggregateLog);
-		statisticDataUnit.setClonePoint(isCloneLog);
-		statisticDataUnit.setIsIndividualStatisticCollected(isIndividualStatistic);
-	}
-
-	@Override
-	public void process() {
+	@Override public void process() {
 		RuntimeStatisticCollector.recordStatisticsOpenEvent(statisticDataUnit);
 	}
 }

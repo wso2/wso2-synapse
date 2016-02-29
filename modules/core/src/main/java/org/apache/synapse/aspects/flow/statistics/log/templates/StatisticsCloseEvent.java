@@ -18,7 +18,6 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
@@ -31,34 +30,8 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		int msgId;
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			msgId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			msgId = 0;
-		}
-
-		statisticDataUnit =
-				new StatisticDataUnit(statisticId, componentId, parentId, msgId, messageContext.isResponse(),
-				                      messageContext.getEnvironment(), messageContext);
-	}
-
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, boolean isCloneLog,
-	                            boolean isAggregateLog, boolean isAlteringContent) {
-		this(messageContext, componentId, parentId);
-		statisticDataUnit.setAggregatePoint(isAggregateLog);
-		statisticDataUnit.setClonePoint(isCloneLog);
-		if (RuntimeStatisticCollector.isCollectingPayloads() && statisticDataUnit.isAspectConfigTraceEnabled() &&
-		    isAlteringContent) {
-			try {
-				statisticDataUnit.setPayload(messageContext.getEnvelope().toString());
-			} catch (Exception e) {
-				// SOAP envelop is not created yet
-				statisticDataUnit.setPayload("NONE");
-			}
-		}
+	public StatisticsCloseEvent(StatisticDataUnit statisticDataUnit) {
+		this.statisticDataUnit = statisticDataUnit;
 	}
 
 	@Override

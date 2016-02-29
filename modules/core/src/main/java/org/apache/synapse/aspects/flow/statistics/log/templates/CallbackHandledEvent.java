@@ -18,8 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -28,16 +29,14 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
  */
 public class CallbackHandledEvent implements StatisticsReportingEvent {
 
-	private final String statisticId;
-	private String callbackId;
+	private CallbackDataUnit callbackDataUnit;
 
-	public CallbackHandledEvent(MessageContext messageContext, String callbackId) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.callbackId = callbackId;
+	public CallbackHandledEvent(CallbackDataUnit callbackDataUnit) {
+		this.callbackDataUnit = callbackDataUnit;
 	}
 
-	@Override
-	public void process() {
-		CallbackStatisticCollector.removeCallback(statisticId, callbackId);
+	@Override public void process() {
+		CallbackStatisticCollector.removeCallback(callbackDataUnit);
+		RuntimeStatisticCollector.closeStatisticEntry(callbackDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
 }

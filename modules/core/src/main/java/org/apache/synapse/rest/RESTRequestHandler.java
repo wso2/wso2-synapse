@@ -22,7 +22,8 @@ import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.flow.statistics.collectors.APIStatisticCollector;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.version.DefaultStrategy;
 
@@ -110,10 +111,10 @@ public class RESTRequestHandler {
 	}
 
 	private void apiProcess(MessageContext synCtx, API api) {
-		if (!synCtx.isResponse()) {
-            APIStatisticCollector
-					.reportApiStatistics(synCtx, api.getAPIName(), api.getAspectConfiguration());
-		}
-		api.process(synCtx);
+        if (!synCtx.isResponse()) {
+            OpenEventCollector
+                    .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
+        }
+        api.process(synCtx);
 	}
 }
