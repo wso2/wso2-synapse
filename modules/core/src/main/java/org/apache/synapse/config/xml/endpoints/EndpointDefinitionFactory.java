@@ -28,9 +28,12 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 public class EndpointDefinitionFactory implements DefinitionFactory{
     public static final Log log = LogFactory.getLog(EndpointDefinitionFactory.class);
@@ -140,11 +143,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 String d = duration.getText();
                 if (d != null) {
                     try {
-                        long timeoutMilliSeconds = Long.parseLong(d.trim());
-                        definition.setTimeoutDuration(timeoutMilliSeconds);
+                        Pattern pattern = Pattern.compile("\\{.*\\}");
+                        if (pattern.matcher(d).matches()) {
+                            d = d.trim().substring(1, d.length() - 1);
+                            SynapseXPath xpath = new SynapseXPath(d);
+                            definition.setDynamicTimeoutExpression(xpath);
+                        } else {
+                            long timeoutMilliSeconds = Long.parseLong(d.trim());
+                            definition.setTimeoutDuration(timeoutMilliSeconds);
+                        }
                     } catch (NumberFormatException e) {
                         handleException("Endpoint timeout duration expected as a " +
                                 "number but was not a number");
+                    } catch (JaxenException e) {
+                        handleException("Couldn't assign dynamic endpoint timeout as Synapse expression");
                     }
                 }
             }
