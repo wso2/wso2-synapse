@@ -388,23 +388,6 @@ public class StatisticsEntry {
 	}
 
 	/**
-	 * Returns collected message flows after message flow is ended.
-	 *
-	 * @return Message flow logs of the message flow
-	 */
-	public List<StatisticsLog> getMessageFlowLogsForStatisticTesting() {
-		if (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY) {
-			StatisticsLog statisticsLog = messageFlowLogs.remove(0);
-			messageFlowLogs.get(0).setMessageFlowId(statisticsLog.getMessageFlowId());
-			for (StatisticsLog log : messageFlowLogs) {
-				log.decrementParentLevel();
-				log.decrementChildren();
-			}
-		}
-		return messageFlowLogs;
-	}
-
-	/**
 	 * Get parent for this reporting element. This is needed as reporting elements actual parent is not its actual
 	 * parent.
 	 *

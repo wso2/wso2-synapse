@@ -114,11 +114,6 @@ public abstract class RuntimeStatisticCollector {
 		} else {
 			log.error("Wrong element tried to open statistics: " + statisticDataUnit.getComponentId());
 		}
-
-		System.out.println(
-				"Parent:" + statisticDataUnit.getParentIndex() + ">>>>>Current:" + statisticDataUnit.getCurrentIndex() +
-				">>>>>ComponentId:" + statisticDataUnit.getComponentId() + ">>>>>ComponentType:" +
-				statisticDataUnit.getComponentType());
 	}
 
 	/**
@@ -128,14 +123,6 @@ public abstract class RuntimeStatisticCollector {
 	 * @param mode     Mode of closing GRACEFULLY_CLOSE, ATTEMPT_TO_CLOSE or FORCEFULLY_CLOSE
 	 */
 	public static void closeStatisticEntry(BasicStatisticDataUnit dataUnit, int mode) {
-
-		if (dataUnit instanceof StatisticDataUnit) {
-			StatisticDataUnit statisticDataUnit = (StatisticDataUnit) dataUnit;
-			System.out.println("Parent:" + statisticDataUnit.getParentIndex() + ">>>>>Current:" +
-			                   statisticDataUnit.getCurrentIndex() +
-			                   ">>>>>ComponentId:" + statisticDataUnit.getComponentId() + ">>>>>ComponentType:" +
-			                   statisticDataUnit.getComponentType());
-		}
 
 		if (runtimeStatistics.containsKey(dataUnit.getStatisticId())) {
 			StatisticsEntry statisticsEntry = runtimeStatistics.get(dataUnit.getStatisticId());
@@ -202,8 +189,6 @@ public abstract class RuntimeStatisticCollector {
 			}
 			dataUnit.getSynapseEnvironment().getCompletedStatisticStore()
 			        .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
-			dataUnit.getSynapseEnvironment().getCompletedStatisticStore()
-			        .putCompletedStatisticEntryForTesting(statisticsEntry.getMessageFlowLogsForStatisticTesting());
 			runtimeStatistics.remove(dataUnit.getStatisticId());
 		}
 	}

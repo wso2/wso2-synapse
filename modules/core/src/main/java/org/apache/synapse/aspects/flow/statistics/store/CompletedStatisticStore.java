@@ -18,7 +18,6 @@
 
 package org.apache.synapse.aspects.flow.statistics.store;
 
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
 import java.util.LinkedList;
@@ -33,10 +32,9 @@ public class CompletedStatisticStore {
 	 * Completed statistics entries for message flows.
 	 */
 	private final List<PublishingFlow> completedStatisticEntries;
-	private final List<List<StatisticsLog>> completedEndpointStatisticEntriesForTesting = new LinkedList<>();
 
 	public CompletedStatisticStore() {
-		completedStatisticEntries = new LinkedList<PublishingFlow>();
+		completedStatisticEntries = new LinkedList<>();
 
 	}
 
@@ -58,20 +56,4 @@ public class CompletedStatisticStore {
 		}
 		return cloneOfCompletedStatisticEntries;
 	}
-
-	public List<List<StatisticsLog>> getCompletedStatisticEntriesForTesting() {
-		List<List<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
-		synchronized (completedEndpointStatisticEntriesForTesting) {
-			cloneOfCompletedStatisticEntries.addAll(completedEndpointStatisticEntriesForTesting);
-			completedEndpointStatisticEntriesForTesting.clear();
-		}
-		return cloneOfCompletedStatisticEntries;
-	}
-
-	public void putCompletedStatisticEntryForTesting(List<StatisticsLog> statisticsLogs) {
-		synchronized (completedEndpointStatisticEntriesForTesting) {
-			completedEndpointStatisticEntriesForTesting.add(statisticsLogs);
-		}
-	}
-
 }
