@@ -120,7 +120,6 @@ public class StatisticDataCollectionHelper {
 		statisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 		statisticDataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 		statisticDataUnit.setParentList(getParentList(messageContext));
-		statisticDataUnit.setIsOutOnlyFlow(isOutOnlyFlow(messageContext));
 
 		statisticDataUnit.setTime(System.currentTimeMillis());
 

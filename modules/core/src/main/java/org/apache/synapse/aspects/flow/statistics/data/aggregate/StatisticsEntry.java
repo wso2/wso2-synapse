@@ -212,13 +212,19 @@ public class StatisticsEntry {
 	 * Close the remaining statistic logs after finishing all the message contexts of requests and
 	 * responses belonging to a message flow.
 	 *
-	 * @param endTime         endTime of the message flow
-	 * @param closeForcefully should we finish the statistics forcefully without considering anything
+	 * @param basicStatisticDataUnit raw statistic data unit
+	 * @param closeForcefully        should we finish the statistics forcefully without considering anything
 	 * @return true if message flow correctly ended
 	 */
-	public synchronized boolean endAll(long endTime, boolean closeForcefully) {
+	public synchronized boolean endAll(BasicStatisticDataUnit basicStatisticDataUnit, boolean closeForcefully) {
 		if (closeForcefully) {
 			expectedFaults -= 1;
+		}
+		long endTime;
+		if (basicStatisticDataUnit.isOutOnlyFlow()) {
+			endTime = messageFlowLogs.get(messageFlowLogs.size() - 1).getEndTime();
+		} else {
+			endTime = basicStatisticDataUnit.getTime();
 		}
 		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedFaults <= 0) ||
 		    (closeForcefully && (expectedFaults <= 0))) {
@@ -303,81 +309,81 @@ public class StatisticsEntry {
 	 */
 	public PublishingFlow getMessageFlowLogs() {
 
-		if (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY) {
-			StatisticsLog statisticsLog = messageFlowLogs.remove(0);
-			messageFlowLogs.get(0).setMessageFlowId(statisticsLog.getMessageFlowId());
-			for (StatisticsLog log : messageFlowLogs) {
-				log.decrementParentLevel();
-				log.decrementChildren();
-			}
-		}
-
-		String entryPoint = messageFlowLogs.get(0).getComponentId();
-		String flowId = messageFlowLogs.get(0).getMessageFlowId();
-
-		for (int index = 0; index < messageFlowLogs.size(); index++) {
-			StatisticsLog currentStatLog = messageFlowLogs.get(index);
-
-			// Add each event to Publishing Flow
-			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
-
-			// Skip the rest of things, if message tracing is disabled
-			if (!RuntimeStatisticCollector.isCollectingPayloads() || !aspectConfigTraceEnabled) {
-				continue;
-			}
-
-			if (currentStatLog.getBeforePayload() != null && currentStatLog.getAfterPayload() == null) {
-				currentStatLog.setAfterPayload(currentStatLog.getBeforePayload());
-			}
-
-			if (currentStatLog.getBeforePayload() == null) {
-				int parentIndex = currentStatLog.getParentIndex();
-				StatisticsLog parentStatLog = messageFlowLogs.get(parentIndex);
-
-				if (parentStatLog.getAfterPayload().startsWith("#REFER:")) {
-					// Parent also referring to after-payload
-					currentStatLog.setBeforePayload(parentStatLog.getAfterPayload());
-					currentStatLog.setAfterPayload(parentStatLog.getAfterPayload());
-
-					String referringIndex = parentStatLog.getAfterPayload().split(":")[1];
-
-					this.payloadMap.get("after-" + referringIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
-					this.payloadMap.get("after-" + referringIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
-
-				} else {
-					// Create a new after-payload reference
-					currentStatLog.setBeforePayload("#REFER:" + parentIndex);
-					currentStatLog.setAfterPayload("#REFER:" + parentIndex);
-
-					this.payloadMap.get("after-" + parentIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
-					this.payloadMap.get("after-" + parentIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
-				}
-
-			} else {
-
-				// For content altering components
-				PublishingPayload publishingPayloadBefore = new PublishingPayload();
-				publishingPayloadBefore.setPayload(currentStatLog.getBeforePayload());
-				publishingPayloadBefore.addEvent(new PublishingPayloadEvent(index, "beforePayload"));
-				this.payloadMap.put("before-" + index, publishingPayloadBefore);
-
-				PublishingPayload publishingPayloadAfter = new PublishingPayload();
-				publishingPayloadAfter.setPayload(currentStatLog.getAfterPayload());
-				publishingPayloadAfter.addEvent(new PublishingPayloadEvent(index, "afterPayload"));
-				this.payloadMap.put("after-" + index, publishingPayloadAfter);
-
-			}
-
-		}
-
-		this.publishingFlow.setMessageFlowId(flowId);
-		// Move all payloads to publishingFlow object
-		this.publishingFlow.setPayloads(this.payloadMap.values());
-
+		//		if (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY) {
+		//			StatisticsLog statisticsLog = messageFlowLogs.remove(0);
+		//			messageFlowLogs.get(0).setMessageFlowId(statisticsLog.getMessageFlowId());
+		//			for (StatisticsLog log : messageFlowLogs) {
+		//				log.decrementParentLevel();
+		//				log.decrementChildren();
+		//			}
+		//		}
+		//
+		//		String entryPoint = messageFlowLogs.get(0).getComponentId();
+		//		String flowId = messageFlowLogs.get(0).getMessageFlowId();
+		//
+		//		for (int index = 0; index < messageFlowLogs.size(); index++) {
+		//			StatisticsLog currentStatLog = messageFlowLogs.get(index);
+		//
+		//			// Add each event to Publishing Flow
+		//			this.publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
+		//
+		//			// Skip the rest of things, if message tracing is disabled
+		//			if (!RuntimeStatisticCollector.isCollectingPayloads() || !aspectConfigTraceEnabled) {
+		//				continue;
+		//			}
+		//
+		//			if (currentStatLog.getBeforePayload() != null && currentStatLog.getAfterPayload() == null) {
+		//				currentStatLog.setAfterPayload(currentStatLog.getBeforePayload());
+		//			}
+		//
+		//			if (currentStatLog.getBeforePayload() == null) {
+		//				int parentIndex = currentStatLog.getParentIndex();
+		//				StatisticsLog parentStatLog = messageFlowLogs.get(parentIndex);
+		//
+		//				if (parentStatLog.getAfterPayload().startsWith("#REFER:")) {
+		//					// Parent also referring to after-payload
+		//					currentStatLog.setBeforePayload(parentStatLog.getAfterPayload());
+		//					currentStatLog.setAfterPayload(parentStatLog.getAfterPayload());
+		//
+		//					String referringIndex = parentStatLog.getAfterPayload().split(":")[1];
+		//
+		//					this.payloadMap.get("after-" + referringIndex)
+		//					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+		//					this.payloadMap.get("after-" + referringIndex)
+		//					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+		//
+		//				} else {
+		//					// Create a new after-payload reference
+		//					currentStatLog.setBeforePayload("#REFER:" + parentIndex);
+		//					currentStatLog.setAfterPayload("#REFER:" + parentIndex);
+		//
+		//					this.payloadMap.get("after-" + parentIndex)
+		//					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+		//					this.payloadMap.get("after-" + parentIndex)
+		//					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+		//				}
+		//
+		//			} else {
+		//
+		//				// For content altering components
+		//				PublishingPayload publishingPayloadBefore = new PublishingPayload();
+		//				publishingPayloadBefore.setPayload(currentStatLog.getBeforePayload());
+		//				publishingPayloadBefore.addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+		//				this.payloadMap.put("before-" + index, publishingPayloadBefore);
+		//
+		//				PublishingPayload publishingPayloadAfter = new PublishingPayload();
+		//				publishingPayloadAfter.setPayload(currentStatLog.getAfterPayload());
+		//				publishingPayloadAfter.addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+		//				this.payloadMap.put("after-" + index, publishingPayloadAfter);
+		//
+		//			}
+		//
+		//		}
+		//
+		//		this.publishingFlow.setMessageFlowId(flowId);
+		//		// Move all payloads to publishingFlow object
+		//		this.publishingFlow.setPayloads(this.payloadMap.values());
+		//
 		return this.publishingFlow;
 	}
 

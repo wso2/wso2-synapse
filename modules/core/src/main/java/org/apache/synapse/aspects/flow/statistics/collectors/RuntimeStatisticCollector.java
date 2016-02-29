@@ -194,7 +194,7 @@ public abstract class RuntimeStatisticCollector {
 	 */
 	private synchronized static void endMessageFlow(BasicStatisticDataUnit dataUnit, StatisticsEntry statisticsEntry,
 	                                                boolean closeForceFully) {
-		boolean isMessageFlowEnded = statisticsEntry.endAll(dataUnit.getTime(), closeForceFully);
+		boolean isMessageFlowEnded = statisticsEntry.endAll(dataUnit, closeForceFully);
 		if (isMessageFlowEnded) {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistic collection is ended for the message flow with statistic " +
