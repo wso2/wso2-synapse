@@ -26,7 +26,7 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
@@ -522,7 +522,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     @Override
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
-        ClosingEventCollector
+        CloseEventCollector
                 .closeEntryEvent(messageContext, getSequenceNameForStatistics(messageContext), ComponentType.SEQUENCE,
                                  currentIndex, isContentAltering());
     }

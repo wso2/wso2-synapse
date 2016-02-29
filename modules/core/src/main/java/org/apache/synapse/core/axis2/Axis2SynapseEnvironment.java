@@ -41,7 +41,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
@@ -416,7 +416,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                         .reportEntryEvent(synCtx, inboundName, inboundAspectConfiguration,
                                           ComponentType.INBOUNDENDPOINT);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                ClosingEventCollector
+                CloseEventCollector
                         .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
                                          false);
                 return true;
@@ -473,9 +473,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
-            ClosingEventCollector
-                    .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
-                                     false);
+            CloseEventCollector
+                    .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex, false);
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -1030,7 +1029,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         } finally {
             if (inboundName != null) {
-                ClosingEventCollector
+                CloseEventCollector
                         .closeEntryEvent(smc, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
                                          false);
             }

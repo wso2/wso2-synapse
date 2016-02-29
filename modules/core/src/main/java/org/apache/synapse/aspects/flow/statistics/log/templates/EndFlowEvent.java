@@ -24,7 +24,7 @@ import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
- * End message-flow forcefully without considering open logs
+ * End message-flow forcefully without considering open logs.
  */
 public class EndFlowEvent implements StatisticsReportingEvent {
 
@@ -35,6 +35,6 @@ public class EndFlowEvent implements StatisticsReportingEvent {
 	}
 
 	@Override public void process() {
-		RuntimeStatisticCollector.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORECEFULLY_CLOSE);
+		RuntimeStatisticCollector.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
 	}
 }

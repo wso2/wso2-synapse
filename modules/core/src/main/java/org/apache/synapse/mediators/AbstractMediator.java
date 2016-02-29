@@ -28,7 +28,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -480,8 +480,8 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     }
 
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
-        ClosingEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
-                                              isContentAltering());
+        CloseEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
+                                            isContentAltering());
     }
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
         this.flowPoint = flowPoint;

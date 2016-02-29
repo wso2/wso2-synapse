@@ -29,7 +29,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
@@ -232,7 +232,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             //Statistic reporting
-            ClosingEventCollector
+            CloseEventCollector
                     .closeEntryEvent(synCtx, this.name, ComponentType.PROXYSERVICE, statisticReportingIndex, true);
             if(synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();

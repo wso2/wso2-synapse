@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -20,15 +20,23 @@ package org.apache.synapse.aspects.flow.statistics.util;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+/**
+ * Provides various methods used for tracing data collections.
+ */
 public class TracingDataCollectionHelper {
 
+	/**
+	 * Extract payload from the synapse message context.
+	 *
+	 * @param messageContext synapse message context
+	 * @return payload
+	 */
 	public static String collectPayload(MessageContext messageContext) {
 		String payload = null;
 		try {
@@ -41,7 +49,10 @@ public class TracingDataCollectionHelper {
 	}
 
 	/**
-	 * Extract message context properties
+	 * Extract properties from the synapse message context.
+	 *
+	 * @param synCtx synapse message context
+	 * @return property map
 	 */
 	public static Map<String, Object> extractContextProperties(MessageContext synCtx) {
 		Set<String> propertySet = synCtx.getPropertyKeySet();
@@ -59,7 +70,10 @@ public class TracingDataCollectionHelper {
 	}
 
 	/**
-	 * Extract transport headers from context
+	 * Extract transport headers from the synapse message context.
+	 *
+	 * @param synCtx synapse message context
+	 * @return transport headers map
 	 */
 	public static Map<String, Object> extractTransportProperties(MessageContext synCtx) {
 		Map<String, Object> transportPropertyMap = new TreeMap<>();

@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,6 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -26,8 +28,26 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEv
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
+/**
+ * OpenEventCollector receives  open statistic events from synapse mediation engine. It Receives Statistics for Proxy
+ * Services, Inbound Endpoint, APIs, Sequences, Endpoints, Mediators and Resources.
+ */
 public class OpenEventCollector extends RuntimeStatisticCollector {
 
+	private static final Log log = LogFactory.getLog(OpenEventCollector.class);
+
+	/**
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Proxy Services, Endpoints, Apis,
+	 * Inbound Endpoints and Sequences which are considered as entry components for statistics collection. These
+	 * components can start statistic collection if their individual statistic collection is enables. If statistics
+	 * is already enabled, it will enqueue open event to the queue regardless of its individual statistics collection.
+	 *
+	 * @param messageContext      synapse message context.
+	 * @param componentName       statistic reporting component name.
+	 * @param aspectConfiguration aspect configuration of the reporting component.
+	 * @param componentType       component type of the reporting component.
+	 * @return component's level in this message flow.
+	 */
 	public static Integer reportEntryEvent(MessageContext messageContext, String componentName,
 	                                       AspectConfiguration aspectConfiguration, ComponentType componentType) {
 		if (isStatisticsEnabled()) {
@@ -53,9 +73,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 				statisticDataUnit.setComponentId(componentName);
 				statisticDataUnit.setComponentType(componentType);
-				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getNextIndex(messageContext));
+				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
 				int parentIndex = StatisticDataCollectionHelper
-						.getParentIndex(messageContext, statisticDataUnit.getCurrentIndex());
+						.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
 				statisticDataUnit.setParentIndex(parentIndex);
 				if (statisticDataUnit.getComponentType() != ComponentType.ENDPOINT) {
 					statisticDataUnit.setFlowContinuableMediator(true);
@@ -76,6 +96,18 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		return null;
 	}
 
+	/**
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Mediators, Resources. These
+	 * components can't start statistic collection. If statistics is already enabled, it will enqueue open event to
+	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
+	 * to the event queue.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     statistic reporting component name.
+	 * @param componentType     component type of the reporting component.
+	 * @param isContentAltering component is altering the content
+	 * @return component's level in this message flow.
+	 */
 	public static Integer reportChildEntryEvent(MessageContext messageContext, String componentName,
 	                                            ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
@@ -86,6 +118,18 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		return null;
 	}
 
+	/**
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Flow Continuable Mediators. These
+	 * components can't start statistic collection. If statistics is already enabled, it will enqueue open event to
+	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
+	 * to the event queue.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     statistic reporting component name.
+	 * @param componentType     component type of the reporting component.
+	 * @param isContentAltering component is altering the content
+	 * @return component's level in this message flow.
+	 */
 	public static Integer reportFlowContinuableEvent(MessageContext messageContext, String componentName,
 	                                                 ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
@@ -99,6 +143,18 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 	}
 
+	/**
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Flow Splitting Mediators like
+	 * Clone Mediator and Iterate Mediator. These components can't start statistic collection. If statistics is
+	 * already enabled, it will enqueue open event to the queue regardless of its individual statistics collection.
+	 * If its disabled it will not enqueue open event to the event queue.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     statistic reporting component name.
+	 * @param componentType     component type of the reporting component.
+	 * @param isContentAltering component is altering the content
+	 * @return component's level in this message flow.
+	 */
 	public static Integer reportFlowSplittingEvent(MessageContext messageContext, String componentName,
 	                                               ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
@@ -113,11 +169,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 	}
 
+	/**
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Flow Aggregate Mediator. These
+	 * components can't start statistic collection. If statistics is already enabled, it will enqueue open event to
+	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
+	 * to the event queue.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     statistic reporting component name.
+	 * @param componentType     component type of the component.
+	 * @param isContentAltering component is altering the content
+	 * @return component's level in this message flow.
+	 */
 	public static Integer reportFlowAggregateEvent(MessageContext messageContext, String componentName,
 	                                               ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-
 			statisticDataUnit.setFlowContinuableMediator(true);
 			statisticDataUnit.setFlowAggregateMediator(true);
 			getMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit);
@@ -133,9 +200,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		Boolean isCollectingTracing = (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
 		statisticDataUnit.setComponentId(componentName);
 		statisticDataUnit.setComponentType(componentType);
-		statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getNextIndex(messageContext));
+		statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
 		int parentIndex =
-				StatisticDataCollectionHelper.getParentIndex(messageContext, statisticDataUnit.getCurrentIndex());
+				StatisticDataCollectionHelper.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
 		statisticDataUnit.setParentIndex(parentIndex);
 
 		StatisticDataCollectionHelper

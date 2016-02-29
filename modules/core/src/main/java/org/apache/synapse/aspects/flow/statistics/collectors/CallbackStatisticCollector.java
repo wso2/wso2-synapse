@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -33,7 +33,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	private static final Log log = LogFactory.getLog(CallbackStatisticCollector.class);
 
 	/**
-	 * Register callback for message flow.
+	 * Enqueue CallbackSentEvent event to the event queue. This corresponds to the registering of callback for
+	 * the message flow by the SynapseCallbackReceiver.
 	 *
 	 * @param messageContext Current MessageContext of the flow.
 	 * @param callbackId     Callback Id.
@@ -43,7 +44,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			CallbackDataUnit dataUnit = new CallbackDataUnit();
 			dataUnit.setCallbackId(callbackId);
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(messageContext, null));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			CallbackSentEvent callbackSentEvent = new CallbackSentEvent(dataUnit);
 			messageDataStore.enqueue(callbackSentEvent);
@@ -51,7 +52,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Report callback received for message flow.
+	 * Enqueue CallbackCompletionEvent event to the event queue. This event inform that callback handling finished or
+	 * callback is removed by the TimeoutHandler.
 	 *
 	 * @param oldMessageContext Current MessageContext of the flow.
 	 * @param callbackId        Callback Id.
@@ -64,9 +66,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(oldMessageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(oldMessageContext));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(oldMessageContext, null));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(oldMessageContext, null));
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
-			dataUnit.setIsContinuationCall(StatisticDataCollectionHelper.isContinuationCall(oldMessageContext));
 
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
 			messageDataStore.enqueue(callbackCompletionEvent);
@@ -74,7 +75,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Updates parents after callback received for message flow.
+	 * Enqueue CallbackReceivedEvent event to the event queue. This informs that callback has received its response.
 	 *
 	 * @param oldMessageContext Current MessageContext of the flow.
 	 * @param callbackId        Callback Id.
@@ -86,9 +87,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(oldMessageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(oldMessageContext));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(oldMessageContext, null));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(oldMessageContext, null));
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
-			dataUnit.setIsContinuationCall(StatisticDataCollectionHelper.isContinuationCall(oldMessageContext));
 
 			CallbackReceivedEvent callbackReceivedEvent = new CallbackReceivedEvent(dataUnit);
 			messageDataStore.enqueue(callbackReceivedEvent);
@@ -96,7 +96,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Updates properties after callback received for message flow.
+	 * Enqueue CallbackHandledEvent event to the event queue. This informs that callback handling is finished after
+	 * receiving the callback.
 	 *
 	 * @param synapseOutMsgCtx Old MessageContext of the flow.
 	 * @param synNewCtx        New MessageContext of the flow.
@@ -110,7 +111,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(synapseOutMsgCtx.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synapseOutMsgCtx));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(synapseOutMsgCtx, null));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synapseOutMsgCtx, null));
 
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
 			messageDataStore.enqueue(callbackHandledEvent);
@@ -118,7 +119,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Registers callback information for the message flow on the corresponding statistics entry.
+	 * Registers callback information for the message flow on the corresponding StatisticsEntry.
 	 */
 	public static void addCallbacks(CallbackDataUnit callbackDataUnit) {
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
@@ -127,7 +128,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Updates end time of the statistics logs after corresponding callback is removed from
+	 * Updates end time of the statistics logs in the StatisticsEntry after corresponding callback is removed from
 	 * SynapseCallbackReceiver.
 	 */
 	public static void updateForReceivedCallback(CallbackDataUnit callbackDataUnit) {
@@ -137,15 +138,12 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Removes specified callback info for a message flow after all the processing for that
+	 * Removes specified callback info from StatisticsEntry for the message flow after all the processing for that
 	 * callback is ended.
 	 */
 	public static void removeCallback(CallbackDataUnit callbackDataUnit) {
-
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
-			runtimeStatistics.get(callbackDataUnit.getStatisticId()).removeCallback(callbackDataUnit.getCallbackId());
+			runtimeStatistics.get(callbackDataUnit.getStatisticId()).removeCallback(callbackDataUnit);
 		}
-
 	}
-
 }

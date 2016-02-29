@@ -32,7 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -376,7 +376,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
-        ClosingEventCollector
+        CloseEventCollector
                 .closeEntryEvent(synCtx, getReportingName(), ComponentType.ENDPOINT, statisticReportingIndex, false);
     }
 

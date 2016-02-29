@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,10 +18,15 @@
 
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
+/**
+ * This Data Unit will carry callback related data to the StatisticEntry
+ */
 public class CallbackDataUnit extends BasicStatisticDataUnit {
+
+	/**
+	 * Callback Id for the registered callback
+	 */
 	private String callbackId;
-	private Boolean isContinuationCall;
-	private boolean isOutOnlyFlow;
 
 	public String getCallbackId() {
 		return callbackId;
@@ -29,21 +34,5 @@ public class CallbackDataUnit extends BasicStatisticDataUnit {
 
 	public void setCallbackId(String callbackId) {
 		this.callbackId = callbackId;
-	}
-
-	public Boolean getIsContinuationCall() {
-		return isContinuationCall;
-	}
-
-	public void setIsContinuationCall(Boolean isContinuationCall) {
-		this.isContinuationCall = isContinuationCall;
-	}
-
-	public boolean isOutOnlyFlow() {
-		return isOutOnlyFlow;
-	}
-
-	public void setIsOutOnlyFlow(boolean isOutOnlyFlow) {
-		this.isOutOnlyFlow = isOutOnlyFlow;
 	}
 }

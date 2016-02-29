@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -23,23 +23,70 @@ import org.apache.synapse.aspects.ComponentType;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This data unit carries raw statistic data for open and close Events.
+ */
 public class StatisticDataUnit extends BasicStatisticDataUnit {
-	private String payload;
-	private String componentId;
-	private ComponentType componentType;
-	private Map<String, Object> contextPropertyMap;
-	private Map<String, Object> transportPropertyMap;
-	private boolean flowContinuableMediator = false;
-	private boolean flowSplittingMediator = false;
-	private boolean flowAggregateMediator = false;
-	private boolean isIndividualStatisticCollected = false;
-	private int flowId;
+
+	/**
+	 * Parent Index for this event.
+	 */
 	private int parentIndex;
+
+	/**
+	 * Should retrieve parent when closing the event.
+	 */
 	private boolean shouldBackpackParent;
+
+	/**
+	 * Is this a event from FlowContinuableMediator.
+	 */
+	private boolean flowContinuableMediator = false;
+
+	/**
+	 * Is this a event from Splitting Mediator (clone or iterate).
+	 */
+	private boolean flowSplittingMediator = false;
+
+	/**
+	 * Is this a event from Aggregate Mediator.
+	 */
+	private boolean flowAggregateMediator = false;
+
+	/**
+	 * Is statistic enabled in aspect configuration.
+	 */
+	private boolean isIndividualStatisticCollected = false;
+
+	/**
+	 * Payload of the message context.
+	 */
+	private String payload;
+
+	/**
+	 * Name of the event reporting component.
+	 */
+	private String componentId;
+
+	/**
+	 * Component Type of the reporting component.
+	 */
+	private ComponentType componentType;
+
+	/**
+	 * Parent list for this event.
+	 */
 	private List<Integer> parentList;
 
-	public StatisticDataUnit() {
-	}
+	/**
+	 * Message context property map.
+	 */
+	private Map<String, Object> contextPropertyMap;
+
+	/**
+	 * Transport property map.
+	 */
+	private Map<String, Object> transportPropertyMap;
 
 	public String getPayload() {
 		return payload;
@@ -95,14 +142,6 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 
 	public void setIsIndividualStatisticCollected(boolean isIndividualStatisticCollected) {
 		this.isIndividualStatisticCollected = isIndividualStatisticCollected;
-	}
-
-	public int getFlowId() {
-		return flowId;
-	}
-
-	public void setFlowId(int flowId) {
-		this.flowId = flowId;
 	}
 
 	public int getParentIndex() {

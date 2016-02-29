@@ -26,7 +26,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -87,7 +87,7 @@ public class MediatorFaultHandler extends FaultHandler {
 
         synCtx.getServiceLog().warn("Executing fault sequence mediator : " + name);
         this.faultMediator.mediate(synCtx);
-        ClosingEventCollector.createEndFlowEvent(synCtx);
+        CloseEventCollector.createEndFlowEvent(synCtx);
     }
 
     /**

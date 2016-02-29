@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -26,23 +26,28 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * Provides various methods used for statistic collections.
+ */
 public class StatisticDataCollectionHelper {
 
-	public static int getMessageFlowId(MessageContext messageContext) {
-		int cloneId;
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			cloneId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			cloneId = 0;
-		}
-		return cloneId;
-	}
-
+	/**
+	 * Get statistic trace id for this message flow.
+	 *
+	 * @param messageContext synapse message context.
+	 * @return statistic trace id.
+	 */
 	public static String getStatisticTraceId(MessageContext messageContext) {
 		return (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 	}
 
-	public static int getNextIndex(MessageContext messageContext) {
+	/**
+	 * Get message flow position for the current component.
+	 *
+	 * @param messageContext synapse message context.
+	 * @return message flow position
+	 */
+	public static int getFlowPosition(MessageContext messageContext) {
 		UniqueIdentifierObject uniqueIdentifierObject = (UniqueIdentifierObject) messageContext
 				.getProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_INDEXING_OBJECT);
 		if (uniqueIdentifierObject == null) {
@@ -55,7 +60,14 @@ public class StatisticDataCollectionHelper {
 		}
 	}
 
-	public static int getParentIndex(MessageContext messageContext, Integer newParentIndex) {
+	/**
+	 * Get parent of this statistic component and sets current message flow position as next components parent.
+	 *
+	 * @param messageContext synapse message context.
+	 * @param newParentIndex current message flow position.
+	 * @return parent flow position
+	 */
+	public static int getParentFlowPosition(MessageContext messageContext, Integer newParentIndex) {
 		Integer parentIndex =
 				(Integer) messageContext.getProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_INDEX);
 		if (newParentIndex != null) {
@@ -68,6 +80,12 @@ public class StatisticDataCollectionHelper {
 		}
 	}
 
+	/**
+	 * Get Parent list for this component.
+	 *
+	 * @param messageContext synapse message context.
+	 * @return parent list.
+	 */
 	public static List<Integer> getParentList(MessageContext messageContext) {
 		Object parentList = messageContext.getProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST);
 		if (parentList != null) {
@@ -78,33 +96,31 @@ public class StatisticDataCollectionHelper {
 		}
 	}
 
-	//	public static int getCurrentIndex(MessageContext messageContext) {
-	//		UniqueIdentifierObject uniqueIdentifierObject = (UniqueIdentifierObject) messageContext
-	//				.getProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_INDEXING_OBJECT);
-	//		if (uniqueIdentifierObject != null) {
-	//			return uniqueIdentifierObject.getCurrentLevel();
-	//
-	//		} else {
-	//			return StatisticsConstants.DEFAULT_PARENT_INDEX;
-	//		}
-	//	}
-
+	/**
+	 * Checks is this is a Out_Only message flow.
+	 *
+	 * @param messageContext synapse message context.
+	 * @return true is message flow is Out_Only flow.
+	 */
 	public static boolean isOutOnlyFlow(MessageContext messageContext) {
 		return "true".equals(messageContext.getProperty(SynapseConstants.OUT_ONLY));
 	}
 
-	public static boolean isContinuationCall(MessageContext messageContext) {
-		Boolean isContinuation = (Boolean) messageContext.getProperty(SynapseConstants.CONTINUATION_CALL);
-		return (isContinuation != null && isContinuation);
-	}
-
+	/**
+	 * Collect necessary statistics data from the message context.
+	 *
+	 * @param messageContext      synapse message context.
+	 * @param isContentAltering   is this event is content altering event.
+	 * @param isCollectingTracing is collecting tracing.
+	 * @param statisticDataUnit   raw statistic carring object
+	 */
 	public static void collectData(MessageContext messageContext, boolean isContentAltering,
 	                               Boolean isCollectingTracing, StatisticDataUnit statisticDataUnit) {
 
 		statisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
-		statisticDataUnit.setFlowId(StatisticDataCollectionHelper.getMessageFlowId(messageContext));
 		statisticDataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 		statisticDataUnit.setParentList(getParentList(messageContext));
+		statisticDataUnit.setIsOutOnlyFlow(isOutOnlyFlow(messageContext));
 
 		statisticDataUnit.setTime(System.currentTimeMillis());
 
@@ -122,7 +138,7 @@ public class StatisticDataCollectionHelper {
 	}
 
 	/**
-	 * This method is used to collect all the parent indexs from message contexts which contributes to aggregate
+	 * This method is used to collect all the parent indexes from message contexts which contributes to aggregate
 	 * message at the end of the aggregation.
 	 *
 	 * @param messages aggregated message list
@@ -131,7 +147,7 @@ public class StatisticDataCollectionHelper {
 	public static void collectAggregatedParents(List<MessageContext> messages, MessageContext newCtx) {
 		List<Integer> aggregateParents = new LinkedList<>();
 		for (MessageContext synCtx : messages) {
-			aggregateParents.add(StatisticDataCollectionHelper.getParentIndex(synCtx, null));
+			aggregateParents.add(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
 		}
 		newCtx.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST, aggregateParents);
 	}

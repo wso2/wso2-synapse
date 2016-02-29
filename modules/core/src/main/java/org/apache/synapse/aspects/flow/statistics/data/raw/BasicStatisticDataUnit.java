@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -20,12 +20,35 @@ package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.core.SynapseEnvironment;
 
+/**
+ * This is the basic raw statistics data carrier to StatisticEntry.
+ */
 public class BasicStatisticDataUnit {
 
-	private String statisticId;
+	/**
+	 * Time statistic event is reported
+	 */
 	private Long time;
-	private SynapseEnvironment synapseEnvironment;
+
+	/**
+	 * Current position in the message flow.
+	 */
 	private int currentIndex;
+
+	/**
+	 * Statistic Tracing Id for this message flow
+	 */
+	private String statisticId;
+
+	/**
+	 * Is this message flow is a out_only flow
+	 */
+	private boolean isOutOnlyFlow;
+
+	/**
+	 * Synapse environment of the message context.
+	 */
+	private SynapseEnvironment synapseEnvironment;
 
 	public String getStatisticId() {
 		return statisticId;
@@ -57,5 +80,13 @@ public class BasicStatisticDataUnit {
 
 	public void setCurrentIndex(int currentIndex) {
 		this.currentIndex = currentIndex;
+	}
+
+	public boolean isOutOnlyFlow() {
+		return isOutOnlyFlow;
+	}
+
+	public void setIsOutOnlyFlow(boolean isOutOnlyFlow) {
+		this.isOutOnlyFlow = isOutOnlyFlow;
 	}
 }

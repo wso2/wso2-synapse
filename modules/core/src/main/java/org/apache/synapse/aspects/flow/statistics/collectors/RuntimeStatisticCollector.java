@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -39,21 +39,15 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * RuntimeStatisticCollector receives statistic events and responsible for handling each of these
- * events.
+ * RuntimeStatisticCollector receives statistic events and responsible for handling each of these events.
  */
 public abstract class RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(RuntimeStatisticCollector.class);
-
 	protected static Map<String, StatisticsEntry> runtimeStatistics = new HashMap<>();
-
 	private static boolean isStatisticsEnabled;
-
 	private static boolean isCollectingPayloads;
-
 	private static boolean isCollectingProperties;
-
 	protected static MessageDataStore messageDataStore;
 
 	/**
@@ -102,15 +96,16 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Create statistic log for the the reporting component.
+	 * Opens statistic log for the reporting component.
 	 *
-	 * @param statisticDataUnit Statistics raw data object.
+	 * @param statisticDataUnit raw statistic data object.
 	 */
 	public static void recordStatisticsOpenEvent(StatisticDataUnit statisticDataUnit) {
 		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
 			runtimeStatistics.get(statisticDataUnit.getStatisticId()).createLog(statisticDataUnit);
 		} else if (!(statisticDataUnit.getComponentType() == ComponentType.MEDIATOR ||
 		             statisticDataUnit.getComponentType() == ComponentType.RESOURCE)) {
+			//Mediators and resources can't start statistic collection for a flow.
 			StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit);
 			runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
 			if (log.isDebugEnabled()) {
@@ -127,26 +122,9 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Removes specified continuation state for a message flow after all the processing that continuation entry
+	 * Closes statistic collection log after finishing statistic collection for that component.
 	 *
-	 * @param statisticsTraceId message context
-	 * @param messageId         message uuid
-	 */
-	public static void removeContinuationState(String statisticsTraceId, String messageId) {
-		if (statisticsTraceId != null) {
-			if (runtimeStatistics.containsKey(statisticsTraceId)) {
-				runtimeStatistics.get(statisticsTraceId).removeContinuationEntry(messageId);
-				if (log.isDebugEnabled()) {
-					log.debug("Removed continuation state from the statistic entry.");
-				}
-			}
-		}
-	}
-
-	/**
-	 * Ends statistic collection log
-	 *
-	 * @param dataUnit StatisticDataUnit containing id relevant for closing
+	 * @param dataUnit raw data unit containing id relevant for closing
 	 * @param mode     Mode of closing GRACEFULLY_CLOSE, ATTEMPT_TO_CLOSE or FORCEFULLY_CLOSE
 	 */
 	public static void closeStatisticEntry(BasicStatisticDataUnit dataUnit, int mode) {
@@ -179,7 +157,7 @@ public abstract class RuntimeStatisticCollector {
 				 */
 				endMessageFlow(dataUnit, statisticsEntry, false);
 
-			} else if (StatisticsConstants.FORECEFULLY_CLOSE == mode) {
+			} else if (StatisticsConstants.FORCEFULLY_CLOSE == mode) {
 				/**
 				 * Close the statistic log after finishing the message flow forcefully. When we try to use this method to end
 				 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
@@ -194,13 +172,14 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Opens Flow Continuable mediators after call back is received for continuation call to the backend.
+	 * Opens Flow Continuable mediators after callback is received for continuation call to the backend.
 	 *
 	 * @param basicStatisticDataUnit data unit which holds raw data
 	 */
 	public static void openParents(BasicStatisticDataUnit basicStatisticDataUnit) {
 		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
-			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).openFlowContinuable(basicStatisticDataUnit);
+			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).openFlowContinuableMediators(
+					basicStatisticDataUnit);
 		}
 	}
 
@@ -230,12 +209,15 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * @param synCtx
+	 * Add event in to the event queue. This event will inform statistic collection to put all the flow continuable
+	 * mediators before the index specified by current Index to open state.
+	 *
+	 * @param synCtx synapse message context.
 	 */
 	public static void openContinuationEvents(MessageContext synCtx) {
 		BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
 
-		basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(synCtx, null));
+		basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
 		basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
 
 		ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
@@ -245,7 +227,7 @@ public abstract class RuntimeStatisticCollector {
 	/**
 	 * Set message Id of the message context as statistic trace Id at the beginning of the statistic flow.
 	 *
-	 * @param msgCtx synapse message context
+	 * @param msgCtx synapse message context.
 	 */
 	protected static void setStatisticsTraceId(MessageContext msgCtx) {
 		if (msgCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) == null && msgCtx.getMessageID() != null) {
@@ -258,8 +240,8 @@ public abstract class RuntimeStatisticCollector {
 	/**
 	 * Returns true if statistics is collected in this message flow path.
 	 *
-	 * @param messageContext synapse message context
-	 * @return true if statistics is collected in the message flow
+	 * @param messageContext synapse message context.
+	 * @return true if statistics is collected in the message flow.
 	 */
 	protected static boolean shouldReportStatistic(MessageContext messageContext) {
 		Boolean isStatCollected =
@@ -272,7 +254,7 @@ public abstract class RuntimeStatisticCollector {
 	 * Returns whether statistics collection is enabled globally for the esb as specified in the
 	 * synapse.properties file.
 	 *
-	 * @return true if statistics collection is enabled
+	 * @return true if statistics collection is enabled.
 	 */
 
 	public static boolean isStatisticsEnabled() {
@@ -280,25 +262,25 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Return whether collecting payloads is enabled
+	 * Return whether collecting payloads is enabled.
 	 *
-	 * @return true if need to collect payloads
+	 * @return true if need to collect payloads.
 	 */
 	public static boolean isCollectingPayloads() {
 		return isStatisticsEnabled & isCollectingPayloads;
 	}
 
 	/**
-	 * Return whether collecting message-properties is enabled
+	 * Return whether collecting message-properties is enabled.
 	 *
-	 * @return true if need to collect message-properties
+	 * @return true if need to collect message-properties.
 	 */
 	public static boolean isCollectingProperties() {
 		return isStatisticsEnabled & isCollectingProperties;
 	}
 
 	/**
-	 * Stops the MessageDataStore execution
+	 * Stops the MessageDataStore execution.
 	 */
 	public static void stopConsumer() {
 		if (isStatisticsEnabled) {

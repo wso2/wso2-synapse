@@ -27,7 +27,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.ClosingEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -269,7 +269,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
             statisticReportingIndex = OpenEventCollector
                     .reportChildEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, true);
         } else {
-            statisticReportingIndex = StatisticDataCollectionHelper.getParentIndex(synCtx, null);
+            statisticReportingIndex = StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null);
         }
 
         if (log.isDebugEnabled()) {
@@ -280,8 +280,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-                ClosingEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                                      statisticReportingIndex, true);
+                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                                                    statisticReportingIndex, true);
                 return;
             }
 
@@ -312,8 +312,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
-            ClosingEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                                  statisticReportingIndex, true);
+            CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                                                statisticReportingIndex, true);
             return;
         }
 
@@ -327,8 +327,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
-            ClosingEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                                  statisticReportingIndex, true);
+            CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                                                statisticReportingIndex, true);
             return;
         }
 
@@ -343,7 +343,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
-        ClosingEventCollector
+        CloseEventCollector
                 .closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, statisticReportingIndex,
                                  true);
     }

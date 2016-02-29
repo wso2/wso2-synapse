@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,6 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
@@ -28,10 +30,26 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseE
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
-public class ClosingEventCollector extends RuntimeStatisticCollector {
-	public static Integer closeEntryEvent(MessageContext messageContext, String componentName,
-	                                      ComponentType componentType, Integer currentIndex,
-	                                      boolean isContentAltering) {
+/**
+ * CloseEventCollector receives  close statistic events from synapse mediation engine. It Receives Statistics for
+ * Proxy Services, Inbound Endpoint, APIs, Sequences, Endpoints, Mediators and Resources.
+ */
+public class CloseEventCollector extends RuntimeStatisticCollector {
+
+	private static final Log log = LogFactory.getLog(FaultStatisticCollector.class);
+
+	/**
+	 * Enqueue statistics event to the event queue. This method receives statistics events from synapse mediation
+	 * engine for all the component types.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     name of the component reporting statistics.
+	 * @param componentType     component type of the reporting component.
+	 * @param currentIndex      component's level in this message flow.
+	 * @param isContentAltering true if content is altered
+	 */
+	public static void closeEntryEvent(MessageContext messageContext, String componentName, ComponentType componentType,
+	                                   Integer currentIndex, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			Boolean isCollectingTracing =
 					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
@@ -41,7 +59,8 @@ public class ClosingEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setComponentType(componentType);
 			if (currentIndex == null) {
 				statisticDataUnit.setShouldBackpackParent(true);
-				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(messageContext, null));
+				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext,
+				                                                                                      null));
 			} else {
 				statisticDataUnit.setCurrentIndex(currentIndex);
 			}
@@ -51,9 +70,14 @@ public class ClosingEventCollector extends RuntimeStatisticCollector {
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
 			messageDataStore.enqueue(closeEvent);
 		}
-		return null;
 	}
 
+	/**
+	 * Enqueue statistics event to the event queue. This method invokes when fault sequence finished handling the fault
+	 * occurred in the message flow.
+	 *
+	 * @param messageContext synapse message context.
+	 */
 	public static void createEndFlowEvent(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
 
@@ -61,13 +85,19 @@ public class ClosingEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(messageContext, null));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
 			messageDataStore.enqueue(endFlowEvent);
 		}
 	}
 
+	/**
+	 * Enqueue statistics event to the event queue. This method invokes when SynapseCallbackHandler is finished
+	 * handling the callback occurred in the message flow.
+	 *
+	 * @param messageContext synapse message context.
+	 */
 	public static void createFinalizeFlowEvent(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
 
@@ -75,7 +105,7 @@ public class ClosingEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentIndex(messageContext, null));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			FinalizedFlowEvent endFlowEvent = new FinalizedFlowEvent(dataUnit);
 			messageDataStore.enqueue(endFlowEvent);
