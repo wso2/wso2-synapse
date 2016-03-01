@@ -215,7 +215,11 @@ public class EndpointDefinition implements AspectConfigurable {
         long timeoutMilliSeconds;
         try {
             String stringValue = dynamicTimeout.stringValueOf(synCtx);
-            timeoutMilliSeconds = Long.parseLong(stringValue.trim());
+            if (stringValue != null) {
+                timeoutMilliSeconds = Long.parseLong(stringValue.trim());
+            } else {
+                timeoutMilliSeconds = effectiveTimeout;
+            }
         } catch (NumberFormatException e) {
             log.warn("Error while evaluating dynamic endpoint timeout expression");
             timeoutMilliSeconds = effectiveTimeout;
