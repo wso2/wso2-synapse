@@ -34,7 +34,8 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 		this.statisticDataUnit = statisticDataUnit;
 	}
 
-	@Override public void process() {
+	@Override
+	public void process() {
 		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.GRACEFULLY_CLOSE);
 	}
 }

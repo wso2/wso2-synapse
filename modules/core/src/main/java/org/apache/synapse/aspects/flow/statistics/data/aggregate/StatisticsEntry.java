@@ -21,15 +21,12 @@ package org.apache.synapse.aspects.flow.statistics.data.aggregate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
-import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
-import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 import java.util.ArrayList;
@@ -37,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * StatisticsEntry collects all the statistics logs related to a message flow. It is responsible
@@ -55,12 +53,12 @@ public class StatisticsEntry {
 	/**
 	 * Map to hold all the remaining callbacks related to the message flow
 	 */
-	private final HashSet<String> callbacks = new HashSet<>();
+	private final Set<String> callbacks = new HashSet<>();
 
 	/**
 	 * Map to hold all the opened statistic logs related to the message flow
 	 */
-	private final HashSet<Integer> openLogs = new HashSet<>();
+	private final Set<Integer> openLogs = new HashSet<>();
 
 	/**
 	 * Expected number of faults in this message flow. This can increase if message flow split in to several flow by
@@ -79,12 +77,12 @@ public class StatisticsEntry {
 	private static final int ROOT_LEVEL = 0;
 
 	/**
-	 * Publishing flow to publish data to carbon mediation.
+	 *Data structure using to serialize thr statistic data while publishing.
 	 */
 	private PublishingFlow publishingFlow = new PublishingFlow();
 
 	/**
-	 * payload map which all the payloads of the message flow.
+	 * payload map which contains all the payloads of the message flow.
 	 */
 	private Map<String, PublishingPayload> payloadMap = new HashMap<>();
 
@@ -107,7 +105,7 @@ public class StatisticsEntry {
 			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
 			openLogs.add(statisticDataUnit.getCurrentIndex());
 			if (log.isDebugEnabled()) {
-				log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentId());
+				log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
 			}
 		} else {
 			//create imaginary root
@@ -115,7 +113,7 @@ public class StatisticsEntry {
 					new StatisticsLog(ComponentType.IMAGINARY, StatisticsConstants.IMAGINARY_COMPONENT_ID,
 					                  StatisticsConstants.DEFAULT_PARENT_INDEX);
 			if (log.isDebugEnabled()) {
-				log.debug("Created imaginary root for [ElementId|" + statisticDataUnit.getComponentId());
+				log.debug("Created imaginary root for [ElementId|" + statisticDataUnit.getComponentName());
 			}
 			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
 			openLogs.add(statisticDataUnit.getCurrentIndex());
@@ -192,9 +190,9 @@ public class StatisticsEntry {
 			return true;
 		} else {
 			int currentIndex = statisticDataUnit.getCurrentIndex();
-			if (statisticDataUnit.isShouldBackpackParent()) {
+			if (statisticDataUnit.isShouldTrackParent()) {
 				Integer index =
-						getFirstOpenParent(statisticDataUnit.getCurrentIndex(), statisticDataUnit.getComponentId());
+						getFirstOpenParent(statisticDataUnit.getCurrentIndex(), statisticDataUnit.getComponentName());
 				if (index != null) {
 					currentIndex = index;
 				}
@@ -318,7 +316,7 @@ public class StatisticsEntry {
 		//			}
 		//		}
 		//
-		//		String entryPoint = messageFlowLogs.get(0).getComponentId();
+		//		String entryPoint = messageFlowLogs.get(0).getComponentName();
 		//		String flowId = messageFlowLogs.get(0).getMessageFlowId();
 		//
 		//		for (int index = 0; index < messageFlowLogs.size(); index++) {
@@ -449,7 +447,7 @@ public class StatisticsEntry {
 		StatisticsLog currentLog = messageFlowLogs.get(componentIndex);
 		currentLog.decrementOpenTimes();
 		if (log.isDebugEnabled()) {
-			log.debug("Closed statistic log of [ElementId" + currentLog.getComponentId());
+			log.debug("Closed statistic log of [ElementId" + currentLog.getComponentName());
 		}
 		currentLog.setEndTime(endTime);
 		// TODO: add after payload
@@ -467,7 +465,7 @@ public class StatisticsEntry {
 	private Integer getFirstOpenParent(int currentIndex, String componentId) {
 		StatisticsLog statisticsLog = messageFlowLogs.get(messageFlowLogs.get(currentIndex).getParentIndex());
 		while (statisticsLog.getCurrentIndex() > 0) {
-			if (statisticsLog.isOpenLog() && statisticsLog.getComponentId().equals(componentId)) {
+			if (statisticsLog.isOpenLog() && statisticsLog.getComponentName().equals(componentId)) {
 				return statisticsLog.getCurrentIndex();
 			}
 			statisticsLog = messageFlowLogs.get(statisticsLog.getParentIndex());

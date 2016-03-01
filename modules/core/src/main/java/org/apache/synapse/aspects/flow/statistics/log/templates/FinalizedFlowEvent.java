@@ -34,7 +34,8 @@ public class FinalizedFlowEvent implements StatisticsReportingEvent {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
-	@Override public void process() {
+	@Override
+	public void process() {
 		RuntimeStatisticCollector.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
 }

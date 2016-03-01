@@ -30,17 +30,17 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
  * OpenEventCollector receives  open statistic events from synapse mediation engine. It Receives Statistics for Proxy
- * Services, Inbound Endpoint, APIs, Sequences, Endpoints, Mediators and Resources.
+ * Services, Inbound Endpoints, APIs, Sequences, Endpoints, Mediators and Resources.
  */
 public class OpenEventCollector extends RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(OpenEventCollector.class);
 
 	/**
-	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Proxy Services, Endpoints, Apis,
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Proxy Services, Endpoints, APIs,
 	 * Inbound Endpoints and Sequences which are considered as entry components for statistics collection. These
-	 * components can start statistic collection if their individual statistic collection is enables. If statistics
-	 * is already enabled, it will enqueue open event to the queue regardless of its individual statistics collection.
+	 * components can start statistic collection if their individual statistic collection is enabled. If statistics
+	 * is already enabled, this will enqueue open event to the queue regardless of its individual statistics collection.
 	 *
 	 * @param messageContext      synapse message context.
 	 * @param componentName       statistic reporting component name.
@@ -53,10 +53,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		if (isStatisticsEnabled()) {
 			boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
 			boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
-
 			Boolean isFlowStatisticEnabled =
 					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
-
 			if (isCollectingStatistics) {
 				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 				setStatisticsTraceId(messageContext);
@@ -67,11 +65,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				//To signal lower levels that statistics was disabled in upper component in the flow
 				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 			}
-
 			if (shouldReportStatistic(messageContext)) {
-
 				StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-				statisticDataUnit.setComponentId(componentName);
+				statisticDataUnit.setComponentName(componentName);
 				statisticDataUnit.setComponentType(componentType);
 				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
 				int parentIndex = StatisticDataCollectionHelper
@@ -80,15 +76,13 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				if (statisticDataUnit.getComponentType() != ComponentType.ENDPOINT) {
 					statisticDataUnit.setFlowContinuableMediator(true);
 				}
-
 				if (isFlowStatisticEnabled == null) {
 					statisticDataUnit.setIsIndividualStatisticCollected(true);
 				}
-
 				StatisticDataCollectionHelper.collectData(messageContext, true, isCollectingTracing, statisticDataUnit);
 
 				StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
-				messageDataStore.enqueue(openEvent);
+				statisticEventQueue.enqueue(openEvent);
 
 				return statisticDataUnit.getCurrentIndex();
 			}
@@ -97,7 +91,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Mediators, Resources. These
+	 * Enqueue StatisticOpenEvent to the event Queue. This receives open events from Mediators and Resources. These
 	 * components can't start statistic collection. If statistics is already enabled, it will enqueue open event to
 	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
 	 * to the event queue.
@@ -112,7 +106,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	                                            ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-			getMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
+			                         statisticDataUnit);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -134,9 +129,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	                                                 ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-
 			statisticDataUnit.setFlowContinuableMediator(true);
-			getMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
+			                         statisticDataUnit);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -159,10 +154,10 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	                                               ComponentType componentType, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-
 			statisticDataUnit.setFlowContinuableMediator(true);
 			statisticDataUnit.setFlowSplittingMediator(true);
-			getMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
+			                         statisticDataUnit);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -187,28 +182,28 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			statisticDataUnit.setFlowContinuableMediator(true);
 			statisticDataUnit.setFlowAggregateMediator(true);
-			getMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
+			                         statisticDataUnit);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
 
 	}
 
-	private static void getMediatorStatistics(MessageContext messageContext, String componentName,
-	                                          ComponentType componentType, boolean isContentAltering,
-	                                          StatisticDataUnit statisticDataUnit) {
+	private static void reportMediatorStatistics(MessageContext messageContext, String componentName,
+	                                             ComponentType componentType, boolean isContentAltering,
+	                                             StatisticDataUnit statisticDataUnit) {
 		Boolean isCollectingTracing = (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
-		statisticDataUnit.setComponentId(componentName);
+		statisticDataUnit.setComponentName(componentName);
 		statisticDataUnit.setComponentType(componentType);
 		statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
-		int parentIndex =
-				StatisticDataCollectionHelper.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
+		int parentIndex = StatisticDataCollectionHelper
+				.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
 		statisticDataUnit.setParentIndex(parentIndex);
-
 		StatisticDataCollectionHelper
 				.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
-		messageDataStore.enqueue(openEvent);
+		statisticEventQueue.enqueue(openEvent);
 	}
 }

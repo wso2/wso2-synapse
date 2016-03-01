@@ -80,7 +80,7 @@ public class StatisticsLog {
 	/**
 	 * Name of the component.
 	 */
-	private String componentId;
+	private String componentName;
 
 	/**
 	 * Statistic tracing id for the message flow.
@@ -124,7 +124,7 @@ public class StatisticsLog {
 		this.isFlowContinuable = statisticDataUnit.isFlowContinuableMediator();
 		this.isFlowSplittingMediator = statisticDataUnit.isFlowSplittingMediator();
 		this.isFlowAggregateMediator = statisticDataUnit.isFlowAggregateMediator();
-		this.componentId = statisticDataUnit.getComponentId();
+		this.componentName = statisticDataUnit.getComponentName();
 		this.messageFlowId = statisticDataUnit.getStatisticId();
 		this.beforePayload = statisticDataUnit.getPayload();
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
@@ -132,9 +132,9 @@ public class StatisticsLog {
 		this.componentType = statisticDataUnit.getComponentType();
 	}
 
-	public StatisticsLog(ComponentType componentType, String componentId, int parentIndex) {
+	public StatisticsLog(ComponentType componentType, String componentName, int parentIndex) {
 		this.componentType = componentType;
-		this.componentId = componentId;
+		this.componentName = componentName;
 		this.parentIndex = parentIndex;
 	}
 
@@ -187,8 +187,8 @@ public class StatisticsLog {
 		return startTime;
 	}
 
-	public String getComponentId() {
-		return componentId;
+	public String getComponentName() {
+		return componentName;
 	}
 
 	public long getEndTime() {

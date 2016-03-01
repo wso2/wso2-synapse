@@ -33,7 +33,8 @@ public class StatisticsOpenEvent implements StatisticsReportingEvent {
 		this.statisticDataUnit = statisticDataUnit;
 	}
 
-	@Override public void process() {
+	@Override
+	public void process() {
 		RuntimeStatisticCollector.recordStatisticsOpenEvent(statisticDataUnit);
 	}
 }

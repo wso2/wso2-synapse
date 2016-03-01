@@ -33,7 +33,8 @@ public class CallbackSentEvent implements StatisticsReportingEvent {
 		this.callbackDataUnit = callbackDataUnit;
 	}
 
-	@Override public void process() {
+	@Override
+	public void process() {
 		CallbackStatisticCollector.addCallbacks(callbackDataUnit);
 	}
 }

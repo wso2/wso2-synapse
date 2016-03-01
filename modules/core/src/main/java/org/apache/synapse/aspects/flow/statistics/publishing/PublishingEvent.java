@@ -44,7 +44,7 @@ public class PublishingEvent {
 
 	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
 		this.componentType = statisticsLog.getComponentTypeToString();
-		this.componentId = statisticsLog.getComponentId();
+		this.componentId = statisticsLog.getComponentName();
 
 		this.startTime = statisticsLog.getStartTime();
 		this.endTime = statisticsLog.getEndTime();

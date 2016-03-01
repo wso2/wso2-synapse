@@ -36,7 +36,7 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	/**
 	 * Should retrieve parent when closing the event.
 	 */
-	private boolean shouldBackpackParent;
+	private boolean shouldTrackParent;
 
 	/**
 	 * Is this a event from FlowContinuableMediator.
@@ -66,7 +66,7 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	/**
 	 * Name of the event reporting component.
 	 */
-	private String componentId;
+	private String componentName;
 
 	/**
 	 * Component Type of the reporting component.
@@ -96,12 +96,12 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 		this.payload = payload;
 	}
 
-	public String getComponentId() {
-		return componentId;
+	public String getComponentName() {
+		return componentName;
 	}
 
-	public void setComponentId(String componentId) {
-		this.componentId = componentId;
+	public void setComponentName(String componentName) {
+		this.componentName = componentName;
 	}
 
 	public ComponentType getComponentType() {
@@ -152,12 +152,12 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 		this.parentIndex = parentIndex;
 	}
 
-	public boolean isShouldBackpackParent() {
-		return shouldBackpackParent;
+	public boolean isShouldTrackParent() {
+		return shouldTrackParent;
 	}
 
-	public void setShouldBackpackParent(boolean shouldBackpackParent) {
-		this.shouldBackpackParent = shouldBackpackParent;
+	public void setShouldTrackParent(boolean shouldTrackParent) {
+		this.shouldTrackParent = shouldTrackParent;
 	}
 
 	public void setFlowSplittingMediator(boolean isSplitting) {

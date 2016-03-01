@@ -47,7 +47,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			CallbackSentEvent callbackSentEvent = new CallbackSentEvent(dataUnit);
-			messageDataStore.enqueue(callbackSentEvent);
+			statisticEventQueue.enqueue(callbackSentEvent);
 		}
 	}
 
@@ -60,7 +60,6 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	 */
 	public static void callbackCompletionEvent(MessageContext oldMessageContext, String callbackId) {
 		if (shouldReportStatistic(oldMessageContext)) {
-
 			CallbackDataUnit dataUnit = new CallbackDataUnit();
 			dataUnit.setCallbackId(callbackId);
 			dataUnit.setTime(System.currentTimeMillis());
@@ -70,7 +69,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
 
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
-			messageDataStore.enqueue(callbackCompletionEvent);
+			statisticEventQueue.enqueue(callbackCompletionEvent);
 		}
 	}
 
@@ -91,7 +90,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
 
 			CallbackReceivedEvent callbackReceivedEvent = new CallbackReceivedEvent(dataUnit);
-			messageDataStore.enqueue(callbackReceivedEvent);
+			statisticEventQueue.enqueue(callbackReceivedEvent);
 		}
 	}
 
@@ -114,12 +113,14 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synapseOutMsgCtx, null));
 
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
-			messageDataStore.enqueue(callbackHandledEvent);
+			statisticEventQueue.enqueue(callbackHandledEvent);
 		}
 	}
 
 	/**
 	 * Registers callback information for the message flow on the corresponding StatisticsEntry.
+	 *
+	 * @param callbackDataUnit raw statistic data unit
 	 */
 	public static void addCallbacks(CallbackDataUnit callbackDataUnit) {
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
@@ -130,6 +131,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	/**
 	 * Updates end time of the statistics logs in the StatisticsEntry after corresponding callback is removed from
 	 * SynapseCallbackReceiver.
+	 *
+	 * @param callbackDataUnit raw statistic data unit
 	 */
 	public static void updateForReceivedCallback(CallbackDataUnit callbackDataUnit) {
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
@@ -140,6 +143,8 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	/**
 	 * Removes specified callback info from StatisticsEntry for the message flow after all the processing for that
 	 * callback is ended.
+	 *
+	 * @param callbackDataUnit raw statistic data unit
 	 */
 	public static void removeCallback(CallbackDataUnit callbackDataUnit) {
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {

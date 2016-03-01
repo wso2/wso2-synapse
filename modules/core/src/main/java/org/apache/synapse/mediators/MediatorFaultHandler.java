@@ -87,7 +87,7 @@ public class MediatorFaultHandler extends FaultHandler {
 
         synCtx.getServiceLog().warn("Executing fault sequence mediator : " + name);
         this.faultMediator.mediate(synCtx);
-        CloseEventCollector.createEndFlowEvent(synCtx);
+        CloseEventCollector.closeFlowForcefully(synCtx);
     }
 
     /**

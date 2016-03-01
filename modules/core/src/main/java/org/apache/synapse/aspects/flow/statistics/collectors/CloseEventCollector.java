@@ -53,14 +53,13 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 		if (shouldReportStatistic(messageContext)) {
 			Boolean isCollectingTracing =
 					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
-
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-			statisticDataUnit.setComponentId(componentName);
+			statisticDataUnit.setComponentName(componentName);
 			statisticDataUnit.setComponentType(componentType);
 			if (currentIndex == null) {
-				statisticDataUnit.setShouldBackpackParent(true);
-				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext,
-				                                                                                      null));
+				statisticDataUnit.setShouldTrackParent(true);
+				statisticDataUnit
+						.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			} else {
 				statisticDataUnit.setCurrentIndex(currentIndex);
 			}
@@ -68,7 +67,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-			messageDataStore.enqueue(closeEvent);
+			statisticEventQueue.enqueue(closeEvent);
 		}
 	}
 
@@ -78,9 +77,8 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 *
 	 * @param messageContext synapse message context.
 	 */
-	public static void createEndFlowEvent(MessageContext messageContext) {
+	public static void closeFlowForcefully(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
-
 			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
@@ -88,7 +86,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
-			messageDataStore.enqueue(endFlowEvent);
+			statisticEventQueue.enqueue(endFlowEvent);
 		}
 	}
 
@@ -98,9 +96,8 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 *
 	 * @param messageContext synapse message context.
 	 */
-	public static void createFinalizeFlowEvent(MessageContext messageContext) {
+	public static void finalizeFlow(MessageContext messageContext) {
 		if (shouldReportStatistic(messageContext)) {
-
 			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
@@ -108,7 +105,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			FinalizedFlowEvent endFlowEvent = new FinalizedFlowEvent(dataUnit);
-			messageDataStore.enqueue(endFlowEvent);
+			statisticEventQueue.enqueue(endFlowEvent);
 		}
 	}
 }

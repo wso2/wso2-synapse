@@ -35,7 +35,8 @@ public class CallbackCompletionEvent implements StatisticsReportingEvent {
 		this.callbackDataUnit = callbackDataUnit;
 	}
 
-	@Override public void process() {
+	@Override
+	public void process() {
 		CallbackStatisticCollector.updateForReceivedCallback(callbackDataUnit);
 		CallbackStatisticCollector.removeCallback(callbackDataUnit);
 		RuntimeStatisticCollector.closeStatisticEntry(callbackDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);

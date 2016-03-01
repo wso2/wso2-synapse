@@ -44,11 +44,31 @@ import java.util.concurrent.TimeUnit;
 public abstract class RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(RuntimeStatisticCollector.class);
+
+	/**
+	 * Map to hold statistic of current message flows in esb.
+	 */
 	protected static Map<String, StatisticsEntry> runtimeStatistics = new HashMap<>();
+
+	/**
+	 * Is statistics collection enabled in synapse.properties file.
+	 */
 	private static boolean isStatisticsEnabled;
+
+	/**
+	 * Is payload collection enabled in synapse.properties file.
+	 */
 	private static boolean isCollectingPayloads;
+
+	/**
+	 * Is message context property collection enabled in synapse.properties file.
+	 */
 	private static boolean isCollectingProperties;
-	protected static MessageDataStore messageDataStore;
+
+	/**
+	 * Statistic event queue to hold statistic events.
+	 */
+	protected static MessageDataStore statisticEventQueue;
 
 	/**
 	 * Initialize statistics collection when ESB starts.
@@ -78,7 +98,7 @@ public abstract class RuntimeStatisticCollector {
 				log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
 			}
 
-			messageDataStore = new MessageDataStore(queueSize);
+			statisticEventQueue = new MessageDataStore(queueSize);
 			//Thread to consume queue and update data structures for publishing
 			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 				public Thread newThread(Runnable r) {
@@ -87,7 +107,7 @@ public abstract class RuntimeStatisticCollector {
 					return t;
 				}
 			});
-			executor.scheduleAtFixedRate(messageDataStore, 0, 1000, TimeUnit.MILLISECONDS);
+			executor.scheduleAtFixedRate(statisticEventQueue, 0, 1000, TimeUnit.MILLISECONDS);
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is not enabled in \'synapse.properties\' file.");
@@ -112,7 +132,7 @@ public abstract class RuntimeStatisticCollector {
 				log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size());
 			}
 		} else {
-			log.error("Wrong element tried to open statistics: " + statisticDataUnit.getComponentId());
+			log.error("Wrong element tried to open statistics: " + statisticDataUnit.getComponentName());
 		}
 	}
 
@@ -165,8 +185,8 @@ public abstract class RuntimeStatisticCollector {
 	 */
 	public static void openParents(BasicStatisticDataUnit basicStatisticDataUnit) {
 		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
-			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).openFlowContinuableMediators(
-					basicStatisticDataUnit);
+			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId())
+			                 .openFlowContinuableMediators(basicStatisticDataUnit);
 		}
 	}
 
@@ -206,7 +226,7 @@ public abstract class RuntimeStatisticCollector {
 		basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
 
 		ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
-		messageDataStore.enqueue(parentReopenEvent);
+		statisticEventQueue.enqueue(parentReopenEvent);
 	}
 
 	/**
@@ -269,7 +289,7 @@ public abstract class RuntimeStatisticCollector {
 	 */
 	public static void stopConsumer() {
 		if (isStatisticsEnabled) {
-			messageDataStore.setStopped();
+			statisticEventQueue.setStopped();
 		}
 	}
 }
