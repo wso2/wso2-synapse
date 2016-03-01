@@ -26,7 +26,10 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.ResourceStatisticCollector;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -258,12 +261,15 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     }
 
     void process(MessageContext synCtx) {
-
+        Integer statisticReportingIndex;
         if (!synCtx.isResponse()) {
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-            ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, true);
+            statisticReportingIndex = OpenEventCollector
+                    .reportChildEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, true);
+        } else {
+            statisticReportingIndex = StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null);
         }
 
         if (log.isDebugEnabled()) {
@@ -274,8 +280,9 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-                ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
-	            return;
+                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                                                    statisticReportingIndex, true);
+                return;
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
@@ -305,7 +312,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
-            ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+            CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                                                statisticReportingIndex, true);
             return;
         }
 
@@ -319,7 +327,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
-            ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+            CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                                                statisticReportingIndex, true);
             return;
         }
 
@@ -334,7 +343,9 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
-        ResourceStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+        CloseEventCollector
+                .closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, statisticReportingIndex,
+                                 true);
     }
 
     public void registerFaultHandler(MessageContext synCtx) {
@@ -435,5 +446,20 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (faultSequence != null && faultSequence.isInitialized()) {
             faultSequence.destroy();
         }
+    }
+
+    private static String getResourceName(MessageContext messageContext, String resourceId) {
+        Object synapseRestApi = messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
+        Object restUrlPattern = messageContext.getProperty(RESTConstants.REST_URL_PATTERN);
+        if (synapseRestApi != null) {
+            String textualStringName;
+            if (restUrlPattern != null) {
+                textualStringName = (String) synapseRestApi + restUrlPattern;
+            } else {
+                textualStringName = (String) synapseRestApi;
+            }
+            return textualStringName;
+        }
+        return resourceId;
     }
 }

@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,26 +18,24 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
- * Try to finish message flow, unless callback or open logs exists
+ * Event to try and end message flow.
  */
 public class FinalizedFlowEvent implements StatisticsReportingEvent {
 
-	private final StatisticDataUnit statisticDataUnit;
+	private BasicStatisticDataUnit basicStatisticDataUnit;
 
-	public FinalizedFlowEvent(MessageContext messageContext, long endTime) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
+	public FinalizedFlowEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
+		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
+		RuntimeStatisticCollector.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
 }

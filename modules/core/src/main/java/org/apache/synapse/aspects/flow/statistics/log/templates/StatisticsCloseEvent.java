@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,47 +18,20 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
- * Handling Close Event
+ * Event to close opened statistic log.
  */
 public class StatisticsCloseEvent implements StatisticsReportingEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		int msgId;
-		if (messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID) != null) {
-			msgId = (Integer) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_MESSAGE_ID);
-		} else {
-			msgId = 0;
-		}
-
-		statisticDataUnit =
-				new StatisticDataUnit(statisticId, componentId, parentId, msgId, messageContext.isResponse(),
-				                      messageContext.getEnvironment(), messageContext);
-	}
-
-	public StatisticsCloseEvent(MessageContext messageContext, String componentId, String parentId, boolean isCloneLog,
-	                            boolean isAggregateLog, boolean isAlteringContent) {
-		this(messageContext, componentId, parentId);
-		statisticDataUnit.setAggregatePoint(isAggregateLog);
-		statisticDataUnit.setClonePoint(isCloneLog);
-		if (RuntimeStatisticCollector.isCollectingPayloads() && statisticDataUnit.isAspectConfigTraceEnabled() &&
-		    isAlteringContent) {
-			try {
-				statisticDataUnit.setPayload(messageContext.getEnvelope().toString());
-			} catch (Exception e) {
-				// SOAP envelop is not created yet
-				statisticDataUnit.setPayload("NONE");
-			}
-		}
+	public StatisticsCloseEvent(StatisticDataUnit statisticDataUnit) {
+		this.statisticDataUnit = statisticDataUnit;
 	}
 
 	@Override

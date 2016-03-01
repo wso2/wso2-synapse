@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,27 +18,23 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
- * Reopen sequence for continuation (eg: call mediator)
+ * Event to reopen flow continuable mediators after receiving callback for continuation call.
  */
-public class ParentReopenEvent implements StatisticsReportingEvent {
-	private final String statisticId;
-	private String componentId;
-	private String newMessageId;
 
-	public ParentReopenEvent(MessageContext messageContext, String componentId) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		this.componentId = componentId;
-		this.newMessageId = messageContext.getMessageID();
+public class ParentReopenEvent implements StatisticsReportingEvent {
+	private BasicStatisticDataUnit basicStatisticDataUnit;
+
+	public ParentReopenEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
+		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector.putComponentToOpenLogs(statisticId, newMessageId, componentId);
+		RuntimeStatisticCollector.openParents(basicStatisticDataUnit);
 	}
 }

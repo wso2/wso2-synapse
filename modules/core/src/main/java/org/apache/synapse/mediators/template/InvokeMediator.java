@@ -23,7 +23,6 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -156,7 +155,6 @@ public class InvokeMediator extends AbstractMediator implements
         if (subBranch == 0) {
 	        // Default flow
 	        TemplateMediator templateMediator = (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
-	        MediatorStatisticCollector.openLogForContinuation(synCtx, templateMediator.getMediatorName());
 	        if (!continuationState.hasChild()) {
 		        result = templateMediator.mediate(synCtx, continuationState.getPosition() + 1);
 		        if (result) {
@@ -165,18 +163,16 @@ public class InvokeMediator extends AbstractMediator implements
 	        } else {
 		        FlowContinuableMediator mediator =
 				        (FlowContinuableMediator) templateMediator.getChild(continuationState.getPosition());
-		        MediatorStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
 		        result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-		        ((Mediator) mediator).reportStatistic(synCtx, null, false);
+		        ((Mediator) mediator).reportCloseStatistics(synCtx, null);
 	        }
-	        templateMediator.reportStatistic(synCtx, null, false);
+	        templateMediator.reportCloseStatistics(synCtx, null);
         } else {
 	        // Pre fetching invoke mediator flow
 	        String prefetchInvokeKey = key.evaluateValue(synCtx);
 	        InvokeMediator prefetchInvoke = (InvokeMediator) synCtx.getDefaultConfiguration(prefetchInvokeKey);
-	        MediatorStatisticCollector.openLogForContinuation(synCtx, prefetchInvoke.getMediatorName());
 
 	        ContinuationState childContinuationState = continuationState.getChildContState();
 	        result = prefetchInvoke.mediate(synCtx, childContinuationState);
@@ -190,7 +186,7 @@ public class InvokeMediator extends AbstractMediator implements
 		        // after prefetch invoke mediator flow, execute default flow
 		        result = mediate(synCtx, false);
 	        }
-	        prefetchInvoke.reportStatistic(synCtx, null, false);
+	        prefetchInvoke.reportCloseStatistics(synCtx, null);
         }
         return result;
     }

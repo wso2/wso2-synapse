@@ -40,9 +40,10 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.flow.statistics.collectors.InboundEPStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.collectors.MediatorStatisticCollector;
-import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
@@ -379,10 +380,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
-
-//        boolean inboundStatistics = false;
         String inboundName = null;
         AspectConfiguration inboundAspectConfiguration = null;
+        Integer statisticReportingIndex = null;
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for inbound mediation using the : "
                     + (seq.getName() == null ? "Anonymous" : seq.getName()) + " Sequence");
@@ -412,9 +412,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (!sequential) {
             try {
-                InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundAspectConfiguration, true);
+                statisticReportingIndex = OpenEventCollector
+                        .reportEntryEvent(synCtx, inboundName, inboundAspectConfiguration,
+                                          ComponentType.INBOUNDENDPOINT);
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundAspectConfiguration, false);
+                CloseEventCollector
+                        .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
+                                         false);
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -424,7 +428,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         // Following code is reached if the sequential==true or inbound is
         // reached max level
-        InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundAspectConfiguration, true);
+        statisticReportingIndex = OpenEventCollector
+                .reportEntryEvent(synCtx, inboundName, inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
         try {
 
             if (synCtx.getEnvironment().isDebugEnabled()) {
@@ -468,7 +473,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
-            InboundEPStatisticCollector.reportStatisticsForInbound(synCtx, inboundName, inboundAspectConfiguration, false);
+            CloseEventCollector
+                    .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex, false);
             if (synCtx.getEnvironment().isDebugEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -756,18 +762,17 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }
 
+        RuntimeStatisticCollector.openContinuationEvents(synCtx);
         boolean result;
         do {
             SeqContinuationState seqContinuationState =
                     (SeqContinuationState) synCtx.getContinuationStateStack().peek();
             SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
             //Report Statistics for this continuation call
-            MediatorStatisticCollector.openLogForContinuation(synCtx, sequenceMediator.getSequenceNameForStatistics(synCtx));
             result = sequenceMediator.mediate(synCtx, seqContinuationState);
-            sequenceMediator.reportStatistic(synCtx, null, false);
+            sequenceMediator.reportCloseStatistics(synCtx, null);
             //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
-        MediatorStatisticCollector.removeContinuationState(synCtx);
         return result;
     }
 
@@ -950,9 +955,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
-//        boolean inboundStatistics = false;
         AspectConfiguration inboundAspectConfiguration = null;
         String inboundName = null;
+        Integer statisticReportingIndex = null;
 
         /*
          * If the method is invoked by the inbound endpoint
@@ -985,7 +990,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
         try {
             if (inboundName != null) {
-                InboundEPStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundAspectConfiguration, true);
+                statisticReportingIndex = OpenEventCollector
+                        .reportEntryEvent(smc, inboundName, inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
             }
             seq.mediate(smc);
             return true;
@@ -1023,7 +1029,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         } finally {
             if (inboundName != null) {
-                InboundEPStatisticCollector.reportStatisticsForInbound(smc, inboundName, inboundAspectConfiguration, false);
+                CloseEventCollector
+                        .closeEntryEvent(smc, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
+                                         false);
             }
         }
     }

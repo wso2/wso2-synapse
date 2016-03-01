@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,41 +18,23 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
-import org.apache.synapse.core.SynapseEnvironment;
 
 /**
- * Update time of parents
+ * Event to represent callback receive.
  */
 public class CallbackReceivedEvent implements StatisticsReportingEvent {
 
-	private final String statisticId;
-	private String callbackId;
-	private Long endTime;
-	private SynapseEnvironment synapseEnvironment;
-	private Boolean isContinuationCall;
-	private boolean isOutOnlyFlow;
+	private CallbackDataUnit callbackDataUnit;
 
-	public CallbackReceivedEvent(MessageContext messageContext, String callbackId, Long endTime) {
-		statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		boolean isOutOnly = Boolean.parseBoolean(String.valueOf(messageContext.getProperty(SynapseConstants.OUT_ONLY)));
-		if (isOutOnly) {
-			isOutOnlyFlow = true;
-		}
-		this.callbackId = callbackId;
-		this.endTime = endTime;
-		this.synapseEnvironment = messageContext.getEnvironment();
-		isContinuationCall = (Boolean) messageContext.getProperty(SynapseConstants.CONTINUATION_CALL);
-
+	public CallbackReceivedEvent(CallbackDataUnit callbackDataUnit) {
+		this.callbackDataUnit = callbackDataUnit;
 	}
 
 	@Override
 	public void process() {
-		CallbackStatisticCollector
-				.updateForReceivedCallback(statisticId, callbackId, endTime, isContinuationCall, synapseEnvironment, isOutOnlyFlow);
+		CallbackStatisticCollector.updateForReceivedCallback(callbackDataUnit);
 	}
 }

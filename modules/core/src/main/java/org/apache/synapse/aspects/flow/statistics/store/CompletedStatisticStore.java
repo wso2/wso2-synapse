@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -18,51 +18,23 @@
 
 package org.apache.synapse.aspects.flow.statistics.store;
 
-import org.apache.synapse.aspects.flow.statistics.data.raw.EndpointStatisticLog;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This class will hold completed statistic entries till they are collected for storage.
+ * This class will hold completed statistic entries till they are collected for by carbon mediation.
  */
 public class CompletedStatisticStore {
 
+	/**
+	 * Completed statistics entries for message flows.
+	 */
 	private final List<PublishingFlow> completedStatisticEntries;
-	private final List<List<StatisticsLog>> completedEndpointStatisticEntriesForTesting = new LinkedList<>();
-
-	public List<PublishingFlow> getCompletedStatisticEntries() {
-		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
-		synchronized (completedStatisticEntries) {
-			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
-			completedStatisticEntries.clear();
-		}
-		return cloneOfCompletedStatisticEntries;
-	}
-
-	public List<List<StatisticsLog>> getCompletedStatisticEntriesForTesting() {
-		List<List<StatisticsLog>> cloneOfCompletedStatisticEntries = new LinkedList<>();
-		synchronized (completedEndpointStatisticEntriesForTesting) {
-			cloneOfCompletedStatisticEntries.addAll(completedEndpointStatisticEntriesForTesting);
-			completedEndpointStatisticEntriesForTesting.clear();
-		}
-		return cloneOfCompletedStatisticEntries;
-	}
-
-	public void putCompletedStatisticEntryForTesting(List<StatisticsLog> statisticsLogs) {
-		synchronized (completedEndpointStatisticEntriesForTesting) {
-			completedEndpointStatisticEntriesForTesting.add(statisticsLogs);
-		}
-	}
-
-	public List<EndpointStatisticLog> getCompletedEndpointStatisticEntries() {
-		return null;
-	}
 
 	public CompletedStatisticStore() {
-		completedStatisticEntries = new LinkedList<PublishingFlow>();
+		completedStatisticEntries = new LinkedList<>();
 
 	}
 
@@ -74,5 +46,14 @@ public class CompletedStatisticStore {
 
 	public boolean isEmpty() {
 		return completedStatisticEntries.isEmpty();
+	}
+
+	public List<PublishingFlow> getCompletedStatisticEntries() {
+		List<PublishingFlow> cloneOfCompletedStatisticEntries = new LinkedList<>();
+		synchronized (completedStatisticEntries) {
+			cloneOfCompletedStatisticEntries.addAll(completedStatisticEntries);
+			completedStatisticEntries.clear();
+		}
+		return cloneOfCompletedStatisticEntries;
 	}
 }

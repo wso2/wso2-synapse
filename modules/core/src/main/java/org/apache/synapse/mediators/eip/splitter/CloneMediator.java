@@ -29,7 +29,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.SplittingMediatorsStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -141,19 +141,17 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         SequenceMediator branchSequence = targets.get(subBranch).getSequence();
-        SplittingMediatorsStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
         if (!continuationState.hasChild()) {
             result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
-            SplittingMediatorsStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            ((Mediator) mediator).reportStatistic(synCtx, null, false);
+            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
         }
-        branchSequence.reportStatistic(synCtx, null, false);
+        branchSequence.reportCloseStatistics(synCtx, null);
         return result;
     }
 
@@ -302,10 +300,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
     }
 
     @Override
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        SplittingMediatorsStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, true, false, isContentAltering());
+    public Integer reportOpenStatistics(MessageContext messageContext) {
+        return OpenEventCollector.reportFlowSplittingEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           isContentAltering());
     }
-
 }

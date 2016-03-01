@@ -18,26 +18,24 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
- * End message-flow forcefully without considering open logs
+ * End message-flow forcefully without considering open logs.
  */
 public class EndFlowEvent implements StatisticsReportingEvent {
 
-	private final StatisticDataUnit statisticDataUnit;
+	private final BasicStatisticDataUnit basicStatisticDataUnit;
 
-	public EndFlowEvent(MessageContext messageContext, long endTime) {
-		String statisticId = (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		statisticDataUnit = new StatisticDataUnit(statisticId, messageContext.getEnvironment(), endTime);
+	public EndFlowEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
+		this.basicStatisticDataUnit = basicStatisticDataUnit;
 	}
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector.closeStatisticEntry(statisticDataUnit, StatisticsConstants.FORECEFULLY_CLOSE);
+		RuntimeStatisticCollector.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
 	}
 }

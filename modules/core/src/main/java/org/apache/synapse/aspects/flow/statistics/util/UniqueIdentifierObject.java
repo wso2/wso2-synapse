@@ -16,25 +16,22 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.flow.statistics.log.templates;
+package org.apache.synapse.aspects.flow.statistics.util;
 
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Event to open statistics for a component.
+ * Provides indexes to components in the message flow.
  */
-public class StatisticsOpenEvent implements StatisticsReportingEvent {
+public class UniqueIdentifierObject {
 
-	private StatisticDataUnit statisticDataUnit;
+	AtomicInteger currentLevel = new AtomicInteger(0);
 
-	public StatisticsOpenEvent(StatisticDataUnit statisticDataUnit) {
-		this.statisticDataUnit = statisticDataUnit;
+	public int getNextIndex() {
+		return currentLevel.incrementAndGet();
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.recordStatisticsOpenEvent(statisticDataUnit);
+	public int getCurrentLevel() {
+		return currentLevel.get();
 	}
 }

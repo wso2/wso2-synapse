@@ -16,25 +16,23 @@
  *  under the License.
  */
 
-package org.apache.synapse.aspects.flow.statistics.log.templates;
-
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
+package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 /**
- * Event to open statistics for a component.
+ * This Data Unit will carry callback related data to the StatisticEntry
  */
-public class StatisticsOpenEvent implements StatisticsReportingEvent {
+public class CallbackDataUnit extends BasicStatisticDataUnit {
 
-	private StatisticDataUnit statisticDataUnit;
+	/**
+	 * Callback Id for the registered callback
+	 */
+	private String callbackId;
 
-	public StatisticsOpenEvent(StatisticDataUnit statisticDataUnit) {
-		this.statisticDataUnit = statisticDataUnit;
+	public String getCallbackId() {
+		return callbackId;
 	}
 
-	@Override
-	public void process() {
-		RuntimeStatisticCollector.recordStatisticsOpenEvent(statisticDataUnit);
+	public void setCallbackId(String callbackId) {
+		this.callbackId = callbackId;
 	}
 }
