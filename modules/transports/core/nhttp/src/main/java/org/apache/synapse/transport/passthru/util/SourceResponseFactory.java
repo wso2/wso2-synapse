@@ -45,8 +45,11 @@ public class SourceResponseFactory {
         // determine the status code to be sent
         int statusCode = PassThroughTransportUtils.determineHttpStatusCode(msgContext);
 
+        //determine status message description
+        String statusLine = PassThroughTransportUtils.determineHttpStatusLine(msgContext);
+
         SourceResponse sourceResponse =
-                new SourceResponse(sourceConfiguration, statusCode, sourceRequest);
+                new SourceResponse(sourceConfiguration, statusCode, statusLine, sourceRequest);
 
         // set any transport headers
         Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
