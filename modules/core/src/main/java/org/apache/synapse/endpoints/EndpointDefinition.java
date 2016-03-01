@@ -218,10 +218,13 @@ public class EndpointDefinition implements AspectConfigurable {
             if (stringValue != null) {
                 timeoutMilliSeconds = Long.parseLong(stringValue.trim());
             } else {
+                log.warn("Error while evaluating dynamic endpoint timeout expression." +
+                        "Synapse global timeout is taken as effective timeout.");
                 timeoutMilliSeconds = effectiveTimeout;
             }
         } catch (NumberFormatException e) {
-            log.warn("Error while evaluating dynamic endpoint timeout expression");
+            log.warn("Error while evaluating dynamic endpoint timeout expression." +
+                    "Synapse global timeout is taken as effective timeout.");
             timeoutMilliSeconds = effectiveTimeout;
         }
         if (timeoutMilliSeconds > effectiveTimeout) {
