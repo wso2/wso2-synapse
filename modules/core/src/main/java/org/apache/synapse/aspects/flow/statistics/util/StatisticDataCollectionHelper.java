@@ -144,11 +144,14 @@ public class StatisticDataCollectionHelper {
 	 * @param newCtx   new aggregated message context
 	 */
 	public static void collectAggregatedParents(List<MessageContext> messages, MessageContext newCtx) {
-		List<Integer> aggregateParents = new LinkedList<>();
-		for (MessageContext synCtx : messages) {
-			aggregateParents.add(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
+		if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+			List<Integer> aggregateParents = new LinkedList<>();
+			for (MessageContext synCtx : messages) {
+				if (RuntimeStatisticCollector.shouldReportStatistic(synCtx)) {
+					aggregateParents.add(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
+				}
+			}
+			newCtx.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST, aggregateParents);
 		}
-		newCtx.setProperty(StatisticsConstants.MEDIATION_FLOW_STATISTICS_PARENT_LIST, aggregateParents);
 	}
-
 }
