@@ -220,13 +220,15 @@ public abstract class RuntimeStatisticCollector {
 	 * @param synCtx synapse message context.
 	 */
 	public static void openContinuationEvents(MessageContext synCtx) {
-		BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
+		if (shouldReportStatistic(synCtx)) {
+			BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
 
-		basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
-		basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
+			basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
+			basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
 
-		ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
-		statisticEventQueue.enqueue(parentReopenEvent);
+			ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
+			statisticEventQueue.enqueue(parentReopenEvent);
+		}
 	}
 
 	/**
