@@ -29,7 +29,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -269,7 +268,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
             statisticReportingIndex = OpenEventCollector
                     .reportChildEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, true);
         } else {
-            statisticReportingIndex = StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null);
+            statisticReportingIndex = null;
         }
 
         if (log.isDebugEnabled()) {

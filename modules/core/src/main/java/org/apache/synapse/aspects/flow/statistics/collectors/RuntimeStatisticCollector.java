@@ -248,7 +248,7 @@ public abstract class RuntimeStatisticCollector {
 	 * @param messageContext synapse message context.
 	 * @return true if statistics is collected in the message flow.
 	 */
-	protected static boolean shouldReportStatistic(MessageContext messageContext) {
+	public static boolean shouldReportStatistic(MessageContext messageContext) {
 		Boolean isStatCollected =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
