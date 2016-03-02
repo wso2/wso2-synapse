@@ -77,7 +77,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
                 Mediator mediator = mediators.get(i);
-                Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx);
+                Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                 synCtx.setTracingState(myEffectiveTraceState);
                 if (!mediator.mediate(synCtx)) {
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);

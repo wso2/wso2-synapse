@@ -643,8 +643,8 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     }
 
     @Override
-    public Integer reportOpenStatistics(MessageContext messageContext) {
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
         return OpenEventCollector.reportFlowAggregateEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                           isContentAltering());
+                                                           isContentAltering() || isContentAltering);
     }
 }

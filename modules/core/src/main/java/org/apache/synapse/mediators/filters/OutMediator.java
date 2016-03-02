@@ -122,11 +122,11 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
     }
 
     @Override
-    public Integer reportOpenStatistics(MessageContext messageContext) {
+    public Integer reportOpenStatistics(MessageContext messageContext,  boolean isContentAltering) {
         if (messageContext.isResponse()) {
             return OpenEventCollector
                     .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                isContentAltering());
+                                                isContentAltering() || isContentAltering);
         }
         return null;
     }

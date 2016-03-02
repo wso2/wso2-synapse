@@ -107,7 +107,7 @@ public interface Mediator extends SynapseArtifact {
     /**
      * Report Open Statistic Event for the Mediator
      */
-    public Integer reportOpenStatistics(MessageContext synCtx);
+    public Integer reportOpenStatistics(MessageContext synCtx, boolean isContentAltering);
 
     /**
      * Report Close Statistic Event for the Mediator

@@ -118,7 +118,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
             Mediator errorHandlerMediator = null;
-            Integer statisticReportingIndex = reportOpenStatistics(synCtx);
+            Integer statisticReportingIndex = reportOpenStatistics(synCtx, false);
             // Setting Required property to reportForComponent the sequence aspects
 
             try {
@@ -512,8 +512,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     }
 
     @Override
-    public Integer reportOpenStatistics(MessageContext messageContext) {
-        if (key == null) {
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
+        if (key == null && sequenceType != SequenceType.ANON) {
             return OpenEventCollector.reportEntryEvent(messageContext, getSequenceNameForStatistics(messageContext),
                                                        getAspectConfiguration(), ComponentType.SEQUENCE);
         }
@@ -522,8 +522,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     @Override
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
-        CloseEventCollector
-                .closeEntryEvent(messageContext, getSequenceNameForStatistics(messageContext), ComponentType.SEQUENCE,
-                                 currentIndex, isContentAltering());
+        if (key == null && sequenceType != SequenceType.ANON) {
+            CloseEventCollector
+                    .closeEntryEvent(messageContext, getSequenceNameForStatistics(messageContext), ComponentType.SEQUENCE,
+                                     currentIndex, isContentAltering());
+        }
     }
 }

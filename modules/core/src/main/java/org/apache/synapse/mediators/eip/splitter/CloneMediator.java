@@ -300,8 +300,8 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
     }
 
     @Override
-    public Integer reportOpenStatistics(MessageContext messageContext) {
+    public Integer reportOpenStatistics(MessageContext messageContext,  boolean isContentAltering) {
         return OpenEventCollector.reportFlowSplittingEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                           isContentAltering());
+                                                           isContentAltering() || isContentAltering);
     }
 }
