@@ -468,14 +468,14 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         return cls.substring(cls.lastIndexOf(".") + 1);
     }
 
-    public Integer reportOpenStatistics(MessageContext messageContext) {
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
         if (this instanceof FlowContinuableMediator) {
             return OpenEventCollector
                     .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                isContentAltering());
+                                                isContentAltering() || isContentAltering);
         } else {
             return OpenEventCollector.reportChildEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                            isContentAltering());
+                                                            isContentAltering() || isContentAltering);
         }
     }
 

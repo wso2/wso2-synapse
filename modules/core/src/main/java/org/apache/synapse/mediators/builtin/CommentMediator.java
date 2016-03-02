@@ -68,7 +68,7 @@ public class CommentMediator extends AbstractMediator {
     }
 
     @Override
-    public Integer reportOpenStatistics(MessageContext synCtx) {
+    public Integer reportOpenStatistics(MessageContext synCtx, boolean isContentAltering) {
         //Do not report statistic for comment mediator
         return null;
     }

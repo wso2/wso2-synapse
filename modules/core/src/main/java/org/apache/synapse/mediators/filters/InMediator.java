@@ -121,11 +121,12 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         super.init(se);
     }
 
-    @Override public Integer reportOpenStatistics(MessageContext messageContext) {
+    @Override
+    public Integer reportOpenStatistics(MessageContext messageContext,  boolean isContentAltering) {
         if (!messageContext.isResponse()) {
             return OpenEventCollector
                     .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                isContentAltering());
+                                                isContentAltering() || isContentAltering);
         }
         return null;
     }

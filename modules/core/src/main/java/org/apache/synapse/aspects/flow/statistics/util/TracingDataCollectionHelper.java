@@ -20,8 +20,16 @@ package org.apache.synapse.aspects.flow.statistics.util;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -121,5 +129,94 @@ public class TracingDataCollectionHelper {
 		}
 
 		return transportPropertyMap;
+	}
+
+	public static PublishingFlow createPublishingFlow(List<StatisticsLog> messageFlowLogs) {
+
+		/**
+		 *Data structure using to serialize thr statistic data while publishing.
+		 */
+		PublishingFlow publishingFlow = new PublishingFlow();
+
+		/**
+		 * payload map which contains all the payloads of the message flow.
+		 */
+		Map<String, PublishingPayload> payloadMap = new HashMap<>();
+
+		String entryPoint = messageFlowLogs.get(0).getComponentName();
+		String flowId = messageFlowLogs.get(0).getMessageFlowId();
+
+		for (int index = 0; index < messageFlowLogs.size(); index++) {
+			StatisticsLog currentStatLog = messageFlowLogs.get(index);
+
+			// Add each event to Publishing Flow
+			publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
+
+			// Skip the rest of things, if message tracing is disabled
+			if (!RuntimeStatisticCollector.isCollectingPayloads()) {
+				continue;
+			}
+
+			// Update children's immediateParent index
+			List<Integer> childrenOfCurrent = currentStatLog.getChildren();
+			for(Integer child:childrenOfCurrent) {
+				messageFlowLogs.get(child).setImmediateParent(currentStatLog.getCurrentIndex());
+			}
+
+			if (currentStatLog.getBeforePayload() != null && currentStatLog.getAfterPayload() == null) {
+				currentStatLog.setAfterPayload(currentStatLog.getBeforePayload());
+			}
+
+			if (currentStatLog.getBeforePayload() == null) {
+				int parentIndex = currentStatLog.getImmediateParent();
+				StatisticsLog parentStatLog = messageFlowLogs.get(parentIndex);
+
+				if (parentStatLog.getAfterPayload().startsWith("#REFER:")) {
+					// Parent also referring to after-payload
+					currentStatLog.setBeforePayload(parentStatLog.getAfterPayload());
+					currentStatLog.setAfterPayload(parentStatLog.getAfterPayload());
+
+					String referringIndex = parentStatLog.getAfterPayload().split(":")[1];
+
+					payloadMap.get("after-" + referringIndex)
+					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+					payloadMap.get("after-" + referringIndex)
+					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+
+				} else {
+					// Create a new after-payload reference
+					currentStatLog.setBeforePayload("#REFER:" + parentIndex);
+					currentStatLog.setAfterPayload("#REFER:" + parentIndex);
+
+					payloadMap.get("after-" + parentIndex)
+					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+					payloadMap.get("after-" + parentIndex)
+					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+				}
+
+			} else {
+
+				// For content altering components
+				PublishingPayload publishingPayloadBefore = new PublishingPayload();
+				publishingPayloadBefore.setPayload(currentStatLog.getBeforePayload());
+				publishingPayloadBefore.addEvent(new PublishingPayloadEvent(index, "beforePayload"));
+				payloadMap.put("before-" + index, publishingPayloadBefore);
+
+				PublishingPayload publishingPayloadAfter = new PublishingPayload();
+				publishingPayloadAfter.setPayload(currentStatLog.getAfterPayload());
+				publishingPayloadAfter.addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+				payloadMap.put("after-" + index, publishingPayloadAfter);
+
+			}
+
+		}
+
+		publishingFlow.setMessageFlowId(flowId);
+		// Move all payloads to publishingFlow object
+		publishingFlow.setPayloads(payloadMap.values());
+
+
+
+		return publishingFlow;
 	}
 }

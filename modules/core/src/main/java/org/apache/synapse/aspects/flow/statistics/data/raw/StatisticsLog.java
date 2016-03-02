@@ -117,6 +117,11 @@ public class StatisticsLog {
 	 */
 	private ComponentType componentType;
 
+	/**
+	 * Reference to immediate parent of a node
+	 */
+	private int immediateParent;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit) {
 		this.parentIndex = statisticDataUnit.getParentIndex();
 		this.currentIndex = statisticDataUnit.getCurrentIndex();
@@ -277,5 +282,13 @@ public class StatisticsLog {
 
 	public boolean isFlowAggregateMediator() {
 		return isFlowAggregateMediator;
+	}
+
+	public int getImmediateParent() {
+		return immediateParent;
+	}
+
+	public void setImmediateParent(int immediateParent) {
+		this.immediateParent = immediateParent;
 	}
 }
