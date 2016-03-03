@@ -55,4 +55,13 @@ public interface StatisticsConfigurable {
      * To enable tracing
      */
     public void enableTracing();
+
+    public String getUniqueId();
+
+    public void setUniqueId(String uniqueId);
+
+    public void setHashCode(String hashCode);
+
+    public int getHashCode();
+
 }

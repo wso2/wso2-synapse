@@ -21,58 +21,102 @@ package org.apache.synapse.aspects;
 import org.apache.synapse.Identifiable;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Aspect configuration
  * Currently contains only statistics configuration related things
  */
 public class AspectConfiguration implements StatisticsConfigurable, Identifiable {
 
-    /* Whether statistics enable */
-    private boolean statisticsEnable = false;
+	/* Whether statistics enable */
+	private boolean statisticsEnable = false;
 
-    /* Whether tracing (collecting payload + message context properties) enabled */
-    private boolean tracingEnabled = false;
+	/* Whether tracing (collecting payload + message context properties) enabled */
+	private boolean tracingEnabled = false;
 
-    /* Identifier for a particular aspects configuration */
-    private String id;
+	/* Identifier for a particular aspects configuration */
+	private String id;
 
-    public AspectConfiguration(String id) {
-        this.id = id;
-    }
+	private String uniqueId = null;
 
-    public boolean isStatisticsEnable() {
-        return statisticsEnable;
-    }
+	private Integer hashCode = null;
 
-    public void disableStatistics() {
-        if (statisticsEnable) {
-            this.statisticsEnable = false;
-        }
-    }
+	public AspectConfiguration(String id) {
+		this.id = id;
+	}
 
-    public void enableStatistics() {
-        if (!statisticsEnable) {
-            statisticsEnable = true;
-        }
-    }
+	public boolean isStatisticsEnable() {
+		return statisticsEnable;
+	}
 
-    public boolean isTracingEnabled() {
-        return tracingEnabled;
-    }
+	public void disableStatistics() {
+		if (statisticsEnable) {
+			this.statisticsEnable = false;
+		}
+	}
 
-    public void disableTracing() {
-        if (tracingEnabled) {
-            this.tracingEnabled = false;
-        }
-    }
+	public void enableStatistics() {
+		if (!statisticsEnable) {
+			statisticsEnable = true;
+		}
+	}
 
-    public void enableTracing() {
-        if (!tracingEnabled) {
-            this.tracingEnabled = true;
-        }
-    }
+	public boolean isTracingEnabled() {
+		return tracingEnabled;
+	}
 
-    public String getId() {
-        return id;
-    }
+	public void disableTracing() {
+		if (tracingEnabled) {
+			this.tracingEnabled = false;
+		}
+	}
+
+	public void enableTracing() {
+		if (!tracingEnabled) {
+			this.tracingEnabled = true;
+		}
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setStatisticsEnable(boolean statisticsEnable) {
+		this.statisticsEnable = statisticsEnable;
+	}
+
+	public void setTracingEnabled(boolean tracingEnabled) {
+		this.tracingEnabled = tracingEnabled;
+	}
+
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public String getUniqueId() {
+		return uniqueId;
+	}
+
+	public void setUniqueId(String uniqueId) {
+		if (this.uniqueId == null) {
+			this.uniqueId = uniqueId;
+		}
+	}
+
+	public void setHashCode(String hashCode) {
+		if (this.hashCode == null) {
+			this.hashCode = hashCode.hashCode();
+		}
+	}
+
+	public int getHashCode() {
+		return hashCode;
+	}
+
 }

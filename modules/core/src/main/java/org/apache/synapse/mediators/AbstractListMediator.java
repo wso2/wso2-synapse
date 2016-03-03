@@ -171,5 +171,9 @@ public abstract class AbstractListMediator extends AbstractMediator
         return contentAware;
     }
 
-
+    public void setStatisticIdForMediators(){
+        for (Mediator mediator : mediators) {
+            mediator.setComponentStatisticsId();
+        }
+    }
 }

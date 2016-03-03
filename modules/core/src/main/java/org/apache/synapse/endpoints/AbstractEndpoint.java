@@ -805,4 +805,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         return (definition.getAspectConfiguration() != null &&
                 definition.getAspectConfiguration().isStatisticsEnable() && this.endpointName != null);
     }
+
+    public void setComponentStatisticsId() {
+
+    }
 }

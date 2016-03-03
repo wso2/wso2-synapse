@@ -26,6 +26,8 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -495,18 +497,14 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         this.sequenceType = sequenceType;
     }
 
-    public String getSequenceNameForStatistics(MessageContext synCtx) {
+    public String getSequenceNameForStatistics() {
         if (this.name != null) {
             return this.name;
         } else {
-            if (key != null) {
-                return key.evaluateValue(synCtx);
+            if (this.sequenceType != SequenceType.ANON) {
+                return this.sequenceType.toString();
             } else {
-                if (this.sequenceType != SequenceType.ANON) {
-                    return this.sequenceType.toString();
-                } else {
-                    return SynapseConstants.ANONYMOUS_SEQUENCE;
-                }
+                return SynapseConstants.ANONYMOUS_SEQUENCE;
             }
         }
     }
@@ -514,7 +512,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     @Override
     public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
         if (key == null && sequenceType != SequenceType.ANON) {
-            return OpenEventCollector.reportEntryEvent(messageContext, getSequenceNameForStatistics(messageContext),
+            return OpenEventCollector.reportEntryEvent(messageContext, getSequenceNameForStatistics(),
                                                        getAspectConfiguration(), ComponentType.SEQUENCE);
         }
         return null;
@@ -524,8 +522,28 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
         if (key == null && sequenceType != SequenceType.ANON) {
             CloseEventCollector
-                    .closeEntryEvent(messageContext, getSequenceNameForStatistics(messageContext), ComponentType.SEQUENCE,
+                    .closeEntryEvent(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
                                      currentIndex, isContentAltering());
         }
+    }
+
+    @Override
+    public void setComponentStatisticsId() {
+        String sequenceId = null;
+        if (sequenceType != SequenceType.ANON) {
+            if (getAspectConfiguration() == null) {
+                configure(new AspectConfiguration(name));
+            }
+            sequenceId = StatisticIdentityGenerator
+                    .getIdForComponent(getSequenceNameForStatistics(), ComponentType.SEQUENCE);
+            getAspectConfiguration().setUniqueId(sequenceId);
+        }
+
+        setStatisticIdForMediators();
+
+        if (sequenceType != SequenceType.ANON) {
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.SEQUENCE);
+        }
+
     }
 }

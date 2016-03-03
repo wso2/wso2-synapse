@@ -28,6 +28,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
@@ -524,5 +525,15 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         else {
             return isCollectingTraces;
         }
+    }
+
+    public void setComponentStatisticsId() {
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(getMediatorName());
+        }
+        String sequenceId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.SEQUENCE);
+        getAspectConfiguration().setUniqueId(sequenceId);
+
+        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.SEQUENCE);
     }
 }

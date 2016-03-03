@@ -147,4 +147,6 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      */
     public void setIsEdited(boolean isEdited);
 
+    public void setComponentStatisticsId();
+
 }
