@@ -61,8 +61,8 @@ public class StatisticIdentityGenerator {
 		System.out.println("Branching Happening, IF~else // Clone Targets");
 	}
 
-	public static void reportingEndEvent(String id, ComponentType componentType) {
-		System.out.println("Ending Component Initialization:" + id);
+	public static void reportingEndEvent(String mediatorId, ComponentType componentType) {
+		System.out.println("Ending Component Initialization:" + mediatorId);
 	}
 
 	public static String getHashCode() {
@@ -75,5 +75,13 @@ public class StatisticIdentityGenerator {
 		hashCode += id.hashCode();
 		System.out.println(id);
 		return id;
+	}
+
+	public static void reportingFlowContinuableEndEvent(String mediatorId, ComponentType mediator) {
+		System.out.println("Ending Flow Continuable Component Initialization:" + mediatorId);
+	}
+
+	public static void reportingEndBranchingEvent() {
+		System.out.println("Branching Ended, IF~else // Clone Targets");
 	}
 }

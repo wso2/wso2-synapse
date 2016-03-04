@@ -664,6 +664,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     StatisticIdentityGenerator.getIdReferencingComponent(onCompleteSequenceRef, ComponentType.SEQUENCE);
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
         }
-        StatisticIdentityGenerator.reportingEndEvent(mediatorId, ComponentType.MEDIATOR);
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR);
     }
 }
