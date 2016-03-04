@@ -32,7 +32,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
@@ -646,5 +648,22 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
         return OpenEventCollector.reportFlowAggregateEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
                                                            isContentAltering() || isContentAltering);
+    }
+
+    @Override public void setComponentStatisticsId() {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        if (onCompleteSequence != null) {
+            onCompleteSequence.setComponentStatisticsId();
+        } else if (onCompleteSequenceRef != null) {
+            String childId =
+                    StatisticIdentityGenerator.getIdReferencingComponent(onCompleteSequenceRef, ComponentType.SEQUENCE);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(mediatorId, ComponentType.MEDIATOR);
     }
 }

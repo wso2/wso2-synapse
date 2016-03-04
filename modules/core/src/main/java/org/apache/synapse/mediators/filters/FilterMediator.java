@@ -35,7 +35,6 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.mediators.eip.Target;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -375,7 +374,8 @@ public class FilterMediator extends AbstractListMediator implements
         String mediatorId =
                 StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
         getAspectConfiguration().setUniqueId(mediatorId);
-        String childId = null;
+        String childId;
+
         StatisticIdentityGenerator.reportingBranchingEvents();
         if (thenKey != null) {
             childId = StatisticIdentityGenerator.getIdReferencingComponent(thenKey, ComponentType.SEQUENCE);
@@ -391,7 +391,6 @@ public class FilterMediator extends AbstractListMediator implements
         } else {
             setStatisticIdForMediators();
         }
-
         StatisticIdentityGenerator.reportingEndEvent(mediatorId, ComponentType.MEDIATOR);
     }
 }
