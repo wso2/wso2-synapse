@@ -18,6 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.structuring.StructuringElement;
 
@@ -25,6 +27,8 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 public class StatisticIdentityGenerator {
+
+    private static Log log;
 
     private static int id = 0;
 
@@ -40,12 +44,15 @@ public class StatisticIdentityGenerator {
 
     private static boolean branching = false;
 
+    public StatisticIdentityGenerator() {
+        log = LogFactory.getLog(this.getClass());
+    }
+
     public static String getIdString() {
         return String.valueOf(id++);
     }
 
     public static void resetId() {
-        //System.out.println(">>>>>>>HASHCODE for: " + hashCode);
         id = 0;
         hashCode = 0;
         stack.clear();
@@ -81,7 +88,10 @@ public class StatisticIdentityGenerator {
     public static String getIdForFlowContinuableMediator(String mediatorName, ComponentType componentType) {
         String idString = parent + getIdString() + ":" + mediatorName;
         hashCode += idString.hashCode();
-        System.out.println(idString);
+
+        if(log.isDebugEnabled()) {
+            log.debug("Adding Flow Continuable Mediator : " + idString);
+        }
 
         process(idString, componentType, true);
 
@@ -89,14 +99,18 @@ public class StatisticIdentityGenerator {
     }
 
     public static void reportingBranchingEvents() {
-        System.out.println("Branching Happening, IF~else // Clone Targets");
+        if(log.isDebugEnabled()) {
+            log.debug("Starts branching (then/else/targets)");
+        }
 
         lastParent = stack.peek().getId();
         branching = true;
     }
 
     public static void reportingEndEvent(String name, ComponentType componentType) {
-        System.out.println("Ending Component Initialization:" + name);
+        if(log.isDebugEnabled()) {
+            log.debug("Ending Component Initialization: " + name);
+        }
 
         // If event is a SEQ or Proxy - pop from stack, then update parent
         if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType) {
@@ -111,11 +125,11 @@ public class StatisticIdentityGenerator {
     }
 
     public static void reportingFlowContinuableEndEvent(String mediatorId, ComponentType mediator) {
-        System.out.println("Ending Flow Continuable Component Initialization:" + mediatorId);
-
+        if(log.isDebugEnabled()) {
+            log.debug("Ending Flow Continuable Mediator Initialization: " + mediatorId);
+        }
         lastParent = stack.peek().getId();
         stack.pop();
-
         branching = false;
 
     }
@@ -125,14 +139,16 @@ public class StatisticIdentityGenerator {
     }
 
     public static String getHashCode() {
-        System.out.println("Hash Code Given to the component is :" + hashCode);
+        if(log.isDebugEnabled()) {
+            log.debug("Hash Code Given to the component is :" + hashCode);
+        }
+
         return String.valueOf(hashCode);
     }
 
     private static void process(String name, ComponentType componentType, boolean flowContinuable) {
         if (ComponentType.PROXYSERVICE == componentType) {
             StructuringElement proxyElem = new StructuringElement(name, componentType, false);
-
             stack.push(proxyElem);
             list.add(proxyElem);
             lastParent = name;
@@ -140,7 +156,6 @@ public class StatisticIdentityGenerator {
 
         if (ComponentType.SEQUENCE == componentType) {
             StructuringElement seqElem = new StructuringElement(name, componentType, false);
-
             if (stack.isEmpty()) {
                 // This is directly deploying a sequence
                 stack.push(seqElem);
@@ -159,10 +174,10 @@ public class StatisticIdentityGenerator {
             medElem.setParentId(lastParent);
             if (stack.isEmpty()) {
                 // This is not a desired situation! Mediators always lies inside a sequence
+                log.error("Sequence is missing for mediator : " + name);
             }
             list.add(medElem);
             lastParent = name;
-
             stack.push(medElem);
         }
 
@@ -173,7 +188,6 @@ public class StatisticIdentityGenerator {
             if (!stack.isEmpty()) {
                 endpointElem.setParentId(stack.peek().getId());
             }
-
             list.add(endpointElem);
         }
     }
