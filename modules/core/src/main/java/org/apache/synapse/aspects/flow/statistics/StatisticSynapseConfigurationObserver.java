@@ -19,17 +19,24 @@
 package org.apache.synapse.aspects.flow.statistics;
 
 import org.apache.synapse.Mediator;
+import org.apache.synapse.Nameable;
 import org.apache.synapse.Startup;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseObserver;
 import org.apache.synapse.core.axis2.ProxyService;
+import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.eventing.SynapseEventSource;
+import org.apache.synapse.mediators.base.SequenceMediator;
 
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	@Override public void sequenceAdded(Mediator sequence) {
-
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(((Nameable) sequence).getName());
+		sequence.setComponentStatisticsId();
+		((SequenceMediator) sequence).getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
 	}
 
 	@Override public void sequenceRemoved(Mediator sequence) {
@@ -53,7 +60,12 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	}
 
 	@Override public void endpointAdded(Endpoint endpoint) {
-
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(endpoint.getName());
+		endpoint.setComponentStatisticsId();
+		((AbstractEndpoint) endpoint).getDefinition().getAspectConfiguration()
+		                             .setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
 	}
 
 	@Override public void endpointRemoved(Endpoint endpoint) {
@@ -61,9 +73,11 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	}
 
 	@Override public void proxyServiceAdded(ProxyService proxy) {
-
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(proxy.getName());
 		proxy.setComponentStatisticsId();
-
+		proxy.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
 	}
 
 	@Override public void proxyServiceRemoved(ProxyService proxy) {

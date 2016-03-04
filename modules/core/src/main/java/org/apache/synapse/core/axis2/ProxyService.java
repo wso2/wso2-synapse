@@ -1320,7 +1320,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 		if (aspectConfiguration == null) {
 			aspectConfiguration = new AspectConfiguration(name);
 		}
-        StatisticIdentityGenerator.setParent(name);
 		String proxyId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE);
 		aspectConfiguration.setUniqueId(proxyId);
 
@@ -1354,7 +1353,5 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 			targetInLineFaultSequence.setComponentStatisticsId();
 		}
 		StatisticIdentityGenerator.reportingEndEvent(proxyId, ComponentType.PROXYSERVICE);
-		aspectConfiguration.setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
 	}
 }
