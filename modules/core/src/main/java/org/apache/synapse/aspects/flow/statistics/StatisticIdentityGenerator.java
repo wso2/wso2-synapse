@@ -98,14 +98,6 @@ public class StatisticIdentityGenerator {
 	public static void reportingEndEvent(String name, ComponentType componentType) {
 		System.out.println("Ending Component Initialization:" + name);
 
-		// If the mediator is also a clone/switch/filter/iterate/in/out - Reset lastParent value
-		if (name.contains("CloneMediator") || name.contains("SwitchMediator") || name.contains("FilterMediator") || name.contains("IterateMediator")) {
-			lastParent = stack.peek().getId();
-			stack.pop();
-
-			branching = false;
-		}
-
 		// If event is a SEQ or Proxy - pop from stack, then update parent
 		if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType) {
 			stack.pop();
@@ -117,6 +109,12 @@ public class StatisticIdentityGenerator {
 
 	public static void reportingFlowContinuableEndEvent(String mediatorId, ComponentType mediator) {
 		System.out.println("Ending Flow Continuable Component Initialization:" + mediatorId);
+
+		lastParent = stack.peek().getId();
+		stack.pop();
+
+		branching = false;
+
 	}
 
 	public static void reportingEndBranchingEvent() {
