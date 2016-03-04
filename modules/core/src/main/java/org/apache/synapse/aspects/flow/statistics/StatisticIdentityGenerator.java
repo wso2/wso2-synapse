@@ -115,6 +115,14 @@ public class StatisticIdentityGenerator {
 		}
 	}
 
+	public static void reportingFlowContinuableEndEvent(String mediatorId, ComponentType mediator) {
+		System.out.println("Ending Flow Continuable Component Initialization:" + mediatorId);
+	}
+
+	public static void reportingEndBranchingEvent() {
+		System.out.println("Branching Ended, IF~else // Clone Targets");
+	}
+
 	public static String getHashCode() {
 		System.out.println("Hash Code Given to the component is :" + hashCode);
 		return String.valueOf(hashCode);

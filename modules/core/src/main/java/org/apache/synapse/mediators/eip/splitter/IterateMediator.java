@@ -33,7 +33,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
@@ -450,5 +452,18 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     public Integer reportOpenStatistics(MessageContext messageContext,  boolean isContentAltering) {
         return OpenEventCollector.reportFlowSplittingEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
                                                            isContentAltering() || isContentAltering);
+    }
+
+    @Override public void setComponentStatisticsId() {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        if(target != null){
+            target.setStatisticIdForMediators();
+        }
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR);
     }
 }

@@ -48,6 +48,9 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -621,4 +624,20 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         }
     }
 
+    @Override public void setComponentStatisticsId() {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        if (onCacheHitSequence != null) {
+            onCacheHitSequence.setComponentStatisticsId();
+        } else if (onCacheHitRef != null) {
+            String childId =
+                    StatisticIdentityGenerator.getIdReferencingComponent(onCacheHitRef, ComponentType.SEQUENCE);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+        }
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR);
+    }
 }

@@ -22,6 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.core.SynapseEnvironment;
 
 import java.util.regex.Matcher;
@@ -128,5 +130,11 @@ public class SwitchCase implements ManagedLifecycle {
         }
 
         return matcher.matches();
+    }
+
+    public void setStatisticIdForMediators() {
+        StatisticIdentityGenerator.reportingBranchingEvents();
+        caseMediator.setStatisticIdForMediators();
+        StatisticIdentityGenerator.reportingEndBranchingEvent();
     }
 }

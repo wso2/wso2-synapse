@@ -542,7 +542,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         setStatisticIdForMediators();
 
         if (sequenceType != SequenceType.ANON) {
-            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.SEQUENCE);
+            StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE);
         }
     }
 }

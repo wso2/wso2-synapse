@@ -319,6 +319,6 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             target.setStatisticIdForMediators();
         }
 
-        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR);
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.MEDIATOR);
     }
 }
