@@ -36,6 +36,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -638,4 +641,19 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
+    @Override
+    public void setComponentStatisticsId() {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR);
+        getAspectConfiguration().setUniqueId(cloneId);
+        if (endpointKey != null) {
+            String childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointKey, ComponentType.ENDPOINT);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+        } else if (endpoint != null) {
+            endpoint.setComponentStatisticsId();
+        }
+        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR);
+    }
 }

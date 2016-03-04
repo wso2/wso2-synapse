@@ -1334,7 +1334,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 		}
 		if (targetEndpoint != null) {
 			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetEndpoint, ComponentType.ENDPOINT);
-			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.ENDPOINT);
 		}
 		if (targetInLineEndpoint != null) {
 			targetInLineEndpoint.setComponentStatisticsId();
