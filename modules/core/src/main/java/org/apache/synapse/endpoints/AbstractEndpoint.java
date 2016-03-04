@@ -32,6 +32,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -807,6 +808,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void setComponentStatisticsId() {
+        if(definition != null) {
+            if (definition.getAspectConfiguration() == null) {
+                definition.configure(new AspectConfiguration(getReportingName()));
+            }
+            String sequenceId = StatisticIdentityGenerator.getIdForComponent(getReportingName(), ComponentType.ENDPOINT);
+            definition.getAspectConfiguration().setUniqueId(sequenceId);
 
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT);
+        } else if (this instanceof IndirectEndpoint) {
+            String sequenceId = StatisticIdentityGenerator
+                    .getIdForComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT);
+
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT);
+        }
     }
 }

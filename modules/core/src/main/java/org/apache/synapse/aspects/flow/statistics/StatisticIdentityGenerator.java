@@ -69,4 +69,11 @@ public class StatisticIdentityGenerator {
 		System.out.println("Hash Code Given to the component is :" + hashCode);
 		return String.valueOf(hashCode);
 	}
+
+	public static String getIdForFlowContinuableMediator(String mediatorName, ComponentType mediator) {
+		String id = parent + getIdString() + ":" + mediatorName;
+		hashCode += id.hashCode();
+		System.out.println(id);
+		return id;
+	}
 }

@@ -23,6 +23,9 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -32,6 +35,7 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.ListMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.Target;
 import org.jaxen.JaxenException;
 
 import java.util.regex.Matcher;
@@ -364,4 +368,30 @@ public class FilterMediator extends AbstractListMediator implements
         return false;
     }
 
+    @Override public void setComponentStatisticsId() {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        String childId = null;
+        StatisticIdentityGenerator.reportingBranchingEvents();
+        if (thenKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(thenKey, ComponentType.SEQUENCE);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+        } else {
+            setStatisticIdForMediators();
+        }
+
+        StatisticIdentityGenerator.reportingBranchingEvents();
+        if (elseKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(elseKey, ComponentType.SEQUENCE);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+        } else {
+            setStatisticIdForMediators();
+        }
+
+        StatisticIdentityGenerator.reportingEndEvent(mediatorId, ComponentType.MEDIATOR);
+    }
 }

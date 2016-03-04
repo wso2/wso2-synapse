@@ -229,17 +229,18 @@ public class Target {
     }
 
     public void setStatisticIdForMediators(){
+        StatisticIdentityGenerator.reportingBranchingEvents();
         String childId;
         if (sequenceRef != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(sequenceRef, ComponentType.SEQUENCE);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(sequenceRef, ComponentType.MEDIATOR);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.MEDIATOR);
         }
         if (sequence != null) {
             sequence.setComponentStatisticsId();
         }
         if (endpointRef != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointRef, ComponentType.ENDPOINT);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointRef, ComponentType.MEDIATOR);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.MEDIATOR);
         }
         if (endpoint != null) {
             endpoint.setComponentStatisticsId();

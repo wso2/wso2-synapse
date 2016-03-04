@@ -22,8 +22,12 @@ package org.apache.synapse.mediators.builtin;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
@@ -311,6 +315,20 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
         throw new SynapseException("Error while performing the call operation", ex);
+    }
+
+    @Override
+    public void setComponentStatisticsId() {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.SEQUENCE);
+        getAspectConfiguration().setUniqueId(cloneId);
+
+        if(endpoint != null){
+            endpoint.setComponentStatisticsId();
+        }
+        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.SEQUENCE);
     }
 
 }

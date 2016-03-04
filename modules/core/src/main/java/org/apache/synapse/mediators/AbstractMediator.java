@@ -531,9 +531,9 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(getMediatorName());
         }
-        String sequenceId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.SEQUENCE);
+        String sequenceId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR);
         getAspectConfiguration().setUniqueId(sequenceId);
 
-        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.SEQUENCE);
+        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR);
     }
 }

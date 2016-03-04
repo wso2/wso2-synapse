@@ -313,13 +313,12 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
             configure(new AspectConfiguration(getMediatorName()));
         }
         String sequenceId =
-                StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.SEQUENCE);
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
         getAspectConfiguration().setUniqueId(sequenceId);
         for(Target target: targets){
             target.setStatisticIdForMediators();
         }
 
-        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.SEQUENCE);
-
+        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR);
     }
 }
