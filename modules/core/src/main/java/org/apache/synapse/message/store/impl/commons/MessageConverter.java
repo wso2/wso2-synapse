@@ -298,7 +298,8 @@ public final class MessageConverter {
                 if (value instanceof String) {
                     synMsg.addProperty(key, (String) value);
                 }
-                if(value instanceof ArrayList && ((ArrayList)value).get(0) instanceof OMElement) {
+                if (value instanceof ArrayList && ((ArrayList) value).size() > 0
+                        && ((ArrayList) value).get(0) instanceof OMElement) {
                     OMElement elem = ((OMElement) ((ArrayList) value).get(0));
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     try {
