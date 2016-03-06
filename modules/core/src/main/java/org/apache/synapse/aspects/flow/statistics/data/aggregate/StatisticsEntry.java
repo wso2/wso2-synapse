@@ -307,7 +307,6 @@ public class StatisticsEntry {
 	 * @return Message flow logs of the message flow
 	 */
 	public PublishingFlow getMessageFlowLogs() {
-
 		return TracingDataCollectionHelper.createPublishingFlow(this.messageFlowLogs);
 	}
 

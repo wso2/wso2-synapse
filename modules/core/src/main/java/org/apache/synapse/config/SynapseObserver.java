@@ -25,6 +25,8 @@ import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.rest.API;
 
 /**
  * An implementation of this interface can be registered with the SynapseConfiguration to receive
@@ -92,6 +94,42 @@ public interface SynapseObserver {
      * @param proxy the ProxyService removed from the configuration
      */
     public void proxyServiceRemoved(ProxyService proxy);
+
+    /** Event fired when a api is added to the configuration
+     *
+     * @param api the API added to the configuration
+     */
+    public void apiAdded(API api);
+
+    /** Event fired when a API is removed from the configuration
+     *
+     * @param api the API removed from the configuration
+     */
+    public void apiRemoved(API api);
+
+    /** Event fired when a API is updated in the configuration
+     *
+     * @param api the API updated in the configuration
+     */
+    public void apiUpdated(API api);
+
+    /** Event fired when a Inbound Endpoint is added to the configuration
+     *
+     * @param inboundEndpoint the Inbound Endpoint added to the configuration
+     */
+    public void inboundEndpointAdded(InboundEndpoint inboundEndpoint);
+
+    /** Event fired when a Inbound Endpoint is removed to the configuration
+     *
+     * @param inboundEndpoint the Inbound Endpoint removed to the configuration
+     */
+    public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint);
+
+    /** Event fired when a Inbound Endpoint is updated in the configuration
+     *
+     * @param inboundEndpoint the Inbound Endpoint updated in the configuration
+     */
+    public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint);
 
     /** Event fired when a startup is added to the configuration
      *

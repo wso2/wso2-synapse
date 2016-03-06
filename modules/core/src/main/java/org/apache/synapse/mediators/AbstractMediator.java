@@ -473,9 +473,10 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (this instanceof FlowContinuableMediator) {
             return OpenEventCollector
                     .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                isContentAltering() || isContentAltering);
+                                                getAspectConfiguration(), isContentAltering() || isContentAltering);
         } else {
             return OpenEventCollector.reportChildEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                            getAspectConfiguration(),
                                                             isContentAltering() || isContentAltering);
         }
     }

@@ -25,7 +25,7 @@ import java.util.Map;
 public class PublishingEvent {
 
 	private String componentType;
-	private String componentId;
+	private String componentName;
 
 	private long startTime;
 	private long endTime;
@@ -40,11 +40,14 @@ public class PublishingEvent {
 	private Integer[] children;
 	private String entryPoint;
 
+	private String ComponentId;
+	private Integer hashCode;
+
 	private int faultCount;
 
 	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
 		this.componentType = statisticsLog.getComponentTypeToString();
-		this.componentId = statisticsLog.getComponentName();
+		this.componentName = statisticsLog.getComponentName();
 
 		this.startTime = statisticsLog.getStartTime();
 		this.endTime = statisticsLog.getEndTime();
@@ -71,12 +74,12 @@ public class PublishingEvent {
 		this.componentType = componentType;
 	}
 
-	public String getComponentId() {
-		return componentId;
+	public String getComponentName() {
+		return componentName;
 	}
 
-	public void setComponentId(String componentId) {
-		this.componentId = componentId;
+	public void setComponentName(String componentName) {
+		this.componentName = componentName;
 	}
 
 	public long getStartTime() {
@@ -159,7 +162,24 @@ public class PublishingEvent {
 		this.faultCount = faultCount;
 	}
 
+	public String getComponentId() {
+		return ComponentId;
+	}
+
+	public void setComponentId(String componentId) {
+		ComponentId = componentId;
+	}
+
+	public Integer getHashCode() {
+		return hashCode;
+	}
+
+	public void setHashCode(Integer hashCode) {
+		this.hashCode = hashCode;
+	}
+
 	@Override public String toString() {
-		return "Component Type " + componentType + " , Component Id " + componentId;
+		return "Component Type " + componentType + " , Component Name " +
+		       componentName;
 	}
 }

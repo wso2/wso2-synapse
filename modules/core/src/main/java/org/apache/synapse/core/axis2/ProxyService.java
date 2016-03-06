@@ -1315,7 +1315,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     }
 
 	public void setComponentStatisticsId() {
-		//Reset Id Generator as this is new component
 		StatisticIdentityGenerator.resetId();
 		if (aspectConfiguration == null) {
 			aspectConfiguration = new AspectConfiguration(name);

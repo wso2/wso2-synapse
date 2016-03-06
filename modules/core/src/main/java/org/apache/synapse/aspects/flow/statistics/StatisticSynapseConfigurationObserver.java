@@ -28,7 +28,9 @@ import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.eventing.SynapseEventSource;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.rest.API;
 
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	@Override public void sequenceAdded(Mediator sequence) {
@@ -82,6 +84,46 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override public void proxyServiceRemoved(ProxyService proxy) {
 
+	}
+
+	@Override public void apiAdded(API api) {
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(api.getName());
+		api.setComponentStatisticsId();
+		api.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
+	}
+
+	@Override public void apiRemoved(API api) {
+
+	}
+
+	@Override public void apiUpdated(API api) {
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(api.getName());
+		api.setComponentStatisticsId();
+		api.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
+	}
+
+	@Override public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(inboundEndpoint.getName());
+		inboundEndpoint.setComponentStatisticsId();
+		inboundEndpoint.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
+	}
+
+	@Override public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint) {
+
+	}
+
+	@Override public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
+		StatisticIdentityGenerator.resetId();
+		StatisticIdentityGenerator.setParent(inboundEndpoint.getName());
+		inboundEndpoint.setComponentStatisticsId();
+		inboundEndpoint.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
+		StatisticIdentityGenerator.resetId();
 	}
 
 	@Override public void startupAdded(Startup startup) {

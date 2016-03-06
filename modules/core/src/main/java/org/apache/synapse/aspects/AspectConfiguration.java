@@ -43,7 +43,7 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 	/* Identifier for a particular aspects configuration */
 	private String id;
 
-	private String uniqueId = null;
+	private String uniqueId;
 
 	private Integer hashCode = null;
 
@@ -115,7 +115,7 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 		}
 	}
 
-	public int getHashCode() {
+	public Integer getHashCode() {
 		return hashCode;
 	}
 

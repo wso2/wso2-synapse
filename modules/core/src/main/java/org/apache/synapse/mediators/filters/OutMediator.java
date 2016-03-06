@@ -128,7 +128,7 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
         if (messageContext.isResponse()) {
             return OpenEventCollector
                     .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                isContentAltering() || isContentAltering);
+                                                getAspectConfiguration(), isContentAltering() || isContentAltering);
         }
         return null;
     }

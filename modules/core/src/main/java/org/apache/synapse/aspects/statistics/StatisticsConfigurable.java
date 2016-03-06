@@ -62,6 +62,6 @@ public interface StatisticsConfigurable {
 
     public void setHashCode(String hashCode);
 
-    public int getHashCode();
+    public Integer getHashCode();
 
 }

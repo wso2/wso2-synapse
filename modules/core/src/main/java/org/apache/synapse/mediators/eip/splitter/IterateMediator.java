@@ -449,8 +449,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
     }
 
     @Override
-    public Integer reportOpenStatistics(MessageContext messageContext,  boolean isContentAltering) {
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
         return OpenEventCollector.reportFlowSplittingEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           getAspectConfiguration(),
                                                            isContentAltering() || isContentAltering);
     }
 
