@@ -479,6 +479,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
     }
 
     public void setComponentStatisticsId() {
+        StatisticIdentityGenerator.reportingBranchingEvents();
         StatisticIdentityGenerator.resetId();
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(name);
