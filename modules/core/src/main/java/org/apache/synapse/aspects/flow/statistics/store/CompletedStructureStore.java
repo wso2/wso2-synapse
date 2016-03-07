@@ -40,7 +40,7 @@ public class CompletedStructureStore {
         }
     }
 
-    public List<StructuringArtifact> getCompletedStatisticEntries() {
+    public List<StructuringArtifact> getCompletedStructureEntries() {
         List<StructuringArtifact> clonedCompletedStructures = new LinkedList<>();
         synchronized (completedStructures) {
             clonedCompletedStructures.addAll(completedStructures);

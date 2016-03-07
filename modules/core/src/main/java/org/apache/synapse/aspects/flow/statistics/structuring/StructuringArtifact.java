@@ -18,6 +18,8 @@
 package org.apache.synapse.aspects.flow.statistics.structuring;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class StructuringArtifact {
     private ArrayList<StructuringElement> list;
@@ -42,5 +44,13 @@ public class StructuringArtifact {
 
     public void setHashcode(int hashcode) {
         this.hashcode = hashcode;
+    }
+
+    public Map<String, Object> getObjectAsMap() {
+        Map<String, Object> objectMap = new HashMap<>();
+        objectMap.put("hashcode", this.hashcode);
+        objectMap.put("components", this.list);
+
+        return objectMap;
     }
 }
