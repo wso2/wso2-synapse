@@ -21,7 +21,9 @@ package org.apache.synapse.aspects.flow.statistics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.structuring.StructuringArtifact;
 import org.apache.synapse.aspects.flow.statistics.structuring.StructuringElement;
+import org.apache.synapse.config.SynapseConfiguration;
 
 import java.util.ArrayList;
 import java.util.Stack;
@@ -44,11 +46,20 @@ public class StatisticIdentityGenerator {
 
     private static boolean branching = false;
 
+    private static SynapseConfiguration synapseConfiguration;
+
     public static String getIdString() {
         return String.valueOf(id++);
     }
 
     public static void resetId() {
+        if (list.size() > 0) {
+            StructuringArtifact structuringArtifact = new StructuringArtifact(hashCode, list);
+            if (synapseConfiguration != null) {
+                synapseConfiguration.getCompletedStructureStore().putCompletedStatisticEntry(structuringArtifact);
+            }
+        }
+
         id = 0;
         hashCode = 0;
         stack.clear();
@@ -114,8 +125,9 @@ public class StatisticIdentityGenerator {
         }
 //        log.info("Ending Component Initialization: " + name);
         // If event is a SEQ or Proxy - pop from stack, then update parent
-        if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType ||
-            ComponentType.API ==componentType || ComponentType.RESOURCE == componentType) {
+        if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType
+            || ComponentType.API ==componentType || ComponentType.RESOURCE == componentType
+            || ComponentType.INBOUNDENDPOINT == componentType) {
 
             stack.pop();
             if (!stack.isEmpty()) {
@@ -150,8 +162,12 @@ public class StatisticIdentityGenerator {
         return String.valueOf(hashCode);
     }
 
+    public static void setSynapseConfiguration(SynapseConfiguration synapseConfiguration) {
+        StatisticIdentityGenerator.synapseConfiguration = synapseConfiguration;
+    }
+
     private static void process(String name, ComponentType componentType, boolean flowContinuable) {
-        if (ComponentType.PROXYSERVICE == componentType || ComponentType.API == componentType) {
+        if (ComponentType.PROXYSERVICE == componentType || ComponentType.API == componentType || ComponentType.INBOUNDENDPOINT == componentType) {
             StructuringElement proxyElem = new StructuringElement(name, componentType, false);
             stack.push(proxyElem);
             list.add(proxyElem);

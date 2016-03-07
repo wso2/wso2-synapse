@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.*;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -216,6 +217,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * List of commented text segments within the Synapse Configuration
      */
     private List<String> commentedTextList = new ArrayList<String>();
+
+    /** The Completed StructureStore object */
+    private CompletedStructureStore completedStructureStore = new CompletedStructureStore();
+
 
     /**
      * Add a named sequence into the local registry. If a sequence already exists by the specified
@@ -2177,6 +2182,16 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             this.commentedTextList.add(comment);
         }
 
+    }
+
+    /**
+     * This method returns the CompletedStructureStore responsible for collecting completed statistics for this synapse
+     * instance.
+     *
+     * @return CompletedStructureStore for this synapse instance
+     */
+    public CompletedStructureStore getCompletedStructureStore() {
+        return completedStructureStore;
     }
 
 }

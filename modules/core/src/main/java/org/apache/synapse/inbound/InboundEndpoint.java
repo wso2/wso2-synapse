@@ -243,7 +243,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(name);
         }
-        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE);
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.INBOUNDENDPOINT);
         aspectConfiguration.setUniqueId(apiId);
         String childId = null;
         if (injectingSeq != null) {
@@ -254,6 +254,6 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
             childId = StatisticIdentityGenerator.getIdReferencingComponent(onErrorSeq, ComponentType.SEQUENCE);
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
         }
-        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.PROXYSERVICE);
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.INBOUNDENDPOINT);
     }
 }
