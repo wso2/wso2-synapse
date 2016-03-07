@@ -28,7 +28,7 @@ import java.util.Stack;
 
 public class StatisticIdentityGenerator {
 
-    private static Log log;
+    private static Log log = LogFactory.getLog(StatisticIdentityGenerator.class);
 
     private static int id = 0;
 
@@ -43,10 +43,6 @@ public class StatisticIdentityGenerator {
     private static String lastParent;
 
     private static boolean branching = false;
-
-    public StatisticIdentityGenerator() {
-        log = LogFactory.getLog(this.getClass());
-    }
 
     public static String getIdString() {
         return String.valueOf(id++);
@@ -67,8 +63,10 @@ public class StatisticIdentityGenerator {
     public static String getIdForComponent(String name, ComponentType componentType) {
         String idString = parent + getIdString() + ":" + name;
         hashCode += idString.hashCode();
-        System.out.println(idString);
 
+        if(log.isDebugEnabled()) {
+            log.debug("Adding Component : " + idString);
+        }
         process(idString, componentType, false);
 
         return idString;
@@ -78,8 +76,9 @@ public class StatisticIdentityGenerator {
         String idString = name + "@0:" + name;
         id++;
         hashCode += idString.hashCode();
-        System.out.println(idString);
-
+        if(log.isDebugEnabled()) {
+            log.debug("Adding Referencing Component  : " + idString);
+        }
         process(idString, componentType, false);
 
         return idString;
@@ -135,7 +134,7 @@ public class StatisticIdentityGenerator {
     }
 
     public static void reportingEndBranchingEvent() {
-        System.out.println("Branching Ended, IF~else // Clone Targets");
+//        System.out.println("Branching Ended, IF~else // Clone Targets");
     }
 
     public static String getHashCode() {

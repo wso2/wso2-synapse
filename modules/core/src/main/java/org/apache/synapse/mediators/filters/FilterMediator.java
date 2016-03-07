@@ -390,7 +390,7 @@ public class FilterMediator extends AbstractListMediator implements
             childId = StatisticIdentityGenerator.getIdReferencingComponent(elseKey, ComponentType.SEQUENCE);
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
         } else {
-            setStatisticIdForMediators();
+            elseMediator.setStatisticIdForMediators();
         }
         StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR);
         StatisticIdentityGenerator.reportingEndBranchingEvent();

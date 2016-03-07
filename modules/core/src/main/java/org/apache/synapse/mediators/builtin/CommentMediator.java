@@ -68,6 +68,11 @@ public class CommentMediator extends AbstractMediator {
     }
 
     @Override
+    public void setComponentStatisticsId() {
+        // Not to set component ID for comments
+    }
+
+    @Override
     public Integer reportOpenStatistics(MessageContext synCtx, boolean isContentAltering) {
         //Do not report statistic for comment mediator
         return null;
