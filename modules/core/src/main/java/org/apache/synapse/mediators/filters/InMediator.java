@@ -128,7 +128,7 @@ public class InMediator extends AbstractListMediator implements org.apache.synap
         if (!messageContext.isResponse()) {
             return OpenEventCollector
                     .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                isContentAltering() || isContentAltering);
+                                                getAspectConfiguration(), isContentAltering() || isContentAltering);
         }
         return null;
     }

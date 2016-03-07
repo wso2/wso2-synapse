@@ -354,6 +354,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 	public void addInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
 		if (!inboundEndpointMap.containsKey(name)) {
 			inboundEndpointMap.put(name, inboundEndpoint);
+            for (SynapseObserver o : observers) {
+                o.inboundEndpointAdded(inboundEndpoint);
+            }
 		} else {
 			handleException("Duplicate inbound  endpoint definition by the name: " + name);
 		}
@@ -372,6 +375,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			handleException("No Inbound Endpoint exists by the name: " + name);
 		} else {
 			inboundEndpointMap.put(name, inboundEndpoint);
+            for (SynapseObserver o : observers) {
+                o.inboundEndpointUpdated(inboundEndpoint);
+            }
 		}
 	}
 
@@ -379,6 +385,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 		InboundEndpoint inboundEndpoint = inboundEndpointMap.get(name);
 		if (inboundEndpoint != null) {
 			inboundEndpointMap.remove(name);
+            for (SynapseObserver o : observers) {
+                o.inboundEndpointRemoved(inboundEndpoint);
+            }
 		} else {
 			handleException("No Inbound Endpoint exists by the name: " + name);
 		}
@@ -393,6 +402,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }
             apiTable.put(name, api);
+            for (SynapseObserver o : observers) {
+                o.apiAdded(api);
+            }
         } else {
             handleException("Duplicate resource definition by the name: " + name);
         }
@@ -409,6 +421,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }        	
             apiTable.put(name, api);
+            for (SynapseObserver o : observers) {
+                o.apiUpdated(api);
+            }
         }
     }
 
@@ -424,6 +439,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         API api = apiTable.get(name);
         if (api != null) {
             apiTable.remove(name);
+            for (SynapseObserver o : observers) {
+                o.apiRemoved(api);
+            }
         } else {
             handleException("No API exists by the name: " + name);
         }

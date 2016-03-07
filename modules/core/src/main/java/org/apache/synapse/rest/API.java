@@ -28,6 +28,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.util.UniqueIdentifierObject;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -509,5 +512,17 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     @Override
     public AspectConfiguration getAspectConfiguration() {
         return aspectConfiguration;
+    }
+
+    public void setComponentStatisticsId(){
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(name);
+        }
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE);
+        aspectConfiguration.setUniqueId(apiId);
+        for (Resource resource : resources.values()) {
+            resource.setComponentStatisticsId();
+        }
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.PROXYSERVICE);
     }
 }

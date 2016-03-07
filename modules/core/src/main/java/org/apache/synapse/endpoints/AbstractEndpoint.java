@@ -818,7 +818,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT);
         } else if (this instanceof IndirectEndpoint) {
             String sequenceId = StatisticIdentityGenerator
-                    .getIdForComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT);
+                    .getIdReferencingComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT);
 
             StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT);
         }
