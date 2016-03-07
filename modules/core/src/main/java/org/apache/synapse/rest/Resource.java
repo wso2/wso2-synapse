@@ -480,12 +480,11 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
 
     public void setComponentStatisticsId() {
         StatisticIdentityGenerator.reportingBranchingEvents();
-        StatisticIdentityGenerator.resetId();
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(name);
         }
         String resourceId =
-                StatisticIdentityGenerator.getIdForComponent(getResourceClassName(), ComponentType.PROXYSERVICE);
+                StatisticIdentityGenerator.getIdForComponent(getResourceClassName(), ComponentType.RESOURCE);
         aspectConfiguration.setUniqueId(resourceId);
 
         String childId = null;
@@ -510,7 +509,7 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         if (faultSequence != null) {
             faultSequence.setComponentStatisticsId();
         }
-        StatisticIdentityGenerator.reportingEndEvent(resourceId, ComponentType.PROXYSERVICE);
+        StatisticIdentityGenerator.reportingEndEvent(resourceId, ComponentType.RESOURCE);
     }
 
     /**

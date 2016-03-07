@@ -518,11 +518,11 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(name);
         }
-        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE);
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.API);
         aspectConfiguration.setUniqueId(apiId);
         for (Resource resource : resources.values()) {
             resource.setComponentStatisticsId();
         }
-        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.PROXYSERVICE);
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.API);
     }
 }

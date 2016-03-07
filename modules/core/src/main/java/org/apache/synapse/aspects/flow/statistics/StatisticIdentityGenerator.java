@@ -64,9 +64,10 @@ public class StatisticIdentityGenerator {
         String idString = parent + getIdString() + ":" + name;
         hashCode += idString.hashCode();
 
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Adding Component : " + idString);
         }
+        log.info("Adding Component : " + idString);
         process(idString, componentType, false);
 
         return idString;
@@ -76,9 +77,10 @@ public class StatisticIdentityGenerator {
         String idString = name + "@0:" + name;
         id++;
         hashCode += idString.hashCode();
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Adding Referencing Component  : " + idString);
         }
+        log.info("Adding Referencing Component  : " + idString);
         process(idString, componentType, false);
 
         return idString;
@@ -88,31 +90,33 @@ public class StatisticIdentityGenerator {
         String idString = parent + getIdString() + ":" + mediatorName;
         hashCode += idString.hashCode();
 
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Adding Flow Continuable Mediator : " + idString);
         }
-
+        log.info("Adding Flow Continuable Mediator : " + idString);
         process(idString, componentType, true);
 
         return idString;
     }
 
     public static void reportingBranchingEvents() {
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Starts branching (then/else/targets)");
         }
-
+        log.info("Starts branching (then/else/targets)");
         lastParent = stack.peek().getId();
         branching = true;
     }
 
     public static void reportingEndEvent(String name, ComponentType componentType) {
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Ending Component Initialization: " + name);
         }
-
+        log.info("Ending Component Initialization: " + name);
         // If event is a SEQ or Proxy - pop from stack, then update parent
-        if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType) {
+        if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType ||
+            ComponentType.API ==componentType || ComponentType.RESOURCE == componentType) {
+
             stack.pop();
             if (!stack.isEmpty()) {
                 lastParent = stack.peek().getId();
@@ -124,9 +128,10 @@ public class StatisticIdentityGenerator {
     }
 
     public static void reportingFlowContinuableEndEvent(String mediatorId, ComponentType mediator) {
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Ending Flow Continuable Mediator Initialization: " + mediatorId);
         }
+        log.info("Ending Flow Continuable Mediator Initialization: " + mediatorId);
         lastParent = stack.peek().getId();
         stack.pop();
         branching = false;
@@ -138,15 +143,15 @@ public class StatisticIdentityGenerator {
     }
 
     public static String getHashCode() {
-        if(log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             log.debug("Hash Code Given to the component is :" + hashCode);
         }
-
+        log.info("Hash Code Given to the component is :" + hashCode);
         return String.valueOf(hashCode);
     }
 
     private static void process(String name, ComponentType componentType, boolean flowContinuable) {
-        if (ComponentType.PROXYSERVICE == componentType) {
+        if (ComponentType.PROXYSERVICE == componentType || ComponentType.API == componentType) {
             StructuringElement proxyElem = new StructuringElement(name, componentType, false);
             stack.push(proxyElem);
             list.add(proxyElem);
@@ -166,6 +171,15 @@ public class StatisticIdentityGenerator {
                 list.add(seqElem);
             }
             lastParent = name;
+        }
+
+        if (ComponentType.RESOURCE == componentType) {
+            StructuringElement resourceElem = new StructuringElement(name, componentType, false);
+            // There must be an API, which has this resource
+            resourceElem.setParentId(stack.peek().getId());
+            list.add(resourceElem);
+            lastParent = name;
+            stack.push(resourceElem);
         }
 
         if (ComponentType.MEDIATOR == componentType) {
