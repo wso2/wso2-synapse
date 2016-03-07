@@ -67,7 +67,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Component : " + idString);
         }
-        log.info("Adding Component : " + idString);
+//        log.info("Adding Component : " + idString);
         process(idString, componentType, false);
 
         return idString;
@@ -93,7 +93,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Flow Continuable Mediator : " + idString);
         }
-        log.info("Adding Flow Continuable Mediator : " + idString);
+//        log.info("Adding Flow Continuable Mediator : " + idString);
         process(idString, componentType, true);
 
         return idString;
@@ -103,7 +103,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Starts branching (then/else/targets)");
         }
-        log.info("Starts branching (then/else/targets)");
+//        log.info("Starts branching (then/else/targets)");
         lastParent = stack.peek().getId();
         branching = true;
     }
@@ -112,7 +112,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Component Initialization: " + name);
         }
-        log.info("Ending Component Initialization: " + name);
+//        log.info("Ending Component Initialization: " + name);
         // If event is a SEQ or Proxy - pop from stack, then update parent
         if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType ||
             ComponentType.API ==componentType || ComponentType.RESOURCE == componentType) {
@@ -131,7 +131,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Flow Continuable Mediator Initialization: " + mediatorId);
         }
-        log.info("Ending Flow Continuable Mediator Initialization: " + mediatorId);
+//        log.info("Ending Flow Continuable Mediator Initialization: " + mediatorId);
         lastParent = stack.peek().getId();
         stack.pop();
         branching = false;
@@ -146,7 +146,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Hash Code Given to the component is :" + hashCode);
         }
-        log.info("Hash Code Given to the component is :" + hashCode);
+//        log.info("Hash Code Given to the component is :" + hashCode);
         return String.valueOf(hashCode);
     }
 
