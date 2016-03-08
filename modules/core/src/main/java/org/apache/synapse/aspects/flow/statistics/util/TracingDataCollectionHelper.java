@@ -219,8 +219,6 @@ public class TracingDataCollectionHelper {
 		// Move all payloads to publishingFlow object
 		publishingFlow.setPayloads(payloadMap.values());
 
-
-
 		return publishingFlow;
 	}
 }

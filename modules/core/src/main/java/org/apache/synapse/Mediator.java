@@ -20,6 +20,8 @@
 package org.apache.synapse;
 
 
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+
 /**
  * All Synapse mediators must implement this Mediator interface. As a message passes
  * through the Synapse system, each mediator's mediate() method is invoked in the
@@ -114,5 +116,5 @@ public interface Mediator extends SynapseArtifact {
      */
     public void reportCloseStatistics(MessageContext synCtx, Integer currentIndex);
 
-    public void setComponentStatisticsId();
+    public void setComponentStatisticsId(ArtifactHolder holder);
 }

@@ -30,6 +30,7 @@ import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.UniqueIdentifierObject;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -514,15 +515,15 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         return aspectConfiguration;
     }
 
-    public void setComponentStatisticsId(){
+    public void setComponentStatisticsId(ArtifactHolder holder){
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(name);
         }
-        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.API);
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.API, holder);
         aspectConfiguration.setUniqueId(apiId);
         for (Resource resource : resources.values()) {
-            resource.setComponentStatisticsId();
+            resource.setComponentStatisticsId(holder);
         }
-        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.API);
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.API, holder);
     }
 }

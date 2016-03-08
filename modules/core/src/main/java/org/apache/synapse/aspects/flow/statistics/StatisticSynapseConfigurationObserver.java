@@ -21,6 +21,7 @@ package org.apache.synapse.aspects.flow.statistics;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Nameable;
 import org.apache.synapse.Startup;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseObserver;
@@ -35,11 +36,11 @@ import org.apache.synapse.rest.API;
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 	@Override
 	public void sequenceAdded(Mediator sequence) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(((Nameable) sequence).getName());
-		sequence.setComponentStatisticsId();
-		((SequenceMediator) sequence).getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		ArtifactHolder holder = new ArtifactHolder();
+		holder.setParent(((Nameable) sequence).getName());
+		sequence.setComponentStatisticsId(holder);
+		((SequenceMediator) sequence).getAspectConfiguration().setHashCode(holder.getHashCodeAsString());
+		StatisticIdentityGenerator.conclude(holder);
 	}
 
 	@Override
@@ -69,12 +70,12 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void endpointAdded(Endpoint endpoint) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(endpoint.getName());
-		endpoint.setComponentStatisticsId();
+		ArtifactHolder holder = new ArtifactHolder();
+		holder.setParent(endpoint.getName());
+		endpoint.setComponentStatisticsId(holder);
 		((AbstractEndpoint) endpoint).getDefinition().getAspectConfiguration()
-		                             .setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		                             .setHashCode(holder.getHashCodeAsString());
+		StatisticIdentityGenerator.conclude(holder);
 	}
 
 	@Override
@@ -84,11 +85,11 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void proxyServiceAdded(ProxyService proxy) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(proxy.getName());
-		proxy.setComponentStatisticsId();
-		proxy.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		ArtifactHolder holder = new ArtifactHolder();
+		holder.setParent(proxy.getName());
+		proxy.setComponentStatisticsId(holder);
+		proxy.getAspectConfiguration().setHashCode(holder.getHashCodeAsString());
+		StatisticIdentityGenerator.conclude(holder);
 	}
 
 	@Override
@@ -98,11 +99,7 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void apiAdded(API api) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(api.getName());
-		api.setComponentStatisticsId();
-		api.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		this.apiUpdated(api);
 	}
 
 	@Override
@@ -112,20 +109,16 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void apiUpdated(API api) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(api.getName());
-		api.setComponentStatisticsId();
-		api.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		ArtifactHolder holder = new ArtifactHolder();
+		holder.setParent(api.getName());
+		api.setComponentStatisticsId(holder);
+		api.getAspectConfiguration().setHashCode(holder.getHashCodeAsString());
+		StatisticIdentityGenerator.conclude(holder);
 	}
 
 	@Override
 	public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(inboundEndpoint.getName());
-		inboundEndpoint.setComponentStatisticsId();
-		inboundEndpoint.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		this.inboundEndpointUpdated(inboundEndpoint);
 	}
 
 	@Override
@@ -135,11 +128,11 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 
 	@Override
 	public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
-		StatisticIdentityGenerator.resetId();
-		StatisticIdentityGenerator.setParent(inboundEndpoint.getName());
-		inboundEndpoint.setComponentStatisticsId();
-		inboundEndpoint.getAspectConfiguration().setHashCode(StatisticIdentityGenerator.getHashCode());
-		StatisticIdentityGenerator.resetId();
+		ArtifactHolder holder = new ArtifactHolder();
+		holder.setParent(inboundEndpoint.getName());
+		inboundEndpoint.setComponentStatisticsId(holder);
+		inboundEndpoint.getAspectConfiguration().setHashCode(holder.getHashCodeAsString());
+		StatisticIdentityGenerator.conclude(holder);
 	}
 
 	@Override

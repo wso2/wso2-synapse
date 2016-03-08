@@ -51,6 +51,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -624,20 +625,21 @@ public class CacheMediator extends AbstractMediator implements ManagedLifecycle,
         }
     }
 
-    @Override public void setComponentStatisticsId() {
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
         if (getAspectConfiguration() == null) {
             configure(new AspectConfiguration(getMediatorName()));
         }
         String mediatorId =
-                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR);
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(mediatorId);
         if (onCacheHitSequence != null) {
-            onCacheHitSequence.setComponentStatisticsId();
+            onCacheHitSequence.setComponentStatisticsId(holder);
         } else if (onCacheHitRef != null) {
             String childId =
-                    StatisticIdentityGenerator.getIdReferencingComponent(onCacheHitRef, ComponentType.SEQUENCE);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+                    StatisticIdentityGenerator.getIdReferencingComponent(onCacheHitRef, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
-        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR);
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
     }
 }

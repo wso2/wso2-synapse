@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 
@@ -528,13 +529,13 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         }
     }
 
-    public void setComponentStatisticsId() {
+    public void setComponentStatisticsId(ArtifactHolder holder) {
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(getMediatorName());
         }
-        String sequenceId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR);
+        String sequenceId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(sequenceId);
 
-        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR);
+        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR, holder);
     }
 }

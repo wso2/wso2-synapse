@@ -24,6 +24,7 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
@@ -171,9 +172,9 @@ public abstract class AbstractListMediator extends AbstractMediator
         return contentAware;
     }
 
-    public void setStatisticIdForMediators(){
+    public void setStatisticIdForMediators(ArtifactHolder holder){
         for (Mediator mediator : mediators) {
-            mediator.setComponentStatisticsId();
+            mediator.setComponentStatisticsId(holder);
         }
     }
 }

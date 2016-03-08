@@ -26,6 +26,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
@@ -159,20 +160,20 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         return false;
     }
 
-    @Override public void setComponentStatisticsId() {
+    @Override public void setComponentStatisticsId(ArtifactHolder holder) {
         if (getAspectConfiguration() == null) {
             configure(new AspectConfiguration(getMediatorName()));
         }
-        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR);
+        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
         if (endpoint != null) {
-            endpoint.setComponentStatisticsId();
+            endpoint.setComponentStatisticsId(holder);
         }
         if (receivingSequence != null) {
             String childId = StatisticIdentityGenerator
-                    .getIdReferencingComponent(receivingSequence.getName(), ComponentType.SEQUENCE);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+                    .getIdReferencingComponent(receivingSequence.getName(), ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
-        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR);
+        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
     }
 }

@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -478,38 +479,38 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         return aspectConfiguration;
     }
 
-    public void setComponentStatisticsId() {
-        StatisticIdentityGenerator.reportingBranchingEvents();
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        StatisticIdentityGenerator.reportingBranchingEvents(holder);
         if (aspectConfiguration == null) {
             aspectConfiguration = new AspectConfiguration(name);
         }
         String resourceId =
-                StatisticIdentityGenerator.getIdForComponent(getResourceClassName(), ComponentType.RESOURCE);
+                StatisticIdentityGenerator.getIdForComponent(getResourceClassName(), ComponentType.RESOURCE, holder);
         aspectConfiguration.setUniqueId(resourceId);
 
         String childId = null;
         if (inSequenceKey != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(inSequenceKey, ComponentType.SEQUENCE);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(inSequenceKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         if (inSequence != null) {
-            inSequence.setComponentStatisticsId();
+            inSequence.setComponentStatisticsId(holder);
         }
         if (outSequenceKey != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(outSequenceKey, ComponentType.SEQUENCE);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(outSequenceKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         if (outSequence != null) {
-            outSequence.setComponentStatisticsId();
+            outSequence.setComponentStatisticsId(holder);
         }
         if (faultSequenceKey != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(faultSequenceKey, ComponentType.SEQUENCE);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(faultSequenceKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         if (faultSequence != null) {
-            faultSequence.setComponentStatisticsId();
+            faultSequence.setComponentStatisticsId(holder);
         }
-        StatisticIdentityGenerator.reportingEndEvent(resourceId, ComponentType.RESOURCE);
+        StatisticIdentityGenerator.reportingEndEvent(resourceId, ComponentType.RESOURCE, holder);
     }
 
     /**

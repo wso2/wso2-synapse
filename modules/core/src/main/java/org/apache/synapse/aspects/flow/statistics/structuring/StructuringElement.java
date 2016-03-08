@@ -26,13 +26,11 @@ public class StructuringElement {
 
     private String parentId;
 
-    private boolean mediatorBranching;
 
 
-    public StructuringElement(String id, ComponentType type, boolean mediatorBranching) {
+    public StructuringElement(String id, ComponentType type) {
         this.id = id;
         this.type = type;
-        this.mediatorBranching = mediatorBranching;
     }
 
     public String getId() {
@@ -49,14 +47,6 @@ public class StructuringElement {
 
     public String getParentId() {
         return parentId;
-    }
-
-    public boolean getMediatorBranching() {
-        return mediatorBranching;
-    }
-
-    public void setMediatorBranching(boolean mediatorBranching) {
-        this.mediatorBranching = mediatorBranching;
     }
 
     @Override

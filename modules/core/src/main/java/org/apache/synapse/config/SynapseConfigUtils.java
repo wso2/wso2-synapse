@@ -31,6 +31,7 @@ import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.StatisticSynapseConfigurationObserver;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.wso2.securevault.definition.IdentityKeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformation;
@@ -800,8 +801,10 @@ public class SynapseConfigUtils {
                 }
             }
         }
-        synConfig.registerObserver(new StatisticSynapseConfigurationObserver());
-        StatisticIdentityGenerator.setSynapseConfiguration(synConfig);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            synConfig.registerObserver(new StatisticSynapseConfigurationObserver());
+            StatisticIdentityGenerator.setSynapseConfiguration(synConfig);
+        }
         return synConfig;
     }
 

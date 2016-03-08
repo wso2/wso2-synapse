@@ -25,6 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -228,22 +229,22 @@ public class Target {
         return asynchronous;
     }
 
-    public void setStatisticIdForMediators(){
-        StatisticIdentityGenerator.reportingBranchingEvents();
+    public void setStatisticIdForMediators(ArtifactHolder holder){
+        StatisticIdentityGenerator.reportingBranchingEvents(holder);
         String childId;
         if (sequenceRef != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(sequenceRef, ComponentType.MEDIATOR);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.MEDIATOR);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(sequenceRef, ComponentType.MEDIATOR, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.MEDIATOR, holder);
         }
         if (sequence != null) {
-            sequence.setComponentStatisticsId();
+            sequence.setComponentStatisticsId(holder);
         }
         if (endpointRef != null) {
-            childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointRef, ComponentType.MEDIATOR);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.MEDIATOR);
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointRef, ComponentType.MEDIATOR, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.MEDIATOR, holder);
         }
         if (endpoint != null) {
-            endpoint.setComponentStatisticsId();
+            endpoint.setComponentStatisticsId(holder);
         }
         StatisticIdentityGenerator.reportingEndBranchingEvent();
     }

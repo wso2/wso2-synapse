@@ -30,6 +30,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
@@ -528,21 +529,21 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     }
 
     @Override
-    public void setComponentStatisticsId() {
+    public void setComponentStatisticsId(ArtifactHolder holder) {
         String sequenceId = null;
 //        if (sequenceType != SequenceType.ANON) {
             if (getAspectConfiguration() == null) {
                 configure(new AspectConfiguration(name));
             }
             sequenceId = StatisticIdentityGenerator
-                    .getIdForFlowContinuableMediator(getSequenceNameForStatistics(), ComponentType.SEQUENCE);
+                    .getIdForFlowContinuableMediator(getSequenceNameForStatistics(), ComponentType.SEQUENCE, holder);
             getAspectConfiguration().setUniqueId(sequenceId);
 //        }
 
-        setStatisticIdForMediators();
+        setStatisticIdForMediators(holder);
 
         if (sequenceType != SequenceType.ANON) {
-            StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE);
+            StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
         }
     }
 }

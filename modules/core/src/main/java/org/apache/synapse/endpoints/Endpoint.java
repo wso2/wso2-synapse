@@ -23,6 +23,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.Nameable;
 import org.apache.synapse.SynapseArtifact;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 
 import java.util.List;
 
@@ -147,6 +148,6 @@ public interface Endpoint extends ManagedLifecycle, SynapseArtifact, Nameable {
      */
     public void setIsEdited(boolean isEdited);
 
-    public void setComponentStatisticsId();
+    public void setComponentStatisticsId(ArtifactHolder holder);
 
 }

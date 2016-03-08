@@ -39,6 +39,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -1314,43 +1315,42 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 
-	public void setComponentStatisticsId() {
-		StatisticIdentityGenerator.resetId();
+	public void setComponentStatisticsId(ArtifactHolder holder) {
 		if (aspectConfiguration == null) {
 			aspectConfiguration = new AspectConfiguration(name);
 		}
-		String proxyId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE);
+		String proxyId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE, holder);
 		aspectConfiguration.setUniqueId(proxyId);
 
 		String childId = null;
 		if (targetInSequence != null) {
-			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetInSequence, ComponentType.SEQUENCE);
-			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetInSequence, ComponentType.SEQUENCE, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
 		}
 		if (targetInLineInSequence != null) {
-			targetInLineInSequence.setComponentStatisticsId();
+			targetInLineInSequence.setComponentStatisticsId(holder);
 		}
 		if (targetEndpoint != null) {
-			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetEndpoint, ComponentType.ENDPOINT);
-			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.ENDPOINT);
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetEndpoint, ComponentType.ENDPOINT, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.ENDPOINT, holder);
 		}
 		if (targetInLineEndpoint != null) {
-			targetInLineEndpoint.setComponentStatisticsId();
+			targetInLineEndpoint.setComponentStatisticsId(holder);
 		}
 		if (targetOutSequence != null) {
-			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetOutSequence, ComponentType.SEQUENCE);
-			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetOutSequence, ComponentType.SEQUENCE, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
 		}
 		if (targetInLineOutSequence != null) {
-			targetInLineOutSequence.setComponentStatisticsId();
+			targetInLineOutSequence.setComponentStatisticsId(holder);
 		}
 		if (targetFaultSequence != null) {
-			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetFaultSequence, ComponentType.SEQUENCE);
-			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE);
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetFaultSequence, ComponentType.SEQUENCE, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
 		}
 		if (targetInLineFaultSequence != null) {
-			targetInLineFaultSequence.setComponentStatisticsId();
+			targetInLineFaultSequence.setComponentStatisticsId(holder);
 		}
-		StatisticIdentityGenerator.reportingEndEvent(proxyId, ComponentType.PROXYSERVICE);
+		StatisticIdentityGenerator.reportingEndEvent(proxyId, ComponentType.PROXYSERVICE, holder);
 	}
 }
