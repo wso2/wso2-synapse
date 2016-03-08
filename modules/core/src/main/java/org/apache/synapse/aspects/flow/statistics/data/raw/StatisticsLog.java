@@ -311,4 +311,8 @@ public class StatisticsLog {
 	public Integer getHashCode() {
 		return hashCode;
 	}
+
+	public void setHashCode(Integer hashCode) {
+		this.hashCode = hashCode;
+	}
 }

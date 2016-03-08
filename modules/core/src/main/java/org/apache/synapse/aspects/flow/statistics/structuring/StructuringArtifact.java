@@ -22,11 +22,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class StructuringArtifact {
-    private ArrayList<StructuringElement> list;
     private int hashcode;
+    private String name;
+    private ArrayList<StructuringElement> list;
 
-    public StructuringArtifact(int hashcode, ArrayList<StructuringElement> list) {
+    public StructuringArtifact(int hashcode, String name, ArrayList<StructuringElement> list) {
         this.hashcode = hashcode;
+        this.name = name;
         this.list = new ArrayList<>(list);
     }
 
@@ -49,6 +51,7 @@ public class StructuringArtifact {
     public Map<String, Object> getObjectAsMap() {
         Map<String, Object> objectMap = new HashMap<>();
         objectMap.put("hashcode", this.hashcode);
+        objectMap.put("name", this.name);
         objectMap.put("components", this.list);
 
         return objectMap;

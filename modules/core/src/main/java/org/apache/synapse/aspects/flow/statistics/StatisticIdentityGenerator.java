@@ -54,7 +54,8 @@ public class StatisticIdentityGenerator {
 
     public static void resetId() {
         if (list.size() > 0) {
-            StructuringArtifact structuringArtifact = new StructuringArtifact(hashCode, list);
+            String artifactName = list.get(0).getId();
+            StructuringArtifact structuringArtifact = new StructuringArtifact(hashCode, artifactName, list);
             if (synapseConfiguration != null) {
                 synapseConfiguration.getCompletedStructureStore().putCompletedStatisticEntry(structuringArtifact);
             }
