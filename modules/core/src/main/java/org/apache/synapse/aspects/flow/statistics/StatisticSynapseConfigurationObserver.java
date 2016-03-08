@@ -33,7 +33,8 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.rest.API;
 
 public class StatisticSynapseConfigurationObserver implements SynapseObserver{
-	@Override public void sequenceAdded(Mediator sequence) {
+	@Override
+	public void sequenceAdded(Mediator sequence) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(((Nameable) sequence).getName());
 		sequence.setComponentStatisticsId();
@@ -41,27 +42,33 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void sequenceRemoved(Mediator sequence) {
+	@Override
+	public void sequenceRemoved(Mediator sequence) {
 
 	}
 
-	@Override public void sequenceTemplateAdded(Mediator template) {
+	@Override
+	public void sequenceTemplateAdded(Mediator template) {
 
 	}
 
-	@Override public void sequenceTemplateRemoved(Mediator template) {
+	@Override
+	public void sequenceTemplateRemoved(Mediator template) {
 
 	}
 
-	@Override public void entryAdded(Entry entry) {
+	@Override
+	public void entryAdded(Entry entry) {
 
 	}
 
-	@Override public void entryRemoved(Entry entry) {
+	@Override
+	public void entryRemoved(Entry entry) {
 
 	}
 
-	@Override public void endpointAdded(Endpoint endpoint) {
+	@Override
+	public void endpointAdded(Endpoint endpoint) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(endpoint.getName());
 		endpoint.setComponentStatisticsId();
@@ -70,11 +77,13 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void endpointRemoved(Endpoint endpoint) {
+	@Override
+	public void endpointRemoved(Endpoint endpoint) {
 
 	}
 
-	@Override public void proxyServiceAdded(ProxyService proxy) {
+	@Override
+	public void proxyServiceAdded(ProxyService proxy) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(proxy.getName());
 		proxy.setComponentStatisticsId();
@@ -82,11 +91,13 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void proxyServiceRemoved(ProxyService proxy) {
+	@Override
+	public void proxyServiceRemoved(ProxyService proxy) {
 
 	}
 
-	@Override public void apiAdded(API api) {
+	@Override
+	public void apiAdded(API api) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(api.getName());
 		api.setComponentStatisticsId();
@@ -94,11 +105,13 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void apiRemoved(API api) {
+	@Override
+	public void apiRemoved(API api) {
 
 	}
 
-	@Override public void apiUpdated(API api) {
+	@Override
+	public void apiUpdated(API api) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(api.getName());
 		api.setComponentStatisticsId();
@@ -106,7 +119,8 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
+	@Override
+	public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(inboundEndpoint.getName());
 		inboundEndpoint.setComponentStatisticsId();
@@ -114,11 +128,13 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint) {
+	@Override
+	public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint) {
 
 	}
 
-	@Override public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
+	@Override
+	public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
 		StatisticIdentityGenerator.resetId();
 		StatisticIdentityGenerator.setParent(inboundEndpoint.getName());
 		inboundEndpoint.setComponentStatisticsId();
@@ -126,27 +142,33 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		StatisticIdentityGenerator.resetId();
 	}
 
-	@Override public void startupAdded(Startup startup) {
+	@Override
+	public void startupAdded(Startup startup) {
 
 	}
 
-	@Override public void startupRemoved(Startup startup) {
+	@Override
+	public void startupRemoved(Startup startup) {
 
 	}
 
-	@Override public void eventSourceAdded(SynapseEventSource eventSource) {
+	@Override
+	public void eventSourceAdded(SynapseEventSource eventSource) {
 
 	}
 
-	@Override public void eventSourceRemoved(SynapseEventSource eventSource) {
+	@Override
+	public void eventSourceRemoved(SynapseEventSource eventSource) {
 
 	}
 
-	@Override public void priorityExecutorAdded(PriorityExecutor exec) {
+	@Override
+	public void priorityExecutorAdded(PriorityExecutor exec) {
 
 	}
 
-	@Override public void priorityExecutorRemoved(PriorityExecutor exec) {
+	@Override
+	public void priorityExecutorRemoved(PriorityExecutor exec) {
 
 	}
 }
