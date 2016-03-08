@@ -511,7 +511,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     @Override
     public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
-        if (key == null && sequenceType != SequenceType.ANON) {
+        if (key == null) {
             return OpenEventCollector.reportEntryEvent(messageContext, getSequenceNameForStatistics(),
                                                        getAspectConfiguration(), ComponentType.SEQUENCE);
         }
@@ -520,7 +520,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     @Override
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
-        if (key == null && sequenceType != SequenceType.ANON) {
+        if (key == null) {
             CloseEventCollector
                     .closeEntryEvent(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
                                      currentIndex, isContentAltering());
@@ -530,14 +530,14 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     @Override
     public void setComponentStatisticsId() {
         String sequenceId = null;
-        if (sequenceType != SequenceType.ANON) {
+//        if (sequenceType != SequenceType.ANON) {
             if (getAspectConfiguration() == null) {
                 configure(new AspectConfiguration(name));
             }
             sequenceId = StatisticIdentityGenerator
                     .getIdForFlowContinuableMediator(getSequenceNameForStatistics(), ComponentType.SEQUENCE);
             getAspectConfiguration().setUniqueId(sequenceId);
-        }
+//        }
 
         setStatisticIdForMediators();
 
