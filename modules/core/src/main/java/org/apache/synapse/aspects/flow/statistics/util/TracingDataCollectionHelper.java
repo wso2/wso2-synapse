@@ -133,15 +133,19 @@ public class TracingDataCollectionHelper {
 
 	public static PublishingFlow createPublishingFlow(List<StatisticsLog> messageFlowLogs) {
 
-		/**
-		 *Data structure using to serialize thr statistic data while publishing.
-		 */
+		// Data structure using to serialize thr statistic data while publishing.
 		PublishingFlow publishingFlow = new PublishingFlow();
 
-		/**
-		 * payload map which contains all the payloads of the message flow.
-		 */
+		// Payload map which contains all the payloads of the message flow.
 		Map<String, PublishingPayload> payloadMap = new HashMap<>();
+
+		// Constants
+		final String REFER = "#REFER:";
+		final String BEFORE = "before-";
+		final String AFTER = "after-";
+		final String BEFORE_PAYLOAD = "beforePayload";
+		final String AFTER_PAYLOAD = "afterPayload";
+
 
 		String entryPoint = messageFlowLogs.get(0).getComponentName();
 		String flowId = messageFlowLogs.get(0).getMessageFlowId();
@@ -171,27 +175,27 @@ public class TracingDataCollectionHelper {
 				int parentIndex = currentStatLog.getImmediateParent();
 				StatisticsLog parentStatLog = messageFlowLogs.get(parentIndex);
 
-				if (parentStatLog.getAfterPayload().startsWith("#REFER:")) {
+				if (parentStatLog.getAfterPayload().startsWith(REFER)) {
 					// Parent also referring to after-payload
 					currentStatLog.setBeforePayload(parentStatLog.getAfterPayload());
 					currentStatLog.setAfterPayload(parentStatLog.getAfterPayload());
 
 					String referringIndex = parentStatLog.getAfterPayload().split(":")[1];
 
-					payloadMap.get("after-" + referringIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
-					payloadMap.get("after-" + referringIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+					payloadMap.get(AFTER + referringIndex)
+					               .addEvent(new PublishingPayloadEvent(index, BEFORE_PAYLOAD));
+					payloadMap.get(AFTER + referringIndex)
+					               .addEvent(new PublishingPayloadEvent(index, AFTER_PAYLOAD));
 
 				} else {
 					// Create a new after-payload reference
-					currentStatLog.setBeforePayload("#REFER:" + parentIndex);
-					currentStatLog.setAfterPayload("#REFER:" + parentIndex);
+					currentStatLog.setBeforePayload(REFER + parentIndex);
+					currentStatLog.setAfterPayload(REFER + parentIndex);
 
-					payloadMap.get("after-" + parentIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "beforePayload"));
-					payloadMap.get("after-" + parentIndex)
-					               .addEvent(new PublishingPayloadEvent(index, "afterPayload"));
+					payloadMap.get(AFTER + parentIndex)
+					               .addEvent(new PublishingPayloadEvent(index, BEFORE_PAYLOAD));
+					payloadMap.get(AFTER + parentIndex)
+					               .addEvent(new PublishingPayloadEvent(index, AFTER_PAYLOAD));
 				}
 
 			} else {
@@ -199,13 +203,13 @@ public class TracingDataCollectionHelper {
 				// For content altering components
 				PublishingPayload publishingPayloadBefore = new PublishingPayload();
 				publishingPayloadBefore.setPayload(currentStatLog.getBeforePayload());
-				publishingPayloadBefore.addEvent(new PublishingPayloadEvent(index, "beforePayload"));
-				payloadMap.put("before-" + index, publishingPayloadBefore);
+				publishingPayloadBefore.addEvent(new PublishingPayloadEvent(index, BEFORE_PAYLOAD));
+				payloadMap.put(BEFORE + index, publishingPayloadBefore);
 
 				PublishingPayload publishingPayloadAfter = new PublishingPayload();
 				publishingPayloadAfter.setPayload(currentStatLog.getAfterPayload());
-				publishingPayloadAfter.addEvent(new PublishingPayloadEvent(index, "afterPayload"));
-				payloadMap.put("after-" + index, publishingPayloadAfter);
+				publishingPayloadAfter.addEvent(new PublishingPayloadEvent(index, AFTER_PAYLOAD));
+				payloadMap.put(AFTER + index, publishingPayloadAfter);
 
 			}
 

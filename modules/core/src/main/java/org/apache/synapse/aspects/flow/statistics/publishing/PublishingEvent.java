@@ -26,28 +26,28 @@ public class PublishingEvent {
 
 	private String componentType;
 	private String componentName;
+	private String componentId;
 
 	private long startTime;
 	private long endTime;
+
 	private long duration;
-
 	private String beforePayload;
+
 	private String afterPayload;
-
 	private Map contextPropertyMap;
+
 	private Map transportPropertyMap;
-
 	private Integer[] children;
+
 	private String entryPoint;
-
-	private String ComponentId;
-	private Integer hashCode;
-
 	private int faultCount;
+	private Integer hashCode;
 
 	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
 		this.componentType = statisticsLog.getComponentTypeToString();
 		this.componentName = statisticsLog.getComponentName();
+		this.componentId = statisticsLog.getComponentId();
 
 		this.startTime = statisticsLog.getStartTime();
 		this.endTime = statisticsLog.getEndTime();
@@ -62,8 +62,8 @@ public class PublishingEvent {
 		}
 
 		this.entryPoint = entryPoint;
-
 		this.faultCount = statisticsLog.getNoOfFaults();
+		this.hashCode = statisticsLog.getHashCode();
 	}
 
 	public String getComponentType() {
@@ -163,11 +163,11 @@ public class PublishingEvent {
 	}
 
 	public String getComponentId() {
-		return ComponentId;
+		return componentId;
 	}
 
 	public void setComponentId(String componentId) {
-		ComponentId = componentId;
+		this.componentId = componentId;
 	}
 
 	public Integer getHashCode() {
@@ -178,7 +178,8 @@ public class PublishingEvent {
 		this.hashCode = hashCode;
 	}
 
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		return "Component Type " + componentType + " , Component Name " +
 		       componentName;
 	}
