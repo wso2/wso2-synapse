@@ -54,7 +54,7 @@ public class StatisticIdentityGenerator {
 
     public static void resetId() {
         if (list.size() > 0) {
-            String artifactName = list.get(0).getId();
+            String artifactName = parent;
             StructuringArtifact structuringArtifact = new StructuringArtifact(hashCode, artifactName, list);
             if (synapseConfiguration != null) {
                 synapseConfiguration.getCompletedStructureStore().putCompletedStatisticEntry(structuringArtifact);
@@ -69,11 +69,11 @@ public class StatisticIdentityGenerator {
     }
 
     public static void setParent(String parentName) {
-        parent = parentName + "@";
+        parent = parentName;
     }
 
     public static String getIdForComponent(String name, ComponentType componentType) {
-        String idString = parent + getIdString() + ":" + name;
+        String idString = parent + "@" + getIdString() + ":" + name;
         hashCode += idString.hashCode();
 
         if (log.isDebugEnabled()) {
@@ -99,7 +99,7 @@ public class StatisticIdentityGenerator {
     }
 
     public static String getIdForFlowContinuableMediator(String mediatorName, ComponentType componentType) {
-        String idString = parent + getIdString() + ":" + mediatorName;
+        String idString = parent + "@" + getIdString() + ":" + mediatorName;
         hashCode += idString.hashCode();
 
         if (log.isDebugEnabled()) {

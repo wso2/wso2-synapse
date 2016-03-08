@@ -48,6 +48,10 @@ public class StructuringArtifact {
         this.hashcode = hashcode;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public Map<String, Object> getObjectAsMap() {
         Map<String, Object> objectMap = new HashMap<>();
         objectMap.put("hashcode", this.hashcode);
