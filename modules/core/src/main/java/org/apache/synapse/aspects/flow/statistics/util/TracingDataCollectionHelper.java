@@ -149,12 +149,13 @@ public class TracingDataCollectionHelper {
 
 		String entryPoint = messageFlowLogs.get(0).getComponentName();
 		String flowId = messageFlowLogs.get(0).getMessageFlowId();
+		Integer entrypointHashcode = messageFlowLogs.get(0).getHashCode();
 
 		for (int index = 0; index < messageFlowLogs.size(); index++) {
 			StatisticsLog currentStatLog = messageFlowLogs.get(index);
 
 			// Add each event to Publishing Flow
-			publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint));
+			publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint, entrypointHashcode));
 
 			// Skip the rest of things, if message tracing is disabled
 			if (!RuntimeStatisticCollector.isCollectingPayloads()) {

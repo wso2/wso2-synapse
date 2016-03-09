@@ -41,10 +41,11 @@ public class PublishingEvent {
 	private Integer[] children;
 
 	private String entryPoint;
+	private Integer entryPointHashcode;
 	private int faultCount;
 	private Integer hashCode;
 
-	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
+	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint, Integer entryPointHashcode) {
 		this.componentType = statisticsLog.getComponentTypeToString();
 		this.componentName = statisticsLog.getComponentName();
 		this.componentId = statisticsLog.getComponentId();
@@ -62,6 +63,7 @@ public class PublishingEvent {
 		}
 
 		this.entryPoint = entryPoint;
+		this.entryPointHashcode = entryPointHashcode;
 		this.faultCount = statisticsLog.getNoOfFaults();
 		this.hashCode = statisticsLog.getHashCode();
 	}
@@ -176,6 +178,14 @@ public class PublishingEvent {
 
 	public void setHashCode(Integer hashCode) {
 		this.hashCode = hashCode;
+	}
+
+	public Integer getEntryPointHashcode() {
+		return entryPointHashcode;
+	}
+
+	public void setEntryPointHashcode(Integer entryPointHashcode) {
+		this.entryPointHashcode = entryPointHashcode;
 	}
 
 	@Override
