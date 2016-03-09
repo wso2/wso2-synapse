@@ -111,7 +111,8 @@ public class AspectConfiguration implements StatisticsConfigurable, Identifiable
 
 	public void setHashCode(String hashCode) {
 		if (this.hashCode == null) {
-			this.hashCode = hashCode.hashCode();
+			this.hashCode = Integer.parseInt(hashCode);
+//			this.hashCode = hashCode.hashCode();
 		}
 	}
 
