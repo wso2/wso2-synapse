@@ -43,6 +43,7 @@ public class ArtifactHolder {
 
     private String lastParent;
 
+    private boolean exitFromBox = false;
 
     public void setParent(String parent) {
         this.parent = parent;
@@ -110,5 +111,13 @@ public class ArtifactHolder {
 
     public void setLastParent(String lastParent) {
         this.lastParent = lastParent;
+    }
+
+    public boolean getExitFromBox() {
+        return exitFromBox;
+    }
+
+    public void setExitFromBox(boolean exitFromBox) {
+        this.exitFromBox = exitFromBox;
     }
 }

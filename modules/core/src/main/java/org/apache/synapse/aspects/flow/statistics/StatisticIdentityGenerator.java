@@ -26,9 +26,6 @@ import org.apache.synapse.aspects.flow.statistics.structuring.StructuringArtifac
 import org.apache.synapse.aspects.flow.statistics.structuring.StructuringElement;
 import org.apache.synapse.config.SynapseConfiguration;
 
-import java.util.ArrayList;
-import java.util.Stack;
-
 public class StatisticIdentityGenerator {
 
     private static Log log = LogFactory.getLog(StatisticIdentityGenerator.class);
@@ -52,7 +49,8 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Component : " + idString);
         }
-//        log.info("Adding Component : " + idString);
+        log.info("Adding Component : " + idString);
+
         process(idString, componentType, holder);
 
         return idString;
@@ -72,13 +70,18 @@ public class StatisticIdentityGenerator {
     }
 
     public static String getIdForFlowContinuableMediator(String mediatorName, ComponentType componentType, ArtifactHolder holder) {
+
+        if (ComponentType.SEQUENCE == componentType && mediatorName.contains("AnonymousSequence")) {
+            return null;
+        }
+
         String idString = holder.getParent() + "@" + holder.getIdString() + ":" + mediatorName;
         holder.setHashCode(holder.getHashCode() + idString.hashCode());
 
         if (log.isDebugEnabled()) {
             log.debug("Adding Flow Continuable Mediator : " + idString);
         }
-//        log.info("Adding Flow Continuable Mediator : " + idString);
+        log.info("Adding Flow Continuable Mediator : " + idString);
         process(idString, componentType, holder);
 
         return idString;
@@ -88,7 +91,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Starts branching (then/else/targets)");
         }
-//        log.info("Starts branching (then/else/targets)");
+        log.info("Starts branching (then/else/targets)");
         holder.setLastParent(holder.getStack().peek().getId());
     }
 
@@ -96,7 +99,7 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Component Initialization: " + name);
         }
-//        log.info("Ending Component Initialization: " + name);
+        log.info("Ending Component Initialization: " + name);
         // If event is a SEQ or Proxy - pop from stack, then update parent
         if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType
             || ComponentType.API ==componentType || ComponentType.RESOURCE == componentType
@@ -116,13 +119,18 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Flow Continuable Mediator Initialization: " + mediatorId);
         }
-//        log.info("Ending Flow Continuable Mediator Initialization: " + mediatorId);
+        log.info("Ending Flow Continuable Mediator Initialization: " + mediatorId);
 
         holder.setLastParent(holder.getStack().peek().getId());
         holder.getStack().pop();
+        holder.setExitFromBox(true);
     }
 
-    public static void reportingEndBranchingEvent() {
+    public static void reportingEndBranchingEvent(ArtifactHolder holder) {
+        if (log.isDebugEnabled()) {
+            log.debug("Ending Branching Event");
+        }
+        log.info("Ending Branching Event");
     }
 
 
@@ -164,6 +172,10 @@ public class StatisticIdentityGenerator {
 
         if (ComponentType.MEDIATOR == componentType) {
             StructuringElement medElem = new StructuringElement(name, componentType);
+            if (holder.getExitFromBox()){
+                medElem.setExitFromBox(true);
+                holder.setExitFromBox(false);
+            }
             medElem.setParentId(holder.getLastParent());
             if (holder.getStack().isEmpty()) {
                 // This is not a desired situation! Mediators always lies inside a sequence

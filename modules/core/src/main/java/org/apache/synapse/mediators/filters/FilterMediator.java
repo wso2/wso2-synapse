@@ -384,7 +384,7 @@ public class FilterMediator extends AbstractListMediator implements
         } else {
             setStatisticIdForMediators(holder);
         }
-        StatisticIdentityGenerator.reportingEndBranchingEvent();
+        StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
 
         StatisticIdentityGenerator.reportingBranchingEvents(holder);
         if (elseKey != null) {
@@ -394,6 +394,6 @@ public class FilterMediator extends AbstractListMediator implements
             elseMediator.setStatisticIdForMediators(holder);
         }
         StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
-        StatisticIdentityGenerator.reportingEndBranchingEvent();
+        StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
     }
 }

@@ -136,6 +136,6 @@ public class SwitchCase implements ManagedLifecycle {
     public void setStatisticIdForMediators(ArtifactHolder holder) {
         StatisticIdentityGenerator.reportingBranchingEvents(holder);
         caseMediator.setStatisticIdForMediators(holder);
-        StatisticIdentityGenerator.reportingEndBranchingEvent();
+        StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
     }
 }

@@ -246,6 +246,6 @@ public class Target {
         if (endpoint != null) {
             endpoint.setComponentStatisticsId(holder);
         }
-        StatisticIdentityGenerator.reportingEndBranchingEvent();
+        StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
     }
 }
