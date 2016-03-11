@@ -228,23 +228,16 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		 * therefore not started but initiated.
 		 */
 		if (taskManager != null && taskManager.isInitialized()) {
-            /*
-             * If the task is already deleted, then it does not exist any more.
-             * Therefore no point of deleting it again. Hence merely returning.
-             * This situation arises when a MP is deleted from the manager node
-             * in a cluster setup. Then the deployment engine will eventually
-             * call the destroy method in all workers, leading to delete an
-             * already deleted task. This leads to unnecessary exceptions.
-             */
-            if (!taskManager.isTaskExist(TASK_PREFIX + name + DEFAULT_TASK_SUFFIX)) {
-                return false;
-            }
+
 			for (int i = 0; i < memberCount; i++) {
 				/*
 				 * This is to immediately stop the scheduler to avoid firing new
 				 * services
 				 */
-				taskManager.pause(TASK_PREFIX + name + i);
+				if (taskManager.isTaskExist(TASK_PREFIX + name + i) &&
+						taskManager.isTaskRunning(TASK_PREFIX + name + i)) {
+					taskManager.pause(TASK_PREFIX + name + i);
+				}
 				if (logger.isDebugEnabled()) {
 					logger.debug("ShuttingDown Message Processor Scheduler : " +
 					             taskManager.getName());
@@ -257,6 +250,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				 */
 				taskManager.delete(TASK_PREFIX + name + i + "::" +
 				                    MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
+				//even the task is existed or not at Task REPO we need to clear the NTaskAdaptor
+				//synapseTaskProperties map which holds taskName and TASK Instance for expired TASK at undeployment.
+				//taskManager.delete() method does that. There is a possibility to reinitialize those expired tasks
+				//from Ntask core if the expired task existed in mentioned property map in worker nodes.
+				//Even the manager first deletes the Task from Ntask core task repository, at that
+				//point all the workers see this task as non existing task but the property map will not be updated
+				//as we are not triggering taskManager.delete() to non existing task. Which in that case all worker node's
+				//property map leaves expired tasks which ultimate lead to re initialize them.
 			}
 
 			if (logger.isDebugEnabled()) {
