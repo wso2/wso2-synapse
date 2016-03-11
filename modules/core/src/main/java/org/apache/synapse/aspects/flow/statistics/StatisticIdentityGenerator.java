@@ -155,6 +155,7 @@ public class StatisticIdentityGenerator {
             } else {
                 // There's a parent for sequence
                 seqElem.setParentId(holder.getLastParent());
+                seqElem.setGroup(holder.getStack().peek().getId());
                 holder.getStack().push(seqElem);
                 holder.getList().add(seqElem);
             }
@@ -173,10 +174,10 @@ public class StatisticIdentityGenerator {
         if (ComponentType.MEDIATOR == componentType) {
             StructuringElement medElem = new StructuringElement(name, componentType);
             if (holder.getExitFromBox()){
-                medElem.setExitFromBox(true);
                 holder.setExitFromBox(false);
             }
             medElem.setParentId(holder.getLastParent());
+            medElem.setGroup(holder.getStack().peek().getId());
             if (holder.getStack().isEmpty()) {
                 // This is not a desired situation! Mediators always lies inside a sequence
                 log.error("Sequence is missing for mediator : " + name);
@@ -192,6 +193,7 @@ public class StatisticIdentityGenerator {
             // Add parent only the endpoint is called by a mediator
             if (!holder.getStack().isEmpty()) {
                 endpointElem.setParentId(holder.getStack().peek().getId());
+                endpointElem.setGroup(holder.getStack().peek().getId());
             }
             holder.getList().add(endpointElem);
         }

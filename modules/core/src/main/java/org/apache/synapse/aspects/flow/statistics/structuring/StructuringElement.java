@@ -26,7 +26,7 @@ public class StructuringElement {
 
     private String parentId;
 
-    private boolean exitFromBox = false;
+    private String group = null;
 
 
 
@@ -51,16 +51,16 @@ public class StructuringElement {
         return parentId;
     }
 
-    public boolean getExitFromBox() {
-        return exitFromBox;
+    public String getGroup() {
+        return group;
     }
 
-    public void setExitFromBox(boolean exitFromBox) {
-        this.exitFromBox = exitFromBox;
+    public void setGroup(String group) {
+        this.group = group;
     }
 
     @Override
     public String toString() {
-        return "component -> " + this.id + " ### parent -> " + this.parentId + " ### exitFromBox -> " + exitFromBox;
+        return "component -> " + this.id + " ### parent -> " + this.parentId + " ### group -> " + group;
     }
 }
