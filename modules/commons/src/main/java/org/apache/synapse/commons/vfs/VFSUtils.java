@@ -36,6 +36,7 @@ import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
@@ -426,6 +427,28 @@ public class VFSUtils {
             }
         }
 
+        if (options.get(VFSConstants.FILE_TYPE) != null) {
+            delegate.setConfigString(opts, options.get(VFSConstants.SCHEME), VFSConstants.FILE_TYPE,
+                    String.valueOf(getFileType(options.get(VFSConstants.FILE_TYPE))));
+        }
+
         return opts;
+    }
+
+    private static Integer getFileType(String fileType) {
+
+        fileType = fileType.toUpperCase();
+
+        if (VFSConstants.ASCII_TYPE.equals(fileType)) {
+            return FTP.ASCII_FILE_TYPE;
+        } else if (VFSConstants.BINARY_TYPE.equals(fileType)) {
+            return FTP.BINARY_FILE_TYPE;
+        } else if (VFSConstants.EBCDIC_TYPE.equals(fileType)) {
+            return FTP.EBCDIC_FILE_TYPE;
+        } else if (VFSConstants.LOCAL_TYPE.equals(fileType)) {
+            return FTP.LOCAL_FILE_TYPE;
+        } else {
+            return FTP.BINARY_FILE_TYPE;
+        }
     }
 }

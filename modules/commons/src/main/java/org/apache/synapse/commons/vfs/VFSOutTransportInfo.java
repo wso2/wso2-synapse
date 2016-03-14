@@ -248,6 +248,14 @@ public class VFSOutTransportInfo implements OutTransportInfo {
             }
         }
 
+        if (VFSConstants.SCHEME_FTP.equals(fso.get(VFSConstants.SCHEME)) ||
+                VFSConstants.SCHEME_FTPS.equals(fso.get(VFSConstants.SCHEME))) {
+            if (fso.get(VFSConstants.FILE_TYPE_PREFIX) != null) {
+                options.put(VFSConstants.FILE_TYPE, fso.get(VFSConstants.FILE_TYPE_PREFIX));
+                options.put(VFSConstants.SCHEME, fso.get(VFSConstants.SCHEME));
+            }
+        }
+
         this.fso = options;
     }
 
