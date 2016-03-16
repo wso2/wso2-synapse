@@ -108,8 +108,14 @@ public class JmsStore extends AbstractMessageStore {
     private long retryTime = -1;
     /** Guaranteed delivery enable or disable flag */
     private boolean isGuaranteedDeliveryEnable = false;
+    /** Preserve session for caching */
+    private MessageProducer cachedProducer;
 
     public MessageProducer getProducer() {
+        if (cacheLevel == 1 && cachedProducer != null) {
+            return cachedProducer;
+        }
+
         JmsProducer producer = new JmsProducer(this);
         producer.setId(nextProducerId());
         Throwable throwable = null;
@@ -157,6 +163,9 @@ public class JmsStore extends AbstractMessageStore {
         }
         if (logger.isDebugEnabled()) {
             logger.debug(nameString() + " created message producer " + producer.getId());
+        }
+        if (cacheLevel == 1) {
+            cachedProducer = producer;
         }
         return producer;
     }
@@ -468,6 +477,22 @@ public class JmsStore extends AbstractMessageStore {
     }
 
     /**
+     * Resets the JMS session for next message
+     *
+     * @param connection  JMS Connection
+     * @param session     JMS Session associated with the given connection
+     * @param error       Is this method called upon an error
+     * @return  {@code true} if the reset is successful. {@code false} otherwise.
+     */
+    public boolean reset(Connection connection, Session session, boolean error) {
+        if (cacheLevel == 1 && !error) {
+            return false;
+        } else {
+            return cleanup(connection, session, error);
+        }
+    }
+
+    /**
      * Cleans up the JMS Connection and Session associated with a JMS client.
      *
      * @param connection  JMS Connection
@@ -476,6 +501,7 @@ public class JmsStore extends AbstractMessageStore {
      * @return {@code true} if the cleanup is successful. {@code false} otherwise.
      */
     public boolean cleanup(Connection connection, Session session, boolean error) {
+        cachedProducer = null;
         if (connection == null && error) {
             return true;
         }
@@ -513,6 +539,10 @@ public class JmsStore extends AbstractMessageStore {
                                        "]. Required parameters are not available.");
         }
         super.setParameters(parameters);
+    }
+
+    public void setCachedProducer(MessageProducer cachedProducer) {
+        this.cachedProducer = cachedProducer;
     }
 
     private boolean initme() {
