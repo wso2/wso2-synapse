@@ -535,8 +535,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             if (getAspectConfiguration() == null) {
                 configure(new AspectConfiguration(name));
             }
-            sequenceId = StatisticIdentityGenerator
-                    .getIdForFlowContinuableMediator(getSequenceNameForStatistics(), ComponentType.SEQUENCE, holder);
+            if (getKey()!= null) {
+                sequenceId = StatisticIdentityGenerator
+                        .getIdReferencingComponent(getKey().getKeyValue(), ComponentType.SEQUENCE, holder);
+            } else {
+                sequenceId = StatisticIdentityGenerator
+                        .getIdForFlowContinuableMediator(getSequenceNameForStatistics(), ComponentType.SEQUENCE, holder);
+            }
             getAspectConfiguration().setUniqueId(sequenceId);
 //        }
 
