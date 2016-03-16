@@ -79,7 +79,7 @@ public class ProxyTunnelHandler {
         if (code >= 200 && code < 300) {
             this.successful = true;
             if (this.route.isLayered() && conn instanceof UpgradableNHttpConnection) {
-                this.connFactory.upgrade((UpgradableNHttpConnection) conn);
+                this.connFactory.upgrade((UpgradableNHttpConnection) conn, route);
             }
         } else {
             this.successful = false;
