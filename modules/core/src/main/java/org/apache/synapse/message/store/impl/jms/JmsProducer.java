@@ -131,7 +131,7 @@ public class JmsProducer implements MessageProducer {
             }
             return false;
         } else {
-            store.cleanup(null, session, false);
+            store.reset(null, session, false);
         }
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + ". Stored MessageID : " + synCtx.getMessageID());
