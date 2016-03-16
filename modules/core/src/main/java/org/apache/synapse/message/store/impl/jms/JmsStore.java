@@ -493,6 +493,38 @@ public class JmsStore extends AbstractMessageStore {
     }
 
     /**
+     * Resets the JMS session for next message
+     *
+     * @param connection  JMS Connection
+     * @param session     JMS Session associated with the given connection
+     * @param error       Is this method called upon an error
+     * @return  {@code true} if the reset is successful. {@code false} otherwise.
+     */
+    public boolean reset(Connection connection, Session session, boolean error) {
+        if (cacheLevel == 1 && !error) {
+            return false;
+        } else {
+            return cleanup(connection, session, error);
+        }
+    }
+
+    /**
+     * Resets the JMS session for next message
+     *
+     * @param connection  JMS Connection
+     * @param session     JMS Session associated with the given connection
+     * @param error       Is this method called upon an error
+     * @return  {@code true} if the reset is successful. {@code false} otherwise.
+     */
+    public boolean reset(Connection connection, Session session, boolean error) {
+        if (cacheLevel == 1 && !error) {
+            return false;
+        } else {
+            return cleanup(connection, session, error);
+        }
+    }
+
+    /**
      * Cleans up the JMS Connection and Session associated with a JMS client.
      *
      * @param connection  JMS Connection
@@ -539,6 +571,10 @@ public class JmsStore extends AbstractMessageStore {
                                        "]. Required parameters are not available.");
         }
         super.setParameters(parameters);
+    }
+
+    public void setCachedProducer(MessageProducer cachedProducer) {
+        this.cachedProducer = cachedProducer;
     }
 
     private boolean initme() {

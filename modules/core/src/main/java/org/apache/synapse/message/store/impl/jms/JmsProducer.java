@@ -72,6 +72,7 @@ public class JmsProducer implements MessageProducer {
         }
         if (!checkConnection()) {
             logger.warn(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
+            store.setCachedProducer(null);
             return false;
         }
         StorableMessage message = MessageConverter.toStorableMessage(synCtx);
