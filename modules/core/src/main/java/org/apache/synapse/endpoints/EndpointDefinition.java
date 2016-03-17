@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.xml.SynapsePath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,6 +132,11 @@ public class EndpointDefinition implements AspectConfigurable {
     private String charSetEncoding;
 
     /**
+     * The expression to evaluate dynamic timeout.
+     */
+    private SynapsePath dynamicTimeout = null;
+
+    /**
      * Whether endpoint state replication should be disabled or not (only valid in clustered setups)
      */
     private boolean replicationDisabled = false;
@@ -187,6 +193,44 @@ public class EndpointDefinition implements AspectConfigurable {
             log.error(msg, ex);
             throw new SynapseException(msg, ex);
         }
+    }
+
+    public void setDynamicTimeoutExpression(SynapsePath expression) {
+        this.dynamicTimeout = expression;
+    }
+
+    public SynapsePath getDynamicTimeoutExpression() {
+        return this.dynamicTimeout;
+    }
+
+    public boolean isDynamicTimeoutEndpoint() {
+        if (this.dynamicTimeout != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public long evaluateDynamicEndpointTimeout(MessageContext synCtx) {
+        long timeoutMilliSeconds;
+        try {
+            String stringValue = dynamicTimeout.stringValueOf(synCtx);
+            if (stringValue != null) {
+                timeoutMilliSeconds = Long.parseLong(stringValue.trim());
+            } else {
+                log.warn("Error while evaluating dynamic endpoint timeout expression." +
+                        "Synapse global timeout is taken as effective timeout.");
+                timeoutMilliSeconds = effectiveTimeout;
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression." +
+                    "Synapse global timeout is taken as effective timeout.");
+            timeoutMilliSeconds = effectiveTimeout;
+        }
+        if (timeoutMilliSeconds > effectiveTimeout) {
+            return effectiveTimeout;
+        }
+        return timeoutMilliSeconds;
     }
 
     /**

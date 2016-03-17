@@ -98,16 +98,20 @@ public class EndpointDefinitionSerializer {
         }
 
         if (endpointDefinition.getTimeoutAction() != SynapseConstants.NONE ||
-                endpointDefinition.getTimeoutDuration() > 0) {
+                endpointDefinition.getTimeoutDuration() > 0 || endpointDefinition.isDynamicTimeoutEndpoint()) {
 
             OMElement timeout = fac.createOMElement(
                     "timeout", SynapseConstants.SYNAPSE_OMNAMESPACE);
             element.addChild(timeout);
 
-            if (endpointDefinition.getTimeoutDuration() > 0) {
+            if (endpointDefinition.getTimeoutDuration() > 0 || endpointDefinition.isDynamicTimeoutEndpoint()) {
                 OMElement duration = fac.createOMElement(
                         "duration", SynapseConstants.SYNAPSE_OMNAMESPACE);
-                duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
+                if (!endpointDefinition.isDynamicTimeoutEndpoint()) {
+                    duration.setText(Long.toString(endpointDefinition.getTimeoutDuration()));
+                } else {
+                    duration.setText('{' + endpointDefinition.getDynamicTimeoutExpression().getExpression() + '}');
+                }
                 timeout.addChild(duration);
             }
 
