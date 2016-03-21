@@ -49,8 +49,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Component : " + idString);
         }
-        log.info("Adding Component : " + idString);
-
         process(idString, componentType, holder);
 
         return idString;
@@ -63,7 +61,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Referencing Component  : " + idString);
         }
-        log.info("Adding Referencing Component  : " + idString);
         process(idString, componentType, holder);
 
         return idString;
@@ -81,7 +78,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Adding Flow Continuable Mediator : " + idString);
         }
-        log.info("Adding Flow Continuable Mediator : " + idString);
         process(idString, componentType, holder);
 
         return idString;
@@ -91,7 +87,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Starts branching (then/else/targets)");
         }
-        log.info("Starts branching (then/else/targets)");
         holder.setLastParent(holder.getStack().peek().getId());
     }
 
@@ -99,7 +94,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Component Initialization: " + name);
         }
-        log.info("Ending Component Initialization: " + name);
         // If event is a SEQ or Proxy - pop from stack, then update parent
         if (ComponentType.SEQUENCE == componentType || ComponentType.PROXYSERVICE == componentType
             || ComponentType.API ==componentType || ComponentType.RESOURCE == componentType
@@ -119,8 +113,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Flow Continuable Mediator Initialization: " + mediatorId);
         }
-        log.info("Ending Flow Continuable Mediator Initialization: " + mediatorId);
-
         holder.setLastParent(holder.getStack().peek().getId());
         holder.getStack().pop();
         holder.setExitFromBox(true);
@@ -130,7 +122,6 @@ public class StatisticIdentityGenerator {
         if (log.isDebugEnabled()) {
             log.debug("Ending Branching Event");
         }
-        log.info("Ending Branching Event");
     }
 
 
