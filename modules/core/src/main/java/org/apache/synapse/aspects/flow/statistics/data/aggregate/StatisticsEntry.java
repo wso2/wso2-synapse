@@ -26,15 +26,12 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
-import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.flow.statistics.util.TracingDataCollectionHelper;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -78,22 +75,7 @@ public class StatisticsEntry {
 	private static final int ROOT_LEVEL = 0;
 
 	/**
-	 *Data structure using to serialize thr statistic data while publishing.
-	 */
-	private PublishingFlow publishingFlow = new PublishingFlow();
-
-	/**
-	 * payload map which contains all the payloads of the message flow.
-	 */
-	private Map<String, PublishingPayload> payloadMap = new HashMap<>();
-
-	/**
-	 * Is aspect configuration is enabled for tracing
-	 */
-	private boolean aspectConfigTraceEnabled = true;
-
-	/**
-	 * This overloaded constructor will create the root statistic log og the Statistic Entry
+	 * This overloaded constructor will create the root statistic log of the Statistic Entry
 	 * according to given parameters. Statistic Event for creating statistic entry can be either
 	 * PROXY, API, INBOUND_ENDPOINT, ENDPOINT or SEQUENCE
 	 *
@@ -129,26 +111,17 @@ public class StatisticsEntry {
 	 */
 	public synchronized void createLog(StatisticDataUnit statisticDataUnit) {
 
-		if (openLogs.contains(ROOT_LEVEL) && openLogs.size() == 1) {
-			if (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY) {
-				if (!statisticDataUnit.isIndividualStatisticCollected()) {
-					return;//because if imaginary root is there it means that this is not whole collection
-				}
-			}
+		if ((openLogs.contains(ROOT_LEVEL) && openLogs.size() == 1)
+			&& (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY)
+			&& (!statisticDataUnit.isIndividualStatisticCollected()) ){
+					return; // Because if imaginary root is there it means that this is not whole collection
 		}
-
-		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
 
 		if (hasFault) {
 			hasFault = false;
 		}
 
-		//Filling the gaps
-		if (statisticDataUnit.getCurrentIndex() > messageFlowLogs.size()) {
-			for (int i = messageFlowLogs.size(); i < statisticDataUnit.getCurrentIndex(); i++) {
-				messageFlowLogs.add(null);
-			}
-		}
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
 
 		int parentIndexValue = statisticDataUnit.getParentIndex();
 
@@ -167,6 +140,13 @@ public class StatisticsEntry {
 		if (statisticDataUnit.getCurrentIndex() < messageFlowLogs.size()) {
 			messageFlowLogs.set(statisticDataUnit.getCurrentIndex(), statisticsLog);
 		} else {
+
+			// Filling the gaps, if messageFlowLogs size is less than current index given
+			for (int i = messageFlowLogs.size(); i < statisticDataUnit.getCurrentIndex(); i++) {
+				messageFlowLogs.add(null);
+			}
+
+			// After filling gaps, add the new statistic-data-unit
 			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
 		}
 
