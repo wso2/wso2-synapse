@@ -72,6 +72,7 @@ public class JmsProducer implements MessageProducer {
         }
         if (!checkConnection()) {
             logger.warn(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
+            store.setCachedProducer(null);
             return false;
         }
         StorableMessage message = MessageConverter.toStorableMessage(synCtx);
@@ -131,7 +132,7 @@ public class JmsProducer implements MessageProducer {
             }
             return false;
         } else {
-            store.cleanup(null, session, false);
+            store.reset(null, session, false);
         }
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + ". Stored MessageID : " + synCtx.getMessageID());

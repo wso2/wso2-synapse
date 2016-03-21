@@ -33,6 +33,7 @@ import org.apache.axis2.transport.TransportSender;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -526,8 +527,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                    // Skip multipart/related as it should be taken from formatter.
                    if (!contentTypeValueInMsgCtx.contains(
                            PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
-                	   
-						if (format != null) {
+
+                       // adding charset only if charset is not available,
+                       if (contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1
+                           && format != null) {
 							String encoding = format.getCharSetEncoding();
 							if (encoding != null) {
 								sourceResponse.removeHeader(HTTP.CONTENT_TYPE);

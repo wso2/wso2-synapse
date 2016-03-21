@@ -180,8 +180,15 @@ public final class VFSConstants {
     public static final String SFTP_PREFIX = "transport.vfs.SFTP";
     // sftp scheme
     public static final String SCHEME_SFTP = "sftp";
+    public static final String SCHEME_FTP = "ftp";
+    public static final String SCHEME_FTPS = "ftps";
     // sftp scheme file option list
     public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
 
-
+    public static final String FILE_TYPE_PREFIX = "transport.vfs.fileType";
+    public static final String FILE_TYPE = "filetype";
+    public static final String BINARY_TYPE = "BINARY";
+    public static final String LOCAL_TYPE = "LOCAL";
+    public static final String ASCII_TYPE = "ASCII";
+    public static final String EBCDIC_TYPE = "EBCDIC";
 }

@@ -21,6 +21,7 @@ package org.apache.synapse.deployers;
 
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
+import org.apache.axis2.description.AxisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
@@ -77,15 +78,22 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Initialized the ProxyService : " + proxy.getName());
                 }
 
-                proxy.buildAxisService(getSynapseConfiguration(),
-                        getSynapseConfiguration().getAxisConfiguration());
+                AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
+                                                  getSynapseConfiguration().getAxisConfiguration());
+
+                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
+                if (axisService == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());
+                    }
+                    return proxy.getName();
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("Started the ProxyService : " + proxy.getName());
-                }
-                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
-                if (log.isDebugEnabled()) {
                     log.debug("ProxyService Deployment from file : " + filePath + " : Completed");
                 }
+
                 log.info("ProxyService named '" + proxy.getName()
                         + "' has been deployed from file : " + filePath);
 
@@ -142,13 +150,18 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 if (!existingArtifactName.equals(proxy.getName())) {
                     log.info("ProxyService named " + existingArtifactName + " has been Undeployed");
                 }
-                proxy.buildAxisService(getSynapseConfiguration(),
+                AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
                         getSynapseConfiguration().getAxisConfiguration());
+                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
+                if (axisService == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());
+                    }
+                    return proxy.getName();
+                }
+
                 if (log.isDebugEnabled()) {
                     log.debug("Started the ProxyService : " + proxy.getName());
-                }
-                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
-                if (log.isDebugEnabled()) {
                     log.debug("ProxyService " + (existingArtifactName.equals(proxy.getName()) ?
                             "update" : "deployment") + " from file : " + fileName + " : Completed");
                 }

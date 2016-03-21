@@ -197,7 +197,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
             }
 
-            if (resultMsgCtx != null) {
+            if (resultMsgCtx != null && resultMsgCtx.getEnvelope() != null) {
                 org.apache.axis2.context.MessageContext resultAxisMsgCtx =
                         ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
                 org.apache.axis2.context.MessageContext inAxisMsgCtx =

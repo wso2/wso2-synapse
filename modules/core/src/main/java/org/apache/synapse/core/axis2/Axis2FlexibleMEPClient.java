@@ -471,7 +471,11 @@ public class Axis2FlexibleMEPClient {
 
         // set the SEND_TIMEOUT for transport sender
         if (endpoint != null && endpoint.getEffectiveTimeout() > 0) {
-            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            if (!endpoint.isDynamicTimeoutEndpoint()) {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            } else {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext));
+            }
         }
 
 
@@ -484,10 +488,17 @@ public class Axis2FlexibleMEPClient {
             if (endpoint != null) {
                 // set the timeout time and the timeout action to the callback, so that the
                 // TimeoutHandler can detect timed out callbacks and take appropriate action.
-                long endpointTimeout =  endpoint.getEffectiveTimeout();
-                callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
-                callback.setTimeOutAction(endpoint.getTimeoutAction());
-                callback.setTimeoutDuration(endpointTimeout);
+                if (!endpoint.isDynamicTimeoutEndpoint()) {
+                    long endpointTimeout = endpoint.getEffectiveTimeout();
+                    callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
+                    callback.setTimeOutAction(endpoint.getTimeoutAction());
+                    callback.setTimeoutDuration(endpointTimeout);
+                } else {
+                    long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
+                    callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
+                    callback.setTimeOutAction(endpoint.getTimeoutAction());
+                    callback.setTimeoutDuration(endpointTimeout);
+                }
             } else {
                 long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
                 callback.setTimeOutOn(System.currentTimeMillis() + globalTimeout);

@@ -863,7 +863,7 @@ public final class JsonUtil {
      * @return <tt>true</tt> if the message context contains a Streaming JSON payload.
      */
     public static boolean hasAJsonPayload(MessageContext messageContext) {
-        if (messageContext == null) {
+        if (messageContext == null || messageContext.getEnvelope() == null) {
             return false;
         }
         SOAPBody b = messageContext.getEnvelope().getBody();

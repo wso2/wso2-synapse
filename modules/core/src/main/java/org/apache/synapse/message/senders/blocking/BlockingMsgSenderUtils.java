@@ -234,7 +234,11 @@ public class BlockingMsgSenderUtils {
 
         // set the SEND_TIMEOUT for transport sender
         if (endpoint.getEffectiveTimeout() > 0) {
-            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            if (!endpoint.isDynamicTimeoutEndpoint()) {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            } else {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx));
+            }
         }
 
         // Check for preserve WS-Addressing

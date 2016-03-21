@@ -40,8 +40,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.endpoints.AbstractEndpoint;
-import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -262,6 +260,23 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
         auditInfo("Building Axis service for Proxy service : " + name);
         AxisService proxyService = null;
+
+        if (pinnedServers != null && !pinnedServers.isEmpty()) {
+
+            Parameter param = axisCfg.getParameter(SynapseConstants.SYNAPSE_ENV);
+            if (param != null && param.getValue() instanceof SynapseEnvironment) {
+
+                SynapseEnvironment synEnv = (SynapseEnvironment) param.getValue();
+                String serverName = synEnv != null ? synEnv.getServerContextInformation()
+                        .getServerConfigurationInformation().getServerName() : "localhost";
+
+                if (!pinnedServers.contains(serverName)) {
+                    log.info("Server name " + serverName + " not in pinned servers list. " +
+                             "Not deploying Proxy service : " + name);
+                    return null;
+                }
+            }
+        }
 
         // get the wsdlElement as an OMElement
         if (trace()) {
