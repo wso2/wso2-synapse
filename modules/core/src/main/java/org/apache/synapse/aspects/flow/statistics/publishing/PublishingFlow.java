@@ -31,10 +31,6 @@ public class PublishingFlow {
 
     private ArrayList<PublishingPayload> payloads;
 
-    private String MESSAGE_FLOW_ID = "messageFlowId";
-    private String EVENTS = "events";
-    private String PAYLOADS = "payloads";
-
 
     public PublishingEvent getEvent(int index) {
         return events.get(index);
@@ -71,6 +67,10 @@ public class PublishingFlow {
     }
 
     public Map<String, Object> getObjectAsMap() {
+        String MESSAGE_FLOW_ID = "messageFlowId";
+        String EVENTS = "events";
+        String PAYLOADS = "payloads";
+
         Map<String, Object> objectMap = new HashMap<String, Object>();
         objectMap.put(MESSAGE_FLOW_ID, this.messageFlowId);
         objectMap.put(EVENTS, events);

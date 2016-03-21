@@ -182,7 +182,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
                 org.apache.synapse.MessageContext synMsgCtx =
                         MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
-                CallbackStatisticCollector.reportCallbackHandlingCompletion(SynapseOutMsgCtx, synMsgCtx, messageID);
+                CallbackStatisticCollector.reportCallbackHandlingCompletion(SynapseOutMsgCtx, messageID);
                 
             } else {
                 // TODO invoke a generic synapse error handler for this message
