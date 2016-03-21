@@ -116,39 +116,4 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			statisticEventQueue.enqueue(callbackHandledEvent);
 		}
 	}
-
-	/**
-	 * Registers callback information for the message flow on the corresponding StatisticsEntry.
-	 *
-	 * @param callbackDataUnit raw statistic data unit
-	 */
-	public static void addCallbacks(CallbackDataUnit callbackDataUnit) {
-		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
-			runtimeStatistics.get(callbackDataUnit.getStatisticId()).addCallback(callbackDataUnit);
-		}
-	}
-
-	/**
-	 * Updates end time of the statistics logs in the StatisticsEntry after corresponding callback is removed from
-	 * SynapseCallbackReceiver.
-	 *
-	 * @param callbackDataUnit raw statistic data unit
-	 */
-	public static void updateForReceivedCallback(CallbackDataUnit callbackDataUnit) {
-		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
-			runtimeStatistics.get(callbackDataUnit.getStatisticId()).updateCallbackReceived(callbackDataUnit);
-		}
-	}
-
-	/**
-	 * Removes specified callback info from StatisticsEntry for the message flow after all the processing for that
-	 * callback is ended.
-	 *
-	 * @param callbackDataUnit raw statistic data unit
-	 */
-	public static void removeCallback(CallbackDataUnit callbackDataUnit) {
-		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
-			runtimeStatistics.get(callbackDataUnit.getStatisticId()).removeCallback(callbackDataUnit);
-		}
-	}
 }

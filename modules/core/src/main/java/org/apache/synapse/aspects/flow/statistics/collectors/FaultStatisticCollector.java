@@ -52,17 +52,6 @@ public class FaultStatisticCollector extends RuntimeStatisticCollector {
 		}
 	}
 
-	/**
-	 * Report to the StatisticsEntry that message flow encountered a Fault During Mediation.
-	 *
-	 * @param basicStatisticDataUnit raw statistic unit carrying statistic data
-	 */
-	public static void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
-		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
-			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).reportFault(basicStatisticDataUnit);
-		}
-	}
-
 	private static boolean isFaultAlreadyReported(MessageContext synCtx) {
 		Boolean faultReported = (Boolean) synCtx.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_FAULT_REPORTED);
 		return (faultReported != null && faultReported);

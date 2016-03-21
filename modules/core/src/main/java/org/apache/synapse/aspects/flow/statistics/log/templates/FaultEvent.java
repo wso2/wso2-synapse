@@ -18,8 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
@@ -35,6 +35,6 @@ public class FaultEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		FaultStatisticCollector.reportFault(basicStatisticDataUnit);
+		StatisticEventProcessor.reportFault(basicStatisticDataUnit);
 	}
 }
