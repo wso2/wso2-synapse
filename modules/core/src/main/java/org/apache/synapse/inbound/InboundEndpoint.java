@@ -25,7 +25,11 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.rest.Resource;
 import sun.misc.Service;
 
 import java.util.Iterator;
@@ -236,4 +240,21 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         return aspectConfiguration;
     }
 
+    public void setComponentStatisticsId(ArtifactHolder holder){
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(name);
+        }
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.INBOUNDENDPOINT, holder);
+        aspectConfiguration.setUniqueId(apiId);
+        String childId = null;
+        if (injectingSeq != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(injectingSeq, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        if (onErrorSeq != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(onErrorSeq, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.INBOUNDENDPOINT, holder);
+    }
 }

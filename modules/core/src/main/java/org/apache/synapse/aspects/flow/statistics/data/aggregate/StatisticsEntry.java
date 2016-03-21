@@ -150,11 +150,18 @@ public class StatisticsEntry {
 			}
 		}
 
-		if (messageFlowLogs.get(statisticDataUnit.getParentIndex()).isFlowSplittingMediator()) {
-			statisticsLog.setParentIndex(statisticDataUnit.getParentIndex());
+		int parentIndexValue = statisticDataUnit.getParentIndex();
+
+		if (messageFlowLogs.get(parentIndexValue).isFlowSplittingMediator()) {
+			statisticsLog.setParentIndex(parentIndexValue);
 			expectedFaults += 1;
 		} else {
-			statisticsLog.setParentIndex(getParent(statisticDataUnit.getParentIndex()));
+			parentIndexValue = getParent(parentIndexValue);
+			statisticsLog.setParentIndex(parentIndexValue);
+		}
+
+		if (statisticDataUnit.getHashCode() == null) {
+			statisticsLog.setHashCode(messageFlowLogs.get(parentIndexValue).getHashCode());
 		}
 
 		if (statisticDataUnit.getCurrentIndex() < messageFlowLogs.size()) {
@@ -307,7 +314,6 @@ public class StatisticsEntry {
 	 * @return Message flow logs of the message flow
 	 */
 	public PublishingFlow getMessageFlowLogs() {
-
 		return TracingDataCollectionHelper.createPublishingFlow(this.messageFlowLogs);
 	}
 

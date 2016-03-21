@@ -70,6 +70,10 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				statisticDataUnit.setComponentName(componentName);
 				statisticDataUnit.setComponentType(componentType);
 				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
+				if(aspectConfiguration != null) {
+					statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
+					statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
+				}
 				int parentIndex = StatisticDataCollectionHelper
 						.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
 				statisticDataUnit.setParentIndex(parentIndex);
@@ -96,18 +100,20 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
 	 * to the event queue.
 	 *
-	 * @param messageContext    synapse message context.
-	 * @param componentName     statistic reporting component name.
-	 * @param componentType     component type of the reporting component.
-	 * @param isContentAltering component is altering the content
+	 * @param messageContext      synapse message context.
+	 * @param componentName       statistic reporting component name.
+	 * @param componentType       component type of the reporting component.
+	 * @param aspectConfiguration aspect configuration of the component
+	 * @param isContentAltering   component is altering the content
 	 * @return component's level in this message flow.
 	 */
 	public static Integer reportChildEntryEvent(MessageContext messageContext, String componentName,
-	                                            ComponentType componentType, boolean isContentAltering) {
+	                                            ComponentType componentType, AspectConfiguration aspectConfiguration,
+	                                            boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
-			                         statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
+			                         aspectConfiguration);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -119,19 +125,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
 	 * to the event queue.
 	 *
-	 * @param messageContext    synapse message context.
-	 * @param componentName     statistic reporting component name.
-	 * @param componentType     component type of the reporting component.
-	 * @param isContentAltering component is altering the content
+	 * @param messageContext      synapse message context.
+	 * @param componentName       statistic reporting component name.
+	 * @param componentType       component type of the reporting component.
+	 * @param aspectConfiguration aspect configuration of the component
+	 * @param isContentAltering   component is altering the content
 	 * @return component's level in this message flow.
 	 */
 	public static Integer reportFlowContinuableEvent(MessageContext messageContext, String componentName,
-	                                                 ComponentType componentType, boolean isContentAltering) {
+	                                                 ComponentType componentType,
+	                                                 AspectConfiguration aspectConfiguration,
+	                                                 boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			statisticDataUnit.setFlowContinuableMediator(true);
-			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
-			                         statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
+			                         aspectConfiguration);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -144,20 +153,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 * already enabled, it will enqueue open event to the queue regardless of its individual statistics collection.
 	 * If its disabled it will not enqueue open event to the event queue.
 	 *
-	 * @param messageContext    synapse message context.
-	 * @param componentName     statistic reporting component name.
-	 * @param componentType     component type of the reporting component.
-	 * @param isContentAltering component is altering the content
+	 * @param messageContext      synapse message context.
+	 * @param componentName       statistic reporting component name.
+	 * @param componentType       component type of the reporting component.
+	 * @param aspectConfiguration aspect configuration of the component
+	 * @param isContentAltering   component is altering the content
 	 * @return component's level in this message flow.
 	 */
 	public static Integer reportFlowSplittingEvent(MessageContext messageContext, String componentName,
-	                                               ComponentType componentType, boolean isContentAltering) {
+	                                               ComponentType componentType, AspectConfiguration aspectConfiguration,
+	                                               boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			statisticDataUnit.setFlowContinuableMediator(true);
 			statisticDataUnit.setFlowSplittingMediator(true);
-			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
-			                         statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
+			                         aspectConfiguration);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -170,20 +181,22 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 * the queue regardless of its individual statistics collection. If its disabled it will not enqueue open event
 	 * to the event queue.
 	 *
-	 * @param messageContext    synapse message context.
-	 * @param componentName     statistic reporting component name.
-	 * @param componentType     component type of the component.
-	 * @param isContentAltering component is altering the content
+	 * @param messageContext      synapse message context.
+	 * @param componentName       statistic reporting component name.
+	 * @param componentType       component type of the component.
+	 * @param aspectConfiguration aspect configuration of the component
+	 * @param isContentAltering   component is altering the content
 	 * @return component's level in this message flow.
 	 */
 	public static Integer reportFlowAggregateEvent(MessageContext messageContext, String componentName,
-	                                               ComponentType componentType, boolean isContentAltering) {
+	                                               ComponentType componentType, AspectConfiguration aspectConfiguration,
+	                                               boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			statisticDataUnit.setFlowContinuableMediator(true);
 			statisticDataUnit.setFlowAggregateMediator(true);
-			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering,
-			                         statisticDataUnit);
+			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
+			                         aspectConfiguration);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -192,11 +205,16 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 	private static void reportMediatorStatistics(MessageContext messageContext, String componentName,
 	                                             ComponentType componentType, boolean isContentAltering,
-	                                             StatisticDataUnit statisticDataUnit) {
+	                                             StatisticDataUnit statisticDataUnit,
+	                                             AspectConfiguration aspectConfiguration) {
 		Boolean isCollectingTracing = (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
 		statisticDataUnit.setComponentName(componentName);
 		statisticDataUnit.setComponentType(componentType);
 		statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
+		if(aspectConfiguration != null) {
+			statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
+			statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
+		}
 		int parentIndex = StatisticDataCollectionHelper
 				.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
 		statisticDataUnit.setParentIndex(parentIndex);

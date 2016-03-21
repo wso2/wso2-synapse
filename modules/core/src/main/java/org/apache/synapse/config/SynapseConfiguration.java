@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.*;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
@@ -217,6 +218,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private List<String> commentedTextList = new ArrayList<String>();
 
+    /** The Completed StructureStore object */
+    private CompletedStructureStore completedStructureStore = new CompletedStructureStore();
+
+
     /**
      * Add a named sequence into the local registry. If a sequence already exists by the specified
      * key a runtime exception is thrown.
@@ -354,6 +359,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 	public void addInboundEndpoint(String name, InboundEndpoint inboundEndpoint) {
 		if (!inboundEndpointMap.containsKey(name)) {
 			inboundEndpointMap.put(name, inboundEndpoint);
+            for (SynapseObserver o : observers) {
+                o.inboundEndpointAdded(inboundEndpoint);
+            }
 		} else {
 			handleException("Duplicate inbound  endpoint definition by the name: " + name);
 		}
@@ -372,6 +380,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 			handleException("No Inbound Endpoint exists by the name: " + name);
 		} else {
 			inboundEndpointMap.put(name, inboundEndpoint);
+            for (SynapseObserver o : observers) {
+                o.inboundEndpointUpdated(inboundEndpoint);
+            }
 		}
 	}
 
@@ -379,6 +390,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 		InboundEndpoint inboundEndpoint = inboundEndpointMap.get(name);
 		if (inboundEndpoint != null) {
 			inboundEndpointMap.remove(name);
+            for (SynapseObserver o : observers) {
+                o.inboundEndpointRemoved(inboundEndpoint);
+            }
 		} else {
 			handleException("No Inbound Endpoint exists by the name: " + name);
 		}
@@ -393,6 +407,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }
             apiTable.put(name, api);
+            for (SynapseObserver o : observers) {
+                o.apiAdded(api);
+            }
         } else {
             handleException("Duplicate resource definition by the name: " + name);
         }
@@ -409,6 +426,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }        	
             apiTable.put(name, api);
+            for (SynapseObserver o : observers) {
+                o.apiUpdated(api);
+            }
         }
     }
 
@@ -424,6 +444,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         API api = apiTable.get(name);
         if (api != null) {
             apiTable.remove(name);
+            for (SynapseObserver o : observers) {
+                o.apiRemoved(api);
+            }
         } else {
             handleException("No API exists by the name: " + name);
         }
@@ -2159,6 +2182,16 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
             this.commentedTextList.add(comment);
         }
 
+    }
+
+    /**
+     * This method returns the CompletedStructureStore responsible for collecting completed statistics for this synapse
+     * instance.
+     *
+     * @return CompletedStructureStore for this synapse instance
+     */
+    public CompletedStructureStore getCompletedStructureStore() {
+        return completedStructureStore;
     }
 
 }

@@ -98,6 +98,16 @@ public class StatisticsLog {
 	private String afterPayload;
 
 	/**
+	 * Unique Id of the reporting component.
+	 */
+	private String componentId;
+
+	/**
+	 * HashCode of the reporting component.
+	 */
+	private Integer hashCode;
+
+	/**
 	 * Children List for the component.
 	 */
 	private List<Integer> children = new LinkedList<>();
@@ -135,6 +145,8 @@ public class StatisticsLog {
 		this.contextPropertyMap = statisticDataUnit.getContextPropertyMap();
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 		this.componentType = statisticDataUnit.getComponentType();
+		this.hashCode = statisticDataUnit.getHashCode();
+		this.componentId = statisticDataUnit.getComponentId();
 	}
 
 	public StatisticsLog(ComponentType componentType, String componentName, int parentIndex) {
@@ -290,5 +302,17 @@ public class StatisticsLog {
 
 	public void setImmediateParent(int immediateParent) {
 		this.immediateParent = immediateParent;
+	}
+
+	public String getComponentId() {
+		return componentId;
+	}
+
+	public Integer getHashCode() {
+		return hashCode;
+	}
+
+	public void setHashCode(Integer hashCode) {
+		this.hashCode = hashCode;
 	}
 }

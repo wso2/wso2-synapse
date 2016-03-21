@@ -18,8 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
@@ -35,6 +35,6 @@ public class ParentReopenEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		RuntimeStatisticCollector.openParents(basicStatisticDataUnit);
+		StatisticEventProcessor.openParents(basicStatisticDataUnit);
 	}
 }

@@ -26,7 +26,9 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.core.axis2.ProxyService;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.rest.API;
 import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.commons.executors.PriorityExecutor;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -160,6 +162,30 @@ public class SynapseObserverTest extends TestCase {
 
         public void proxyServiceRemoved(ProxyService proxy) {
             tracker.get(PROXY).remove(proxy.getName());
+        }
+
+        @Override public void apiAdded(API api) {
+
+        }
+
+        @Override public void apiRemoved(API api) {
+
+        }
+
+        @Override public void apiUpdated(API api) {
+
+        }
+
+        @Override public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
+
+        }
+
+        @Override public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint) {
+
+        }
+
+        @Override public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
+
         }
 
         public void sequenceAdded(Mediator sequence) {

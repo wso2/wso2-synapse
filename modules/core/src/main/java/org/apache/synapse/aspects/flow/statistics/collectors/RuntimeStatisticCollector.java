@@ -25,6 +25,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
@@ -44,11 +45,6 @@ import java.util.concurrent.TimeUnit;
 public abstract class RuntimeStatisticCollector {
 
 	private static final Log log = LogFactory.getLog(RuntimeStatisticCollector.class);
-
-	/**
-	 * Map to hold statistic of current message flows in esb.
-	 */
-	protected static Map<String, StatisticsEntry> runtimeStatistics = new HashMap<>();
 
 	/**
 	 * Is statistics collection enabled in synapse.properties file.
@@ -116,104 +112,6 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Opens statistic log for the reporting component.
-	 *
-	 * @param statisticDataUnit raw statistic data object.
-	 */
-	public static void recordStatisticsOpenEvent(StatisticDataUnit statisticDataUnit) {
-		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
-			runtimeStatistics.get(statisticDataUnit.getStatisticId()).createLog(statisticDataUnit);
-		} else if (!(statisticDataUnit.getComponentType() == ComponentType.MEDIATOR ||
-		             statisticDataUnit.getComponentType() == ComponentType.RESOURCE)) {
-			//Mediators and resources can't start statistic collection for a flow.
-			StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit);
-			runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
-			if (log.isDebugEnabled()) {
-				log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size());
-			}
-		} else {
-			log.error("Wrong element tried to open statistics: " + statisticDataUnit.getComponentName());
-		}
-	}
-
-	/**
-	 * Closes statistic collection log after finishing statistic collection for that component.
-	 *
-	 * @param dataUnit raw data unit containing id relevant for closing
-	 * @param mode     Mode of closing GRACEFULLY_CLOSE, ATTEMPT_TO_CLOSE or FORCEFULLY_CLOSE
-	 */
-	public static void closeStatisticEntry(BasicStatisticDataUnit dataUnit, int mode) {
-
-		if (runtimeStatistics.containsKey(dataUnit.getStatisticId())) {
-			StatisticsEntry statisticsEntry = runtimeStatistics.get(dataUnit.getStatisticId());
-
-			if (StatisticsConstants.GRACEFULLY_CLOSE == mode) {
-				/**
-				 * Ends statistics collection log for the reported statistics component.
-				 */
-
-				boolean finished = statisticsEntry.closeLog((StatisticDataUnit) dataUnit);
-				if (finished) {
-					endMessageFlow(dataUnit, statisticsEntry, false);
-				}
-
-			} else if (StatisticsConstants.ATTEMPT_TO_CLOSE == mode) {
-				/**
-				 * Check whether Statistics entry present for the message flow and if there is an entry try
-				 * to finish ending statistics collection for that entry.
-				 */
-				endMessageFlow(dataUnit, statisticsEntry, false);
-
-			} else if (StatisticsConstants.FORCEFULLY_CLOSE == mode) {
-				/**
-				 * Close the statistic log after finishing the message flow forcefully. When we try to use this method to end
-				 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
-				 * will send the completed statistic entry for collection.
-				 */
-				endMessageFlow(dataUnit, statisticsEntry, true);
-
-			} else {
-				log.error("Invalid mode for closing statistic entry");
-			}
-		}
-	}
-
-	/**
-	 * Opens Flow Continuable mediators after callback is received for continuation call to the backend.
-	 *
-	 * @param basicStatisticDataUnit data unit which holds raw data
-	 */
-	public static void openParents(BasicStatisticDataUnit basicStatisticDataUnit) {
-		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
-			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId())
-			                 .openFlowContinuableMediators(basicStatisticDataUnit);
-		}
-	}
-
-	/**
-	 * End the statistics collection for the message flow. If entry is successfully completed ending
-	 * its statistics collection statistics store is updated with new statistics data. Then entry
-	 * is removed from the running statistic map.
-	 *
-	 * @param dataUnit        Statistics raw data object.
-	 * @param statisticsEntry Statistic entry for the message flow.
-	 * @param closeForceFully Whether to close statistics forcefully.
-	 */
-	private synchronized static void endMessageFlow(BasicStatisticDataUnit dataUnit, StatisticsEntry statisticsEntry,
-	                                                boolean closeForceFully) {
-		boolean isMessageFlowEnded = statisticsEntry.endAll(dataUnit, closeForceFully);
-		if (isMessageFlowEnded) {
-			if (log.isDebugEnabled()) {
-				log.debug("Statistic collection is ended for the message flow with statistic " +
-				          "trace Id :" + dataUnit.getStatisticId());
-			}
-			dataUnit.getSynapseEnvironment().getCompletedStatisticStore()
-			        .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
-			runtimeStatistics.remove(dataUnit.getStatisticId());
-		}
-	}
-
-	/**
 	 * Add event in to the event queue. This event will inform statistic collection to put all the flow continuable
 	 * mediators before the index specified by current Index to open state.
 	 *
@@ -251,10 +149,13 @@ public abstract class RuntimeStatisticCollector {
 	 * @return true if statistics is collected in the message flow.
 	 */
 	public static boolean shouldReportStatistic(MessageContext messageContext) {
+		if (!isStatisticsEnabled)
+			return false;
+
 		Boolean isStatCollected =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		return (statID != null && isStatCollected != null && isStatCollected && isStatisticsEnabled);
+		return (statID != null && isStatCollected != null && isStatCollected );
 	}
 
 	/**

@@ -24,6 +24,10 @@ import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.*;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -733,4 +737,28 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         return null;
     }
 
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(mediatorId);
+
+        String childId;
+        if (onAcceptSeqKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(onAcceptSeqKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else if (onAcceptMediator != null) {
+            onAcceptMediator.setComponentStatisticsId(holder);
+        }
+        if (onRejectSeqKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(onRejectSeqKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else if (onRejectMediator != null) {
+            onRejectMediator.setComponentStatisticsId(holder);
+        }
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+    }
 }

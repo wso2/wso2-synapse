@@ -89,23 +89,4 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			statisticEventQueue.enqueue(endFlowEvent);
 		}
 	}
-
-	/**
-	 * Enqueue statistics event to the event queue. This method invokes when SynapseCallbackHandler is finished
-	 * handling the callback occurred in the message flow.
-	 *
-	 * @param messageContext synapse message context.
-	 */
-	public static void finalizeFlow(MessageContext messageContext) {
-		if (shouldReportStatistic(messageContext)) {
-			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
-			dataUnit.setTime(System.currentTimeMillis());
-			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
-			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
-			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
-
-			FinalizedFlowEvent endFlowEvent = new FinalizedFlowEvent(dataUnit);
-			statisticEventQueue.enqueue(endFlowEvent);
-		}
-	}
 }

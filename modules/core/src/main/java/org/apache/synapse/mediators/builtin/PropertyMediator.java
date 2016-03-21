@@ -461,4 +461,8 @@ public class PropertyMediator extends AbstractMediator {
         result.buildWithAttachments();
         return result;
     }
+
+    @Override public String getMediatorName() {
+        return super.getMediatorName() + ":" + name;
+    }
 }

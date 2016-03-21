@@ -25,26 +25,30 @@ import java.util.Map;
 public class PublishingEvent {
 
 	private String componentType;
+	private String componentName;
 	private String componentId;
 
 	private long startTime;
 	private long endTime;
+
 	private long duration;
-
 	private String beforePayload;
+
 	private String afterPayload;
-
 	private Map contextPropertyMap;
+
 	private Map transportPropertyMap;
-
 	private Integer[] children;
+
 	private String entryPoint;
-
+	private Integer entryPointHashcode;
 	private int faultCount;
+	private Integer hashCode;
 
-	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint) {
+	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint, Integer entryPointHashcode) {
 		this.componentType = statisticsLog.getComponentTypeToString();
-		this.componentId = statisticsLog.getComponentName();
+		this.componentName = statisticsLog.getComponentName();
+		this.componentId = statisticsLog.getComponentId();
 
 		this.startTime = statisticsLog.getStartTime();
 		this.endTime = statisticsLog.getEndTime();
@@ -59,8 +63,9 @@ public class PublishingEvent {
 		}
 
 		this.entryPoint = entryPoint;
-
+		this.entryPointHashcode = entryPointHashcode;
 		this.faultCount = statisticsLog.getNoOfFaults();
+		this.hashCode = statisticsLog.getHashCode();
 	}
 
 	public String getComponentType() {
@@ -71,12 +76,12 @@ public class PublishingEvent {
 		this.componentType = componentType;
 	}
 
-	public String getComponentId() {
-		return componentId;
+	public String getComponentName() {
+		return componentName;
 	}
 
-	public void setComponentId(String componentId) {
-		this.componentId = componentId;
+	public void setComponentName(String componentName) {
+		this.componentName = componentName;
 	}
 
 	public long getStartTime() {
@@ -159,7 +164,33 @@ public class PublishingEvent {
 		this.faultCount = faultCount;
 	}
 
-	@Override public String toString() {
-		return "Component Type " + componentType + " , Component Id " + componentId;
+	public String getComponentId() {
+		return componentId;
+	}
+
+	public void setComponentId(String componentId) {
+		this.componentId = componentId;
+	}
+
+	public Integer getHashCode() {
+		return hashCode;
+	}
+
+	public void setHashCode(Integer hashCode) {
+		this.hashCode = hashCode;
+	}
+
+	public Integer getEntryPointHashcode() {
+		return entryPointHashcode;
+	}
+
+	public void setEntryPointHashcode(Integer entryPointHashcode) {
+		this.entryPointHashcode = entryPointHashcode;
+	}
+
+	@Override
+	public String toString() {
+		return "Component Type " + componentType + " , Component Name " +
+		       componentName;
 	}
 }

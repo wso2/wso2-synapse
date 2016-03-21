@@ -22,6 +22,7 @@ package org.apache.synapse.config;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.Startup;
 import org.apache.synapse.commons.executors.PriorityExecutor;
+import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.eventing.SynapseEventSource;
 import org.apache.synapse.core.axis2.ProxyService;
@@ -29,6 +30,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.rest.API;
 
 public abstract class AbstractSynapseObserver implements SynapseObserver {
 
@@ -116,5 +118,32 @@ public abstract class AbstractSynapseObserver implements SynapseObserver {
     public void priorityExecutorRemoved(PriorityExecutor exec) {
         log.info("Priority executor : " + exec.getName() + " was removed " +
                 "from the Synapse configuration successfully");
+    }
+
+    @Override public void apiAdded(API api) {
+        log.info("API : " + api.getName() + " was added to the Synapse configuration successfully");
+    }
+
+    @Override public void apiRemoved(API api) {
+        log.info("API : " + api.getName() + " was removed from the Synapse configuration successfully");
+    }
+
+    @Override public void apiUpdated(API api) {
+        log.info("API : " + api.getName() + " was updated from the Synapse configuration successfully");
+    }
+
+    @Override public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
+        log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                 " was added to the Synapse configuration successfully");
+    }
+
+    @Override public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint) {
+        log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                 " was removed from the Synapse configuration successfully");
+    }
+
+    @Override public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
+        log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                 " was updated from the Synapse configuration successfully");
     }
 }

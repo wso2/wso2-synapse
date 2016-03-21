@@ -18,9 +18,8 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
-import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -37,9 +36,9 @@ public class CallbackCompletionEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		CallbackStatisticCollector.updateForReceivedCallback(callbackDataUnit);
-		CallbackStatisticCollector.removeCallback(callbackDataUnit);
-		RuntimeStatisticCollector.closeStatisticEntry(callbackDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
+		StatisticEventProcessor.updateForReceivedCallback(callbackDataUnit);
+		StatisticEventProcessor.removeCallback(callbackDataUnit);
+		StatisticEventProcessor.closeStatisticEntry(callbackDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
 }
 

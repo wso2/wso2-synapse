@@ -32,8 +32,10 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -804,5 +806,22 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     private boolean isStatisticCollected() {
         return (definition.getAspectConfiguration() != null &&
                 definition.getAspectConfiguration().isStatisticsEnable() && this.endpointName != null);
+    }
+
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if(definition != null) {
+            if (definition.getAspectConfiguration() == null) {
+                definition.configure(new AspectConfiguration(getReportingName()));
+            }
+            String sequenceId = StatisticIdentityGenerator.getIdForComponent(getReportingName(), ComponentType.ENDPOINT, holder);
+            definition.getAspectConfiguration().setUniqueId(sequenceId);
+
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
+        } else if (this instanceof IndirectEndpoint) {
+            String sequenceId = StatisticIdentityGenerator
+                    .getIdReferencingComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT, holder);
+
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
+        }
     }
 }

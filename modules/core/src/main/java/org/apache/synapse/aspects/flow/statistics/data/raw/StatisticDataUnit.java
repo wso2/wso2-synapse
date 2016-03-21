@@ -74,6 +74,16 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	private ComponentType componentType;
 
 	/**
+	 * Unique Id of the reporting component.
+	 */
+	private String componentId;
+
+	/**
+	 * HashCode of the reporting component.
+	 */
+	private Integer hashCode;
+
+	/**
 	 * Parent list for this event.
 	 */
 	private List<Integer> parentList;
@@ -182,5 +192,21 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 
 	public void setFlowAggregateMediator(boolean flowAggregateMediator) {
 		this.flowAggregateMediator = flowAggregateMediator;
+	}
+
+	public String getComponentId() {
+		return componentId;
+	}
+
+	public void setComponentId(String componentId) {
+		this.componentId = componentId;
+	}
+
+	public Integer getHashCode() {
+		return hashCode;
+	}
+
+	public void setHashCode(Integer hashCode) {
+		this.hashCode = hashCode;
 	}
 }

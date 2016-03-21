@@ -326,4 +326,8 @@ public class HeaderMediator extends AbstractMediator {
             return true;
         }
     }
+
+    @Override public String getMediatorName() {
+        return super.getMediatorName() + ":" + qName.getLocalPart();
+    }
 }

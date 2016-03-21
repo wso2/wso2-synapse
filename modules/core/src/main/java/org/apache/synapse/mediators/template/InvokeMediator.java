@@ -23,6 +23,10 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -271,4 +275,15 @@ public class InvokeMediator extends AbstractMediator implements
             synapseEnv.removeUnavailableArtifactRef(targetTemplate);
         }
     }
+
+	@Override
+	public void setComponentStatisticsId(ArtifactHolder holder) {
+		if (getAspectConfiguration() == null) {
+			configure(new AspectConfiguration(getMediatorName()));
+		}
+		String mediatorId =
+				StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+		getAspectConfiguration().setUniqueId(mediatorId);
+		StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+	}
 }
