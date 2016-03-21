@@ -99,11 +99,9 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 	 * receiving the callback.
 	 *
 	 * @param synapseOutMsgCtx Old MessageContext of the flow.
-	 * @param synNewCtx        New MessageContext of the flow.
 	 * @param callbackId       Callback Id.
 	 */
-	public static void reportCallbackHandlingCompletion(MessageContext synapseOutMsgCtx, MessageContext synNewCtx,
-	                                                    String callbackId) {
+	public static void reportCallbackHandlingCompletion(MessageContext synapseOutMsgCtx, String callbackId) {
 		if (shouldReportStatistic(synapseOutMsgCtx)) {
 			CallbackDataUnit dataUnit = new CallbackDataUnit();
 			dataUnit.setCallbackId(callbackId);

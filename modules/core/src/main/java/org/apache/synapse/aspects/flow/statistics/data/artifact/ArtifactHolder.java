@@ -60,14 +60,6 @@ public class ArtifactHolder {
         return String.valueOf(hashCode);
     }
 
-    public Log getLog() {
-        return log;
-    }
-
-    public void setLog(Log log) {
-        this.log = log;
-    }
-
     public int getId() {
         return id;
     }
