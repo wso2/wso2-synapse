@@ -132,6 +132,11 @@ public class StatisticsLog {
 	 */
 	private int immediateParent;
 
+	/**
+	 * Flag indicates whether tracing enabled for the component
+	 */
+	private boolean isTracingEnabled;
+
 	public StatisticsLog(StatisticDataUnit statisticDataUnit) {
 		this.parentIndex = statisticDataUnit.getParentIndex();
 		this.currentIndex = statisticDataUnit.getCurrentIndex();
@@ -147,6 +152,7 @@ public class StatisticsLog {
 		this.componentType = statisticDataUnit.getComponentType();
 		this.hashCode = statisticDataUnit.getHashCode();
 		this.componentId = statisticDataUnit.getComponentId();
+		this.isTracingEnabled = statisticDataUnit.isTracingEnabled();
 	}
 
 	public StatisticsLog(ComponentType componentType, String componentName, int parentIndex) {
@@ -314,5 +320,13 @@ public class StatisticsLog {
 
 	public void setHashCode(Integer hashCode) {
 		this.hashCode = hashCode;
+	}
+
+	public boolean isTracingEnabled() {
+		return isTracingEnabled;
+	}
+
+	public void setTracingEnabled(boolean tracingEnabled) {
+		isTracingEnabled = tracingEnabled;
 	}
 }

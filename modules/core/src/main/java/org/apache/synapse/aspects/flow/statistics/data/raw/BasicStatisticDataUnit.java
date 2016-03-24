@@ -41,6 +41,11 @@ public class BasicStatisticDataUnit {
 	private String statisticId;
 
 	/**
+	 * Is tracing enabled for a component
+	 */
+	private boolean isTracingEnabled = false;
+
+	/**
 	 * Is this message flow is a out_only flow
 	 */
 	private boolean isOutOnlyFlow;
@@ -80,6 +85,14 @@ public class BasicStatisticDataUnit {
 
 	public void setCurrentIndex(int currentIndex) {
 		this.currentIndex = currentIndex;
+	}
+
+	public boolean isTracingEnabled() {
+		return isTracingEnabled;
+	}
+
+	public void setTracingEnabled(boolean tracingEnabled) {
+		isTracingEnabled = tracingEnabled;
 	}
 
 	public boolean isOutOnlyFlow() {

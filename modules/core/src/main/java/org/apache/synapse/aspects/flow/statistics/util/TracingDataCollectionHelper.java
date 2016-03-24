@@ -151,6 +151,8 @@ public class TracingDataCollectionHelper {
 		String flowId = messageFlowLogs.get(0).getMessageFlowId();
 		Integer entrypointHashcode = messageFlowLogs.get(0).getHashCode();
 
+		boolean isTracingEnabledForFlow = messageFlowLogs.get(0).isTracingEnabled();
+
 		for (int index = 0; index < messageFlowLogs.size(); index++) {
 			StatisticsLog currentStatLog = messageFlowLogs.get(index);
 
@@ -159,6 +161,11 @@ public class TracingDataCollectionHelper {
 
 			// Skip the rest of things, if message tracing is disabled
 			if (!RuntimeStatisticCollector.isCollectingPayloads()) {
+				continue;
+			}
+
+			// Skip flow is tracing is not enabled for the flow (from UI)
+			if (!isTracingEnabledForFlow) {
 				continue;
 			}
 
