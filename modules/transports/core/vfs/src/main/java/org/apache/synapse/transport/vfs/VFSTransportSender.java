@@ -205,7 +205,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 }
                 
                 //If the reply folder does not exists create the folder structure
-                if (vfsOutInfo.isForceCreateFolder()) {
+                if (vfsOutInfo.isForceCreateFolder(msgCtx)) {
                     String strPath = vfsOutInfo.getOutFileURI();
                     int iIndex = strPath.indexOf("?");
                     if(iIndex > -1){
