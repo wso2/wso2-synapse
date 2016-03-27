@@ -45,6 +45,9 @@ public class MessageDataStore implements Runnable {
 	 * @param statisticsReportingEvent StatisticReportingLog to be stored in the queue
 	 */
 	public void enqueue(StatisticsReportingEvent statisticsReportingEvent) {
+		if (log.isDebugEnabled()) {
+			log.debug("Adding event: " + statisticsReportingEvent.toString());
+		}
 		queue.add(statisticsReportingEvent);
 	}
 
