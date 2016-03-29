@@ -199,7 +199,7 @@ public class StatisticsEntry {
 			}
 			openLogs.remove(currentIndex);
 		}
-		return openLogs.isEmpty();
+		return (openLogs.size() == 1 && openLogs.contains(0)) || openLogs.isEmpty();
 	}
 
 	/**
@@ -220,8 +220,7 @@ public class StatisticsEntry {
 		} else {
 			endTime = basicStatisticDataUnit.getTime();
 		}
-		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedFaults <= 0) && (expectedAsynchronousCalls <= 0) ||
-		    (closeForcefully && (expectedFaults <= 0))) {
+		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedAsynchronousCalls <= 0) || (closeForcefully)) {
 			if (openLogs.isEmpty()) {
 				messageFlowLogs.get(ROOT_LEVEL).setEndTime(endTime);
 			} else {
