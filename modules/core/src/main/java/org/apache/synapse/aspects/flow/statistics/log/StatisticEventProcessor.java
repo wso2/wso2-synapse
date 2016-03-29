@@ -52,8 +52,16 @@ public class StatisticEventProcessor {
         } else if (!(statisticDataUnit.getComponentType() == ComponentType.MEDIATOR ||
                      statisticDataUnit.getComponentType() == ComponentType.RESOURCE)) {
             //Mediators and resources can't start statistic collection for a flow.
-            StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit);
-            runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
+            if (statisticDataUnit.isIndividualStatisticCollected() && statisticDataUnit.getCurrentIndex() == 0) {
+                StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit);
+                runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
+            } else if (statisticDataUnit.getCurrentIndex() > 0 && !statisticDataUnit.isIndividualStatisticCollected()) {
+                log.error("Component: " + statisticDataUnit.getComponentId() + "Is in a middle of the statistics " +
+                          "collection. But collection cannot be found collection seem to be broken.");
+            } else {
+                log.error("Component: " + statisticDataUnit.getComponentId() + "tried to open statistics, but its " +
+                          "individual collection was not enabled");
+            }
             if (log.isDebugEnabled()) {
                 log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size());
             }
@@ -182,6 +190,17 @@ public class StatisticEventProcessor {
     public static void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
         if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
             runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).reportFault(basicStatisticDataUnit);
+        }
+    }
+
+    /**
+     * Report to the StatisticsEntry that message flow encountered Asynchronous flow.
+     *
+     * @param basicStatisticDataUnit raw statistic unit carrying statistic data
+     */
+    public static void reportAsynchronousExecution(BasicStatisticDataUnit basicStatisticDataUnit) {
+        if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
+            runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).addAsynchronousFlow(basicStatisticDataUnit);
         }
     }
 }
