@@ -19,6 +19,7 @@
 
 package org.apache.synapse.commons.vfs;
 
+import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.OutTransportInfo;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.commons.lang.StringUtils;
@@ -186,6 +187,18 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         } else {
             return originalFileURI.substring(VFSConstants.VFS_PREFIX.length());
         }
+    }
+
+    public boolean isForceCreateFolder(MessageContext msgCtx) {
+        // first preference to set on the current message context
+        Map transportHeaders = (Map) msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null && "true"
+                .equals((String) transportHeaders.get(VFSConstants.FORCE_CREATE_FOLDER))) {
+            return true;
+        }
+
+        // next check if the OutTransportInfo specifies one
+        return this.isForceCreateFolder();
     }
 
     public void setContentType(String contentType) {

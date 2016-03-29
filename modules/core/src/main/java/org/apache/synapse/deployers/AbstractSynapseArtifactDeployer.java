@@ -161,15 +161,15 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                     try {
                         artifactName = updateSynapseArtifact(
                                 element, filename, existingArtifactName, properties);
-                    } catch (SynapseArtifactDeploymentException sade) {
-                        log.error("Update of the Synapse Artifact from file : "
-                                + filename + " : Failed!", sade);
-                        log.info("The updated file has been backed up into : "
-                                + backupFile(deploymentFileData.getFile()));
+                    } catch (SynapseArtifactDeploymentException | OMException ex) {
+                        log.error("Update of the Synapse Artifact from file : " + filename + " : Failed!", ex);
+                        log.info("The updated file has been backed up into : " +
+                                 backupFile(deploymentFileData.getFile()));
                         log.info("Restoring the existing artifact into the file : " + filename);
                         restoreSynapseArtifact(existingArtifactName);
+                        deploymentStore.addArtifact(filename, existingArtifactName);
                         artifactName = existingArtifactName;
-                        throw new DeploymentException(sade);
+                        throw new DeploymentException(ex);
                     }
                 } else {
                     // new artifact hot-deployment case
@@ -431,8 +431,7 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
     protected ServerContextInformation getServerContextInformation()
             throws DeploymentException {
         Parameter serverCtxParam =
-                cfgCtx.getAxisConfiguration().getParameter(
-                        SynapseConstants.SYNAPSE_SERVER_CTX_INFO);
+                cfgCtx.getAxisConfiguration().getParameter(SynapseConstants.SYNAPSE_SERVER_CTX_INFO);
         if (serverCtxParam == null) {
             throw new DeploymentException("ServerContextInformation not found. " +
                     "Are you sure that you are running Synapse?");
