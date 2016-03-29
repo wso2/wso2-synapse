@@ -226,6 +226,7 @@ public class ClientWorker implements Runnable {
                 }
 
                 responseMsgCtx.setServerSide(true);
+	         responseMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
             } else {
                 // there is no response entity-body
                 responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
