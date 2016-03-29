@@ -47,7 +47,7 @@ public class MessageDataStore implements Runnable {
 	public void enqueue(StatisticsReportingEvent statisticsReportingEvent) {
 		try {
 			queue.add(statisticsReportingEvent);
-		}catch (Exception e){
+		} catch (Exception e) {
 			log.error("Statistics queue became full. Dropping statistics events.");
 		}
 	}
