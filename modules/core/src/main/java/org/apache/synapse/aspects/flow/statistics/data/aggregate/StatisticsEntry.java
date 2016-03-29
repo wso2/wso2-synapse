@@ -220,7 +220,7 @@ public class StatisticsEntry {
 		} else {
 			endTime = basicStatisticDataUnit.getTime();
 		}
-		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedAsynchronousCalls <= 0) || (closeForcefully)) {
+		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedAsynchronousCalls <= 0)) {
 			if (openLogs.isEmpty()) {
 				messageFlowLogs.get(ROOT_LEVEL).setEndTime(endTime);
 			} else {
