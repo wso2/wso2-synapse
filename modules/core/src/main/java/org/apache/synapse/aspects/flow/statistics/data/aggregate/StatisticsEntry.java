@@ -30,8 +30,10 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.flow.statistics.util.TracingDataCollectionHelper;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -65,6 +67,14 @@ public class StatisticsEntry {
 	private int expectedFaults = 0;
 
 	/**
+	 * Number of asynchronous flow remaining to be executed. Message flow cannot be completed without having this as
+	 * zero.
+	 */
+	private int expectedAsynchronousCalls = 0;
+
+	private Map<Integer, Integer> asynchronousCallMap = new HashMap<>();
+
+	/**
 	 * Whether this message flow has encountered a fault.
 	 */
 	private boolean hasFault;
@@ -82,25 +92,11 @@ public class StatisticsEntry {
 	 * @param statisticDataUnit statistic data unit with raw data
 	 */
 	public StatisticsEntry(StatisticDataUnit statisticDataUnit) {
-
-		if (statisticDataUnit.isIndividualStatisticCollected()) {
-			StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
-			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
-			openLogs.add(statisticDataUnit.getCurrentIndex());
-			if (log.isDebugEnabled()) {
-				log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
-			}
-		} else {
-			//create imaginary root
-			StatisticsLog statisticsLog =
-					new StatisticsLog(ComponentType.IMAGINARY, StatisticsConstants.IMAGINARY_COMPONENT_ID,
-					                  StatisticsConstants.DEFAULT_PARENT_INDEX);
-			if (log.isDebugEnabled()) {
-				log.debug("Created imaginary root for [ElementId|" + statisticDataUnit.getComponentName());
-			}
-			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
-			openLogs.add(statisticDataUnit.getCurrentIndex());
-			createLog(statisticDataUnit);
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
+		messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
+		openLogs.add(statisticDataUnit.getCurrentIndex());
+		if (log.isDebugEnabled()) {
+			log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
 		}
 	}
 
@@ -109,7 +105,7 @@ public class StatisticsEntry {
 	 *
 	 * @param statisticDataUnit statistic data unit with raw data
 	 */
-	public synchronized void createLog(StatisticDataUnit statisticDataUnit) {
+	public void createLog(StatisticDataUnit statisticDataUnit) {
 
 		if ((openLogs.contains(ROOT_LEVEL) && openLogs.size() == 1)
 			&& (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY)
@@ -119,6 +115,18 @@ public class StatisticsEntry {
 
 		if (hasFault) {
 			hasFault = false;
+		}
+
+		if (expectedAsynchronousCalls > 0) {
+			if (asynchronousCallMap.get(statisticDataUnit.getParentIndex()) != null) {
+				expectedAsynchronousCalls--;
+				Integer flowCount = asynchronousCallMap.get(statisticDataUnit.getParentIndex());
+				if (flowCount == 1) {
+					asynchronousCallMap.remove(statisticDataUnit.getParentIndex());
+				} else {
+					asynchronousCallMap.put(statisticDataUnit.getParentIndex(), flowCount - 1);
+				}
+			}
 		}
 
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
@@ -161,7 +169,7 @@ public class StatisticsEntry {
 		openLogs.add(statisticDataUnit.getCurrentIndex());
 	}
 
-	public synchronized void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
+	public void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
 		hasFault = true;
 		addFaultsToParents(basicStatisticDataUnit.getCurrentIndex());
 	}
@@ -173,7 +181,7 @@ public class StatisticsEntry {
 	 * @param statisticDataUnit statistic data unit with raw data
 	 * @return true if there are no open message logs in openLogs List
 	 */
-	public synchronized boolean closeLog(StatisticDataUnit statisticDataUnit) {
+	public boolean closeLog(StatisticDataUnit statisticDataUnit) {
 		if (statisticDataUnit.getCurrentIndex() == 0) {
 			return true;
 		} else {
@@ -191,7 +199,7 @@ public class StatisticsEntry {
 			}
 			openLogs.remove(currentIndex);
 		}
-		return openLogs.isEmpty();
+		return (openLogs.size() == 1 && openLogs.contains(0)) || openLogs.isEmpty();
 	}
 
 	/**
@@ -202,7 +210,7 @@ public class StatisticsEntry {
 	 * @param closeForcefully        should we finish the statistics forcefully without considering anything
 	 * @return true if message flow correctly ended
 	 */
-	public synchronized boolean endAll(BasicStatisticDataUnit basicStatisticDataUnit, boolean closeForcefully) {
+	public boolean endAll(BasicStatisticDataUnit basicStatisticDataUnit, boolean closeForcefully) {
 		if (closeForcefully) {
 			expectedFaults -= 1;
 		}
@@ -212,8 +220,7 @@ public class StatisticsEntry {
 		} else {
 			endTime = basicStatisticDataUnit.getTime();
 		}
-		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedFaults <= 0) ||
-		    (closeForcefully && (expectedFaults <= 0))) {
+		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedAsynchronousCalls <= 0)) {
 			if (openLogs.isEmpty()) {
 				messageFlowLogs.get(ROOT_LEVEL).setEndTime(endTime);
 			} else {
@@ -227,6 +234,21 @@ public class StatisticsEntry {
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Add a asynchronous executions flow.
+	 *
+	 * @param basicStatisticDataUnit raw statistic data unit carrying callback data
+	 */
+	public void addAsynchronousFlow(BasicStatisticDataUnit basicStatisticDataUnit) {
+		expectedAsynchronousCalls++;
+		Integer count = asynchronousCallMap.get(basicStatisticDataUnit.getCurrentIndex());
+		if (count == null) {
+			asynchronousCallMap.put(basicStatisticDataUnit.getCurrentIndex(), 1);
+		} else {
+			asynchronousCallMap.put(basicStatisticDataUnit.getCurrentIndex(), count + 1);
+		}
 	}
 
 	/**
@@ -260,7 +282,7 @@ public class StatisticsEntry {
 	 *
 	 * @param callbackDataUnit raw statistic data unit carrying callback data.
 	 */
-	public synchronized void updateCallbackReceived(CallbackDataUnit callbackDataUnit) {
+	public void updateCallbackReceived(CallbackDataUnit callbackDataUnit) {
 		if (callbacks.contains(callbackDataUnit.getCallbackId())) {
 			if (!callbackDataUnit.isOutOnlyFlow()) {
 				updateParentLogs(callbackDataUnit.getCurrentIndex(), callbackDataUnit.getTime());
@@ -282,7 +304,6 @@ public class StatisticsEntry {
 		while (statisticsLog.getCurrentIndex() > 0) {
 			if (statisticsLog.isFlowContinuable()) {
 				statisticsLog.incrementOpenTimes();
-				openLogs.add(statisticsLog.getCurrentIndex()); //We will not open continuation logs as it might lead
 			}
 			statisticsLog = messageFlowLogs.get(statisticsLog.getParentIndex());
 		}
@@ -340,7 +361,6 @@ public class StatisticsEntry {
 				updatingLog.setEndTime(endTime);
 				closedIndex = updatingLog.getParentIndex();
 			} while (closedIndex > StatisticsConstants.DEFAULT_PARENT_INDEX);
-
 			if (log.isDebugEnabled()) {
 				log.debug("Statistic Log updating finished.");
 			}
@@ -362,7 +382,6 @@ public class StatisticsEntry {
 			log.debug("Closed statistic log of [ElementId" + currentLog.getComponentName());
 		}
 		currentLog.setEndTime(endTime);
-		// TODO: add after payload
 		currentLog.setAfterPayload(payload);
 		updateParentLogs(currentLog.getParentIndex(), endTime);
 	}

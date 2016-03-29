@@ -45,7 +45,11 @@ public class MessageDataStore implements Runnable {
 	 * @param statisticsReportingEvent StatisticReportingLog to be stored in the queue
 	 */
 	public void enqueue(StatisticsReportingEvent statisticsReportingEvent) {
-		queue.add(statisticsReportingEvent);
+		try {
+			queue.add(statisticsReportingEvent);
+		} catch (Exception e) {
+			log.error("Statistics queue became full. Dropping statistics events.");
+		}
 	}
 
 	/**
