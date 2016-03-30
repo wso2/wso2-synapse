@@ -157,6 +157,7 @@ public class StatisticIdentityGenerator {
             StructuringElement resourceElem = new StructuringElement(name, componentType);
             // There must be an API, which has this resource
             resourceElem.setParentId(holder.getStack().peek().getId());
+            resourceElem.setGroup(holder.getStack().peek().getId());
             holder.getList().add(resourceElem);
             holder.setLastParent(name);
             holder.getStack().push(resourceElem);
