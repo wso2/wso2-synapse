@@ -21,8 +21,11 @@ package org.apache.synapse.transport.http.conn;
 import java.nio.ByteBuffer;
 
 import org.apache.commons.logging.Log;
+import org.apache.http.nio.reactor.IOSession;
 
 class Wire {
+
+    private IOSession session;
 
     private final Log log;
     
@@ -70,7 +73,10 @@ class Wire {
             }
         }
         if (synapseBuffer.length() > 0 && SynapseDebugInfoHolder.getInstance().isDebugEnabled()) {
-            SynapseDebugInfoHolder.getInstance().setWireLog(synapseBuffer.toString());
+            SynapseWireLogHolder logHolder = new SynapseWireLogHolder();
+            logHolder.setWireLog(synapseBuffer.toString());
+            this.session.setAttribute("synapse.wire.log.holder", new SynapseWireLogHolder());
+//            SynapseDebugInfoHolder.getInstance().setWireLog(synapseBuffer.toString());
         }
     }
 
@@ -123,4 +129,7 @@ class Wire {
         }
     }
 
+    public void setSession(IOSession session) {
+        this.session = session;
+    }
 }
