@@ -194,6 +194,7 @@ class LoggingIOSession implements IOSession {
                 int p = b.position();
                 b.limit(p);
                 b.position(p - bytesRead);
+                wirelog.setSession(session);
                 wirelog.input(b);
             }
             return bytesRead;
@@ -209,6 +210,7 @@ class LoggingIOSession implements IOSession {
                 int p = b.position();
                 b.limit(p);
                 b.position(p - byteWritten);
+                wirelog.setSession(session);
                 wirelog.output(b);
             }
             return byteWritten;
