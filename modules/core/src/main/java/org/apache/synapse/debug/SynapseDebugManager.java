@@ -16,6 +16,7 @@
 
 package org.apache.synapse.debug;
 
+import net.minidev.json.JSONStreamAware;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
@@ -41,13 +42,17 @@ import org.apache.synapse.debug.utils.InboundEndpointDebugUtil;
 import org.apache.synapse.debug.utils.ProxyDebugUtil;
 import org.apache.synapse.debug.utils.SequenceDebugUtil;
 import org.apache.synapse.debug.utils.TemplateDebugUtil;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.codehaus.jettison.json.JSONString;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
@@ -58,7 +63,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * debug related information in the mediator level.
  * Relies on SynapseDebugInterface to communicate over TCP channels for commands and events.
  */
-public class SynapseDebugManager {
+public class SynapseDebugManager implements Observer {
     /* to ensure a single mediation flow at a given time */
     private static volatile ReentrantLock mediationFlowLock;
     /* to ensure a synchronization between mediation flow suspension and resumption */
@@ -105,6 +110,8 @@ public class SynapseDebugManager {
             this.synCfg = synCfg;
             this.debugInterface = debugInterface;
             this.synEnv = synEnv;
+            SynapseDebugInfoHolder.getInstance().setDebugEnabled(true);
+            SynapseDebugInfoHolder.getInstance().addObserver(this);
             if (!initialised) {
                 initialised = true;
                 debugTCPListener = new SynapseDebugTCPListener(this, this.debugInterface);
@@ -286,8 +293,11 @@ public class SynapseDebugManager {
         try {
             JSONObject parsed_debug_line = new JSONObject(debug_line);
             String command = "";
+            log.info("//////////////// step 1 - " + debug_line);
             if (parsed_debug_line.has(SynapseDebugCommandConstants.DEBUG_COMMAND)) {
+                log.info("//////////////// step 2 - " + debug_line);
                 command = parsed_debug_line.getString(SynapseDebugCommandConstants.DEBUG_COMMAND);
+                log.info("//////////////// step 3 command - " + command + " line - " + debug_line);
             } else {
                 return;
             }
@@ -312,6 +322,7 @@ public class SynapseDebugManager {
                     }
                 }
             } else if (command.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_GET)) {
+                log.info("//////////////// step 4 - " + debug_line);
                 String propertyOrProperties = parsed_debug_line
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_ARGUMENT);
                 String propertyContext = parsed_debug_line
@@ -320,6 +331,7 @@ public class SynapseDebugManager {
                 if (propertyOrProperties.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY)) {
                     property_arguments = parsed_debug_line
                             .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY);
+                    log.info("//////////////// step 5 prop arg - " + property_arguments.toString() + " line - " + debug_line);
                 }
                 this.acquireMediationFlowPointProperties(propertyOrProperties, propertyContext, property_arguments);
             } else if (command.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_RESUME)) {
@@ -662,12 +674,15 @@ public class SynapseDebugManager {
     public void acquireMediationFlowPointProperties(String propertyOrProperties,
                                                     String propertyContext,
                                                     JSONObject property_arguments) {
-        if (!(this.medFlowState == MediationFlowState.SUSPENDED)) {
+        log.info("//////////////// step 6 prop arg - " + property_arguments + " state " + this.medFlowState);
+        if ((!(this.medFlowState == MediationFlowState.SUSPENDED)) & (propertyContext != null & !propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE))) {
+            log.info("//////////////// step 7 prop arg - " + property_arguments + " state " + this.medFlowState);
             this.advertiseCommandResponse(createDebugCommandResponse(false,
                     SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES).toString());
             return;
         }
         try {
+            log.info("//////////////// step 8 prop arg - " + property_arguments + " state " + this.medFlowState);
             if (propertyOrProperties.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTIES)) {
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_ALL)) {
                     JSONObject data_axis2 = getAxis2Properties();
@@ -771,6 +786,14 @@ public class SynapseDebugManager {
                     json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME), result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
                     debugInterface.getPortListenWriter().flush();
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE)) {
+//                    JSONObject log = new JSONObject();
+//                    log.put("log", SynapseDebugInfoHolder.getInstance().getWireLog().toString());
+                    JSONObject wireLog = new JSONObject();
+                    wireLog.put(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE, SynapseDebugInfoHolder.getInstance().getWireLog().toString());
+                    debugInterface.getPortListenWriter().println(wireLog.toString());
+                    debugInterface.getPortListenWriter().flush();
+                    log.info("++++++++++++++++++++++++++++++++++ wirelog sent - " + wireLog.toString());
                 }
             }
         } catch (JSONException ex) {
@@ -913,4 +936,19 @@ public class SynapseDebugManager {
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }
 
+    @Override
+    public void update(Observable o, Object arg) {
+        if (synEnv.isDebugEnabled()) {
+            JSONObject event = null;
+            try {
+                event = new JSONObject();
+                event.put(SynapseDebugEventConstants.DEBUG_EVENT, SynapseDebugEventConstants.DEBUG_EVENT_WIRE);
+                debugInterface.getPortSendWriter().println(event);
+                debugInterface.getPortSendWriter().flush();
+                log.info("------------------------ wire event Triggered in esb side ");
+            } catch (JSONException ex) {
+                log.error("Failed to create debug event in JSON format", ex);
+            }
+        }
+    }
 }

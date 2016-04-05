@@ -25,6 +25,7 @@ public class SynapseDebugEventConstants {
     public static final String DEBUG_EVENT_BREAKPOINT = "breakpoint";
     public static final String DEBUG_EVENT_SKIP = "skip";
     public static final String DEBUG_EVENT_CONFIGURATION_UPDATED = "configuration updated";
+    public static final String DEBUG_EVENT_WIRE = "wire";
 
 }
 

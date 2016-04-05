@@ -71,7 +71,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         this.accesslog = LogFactory.getLog(LoggingUtils.ACCESS_LOG_ID);
         this.id = "http-outgoing-" + COUNT.incrementAndGet();
         this.original = session;
-        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled()) {
+        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebugEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
         }
     }
@@ -146,7 +146,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
     @Override
     public void bind(final IOSession session) {
         this.original = session;
-        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled()) {
+        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebugEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
         } else {
             super.bind(session);

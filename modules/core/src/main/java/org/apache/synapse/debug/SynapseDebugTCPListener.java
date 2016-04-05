@@ -19,6 +19,7 @@ package org.apache.synapse.debug;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import java.io.IOException;
+import java.net.SocketException;
 
 /**
  * A separate dedicated thread that handles debug commands parsing and processing. Thread spans the
@@ -55,8 +56,12 @@ public class SynapseDebugTCPListener extends Thread {
                 debug_line = debugInterface.getPortListenReader().readLine();
                 if (debug_line != null) {
                     debugManager.processDebugCommand(debug_line);
+                    log.info("********************* - " +debug_line );
                     debug_line = null;
                 }
+            } catch (SocketException ex) {
+                isDebugModeInProgress = false;
+                log.error("Error in Socket Connection " + ex.getMessage(), ex);
             } catch (IOException ex) {
                 log.error("Unable to process debug commands", ex);
             }
