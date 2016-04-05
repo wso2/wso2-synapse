@@ -16,6 +16,7 @@
 
 package org.apache.synapse.debug;
 
+import net.minidev.json.JSONStreamAware;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
@@ -27,6 +28,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
@@ -43,9 +45,11 @@ import org.apache.synapse.debug.utils.InboundEndpointDebugUtil;
 import org.apache.synapse.debug.utils.ProxyDebugUtil;
 import org.apache.synapse.debug.utils.SequenceDebugUtil;
 import org.apache.synapse.debug.utils.TemplateDebugUtil;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.codehaus.jettison.json.JSONString;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +58,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
@@ -64,7 +70,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * debug related information in the mediator level.
  * Relies on SynapseDebugInterface to communicate over TCP channels for commands and events.
  */
-public class SynapseDebugManager {
+public class SynapseDebugManager implements Observer {
     /* to ensure a single mediation flow at a given time */
     private static volatile ReentrantLock mediationFlowLock;
     /* to ensure a synchronization between mediation flow suspension and resumption */
@@ -111,6 +117,8 @@ public class SynapseDebugManager {
             this.synCfg = synCfg;
             this.debugInterface = debugInterface;
             this.synEnv = synEnv;
+            SynapseDebugInfoHolder.getInstance().setDebugEnabled(true);
+            SynapseDebugInfoHolder.getInstance().addObserver(this);
             if (!initialised) {
                 initialised = true;
                 debugTCPListener = new SynapseDebugTCPListener(this, this.debugInterface);
@@ -694,8 +702,9 @@ public class SynapseDebugManager {
         return positionString;
     }
 
-    public void acquireMediationFlowPointProperties(String propertyOrProperties, String propertyContext,
-            JSONObject property_arguments) throws IOException {
+    public void acquireMediationFlowPointProperties(String propertyOrProperties,
+                                                    String propertyContext,
+                                                    JSONObject property_arguments) throws IOException {
         if (!(this.medFlowState == MediationFlowState.SUSPENDED)) {
             this.advertiseCommandResponse(createDebugCommandResponse(false,
                     SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES)
@@ -849,6 +858,13 @@ public class SynapseDebugManager {
                             .put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME),
                                     result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
+                    debugInterface.getPortListenWriter().flush();
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE)) {
+//                    JSONObject log = new JSONObject();
+//                    log.put("log", SynapseDebugInfoHolder.getInstance().getWireLog().toString());
+                    JSONObject wireLog = new JSONObject();
+                    wireLog.put(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE, SynapseDebugInfoHolder.getInstance().getWireLog().toString());
+                    debugInterface.getPortListenWriter().println(wireLog.toString());
                     debugInterface.getPortListenWriter().flush();
                 }
             }
@@ -1102,5 +1118,20 @@ public class SynapseDebugManager {
     private String getAxis2MessagePropertiesKey(org.apache.axis2.context.MessageContext axis2MessageCtx) {
         String axis2MessageCtxKey = axis2MessageCtx.toString();
         return axis2MessageCtxKey;
+    }
+    @Override
+    public void update(Observable o, Object arg) {
+        if (synEnv.isDebugEnabled()) {
+            JSONObject event = null;
+            try {
+                event = new JSONObject();
+                event.put(SynapseDebugEventConstants.DEBUG_EVENT, SynapseDebugEventConstants.DEBUG_EVENT_WIRE);
+                debugInterface.getPortSendWriter().println(event);
+                debugInterface.getPortSendWriter().flush();
+                log.info("------------------------ wire event Triggered in esb side ");
+            } catch (JSONException ex) {
+                log.error("Failed to create debug event in JSON format", ex);
+            }
+        }
     }
 }

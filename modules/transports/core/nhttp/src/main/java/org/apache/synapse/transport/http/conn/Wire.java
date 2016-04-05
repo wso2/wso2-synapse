@@ -33,15 +33,25 @@ class Wire {
     
     private void wire(final String header, final byte[] b, int pos, int off) {
         StringBuilder buffer = new StringBuilder();
+        StringBuilder tmpBuffer = new StringBuilder();
+        StringBuilder synapseBuffer = new StringBuilder();
         for (int i = 0; i < off; i++) {
             int ch = b[pos + i] & 0xFF;
             if (ch == 13) {
                 buffer.append("[\\r]");
             } else if (ch == 10) {
+                    tmpBuffer.setLength(0);
+                    tmpBuffer.append(buffer.toString());
+                    tmpBuffer.insert(0, header);
                     buffer.append("[\\n]\"");
                     buffer.insert(0, "\"");
                     buffer.insert(0, header);
-                    this.log.debug(buffer.toString());
+                    if (isEnabled()) {
+                        this.log.debug(buffer.toString());
+                    }
+//                    this.log.debug(buffer.toString());
+                    synapseBuffer.append(tmpBuffer.toString());
+                    synapseBuffer.append(System.lineSeparator());
                     buffer.setLength(0);
             } else if ((ch < 32) || (ch > 127)) {
                 buffer.append("[0x");
@@ -55,7 +65,12 @@ class Wire {
             buffer.append('\"');
             buffer.insert(0, '\"');
             buffer.insert(0, header);
-            this.log.debug(buffer.toString());
+            if (isEnabled()) {
+                this.log.debug(buffer.toString());
+            }
+        }
+        if (synapseBuffer.length() > 0 && SynapseDebugInfoHolder.getInstance().isDebugEnabled()) {
+            SynapseDebugInfoHolder.getInstance().setWireLog(synapseBuffer.toString());
         }
     }
 

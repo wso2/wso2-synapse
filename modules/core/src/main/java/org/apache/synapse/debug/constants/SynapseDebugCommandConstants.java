@@ -55,6 +55,7 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT = "axis2-client";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT = "transport";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION = "operation";
+    public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE = "wire";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2 = "axis2-properties";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_SYNAPSE = "synapse-properties";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2CLIENT = "axis2Client-properties";
