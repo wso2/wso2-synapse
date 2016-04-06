@@ -44,6 +44,16 @@ public class StatisticsConstants {
 	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";
 
 	/**
+	 * Flow statistic event consuming time.
+	 */
+	public static final String FLOW_STATISTICS_EVENT_CONSUME_TIME = "mediation.flow.statistics.event.consume.time";
+
+	/**
+	 * Flow statistic event consuming time.
+	 */
+	public static final String FLOW_STATISTICS_EVENT_CLEAN_TIME = "mediation.flow.statistics.event.clean.time";
+
+	/**
 	 * Key to message context statistic entry.
 	 */
 	public static final String FLOW_STATISTICS_ID = "mediation.flow.statistics.statistic.id";
@@ -87,6 +97,16 @@ public class StatisticsConstants {
 	 * Flow statistic default queue size.
 	 */
 	public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE = "10000";
+
+	/**
+	 * Flow statistic default event consumer time.
+	 */
+	public static final String FLOW_STATISTICS_DEFAULT_EVENT_CONSUME_INTERVAL = "1000";
+
+	/**
+	 * Flow statistic cleaning Time.
+	 */
+	public static final String FLOW_STATISTICS_DEFAULT_EVENT_CLEAN__INTERVAL = "15000";
 
 	/**
 	 * Modes of closing statistic entry
