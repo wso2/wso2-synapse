@@ -72,6 +72,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				statisticDataUnit.setComponentName(componentName);
 				statisticDataUnit.setComponentType(componentType);
 				statisticDataUnit.setTracingEnabled(isCollectingTracing);
+				statisticDataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
 				if (aspectConfiguration != null) {
 					statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());

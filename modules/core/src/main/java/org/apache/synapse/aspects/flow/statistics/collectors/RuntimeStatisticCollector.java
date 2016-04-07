@@ -21,19 +21,15 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -66,6 +62,8 @@ public abstract class RuntimeStatisticCollector {
 	 */
 	protected static MessageDataStore statisticEventQueue;
 
+	public static long eventExpireTime;
+
 	/**
 	 * Initialize statistics collection when ESB starts.
 	 */
@@ -79,6 +77,9 @@ public abstract class RuntimeStatisticCollector {
 			int queueSize = Integer.parseInt(SynapsePropertiesLoader
 					                                 .getPropertyValue(StatisticsConstants.FLOW_STATISTICS_QUEUE_SIZE,
 					                                                   StatisticsConstants.FLOW_STATISTICS_DEFAULT_QUEUE_SIZE));
+			Long eventConsumerTime = Long.parseLong(SynapsePropertiesLoader.getPropertyValue(
+					StatisticsConstants.FLOW_STATISTICS_EVENT_CONSUME_TIME,
+					StatisticsConstants.FLOW_STATISTICS_DEFAULT_EVENT_CONSUME_INTERVAL));
 
 			isCollectingPayloads = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
 					StatisticsConstants.COLLECT_MESSAGE_PAYLOADS, String.valueOf(false)));
@@ -103,7 +104,12 @@ public abstract class RuntimeStatisticCollector {
 					return t;
 				}
 			});
-			executor.scheduleAtFixedRate(statisticEventQueue, 0, 1000, TimeUnit.MILLISECONDS);
+			executor.scheduleAtFixedRate(statisticEventQueue, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
+			eventExpireTime =
+					SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
+					eventConsumerTime;
+			log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
+			StatisticEventProcessor.initializeCleaningThread();
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is not enabled in \'synapse.properties\' file.");
@@ -155,7 +161,7 @@ public abstract class RuntimeStatisticCollector {
 		Boolean isStatCollected =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
-		return (statID != null && isStatCollected != null && isStatCollected );
+		return (statID != null && isStatCollected != null && isStatCollected);
 	}
 
 	/**
