@@ -46,12 +46,12 @@ public class StatisticsConstants {
 	/**
 	 * Flow statistic event consuming time.
 	 */
-	public static final String FLOW_STATISTICS_EVENT_CONSUME_TIME = "mediation.flow.statistics.event.consume.time";
+	public static final String FLOW_STATISTICS_EVENT_CONSUME_TIME = "mediation.flow.statistics.event.consume.interval";
 
 	/**
 	 * Flow statistic event consuming time.
 	 */
-	public static final String FLOW_STATISTICS_EVENT_CLEAN_TIME = "mediation.flow.statistics.event.clean.time";
+	public static final String FLOW_STATISTICS_EVENT_CLEAN_TIME = "mediation.flow.statistics.event.clean.interval";
 
 	/**
 	 * Key to message context statistic entry.
@@ -106,7 +106,7 @@ public class StatisticsConstants {
 	/**
 	 * Flow statistic cleaning Time.
 	 */
-	public static final String FLOW_STATISTICS_DEFAULT_EVENT_CLEAN__INTERVAL = "15000";
+	public static final String FLOW_STATISTICS_DEFAULT_EVENT_CLEAN_INTERVAL = "15000";
 
 	/**
 	 * Modes of closing statistic entry

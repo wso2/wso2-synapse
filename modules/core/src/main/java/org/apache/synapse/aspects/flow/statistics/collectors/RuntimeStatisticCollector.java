@@ -105,7 +105,10 @@ public abstract class RuntimeStatisticCollector {
 				}
 			});
 			executor.scheduleAtFixedRate(statisticEventQueue, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
-			eventExpireTime = SynapseConfigUtils.getGlobalTimeoutInterval() + eventConsumerTime;
+			eventExpireTime =
+					SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
+					eventConsumerTime;
+			log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
 			StatisticEventProcessor.initializeCleaningThread();
 		} else {
 			if (log.isDebugEnabled()) {

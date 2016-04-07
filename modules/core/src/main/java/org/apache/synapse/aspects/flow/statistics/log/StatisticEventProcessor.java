@@ -20,7 +20,6 @@ package org.apache.synapse.aspects.flow.statistics.log;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
@@ -59,7 +58,7 @@ public class StatisticEventProcessor {
 		});
 		Long eventCleanTime = Long.parseLong(SynapsePropertiesLoader.getPropertyValue(
 				StatisticsConstants.FLOW_STATISTICS_EVENT_CLEAN_TIME,
-				StatisticsConstants.FLOW_STATISTICS_DEFAULT_EVENT_CLEAN__INTERVAL));
+				StatisticsConstants.FLOW_STATISTICS_DEFAULT_EVENT_CLEAN_INTERVAL));
 		StatisticCleaningThread statisticCleaningThread = new StatisticCleaningThread(runtimeStatistics);
 		executor.scheduleAtFixedRate(statisticCleaningThread, 0, eventCleanTime, TimeUnit.MILLISECONDS);
 	}
