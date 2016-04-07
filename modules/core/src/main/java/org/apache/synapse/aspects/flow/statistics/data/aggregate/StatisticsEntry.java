@@ -107,8 +107,8 @@ public class StatisticsEntry {
 	public StatisticsEntry(StatisticDataUnit statisticDataUnit) {
 		lastModifiedTime = System.currentTimeMillis();
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
+		synapseEnvironment = statisticDataUnit.getSynapseEnvironment();
 		messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
-		lastModifiedTime = System.currentTimeMillis();
 		if (log.isDebugEnabled()) {
 			log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
 		}

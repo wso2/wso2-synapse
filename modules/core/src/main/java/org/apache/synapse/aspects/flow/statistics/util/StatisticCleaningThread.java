@@ -23,6 +23,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,18 +39,26 @@ public class StatisticCleaningThread implements Runnable {
 	}
 
 	@Override public void run() {
+		List<String> toRemove = new ArrayList<>();
 		for (Map.Entry<String, StatisticsEntry> entry : runtimeStatisticsMap.entrySet()) {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics cleaning started.");
 			}
 			StatisticsEntry statisticsEntry = entry.getValue();
-			PublishingFlow publishingFlow = statisticsEntry.getMessageFlowLogs();
 			if (statisticsEntry.isEventExpired()) {
-				runtimeStatisticsMap.remove(entry.getKey());
-				statisticsEntry.getSynapseEnvironment().getCompletedStatisticStore()
-				               .putCompletedStatisticEntry(publishingFlow);
-				log.error("Cleaned Statistics for component: " + publishingFlow.getEvent(0).getEntryPoint());
+				toRemove.add(entry.getKey());
 			}
+		}
+		for (String removeElement : toRemove) {
+			StatisticsEntry statisticsEntry = runtimeStatisticsMap.remove(removeElement);
+			if (statisticsEntry == null) {
+				continue;     //Statistics was cleared by some other event
+			}
+			PublishingFlow publishingFlow = statisticsEntry.getMessageFlowLogs();
+			statisticsEntry.getSynapseEnvironment().getCompletedStatisticStore()
+			               .putCompletedStatisticEntry(publishingFlow);
+			log.warn("Cleaned Statistics for component: " + publishingFlow.getEvent(0).getEntryPoint() + " | Runtime " +
+			         "statistic collection size : " + runtimeStatisticsMap.size());
 		}
 	}
 }
