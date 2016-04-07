@@ -109,6 +109,7 @@ public class StatisticsEntry {
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
 		synapseEnvironment = statisticDataUnit.getSynapseEnvironment();
 		messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
+		openLogs.add(statisticDataUnit.getCurrentIndex());
 		if (log.isDebugEnabled()) {
 			log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
 		}
@@ -215,7 +216,7 @@ public class StatisticsEntry {
 			}
 			openLogs.remove(currentIndex);
 		}
-		return (openLogs.size() == 1 && openLogs.contains(0)) || openLogs.isEmpty();
+		return openLogs.isEmpty();
 	}
 
 	/**
