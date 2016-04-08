@@ -979,7 +979,7 @@
       <qfj.version>1.5.3</qfj.version>
       <org.bouncycastle.version>1.52</org.bouncycastle.version>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
-      <httpcore-nio.wso2.version>4.3.3-wso2v3-SNAPSHOT</httpcore-nio.wso2.version>
+      <httpcore-nio.wso2.version>4.3.3-wso2v2</httpcore-nio.wso2.version>
       <hc.httpclient.version>4.3.6</hc.httpclient.version>
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
