@@ -137,7 +137,7 @@
             <artifactId>httpcore</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
+            <groupId>org.wso2.httpcomponents</groupId>
             <artifactId>httpcore-nio</artifactId>
         </dependency>
         <dependency>
