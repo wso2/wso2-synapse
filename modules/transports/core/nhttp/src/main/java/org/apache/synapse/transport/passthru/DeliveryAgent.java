@@ -241,6 +241,7 @@ public class DeliveryAgent {
             log.debug("Submitting new request to the connection: " + conn);
         }
 
+        conn.getContext().setAttribute("synapse.wire.log.holder", msgContext.getProperty("synapse.wire.log.holder"));
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
 

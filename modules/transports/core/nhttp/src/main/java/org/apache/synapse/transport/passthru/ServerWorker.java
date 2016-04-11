@@ -113,6 +113,7 @@ public class ServerWorker implements Runnable {
                 PassThroughConstants.PASS_THROUGH_SOURCE_CONFIGURATION, sourceConfiguration);
         msgContext.setProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION,
                 request.getConnection());
+        msgContext.setProperty("synapse.wire.log.holder", request.getConnection().getContext().getAttribute("synapse.wire.log.holder"));
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
                 System.currentTimeMillis());
     }

@@ -73,10 +73,30 @@ class Wire {
             }
         }
         if (synapseBuffer.length() > 0 && SynapseDebugInfoHolder.getInstance().isDebugEnabled()) {
-            SynapseWireLogHolder logHolder = new SynapseWireLogHolder();
-            logHolder.setWireLog(synapseBuffer.toString());
-            this.session.setAttribute("synapse.wire.log.holder", new SynapseWireLogHolder());
-//            SynapseDebugInfoHolder.getInstance().setWireLog(synapseBuffer.toString());
+            //an IOsession get create for new request when there is already a request getting debugged
+            SynapseWireLogHolder logHolder;
+            Object holder = this.session.getAttribute("synapse.wire.log.holder");
+            if (holder == null) {
+                logHolder = new SynapseWireLogHolder();
+            } else {
+                logHolder = (SynapseWireLogHolder) holder;
+            }
+            if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.INIT) || logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.DONE)) { //this means this is initial request
+                logHolder.setPhase(SynapseWireLogHolder.PHASE.REQUEST_RECEIVED);
+                logHolder.setRequestWireLog(synapseBuffer.toString());
+            } else if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.REQUEST_READY)) { //this means this is a back end call
+                logHolder.insertBackEndWireLog(SynapseWireLogHolder.RequestType.REQUEST, synapseBuffer.toString());
+                logHolder.setPhase(SynapseWireLogHolder.PHASE.REQUEST_SENT);
+            } else if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.REQUEST_SENT)) { //this means this is a response back from back end
+                logHolder.insertBackEndWireLog(SynapseWireLogHolder.RequestType.RESPONSE, synapseBuffer.toString());
+                logHolder.setPhase(SynapseWireLogHolder.PHASE.RESPONSE_RECEIVED);
+            } else if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.RESPONSE_READY)) { //this means this is the final response to client
+                SynapseDebugInfoHolder.getInstance().setWireLog(synapseBuffer.toString());
+                logHolder.setResponseWireLog(synapseBuffer.toString()); //set this for consistency, otherwise setting to debug info holder will suffice
+                logHolder.setPhase(SynapseWireLogHolder.PHASE.DONE);
+                logHolder = null;
+            }
+            this.session.setAttribute("synapse.wire.log.holder", logHolder);
         }
     }
 
