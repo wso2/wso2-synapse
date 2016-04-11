@@ -20,7 +20,9 @@ package org.apache.synapse.aspects.flow.statistics.data.aggregate;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
@@ -28,10 +30,13 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.aspects.flow.statistics.util.TracingDataCollectionHelper;
+import org.apache.synapse.core.SynapseEnvironment;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -65,6 +70,24 @@ public class StatisticsEntry {
 	private int expectedFaults = 0;
 
 	/**
+	 * Last modified time for this Entry
+	 */
+	private long lastModifiedTime;
+
+	/**
+	 * SynapseEnvironment for this Entry
+	 */
+	private SynapseEnvironment synapseEnvironment;
+
+	/**
+	 * Number of asynchronous flow remaining to be executed. Message flow cannot be completed without having this as
+	 * zero.
+	 */
+	private int expectedAsynchronousCalls = 0;
+
+	private Map<Integer, Integer> asynchronousCallMap = new HashMap<>();
+
+	/**
 	 * Whether this message flow has encountered a fault.
 	 */
 	private boolean hasFault;
@@ -82,25 +105,13 @@ public class StatisticsEntry {
 	 * @param statisticDataUnit statistic data unit with raw data
 	 */
 	public StatisticsEntry(StatisticDataUnit statisticDataUnit) {
-
-		if (statisticDataUnit.isIndividualStatisticCollected()) {
-			StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
-			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
-			openLogs.add(statisticDataUnit.getCurrentIndex());
-			if (log.isDebugEnabled()) {
-				log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
-			}
-		} else {
-			//create imaginary root
-			StatisticsLog statisticsLog =
-					new StatisticsLog(ComponentType.IMAGINARY, StatisticsConstants.IMAGINARY_COMPONENT_ID,
-					                  StatisticsConstants.DEFAULT_PARENT_INDEX);
-			if (log.isDebugEnabled()) {
-				log.debug("Created imaginary root for [ElementId|" + statisticDataUnit.getComponentName());
-			}
-			messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
-			openLogs.add(statisticDataUnit.getCurrentIndex());
-			createLog(statisticDataUnit);
+		lastModifiedTime = System.currentTimeMillis();
+		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
+		synapseEnvironment = statisticDataUnit.getSynapseEnvironment();
+		messageFlowLogs.add(statisticDataUnit.getCurrentIndex(), statisticsLog);
+		openLogs.add(statisticDataUnit.getCurrentIndex());
+		if (log.isDebugEnabled()) {
+			log.debug("Created statistic Entry for [ElementId|" + statisticDataUnit.getComponentName());
 		}
 	}
 
@@ -109,16 +120,28 @@ public class StatisticsEntry {
 	 *
 	 * @param statisticDataUnit statistic data unit with raw data
 	 */
-	public synchronized void createLog(StatisticDataUnit statisticDataUnit) {
-
-		if ((openLogs.contains(ROOT_LEVEL) && openLogs.size() == 1)
-			&& (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY)
-			&& (!statisticDataUnit.isIndividualStatisticCollected()) ){
-					return; // Because if imaginary root is there it means that this is not whole collection
+	public void createLog(StatisticDataUnit statisticDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
+		if ((openLogs.contains(ROOT_LEVEL) && openLogs.size() == 1) &&
+		    (messageFlowLogs.get(0).getComponentType() == ComponentType.IMAGINARY) &&
+		    (!statisticDataUnit.isIndividualStatisticCollected())) {
+			return; // Because if imaginary root is there it means that this is not whole collection
 		}
 
 		if (hasFault) {
 			hasFault = false;
+		}
+
+		if (expectedAsynchronousCalls > 0) {
+			if (asynchronousCallMap.get(statisticDataUnit.getParentIndex()) != null) {
+				expectedAsynchronousCalls--;
+				Integer flowCount = asynchronousCallMap.get(statisticDataUnit.getParentIndex());
+				if (flowCount == 1) {
+					asynchronousCallMap.remove(statisticDataUnit.getParentIndex());
+				} else {
+					asynchronousCallMap.put(statisticDataUnit.getParentIndex(), flowCount - 1);
+				}
+			}
 		}
 
 		StatisticsLog statisticsLog = new StatisticsLog(statisticDataUnit);
@@ -161,7 +184,8 @@ public class StatisticsEntry {
 		openLogs.add(statisticDataUnit.getCurrentIndex());
 	}
 
-	public synchronized void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
+	public void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
 		hasFault = true;
 		addFaultsToParents(basicStatisticDataUnit.getCurrentIndex());
 	}
@@ -173,7 +197,8 @@ public class StatisticsEntry {
 	 * @param statisticDataUnit statistic data unit with raw data
 	 * @return true if there are no open message logs in openLogs List
 	 */
-	public synchronized boolean closeLog(StatisticDataUnit statisticDataUnit) {
+	public boolean closeLog(StatisticDataUnit statisticDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
 		if (statisticDataUnit.getCurrentIndex() == 0) {
 			return true;
 		} else {
@@ -202,7 +227,8 @@ public class StatisticsEntry {
 	 * @param closeForcefully        should we finish the statistics forcefully without considering anything
 	 * @return true if message flow correctly ended
 	 */
-	public synchronized boolean endAll(BasicStatisticDataUnit basicStatisticDataUnit, boolean closeForcefully) {
+	public boolean endAll(BasicStatisticDataUnit basicStatisticDataUnit, boolean closeForcefully) {
+		lastModifiedTime = System.currentTimeMillis();
 		if (closeForcefully) {
 			expectedFaults -= 1;
 		}
@@ -212,8 +238,7 @@ public class StatisticsEntry {
 		} else {
 			endTime = basicStatisticDataUnit.getTime();
 		}
-		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedFaults <= 0) ||
-		    (closeForcefully && (expectedFaults <= 0))) {
+		if ((callbacks.isEmpty() && (openLogs.size() <= 1)) && (expectedAsynchronousCalls <= 0)) {
 			if (openLogs.isEmpty()) {
 				messageFlowLogs.get(ROOT_LEVEL).setEndTime(endTime);
 			} else {
@@ -230,11 +255,28 @@ public class StatisticsEntry {
 	}
 
 	/**
+	 * Add a asynchronous executions flow.
+	 *
+	 * @param basicStatisticDataUnit raw statistic data unit carrying callback data
+	 */
+	public void addAsynchronousFlow(BasicStatisticDataUnit basicStatisticDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
+		expectedAsynchronousCalls++;
+		Integer count = asynchronousCallMap.get(basicStatisticDataUnit.getCurrentIndex());
+		if (count == null) {
+			asynchronousCallMap.put(basicStatisticDataUnit.getCurrentIndex(), 1);
+		} else {
+			asynchronousCallMap.put(basicStatisticDataUnit.getCurrentIndex(), count + 1);
+		}
+	}
+
+	/**
 	 * Add a callback reference to this message flow.
 	 *
 	 * @param callbackDataUnit raw statistic data unit carrying callback data
 	 */
 	public void addCallback(CallbackDataUnit callbackDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
 		callbacks.add(callbackDataUnit.getCallbackId());
 	}
 
@@ -244,6 +286,7 @@ public class StatisticsEntry {
 	 * @param callbackDataUnit raw statistic data unit carrying callback data
 	 */
 	public void removeCallback(CallbackDataUnit callbackDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
 		if (callbacks.remove(callbackDataUnit.getCallbackId())) {
 			if (log.isDebugEnabled()) {
 				log.debug("Callback removed for the received Id:" + callbackDataUnit.getCallbackId());
@@ -260,7 +303,8 @@ public class StatisticsEntry {
 	 *
 	 * @param callbackDataUnit raw statistic data unit carrying callback data.
 	 */
-	public synchronized void updateCallbackReceived(CallbackDataUnit callbackDataUnit) {
+	public void updateCallbackReceived(CallbackDataUnit callbackDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
 		if (callbacks.contains(callbackDataUnit.getCallbackId())) {
 			if (!callbackDataUnit.isOutOnlyFlow()) {
 				updateParentLogs(callbackDataUnit.getCurrentIndex(), callbackDataUnit.getTime());
@@ -278,11 +322,11 @@ public class StatisticsEntry {
 	 * @param basicStatisticDataUnit raw statistic data unit
 	 */
 	public void openFlowContinuableMediators(BasicStatisticDataUnit basicStatisticDataUnit) {
+		lastModifiedTime = System.currentTimeMillis();
 		StatisticsLog statisticsLog = messageFlowLogs.get(basicStatisticDataUnit.getCurrentIndex());
 		while (statisticsLog.getCurrentIndex() > 0) {
 			if (statisticsLog.isFlowContinuable()) {
 				statisticsLog.incrementOpenTimes();
-				openLogs.add(statisticsLog.getCurrentIndex()); //We will not open continuation logs as it might lead
 			}
 			statisticsLog = messageFlowLogs.get(statisticsLog.getParentIndex());
 		}
@@ -294,7 +338,33 @@ public class StatisticsEntry {
 	 * @return Message flow logs of the message flow
 	 */
 	public PublishingFlow getMessageFlowLogs() {
+		lastModifiedTime = System.currentTimeMillis();
 		return TracingDataCollectionHelper.createPublishingFlow(this.messageFlowLogs);
+	}
+
+	/**
+	 * Is this event is expired as this has no callback remaining and global timeout is reached
+	 *
+	 * @return true if event is expired.
+	 */
+	public boolean isEventExpired() {
+		if (callbacks.isEmpty() &&
+		    ((System.currentTimeMillis() - lastModifiedTime) > RuntimeStatisticCollector.eventExpireTime)) {
+			for (Integer index : openLogs) {
+				messageFlowLogs.get(index).setEndTime(System.currentTimeMillis());
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns synapseEnvironment for this statistics entry.
+	 *
+	 * @return synapse environment.
+	 */
+	public SynapseEnvironment getSynapseEnvironment() {
+		return synapseEnvironment;
 	}
 
 	/**
@@ -340,7 +410,6 @@ public class StatisticsEntry {
 				updatingLog.setEndTime(endTime);
 				closedIndex = updatingLog.getParentIndex();
 			} while (closedIndex > StatisticsConstants.DEFAULT_PARENT_INDEX);
-
 			if (log.isDebugEnabled()) {
 				log.debug("Statistic Log updating finished.");
 			}
@@ -362,7 +431,6 @@ public class StatisticsEntry {
 			log.debug("Closed statistic log of [ElementId" + currentLog.getComponentName());
 		}
 		currentLog.setEndTime(endTime);
-		// TODO: add after payload
 		currentLog.setAfterPayload(payload);
 		updateParentLogs(currentLog.getParentIndex(), endTime);
 	}

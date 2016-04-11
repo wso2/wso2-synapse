@@ -363,6 +363,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
+        OpenEventCollector.reportFlowAsynchronousEvent(synCtx);
         synCtx.setEnvironment(this);
         executorService.execute(new MediatorWorker(seq, synCtx));
     }

@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class PublishingEvent {
@@ -54,8 +55,8 @@ public class PublishingEvent {
 		this.endTime = statisticsLog.getEndTime();
 		this.duration = this.endTime - this.startTime;
 
-		this.contextPropertyMap = statisticsLog.getContextPropertyMap();
-		this.transportPropertyMap = statisticsLog.getTransportPropertyMap();
+		this.contextPropertyMap = extractProperties(statisticsLog.getContextPropertyMap());
+		this.transportPropertyMap = extractProperties(statisticsLog.getTransportPropertyMap());
 
 		if (statisticsLog.getChildren().size() > 0) {
 			this.children = new Integer[statisticsLog.getChildren().size()];
@@ -192,5 +193,38 @@ public class PublishingEvent {
 	public String toString() {
 		return "Component Type " + componentType + " , Component Name " +
 		       componentName;
+	}
+
+	/**
+	 * Need to convert complex objects in properties to string, before converting to JSON
+	 */
+	private Map<String, Object> extractProperties(Map<String, Object> originalMap) {
+		Map<String, Object> copy = new HashMap<String, Object>();
+
+		if (originalMap == null) {
+			return null;
+		}
+
+		for (Map.Entry<String, Object> anEntry : originalMap.entrySet()){
+			Object entryValue = anEntry.getValue();
+
+			// Directly set if it's a known serializable type
+			if (entryValue instanceof String
+			    || entryValue instanceof Boolean
+			    || entryValue instanceof Integer
+			    || entryValue instanceof Double
+			    || entryValue instanceof Character) {
+				copy.put(anEntry.getKey(), entryValue);
+			} else {
+				// Else, try to serialize
+				try {
+					copy.put(anEntry.getKey(), anEntry.getValue().toString());
+				} catch (Exception ignore) {
+					copy.put(anEntry.getKey(), "Value cannot be serialized");
+				}
+			}
+
+		}
+		return copy;
 	}
 }

@@ -23,7 +23,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -70,8 +72,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				statisticDataUnit.setComponentName(componentName);
 				statisticDataUnit.setComponentType(componentType);
 				statisticDataUnit.setTracingEnabled(isCollectingTracing);
+				statisticDataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
-				if(aspectConfiguration != null) {
+				if (aspectConfiguration != null) {
 					statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
 					statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
 				}
@@ -202,6 +205,21 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		}
 		return null;
 
+	}
+
+	/**
+	 * Enqueue StatisticOpenEvent for asynchronous invocation.
+	 *
+	 * @param messageContext synapse message context.
+	 */
+	public static void reportFlowAsynchronousEvent(MessageContext messageContext) {
+		if (shouldReportStatistic(messageContext)) {
+			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
+			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
+			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
+			statisticEventQueue.enqueue(asynchronousExecutionEvent);
+		}
 	}
 
 	private static void reportMediatorStatistics(MessageContext messageContext, String componentName,

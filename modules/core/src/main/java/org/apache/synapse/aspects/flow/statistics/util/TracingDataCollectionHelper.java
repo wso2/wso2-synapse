@@ -26,6 +26,7 @@ import org.apache.synapse.aspects.flow.statistics.publishing.PublishingEvent;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayload;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingPayloadEvent;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import java.util.HashMap;
@@ -48,7 +49,12 @@ public class TracingDataCollectionHelper {
 	public static String collectPayload(MessageContext messageContext) {
 		String payload = null;
 		try {
-			payload = messageContext.getEnvelope().toString();
+			org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+			if (JsonUtil.hasAJsonPayload(a2mc)) {
+				payload = JsonUtil.jsonPayloadToString(a2mc);
+			} else {
+				payload = messageContext.getEnvelope().toString();
+			}
 		} catch (Exception e) {
 			// SOAP envelop is not created yet
 			payload = "NONE";
