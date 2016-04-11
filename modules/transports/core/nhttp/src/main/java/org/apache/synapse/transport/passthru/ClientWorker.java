@@ -174,6 +174,7 @@ public class ClientWorker implements Runnable {
 
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, response.getPipe());
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_RESPONSE, response);
+        responseMsgCtx.setProperty("synapse.wire.log.holder", response.getConnection().getContext().getAttribute("synapse.wire.log.holder"));
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION,
                 response.getConnection());
     }
