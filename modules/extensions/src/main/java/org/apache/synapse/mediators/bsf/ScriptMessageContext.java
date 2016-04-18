@@ -353,19 +353,7 @@ public class ScriptMessageContext implements MessageContext {
 
     public void setProperty(String key, Object value, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
-            if (value instanceof XMLObject) {
-                OMElement omElement = null;
-                try {
-                    omElement = xmlHelper.toOMElement(value);
-                } catch (ScriptException e) {
-                    mc.setProperty(key, value);
-                }
-                if (omElement != null) {
-                    mc.setProperty(key, omElement);
-                }
-            } else {
-                mc.setProperty(key, value);
-            }
+            setProperty(key, value);
         } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
             //Setting property into the  Axis2 Message Context
             Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
