@@ -31,6 +31,7 @@ import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
+import org.apache.axis2.context.OperationContext;
 import org.apache.bsf.xml.XMLHelper;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
@@ -49,6 +50,9 @@ import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Wrapper;
 import org.mozilla.javascript.xml.XMLObject;
+import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.http.protocol.HTTP;
+import java.util.*;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -344,6 +348,82 @@ public class ScriptMessageContext implements MessageContext {
             }
         } else {
             mc.setProperty(key, value);
+        }
+    }
+
+    public void setProperty(String key, Object value, String scope) {
+        if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
+            setProperty(key, value);
+        } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
+            //Setting property into the  Axis2 Message Context
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            axis2MessageCtx.setProperty(key, value);
+            handleSpecialProperties(key, value, axis2MessageCtx);
+
+        } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {
+            //Setting Transport Headers
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+            if (headers != null && headers instanceof Map) {
+                Map headersMap = (Map) headers;
+                headersMap.put(key, value);
+            }
+            if (headers == null) {
+                Map headersMap = new HashMap();
+                headersMap.put(key, value);
+                axis2MessageCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+            }
+        } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            axis2smc.getAxis2MessageContext().getOperationContext().setProperty(key, value);
+        }
+    }
+
+    public void removeProperty(String key, String scope) {
+        if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
+            Set pros = mc.getPropertyKeySet();
+            if (pros != null) {
+                pros.remove(key);
+            }
+        } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
+            //Removing property from the Axis2 Message Context
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            axis2MessageCtx.removeProperty(key);
+
+        } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {
+            // Removing transport headers
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            if (headers != null && headers instanceof Map) {
+                Map headersMap = (Map) headers;
+                headersMap.remove(key);
+            }
+        } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
+            // Removing operation scope headers
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            OperationContext axis2oc = axis2MessageCtx.getOperationContext();
+            axis2oc.removeProperty(key);
+        }
+
+    }
+
+    private void handleSpecialProperties(String key, Object value,
+            org.apache.axis2.context.MessageContext messageContext) {
+        if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(key)) {
+            messageContext.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, value);
+            Object o = messageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            Map _headers = (Map) o;
+            if (_headers != null) {
+                _headers.remove(HTTP.CONTENT_TYPE);
+                _headers.put(HTTP.CONTENT_TYPE, value);
+            }
         }
     }
 
