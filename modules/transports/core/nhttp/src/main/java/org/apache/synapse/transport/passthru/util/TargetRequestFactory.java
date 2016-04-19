@@ -70,11 +70,26 @@ public class TargetRequestFactory {
             TargetRequest request = new TargetRequest(configuration, route, url, httpMethod,
                     noEntityBody == null || !noEntityBody);
 
+            //this code block is needed to replace the host header in service chaining with REQUEST_HOST_HEADER
+            //adding host header since it is not available in response message.
+            //otherwise Host header will not replaced after first call
+            if (msgContext.getProperty(NhttpConstants.REQUEST_HOST_HEADER) != null) {
+                Object headers = msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+                if(headers != null) {
+                    Map headersMap = (Map) headers;
+                    if (!headersMap.containsKey(HTTPConstants.HEADER_HOST)) {
+                        headersMap.put(HTTPConstants.HEADER_HOST
+                                , msgContext.getProperty(NhttpConstants.REQUEST_HOST_HEADER));
+                    }
+                }
+            }
+
             // headers
             PassThroughTransportUtils.removeUnwantedHeaders(msgContext, configuration);
 
 
             Object o = msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+
             if (o != null && o instanceof Map) {
                 Map headers = (Map) o;
                 for (Object entryObj : headers.entrySet()) {
