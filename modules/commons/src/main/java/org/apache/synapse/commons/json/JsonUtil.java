@@ -465,7 +465,7 @@ public final class JsonUtil {
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that can build the XML tree for contained JSON payload on demand.
      */
     public static OMElement newJsonPayload(MessageContext messageContext, InputStream inputStream,
-                                           boolean removeChildren, boolean addAsNewFirstChild) {
+                                           boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault {
         if (messageContext == null) {
             logger.error("#newJsonPayload. Could not save JSON stream. Message context is null.");
             return null;
@@ -479,8 +479,12 @@ public final class JsonUtil {
             try {
                 // check for empty/all-whitespace streams
                 int c = json.read();
+                boolean isEmptyPayload = true;
                 boolean valid = false;
                 while (c != -1 && c != '{' && c != '[') {
+                    if (c != 32) {
+                        isEmptyPayload = false;
+                    }
                     c = json.read();
                 }
                 if (c != -1) {
@@ -494,10 +498,21 @@ public final class JsonUtil {
                     isObject = false;
                 }
                 json.reset();
+
                 if (!valid) {
-                    logger.error("#newJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: "
-                            + messageContext.getMessageID());
-                    return null;
+                    if (isEmptyPayload) {
+                        //This is a empty payload so return null without doing further processing.
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
+                        }
+                        logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
+                        return null;
+                    }else {
+                        logger.error(
+                                "#newJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
+                                messageContext.getMessageID());
+                        throw new AxisFault("Payload is not a JSON string.");
+                    }
                 }
             } catch (IOException e) {
                 logger.error("#newJsonPayload. Could not determine availability of the JSON input stream. MessageID: "
@@ -566,7 +581,7 @@ public final class JsonUtil {
      * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
      */
     public static OMElement newJsonPayload(MessageContext messageContext, String jsonString,
-                                           boolean removeChildren, boolean addAsNewFirstChild) {
+                                           boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault{
         if (jsonString == null || jsonString.isEmpty()) {
             jsonString = "{}";
         }
@@ -588,7 +603,7 @@ public final class JsonUtil {
      * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
      */
     public static OMElement newJsonPayload(MessageContext messageContext, byte[] json, int offset,
-                                           int length, boolean removeChildren, boolean addAsNewFirstChild) {
+                                           int length, boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault{
         InputStream is;
         if (json == null || json.length < 2) {
             json = new byte[]{'{', '}'};

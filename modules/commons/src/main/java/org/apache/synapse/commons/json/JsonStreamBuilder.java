@@ -49,18 +49,6 @@ public final class JsonStreamBuilder implements Builder {
                     logger.debug("#processDocument. Built JSON payload from JSON stream. MessageID: " + messageContext.getMessageID());
                 }
                 return element;
-            } else {
-                /*
-                * This method required to introduce due the GET request failure with query parameter and content-type=
-                * application/json. Because of the logic implemented with '=' sign below, it expects a valid JSON
-                * string as the query parameter value (string after '=' sign) for GET requests with application/json
-                * content type. Therefore it fails for requests like
-                * https://localhost:8243/services/customer?format=xml and throws axis fault. With this fix, HTTP
-                * method is checked and avoid throwing axis2 fault for GET requests.
-                 */
-                if (isValidPayloadRequired(messageContext)) {
-                    throw new AxisFault("No JSON payload provided.");
-                }
             }
         } else {
             EndpointReference endpointReference = messageContext.getTo();

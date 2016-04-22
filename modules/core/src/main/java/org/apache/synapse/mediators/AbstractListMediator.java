@@ -98,7 +98,6 @@ public abstract class AbstractListMediator extends AbstractMediator
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
-
         return returnVal;
     }
 

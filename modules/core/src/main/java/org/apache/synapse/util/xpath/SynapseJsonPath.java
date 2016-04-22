@@ -84,7 +84,12 @@ public class SynapseJsonPath extends SynapsePath {
                     // Message Already built.
                     stream = JsonUtil.toJsonStream(amc.getEnvelope().getBody().getFirstElement());
                 }
-                return stringValueOf(stream);
+                if(stream != null) {
+                    return stringValueOf(stream);
+                }else{
+                    log.warn("Json Payload is empty.");
+                    return "";
+                }
             } catch (IOException e) {
                 handleException("Could not find JSON Stream in PassThrough Pipe during JSON path evaluation.", e);
             }
