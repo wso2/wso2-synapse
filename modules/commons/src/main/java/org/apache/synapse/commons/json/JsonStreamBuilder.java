@@ -81,19 +81,4 @@ public final class JsonStreamBuilder implements Builder {
         }
         return envelope;
     }
-
-    /**
-     * Check whether the request HTTP method is required valid payload
-     *
-     * @param msgCtx Message Context of incoming request
-     * @return true if payload required, false otherwise
-     */
-    private boolean isValidPayloadRequired(MessageContext msgCtx) {
-        boolean isRequired = true;
-        if (HTTPConstants.HEADER_GET.equals(msgCtx.getProperty(HTTPConstants.HTTP_METHOD)) || HTTPConstants
-                .HEADER_DELETE.equals(msgCtx.getProperty(HTTPConstants.HTTP_METHOD))) {
-            isRequired = false;
-        }
-        return isRequired;
-    }
 }
