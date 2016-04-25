@@ -146,7 +146,8 @@ public class TestMessageContextBuilder {
             //synCtx = new Axis2MessageContext(null, testConfig, synEnv);
             SOAPEnvelope envelope = OMAbstractFactory.getSOAP11Factory().getDefaultEnvelope();
             synCtx.setEnvelope(envelope);
-            JsonUtil.newJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), contentStringJson, true, true);
+            JsonUtil.getNewJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext(), contentStringJson, true,
+                                       true);
             return synCtx;
         }
         

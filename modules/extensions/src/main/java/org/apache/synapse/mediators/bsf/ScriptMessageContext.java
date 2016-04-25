@@ -170,7 +170,7 @@ public class ScriptMessageContext implements MessageContext {
             jsonString = serializeJSON(jsonPayload);
         }
         try {
-            JsonUtil.newJsonPayload(messageContext, jsonString, true, true);
+            JsonUtil.getNewJsonPayload(messageContext, jsonString, true, true);
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }
@@ -711,7 +711,7 @@ public class ScriptMessageContext implements MessageContext {
         }
         // save this JSON object as the new payload.
         try {
-            JsonUtil.newJsonPayload(messageContext, json, 0, json.length, true, true);
+            JsonUtil.getNewJsonPayload(messageContext, json, 0, json.length, true, true);
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }

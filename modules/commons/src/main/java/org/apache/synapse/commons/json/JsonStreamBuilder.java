@@ -26,7 +26,6 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.builder.Builder;
 import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.util.URIEncoderDecoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,7 +42,7 @@ public final class JsonStreamBuilder implements Builder {
         SOAPEnvelope envelope = factory.getDefaultEnvelope();
 
         if (inputStream != null) {
-            OMElement element = JsonUtil.newJsonPayload(messageContext, inputStream, false, false);
+            OMElement element = JsonUtil.getNewJsonPayload(messageContext, inputStream, false, false);
             if (element != null) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("#processDocument. Built JSON payload from JSON stream. MessageID: " + messageContext.getMessageID());

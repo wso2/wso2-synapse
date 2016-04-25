@@ -170,7 +170,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             }
         } else if  (mediaType.equals(JSON_TYPE)) {
             try {
-                JsonUtil.newJsonPayload(axis2MessageContext, out, true, true);
+                JsonUtil.getNewJsonPayload(axis2MessageContext, out, true, true);
             } catch (AxisFault axisFault) {
                 handleException("Error creating JSON Payload from source " + out, synCtx);
             }

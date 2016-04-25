@@ -455,6 +455,31 @@ public final class JsonUtil {
      * Builds and returns a new JSON payload for a message context with a stream of JSON content. <br/>
      * This is the recommended way to build a JSON payload into an Axis2 message context.<br/>
      * A JSON payload built into a message context with this method can only be removed by calling
+     * {@link #removeJsonPayload(org.apache.axis2.context.MessageContext)} method. This added to avoid code breaks
+     * for previous implementations. For new implementations use getNewJsonPayload method.
+     *
+     * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
+     * @param inputStream        JSON content as an input stream.
+     * @param removeChildren     Whether to remove existing child nodes of the existing payload of the message context
+     * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
+     *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
+     * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that can build the XML tree for contained JSON payload on demand.
+     */
+    @Deprecated
+    public static OMElement newJsonPayload(MessageContext messageContext, InputStream inputStream,
+                                           boolean removeChildren, boolean addAsNewFirstChild) {
+        try {
+            return getNewJsonPayload(messageContext, inputStream, removeChildren, addAsNewFirstChild);
+        } catch (AxisFault axisFault) {
+            logger.error("Payload provided is not an JSON payload.");
+            return null;
+        }
+    }
+
+    /**
+     * Builds and returns a new JSON payload for a message context with a stream of JSON content. <br/>
+     * This is the recommended way to build a JSON payload into an Axis2 message context.<br/>
+     * A JSON payload built into a message context with this method can only be removed by calling
      * {@link #removeJsonPayload(org.apache.axis2.context.MessageContext)} method.
      *
      * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
@@ -464,10 +489,10 @@ public final class JsonUtil {
      *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that can build the XML tree for contained JSON payload on demand.
      */
-    public static OMElement newJsonPayload(MessageContext messageContext, InputStream inputStream,
-                                           boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault {
+    public static OMElement getNewJsonPayload(MessageContext messageContext, InputStream inputStream,
+                                              boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault {
         if (messageContext == null) {
-            logger.error("#newJsonPayload. Could not save JSON stream. Message context is null.");
+            logger.error("#getNewJsonPayload. Could not save JSON stream. Message context is null.");
             return null;
         }
         boolean isObject = false;
@@ -499,8 +524,9 @@ public final class JsonUtil {
                 }
                 json.reset();
             } catch (IOException e) {
-                logger.error("#newJsonPayload. Could not determine availability of the JSON input stream. MessageID: "
-                        + messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage());
+                logger.error(
+                        "#getNewJsonPayload. Could not determine availability of the JSON input stream. MessageID: " +
+                        messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage());
                 return null;
             }
             if (!valid) {
@@ -513,7 +539,7 @@ public final class JsonUtil {
                     return null;
                 } else {
                     logger.error(
-                            "#newJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
+                            "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
                             messageContext.getMessageID());
                     throw new AxisFault("Payload is not a JSON string.");
                 }
@@ -527,13 +553,13 @@ public final class JsonUtil {
                 jsonElement = JSON_ARRAY;
                 messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, false);
             }
-            OMElement elem = new OMSourcedElementImpl(jsonElement,
-                    OMAbstractFactory.getOMFactory(),
-                    new JsonDataSource((InputStream) messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM)));
+            OMElement elem = new OMSourcedElementImpl(jsonElement, OMAbstractFactory.getOMFactory(), new JsonDataSource(
+                    (InputStream) messageContext.getProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM)));
             if (!removeChildren) {
                 if (logger.isTraceEnabled()) {
-                    logger.trace("#newJsonPayload. Not removing child elements from exiting message. Returning result. MessageID: "
-                            + messageContext.getMessageID());
+                    logger.trace(
+                            "#getNewJsonPayload. Not removing child elements from exiting message. Returning result. MessageID: " +
+                            messageContext.getMessageID());
                 }
                 return elem;
             }
@@ -551,14 +577,15 @@ public final class JsonUtil {
                         }
                     }
                     if (logger.isTraceEnabled()) {
-                        logger.trace("#newJsonPayload. Removed child elements from exiting message. MessageID: "
-                                + messageContext.getMessageID());
+                        logger.trace("#getNewJsonPayload. Removed child elements from exiting message. MessageID: " +
+                                     messageContext.getMessageID());
                     }
                     if (addAsNewFirstChild) {
                         b.addChild(elem);
                         if (logger.isTraceEnabled()) {
-                            logger.trace("#newJsonPayload. Added the new JSON sourced element as the first child. MessageID: "
-                                    + messageContext.getMessageID());
+                            logger.trace(
+                                    "#getNewJsonPayload. Added the new JSON sourced element as the first child. MessageID: " +
+                                    messageContext.getMessageID());
                         }
                     }
                 }
@@ -566,6 +593,29 @@ public final class JsonUtil {
             return elem;
         }
         return null;
+    }
+
+    /**
+     * Builds and returns a new JSON payload for a message context with a JSON string. This is deprecated and use
+     * getNewJsonPayload for new implementations.
+     *
+     * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
+     * @param jsonString         JSON content as a String.
+     * @param removeChildren     Whether to remove existing child nodes of the existing payload of the message context
+     * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
+     *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
+     * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
+     * @see #getNewJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
+     */
+    @Deprecated
+    public static OMElement newJsonPayload(MessageContext messageContext, String jsonString, boolean removeChildren,
+                                           boolean addAsNewFirstChild) {
+        try {
+            return getNewJsonPayload(messageContext, jsonString, removeChildren, addAsNewFirstChild);
+        } catch (AxisFault axisFault) {
+            logger.error("Payload provided is not an JSON payload.");
+            return null;
+        }
     }
 
     /**
@@ -577,15 +627,41 @@ public final class JsonUtil {
      * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
      *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
-     * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
+     * @see #getNewJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
      */
-    public static OMElement newJsonPayload(MessageContext messageContext, String jsonString,
-                                           boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault{
+    public static OMElement getNewJsonPayload(MessageContext messageContext, String jsonString, boolean removeChildren,
+                                              boolean addAsNewFirstChild) throws AxisFault {
         if (jsonString == null || jsonString.isEmpty()) {
             jsonString = "{}";
         }
-        return newJsonPayload(messageContext, new ByteArrayInputStream(jsonString.getBytes()),
-                removeChildren, addAsNewFirstChild);
+        return getNewJsonPayload(messageContext, new ByteArrayInputStream(jsonString.getBytes()), removeChildren,
+                                 addAsNewFirstChild);
+    }
+
+    /**
+     * Builds and returns a new JSON payload for a message context with a byte array containing JSON.This method is
+     * now deprecated and replaced by getNewJsonPayload method.
+     *
+     * @param messageContext     Axis2 Message context to which the new JSON payload must be saved (if instructed with <tt>addAsNewFirstChild</tt>).
+     * @param json               JSON content as a byte array.
+     * @param offset             starting position of the JSON content in the provided array
+     * @param length             how many bytes to read starting from the offset provided.
+     * @param removeChildren     Whether to remove existing child nodes of the existing payload of the message context
+     * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
+     *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
+     * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
+     * @see #getNewJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
+     */
+    @Deprecated
+    public static OMElement newJsonPayload(MessageContext messageContext, byte[] json, int offset, int length,
+                                              boolean removeChildren, boolean addAsNewFirstChild) {
+        try {
+            return  getNewJsonPayload(messageContext, json, offset, length,
+            removeChildren, addAsNewFirstChild);
+        } catch (AxisFault axisFault) {
+            logger.error("Payload provided is not an JSON payload.");
+            return null;
+        }
     }
 
     /**
@@ -599,10 +675,10 @@ public final class JsonUtil {
      * @param addAsNewFirstChild Whether to add the new JSON payload as the first child of this message context *after* removing the existing first child element.<br/>
      *                           Setting this argument to <tt>true</tt> will have no effect if the value of the argument <tt>removeChildren</tt> is already <tt>false</tt>.
      * @return Payload object that stores the input JSON content as a Sourced object (See {@link org.apache.axiom.om.OMSourcedElement}) that facilitates on demand building of the XML tree.
-     * @see #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
+     * @see #getNewJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)
      */
-    public static OMElement newJsonPayload(MessageContext messageContext, byte[] json, int offset,
-                                           int length, boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault{
+    public static OMElement getNewJsonPayload(MessageContext messageContext, byte[] json, int offset, int length,
+                                              boolean removeChildren, boolean addAsNewFirstChild) throws AxisFault{
         InputStream is;
         if (json == null || json.length < 2) {
             json = new byte[]{'{', '}'};
@@ -610,12 +686,12 @@ public final class JsonUtil {
         } else {
             is = new ByteArrayInputStream(json, offset, length);
         }
-        return newJsonPayload(messageContext, is, removeChildren, addAsNewFirstChild);
+        return getNewJsonPayload(messageContext, is, removeChildren, addAsNewFirstChild);
     }
 
     /**
      * Removes the existing JSON payload of a message context if any.<br/>
-     * This method can only remove a JSON payload that has been set with {@link #newJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)}
+     * This method can only remove a JSON payload that has been set with {@link #getNewJsonPayload(org.apache.axis2.context.MessageContext, java.io.InputStream, boolean, boolean)}
      * and its variants.
      *
      * @param messageContext Axis2 Message context from which the JSON stream must be removed.
@@ -898,7 +974,7 @@ public final class JsonUtil {
         InputStream json = jsonStream(sourceMc, true);
         try {
             byte[] stream = IOUtils.toByteArray(json);
-            newJsonPayload(targetMc, new ByteArrayInputStream(stream), true, true);
+            getNewJsonPayload(targetMc, new ByteArrayInputStream(stream), true, true);
         } catch (IOException e) {
             logger.error("#cloneJsonPayload. Could not clone JSON stream. Error>>> " + e.getLocalizedMessage());
             return false;

@@ -78,7 +78,7 @@ public class SynapseJsonPath extends SynapsePath {
                     if (stream == null) {
                         stream = JsonUtil.getJsonPayload(amc);
                     } else {
-                        JsonUtil.newJsonPayload(amc, stream, true, true);
+                        JsonUtil.getNewJsonPayload(amc, stream, true, true);
                     }
                 } else {
                     // Message Already built.
