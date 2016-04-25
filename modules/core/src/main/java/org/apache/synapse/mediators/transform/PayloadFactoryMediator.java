@@ -169,7 +169,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 handleException("Error creating SOAP Envelope from source " + out, synCtx);
             }
         } else if  (mediaType.equals(JSON_TYPE)) {
-            JsonUtil.newJsonPayload(axis2MessageContext, out, true, true);
+            try {
+                JsonUtil.getNewJsonPayload(axis2MessageContext, out, true, true);
+            } catch (AxisFault axisFault) {
+                handleException("Error creating JSON Payload from source " + out, synCtx);
+            }
         } else if  (mediaType.equals(TEXT_TYPE)) {
             JsonUtil.removeJsonPayload(axis2MessageContext);
             axis2MessageContext.getEnvelope().getBody().addChild(getTextElement(out));

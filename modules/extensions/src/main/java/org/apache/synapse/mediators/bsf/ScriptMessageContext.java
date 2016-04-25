@@ -169,7 +169,11 @@ public class ScriptMessageContext implements MessageContext {
         } else {
             jsonString = serializeJSON(jsonPayload);
         }
-        JsonUtil.newJsonPayload(messageContext, jsonString, true, true);
+        try {
+            JsonUtil.getNewJsonPayload(messageContext, jsonString, true, true);
+        } catch (AxisFault axisFault) {
+            throw new ScriptException(axisFault);
+        }
         //JsonUtil.setContentType(messageContext);
         Object jsonObject = scriptEngine.eval('(' + jsonString + ')');
         setJsonObject(mc, jsonObject);
@@ -706,7 +710,11 @@ public class ScriptMessageContext implements MessageContext {
             }
         }
         // save this JSON object as the new payload.
-        JsonUtil.newJsonPayload(messageContext, json, 0, json.length, true, true);
+        try {
+            JsonUtil.getNewJsonPayload(messageContext, json, 0, json.length, true, true);
+        } catch (AxisFault axisFault) {
+            throw new ScriptException(axisFault);
+        }
         //JsonUtil.setContentType(messageContext);
         Object jsonObject = scriptEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
         setJsonObject(mc, jsonObject);

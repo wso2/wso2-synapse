@@ -41,7 +41,7 @@ public class JsonStreamingFormatterTest extends TestCase {
             InputStream inputStream = Util.newInputStream(obj_1.getBytes());
             MessageFormatter formatter = Util.newJsonStreamFormatter();
             MessageContext messageContext = Util.newMessageContext();
-            JsonUtil.newJsonPayload(messageContext, inputStream, true, true);
+            JsonUtil.getNewJsonPayload(messageContext, inputStream, true, true);
             OutputStream out = Util.newOutputStream();
             formatter.writeTo(messageContext, null, out, false);
             assertTrue(obj_1.equals(out.toString()));

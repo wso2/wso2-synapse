@@ -40,7 +40,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -165,8 +164,7 @@ public final class MessageConverter {
             // XXX: always this section must come after the above step. ie. after applying Envelope.
             // That is to get the existing headers into the new envelope.
             if (axis2Msg.getJsonStream() != null) {
-                JsonUtil.newJsonPayload(axis2Ctx,
-                        new ByteArrayInputStream(axis2Msg.getJsonStream()), true, true);
+                JsonUtil.getNewJsonPayload(axis2Ctx, new ByteArrayInputStream(axis2Msg.getJsonStream()), true, true);
             }
             SynapseMessage synMsg = message.getSynapseMessage();
             synCtx.setTracingState(synMsg.getTracingState());
