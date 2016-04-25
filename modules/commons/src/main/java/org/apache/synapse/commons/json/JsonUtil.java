@@ -476,11 +476,11 @@ public final class JsonUtil {
             InputStream json = toReadOnlyStream(inputStream);
             messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
             // read ahead few characters to see if the stream is valid...
+            boolean isEmptyPayload = true;
+            boolean valid = false;
             try {
                 // check for empty/all-whitespace streams
                 int c = json.read();
-                boolean isEmptyPayload = true;
-                boolean valid = false;
                 while (c != -1 && c != '{' && c != '[') {
                     if (c != 32) {
                         isEmptyPayload = false;
@@ -498,26 +498,25 @@ public final class JsonUtil {
                     isObject = false;
                 }
                 json.reset();
-
-                if (!valid) {
-                    if (isEmptyPayload) {
-                        //This is a empty payload so return null without doing further processing.
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
-                        }
-                        logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
-                        return null;
-                    }else {
-                        logger.error(
-                                "#newJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
-                                messageContext.getMessageID());
-                        throw new AxisFault("Payload is not a JSON string.");
-                    }
-                }
             } catch (IOException e) {
                 logger.error("#newJsonPayload. Could not determine availability of the JSON input stream. MessageID: "
                         + messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage());
                 return null;
+            }
+            if (!valid) {
+                if (isEmptyPayload) {
+                    //This is a empty payload so return null without doing further processing.
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
+                    }
+                    logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
+                    return null;
+                } else {
+                    logger.error(
+                            "#newJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
+                            messageContext.getMessageID());
+                    throw new AxisFault("Payload is not a JSON string.");
+                }
             }
             QName jsonElement = null;
             if (isObject) {
