@@ -1935,7 +1935,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         //noinspection ConstantConditions
         if (localRegistry.containsKey(key.trim())) {
-            handleException("Duplicate " + type + " definition for key : " + key);
+            //Fixing ESBJAVA-4225
+            if (localRegistry.get(key.trim()) instanceof Entry && ((Entry) localRegistry.get(key.trim())).getValue() != null) {
+                handleException("Duplicate " + type + " definition for key : " + key);
+            } else {
+                handleException("Duplicate " + type + " definition for key : " + key);
+            }
         }
     }
 
