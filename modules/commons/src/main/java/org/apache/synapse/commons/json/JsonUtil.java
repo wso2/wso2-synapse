@@ -18,6 +18,7 @@
 
 package org.apache.synapse.commons.json;
 
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfig;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfigBuilder;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLInputFactory;
@@ -538,10 +539,23 @@ public final class JsonUtil {
                     logger.debug("#emptyJsonPayload found.MessageID: " + messageContext.getMessageID());
                     return null;
                 } else {
-                    logger.error(
-                            "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
-                            messageContext.getMessageID());
-                    throw new AxisFault("Payload is not a JSON string.");
+                    /*
+                     * This method required to introduce due the GET request failure with query parameter and
+                     * contenttype=application/json. Because of the logic implemented with '=' sign below,
+                     * it expects a valid JSON string as the query parameter value (string after '=' sign) for GET
+                     * requests with application/json content type. Therefore it fails for requests like
+                     * https://localhost:8243/services/customer?format=xml and throws axis fault. With this fix,
+                     * HTTP method is checked and avoid throwing axis2 fault for GET requests.
+                     * https://wso2.org/jira/browse/ESBJAVA-4270
+                     */
+                    if (isValidPayloadRequired(messageContext)) {
+                        logger.error(
+                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
+                                messageContext.getMessageID());
+                        throw new AxisFault("Payload is not a JSON string.");
+                    } else {
+                        return null;
+                    }
                 }
             }
             QName jsonElement = null;
@@ -1127,5 +1141,20 @@ public final class JsonUtil {
             }
             return 0;
         }
+    }
+
+    /**
+     * Check whether the request HTTP method is required valid payload
+     *
+     * @param msgCtx Message Context of incoming request
+     * @return true if payload required, false otherwise
+     */
+    private static boolean isValidPayloadRequired(MessageContext msgCtx) {
+        boolean isRequired = true;
+        if (HTTPConstants.HEADER_GET.equals(msgCtx.getProperty(HTTPConstants.HTTP_METHOD)) || HTTPConstants
+                .HEADER_DELETE.equals(msgCtx.getProperty(HTTPConstants.HTTP_METHOD))) {
+            isRequired = false;
+        }
+        return isRequired;
     }
 }
