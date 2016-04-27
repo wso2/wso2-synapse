@@ -84,8 +84,9 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				if (statisticDataUnit.getComponentType() != ComponentType.ENDPOINT) {
 					statisticDataUnit.setFlowContinuableMediator(true);
 				}
-				if (isFlowStatisticEnabled == null) {
-					statisticDataUnit.setIsIndividualStatisticCollected(true);
+
+				if(aspectConfiguration != null) {
+					statisticDataUnit.setIsIndividualStatisticCollected(aspectConfiguration.isStatisticsEnable());
 				}
 				StatisticDataCollectionHelper.collectData(messageContext, true, isCollectingTracing, statisticDataUnit);
 
