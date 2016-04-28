@@ -39,6 +39,11 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 	private boolean shouldTrackParent;
 
 	/**
+	 * Is this a event from Continuation Call.
+	 */
+	private boolean continuationCall = false;
+
+	/**
 	 * Is this a event from FlowContinuableMediator.
 	 */
 	private boolean flowContinuableMediator = false;
@@ -208,5 +213,13 @@ public class StatisticDataUnit extends BasicStatisticDataUnit {
 
 	public void setHashCode(Integer hashCode) {
 		this.hashCode = hashCode;
+	}
+
+	public boolean isContinuationCall() {
+		return continuationCall;
+	}
+
+	public void setContinuationCall(boolean continuationCall) {
+		this.continuationCall = continuationCall;
 	}
 }

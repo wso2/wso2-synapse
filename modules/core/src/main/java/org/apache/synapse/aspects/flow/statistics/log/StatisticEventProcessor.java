@@ -70,6 +70,10 @@ public class StatisticEventProcessor {
 	 */
 	public static void openStatisticEntry(StatisticDataUnit statisticDataUnit) {
 		if (runtimeStatistics.containsKey(statisticDataUnit.getStatisticId())) {
+			if (log.isDebugEnabled()) {
+				log.debug("Reported open statistics for component: " + statisticDataUnit.getComponentName() + " for " +
+				          "message flow :" + statisticDataUnit.getStatisticId());
+			}
 			runtimeStatistics.get(statisticDataUnit.getStatisticId()).createLog(statisticDataUnit);
 		} else if (!(statisticDataUnit.getComponentType() == ComponentType.MEDIATOR ||
 		             statisticDataUnit.getComponentType() == ComponentType.RESOURCE)) {
@@ -78,17 +82,21 @@ public class StatisticEventProcessor {
 				StatisticsEntry statisticsEntry = new StatisticsEntry(statisticDataUnit);
 				runtimeStatistics.put(statisticDataUnit.getStatisticId(), statisticsEntry);
 				if (log.isDebugEnabled()) {
-					log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size());
+					log.debug("Creating New Entry in Running Statistics: Current size :" + runtimeStatistics.size() +
+					          "|Statistic Id : " + statisticDataUnit.getStatisticId());
 				}
 			} else if (statisticDataUnit.getCurrentIndex() > 0 && !statisticDataUnit.isIndividualStatisticCollected()) {
-				log.error("Component: " + statisticDataUnit.getComponentId() + "Is in a middle of the statistics " +
-				          "collection. But collection cannot be found collection seem to be broken.");
+				log.error("Component: " + statisticDataUnit.getComponentName() + " is in a middle of the statistics " +
+				          "collection. But collection cannot be found and it seems to be broken. |Statistic Id : " +
+				          statisticDataUnit.getStatisticId());
 			} else {
-				log.error("Component: " + statisticDataUnit.getComponentId() + "tried to open statistics, but its " +
-				          "individual collection was not enabled");
+				log.error("Component: " + statisticDataUnit.getComponentName() + " is tried to open statistics, but " +
+				          "its individual collection was not enabled. |Statistic Id : " +
+				          statisticDataUnit.getStatisticId());
 			}
 		} else {
-			log.error("Wrong element tried to open statistics: " + statisticDataUnit.getComponentName());
+			log.error("Component: " + statisticDataUnit.getComponentName() + " is tried to open statistics, but " +
+			          "its not a statistic entry component. |Statistic Id : " + statisticDataUnit.getStatisticId());
 		}
 	}
 
@@ -99,7 +107,9 @@ public class StatisticEventProcessor {
 	 * @param mode     Mode of closing GRACEFULLY_CLOSE, ATTEMPT_TO_CLOSE or FORCEFULLY_CLOSE
 	 */
 	public static void closeStatisticEntry(BasicStatisticDataUnit dataUnit, int mode) {
-
+		if (log.isDebugEnabled()) {
+			log.debug("Closing statistic event received for "+  dataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(dataUnit.getStatisticId())) {
 			StatisticsEntry statisticsEntry = runtimeStatistics.get(dataUnit.getStatisticId());
 
@@ -107,7 +117,11 @@ public class StatisticEventProcessor {
 				/**
 				 * Ends statistics collection log for the reported statistics component.
 				 */
-
+				if (log.isDebugEnabled()) {
+					log.debug("Closing statistic event received for component :" +
+					          ((StatisticDataUnit) dataUnit).getComponentName() + " for the message flow : " +
+					          dataUnit.getStatisticId());
+				}
 				boolean finished = statisticsEntry.closeLog((StatisticDataUnit) dataUnit);
 				if (finished) {
 					endMessageFlow(dataUnit, statisticsEntry, false);
@@ -118,6 +132,9 @@ public class StatisticEventProcessor {
 				 * Check whether Statistics entry present for the message flow and if there is an entry try
 				 * to finish ending statistics collection for that entry.
 				 */
+				if (log.isDebugEnabled()) {
+					log.debug("Trying to close statistic for " + dataUnit.getStatisticId());
+				}
 				endMessageFlow(dataUnit, statisticsEntry, false);
 
 			} else if (StatisticsConstants.FORCEFULLY_CLOSE == mode) {
@@ -126,10 +143,17 @@ public class StatisticEventProcessor {
 				 * statistic collection for a message flow it will not consider any thing and close all the remaining logs and
 				 * will send the completed statistic entry for collection.
 				 */
+				if (log.isDebugEnabled()) {
+					log.debug("Forcefully close statistic event received for " + dataUnit.getStatisticId());
+				}
 				endMessageFlow(dataUnit, statisticsEntry, true);
 
 			} else {
-				log.error("Invalid mode for closing statistic entry");
+				log.error("Invalid mode for closing statistic entry |Statistic Id : " + dataUnit.getStatisticId());
+			}
+		} else {
+			if (log.isDebugEnabled()) {
+				log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + dataUnit.getStatisticId());
 			}
 		}
 	}
@@ -145,6 +169,9 @@ public class StatisticEventProcessor {
 	 */
 	private synchronized static void endMessageFlow(BasicStatisticDataUnit dataUnit, StatisticsEntry statisticsEntry,
 	                                                boolean closeForceFully) {
+		if (log.isDebugEnabled()) {
+			log.debug("Checking whether message flow is ended for " + dataUnit.getStatisticId());
+		}
 		boolean isMessageFlowEnded = statisticsEntry.endAll(dataUnit, closeForceFully);
 		if (isMessageFlowEnded) {
 			if (log.isDebugEnabled()) {
@@ -163,9 +190,14 @@ public class StatisticEventProcessor {
 	 * @param basicStatisticDataUnit data unit which holds raw data
 	 */
 	public static void openParents(BasicStatisticDataUnit basicStatisticDataUnit) {
+		if (log.isDebugEnabled()) {
+			log.debug("Open parent event is reported for " + basicStatisticDataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
 			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId())
 			                 .openFlowContinuableMediators(basicStatisticDataUnit);
+		} else if (log.isDebugEnabled()) {
+			log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + basicStatisticDataUnit.getStatisticId());
 		}
 	}
 
@@ -175,8 +207,13 @@ public class StatisticEventProcessor {
 	 * @param callbackDataUnit raw statistic data unit
 	 */
 	public static void addCallbacks(CallbackDataUnit callbackDataUnit) {
+		if (log.isDebugEnabled()) {
+			log.debug("Callback registering event is reported for " + callbackDataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
 			runtimeStatistics.get(callbackDataUnit.getStatisticId()).addCallback(callbackDataUnit);
+		} else if (log.isDebugEnabled()) {
+			log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + callbackDataUnit.getStatisticId());
 		}
 	}
 
@@ -187,8 +224,13 @@ public class StatisticEventProcessor {
 	 * @param callbackDataUnit raw statistic data unit
 	 */
 	public static void removeCallback(CallbackDataUnit callbackDataUnit) {
+		if (log.isDebugEnabled()) {
+			log.debug("Callback remove event is reported for " + callbackDataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
 			runtimeStatistics.get(callbackDataUnit.getStatisticId()).removeCallback(callbackDataUnit);
+		} else if (log.isDebugEnabled()) {
+			log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + callbackDataUnit.getStatisticId());
 		}
 	}
 
@@ -199,8 +241,13 @@ public class StatisticEventProcessor {
 	 * @param callbackDataUnit raw statistic data unit
 	 */
 	public static void updateForReceivedCallback(CallbackDataUnit callbackDataUnit) {
+		if (log.isDebugEnabled()) {
+			log.debug("Callback received event is reported for " + callbackDataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(callbackDataUnit.getStatisticId())) {
 			runtimeStatistics.get(callbackDataUnit.getStatisticId()).updateCallbackReceived(callbackDataUnit);
+		} else if (log.isDebugEnabled()) {
+			log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + callbackDataUnit.getStatisticId());
 		}
 	}
 
@@ -210,8 +257,13 @@ public class StatisticEventProcessor {
 	 * @param basicStatisticDataUnit raw statistic unit carrying statistic data
 	 */
 	public static void reportFault(BasicStatisticDataUnit basicStatisticDataUnit) {
+		if (log.isDebugEnabled()) {
+			log.debug("Fault Occurring is reported for " + basicStatisticDataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
 			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).reportFault(basicStatisticDataUnit);
+		} else if (log.isDebugEnabled()) {
+			log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + basicStatisticDataUnit.getStatisticId());
 		}
 	}
 
@@ -221,8 +273,13 @@ public class StatisticEventProcessor {
 	 * @param basicStatisticDataUnit raw statistic unit carrying statistic data
 	 */
 	public static void reportAsynchronousExecution(BasicStatisticDataUnit basicStatisticDataUnit) {
+		if (log.isDebugEnabled()) {
+			log.debug("Asynchronous execution reported for " + basicStatisticDataUnit.getStatisticId());
+		}
 		if (runtimeStatistics.containsKey(basicStatisticDataUnit.getStatisticId())) {
 			runtimeStatistics.get(basicStatisticDataUnit.getStatisticId()).addAsynchronousFlow(basicStatisticDataUnit);
+		} else if (log.isDebugEnabled()) {
+			log.debug(StatisticsConstants.STATISTIC_NOT_FOUND_ERROR + basicStatisticDataUnit.getStatisticId());
 		}
 	}
 }

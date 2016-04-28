@@ -214,7 +214,9 @@ public class StatisticsEntry {
 			if (messageFlowLogs.get(currentIndex).isFlowAggregateMediator()) {
 				expectedFaults -= 1;
 			}
-			openLogs.remove(currentIndex);
+			if(!statisticDataUnit.isContinuationCall()) {
+				openLogs.remove(currentIndex);
+			}
 		}
 		return openLogs.isEmpty();
 	}
