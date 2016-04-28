@@ -59,6 +59,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 				statisticDataUnit.setShouldTrackParent(true);
 				statisticDataUnit
 						.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+				statisticDataUnit.setContinuationCall(true);
 			} else {
 				statisticDataUnit.setCurrentIndex(currentIndex);
 			}

@@ -136,4 +136,7 @@ public class StatisticsConstants {
 
 	public static final String IMAGINARY_COMPONENT_ID = "ImaginaryName";
 
+	public static final String STATISTIC_NOT_FOUND_ERROR = "Reported statistics event cannot find a statistics entry " +
+	                                                       "for the statistic ID : ";
+
 }
