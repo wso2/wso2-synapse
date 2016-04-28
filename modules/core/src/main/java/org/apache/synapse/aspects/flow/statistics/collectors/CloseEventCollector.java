@@ -35,7 +35,7 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
  */
 public class CloseEventCollector extends RuntimeStatisticCollector {
 
-	private static final Log log = LogFactory.getLog(FaultStatisticCollector.class);
+	private static final Log log = LogFactory.getLog(CloseEventCollector.class);
 
 	/**
 	 * Enqueue statistics event to the event queue. This method receives statistics events from synapse mediation

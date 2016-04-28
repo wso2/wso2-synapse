@@ -54,7 +54,12 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	                                       AspectConfiguration aspectConfiguration, ComponentType componentType) {
 		if (isStatisticsEnabled()) {
 			boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
-			boolean isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+
+			boolean isCollectingTracing = false;
+			if (isCollectingProperties() || isCollectingPayloads()) {
+				isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+			}
+
 			Boolean isFlowStatisticEnabled =
 					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
 			if (isCollectingStatistics) {
