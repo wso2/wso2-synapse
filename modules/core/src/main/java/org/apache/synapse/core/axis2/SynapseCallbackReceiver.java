@@ -323,11 +323,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             // If request is REST assume that the response is REST too
             response.setDoingREST(axisOutMsgCtx.isDoingREST());
-            if (axisOutMsgCtx.isDoingMTOM()) {
+            if (axisOutMsgCtx.isDoingMTOM() && (axisOutMsgCtx.getProperty(org.apache.axis2.Constants.Configuration
+                                                                                     .ENABLE_MTOM) == null ||
+                                                Boolean.getBoolean((String) axisOutMsgCtx.
+                                                           getProperty(org.apache.axis2
+                                                                                  .Constants
+                                                                                  .Configuration
+                                                                                  .ENABLE_MTOM)) == true)) {
                 response.setDoingMTOM(true);
                 response.setProperty(
-                        org.apache.axis2.Constants.Configuration.ENABLE_MTOM,
-                        org.apache.axis2.Constants.VALUE_TRUE);
+                           org.apache.axis2.Constants.Configuration.ENABLE_MTOM,
+                           org.apache.axis2.Constants.VALUE_TRUE);
             }
             if (axisOutMsgCtx.isDoingSwA()) {
                 response.setDoingSwA(true);
