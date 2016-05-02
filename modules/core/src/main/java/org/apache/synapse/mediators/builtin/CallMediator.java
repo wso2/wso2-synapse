@@ -86,7 +86,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      */
     public boolean mediate(MessageContext synInCtx) {
 
-        if (synInCtx.getEnvironment().isDebugEnabled()) {
+        if (synInCtx.getEnvironment().isDebuggerEnabled()) {
+            MessageHelper.setWireLogHolderProperties(synInCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synInCtx)) {
                 return true;
             }
