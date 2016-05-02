@@ -144,6 +144,7 @@ public class SOAPUtils {
 
                         newEnvelope.getHeader().addChild(newSOAPHeader);
                     }
+                    // This block will execute if the header block doesn't have any attribute
                     if (!hasAttributes) {
                         Iterator itrChildren = soapHeader.getChildren();
                         while (itrChildren.hasNext()) {
@@ -310,6 +311,7 @@ public class SOAPUtils {
 
                         newEnvelope.getHeader().addChild(newSOAPHeader);
                     }
+                    // This block will execute if the header block doesn't have any attribute
                     if (!hasAttributes) {
                         Iterator itrChildren = soapHeaderBlock.getChildren();
                         while (itrChildren.hasNext()) {
