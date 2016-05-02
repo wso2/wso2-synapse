@@ -36,6 +36,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
@@ -174,7 +175,8 @@ public class ClientWorker implements Runnable {
 
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, response.getPipe());
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_RESPONSE, response);
-        responseMsgCtx.setProperty("synapse.wire.log.holder", response.getConnection().getContext().getAttribute("synapse.wire.log.holder"));
+        responseMsgCtx.setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, response.getConnection()
+                .getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION,
                 response.getConnection());
     }

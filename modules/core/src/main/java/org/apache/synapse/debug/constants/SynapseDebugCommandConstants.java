@@ -103,4 +103,12 @@ public class SynapseDebugCommandConstants {
     public static final String AXIS2_PROPERTY_MESSAGE_TYPE = "MessageType";
     public static final String AXIS2_PROPERTY_CONTENT_TYPE = "ContentType";
 
+    public static final String WIRELOGS = "wirelogs";
+    public static final String MEDIATOR_ID = "mediatorId";
+    public static final String REQUEST_WIRE_LOG = "requestWireLog";
+    public static final String RESPONSE_WIRE_LOG = "responseWireLog";
+    public static final String WIRE_LOG_ENTRY = "wireLogEntry";
+    public static final String TYPE = "type";
+    public static final String REST_RESOURCE_URL_STRING = "restResourceUrlString";
+    public static final String REQUEST_RESPONSE = "requestResponse";
 }

@@ -31,7 +31,7 @@ public class SynapseMediationFlowPoint {
     /*mediator position with related to parent mediator*/
     private int[] mediatorPosition = null;
 
-    private String mediatorId;
+//    private String mediatorId;
 
 
     public SynapseMediationComponent getSynapseMediationComponent() {
@@ -66,14 +66,14 @@ public class SynapseMediationFlowPoint {
         return medRef;
     }
 
-    public String getMediatorId() {
-        String tmpId = "";
-        for (int i = 0; i < mediatorPosition.length; i++) {
-            tmpId = tmpId + mediatorPosition[i] + "_";
-        }
-        mediatorId = tmpId + medComponent.toString() + "_" + key;
-        return mediatorId;
-    }
+//    public String getMediatorId() {
+//        String tmpId = "";
+//        for (int i = 0; i < mediatorPosition.length; i++) {
+//            tmpId = tmpId + mediatorPosition[i] + "_";
+//        }
+//        mediatorId = tmpId + medComponent.toString() + "_" + key;
+//        return mediatorId;
+//    }
 
     public String toString() {
         return "";

@@ -1,15 +1,19 @@
 package org.apache.synapse.transport.http.conn;
 
+import java.io.Serializable;
+
 /**
- * Created by rajith on 4/7/16.
+ * This class holds wirelog information per mediator
  */
-public class SynapseBackEndWireLogs {
-    private String mediatorID;
-    private String medComponent;
-    private String mediatorKey;
-    private int[] mediatorPosition;
-    private String requestWireLog;
-    private String responseWireLog;
+public class SynapseBackEndWireLogs implements Serializable {
+    private String mediatorID;  //stringified json object of mediator id(this was the one which was sent by developer studio side when adding a breakpoint
+    private StringBuilder requestWireLog;
+    private StringBuilder responseWireLog;
+
+    public SynapseBackEndWireLogs() {
+        requestWireLog = new StringBuilder();
+        responseWireLog = new StringBuilder();
+    }
 
     public String getMediatorID() {
         return mediatorID;
@@ -19,44 +23,19 @@ public class SynapseBackEndWireLogs {
         this.mediatorID = mediatorID;
     }
 
-
-    public String getMedComponent() {
-        return medComponent;
-    }
-
-    public void setMedComponent(String medComponent) {
-        this.medComponent = medComponent;
-    }
-
-    public String getMediatorKey() {
-        return mediatorKey;
-    }
-
-    public void setMediatorKey(String mediatorKey) {
-        this.mediatorKey = mediatorKey;
-    }
-
-    public int[] getMediatorPosition() {
-        return mediatorPosition;
-    }
-
-    public void setMediatorPosition(int[] mediatorPosition) {
-        this.mediatorPosition = mediatorPosition;
-    }
-
     public String getRequestWireLog() {
-        return requestWireLog;
+        return requestWireLog.toString();
     }
 
-    public void setRequestWireLog(String requestWireLog) {
-        this.requestWireLog = requestWireLog;
+    public void appendRequestWireLog(String requestWireLog) {
+        this.requestWireLog.append(requestWireLog);
     }
 
     public String getResponseWireLog() {
-        return responseWireLog;
+        return responseWireLog.toString();
     }
 
-    public void setResponseWireLog(String responseWireLog) {
-        this.responseWireLog = responseWireLog;
+    public void appendResponseWireLog(String responseWireLog) {
+        this.responseWireLog.append(responseWireLog);
     }
 }

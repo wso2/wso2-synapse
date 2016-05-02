@@ -28,13 +28,11 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
-import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
-import org.apache.synapse.transport.passthru.SourceRequest;
+import org.apache.synapse.util.MessageHelper;
 
 import java.util.Set;
 
@@ -62,15 +60,8 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
-            SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("synapse.wire.log.holder"); //todo need to use constant
-            wireLogHolder.setMediatorId(super.getRegisteredMediationFlowPoint().getMediatorId());
-            if (synCtx.isResponse()) {
-                wireLogHolder.setPhase(SynapseWireLogHolder.PHASE.RESPONSE_READY);
-            } else {
-                wireLogHolder.setPhase(SynapseWireLogHolder.PHASE.REQUEST_READY);
-            }
-            ((SourceRequest) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("pass-through.Source-Request")).getConnection().getContext().setAttribute("synapse.wire.log.holder", wireLogHolder);
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
+            MessageHelper.setWireLogHolderProperties(synCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }

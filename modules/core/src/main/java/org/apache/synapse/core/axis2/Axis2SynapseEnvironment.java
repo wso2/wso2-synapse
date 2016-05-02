@@ -224,7 +224,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             if (log.isDebugEnabled()) {
                 log.debug("Injecting MessageContext");
             }
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
@@ -345,7 +345,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return true;
         } finally {
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
@@ -434,7 +434,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 .reportEntryEvent(synCtx, inboundName, inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
         try {
 
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
@@ -477,7 +477,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         } finally {
             CloseEventCollector
                     .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex, false);
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
@@ -1107,7 +1107,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      *
      * @return whether debugging is enabled in the environment
      */
-    public boolean isDebugEnabled() {
+    public boolean isDebuggerEnabled() {
         return isDebugEnabled;
     }
 
