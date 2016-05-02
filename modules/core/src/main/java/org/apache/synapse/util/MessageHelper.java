@@ -48,7 +48,6 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
-import org.jaxen.JaxenException;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
@@ -703,28 +702,21 @@ public class MessageHelper {
             fac = OMAbstractFactory.getSOAP12Factory();
         }
         SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
-        Iterator ns1;
+        Iterator childIterator;
         if (envelope.getHeader() != null) {
             SOAPHeader body = envelope.getHeader();
-            ns1 = body.getChildren();
-
-            while (ns1.hasNext()) {
-                try {
-                    Object bodyNs = ns1.next();
-                    if (bodyNs instanceof SOAPHeaderBlock) {
-                        try {
-                            newEnvelope.getHeader().addChild(
-                                    ElementHelper.toSOAPHeaderBlock(((OMElement) bodyNs).cloneOMElement(), fac));
-                        } catch (Exception var11) {
-                            log.error(var11);
-                            throw new JaxenException(var11);
-                        }
-                    } else if (bodyNs instanceof OMElement) {
-                        newEnvelope.getHeader().addChild(((OMElement) bodyNs).cloneOMElement());
+            childIterator = body.getChildren();
+            while (childIterator.hasNext()) {
+                Object bodyNs = childIterator.next();
+                if (bodyNs instanceof SOAPHeaderBlock) {
+                    try {
+                        newEnvelope.getHeader()
+                                .addChild(ElementHelper.toSOAPHeaderBlock(((OMElement) bodyNs).cloneOMElement(), fac));
+                    } catch (Exception e) {
+                        handleException(e);
                     }
-                } catch (Exception var12) {
-                    var12.printStackTrace();
-                    log.error("Error ", var12);
+                } else if (bodyNs instanceof OMElement) {
+                    newEnvelope.getHeader().addChild(((OMElement) bodyNs).cloneOMElement());
                 }
             }
         }
