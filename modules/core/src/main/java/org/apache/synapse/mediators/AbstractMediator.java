@@ -91,7 +91,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * of current child mediator position should be skipped
      */
     public boolean divertMediationRoute(MessageContext synCtx) {
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (isSkipEnabled()) {
                 synCtx.getEnvironment().getSynapseDebugManager()
                         .advertiseMediationFlowSkip(synCtx, getRegisteredMediationFlowPoint());

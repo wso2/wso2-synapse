@@ -56,7 +56,7 @@ public class SynapseDebugTCPListener extends Thread {
                 debug_line = debugInterface.getPortListenReader().readLine();
                 if (debug_line != null) {
                     debugManager.processDebugCommand(debug_line);
-                    log.info("********************* - " +debug_line );
+                    log.debug("debug command received from developer studio - " + debug_line );
                     debug_line = null;
                 }
             } catch (SocketException ex) {

@@ -1,79 +1,96 @@
 package org.apache.synapse.transport.http.conn;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Queue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Created by rajith on 4/5/16.
+ * This class is used to store wirelog information for all the relevant mediators and request wirelog, response wirelog as well
  */
-public class SynapseWireLogHolder {
-    private String serviceName;
-    private String requestWireLog;
-    private String responseWireLog;
+public class SynapseWireLogHolder implements Serializable {
+    private String proxyName = null;
+    private String apiName = null;
+    private String resourceUrlString = null;
+    private StringBuilder requestWireLog;
+    private StringBuilder responseWireLog;
 
-    private String mediatorId;
     //key mediatorID
     private Map<String, SynapseBackEndWireLogs> backEndRequestResponse = new HashMap<>(1);
 
     private PHASE phase;
 
     public SynapseWireLogHolder() {
-        this.phase = PHASE.INIT;
+        this.phase = PHASE.SOURCE_REQUEST_READY;
+        requestWireLog = new StringBuilder();
+        responseWireLog = new StringBuilder();
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public String getProxyName() {
+        return proxyName;
     }
 
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
+    public void setProxyName(String proxyName) {
+        this.proxyName = proxyName;
+    }
+
+    public String getApiName() {
+        return apiName;
+    }
+
+    public void setApiName(String apiName) {
+        this.apiName = apiName;
+    }
+
+    public String getResourceUrlString() {
+        return resourceUrlString;
+    }
+
+    public void setResourceUrlString(String resourceUrlString) {
+        this.resourceUrlString = resourceUrlString;
     }
 
     public String getRequestWireLog() {
-        return requestWireLog;
+        return requestWireLog.toString();
     }
 
-    public void setRequestWireLog(String requestWireLog) {
-        this.requestWireLog = requestWireLog;
+    public void appendRequestWireLog(String requestWireLog) {
+        this.requestWireLog.append(requestWireLog);
     }
 
     public String getResponseWireLog() {
-        return responseWireLog;
+        return responseWireLog.toString();
     }
 
-    public void setResponseWireLog(String responseWireLog) {
-        this.responseWireLog = responseWireLog;
-    }
-
-    public String getMediatorId() {
-        return mediatorId;
-    }
-
-    public void setMediatorId(String mediatorId) {
-        this.mediatorId = mediatorId;
+    public void appendResponseWireLog(String responseWireLog) {
+        this.responseWireLog.append(responseWireLog);
     }
 
     public PHASE getPhase() {
         return phase;
     }
 
-    public void setPhase(PHASE phase) {
+    public synchronized void setPhase(PHASE phase) {
         this.phase = phase;
     }
 
-    public void insertBackEndWireLog(RequestType type, String wireLog) {
+    public synchronized void appendBackEndWireLog(RequestType type, String wireLog, String mediatorId) {
         SynapseBackEndWireLogs backEndWireLogs = backEndRequestResponse.get(mediatorId);
         if (backEndWireLogs == null) {
             backEndWireLogs = new SynapseBackEndWireLogs();
             backEndWireLogs.setMediatorID(mediatorId);
         }
-
         if (type.equals(RequestType.REQUEST)) {
-            backEndWireLogs.setRequestWireLog(wireLog);
+            backEndWireLogs.appendRequestWireLog(wireLog);
         } else if (type.equals(RequestType.RESPONSE)) {
-            backEndWireLogs.setResponseWireLog(wireLog);
+            backEndWireLogs.appendResponseWireLog(wireLog);
         }
         backEndRequestResponse.put(mediatorId, backEndWireLogs);
     }
@@ -82,18 +99,56 @@ public class SynapseWireLogHolder {
         return backEndRequestResponse;
     }
 
+    public synchronized void clear() {
+        this.requestWireLog.setLength(0);
+        this.responseWireLog.setLength(0);
+        this.backEndRequestResponse.clear();
+        this.phase = PHASE.SOURCE_REQUEST_READY;
+    }
+
+    /**
+     * These are the phases to determine request responses in wire level
+     */
     public enum PHASE {
-        INIT, //request get hit
-        REQUEST_RECEIVED, //after the request read in wire
-        REQUEST_READY, //back end request ready
-        REQUEST_SENT, //back end request sent
-        RESPONSE_RECEIVED, //back end response received
-        RESPONSE_READY, //response ready for client
-        DONE //finished
+        SOURCE_REQUEST_READY, //source request gets hit the ESB
+        SOURCE_REQUEST_DONE, //source request read done
+        TARGET_REQUEST_READY, //back end request ready to be sent to back end
+        TARGET_REQUEST_DONE, //back end request sent
+        TARGET_RESPONSE_READY, //back end response received to esb
+        TARGET_RESPONSE_DONE, //back end response read
+        SOURCE_RESPONSE_READY, //source response ready to be sent to client
+        SOURCE_RESPONSE_DONE //source response sent
     }
 
     public enum RequestType {
         REQUEST,
         RESPONSE
+    }
+
+    /**
+     * This method is to clone wirelog holder object
+     *
+     * @return
+     * @throws IOException
+     * @throws ClassNotFoundException
+     */
+    public SynapseWireLogHolder deepClone() throws IOException, ClassNotFoundException {
+        ObjectOutputStream wireLogHolderOutputStream = null;
+        ObjectInputStream wireLogHolderInputStream = null;
+        try {
+            ByteArrayOutputStream binaryOutputStream =
+                    new ByteArrayOutputStream();
+            wireLogHolderOutputStream = new ObjectOutputStream(binaryOutputStream);
+            wireLogHolderOutputStream.writeObject(this);
+            wireLogHolderOutputStream.flush();
+            ByteArrayInputStream binaryInputStream =
+                    new ByteArrayInputStream(binaryOutputStream.toByteArray());
+            wireLogHolderInputStream = new ObjectInputStream(binaryInputStream);
+
+            return (SynapseWireLogHolder) wireLogHolderInputStream.readObject();
+        } finally {
+            wireLogHolderOutputStream.close();
+            wireLogHolderInputStream.close();
+        }
     }
 }

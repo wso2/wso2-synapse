@@ -189,7 +189,7 @@ class LoggingIOSession implements IOSession {
             if (log.isDebugEnabled()) {
                 log.debug("I/O session " + id + " " + session + ": " + bytesRead + " bytes read");
             }
-            if (bytesRead > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebugEnabled())) {
+            if (bytesRead > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled())) {
                 ByteBuffer b = dst.duplicate();
                 int p = b.position();
                 b.limit(p);
@@ -205,7 +205,7 @@ class LoggingIOSession implements IOSession {
             if (log.isDebugEnabled()) {
                 log.debug("I/O session " + id + " " + session + ": " + byteWritten + " bytes written");
             }
-            if (byteWritten > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebugEnabled())) {
+            if (byteWritten > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled())) {
                 ByteBuffer b = src.duplicate();
                 int p = b.position();
                 b.limit(p);

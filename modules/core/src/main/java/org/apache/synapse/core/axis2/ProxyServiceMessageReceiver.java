@@ -31,12 +31,15 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 
 import java.util.Iterator;
 import java.util.List;
@@ -141,10 +144,21 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
 //        synCtx.setTracingState(proxy.getTraceState());
 
         try {
-            if(synCtx.getEnvironment().isDebugEnabled()) {
+            if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
+                if (!synCtx.isResponse()) {
+                    SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                    if (wireLogHolder == null) {
+                        wireLogHolder = new SynapseWireLogHolder();
+                    }
+                    if (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null && !synCtx.getProperty(SynapseConstants.PROXY_SERVICE).toString().isEmpty()) {
+                        wireLogHolder.setProxyName(synCtx.getProperty(SynapseConstants.PROXY_SERVICE).toString());
+                    }
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
+                }
             }
 
             List handlers = synCtx.getEnvironment().getSynapseHandlers();
@@ -234,7 +248,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             //Statistic reporting
             CloseEventCollector
                     .closeEntryEvent(synCtx, this.name, ComponentType.PROXYSERVICE, statisticReportingIndex, true);
-            if(synCtx.getEnvironment().isDebugEnabled()) {
+            if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
