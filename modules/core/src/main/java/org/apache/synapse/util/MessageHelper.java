@@ -706,13 +706,22 @@ public class MessageHelper {
             fac = OMAbstractFactory.getSOAP12Factory();
         }
         SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
-
+        Iterator childIterator;
         if (envelope.getHeader() != null) {
-            Iterator itr     = envelope.getHeader().cloneOMElement().getChildren();
-            while (itr.hasNext()) {
-                OMNode node = (OMNode) itr.next();
-                itr.remove();
-                newEnvelope.getHeader().addChild(node);
+            SOAPHeader body = envelope.getHeader();
+            childIterator = body.getChildren();
+            while (childIterator.hasNext()) {
+                Object bodyNs = childIterator.next();
+                if (bodyNs instanceof SOAPHeaderBlock) {
+                    try {
+                        newEnvelope.getHeader()
+                                .addChild(ElementHelper.toSOAPHeaderBlock(((OMElement) bodyNs).cloneOMElement(), fac));
+                    } catch (Exception e) {
+                        handleException(e);
+                    }
+                } else if (bodyNs instanceof OMElement) {
+                    newEnvelope.getHeader().addChild(((OMElement) bodyNs).cloneOMElement());
+                }
             }
         }
 
