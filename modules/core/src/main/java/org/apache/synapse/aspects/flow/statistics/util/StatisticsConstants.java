@@ -139,4 +139,7 @@ public class StatisticsConstants {
 	public static final String STATISTIC_NOT_FOUND_ERROR = "Reported statistics event cannot find a statistics entry " +
 	                                                       "for the statistic ID : ";
 
+
+	public static final String HASH_CODE_NULL_COMPONENT = "HashCodeNullComponent";
+
 }

@@ -151,7 +151,11 @@ public class StatisticsLog {
 		this.transportPropertyMap = statisticDataUnit.getTransportPropertyMap();
 		this.componentType = statisticDataUnit.getComponentType();
 		this.hashCode = statisticDataUnit.getHashCode();
-		this.componentId = statisticDataUnit.getComponentId();
+		if (statisticDataUnit.getComponentId() == null) {
+			this.componentId = StatisticsConstants.HASH_CODE_NULL_COMPONENT;
+		} else {
+			this.componentId = statisticDataUnit.getComponentId();
+		}
 		this.isTracingEnabled = statisticDataUnit.isTracingEnabled();
 	}
 
