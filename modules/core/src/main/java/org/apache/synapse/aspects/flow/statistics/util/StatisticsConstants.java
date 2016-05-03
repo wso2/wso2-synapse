@@ -44,12 +44,6 @@ public class StatisticsConstants {
 	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";
 
 	/**
-	 * Flow statistic completed store queue size.
-	 */
-	public static final String FLOW_STATISTICS_COMPLETED_STORE_QUEUE_SIZE =
-			"mediation.flow.statistics.completed.store.queue.size";
-
-	/**
 	 * Flow statistic event consuming time.
 	 */
 	public static final String FLOW_STATISTICS_EVENT_CONSUME_TIME = "mediation.flow.statistics.event.consume.interval";
@@ -102,12 +96,7 @@ public class StatisticsConstants {
 	/**
 	 * Flow statistic default queue size.
 	 */
-	public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE = "100000";
-
-	/**
-	 * Flow statistic default completed store queue size.
-	 */
-	public static final String FLOW_STATISTICS_COMPLETED_STORE_DEFAULT_QUEUE_SIZE = "50000";
+	public static final String FLOW_STATISTICS_DEFAULT_QUEUE_SIZE = "10000";
 
 	/**
 	 * Flow statistic default event consumer time.
@@ -147,7 +136,7 @@ public class StatisticsConstants {
 
 	public static final String IMAGINARY_COMPONENT_ID = "ImaginaryName";
 
-	public static final String STATISTIC_NOT_FOUND_ERROR =
-			"Reported statistics event cannot find a statistics entry " + "for the statistic ID : ";
+	public static final String STATISTIC_NOT_FOUND_ERROR = "Reported statistics event cannot find a statistics entry " +
+	                                                       "for the statistic ID : ";
 
 }
