@@ -105,7 +105,6 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
 
     @Override
     public void consumeInput(final NHttpClientEventHandler handler) {
-//        this.log.info("***************** LoggingNHttpClientConnection consumeInput begin - " + Thread.currentThread().getId());
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Consume input");
         }
@@ -119,9 +118,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         } else {
             logHolder = new SynapseWireLogHolder();
         }
-//        this.log.info("***************** LoggingNHttpClientConnection consumeInput locking - " + Thread.currentThread().getId());
         synchronized (logHolder) {
-//            this.log.info("***************** LoggingNHttpClientConnection consumeInput locked - " + Thread.currentThread().getId());
             logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_READY);
             getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
             if (this.status != ACTIVE) {
@@ -157,7 +154,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                 if (this.contentDecoder != null && (this.session.getEventMask() & SelectionKey.OP_READ) > 0) {
                     handler.inputReady(this, this.contentDecoder);
                     if (this.contentDecoder.isCompleted()) {
-//                        this.log.info("***************** LoggingNHttpClientConnection consumeInput TARGET_RESPONSE_DONE - final 1111111 - " + Thread.currentThread().getId()); //todo this is the place where it ends
+                        //This is the place where it finishes the response read from back-ends
                         if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
                             logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
                             logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_DONE);
@@ -174,35 +171,30 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             } catch (final Exception ex) {
                 handler.exception(this, ex);
             } finally {
-                // Finally set buffered input flag
                 if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
                     logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
                     logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_DONE);
                     getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
                 }
+                // Finally set buffered input flag
                 this.hasBufferedInput = this.inbuf.hasData();
             }
 
             if (isReleaseConn()) {
                 if (handler instanceof TargetHandler) {
-//                    this.log.info("***************** LoggingNHttpClientConnection consumeInput TARGET_RESPONSE_DONE - final 2222222 - " + Thread.currentThread().getId()); //todo this is the place where it ends
                     ((TargetHandler) handler).getTargetConfiguration().getConnections().releaseConnection(this);
                     this.setReleaseConn(false);
                 }
             }
-//            this.log.info("***************** LoggingNHttpClientConnection consumeInput unlocking - " + Thread.currentThread().getId());
         }
-//        this.log.info("***************** LoggingNHttpClientConnection consumeInput unlocked - " + Thread.currentThread().getId());
     }
 
     @Override
     public void produceOutput(final NHttpClientEventHandler handler) {
-//        this.log.info("++++++++++++++++ LoggingNHttpClientConnection produceOutput begin - " + Thread.currentThread().getId());
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Produce output");
         }
 //        super.produceOutput(handler);
-
         if (getContext() == null) {
             return;
         }
@@ -212,10 +204,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         } else {
             logHolder = new SynapseWireLogHolder();
         }
-
-//        this.log.info("++++++++++++++++ LoggingNHttpClientConnection produceOutput locking - " + Thread.currentThread().getId());
         synchronized (logHolder) {
-//            this.log.info("++++++++++++++++ LoggingNHttpClientConnection produceOutput locked - " + Thread.currentThread().getId());
             logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_REQUEST_READY);
             getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
             try {
@@ -243,7 +232,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                         resetOutput();
                     }
                     if (this.contentEncoder == null && this.status != CLOSED) {
-//                        this.log.info("++++++++++++++++ LoggingNHttpClientConnection produceOutput TARGET_REQUEST_DONE - final - " + Thread.currentThread().getId()); //todo this is the place where it ends
+                        //This is the place where it ends wrting the back end request to the wire
                         if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
                             logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
                             logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_REQUEST_DONE);
@@ -255,18 +244,15 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             } catch (final Exception ex) {
                 handler.exception(this, ex);
             } finally {
-                // Finally set the buffered output flag
                 if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
                     logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
                     logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_REQUEST_DONE);
                     getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
                 }
+                // Finally set the buffered output flag
                 this.hasBufferedOutput = this.outbuf.hasData();
             }
-
-//            this.log.info("++++++++++++++++ LoggingNHttpClientConnection produceOutput unlocking - " + Thread.currentThread().getId());
         }
-//        this.log.info("++++++++++++++++ LoggingNHttpClientConnection produceOutput unlocked - " + Thread.currentThread().getId());
     }
 
     @Override
