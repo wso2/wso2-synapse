@@ -20,6 +20,7 @@ package org.apache.synapse.message.store.impl.rabbitmq;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -33,7 +34,12 @@ import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.store.AbstractMessageStore;
 import org.apache.synapse.message.store.Constants;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.security.KeyStore;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
@@ -77,6 +83,16 @@ public class RabbitMQStore extends AbstractMessageStore {
 	 * RabbitMQ exchange.
 	 */
 	public static final String EXCHANGE_NAME = "store.rabbitmq.exchange.name";
+
+    //SSL related properties
+    public static final String SSL_ENABLED = "rabbitmq.connection.ssl.enabled";
+    public static final String SSL_KEYSTORE_LOCATION = "rabbitmq.connection.ssl.keystore.location";
+    public static final String SSL_KEYSTORE_TYPE = "rabbitmq.connection.ssl.keystore.type";
+    public static final String SSL_KEYSTORE_PASSWORD = "rabbitmq.connection.ssl.keystore.password";
+    public static final String SSL_TRUSTSTORE_LOCATION = "rabbitmq.connection.ssl.truststore.location";
+    public static final String SSL_TRUSTSTORE_TYPE = "rabbitmq.connection.ssl.truststore.type";
+    public static final String SSL_TRUSTSTORE_PASSWORD = "rabbitmq.connection.ssl.truststore.password";
+    public static final String SSL_VERSION = "rabbitmq.connection.ssl.version";
 	/**
 	 * RabbitMQ connection properties
 	 */
@@ -193,6 +209,49 @@ public class RabbitMQStore extends AbstractMessageStore {
 			connectionFactory.setVirtualHost(virtualHost);
 		}
 
+        String sslEnabledS = parameters.get(SSL_ENABLED) != null ? parameters.get(SSL_ENABLED).toString() : "";
+        if (!StringUtils.isEmpty(sslEnabledS)) {
+            try {
+                boolean sslEnabled = Boolean.parseBoolean(sslEnabledS);
+                if (sslEnabled) {
+                    String keyStoreLocation = parameters.get(SSL_KEYSTORE_LOCATION) != null ? parameters.get(SSL_KEYSTORE_LOCATION).toString() : "";
+                    String keyStoreType = parameters.get(SSL_KEYSTORE_TYPE) != null ? parameters.get(SSL_KEYSTORE_TYPE).toString() : "";
+                    String keyStorePassword = parameters.get(SSL_KEYSTORE_PASSWORD) != null ? parameters.get(SSL_KEYSTORE_PASSWORD).toString() : "";
+                    String trustStoreLocation = parameters.get(SSL_TRUSTSTORE_LOCATION) != null ? parameters.get(SSL_TRUSTSTORE_LOCATION).toString() : "";
+                    String trustStoreType = parameters.get(SSL_TRUSTSTORE_TYPE) != null ? parameters.get(SSL_TRUSTSTORE_TYPE).toString() : "";
+                    String trustStorePassword = parameters.get(SSL_TRUSTSTORE_PASSWORD) != null ? parameters.get(SSL_TRUSTSTORE_PASSWORD).toString() : "";
+                    String sslVersion = parameters.get(SSL_VERSION) != null ? parameters.get(SSL_VERSION).toString() : "";
+
+                    if (StringUtils.isEmpty(keyStoreLocation) || StringUtils.isEmpty(keyStoreType) || StringUtils.isEmpty(keyStorePassword) ||
+                        StringUtils.isEmpty(trustStoreLocation) || StringUtils.isEmpty(trustStoreType) || StringUtils.isEmpty(trustStorePassword)) {
+                        logger.warn("Trustore and keystore information is not provided correctly. Proceeding with default SSL configuration");
+                        connectionFactory.useSslProtocol();
+                    } else {
+                        char[] keyPassphrase = keyStorePassword.toCharArray();
+                        KeyStore ks = KeyStore.getInstance(keyStoreType);
+                        ks.load(new FileInputStream(keyStoreLocation), keyPassphrase);
+
+                        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                        kmf.init(ks, keyPassphrase);
+
+                        char[] trustPassphrase = trustStorePassword.toCharArray();
+                        KeyStore tks = KeyStore.getInstance(trustStoreType);
+                        tks.load(new FileInputStream(trustStoreLocation), trustPassphrase);
+
+                        TrustManagerFactory tmf = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+                        tmf.init(tks);
+
+                        SSLContext c = SSLContext.getInstance(sslVersion);
+                        c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+                        connectionFactory.useSslProtocol(c);
+                    }
+                }
+            } catch (Exception e) {
+                logger.warn("Format error in SSL enabled value. Proceeding without enabling SSL", e);
+            }
+        }
+        
 		//declaring queue
 		String queueName = (String) parameters.get(QUEUE_NAME);
 		if (queueName != null) {
