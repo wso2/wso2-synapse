@@ -64,6 +64,7 @@ public class JavaScriptXmlHelper extends DefaultXMLHelper {
         if (!(scriptXML instanceof XMLObject)) {
             return null;
         }
+        // TODO: E4X Bug? Shouldn't need this copy, but without it the outer element gets lost???
         Scriptable jsXML = (Scriptable) ScriptableObject.callMethod((Scriptable) scriptXML, "copy", new Object[0]);
 
         OMElement omElement;
