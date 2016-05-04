@@ -210,7 +210,8 @@ public class SynapseDebugManager {
      */
     public void advertiseMediationFlowTerminatePoint(MessageContext synCtx) {
         if (synEnv.isDebugEnabled()) {
-            this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
+            this.advertiseDebugEvent(
+                    this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
             if (log.isDebugEnabled()) {
                 log.debug("Mediation flow terminated for id " + synCtx.getMessageID());
             }
@@ -848,35 +849,35 @@ public class SynapseDebugManager {
     public void addMediationFlowPointProperty(String propertyContext, JSONObject property_arguments,
             boolean isActionSet) {
         try {
-            String property_key = property_arguments
+            String propertyKey = property_arguments
                     .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME);
             if (isActionSet) {
-                String property_value = property_arguments
+                String propertyValue = property_arguments
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_VALUE);
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)
                         || propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)) {
-                    synCtx.setProperty(property_key, property_value);
+                    synCtx.setProperty(propertyKey, propertyValue);
 
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    setAxis2Property(property_key, property_value, axis2MessageCtx);
-                    if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(property_key)) {
-                        setAxis2Property(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, property_value,
+                    setAxis2Property(propertyKey, propertyValue, axis2MessageCtx);
+                    if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(propertyKey)) {
+                        setAxis2Property(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, propertyValue,
                                 axis2MessageCtx);
                         Object o = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                         Map headers = (Map) o;
                         if (headers != null) {
                             headers.remove(HTTP.CONTENT_TYPE);
-                            headers.put(HTTP.CONTENT_TYPE, property_value);
+                            headers.put(HTTP.CONTENT_TYPE, propertyValue);
                         }
                     }
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.getOptions().setProperty(property_key, property_value);
+                    axis2MessageCtx.getOptions().setProperty(propertyKey, propertyValue);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -885,18 +886,18 @@ public class SynapseDebugManager {
                             .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                     if (headers != null && headers instanceof Map) {
                         Map headersMap = (Map) headers;
-                        headersMap.put(property_key, property_value);
+                        headersMap.put(propertyKey, propertyValue);
                     }
                     if (headers == null) {
                         Map headersMap = new HashMap();
-                        headersMap.put(property_key, property_value);
+                        headersMap.put(propertyKey, propertyValue);
                         axis2MessageCtx
                                 .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
                     }
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
-                    axis2smc.getAxis2MessageContext().getOperationContext().setProperty(property_key, property_value);
+                    axis2smc.getAxis2MessageContext().getOperationContext().setProperty(propertyKey, propertyValue);
                 }
             } else {
                 if (propertyContext == null || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT
@@ -904,14 +905,19 @@ public class SynapseDebugManager {
                         .equals(propertyContext)) {
                     Set pros = synCtx.getPropertyKeySet();
                     if (pros != null) {
-                        pros.remove(property_key);
+                        pros.remove(propertyKey);
                     }
-                } else if ((propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2) ||
-                        propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT))
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.removeProperty(property_key);
+                    axis2MessageCtx.removeProperty(propertyKey);
+                } else if (
+                        propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)
+                                && synCtx instanceof Axis2MessageContext) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+                    axis2MessageCtx.getOptions().setProperty(propertyKey, null);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -920,8 +926,12 @@ public class SynapseDebugManager {
                             .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                     if (headers != null && headers instanceof Map) {
                         Map headersMap = (Map) headers;
-                        headersMap.remove(property_key);
+                        headersMap.remove(propertyKey);
                     }
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)
+                        && synCtx instanceof Axis2MessageContext) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    axis2smc.getAxis2MessageContext().getOperationContext().removeProperty(propertyKey);
                 } else {
                     log.error("Failed to set or remove property in the scope " + propertyContext);
                     this.advertiseCommandResponse(createDebugCommandResponse(false,
