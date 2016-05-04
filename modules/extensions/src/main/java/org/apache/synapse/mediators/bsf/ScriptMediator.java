@@ -35,6 +35,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -43,11 +44,14 @@ import org.mozilla.javascript.Context;
 
 import javax.activation.DataHandler;
 import javax.script.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Map;
+import java.util.Properties;
 import java.util.TreeMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -117,22 +121,30 @@ public class ScriptMediator extends AbstractMediator {
      */
     private CompiledScript compiledScript;
     /**
-     * The Invokable script. Only used for external scripts
-     */
-    private Invocable invocableScript;
-    /**
      * The BSF helper to convert between the XML representations used by Java
      * and the scripting language
      */
     private XMLHelper xmlHelper;
-
     /**
-     * Lock used to ensure thread-safe lookup of the object from the registry
+     * Script Engine Manger
      */
-    private final Lock resourceLock = new ReentrantLock();
-
-    private Lock scriptEvaluatorLock = new ReentrantLock();
-
+    private ScriptEngineManager engineManager;
+    /**
+     * Default Pool Size
+     */
+    private int DEFAULT_POOL_SIZE = 15;
+    /**
+     * Pool size
+     */
+    private int poolSize = DEFAULT_POOL_SIZE;
+    /**
+     * Pool size property name
+     */
+    private static String POOL_SIZE_PROPERTY = "synapse.script.mediator.pool.size";
+    /**
+     * Pool ScriptEngine Resources
+     */
+    private BlockingQueue<ScriptEngineWrapper> pool;
     /**
      * JSON parser used to parse JSON strings
      */
@@ -174,12 +186,15 @@ public class ScriptMediator extends AbstractMediator {
         if (function != null) {
             this.function = function;
         }
+
+        Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
+        poolSize = Integer.parseInt(properties.getProperty(POOL_SIZE_PROPERTY, String.valueOf(DEFAULT_POOL_SIZE)));
+
         initScriptEngine();
         if (!(scriptEngine instanceof Invocable)) {
             throw new SynapseException("Script engine is not an Invocable" +
                     " engine for language: " + language);
         }
-        invocableScript = (Invocable) scriptEngine;
     }
 
     /**
@@ -282,15 +297,16 @@ public class ScriptMediator extends AbstractMediator {
      */
     private Object mediateWithExternalScript(MessageContext synCtx)
             throws ScriptException, NoSuchMethodException {
-        prepareExternalScript(synCtx);
+        ScriptEngineWrapper sew = prepareExternalScript(synCtx);
         ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
         processJSONPayload(synCtx, scriptMC);
-        scriptEvaluatorLock.lock();
-        try {
-            return invocableScript.invokeFunction(function, new Object[]{scriptMC});
-        } finally {
-            scriptEvaluatorLock.unlock();
-        }
+        Invocable invocableScript = (Invocable) sew.getEngine();
+
+        Object obj = invocableScript.invokeFunction(function, new Object[]{scriptMC});
+        // return engine to front of queue or drop if queue is full (i.e. if getNewScriptEngine() spawns a new engine)
+        pool.offer(sew);
+
+        return obj;
     }
 
     /**
@@ -383,61 +399,54 @@ public class ScriptMediator extends AbstractMediator {
      * @param synCtx MessageContext script
      * @throws ScriptException For any errors , when compile the script
      */
-    protected void prepareExternalScript(MessageContext synCtx)
+    protected ScriptEngineWrapper prepareExternalScript(MessageContext synCtx)
             throws ScriptException {
-
-        // TODO: only need this synchronized method for dynamic registry entries. If there was a way
-        // to access the registry entry during mediator initialization then for non-dynamic entries
-        // this could be done just the once during mediator initialization.
 
         // Derive actual key from xpath expression or get static key
         String generatedScriptKey = key.evaluateValue(synCtx);
         Entry entry = synCtx.getConfiguration().getEntryDefinition(generatedScriptKey);
         boolean needsReload = (entry != null) && entry.isDynamic() &&
                 (!entry.isCached() || entry.isExpired());
-        resourceLock.lock();
-        try {
-            if (scriptSourceCode == null || needsReload) {
-                Object o = synCtx.getEntry(generatedScriptKey);
-                if (o instanceof OMElement) {
-                    scriptSourceCode = ((OMElement) (o)).getText();
-                    scriptEngine.eval(scriptSourceCode);
-                } else if (o instanceof String) {
-                    scriptSourceCode = (String) o;
-                    scriptEngine.eval(scriptSourceCode);
-                } else if (o instanceof OMText) {
-                    DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
-                    if (dataHandler != null) {
-                        BufferedReader reader = null;
-                        try {
-                            reader = new BufferedReader(
-                                    new InputStreamReader(dataHandler.getInputStream()));
-                            StringBuilder scriptSB = new StringBuilder();
-                            String currentLine;
-                            while ((currentLine = reader.readLine()) != null) {
-                                scriptSB.append(currentLine).append('\n');
-                            }
-                            scriptSourceCode = scriptSB.toString();
-                            scriptEngine.eval(scriptSourceCode);
-                        } catch (IOException e) {
-                            handleException("Error in reading script as a stream ", e, synCtx);
-                        } finally {
 
-                            if (reader != null) {
-                                try {
-                                    reader.close();
-                                } catch (IOException e) {
-                                    handleException("Error in closing input stream ", e, synCtx);
-                                }
-                            }
-
+        ScriptEngineWrapper sew = getNewScriptEngine();
+        if (scriptSourceCode == null || needsReload || !sew.isInitialized()) {
+            Object o = synCtx.getEntry(generatedScriptKey);
+            if (o instanceof OMElement) {
+                scriptSourceCode = ((OMElement) (o)).getText();
+                sew.getEngine().eval(scriptSourceCode);
+            } else if (o instanceof String) {
+                scriptSourceCode = (String) o;
+                sew.getEngine().eval(scriptSourceCode);
+            } else if (o instanceof OMText) {
+                DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
+                if (dataHandler != null) {
+                    BufferedReader reader = null;
+                    try {
+                        reader = new BufferedReader(
+                                new InputStreamReader(dataHandler.getInputStream()));
+                        StringBuilder scriptSB = new StringBuilder();
+                        String currentLine;
+                        while ((currentLine = reader.readLine()) != null) {
+                            scriptSB.append(currentLine).append('\n');
                         }
+                        scriptSourceCode = scriptSB.toString();
+                        sew.getEngine().eval(scriptSourceCode);
+                    } catch (IOException e) {
+                        handleException("Error in reading script as a stream ", e, synCtx);
+                    } finally {
+
+                        if (reader != null) {
+                            try {
+                                reader.close();
+                            } catch (IOException e) {
+                                handleException("Error in closing input stream ", e, synCtx);
+                            }
+                        }
+
                     }
                 }
-
             }
-        } finally {
-            resourceLock.unlock();
+
         }
 
         // load <include /> scripts; reload each script if needed
@@ -450,52 +459,51 @@ public class ScriptMediator extends AbstractMediator {
             Entry includeEntry = synCtx.getConfiguration().getEntryDefinition(generatedKey);
             boolean includeEntryNeedsReload = (includeEntry != null) && includeEntry.isDynamic()
                     && (!includeEntry.isCached() || includeEntry.isExpired());
-            resourceLock.lock();
-            try {
-                if (includeSourceCode == null || includeEntryNeedsReload) {
-                    log.debug("Re-/Loading the include script with key " + includeKey);
-                    Object o = synCtx.getEntry(generatedKey);
-                    if (o instanceof OMElement) {
-                        includeSourceCode = ((OMElement) (o)).getText();
-                        scriptEngine.eval(includeSourceCode);
-                    } else if (o instanceof String) {
-                        includeSourceCode = (String) o;
-                        scriptEngine.eval(includeSourceCode);
-                    } else if (o instanceof OMText) {
-                        DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
-                        if (dataHandler != null) {
-                            BufferedReader reader = null;
-                            try {
-                                reader = new BufferedReader(
-                                        new InputStreamReader(dataHandler.getInputStream()));
-                                StringBuilder scriptSB = new StringBuilder();
-                                String currentLine;
-                                while ((currentLine = reader.readLine()) != null) {
-                                    scriptSB.append(currentLine).append('\n');
-                                }
-                                includeSourceCode = scriptSB.toString();
-                                scriptEngine.eval(includeSourceCode);
-                            } catch (IOException e) {
-                                handleException("Error in reading script as a stream ", e, synCtx);
-                            } finally {
+            if (includeSourceCode == null || includeEntryNeedsReload || !sew.isInitialized()) {
+                log.debug("Re-/Loading the include script with key " + includeKey);
+                Object o = synCtx.getEntry(generatedKey);
+                if (o instanceof OMElement) {
+                    includeSourceCode = ((OMElement) (o)).getText();
+                    sew.getEngine().eval(includeSourceCode);
+                } else if (o instanceof String) {
+                    includeSourceCode = (String) o;
+                    sew.getEngine().eval(includeSourceCode);
+                } else if (o instanceof OMText) {
+                    DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
+                    if (dataHandler != null) {
+                        BufferedReader reader = null;
+                        try {
+                            reader = new BufferedReader(
+                                    new InputStreamReader(dataHandler.getInputStream()));
+                            StringBuilder scriptSB = new StringBuilder();
+                            String currentLine;
+                            while ((currentLine = reader.readLine()) != null) {
+                                scriptSB.append(currentLine).append('\n');
+                            }
+                            includeSourceCode = scriptSB.toString();
+                            sew.getEngine().eval(includeSourceCode);
+                        } catch (IOException e) {
+                            handleException("Error in reading script as a stream ", e, synCtx);
+                        } finally {
 
-                                if (reader != null) {
-                                    try {
-                                        reader.close();
-                                    } catch (IOException e) {
-                                        handleException("Error in closing input" +
-                                                " stream ", e, synCtx);
-                                    }
+                            if (reader != null) {
+                                try {
+                                    reader.close();
+                                } catch (IOException e) {
+                                    handleException("Error in closing input" +
+                                            " stream ", e, synCtx);
                                 }
                             }
                         }
                     }
-                    includes.put(includeKey, includeSourceCode);
                 }
-            } finally {
-                resourceLock.unlock();
+                includes.put(includeKey, includeSourceCode);
             }
         }
+
+        sew.setInitialized(true);
+
+        return sew;
     }
 
     protected void initScriptEngine() {
@@ -503,14 +511,22 @@ public class ScriptMediator extends AbstractMediator {
             log.debug("Initializing script mediator for language : " + language);
         }
 
-        ScriptEngineManager manager = new ScriptEngineManager();
-        manager.registerEngineExtension("js", new RhinoScriptEngineFactory());
-        manager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
-        manager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
-        manager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
-        manager.registerEngineExtension("py", new JythonScriptEngineFactory());
-        this.scriptEngine = manager.getEngineByExtension(language);
-        this.jsEngine = manager.getEngineByExtension("jsEngine");
+        engineManager = new ScriptEngineManager();
+        engineManager.registerEngineExtension("js", new RhinoScriptEngineFactory());
+        engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
+        engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
+        engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+        engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
+        this.scriptEngine = engineManager.getEngineByExtension(language);
+
+        pool = new LinkedBlockingQueue<ScriptEngineWrapper>(poolSize);
+
+        for (int i = 0; i< poolSize; i++) {
+            ScriptEngineWrapper sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
+            pool.add(sew);
+        }
+
+        this.jsEngine = engineManager.getEngineByExtension("jsEngine");
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
@@ -558,6 +574,16 @@ public class ScriptMediator extends AbstractMediator {
 
     public void setLoader(ClassLoader loader) {
         this.loader = loader;
+    }
+
+    public ScriptEngineWrapper getNewScriptEngine() {
+        try {
+            return pool.take();
+        } catch (InterruptedException e) {
+            log.error("Error while taking object from pool");
+        }
+        // fall back
+        return new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
     }
 
     public boolean isContentAltering() {
