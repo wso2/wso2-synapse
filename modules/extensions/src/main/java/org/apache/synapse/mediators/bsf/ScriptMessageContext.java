@@ -46,6 +46,7 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
+import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Wrapper;
@@ -785,6 +786,12 @@ public class ScriptMessageContext implements MessageContext {
         } else if (obj instanceof String) {
             out.write('"');
             out.write(((String) obj).getBytes());
+            out.write('"');
+        } else if (obj instanceof ConsString) {
+            //This class represents a string composed of two components using the "+" operator
+            //in java script with rhino7 upward. ex:var str = "val1" + "val2";
+            out.write('"');
+            out.write((((ConsString) obj).toString()).getBytes());
             out.write('"');
         } else if (obj instanceof Integer ||
                 obj instanceof Long ||

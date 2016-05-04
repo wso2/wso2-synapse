@@ -75,6 +75,11 @@ public class ScriptMediator extends AbstractMediator {
     private static final String MC_VAR_NAME = "mc";
 
     /**
+     * Name of the java script language
+     */
+    private static final String JAVA_SCRIPT = "js";
+
+    /**
      * The registry entry key for a script loaded from the registry
      * Handle both static and dynamic(Xpath) Keys
      */
@@ -509,7 +514,13 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
-        xmlHelper = XMLHelper.getArgHelper(scriptEngine);
+        //Invoking a custom Helper class since there is an api change in rhino17 for js
+        if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
+            xmlHelper = new JavaScriptXmlHelper();
+        } else {
+            xmlHelper = XMLHelper.getArgHelper(scriptEngine);
+        }
+
 
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
         log.debug("Script mediator for language : " + language +
