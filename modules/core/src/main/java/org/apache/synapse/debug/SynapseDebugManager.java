@@ -19,6 +19,7 @@ package org.apache.synapse.debug;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axis2.addressing.EndpointReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
@@ -45,6 +46,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -71,10 +73,12 @@ public class SynapseDebugManager {
     private MediationFlowState medFlowState = MediationFlowState.IDLE;
     private boolean initialised = false;
     private static final Log log = LogFactory.getLog(SynapseDebugManager.class);
+    private Map addedPropertyValuesMap;
 
     protected SynapseDebugManager() {
         mediationFlowLock = new ReentrantLock();
         mediationFlowSem = new Semaphore(0);
+        addedPropertyValuesMap = new HashMap<MessageContext,Map<String,Set<String>>>();
     }
 
     public static SynapseDebugManager getInstance() {
@@ -192,8 +196,7 @@ public class SynapseDebugManager {
     public void advertiseMediationFlowStartPoint(MessageContext synCtx) {
         if (synEnv.isDebugEnabled()) {
             setMessageContext(synCtx);
-            this.advertiseDebugEvent(this.createDebugEvent
-                    (SynapseDebugEventConstants.DEBUG_EVENT_STARTED).toString());
+            this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_STARTED).toString());
             if (log.isDebugEnabled()) {
                 log.debug("Mediation flow started for id " + synCtx.getMessageID());
             }
@@ -210,6 +213,11 @@ public class SynapseDebugManager {
             this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
             if (log.isDebugEnabled()) {
                 log.debug("Mediation flow terminated for id " + synCtx.getMessageID());
+            }
+            String axis2ContextKey = getAxis2MessagePropertiesKey(
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext());
+            if (addedPropertyValuesMap.containsKey(axis2ContextKey)) {
+                addedPropertyValuesMap.remove(axis2ContextKey);
             }
         }
     }
@@ -795,6 +803,17 @@ public class SynapseDebugManager {
                 synCtx.isResponse() ? "response" : "request");
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
                 synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+        String axis2MessageContextKey=getAxis2MessagePropertiesKey(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        if (addedPropertyValuesMap.containsKey(axis2MessageContextKey)) {
+            Map scopePropertyMap = (Map) addedPropertyValuesMap.get(axis2MessageContextKey);
+            if (scopePropertyMap.containsKey(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)) {
+                Set<String> propertyKeySet = (Set<String>) scopePropertyMap
+                        .get(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2);
+                for (String key : propertyKeySet) {
+                    result.put(key, ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(key));
+                }
+            }
+        }
         JSONObject soapHeader = new JSONObject();
         if (synCtx.getEnvelope() != null) {
             SOAPHeader header = synCtx.getEnvelope().getHeader();
@@ -807,7 +826,6 @@ public class SynapseDebugManager {
                     } else if (o instanceof OMElement) {
                         OMElement headerElem = (OMElement) o;
                         soapHeader.put(headerElem.getLocalName(), headerElem.getText());
-
                     }
                 }
             }
@@ -827,9 +845,8 @@ public class SynapseDebugManager {
 
     }
 
-    public void addMediationFlowPointProperty(String propertyContext,
-                                              JSONObject property_arguments,
-                                              boolean isActionSet) {
+    public void addMediationFlowPointProperty(String propertyContext, JSONObject property_arguments,
+            boolean isActionSet) {
         try {
             String property_key = property_arguments
                     .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME);
@@ -844,9 +861,10 @@ public class SynapseDebugManager {
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.setProperty(property_key, property_value);
+                    setAxis2Property(property_key, property_value, axis2MessageCtx);
                     if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(property_key)) {
-                        axis2MessageCtx.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, property_value);
+                        setAxis2Property(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, property_value,
+                                axis2MessageCtx);
                         Object o = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                         Map headers = (Map) o;
                         if (headers != null) {
@@ -919,4 +937,67 @@ public class SynapseDebugManager {
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }
 
+    private void setAxis2Property(String propertyKey, String propertyValue,
+            org.apache.axis2.context.MessageContext axis2MessageCtx) {
+        //Do not change the Envelope, SoapHeaders and Transport Headers
+        switch (propertyKey) {
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_TO:
+            axis2MessageCtx.setTo(new EndpointReference(propertyValue));
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_FROM:
+            axis2MessageCtx.setFrom(new EndpointReference(propertyValue));
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_WSACTION:
+            axis2MessageCtx.setWSAAction(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_SOAPACTION:
+            axis2MessageCtx.setSoapAction(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_REPLY_TO:
+            axis2MessageCtx.setReplyTo(new EndpointReference(propertyValue));
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_ID:
+            axis2MessageCtx.setMessageID(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION:
+            if ("response".equalsIgnoreCase(propertyValue)) {
+                synCtx.setResponse(true);
+            } else if ("request".equalsIgnoreCase(propertyValue)) {
+                synCtx.setResponse(false);
+            } else {
+                log.warn("unknown axis2 direction : " + propertyValue);
+            }
+            break;
+        default:
+            //MessageType, ContentType, ExcessTransportHeaders and other properties
+            axis2MessageCtx.setProperty(propertyKey, propertyValue);
+            Map<String, Set<String>> scopePropertiesMap;
+            Set<String> axis2PropertyKeySet;
+            String axis2MessageCtxKey = getAxis2MessagePropertiesKey(axis2MessageCtx);
+            if (addedPropertyValuesMap.containsKey(axis2MessageCtxKey)) {
+                scopePropertiesMap = (Map) addedPropertyValuesMap.get(axis2MessageCtxKey);
+
+                if (scopePropertiesMap.containsKey(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)) {
+                    axis2PropertyKeySet = scopePropertiesMap
+                            .get(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2);
+                } else {
+                    axis2PropertyKeySet = new HashSet<>();
+                }
+                axis2PropertyKeySet.add(propertyKey);
+            } else {
+                scopePropertiesMap = new HashMap<>();
+                axis2PropertyKeySet = new HashSet<>();
+                axis2PropertyKeySet.add(propertyKey);
+            }
+            scopePropertiesMap
+                    .put(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2, axis2PropertyKeySet);
+            addedPropertyValuesMap.put(axis2MessageCtxKey, scopePropertiesMap);
+        }
+
+    }
+
+    private String getAxis2MessagePropertiesKey(org.apache.axis2.context.MessageContext axis2MessageCtx) {
+        String axis2MessageCtxKey = axis2MessageCtx.toString();
+        return axis2MessageCtxKey;
+    }
 }
