@@ -298,7 +298,8 @@ public class ScriptMediator extends AbstractMediator {
     private Object mediateWithExternalScript(MessageContext synCtx)
             throws ScriptException, NoSuchMethodException {
         ScriptEngineWrapper sew = prepareExternalScript(synCtx);
-        ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
+        XMLHelper helper = XMLHelper.getArgHelper(sew.getEngine());
+        ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, helper);
         processJSONPayload(synCtx, scriptMC);
         Invocable invocableScript = (Invocable) sew.getEngine();
 
