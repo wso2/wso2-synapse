@@ -24,7 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
@@ -834,9 +833,9 @@ public class SynapseDebugManager {
         try {
             String property_key = property_arguments
                     .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME);
-            String property_value = property_arguments
-                    .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_VALUE);
             if (isActionSet) {
+                String property_value = property_arguments
+                        .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_VALUE);
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)
                         || propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)) {
                     synCtx.setProperty(property_key, property_value);
@@ -882,7 +881,9 @@ public class SynapseDebugManager {
                     axis2smc.getAxis2MessageContext().getOperationContext().setProperty(property_key, property_value);
                 }
             } else {
-                if (propertyContext == null || XMLConfigConstants.SCOPE_DEFAULT.equals(propertyContext)) {
+                if (propertyContext == null || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT
+                        .equals(propertyContext) || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE
+                        .equals(propertyContext)) {
                     Set pros = synCtx.getPropertyKeySet();
                     if (pros != null) {
                         pros.remove(property_key);
@@ -903,6 +904,11 @@ public class SynapseDebugManager {
                         Map headersMap = (Map) headers;
                         headersMap.remove(property_key);
                     }
+                } else {
+                    log.error("Failed to set or remove property in the scope " + propertyContext);
+                    this.advertiseCommandResponse(createDebugCommandResponse(false,
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY)
+                            .toString());
                 }
             }
         } catch (JSONException e) {
