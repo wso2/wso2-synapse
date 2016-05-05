@@ -108,7 +108,41 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Consume input");
         }
-//        super.consumeInput(handler);
+        if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //Debugger not enabled, hence going through normal flow
+            super.consumeInput(handler);
+        } else {
+            consumeInputWire(handler);
+        }
+        if (isReleaseConn()) {
+            if (handler instanceof TargetHandler) {
+                ((TargetHandler) handler).getTargetConfiguration().getConnections().releaseConnection(this);
+                this.setReleaseConn(false);
+            }
+        }
+    }
+
+    @Override
+    public void produceOutput(final NHttpClientEventHandler handler) {
+        if (this.log.isDebugEnabled()) {
+            this.log.debug(this.id + ": Produce output");
+        }
+        if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //Debugger not enabled, hence going through normal flow
+            super.produceOutput(handler);
+        } else {
+            produceOutputWire(handler);
+        }
+    }
+
+    /**
+     * Helper method for consume input when synapse debugger is enabled
+     * Note that this method need to be changed if we upgrade to new httpcore-nio version, this is override of it's
+     * consumeInput method
+     *
+     * @param handler
+     */
+    private void consumeInputWire(final NHttpClientEventHandler handler) {
         if (getContext() == null) {
             return;
         }
@@ -179,22 +213,17 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
                 // Finally set buffered input flag
                 this.hasBufferedInput = this.inbuf.hasData();
             }
-
-            if (isReleaseConn()) {
-                if (handler instanceof TargetHandler) {
-                    ((TargetHandler) handler).getTargetConfiguration().getConnections().releaseConnection(this);
-                    this.setReleaseConn(false);
-                }
-            }
         }
     }
 
-    @Override
-    public void produceOutput(final NHttpClientEventHandler handler) {
-        if (this.log.isDebugEnabled()) {
-            this.log.debug(this.id + ": Produce output");
-        }
-//        super.produceOutput(handler);
+    /**
+     * Helper method for produce output when synapse debugger is enabled
+     * Note that this method need to be changed if we upgrade to new httpcore-nio version, this is override of it's
+     * produceOutput method
+     *
+     * @param handler
+     */
+    private void produceOutputWire(final NHttpClientEventHandler handler) {
         if (getContext() == null) {
             return;
         }
