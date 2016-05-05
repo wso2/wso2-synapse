@@ -20,10 +20,12 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.addressing.EndpointReference;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -45,6 +47,9 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -287,7 +292,7 @@ public class SynapseDebugManager {
      *
      * @param debug_line string in JSON format which is communicated via command channel
      */
-    public void processDebugCommand(String debug_line) {
+    public void processDebugCommand(String debug_line) throws IOException {
         try {
             JSONObject parsed_debug_line = new JSONObject(debug_line);
             String command = "";
@@ -690,7 +695,7 @@ public class SynapseDebugManager {
     }
 
     public void acquireMediationFlowPointProperties(String propertyOrProperties, String propertyContext,
-            JSONObject property_arguments) {
+            JSONObject property_arguments) throws IOException {
         if (!(this.medFlowState == MediationFlowState.SUSPENDED)) {
             this.advertiseCommandResponse(createDebugCommandResponse(false,
                     SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES)
@@ -852,7 +857,7 @@ public class SynapseDebugManager {
         }
     }
 
-    protected JSONObject getAxis2Properties() throws JSONException {
+    protected JSONObject getAxis2Properties() throws JSONException, IOException {
         JSONObject result = new JSONObject();
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_TO,
                 synCtx.getTo() != null ? synCtx.getTo().getAddress() : "");
@@ -867,8 +872,25 @@ public class SynapseDebugManager {
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_ID,
                 synCtx.getMessageID() != null ? synCtx.getMessageID() : "");
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION, synCtx.isResponse() ? "response" : "request");
-        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
-                synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+        if (((String) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("messageType"))
+                .contains("json")) {
+            InputStream jsonPayloadStream = JsonUtil
+                    .getJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+            if (jsonPayloadStream != null) {
+                StringWriter writer = new StringWriter();
+                String encoding = null;
+                IOUtils.copy(jsonPayloadStream, writer, encoding);
+                String jsonPayload = writer.toString();
+                result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
+                        jsonPayload != null ? jsonPayload : synCtx.getEnvelope().toString());
+            } else {
+                result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
+                        synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+            }
+        } else {
+            result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
+                    synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+        }
         String axis2MessageContextKey = getAxis2MessagePropertiesKey(
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext());
         if (addedPropertyValuesMap.containsKey(axis2MessageContextKey)) {
@@ -928,7 +950,7 @@ public class SynapseDebugManager {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
                     setAxis2Property(propertyKey, propertyValue, axis2MessageCtx);
-                    if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(propertyKey)) {
+                    if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equalsIgnoreCase(propertyKey)) {
                         setAxis2Property(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, propertyValue,
                                 axis2MessageCtx);
                         Object o = axis2MessageCtx
@@ -1036,6 +1058,9 @@ public class SynapseDebugManager {
             break;
         case SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_ID:
             axis2MessageCtx.setMessageID(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_TYPE:
+            axis2MessageCtx.setProperty("messageType", propertyValue);
             break;
         case SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION:
             if ("response".equalsIgnoreCase(propertyValue)) {
