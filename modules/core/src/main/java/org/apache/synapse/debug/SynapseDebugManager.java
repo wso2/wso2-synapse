@@ -19,10 +19,13 @@ package org.apache.synapse.debug;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
+import org.apache.axis2.addressing.EndpointReference;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -44,7 +47,11 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -71,10 +78,12 @@ public class SynapseDebugManager {
     private MediationFlowState medFlowState = MediationFlowState.IDLE;
     private boolean initialised = false;
     private static final Log log = LogFactory.getLog(SynapseDebugManager.class);
+    private Map addedPropertyValuesMap;
 
     protected SynapseDebugManager() {
         mediationFlowLock = new ReentrantLock();
         mediationFlowSem = new Semaphore(0);
+        addedPropertyValuesMap = new HashMap<MessageContext, Map<String, Set<String>>>();
     }
 
     public static SynapseDebugManager getInstance() {
@@ -96,10 +105,8 @@ public class SynapseDebugManager {
      * @param synEnv                    reference to environment
      * @param startListenAsynchronously start interacting with interface asynchronously
      */
-    public void init(SynapseConfiguration synCfg,
-                     SynapseDebugInterface debugInterface,
-                     SynapseEnvironment synEnv,
-                     boolean startListenAsynchronously) {
+    public void init(SynapseConfiguration synCfg, SynapseDebugInterface debugInterface, SynapseEnvironment synEnv,
+            boolean startListenAsynchronously) {
         if (synEnv.isDebugEnabled()) {
             this.synCfg = synCfg;
             this.debugInterface = debugInterface;
@@ -119,8 +126,8 @@ public class SynapseDebugManager {
                 if (log.isDebugEnabled()) {
                     log.debug("Updated Synapse Configuration...");
                 }
-                this.advertiseDebugEvent(this.createDebugEvent(
-                        SynapseDebugEventConstants.DEBUG_EVENT_CONFIGURATION_UPDATED).toString());
+                this.advertiseDebugEvent(
+                        this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_CONFIGURATION_UPDATED).toString());
             }
         }
 
@@ -152,15 +159,13 @@ public class SynapseDebugManager {
         }
     }
 
-
     /**
      * Transit the mediation flow state to the SUSPENDED from previous UNKNOWN state
      * Transiting to SUSPENDED state will put the calling thread to sleep as sem.down() is called
      */
     public void transitMediationFlowStateToSuspended() {
         if (synEnv.isDebugEnabled()) {
-            if (this.medFlowState == MediationFlowState.IDLE
-                    || this.medFlowState == MediationFlowState.ACTIVE) {
+            if (this.medFlowState == MediationFlowState.IDLE || this.medFlowState == MediationFlowState.ACTIVE) {
                 medFlowState = MediationFlowState.SUSPENDED;
                 try {
                     mediationFlowSem.acquire();
@@ -192,8 +197,7 @@ public class SynapseDebugManager {
     public void advertiseMediationFlowStartPoint(MessageContext synCtx) {
         if (synEnv.isDebugEnabled()) {
             setMessageContext(synCtx);
-            this.advertiseDebugEvent(this.createDebugEvent
-                    (SynapseDebugEventConstants.DEBUG_EVENT_STARTED).toString());
+            this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_STARTED).toString());
             if (log.isDebugEnabled()) {
                 log.debug("Mediation flow started for id " + synCtx.getMessageID());
             }
@@ -207,9 +211,15 @@ public class SynapseDebugManager {
      */
     public void advertiseMediationFlowTerminatePoint(MessageContext synCtx) {
         if (synEnv.isDebugEnabled()) {
-            this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
+            this.advertiseDebugEvent(
+                    this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
             if (log.isDebugEnabled()) {
                 log.debug("Mediation flow terminated for id " + synCtx.getMessageID());
+            }
+            String axis2ContextKey = getAxis2MessagePropertiesKey(
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext());
+            if (addedPropertyValuesMap.containsKey(axis2ContextKey)) {
+                addedPropertyValuesMap.remove(axis2ContextKey);
             }
         }
     }
@@ -218,7 +228,7 @@ public class SynapseDebugManager {
      * advertise a mediation skip to the communication channel
      *
      * @param skipPoint describes a unique point in the mediation flow
-     * @param synCtx  message context
+     * @param synCtx    message context
      */
     public void advertiseMediationFlowSkip(MessageContext synCtx, SynapseMediationFlowPoint skipPoint) {
         if (synEnv.isDebugEnabled() && debugInterface != null) {
@@ -234,7 +244,7 @@ public class SynapseDebugManager {
      * advertise a mediation breakpoint to the communication channel
      *
      * @param breakPoint describes a unique point in the mediation flow
-     * @param synCtx message context
+     * @param synCtx     message context
      */
     public void advertiseMediationFlowBreakPoint(MessageContext synCtx, SynapseMediationFlowPoint breakPoint) {
         if (synEnv.isDebugEnabled()) {
@@ -244,7 +254,8 @@ public class SynapseDebugManager {
                 log.debug("Mediation flow suspended at " + logMediatorPosition(breakPoint));
             }
             this.transitMediationFlowStateToSuspended();
-            this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_RESUMED_CLIENT).toString());
+            this.advertiseDebugEvent(
+                    this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_RESUMED_CLIENT).toString());
             if (log.isDebugEnabled()) {
                 log.info("Mediation flow resumed from suspension at " + logMediatorPosition(breakPoint));
             }
@@ -263,10 +274,10 @@ public class SynapseDebugManager {
         }
         log = log.concat("mediator position " + position);
         if (flowPoint instanceof SequenceMediationFlowPoint) {
-            log = log.concat(" " + ((SequenceMediationFlowPoint) flowPoint).getSequenceBaseType()
-                    .toString() + " " + flowPoint.getKey());
-            log = log.concat(" sequence " + ((SequenceMediationFlowPoint) flowPoint).getSynapseSequenceType()
-                    .toString().toLowerCase());
+            log = log.concat(" " + ((SequenceMediationFlowPoint) flowPoint).getSequenceBaseType().toString() + " "
+                    + flowPoint.getKey());
+            log = log.concat(" sequence " + ((SequenceMediationFlowPoint) flowPoint).getSynapseSequenceType().toString()
+                    .toLowerCase());
         } else {
             log = log.concat(" " + flowPoint.getSynapseMediationComponent().toString().toLowerCase() + " " +
                     flowPoint.getKey());
@@ -281,7 +292,7 @@ public class SynapseDebugManager {
      *
      * @param debug_line string in JSON format which is communicated via command channel
      */
-    public void processDebugCommand(String debug_line) {
+    public void processDebugCommand(String debug_line) throws IOException {
         try {
             JSONObject parsed_debug_line = new JSONObject(debug_line);
             String command = "";
@@ -302,8 +313,7 @@ public class SynapseDebugManager {
                 } else {
                     String mediation_component = parsed_debug_line
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT);
-                    JSONObject med_component_arguments = parsed_debug_line
-                            .getJSONObject(mediation_component);
+                    JSONObject med_component_arguments = parsed_debug_line.getJSONObject(mediation_component);
                     if (skipOrBreakPointOrProperty.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_BREAKPOINT)) {
                         this.registerMediationFlowPoint(mediation_component, med_component_arguments, true, false);
                     } else if (skipOrBreakPointOrProperty.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_SKIP)) {
@@ -335,8 +345,7 @@ public class SynapseDebugManager {
                 } else {
                     String mediation_component = parsed_debug_line
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT);
-                    JSONObject med_component_arguments = parsed_debug_line
-                            .getJSONObject(mediation_component);
+                    JSONObject med_component_arguments = parsed_debug_line.getJSONObject(mediation_component);
                     if (skipOrBreakPointOrProperty.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_BREAKPOINT)) {
                         this.registerMediationFlowPoint(mediation_component, med_component_arguments, true, true);
                     } else if (skipOrBreakPointOrProperty.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_SKIP)) {
@@ -363,10 +372,8 @@ public class SynapseDebugManager {
      * @param isBreakpoint            either breakpoint or skip
      * @param registerMode            either register or un register
      */
-    public void registerMediationFlowPoint(String mediation_component,
-                                           JSONObject med_component_arguments,
-                                           boolean isBreakpoint,
-                                           boolean registerMode) {
+    public void registerMediationFlowPoint(String mediation_component, JSONObject med_component_arguments,
+            boolean isBreakpoint, boolean registerMode) {
         try {
             if (mediation_component.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_CONNECTOR)) {
                 String connector_key = med_component_arguments
@@ -381,115 +388,133 @@ public class SynapseDebugManager {
                     med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                 }
                 if (isBreakpoint) {
-                    ConnectorDebugUtil.registerConnectorMediationFlowBreakPoint(synCfg, connector_key,
-                            connector_method_name, med_pos, registerMode);
+                    ConnectorDebugUtil
+                            .registerConnectorMediationFlowBreakPoint(synCfg, connector_key, connector_method_name,
+                                    med_pos, registerMode);
                 } else {
-                    ConnectorDebugUtil.registerConnectorMediationFlowSkip(synCfg, connector_key,
-                            connector_method_name, med_pos, registerMode);
+                    ConnectorDebugUtil
+                            .registerConnectorMediationFlowSkip(synCfg, connector_key, connector_method_name, med_pos,
+                                    registerMode);
                 }
 
-            } else if (mediation_component.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE)) {
-                if ((!med_component_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY))
-                        && (!med_component_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API))
-                        && (!med_component_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND))) {
+            } else if (mediation_component
+                    .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE)) {
+                if ((!med_component_arguments
+                        .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY))
+                        && (!med_component_arguments
+                        .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API))
+                        && (!med_component_arguments
+                        .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND))) {
                     String sequence_key = med_component_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_KEY);
                     String sequence_type = med_component_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE);
-                    String component_mediator_position = med_component_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
+                    String component_mediator_position = med_component_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
                     String[] mediator_position_array = component_mediator_position.split("\\s+");
                     int[] med_pos = new int[mediator_position_array.length];
                     for (int counter = 0; counter < mediator_position_array.length; counter++) {
                         med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                     }
                     if (isBreakpoint) {
-                        SequenceDebugUtil.registerSequenceMediationFlowBreakPoint(synCfg, sequence_type,
-                                sequence_key, med_pos, registerMode);
+                        SequenceDebugUtil
+                                .registerSequenceMediationFlowBreakPoint(synCfg, sequence_type, sequence_key, med_pos,
+                                        registerMode);
                     } else {
-                        SequenceDebugUtil.registerSequenceMediationFlowSkip(synCfg, sequence_type,
-                                sequence_key, med_pos, registerMode);
+                        SequenceDebugUtil
+                                .registerSequenceMediationFlowSkip(synCfg, sequence_type, sequence_key, med_pos,
+                                        registerMode);
                     }
-                } else if (med_component_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY)) {
-                    JSONObject proxy_arguments = med_component_arguments
-                            .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY);
-                    String proxy_key = proxy_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY_KEY);
+                } else if (med_component_arguments
+                        .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY)) {
+                    JSONObject proxy_arguments = med_component_arguments.getJSONObject(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY);
+                    String proxy_key = proxy_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY_KEY);
                     String sequence_type = proxy_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE);
-                    String component_mediator_position = proxy_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
+                    String component_mediator_position = proxy_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
                     String[] mediator_position_array = component_mediator_position.split("\\s+");
                     int[] med_pos = new int[mediator_position_array.length];
                     for (int counter = 0; counter < mediator_position_array.length; counter++) {
                         med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                     }
                     if (isBreakpoint) {
-                        ProxyDebugUtil.registerProxySequenceMediationFlowBreakPoint(synCfg, sequence_type,
-                                proxy_key, med_pos, registerMode);
+                        ProxyDebugUtil
+                                .registerProxySequenceMediationFlowBreakPoint(synCfg, sequence_type, proxy_key, med_pos,
+                                        registerMode);
                     } else {
-                        ProxyDebugUtil.registerProxySequenceMediationFlowSkip(synCfg, sequence_type,
-                                proxy_key, med_pos, registerMode);
+                        ProxyDebugUtil.registerProxySequenceMediationFlowSkip(synCfg, sequence_type, proxy_key, med_pos,
+                                registerMode);
                     }
 
-                } else if (med_component_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND)) {
-                    JSONObject inbound_arguments = med_component_arguments
-                            .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND);
-                    String inbound_key = inbound_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND_KEY);
+                } else if (med_component_arguments
+                        .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND)) {
+                    JSONObject inbound_arguments = med_component_arguments.getJSONObject(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND);
+                    String inbound_key = inbound_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND_KEY);
                     String sequence_type = inbound_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE);
-                    String component_mediator_position = inbound_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
+                    String component_mediator_position = inbound_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
                     String[] mediator_position_array = component_mediator_position.split("\\s+");
                     int[] med_pos = new int[mediator_position_array.length];
                     for (int counter = 0; counter < mediator_position_array.length; counter++) {
                         med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                     }
                     if (isBreakpoint) {
-                        InboundEndpointDebugUtil.registerInboundSequenceMediationFlowBreakPoint(synCfg, sequence_type,
-                                inbound_key, med_pos, registerMode);
+                        InboundEndpointDebugUtil
+                                .registerInboundSequenceMediationFlowBreakPoint(synCfg, sequence_type, inbound_key,
+                                        med_pos, registerMode);
                     } else {
-                        InboundEndpointDebugUtil.registerInboundSequenceMediationFlowSkip(synCfg, sequence_type,
-                                inbound_key, med_pos, registerMode);
+                        InboundEndpointDebugUtil
+                                .registerInboundSequenceMediationFlowSkip(synCfg, sequence_type, inbound_key, med_pos,
+                                        registerMode);
                     }
 
-                } else if (med_component_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API)) {
+                } else if (med_component_arguments
+                        .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API)) {
                     JSONObject api_arguments = med_component_arguments
                             .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API);
-                    JSONObject resource_arguments = api_arguments
-                            .getJSONObject(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE);
+                    JSONObject resource_arguments = api_arguments.getJSONObject(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE);
                     String mapping = null;
-                    if (resource_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URI_TEMPLATE)) {
-                        mapping = resource_arguments
-                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URI_TEMPLATE);
-                    } else if (resource_arguments.has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URL_MAPPING)) {
-                        mapping = resource_arguments
-                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URL_MAPPING);
+                    if (resource_arguments
+                            .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URI_TEMPLATE)) {
+                        mapping = resource_arguments.getString(
+                                SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URI_TEMPLATE);
+                    } else if (resource_arguments
+                            .has(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URL_MAPPING)) {
+                        mapping = resource_arguments.getString(
+                                SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_URL_MAPPING);
                     }
-                    String method = resource_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_METHOD);
+                    String method = resource_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_METHOD);
                     String api_key = api_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_KEY);
                     String sequence_type = api_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE);
-                    String component_mediator_position = api_arguments
-                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
+                    String component_mediator_position = api_arguments.getString(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION);
                     String[] mediator_position_array = component_mediator_position.split("\\s+");
                     int[] med_pos = new int[mediator_position_array.length];
                     for (int counter = 0; counter < mediator_position_array.length; counter++) {
                         med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                     }
                     if (isBreakpoint) {
-                        APIDebugUtil.registerAPISequenceMediationFlowBreakPoint(synCfg, mapping, method,
-                                sequence_type, api_key, med_pos, registerMode);
+                        APIDebugUtil.registerAPISequenceMediationFlowBreakPoint(synCfg, mapping, method, sequence_type,
+                                api_key, med_pos, registerMode);
                     } else {
-                        APIDebugUtil.registerAPISequenceMediationFlowSkip(synCfg, mapping, method,
-                                sequence_type, api_key, med_pos, registerMode);
+                        APIDebugUtil
+                                .registerAPISequenceMediationFlowSkip(synCfg, mapping, method, sequence_type, api_key,
+                                        med_pos, registerMode);
                     }
                 }
 
-            } else if (mediation_component.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_TEMPLATE)) {
+            } else if (mediation_component
+                    .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_TEMPLATE)) {
                 String template_key = med_component_arguments
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_TEMPLATE_KEY);
                 String component_mediator_position = med_component_arguments
@@ -500,11 +525,10 @@ public class SynapseDebugManager {
                     med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                 }
                 if (isBreakpoint) {
-                    TemplateDebugUtil.registerTemplateMediationFlowBreakPoint(synCfg, template_key,
-                            med_pos, registerMode);
+                    TemplateDebugUtil
+                            .registerTemplateMediationFlowBreakPoint(synCfg, template_key, med_pos, registerMode);
                 } else {
-                    TemplateDebugUtil.registerTemplateMediationFlowSkip(synCfg, template_key,
-                            med_pos, registerMode);
+                    TemplateDebugUtil.registerTemplateMediationFlowSkip(synCfg, template_key, med_pos, registerMode);
                 }
             }
         } catch (JSONException ex) {
@@ -578,24 +602,30 @@ public class SynapseDebugManager {
                 } else if (((SequenceMediationFlowPoint) point).getSequenceBaseType()
                         .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY)) {
                     JSONObject proxy_parameters = new JSONObject();
-                    proxy_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY_KEY,
-                            point.getKey());
+                    proxy_parameters
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY_KEY,
+                                    point.getKey());
                     proxy_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE,
                             ((SequenceMediationFlowPoint) point).getSynapseSequenceType().toString().toLowerCase());
-                    proxy_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION,
-                            toString(point.getMediatorPosition()));
-                    parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY, proxy_parameters);
+                    proxy_parameters
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION,
+                                    toString(point.getMediatorPosition()));
+                    parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_PROXY,
+                            proxy_parameters);
                     event.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE, parameters);
                 } else if (((SequenceMediationFlowPoint) point).getSequenceBaseType()
                         .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND)) {
                     JSONObject inbound_parameters = new JSONObject();
-                    inbound_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND_KEY,
-                            point.getKey());
+                    inbound_parameters
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND_KEY,
+                                    point.getKey());
                     inbound_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE,
                             ((SequenceMediationFlowPoint) point).getSynapseSequenceType().toString().toLowerCase());
-                    inbound_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION,
-                            toString(point.getMediatorPosition()));
-                    parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND, inbound_parameters);
+                    inbound_parameters
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION,
+                                    toString(point.getMediatorPosition()));
+                    parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_INBOUND,
+                            inbound_parameters);
                     event.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE, parameters);
                 } else if (((SequenceMediationFlowPoint) point).getSequenceBaseType()
                         .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API)) {
@@ -603,16 +633,21 @@ public class SynapseDebugManager {
                     api_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_KEY,
                             point.getKey());
                     JSONObject resource = new JSONObject();
-                    resource.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_MAPPING,
+                    resource.put(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_MAPPING,
                             ((APIMediationFlowPoint) point).getResourceMapping());
-                    resource.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_METHOD,
+                    resource.put(
+                            SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_METHOD,
                             ((APIMediationFlowPoint) point).getResourceHTTPMethod());
-                    api_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE, resource);
+                    api_parameters
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE,
+                                    resource);
                     api_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_TYPE,
                             ((SequenceMediationFlowPoint) point).getSynapseSequenceType().toString().toLowerCase());
                     api_parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION,
                             toString(point.getMediatorPosition()));
-                    parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API, api_parameters);
+                    parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API,
+                            api_parameters);
                     event.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE, parameters);
                 }
             } else if (point.getSynapseMediationComponent().equals(SynapseMediationComponent.TEMPLATE)) {
@@ -626,7 +661,8 @@ public class SynapseDebugManager {
             } else if (point.getSynapseMediationComponent().equals(SynapseMediationComponent.CONNECTOR)) {
                 event.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT,
                         SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_CONNECTOR);
-                parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_CONNECTOR_KEY, point.getKey());
+                parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_CONNECTOR_KEY,
+                        point.getKey());
                 parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_CONNECTOR_METHOD,
                         ((ConnectorMediationFlowPoint) point).getConnectorMediationComponentMethod());
                 parameters.put(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_MEDIATOR_POSITION,
@@ -658,12 +694,12 @@ public class SynapseDebugManager {
         return positionString;
     }
 
-    public void acquireMediationFlowPointProperties(String propertyOrProperties,
-                                                    String propertyContext,
-                                                    JSONObject property_arguments) {
+    public void acquireMediationFlowPointProperties(String propertyOrProperties, String propertyContext,
+            JSONObject property_arguments) throws IOException {
         if (!(this.medFlowState == MediationFlowState.SUSPENDED)) {
             this.advertiseCommandResponse(createDebugCommandResponse(false,
-                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES).toString());
+                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ACQUIRE_MESSAGE_CONTEXT_PROPERTIES)
+                    .toString());
             return;
         }
         try {
@@ -673,8 +709,10 @@ public class SynapseDebugManager {
                     JSONObject data_synapse = new JSONObject(((Axis2MessageContext) synCtx).getProperties());
                     JSONObject data_axis2_prop = new JSONObject();
                     JSONObject data_synapse_prop = new JSONObject();
-                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2, data_axis2);
-                    data_synapse_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_SYNAPSE, data_synapse);
+                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2,
+                            data_axis2);
+                    data_synapse_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_SYNAPSE,
+                            data_synapse);
                     JSONArray data_array = new JSONArray();
                     data_array.put(data_axis2_prop);
                     data_array.put(data_synapse_prop);
@@ -683,33 +721,48 @@ public class SynapseDebugManager {
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)) {
                     JSONObject data_axis2 = getAxis2Properties();
                     JSONObject data_axis2_prop = new JSONObject();
-                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2, data_axis2);
+                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2,
+                            data_axis2);
                     debugInterface.getPortListenWriter().println(data_axis2_prop.toString());
                     debugInterface.getPortListenWriter().flush();
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)
-                        || propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)) {
+                        || propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)) {
                     JSONObject data_synapse = new JSONObject(((Axis2MessageContext) synCtx).getProperties());
                     JSONObject data_synapse_prop = new JSONObject();
-                    data_synapse_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_SYNAPSE, data_synapse);
+                    data_synapse_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_SYNAPSE,
+                            data_synapse);
                     debugInterface.getPortListenWriter().println(data_synapse_prop.toString());
                     debugInterface.getPortListenWriter().flush();
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)) {
-                    JSONObject data_axis2 = new JSONObject(((Axis2MessageContext) synCtx).getAxis2MessageContext().getOptions().getProperties());
+                } else if (propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)) {
+                    JSONObject data_axis2 = new JSONObject(
+                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOptions().getProperties());
                     JSONObject data_axis2_prop = new JSONObject();
-                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2CLIENT, data_axis2);
+                    data_axis2_prop
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2CLIENT,
+                                    data_axis2);
                     debugInterface.getPortListenWriter().println(data_axis2_prop.toString());
                     debugInterface.getPortListenWriter().flush();
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)) {
-                    JSONObject data_axis2 = new JSONObject((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
-                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                } else if (propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)) {
+                    JSONObject data_axis2 = new JSONObject((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                     JSONObject data_axis2_prop = new JSONObject();
-                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2TRANSPORT, data_axis2);
+                    data_axis2_prop
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2TRANSPORT,
+                                    data_axis2);
                     debugInterface.getPortListenWriter().println(data_axis2_prop.toString());
                     debugInterface.getPortListenWriter().flush();
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)) {
-                    JSONObject data_axis2 = new JSONObject(((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext().getProperties());
+                } else if (propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)) {
+                    JSONObject data_axis2 = new JSONObject(
+                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext()
+                                    .getProperties());
                     JSONObject data_axis2_prop = new JSONObject();
-                    data_axis2_prop.put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2OPERATION, data_axis2);
+                    data_axis2_prop
+                            .put(SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2OPERATION,
+                                    data_axis2);
                     debugInterface.getPortListenWriter().println(data_axis2_prop.toString());
                     debugInterface.getPortListenWriter().flush();
                 }
@@ -717,57 +770,84 @@ public class SynapseDebugManager {
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)) {
                     JSONObject data_axis2 = getAxis2Properties();
                     Object result = null;
-                    if (data_axis2.has(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
-                        result = data_axis2.get(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
+                    if (data_axis2.has(property_arguments
+                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
+                        result = data_axis2.get(property_arguments
+                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
                     }
                     JSONObject json_result = new JSONObject();
-                    json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME), result);
+                    json_result
+                            .put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME),
+                                    result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
                     debugInterface.getPortListenWriter().flush();
 
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)
-                        || propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)) {
+                        || propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)) {
                     JSONObject data_synapse = new JSONObject(((Axis2MessageContext) synCtx).getProperties());
                     Object result = null;
-                    if (data_synapse.has(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
-                        result = data_synapse.getJSONObject(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
+                    if (data_synapse.has(property_arguments
+                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
+                        result = data_synapse.getJSONObject(
+                                property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
                     }
                     JSONObject json_result = new JSONObject();
-                    json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME), result);
+                    json_result
+                            .put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME),
+                                    result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
                     debugInterface.getPortListenWriter().flush();
 
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)) {
-                    JSONObject data_axis2 = new JSONObject(((Axis2MessageContext) synCtx).getAxis2MessageContext().getOptions().getProperties());
+                } else if (propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)) {
+                    JSONObject data_axis2 = new JSONObject(
+                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOptions().getProperties());
                     Object result = null;
-                    if (data_axis2.has(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
-                        result = data_axis2.get(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
+                    if (data_axis2.has(property_arguments
+                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
+                        result = data_axis2.get(property_arguments
+                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
                     }
                     JSONObject json_result = new JSONObject();
-                    json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME), result);
+                    json_result
+                            .put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME),
+                                    result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
                     debugInterface.getPortListenWriter().flush();
 
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)) {
-                    JSONObject data_axis2 = new JSONObject((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
-                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                } else if (propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)) {
+                    JSONObject data_axis2 = new JSONObject((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                     Object result = null;
-                    if (data_axis2.has(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
-                        result = data_axis2.get(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
+                    if (data_axis2.has(property_arguments
+                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
+                        result = data_axis2.get(property_arguments
+                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
                     }
                     JSONObject json_result = new JSONObject();
-                    json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME), result);
+                    json_result
+                            .put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME),
+                                    result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
                     debugInterface.getPortListenWriter().flush();
 
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)) {
-                    JSONObject data_axis2 = new JSONObject(((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext().getProperties());
+                } else if (propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)) {
+                    JSONObject data_axis2 = new JSONObject(
+                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext()
+                                    .getProperties());
                     Object result = null;
-                    if (data_axis2.has(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
-                        result = data_axis2.get(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
+                    if (data_axis2.has(property_arguments
+                            .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME))) {
+                        result = data_axis2.get(property_arguments
+                                .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME));
                     }
                     JSONObject json_result = new JSONObject();
-                    json_result.put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME), result);
+                    json_result
+                            .put(property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME),
+                                    result);
                     debugInterface.getPortListenWriter().println(json_result.toString());
                     debugInterface.getPortListenWriter().flush();
                 }
@@ -777,7 +857,7 @@ public class SynapseDebugManager {
         }
     }
 
-    protected JSONObject getAxis2Properties() throws JSONException {
+    protected JSONObject getAxis2Properties() throws JSONException, IOException {
         JSONObject result = new JSONObject();
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_TO,
                 synCtx.getTo() != null ? synCtx.getTo().getAddress() : "");
@@ -791,10 +871,38 @@ public class SynapseDebugManager {
                 synCtx.getReplyTo() != null ? synCtx.getReplyTo().getAddress() : "");
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_ID,
                 synCtx.getMessageID() != null ? synCtx.getMessageID() : "");
-        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION,
-                synCtx.isResponse() ? "response" : "request");
-        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
-                synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION, synCtx.isResponse() ? "response" : "request");
+        if (((String) ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("messageType"))
+                .contains("json")) {
+            InputStream jsonPayloadStream = JsonUtil
+                    .getJsonPayload(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+            if (jsonPayloadStream != null) {
+                StringWriter writer = new StringWriter();
+                String encoding = null;
+                IOUtils.copy(jsonPayloadStream, writer, encoding);
+                String jsonPayload = writer.toString();
+                result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
+                        jsonPayload != null ? jsonPayload : synCtx.getEnvelope().toString());
+            } else {
+                result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
+                        synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+            }
+        } else {
+            result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_ENVELOPE,
+                    synCtx.getEnvelope() != null ? synCtx.getEnvelope().toString() : "");
+        }
+        String axis2MessageContextKey = getAxis2MessagePropertiesKey(
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        if (addedPropertyValuesMap.containsKey(axis2MessageContextKey)) {
+            Map scopePropertyMap = (Map) addedPropertyValuesMap.get(axis2MessageContextKey);
+            if (scopePropertyMap.containsKey(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)) {
+                Set<String> propertyKeySet = (Set<String>) scopePropertyMap
+                        .get(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2);
+                for (String key : propertyKeySet) {
+                    result.put(key, ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(key));
+                }
+            }
+        }
         JSONObject soapHeader = new JSONObject();
         if (synCtx.getEnvelope() != null) {
             SOAPHeader header = synCtx.getEnvelope().getHeader();
@@ -807,16 +915,14 @@ public class SynapseDebugManager {
                     } else if (o instanceof OMElement) {
                         OMElement headerElem = (OMElement) o;
                         soapHeader.put(headerElem.getLocalName(), headerElem.getText());
-
                     }
                 }
             }
         }
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_SOAPHEADER, soapHeader);
-        JSONObject transportHeader = new JSONObject((Map) ((Axis2MessageContext) synCtx)
-                .getAxis2MessageContext().getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
-        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_TRANSPORT_HEADERS,
-                transportHeader);
+        JSONObject transportHeader = new JSONObject((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_TRANSPORT_HEADERS, transportHeader);
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_EXCESS_TRANSPORT_HEADERS,
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("EXCESS_TRANSPORT_HEADERS"));
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_TYPE,
@@ -827,38 +933,40 @@ public class SynapseDebugManager {
 
     }
 
-    public void addMediationFlowPointProperty(String propertyContext,
-                                              JSONObject property_arguments,
-                                              boolean isActionSet) {
+    public void addMediationFlowPointProperty(String propertyContext, JSONObject property_arguments,
+            boolean isActionSet) {
         try {
-            String property_key = property_arguments
-                    .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME);
+            String propertyKey = property_arguments.getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_NAME);
             if (isActionSet) {
-                String property_value = property_arguments
+                String propertyValue = property_arguments
                         .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_VALUE);
                 if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT)
-                        || propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)) {
-                    synCtx.setProperty(property_key, property_value);
+                        || propertyContext
+                        .equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_SYNAPSE)) {
+                    synCtx.setProperty(propertyKey, propertyValue);
 
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.setProperty(property_key, property_value);
-                    if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(property_key)) {
-                        axis2MessageCtx.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, property_value);
-                        Object o = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                    setAxis2Property(propertyKey, propertyValue, axis2MessageCtx);
+                    if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equalsIgnoreCase(propertyKey)) {
+                        setAxis2Property(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, propertyValue,
+                                axis2MessageCtx);
+                        Object o = axis2MessageCtx
+                                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                         Map headers = (Map) o;
                         if (headers != null) {
                             headers.remove(HTTP.CONTENT_TYPE);
-                            headers.put(HTTP.CONTENT_TYPE, property_value);
+                            headers.put(HTTP.CONTENT_TYPE, propertyValue);
                         }
                     }
-                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)
-                        && synCtx instanceof Axis2MessageContext) {
+                } else if (
+                        propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)
+                                && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.getOptions().setProperty(property_key, property_value);
+                    axis2MessageCtx.getOptions().setProperty(propertyKey, propertyValue);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -867,18 +975,18 @@ public class SynapseDebugManager {
                             .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                     if (headers != null && headers instanceof Map) {
                         Map headersMap = (Map) headers;
-                        headersMap.put(property_key, property_value);
+                        headersMap.put(propertyKey, propertyValue);
                     }
                     if (headers == null) {
                         Map headersMap = new HashMap();
-                        headersMap.put(property_key, property_value);
+                        headersMap.put(propertyKey, propertyValue);
                         axis2MessageCtx
                                 .setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
                     }
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
-                    axis2smc.getAxis2MessageContext().getOperationContext().setProperty(property_key, property_value);
+                    axis2smc.getAxis2MessageContext().getOperationContext().setProperty(propertyKey, propertyValue);
                 }
             } else {
                 if (propertyContext == null || SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_DEFAULT
@@ -886,14 +994,19 @@ public class SynapseDebugManager {
                         .equals(propertyContext)) {
                     Set pros = synCtx.getPropertyKeySet();
                     if (pros != null) {
-                        pros.remove(property_key);
+                        pros.remove(propertyKey);
                     }
-                } else if ((propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2) ||
-                        propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT))
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.removeProperty(property_key);
+                    axis2MessageCtx.removeProperty(propertyKey);
+                } else if (
+                        propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT)
+                                && synCtx instanceof Axis2MessageContext) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+                    axis2MessageCtx.getOptions().setProperty(propertyKey, null);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
@@ -902,8 +1015,12 @@ public class SynapseDebugManager {
                             .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
                     if (headers != null && headers instanceof Map) {
                         Map headersMap = (Map) headers;
-                        headersMap.remove(property_key);
+                        headersMap.remove(propertyKey);
                     }
+                } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION)
+                        && synCtx instanceof Axis2MessageContext) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    axis2smc.getAxis2MessageContext().getOperationContext().removeProperty(propertyKey);
                 } else {
                     log.error("Failed to set or remove property in the scope " + propertyContext);
                     this.advertiseCommandResponse(createDebugCommandResponse(false,
@@ -914,9 +1031,76 @@ public class SynapseDebugManager {
         } catch (JSONException e) {
             log.error("Failed to set or remove property in the scope " + propertyContext, e);
             this.advertiseCommandResponse(createDebugCommandResponse(false,
-                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY).toString());
+                    SynapseDebugCommandConstants.DEBUG_COMMAND_RESPONSE_UNABLE_TO_ALTER_MESSAGE_CONTEXT_PROPERTY)
+                    .toString());
         }
         this.advertiseCommandResponse(createDebugCommandResponse(true, null).toString());
     }
 
+    private void setAxis2Property(String propertyKey, String propertyValue,
+            org.apache.axis2.context.MessageContext axis2MessageCtx) {
+        //Do not change the Envelope, SoapHeaders and Transport Headers
+        switch (propertyKey) {
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_TO:
+            axis2MessageCtx.setTo(new EndpointReference(propertyValue));
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_FROM:
+            axis2MessageCtx.setFrom(new EndpointReference(propertyValue));
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_WSACTION:
+            axis2MessageCtx.setWSAAction(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_SOAPACTION:
+            axis2MessageCtx.setSoapAction(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_REPLY_TO:
+            axis2MessageCtx.setReplyTo(new EndpointReference(propertyValue));
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_ID:
+            axis2MessageCtx.setMessageID(propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_TYPE:
+            axis2MessageCtx.setProperty("messageType", propertyValue);
+            break;
+        case SynapseDebugCommandConstants.AXIS2_PROPERTY_DIRECTION:
+            if ("response".equalsIgnoreCase(propertyValue)) {
+                synCtx.setResponse(true);
+            } else if ("request".equalsIgnoreCase(propertyValue)) {
+                synCtx.setResponse(false);
+            } else {
+                log.warn("unknown axis2 direction : " + propertyValue);
+            }
+            break;
+        default:
+            //MessageType, ContentType, ExcessTransportHeaders and other properties
+            axis2MessageCtx.setProperty(propertyKey, propertyValue);
+            Map<String, Set<String>> scopePropertiesMap;
+            Set<String> axis2PropertyKeySet;
+            String axis2MessageCtxKey = getAxis2MessagePropertiesKey(axis2MessageCtx);
+            if (addedPropertyValuesMap.containsKey(axis2MessageCtxKey)) {
+                scopePropertiesMap = (Map) addedPropertyValuesMap.get(axis2MessageCtxKey);
+
+                if (scopePropertiesMap.containsKey(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2)) {
+                    axis2PropertyKeySet = scopePropertiesMap
+                            .get(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2);
+                } else {
+                    axis2PropertyKeySet = new HashSet<>();
+                }
+                axis2PropertyKeySet.add(propertyKey);
+            } else {
+                scopePropertiesMap = new HashMap<>();
+                axis2PropertyKeySet = new HashSet<>();
+                axis2PropertyKeySet.add(propertyKey);
+            }
+            scopePropertiesMap
+                    .put(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2, axis2PropertyKeySet);
+            addedPropertyValuesMap.put(axis2MessageCtxKey, scopePropertiesMap);
+        }
+
+    }
+
+    private String getAxis2MessagePropertiesKey(org.apache.axis2.context.MessageContext axis2MessageCtx) {
+        String axis2MessageCtxKey = axis2MessageCtx.toString();
+        return axis2MessageCtxKey;
+    }
 }
