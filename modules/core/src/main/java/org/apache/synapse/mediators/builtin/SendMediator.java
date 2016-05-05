@@ -32,6 +32,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.MessageHelper;
 
 import java.util.Set;
 
@@ -59,7 +60,8 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
+            MessageHelper.setWireLogHolderProperties(synCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
