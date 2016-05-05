@@ -23,7 +23,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.commons.transaction.TranscationManger;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -31,6 +33,7 @@ import javax.naming.NamingException;
 import javax.transaction.Status;
 import javax.transaction.UserTransaction;
 import javax.transaction.TransactionManager;
+import java.util.Hashtable;
 
 /**
  * The Mediator for commit, rollback, suspend, resume jta transactions
@@ -114,6 +117,10 @@ public class TransactionMediator extends AbstractMediator {
             try {
                 //tx.begin();
             	TranscationManger.beginTransaction();
+                org.apache.axis2.context.MessageContext axis2MsgCtx =
+                        ((Axis2MessageContext)synCtx).getAxis2MessageContext();
+                axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION,TranscationManger.getTransaction());
+                axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,TranscationManger.getTransactionManager());
             } catch (Exception e) {
                 handleException("Unable to begin a new transaction", e, synCtx);
             }

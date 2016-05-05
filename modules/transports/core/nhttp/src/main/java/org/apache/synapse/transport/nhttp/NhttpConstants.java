@@ -231,4 +231,7 @@ public class NhttpConstants {
      * axis2 configuration to enable Mutual SSL - verify client's certificate
      */
     public static final String SSL_VERIFY_CLIENT = "SSLVerifyClient";
+
+    public static final String DISTRIBUTED_TRANSACTION = "distributedTx";
+    public static final String DISTRIBUTED_TRANSACTION_MANAGER = "distributedTxMgr";
 }
