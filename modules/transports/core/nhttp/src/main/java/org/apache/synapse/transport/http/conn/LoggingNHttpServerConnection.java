@@ -107,7 +107,35 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Consume input");
         }
-//        super.consumeInput(handler);
+        if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //Debugger not enabled, hence going through normal flow
+            super.consumeInput(handler);
+        } else {
+            consumeInputWire(handler);
+        }
+    }
+
+    @Override
+    public void produceOutput(final NHttpServerEventHandler handler) {
+        if (this.log.isDebugEnabled()) {
+            this.log.debug(this.id + ": Produce output");
+        }
+        if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //Debugger not enabled, hence going through normal flow
+            super.produceOutput(handler);
+        } else {
+            produceOutputWire(handler);
+        }
+    }
+
+    /**
+     * Helper method for consume input when synapse debugger is enabled
+     * Note that this method need to be changed if we upgrade to new httpcore-nio version, this is override of it's
+     * consumeInput method
+     *
+     * @param handler
+     */
+    private void consumeInputWire(final NHttpServerEventHandler handler) {
         if (getContext() == null) {
             return;
         }
@@ -186,12 +214,14 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         }
     }
 
-    @Override
-    public void produceOutput(final NHttpServerEventHandler handler) {
-        if (this.log.isDebugEnabled()) {
-            this.log.debug(this.id + ": Produce output");
-        }
-//        super.produceOutput(handler);
+    /**
+     * Helper method for produce output when synapse debugger is enabled
+     * Note that this method need to be changed if we upgrade to new httpcore-nio version, this is override of it's
+     * produceOutput method
+     *
+     * @param handler
+     */
+    private void produceOutputWire(final NHttpServerEventHandler handler) {
         if (getContext() == null) {
             return;
         }
