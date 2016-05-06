@@ -19,29 +19,44 @@
 package org.apache.synapse.transport.http.conn;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
+import org.apache.http.nio.reactor.IOSession;
 
 class Wire {
 
+    private IOSession session;
+
     private final Log log;
-    
+
     public Wire(final Log log) {
         super();
         this.log = log;
     }
-    
+
     private void wire(final String header, final byte[] b, int pos, int off) {
         StringBuilder buffer = new StringBuilder();
+        StringBuilder tmpBuffer = new StringBuilder();
+        StringBuilder synapseBuffer = new StringBuilder();
         for (int i = 0; i < off; i++) {
             int ch = b[pos + i] & 0xFF;
             if (ch == 13) {
                 buffer.append("[\\r]");
             } else if (ch == 10) {
+                    tmpBuffer.setLength(0);
+                    tmpBuffer.append(buffer.toString());
+                    tmpBuffer.insert(0, header);
                     buffer.append("[\\n]\"");
                     buffer.insert(0, "\"");
                     buffer.insert(0, header);
-                    this.log.debug(buffer.toString());
+                    if (isEnabled()) {
+                        this.log.debug(buffer.toString());
+                    }
+//                    this.log.debug(buffer.toString());
+                    synapseBuffer.append(tmpBuffer.toString());
+                    synapseBuffer.append(System.lineSeparator());
                     buffer.setLength(0);
             } else if ((ch < 32) || (ch > 127)) {
                 buffer.append("[0x");
@@ -55,7 +70,47 @@ class Wire {
             buffer.append('\"');
             buffer.insert(0, '\"');
             buffer.insert(0, header);
-            this.log.debug(buffer.toString());
+            if (isEnabled()) {
+                this.log.debug(buffer.toString());
+            }
+            tmpBuffer.setLength(0);
+            tmpBuffer.append(buffer.toString());
+            synapseBuffer.append(tmpBuffer.toString());
+        }
+        if (synapseBuffer.length() > 0 && SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //an IOsession get create for new request when there is already a request getting debugged
+            SynapseWireLogHolder logHolder;
+            Object holder = this.session.getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+            if (holder == null) {
+                logHolder = new SynapseWireLogHolder();
+            } else {
+                logHolder = (SynapseWireLogHolder) holder;
+                if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.SOURCE_RESPONSE_DONE)) {
+                    logHolder.clear();
+                }
+            }
+            if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.SOURCE_REQUEST_READY)) { //this means this is initial request
+                this.log.debug("source request wire Log added to the log holder, phase - " + logHolder.getPhase().toString());
+                logHolder.appendRequestWireLog(synapseBuffer.toString());
+            } else if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.TARGET_REQUEST_READY)) { //this means this is a back end call
+                String mediatorId = (String)this.session.getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY);
+                if (mediatorId == null || mediatorId.isEmpty()) {
+                    mediatorId = SynapseDebugInfoHolder.DUMMY_MEDIATOR_ID;
+                }
+                this.log.debug("wire Log added to the log holder, phase - " + logHolder.getPhase().toString() + ", mediatorId - " + mediatorId);
+                logHolder.appendBackEndWireLog(SynapseWireLogHolder.RequestType.REQUEST, synapseBuffer.toString(), mediatorId);
+            } else if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_READY)) { //this means this is a response back from back end
+                String mediatorId = (String)this.session.getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY);
+                if (mediatorId == null || mediatorId.isEmpty()) {
+                    mediatorId = SynapseDebugInfoHolder.DUMMY_MEDIATOR_ID;
+                }
+                this.log.debug("wire Log added to the log holder, phase - " + logHolder.getPhase().toString() + ", mediatorId - " + mediatorId);
+                logHolder.appendBackEndWireLog(SynapseWireLogHolder.RequestType.RESPONSE, synapseBuffer.toString(), mediatorId);
+            } else if (logHolder.getPhase().equals(SynapseWireLogHolder.PHASE.SOURCE_RESPONSE_READY)) { //this means this is the final response to client
+                this.log.debug("source response wire Log added to the log holder, phase - " + logHolder.getPhase().toString());
+                logHolder.appendResponseWireLog(synapseBuffer.toString());
+            }
+            this.session.setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
         }
     }
 
@@ -108,4 +163,7 @@ class Wire {
         }
     }
 
+    public void setSession(IOSession session) {
+        this.session = session;
+    }
 }

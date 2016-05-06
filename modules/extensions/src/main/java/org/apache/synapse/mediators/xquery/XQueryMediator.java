@@ -105,7 +105,7 @@ public class XQueryMediator extends AbstractMediator {
 
         try {
 
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 if (super.divertMediationRoute(synCtx)) {
                     return true;
                 }

@@ -55,6 +55,7 @@ public class SynapseDebugCommandConstants {
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_AXIS2CLIENT = "axis2-client";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT = "transport";
     public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_OPERATION = "operation";
+    public static final String DEBUG_COMMAND_PROPERTY_CONTEXT_WIRE = "wire";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2 = "axis2-properties";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_SYNAPSE = "synapse-properties";
     public static final String DEBUG_COMMAND_RESPONSE_PROPERTY_CONTEXT_AXIS2CLIENT = "axis2Client-properties";
@@ -102,4 +103,12 @@ public class SynapseDebugCommandConstants {
     public static final String AXIS2_PROPERTY_MESSAGE_TYPE = "MessageType";
     public static final String AXIS2_PROPERTY_CONTENT_TYPE = "ContentType";
 
+    public static final String WIRELOGS = "wirelogs";
+    public static final String MEDIATOR_ID = "mediatorId";
+    public static final String REQUEST_WIRE_LOG = "requestWireLog";
+    public static final String RESPONSE_WIRE_LOG = "responseWireLog";
+    public static final String WIRE_LOG_ENTRY = "wireLogEntry";
+    public static final String TYPE = "type";
+    public static final String REST_RESOURCE_URL_STRING = "restResourceUrlString";
+    public static final String REQUEST_RESPONSE = "requestResponse";
 }

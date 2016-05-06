@@ -31,7 +31,6 @@ public class SynapseMediationFlowPoint {
     /*mediator position with related to parent mediator*/
     private int[] mediatorPosition = null;
 
-
     public SynapseMediationComponent getSynapseMediationComponent() {
         return medComponent;
     }
