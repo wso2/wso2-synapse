@@ -96,7 +96,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     public boolean mediate(MessageContext synCtx) {
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
-//            super.setWireLogHolderProperties(synCtx); //todo remove, this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
