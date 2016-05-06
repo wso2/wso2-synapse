@@ -263,7 +263,7 @@ public interface SynapseEnvironment {
      *
      * @return whether debugging is enabled in the environment
      */
-    public boolean isDebuggerEnabled(); //todo refactor this "isDebuggerEnabled"
+    public boolean isDebuggerEnabled(); 
 
     /**
      * Retrieve the {@link org.apache.synapse.debug.SynapseDebugManager} from the
