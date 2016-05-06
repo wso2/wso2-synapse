@@ -68,7 +68,7 @@ public class MediatorWorker implements Runnable {
     public void run() {
         try {
 
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
@@ -108,7 +108,7 @@ public class MediatorWorker implements Runnable {
                 synCtx.getServiceLog().error(msg, e);
             }
         } finally {
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();

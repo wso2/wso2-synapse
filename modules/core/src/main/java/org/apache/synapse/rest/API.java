@@ -41,6 +41,8 @@ import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 import org.apache.synapse.rest.version.VersionStrategy;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.util.*;
@@ -375,6 +377,25 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
                 Resource resource = dispatcher.findResource(synCtx, acceptableResources);
                 if (resource != null) {
+                    if (synCtx.getEnvironment().isDebuggerEnabled()) {
+                        if (!synCtx.isResponse()) {
+                            SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                                    .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                            if (wireLogHolder == null) {
+                                wireLogHolder = new SynapseWireLogHolder();
+                            }
+                            if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null && !synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString().isEmpty()) {
+                                wireLogHolder.setApiName(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString());
+                                if (resource.getDispatcherHelper() != null) {
+                                    if (resource.getDispatcherHelper().getString() != null && !resource.getDispatcherHelper().getString().isEmpty()) {
+                                        wireLogHolder.setResourceUrlString(resource.getDispatcherHelper().getString());
+                                    }
+                                }
+                            }
+                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
+                        }
+
+                    }
                     resource.process(synCtx);
                     processed = true;
                     break;

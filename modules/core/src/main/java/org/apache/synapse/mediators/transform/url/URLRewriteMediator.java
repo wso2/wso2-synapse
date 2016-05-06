@@ -45,7 +45,7 @@ public class URLRewriteMediator extends AbstractMediator {
 
     public boolean mediate(MessageContext messageContext) {
 
-        if (messageContext.getEnvironment().isDebugEnabled()) {
+        if (messageContext.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(messageContext)) {
                 return true;
             }

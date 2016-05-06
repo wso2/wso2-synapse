@@ -42,8 +42,12 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
+import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.template.TemplateContext;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
@@ -996,6 +1000,25 @@ public class MessageHelper {
     private static void handleException(Exception e) {
         log.error(e);
         throw new SynapseException(e);
+    }
+
+    /**
+     * This method is to set mediatorId property to axis2 message context. This Id will be copied to iosession from the DeliveryAgent.java
+     * class and it will be used at wire level to identify to which mediator the wirelogs belongs.
+     *
+     * @param synCtx
+     */
+    public static void setWireLogHolderProperties(MessageContext synCtx, boolean isBreakPoint, SynapseMediationFlowPoint mediationFlowPoint) {
+        if (isBreakPoint) {
+            String mediatorId = synCtx.getEnvironment().getSynapseDebugManager().createDebugMediationFlowPointJSONForWireLogs(mediationFlowPoint).toString();
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY, mediatorId);
+        } else {
+            /**
+             * this is to be used when there are mediators which sends back-end requests, but not a break point.
+             */
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY,
+                                                                                SynapseDebugInfoHolder.DUMMY_MEDIATOR_ID); //
+        }
     }
 
 }
