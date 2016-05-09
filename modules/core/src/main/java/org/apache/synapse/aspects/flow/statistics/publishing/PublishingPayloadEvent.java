@@ -22,6 +22,8 @@ public class PublishingPayloadEvent {
     private int eventIndex;
     private String attribute;
 
+    public PublishingPayloadEvent() {}
+
     public PublishingPayloadEvent(int eventIndex, String attribute) {
         this.eventIndex = eventIndex;
         this.attribute = attribute;
