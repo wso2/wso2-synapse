@@ -115,6 +115,7 @@ public final class SynapseConstants {
 
     /** Service invoked by Call mediator */
     public static final String CONTINUATION_CALL = "continuation.call";
+    public static final String BACKUP_CONTINUATION_STACK = "backup.continuation.stack";
 
     public static final String SYNAPSE__FUNCTION__STACK = "_SYNAPSE_FUNCTION_STACK";
     public static final String SYNAPSE_WSDL_RESOLVER = "synapse.wsdl.resolver";

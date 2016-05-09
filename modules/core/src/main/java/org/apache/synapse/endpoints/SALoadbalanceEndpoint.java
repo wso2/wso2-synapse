@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -205,7 +206,11 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
                     }
                 }
             }
-
+            //Restore continuation stack on failover
+            if (synCtx.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK) != null) {
+                ContinuationStackManager.setBackupContinuationStack(synCtx);
+                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
+            }
             send(synCtx);
 
         } else {

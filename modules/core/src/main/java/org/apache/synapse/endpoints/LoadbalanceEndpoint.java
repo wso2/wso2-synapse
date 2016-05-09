@@ -29,6 +29,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -268,6 +269,11 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                     log.debug(this + " Retry Attempt for Request with [Message ID : " +
                             synMessageContext.getMessageID() + "], [To : " +
                             synMessageContext.getTo() + "]");
+                }
+                //Restore continuation stack on failover
+                if (synMessageContext.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK) != null) {
+                    ContinuationStackManager.setBackupContinuationStack(synMessageContext);
+                    synMessageContext.setProperty(SynapseConstants.CONTINUATION_CALL, true);
                 }
                 send(synMessageContext);
             } else {
