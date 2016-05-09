@@ -46,6 +46,8 @@ public class PublishingEvent {
 	private int faultCount;
 	private Integer hashCode;
 
+	public  PublishingEvent(){}
+
 	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint, Integer entryPointHashcode) {
 		this.componentType = statisticsLog.getComponentTypeToString();
 		this.componentName = statisticsLog.getComponentName();
