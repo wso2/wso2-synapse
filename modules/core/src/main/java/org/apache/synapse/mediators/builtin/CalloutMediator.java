@@ -296,7 +296,6 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             while (iHeader.hasNext()) {
                 try {
                     Object element = iHeader.next();
-                    iHeader.remove();
                     if (element instanceof  OMElement) {
                         newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
                     }
