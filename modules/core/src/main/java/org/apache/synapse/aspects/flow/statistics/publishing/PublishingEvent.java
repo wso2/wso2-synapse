@@ -20,6 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -256,12 +257,12 @@ public class PublishingEvent {
 			objectMap.put("transportPropertyMap", this.transportPropertyMap.toString());
 		}
 
-		objectMap.put("children", this.children);
+		objectMap.put("children", Arrays.toString(this.children));
 
 		objectMap.put("entryPoint", this.entryPoint);
-		objectMap.put("entryPointHashcode", this.entryPointHashcode);
+		objectMap.put("entryPointHashcode", String.valueOf(this.entryPointHashcode));
 		objectMap.put("faultCount", this.faultCount);
-		objectMap.put("hashCode", this.hashCode);
+		objectMap.put("hashCode", String.valueOf(this.hashCode));
 
 		return objectMap;
 	}
