@@ -97,6 +97,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     private boolean isWrappingEndpointCreated = false;
     private Context txContext;
     private static final String USER_TX_LOOKUP_STR = "java:comp/UserTransaction";
+    private static final String DISTRIBUTED_TX_BEGIN_CHECK_STR = "transport.jms.TransactionCommand=begin";
 
     BlockingMsgSender blockingMsgSender = null;
 
@@ -160,7 +161,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             }
 
-            if(this.serviceURL.contains("transport.jms.TransactionCommand=begin")) {
+            if(this.serviceURL.contains(DISTRIBUTED_TX_BEGIN_CHECK_STR)) {
                 try {
                     initContext(synCtx);
                     try {
