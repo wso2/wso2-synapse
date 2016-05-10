@@ -367,38 +367,38 @@ public class TranscationManger {
 	}
 
 	public static TransactionManager getTransactionManager() throws Exception {
-		long key = Thread.currentThread().getId();
-		try {
-			if (log.isDebugEnabled()) {
+	    long key = Thread.currentThread().getId();
+	    try {
+		    if (log.isDebugEnabled()) {
 			    log.debug("getTransactionManager Called");
-			}
+		    }
 
-			TransactionManager txMgr = txManagers.get().get(key);
-			return txMgr;
-		} catch (Exception ex) {
-			log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
-			throw ex;
-		}
+		    TransactionManager txMgr = txManagers.get().get(key);
+		    return txMgr;
+	    } catch (Exception ex) {
+		    log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
+		    throw ex;
+	    }
 
 	}
 
 	public static Transaction getTransaction() throws Exception {
-		long key = Thread.currentThread().getId();
-		try {
-			if (log.isDebugEnabled()) {
+	    long key = Thread.currentThread().getId();
+	    try {
+		    if (log.isDebugEnabled()) {
 			    log.debug("getTransaction Called");
-			}
+		    }
 
-			TransactionManager txMgr = txManagers.get().get(key);
-			txMgr.begin();
-			Transaction tx = txMgr.getTransaction();
-			transactions.get().put(key, tx);
-			return tx;
+		    TransactionManager txMgr = txManagers.get().get(key);
+		    txMgr.begin();
+		    Transaction tx = txMgr.getTransaction();
+		    transactions.get().put(key, tx);
+		    return tx;
 
-		} catch (Exception ex) {
-			log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
-			throw ex;
-		}
+	    } catch (Exception ex) {
+		    log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
+		    throw ex;
+	    }
 
 	}
 	
