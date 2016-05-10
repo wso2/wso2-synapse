@@ -244,8 +244,17 @@ public class PublishingEvent {
 		objectMap.put("beforePayload", this.beforePayload);
 		objectMap.put("afterPayload", this.afterPayload);
 
-		objectMap.put("contextPropertyMap", this.contextPropertyMap.toString());
-		objectMap.put("transportPropertyMap", this.transportPropertyMap.toString());
+		if (this.contextPropertyMap == null) {
+			objectMap.put("contextPropertyMap", null);
+		} else {
+			objectMap.put("contextPropertyMap", this.contextPropertyMap.toString());
+		}
+
+		if (this.transportPropertyMap == null) {
+			objectMap.put("transportPropertyMap", null);
+		} else {
+			objectMap.put("transportPropertyMap", this.transportPropertyMap.toString());
+		}
 
 		objectMap.put("children", this.children);
 
