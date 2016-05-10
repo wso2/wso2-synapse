@@ -26,9 +26,7 @@ import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPBody;
-import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
-import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
@@ -288,29 +286,28 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         if (synCtx.getEnvelope().getHeader() != null) {
             Iterator iHeader = synCtx.getEnvelope().getHeader().getChildren();
             SOAPFactory fac;
-            if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI
-                    .equals(synCtx.getEnvelope().getBody().getNamespace().getNamespaceURI())) {
+            if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(synCtx.getEnvelope().getBody()
+                    .getNamespace().getNamespaceURI())) {
                 fac = OMAbstractFactory.getSOAP11Factory();
             } else {
                 fac = OMAbstractFactory.getSOAP12Factory();
             }
-            SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
+            List<OMNode> newHeaderNodes = new ArrayList<OMNode>();
             while (iHeader.hasNext()) {
                 try {
                     Object element = iHeader.next();
                     iHeader.remove();
-                    if (element instanceof SOAPHeaderBlock) {
-                        synCtx.getEnvelope().getHeader().addChild((SOAPHeaderBlock) element);
-
-                    } else if (element instanceof OMElement) {
-                        synCtx.getEnvelope().getHeader()
-                                .addChild(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac).cloneOMElement());
+                    if (element instanceof  OMElement) {
+                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
                     }
                 } catch (OMException e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 } catch (Exception e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 }
+            }
+            for (OMNode newHeaderNode : newHeaderNodes) {
+                synCtx.getEnvelope().getHeader().addChild(newHeaderNode);
             }
         }
     }
