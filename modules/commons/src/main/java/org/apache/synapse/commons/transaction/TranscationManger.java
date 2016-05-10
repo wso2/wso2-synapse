@@ -370,7 +370,7 @@ public class TranscationManger {
 		long key = Thread.currentThread().getId();
 		try {
 			if (log.isDebugEnabled()) {
-				log.debug("beginTransaction()");
+			    log.debug("getTransactionManager Called");
 			}
 
 			TransactionManager txMgr = txManagers.get().get(key);
@@ -386,14 +386,14 @@ public class TranscationManger {
 		long key = Thread.currentThread().getId();
 		try {
 			if (log.isDebugEnabled()) {
-				log.debug("beginTransaction()");
+			    log.debug("getTransaction Called");
 			}
 
 			TransactionManager txMgr = txManagers.get().get(key);
 			txMgr.begin();
 			Transaction tx = txMgr.getTransaction();
 			transactions.get().put(key, tx);
-			return  tx;
+			return tx;
 
 		} catch (Exception ex) {
 			log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
