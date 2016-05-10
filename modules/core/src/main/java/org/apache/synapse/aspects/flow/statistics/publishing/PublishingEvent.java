@@ -31,14 +31,14 @@ public class PublishingEvent {
 
 	private long startTime;
 	private long endTime;
-
 	private long duration;
+
 	private String beforePayload;
-
 	private String afterPayload;
-	private Map contextPropertyMap;
 
+	private Map contextPropertyMap;
 	private Map transportPropertyMap;
+
 	private Integer[] children;
 
 	private String entryPoint;
@@ -228,5 +228,32 @@ public class PublishingEvent {
 
 		}
 		return copy;
+	}
+
+	public Map<String, Object> getObjectAsMap() {
+		Map<String, Object> objectMap = new HashMap<String, Object>();
+
+		objectMap.put("componentType", this.componentType);
+		objectMap.put("componentName", this.componentName);
+		objectMap.put("componentId", this.componentId);
+
+		objectMap.put("startTime", this.startTime);
+		objectMap.put("endTime", this.endTime);
+		objectMap.put("duration", this.duration);
+
+		objectMap.put("beforePayload", this.beforePayload);
+		objectMap.put("afterPayload", this.afterPayload);
+
+		objectMap.put("contextPropertyMap", this.contextPropertyMap.toString());
+		objectMap.put("transportPropertyMap", this.transportPropertyMap.toString());
+
+		objectMap.put("children", this.children);
+
+		objectMap.put("entryPoint", this.entryPoint);
+		objectMap.put("entryPointHashcode", this.entryPointHashcode);
+		objectMap.put("faultCount", this.faultCount);
+		objectMap.put("hashCode", this.hashCode);
+
+		return objectMap;
 	}
 }
