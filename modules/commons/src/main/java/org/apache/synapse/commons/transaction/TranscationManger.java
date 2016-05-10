@@ -376,7 +376,7 @@ public class TranscationManger {
 			TransactionManager txMgr = txManagers.get().get(key);
 			return txMgr;
 		} catch (Exception ex) {
-			log.debug(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
+			log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
 			throw ex;
 		}
 
@@ -396,7 +396,7 @@ public class TranscationManger {
 			return  tx;
 
 		} catch (Exception ex) {
-			log.debug(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
+			log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
 			throw ex;
 		}
 
