@@ -699,8 +699,7 @@ public class MessageHelper {
      */
     public static SOAPEnvelope cloneSOAPEnvelope(SOAPEnvelope envelope) {
         SOAPFactory fac;
-        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI
-                .equals(envelope.getBody().getNamespace().getNamespaceURI())) {
+        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(envelope.getBody().getNamespace().getNamespaceURI())) {
             fac = OMAbstractFactory.getSOAP11Factory();
         } else {
             fac = OMAbstractFactory.getSOAP12Factory();
@@ -714,8 +713,7 @@ public class MessageHelper {
                 Object bodyNs = childIterator.next();
                 if (bodyNs instanceof SOAPHeaderBlock) {
                     try {
-                        newEnvelope.getHeader()
-                                .addChild(ElementHelper.toSOAPHeaderBlock(((OMElement) bodyNs).cloneOMElement(), fac));
+                        newEnvelope.getHeader().addChild((SOAPHeaderBlock) bodyNs);
                     } catch (Exception e) {
                         handleException(e);
                     }
