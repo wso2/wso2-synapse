@@ -20,6 +20,8 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.axis2.context.OperationContext;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.SynapseException;
@@ -449,6 +451,19 @@ public class PropertyMediator extends AbstractMediator {
 				_headers.put(HTTP.CONTENT_TYPE, resultValue);
 			}
 		}
+
+        if (PassThroughConstants.REST_URL_POSTFIX.equals(name) && (resultValue instanceof String)) {
+            try {
+                String UTF_8 = "UTF-8";
+                String decodedValue = URIUtil.decode((String) resultValue, UTF_8);
+                String encodedValue = URIUtil.encodePathQuery(decodedValue, UTF_8);
+                axis2MessageCtx.setProperty(PassThroughConstants.REST_URL_POSTFIX, encodedValue);
+            } catch (URIException e) {
+                String msg = "Unable to decode/encode value";
+                log.error(msg, e);
+                throw new SynapseException(msg, e);
+            }
+        }
     }
 
 
