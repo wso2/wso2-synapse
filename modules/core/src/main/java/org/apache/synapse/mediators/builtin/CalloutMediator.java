@@ -161,7 +161,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             }
 
-            if(this.serviceURL.contains(DISTRIBUTED_TX_BEGIN_CHECK_STR)) {
+            if (this.serviceURL != null && this.serviceURL.contains(DISTRIBUTED_TX_BEGIN_CHECK_STR)) {
                 try {
                     initContext(synCtx);
                     try {
@@ -297,8 +297,9 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 try {
                     Object element = iHeader.next();
                     if (element instanceof  OMElement) {
-                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac).cloneOMElement());
                     }
+                    iHeader.remove();
                 } catch (OMException e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 } catch (Exception e) {
