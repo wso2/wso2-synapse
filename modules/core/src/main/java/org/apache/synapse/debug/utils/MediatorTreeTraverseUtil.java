@@ -24,6 +24,7 @@ import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.builtin.CacheMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
+import org.apache.synapse.mediators.eip.splitter.CloneMediator;
 import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
@@ -124,6 +125,14 @@ public class MediatorTreeTraverseUtil {
                         current_mediator = synCfg.getSequence(((IterateMediator) current_mediator)
                                 .getTarget().getSequenceRef());
                     }
+                } else if (current_mediator instanceof CloneMediator) {
+                    if (((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequence() != null) {
+                        current_mediator = ((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequence();
+                    } else if (((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequenceRef() != null) {
+                        current_mediator = synCfg.getSequence(((CloneMediator) current_mediator)
+                                .getTargets().get(position[counter]).getSequenceRef());
+                    }
+                    continue;
                 } else if (current_mediator.getType().equals("ThrottleMediator")) {
                     current_mediator = ((EnclosedInlinedSequence) current_mediator)
                             .getInlineSequence(synCfg, position[counter]);
