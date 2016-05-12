@@ -23,6 +23,7 @@ import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -81,6 +82,9 @@ public class FailoverEndpoint extends AbstractEndpoint {
         }
 
         if (getChildren().isEmpty()) {
+            if (synCtx.getProperty(SynapseConstants.CONTINUATION_CALL) != null) {
+                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
+            }
             informFailure(synCtx, SynapseConstants.ENDPOINT_FO_NONE_READY,
                     "FailoverLoadbalance endpoint : " + getName() + " - no child endpoints");
             return;
@@ -195,6 +199,11 @@ public class FailoverEndpoint extends AbstractEndpoint {
                 log.debug(this + " Retry Attempt for Request with [Message ID : " +
                         synMessageContext.getMessageID() + "], [To : " +
                         synMessageContext.getTo() + "]");
+            }
+            //Restore continuation stack on failover
+            if (synMessageContext.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK) != null) {
+                ContinuationStackManager.setBackupContinuationStack(synMessageContext);
+                synMessageContext.setProperty(SynapseConstants.CONTINUATION_CALL, true);
             }
             send(synMessageContext);
         } else {

@@ -59,6 +59,7 @@ import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 
+import java.util.Set;
 import java.util.Stack;
 import java.util.Timer;
 
@@ -246,6 +247,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
                     synapseOutMsgCtx.setContinuationEnabled(true);
+                    //Backup continuation stack for failover scenarios
+                    Boolean continuationCall =
+                            (Boolean) synapseOutMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+                    if (continuationCall != null && continuationCall) {
+                        ContinuationStackManager.backupContinuationStack(synapseOutMsgCtx);
+                        Set keySet = synapseOutMsgCtx.getPropertyKeySet();
+                        if (keySet != null) {
+                            keySet.remove(SynapseConstants.CONTINUATION_CALL);
+                        }
+                    }
                     ContinuationStackManager.clearStack(synapseOutMsgCtx);
                 }
 
