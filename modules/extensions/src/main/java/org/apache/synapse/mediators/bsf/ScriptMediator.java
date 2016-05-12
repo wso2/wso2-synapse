@@ -415,14 +415,17 @@ public class ScriptMediator extends AbstractMediator {
                 (!entry.isCached() || entry.isExpired());
 
         ScriptEngineWrapper sew = getNewScriptEngine();
+        Bindings engineBinding = sew.getEngine().getBindings(ScriptContext.ENGINE_SCOPE);
+        engineBinding.clear(); // if we don't do this, previous state can affect successive executions! ESBJAVA-4583
+
         if (scriptSourceCode == null || needsReload || !sew.isInitialized()) {
             Object o = synCtx.getEntry(generatedScriptKey);
             if (o instanceof OMElement) {
                 scriptSourceCode = ((OMElement) (o)).getText();
-                sew.getEngine().eval(scriptSourceCode);
+                sew.getEngine().eval(scriptSourceCode, engineBinding);
             } else if (o instanceof String) {
                 scriptSourceCode = (String) o;
-                sew.getEngine().eval(scriptSourceCode);
+                sew.getEngine().eval(scriptSourceCode, engineBinding);
             } else if (o instanceof OMText) {
                 DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
                 if (dataHandler != null) {
@@ -436,7 +439,7 @@ public class ScriptMediator extends AbstractMediator {
                             scriptSB.append(currentLine).append('\n');
                         }
                         scriptSourceCode = scriptSB.toString();
-                        sew.getEngine().eval(scriptSourceCode);
+                        sew.getEngine().eval(scriptSourceCode, engineBinding);
                     } catch (IOException e) {
                         handleException("Error in reading script as a stream ", e, synCtx);
                     } finally {
@@ -453,6 +456,8 @@ public class ScriptMediator extends AbstractMediator {
                 }
             }
 
+        } else {
+            sew.getEngine().eval(scriptSourceCode, engineBinding); // Will drop TPS, but is required for ESBJAVA-4583
         }
 
         // load <include /> scripts; reload each script if needed
@@ -470,10 +475,10 @@ public class ScriptMediator extends AbstractMediator {
                 Object o = synCtx.getEntry(generatedKey);
                 if (o instanceof OMElement) {
                     includeSourceCode = ((OMElement) (o)).getText();
-                    sew.getEngine().eval(includeSourceCode);
+                    sew.getEngine().eval(includeSourceCode, engineBinding);
                 } else if (o instanceof String) {
                     includeSourceCode = (String) o;
-                    sew.getEngine().eval(includeSourceCode);
+                    sew.getEngine().eval(includeSourceCode, engineBinding);
                 } else if (o instanceof OMText) {
                     DataHandler dataHandler = (DataHandler) ((OMText) o).getDataHandler();
                     if (dataHandler != null) {
@@ -487,7 +492,7 @@ public class ScriptMediator extends AbstractMediator {
                                 scriptSB.append(currentLine).append('\n');
                             }
                             includeSourceCode = scriptSB.toString();
-                            sew.getEngine().eval(includeSourceCode);
+                            sew.getEngine().eval(includeSourceCode, engineBinding);
                         } catch (IOException e) {
                             handleException("Error in reading script as a stream ", e, synCtx);
                         } finally {
@@ -504,6 +509,8 @@ public class ScriptMediator extends AbstractMediator {
                     }
                 }
                 includes.put(includeKey, includeSourceCode);
+            } else {
+                sew.getEngine().eval(includeSourceCode, engineBinding); // Will drop TPS, but required for ESBJAVA-4583
             }
         }
 
