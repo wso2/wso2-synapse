@@ -82,6 +82,9 @@ public class FailoverEndpoint extends AbstractEndpoint {
         }
 
         if (getChildren().isEmpty()) {
+            if (synCtx.getProperty(SynapseConstants.CONTINUATION_CALL) != null) {
+                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
+            }
             informFailure(synCtx, SynapseConstants.ENDPOINT_FO_NONE_READY,
                     "FailoverLoadbalance endpoint : " + getName() + " - no child endpoints");
             return;

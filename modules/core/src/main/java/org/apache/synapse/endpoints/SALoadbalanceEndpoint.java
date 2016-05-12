@@ -272,6 +272,9 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
             synCtx.pushFaultHandler(this);
             endpoint.send(synCtx);
         } else {
+            if (synCtx.getProperty(SynapseConstants.CONTINUATION_CALL) != null) {
+                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
+            }
             informFailure(synCtx, SynapseConstants.ENDPOINT_SAL_NOT_READY,
                     "The endpoint " + endpoint + " on the session with id " +
                             sessionID + " is not ready.");

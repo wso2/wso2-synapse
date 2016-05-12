@@ -248,12 +248,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
                     synapseOutMsgCtx.setContinuationEnabled(true);
                     //Backup continuation stack for failover scenarios
-                    ContinuationStackManager.backupContinuationStack(synapseOutMsgCtx);
-                    ContinuationStackManager.clearStack(synapseOutMsgCtx);
-                    Set keySet = synapseOutMsgCtx.getPropertyKeySet();
-                    if (keySet != null) {
-                        keySet.remove(SynapseConstants.CONTINUATION_CALL);
+                    Boolean continuationCall =
+                            (Boolean) synapseOutMsgCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
+                    if (continuationCall != null && continuationCall) {
+                        ContinuationStackManager.backupContinuationStack(synapseOutMsgCtx);
+                        Set keySet = synapseOutMsgCtx.getPropertyKeySet();
+                        if (keySet != null) {
+                            keySet.remove(SynapseConstants.CONTINUATION_CALL);
+                        }
                     }
+                    ContinuationStackManager.clearStack(synapseOutMsgCtx);
                 }
 
                 if (log.isDebugEnabled()) {

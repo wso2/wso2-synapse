@@ -165,6 +165,9 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                     " - no ready child endpoints";
             log.warn(msg);
             // if this is not a retry
+            if (synCtx.getProperty(SynapseConstants.CONTINUATION_CALL) != null) {
+                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
+            }
             informFailure(synCtx, SynapseConstants.ENDPOINT_LB_NONE_READY, msg);
         }
     }
