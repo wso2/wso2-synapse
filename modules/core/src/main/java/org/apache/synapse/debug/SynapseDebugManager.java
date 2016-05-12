@@ -16,7 +16,6 @@
 
 package org.apache.synapse.debug;
 
-import net.minidev.json.JSONStreamAware;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPHeader;
 import org.apache.axiom.soap.SOAPHeaderBlock;
@@ -28,7 +27,6 @@ import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
@@ -51,7 +49,6 @@ import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.codehaus.jettison.json.JSONString;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -73,6 +70,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Relies on SynapseDebugInterface to communicate over TCP channels for commands and events.
  */
 public class SynapseDebugManager implements Observer {
+    private static final java.lang.String METHOD_ARRAY_SEPERATOR = ",";
     /* to ensure a single mediation flow at a given time */
     private static volatile ReentrantLock mediationFlowLock;
     /* to ensure a synchronization between mediation flow suspension and resumption */
@@ -224,7 +222,8 @@ public class SynapseDebugManager implements Observer {
      */
     public void advertiseMediationFlowTerminatePoint(MessageContext synCtx) {
         if (synEnv.isDebuggerEnabled()) {
-            this.advertiseDebugEvent(this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
+            this.advertiseDebugEvent(
+                    this.createDebugEvent(SynapseDebugEventConstants.DEBUG_EVENT_TERMINATED).toString());
             if (log.isDebugEnabled()) {
                 log.debug("Mediation flow terminated for id " + synCtx.getMessageID());
             }
@@ -504,6 +503,7 @@ public class SynapseDebugManager implements Observer {
                     }
                     String method = resource_arguments.getString(
                             SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_RESOURCE_METHOD);
+                    String[] methodArray = method.split(METHOD_ARRAY_SEPERATOR);
                     String api_key = api_arguments
                             .getString(SynapseDebugCommandConstants.DEBUG_COMMAND_MEDIATION_COMPONENT_SEQUENCE_API_KEY);
                     String sequence_type = api_arguments
@@ -515,13 +515,14 @@ public class SynapseDebugManager implements Observer {
                     for (int counter = 0; counter < mediator_position_array.length; counter++) {
                         med_pos[counter] = Integer.valueOf(mediator_position_array[counter]);
                     }
-                    if (isBreakpoint) {
-                        APIDebugUtil.registerAPISequenceMediationFlowBreakPoint(synCfg, mapping, method, sequence_type,
-                                api_key, med_pos, registerMode);
-                    } else {
-                        APIDebugUtil
-                                .registerAPISequenceMediationFlowSkip(synCfg, mapping, method, sequence_type, api_key,
-                                        med_pos, registerMode);
+                    for (String resourceMethod : methodArray) {
+                        if (isBreakpoint) {
+                            APIDebugUtil.registerAPISequenceMediationFlowBreakPoint(synCfg, mapping, resourceMethod,
+                                    sequence_type, api_key, med_pos, registerMode);
+                        } else {
+                            APIDebugUtil.registerAPISequenceMediationFlowSkip(synCfg, mapping, resourceMethod,
+                                    sequence_type, api_key, med_pos, registerMode);
+                        }
                     }
                 }
 
