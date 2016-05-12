@@ -63,7 +63,7 @@ public class ContinuationStackManager {
             //ignore Anonymous type sequences
             synCtx.pushContinuationState(new SeqContinuationState(seqType, seqName));
         }
-        if(synCtx.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK) != null){
+        if (synCtx.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK) != null) {
             ContinuationStackManager.removeBackupContinuationStack(synCtx);
         }
     }
@@ -214,42 +214,42 @@ public class ContinuationStackManager {
         }
     }
 
-	/**
-	 * Backup ContinuationState stack for failover scenarios.
-	 *
-	 * @param synCtx MessageContext
-	 */
-	public static void backupContinuationStack(MessageContext synCtx) {
+    /**
+     * Backup ContinuationState stack for failover scenarios.
+     *
+     * @param synCtx MessageContext
+     */
+    public static void backupContinuationStack(MessageContext synCtx) {
         Stack<ContinuationState> backupStack = new Stack<>();
         backupStack.addAll(synCtx.getContinuationStateStack());
         synCtx.setProperty(SynapseConstants.BACKUP_CONTINUATION_STACK, backupStack);
     }
 
-	/**
-	 * Set backup continuation stack as the message context continuation stack. Then remove backup continuation stack.
-	 *
-	 * @param synCtx MessageContext
-	 */
-	public static void setBackupContinuationStack(MessageContext synCtx) {
-		if (synCtx.getContinuationStateStack().isEmpty()) {
-			Stack<ContinuationState> backupContinuationStack =
-					(Stack<ContinuationState>) (synCtx.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK));
-			synCtx.getContinuationStateStack().addAll(backupContinuationStack);
-		}
-		removeBackupContinuationStack(synCtx);
-	}
+    /**
+     * Set backup continuation stack as the message context continuation stack. Then remove backup continuation stack.
+     *
+     * @param synCtx MessageContext
+     */
+    public static void setBackupContinuationStack(MessageContext synCtx) {
+        if (synCtx.getContinuationStateStack().isEmpty()) {
+            Stack<ContinuationState> backupContinuationStack =
+                    (Stack<ContinuationState>) (synCtx.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK));
+            synCtx.getContinuationStateStack().addAll(backupContinuationStack);
+        }
+        removeBackupContinuationStack(synCtx);
+    }
 
-	/**
-	 * Remove backup ContinuationState stack.
-	 *
-	 * @param synCtx MessageContext
-	 */
-	public static void removeBackupContinuationStack(MessageContext synCtx) {
-		Set keySet = synCtx.getPropertyKeySet();
-		if (keySet != null) {
-			keySet.remove(SynapseConstants.BACKUP_CONTINUATION_STACK);
-		}
-	}
+    /**
+     * Remove backup ContinuationState stack.
+     *
+     * @param synCtx MessageContext
+     */
+    public static void removeBackupContinuationStack(MessageContext synCtx) {
+        Set keySet = synCtx.getPropertyKeySet();
+        if (keySet != null) {
+            keySet.remove(SynapseConstants.BACKUP_CONTINUATION_STACK);
+        }
+    }
 
     /**
      * Retrieve the sequence from Continuation state which message should be injected to.
