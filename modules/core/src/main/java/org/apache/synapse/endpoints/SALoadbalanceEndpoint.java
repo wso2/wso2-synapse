@@ -25,7 +25,6 @@ import java.util.List;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -206,11 +205,7 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
                     }
                 }
             }
-            //Restore continuation stack on failover
-            if (synCtx.getProperty(SynapseConstants.BACKUP_CONTINUATION_STACK) != null) {
-                ContinuationStackManager.setBackupContinuationStack(synCtx);
-                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, true);
-            }
+
             send(synCtx);
 
         } else {
@@ -272,9 +267,6 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
             synCtx.pushFaultHandler(this);
             endpoint.send(synCtx);
         } else {
-            if (synCtx.getProperty(SynapseConstants.CONTINUATION_CALL) != null) {
-                synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
-            }
             informFailure(synCtx, SynapseConstants.ENDPOINT_SAL_NOT_READY,
                     "The endpoint " + endpoint + " on the session with id " +
                             sessionID + " is not ready.");
