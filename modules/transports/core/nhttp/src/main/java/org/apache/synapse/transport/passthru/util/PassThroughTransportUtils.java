@@ -155,11 +155,6 @@ public class PassThroughTransportUtils {
                 iter.remove();
             }
 
-            if (HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)
-                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
-                iter.remove();
-            }
-
             if (HTTP.DATE_HEADER.equalsIgnoreCase(headerName)
                 && !targetConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER)) {
                 iter.remove();
