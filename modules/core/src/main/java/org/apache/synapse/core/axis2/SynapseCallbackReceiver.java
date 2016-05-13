@@ -246,7 +246,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
                     synapseOutMsgCtx.setContinuationEnabled(true);
-                    ContinuationStackManager.clearStack(synapseOutMsgCtx);
                 }
 
                 if (log.isDebugEnabled()) {
