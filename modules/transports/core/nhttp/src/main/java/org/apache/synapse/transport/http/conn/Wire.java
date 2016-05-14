@@ -52,7 +52,7 @@ class Wire {
                     buffer.insert(0, "\"");
                     buffer.insert(0, header);
                     if (isEnabled()) {
-                        this.log.debug(buffer.toString());
+                        this.log.debug(Thread.currentThread().getName() + " " + buffer.toString());
                     }
 //                    this.log.debug(buffer.toString());
                     synapseBuffer.append(tmpBuffer.toString());
@@ -71,7 +71,7 @@ class Wire {
             buffer.insert(0, '\"');
             buffer.insert(0, header);
             if (isEnabled()) {
-                this.log.debug(buffer.toString());
+                this.log.debug(Thread.currentThread().getName() + " " + buffer.toString());
             }
             tmpBuffer.setLength(0);
             tmpBuffer.append(buffer.toString());
