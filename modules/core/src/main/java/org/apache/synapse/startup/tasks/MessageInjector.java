@@ -41,6 +41,9 @@ import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.PayloadHelper;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Injects a Message into a named sequence or a proxy service configured in the Synapse
  * mediation engine. By default this task implementation will inject messages into the
@@ -104,6 +107,11 @@ public class MessageInjector implements Task, ManagedLifecycle {
     private String proxyName = null;
 
     /**
+     * Store additional properties required at the runtime
+     */
+    private Map<String, Object> runtimeProperties = null;
+
+    /**
      * Initializes the Injector
      *
      * @param se
@@ -111,6 +119,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
      */
     public void init(SynapseEnvironment se) {
 		synapseEnvironment = se;
+        runtimeProperties = new HashMap<String, Object>();
 	}
 
     /**
@@ -174,6 +183,30 @@ public class MessageInjector implements Task, ManagedLifecycle {
      */
     public void setProxyName(String proxyName) {
         this.proxyName = proxyName;
+    }
+
+    /**
+     * Set a property to be used at runtime. These properties will get inserted in message context created
+     * at here
+     *
+     * @param key    Key of the property
+     * @param value  Value of the property
+     */
+    public void addRuntimeProperty(String key, Object value) {
+        if (runtimeProperties.get(key) != null && log.isDebugEnabled()) {
+            log.debug("Key :" + key + " will be override.");
+        }
+        runtimeProperties.put(key, value);
+    }
+
+    /**
+     * Get a property stored for runtime use
+     *
+     * @param key   Key of the property to retrieve
+     * @return   Value of the property. If property does not exists, this will throw NullPointerException
+     */
+    public Object getRuntimeProperty(String key) throws NullPointerException {
+        return runtimeProperties.get(key);
     }
 
     /**
@@ -295,6 +328,13 @@ public class MessageInjector implements Task, ManagedLifecycle {
 
             if (soapAction != null) {
                 mc.setSoapAction(soapAction);
+            }
+
+            // Adding runtime properties to SynapseMessageContext, if exists
+            if (runtimeProperties != null && runtimeProperties.size()>0) {
+                for (Map.Entry<String, Object> entry : runtimeProperties.entrySet()) {
+                    mc.setProperty(entry.getKey(), entry.getValue());
+                }
             }
 
             if (INJECT_TO_SEQUENCE.equalsIgnoreCase(injectTo)) {
