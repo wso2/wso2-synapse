@@ -21,8 +21,12 @@ package org.apache.synapse.endpoints;
 
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.databinding.types.soapencoding.Integer;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -48,12 +52,28 @@ public class FailoverEndpoint extends AbstractEndpoint {
     private boolean dynamic = true;
 
     public void send(MessageContext synCtx) {
+        java.lang.Integer currentIndex = null;
+        boolean retry = (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) != null);
+        if (!retry) {
+            currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+                    ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+        }
+        try {
+            sendMessage(synCtx);
+        } finally {
+            if (!retry) {
+                CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
+                        currentIndex, false);
+            }
+        }
+    }
+    private void sendMessage(MessageContext synCtx) {
 
         logSetter();
         if (log.isDebugEnabled()) {
             log.debug("Failover Endpoint : " + getName());
         }
-        
+
        if (getContext().isState(EndpointContext.ST_OFF)) {
             informFailure(synCtx, SynapseConstants.ENDPOINT_FO_NONE_READY,
                     "Failover endpoint : " + getName() != null ? getName() : SynapseConstants.ANONYMOUS_ENDPOINT + " - is inactive");
@@ -74,7 +94,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
                 synCtx.setProperty(SynapseConstants.LB_FO_ENDPOINT_ORIGINAL_MESSAGE, synCtx.getEnvelope());
             }
             mEndpointLog = new HashMap<String,Integer>();
-            synCtx.setProperty(SynapseConstants.ENDPOINT_LOG, mEndpointLog);            
+            synCtx.setProperty(SynapseConstants.ENDPOINT_LOG, mEndpointLog);
         } else {
             isARetry = true;
             mEndpointLog = (Map<String,Integer>)synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
@@ -88,7 +108,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
         // evaluate the endpoint properties
         evaluateProperties(synCtx);
-        
+
         if (dynamic) {
             // Dynamic fail-over mode - Switch to a backup endpoint when an error occurs
             // in the primary endpoint. But switch back to the primary as soon as it becomes
@@ -112,7 +132,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
 						if (axisMC.getProperty(PassThroughConstants.PASS_THROUGH_PIPE) != null) {
 							((AbstractEndpoint) endpoint).setContentAware(true);
 							((AbstractEndpoint) endpoint).setForceBuildMC(true);
-							
+
 							if(endpoint instanceof TemplateEndpoint && ((TemplateEndpoint)endpoint).getRealEndpoint() != null){
 								if(((TemplateEndpoint)endpoint).getRealEndpoint() instanceof AbstractEndpoint){
 									((AbstractEndpoint)((TemplateEndpoint)endpoint).getRealEndpoint()).setContentAware(true);

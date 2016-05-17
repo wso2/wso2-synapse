@@ -809,17 +809,21 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public void setComponentStatisticsId(ArtifactHolder holder) {
-        if(definition != null) {
+        if (this instanceof IndirectEndpoint) {
+            String sequenceId = StatisticIdentityGenerator
+                    .getIdReferencingComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT, holder);
+
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
+        } else {
+            if (definition == null) {
+                EndpointDefinition definition = new EndpointDefinition();
+                this.setDefinition(definition);
+            }
             if (definition.getAspectConfiguration() == null) {
                 definition.configure(new AspectConfiguration(getReportingName()));
             }
             String sequenceId = StatisticIdentityGenerator.getIdForComponent(getReportingName(), ComponentType.ENDPOINT, holder);
             definition.getAspectConfiguration().setUniqueId(sequenceId);
-
-            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
-        } else if (this instanceof IndirectEndpoint) {
-            String sequenceId = StatisticIdentityGenerator
-                    .getIdReferencingComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT, holder);
 
             StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
         }

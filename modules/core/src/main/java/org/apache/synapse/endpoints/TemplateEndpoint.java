@@ -23,6 +23,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -44,6 +47,16 @@ public class TemplateEndpoint extends AbstractEndpoint {
 
     @Override
     public void send(MessageContext synCtx) {
+        Integer currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+                ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+        try {
+            sendMessage(synCtx);
+        } finally {
+            CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR, currentIndex, false);
+        }
+    }
+
+    public void sendMessage(MessageContext synCtx) {
         reLoadAndInitEndpoint(synCtx.getEnvironment());
 
         if (realEndpoint != null) {

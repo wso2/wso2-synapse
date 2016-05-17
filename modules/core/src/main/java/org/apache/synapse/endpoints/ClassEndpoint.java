@@ -23,6 +23,9 @@ import java.util.Map;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 /**
  * Class which defines  custom  user defined endpoints. Custom Endpoint implementations must extend
@@ -78,6 +81,8 @@ public class ClassEndpoint extends AbstractEndpoint  {
 	public void send(MessageContext synMessageContext) {
 
 		logSetter();
+		Integer currentIndex = OpenEventCollector.reportChildEntryEvent(synMessageContext, getReportingName(),
+				ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
 
 		if (log.isDebugEnabled()) {
 			log.debug("Start sending message");
@@ -89,6 +94,9 @@ public class ClassEndpoint extends AbstractEndpoint  {
 			classEndpoint.send(synMessageContext);
 		} catch (Exception e) {
 			throw new SynapseException("Error occured when execute the class endpoint", e);
+		} finally {
+			CloseEventCollector.closeEntryEvent(synMessageContext, getReportingName(), ComponentType.MEDIATOR,
+					currentIndex, false);
 		}
 		
 	}

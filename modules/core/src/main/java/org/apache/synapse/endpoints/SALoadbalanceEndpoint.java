@@ -25,6 +25,9 @@ import java.util.List;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -88,6 +91,23 @@ public class SALoadbalanceEndpoint extends LoadbalanceEndpoint {
     }
 
     public void send(MessageContext synCtx) {
+        Integer currentIndex = null;
+        boolean retry = (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) != null);
+        if (!retry) {
+            currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+                    ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+        }
+        try {
+            sendMessage(synCtx);
+        } finally {
+            if (!retry) {
+                CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
+                        currentIndex, false);
+            }
+        }
+    }
+
+    public void sendMessage(MessageContext synCtx) {
 
         logSetter();
         if (log.isDebugEnabled()) {
