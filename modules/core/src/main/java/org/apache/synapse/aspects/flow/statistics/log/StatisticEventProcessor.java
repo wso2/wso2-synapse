@@ -86,9 +86,11 @@ public class StatisticEventProcessor {
 					          "|Statistic Id : " + statisticDataUnit.getStatisticId());
 				}
 			} else if (statisticDataUnit.getCurrentIndex() > 0 && !statisticDataUnit.isIndividualStatisticCollected()) {
-				log.error("Component: " + statisticDataUnit.getComponentName() + " is in a middle of the statistics " +
-				          "collection. But collection cannot be found and it seems to be broken. |Statistic Id : " +
-				          statisticDataUnit.getStatisticId());
+				if (log.isDebugEnabled()) {
+					log.debug("Component: " + statisticDataUnit.getComponentName() + " is in a middle of the statistics " +
+							"collection. But collection cannot be found and it seems to be broken. |Statistic Id : " +
+							statisticDataUnit.getStatisticId());
+				}
 			} else {
 				log.error("Component: " + statisticDataUnit.getComponentName() + " is tried to open statistics, but " +
 				          "its individual collection was not enabled. |Statistic Id : " +
