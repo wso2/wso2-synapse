@@ -39,13 +39,18 @@ public class ResolvingEndpoint extends AbstractEndpoint {
     private SynapseXPath keyExpression = null;
 
     public void send(MessageContext synCtx) {
-        Integer currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
-                ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+        Integer currentIndex = null;
+        if (getDefinition() != null) {
+            currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+                    ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+        }
         try {
             sendMessage(synCtx);
         } finally {
-            CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
-                    currentIndex, false);
+            if (currentIndex != null) {
+                CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
+                        currentIndex, false);
+            }
         }
     }
 
