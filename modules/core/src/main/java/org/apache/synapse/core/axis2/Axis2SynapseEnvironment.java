@@ -274,7 +274,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 keySet.remove(SynapseConstants.CONTINUATION_CALL);
             }
 
-            if (isContinuationCall != null && isContinuationCall) {
+            if (isContinuationCall != null && isContinuationCall && !synCtx.getContinuationStateStack().isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Response received for the Continuation Call service invocation");
                 }
