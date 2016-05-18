@@ -58,7 +58,23 @@ public class ClassEndpoint extends AbstractEndpoint  {
 	public Endpoint getClassEndpoint() {
 		return classEndpoint;
 	}
-	
+
+	public void send(MessageContext synCtx) {
+		Integer currentIndex = null;
+		if (getDefinition() != null) {
+			currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+					ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+		}
+		try {
+			sendMessage(synCtx);
+		} finally {
+			if (currentIndex != null) {
+				CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
+						currentIndex, false);
+			}
+		}
+	}
+
 	/**
 	 * Override the <code>AbstractEndpoint.init()</code> to load a custom synapse
 	 * environment.
@@ -78,11 +94,9 @@ public class ClassEndpoint extends AbstractEndpoint  {
 	 * Override the <code>AbstractEndpoint.send()</code> to have a custom
 	 * message send out logic.
 	 */
-	public void send(MessageContext synMessageContext) {
+	public void sendMessage(MessageContext synMessageContext) {
 
 		logSetter();
-		Integer currentIndex = OpenEventCollector.reportChildEntryEvent(synMessageContext, getReportingName(),
-				ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
 
 		if (log.isDebugEnabled()) {
 			log.debug("Start sending message");
@@ -94,9 +108,6 @@ public class ClassEndpoint extends AbstractEndpoint  {
 			classEndpoint.send(synMessageContext);
 		} catch (Exception e) {
 			throw new SynapseException("Error occured when execute the class endpoint", e);
-		} finally {
-			CloseEventCollector.closeEntryEvent(synMessageContext, getReportingName(), ComponentType.MEDIATOR,
-					currentIndex, false);
 		}
 		
 	}

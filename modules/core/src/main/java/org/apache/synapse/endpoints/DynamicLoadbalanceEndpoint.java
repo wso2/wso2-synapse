@@ -109,14 +109,14 @@ public class DynamicLoadbalanceEndpoint extends LoadbalanceEndpoint {
     public void send(MessageContext synCtx) {
         Integer currentIndex = null;
         boolean retry = (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) != null);
-        if (!retry) {
+        if ((getDefinition() != null) && !retry) {
             currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
                     ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
         }
         try {
             sendMessage(synCtx);
         } finally {
-            if (!retry) {
+            if (currentIndex != null) {
                 CloseEventCollector.closeEntryEvent(synCtx, getReportingName(),
                         ComponentType.MEDIATOR, currentIndex, false);
             }
