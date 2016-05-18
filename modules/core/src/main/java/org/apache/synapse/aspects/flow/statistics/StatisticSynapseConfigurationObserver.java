@@ -74,7 +74,7 @@ public class StatisticSynapseConfigurationObserver implements SynapseObserver{
 		holder.setParent(endpoint.getName());
 		endpoint.setComponentStatisticsId(holder);
 		((AbstractEndpoint) endpoint).getDefinition().getAspectConfiguration()
-		                             .setHashCode(holder.getHashCodeAsString());
+				.setHashCode(holder.getHashCodeAsString());
 		StatisticIdentityGenerator.conclude(holder);
 	}
 

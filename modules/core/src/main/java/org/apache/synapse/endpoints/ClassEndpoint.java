@@ -23,6 +23,9 @@ import java.util.Map;
 
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 /**
  * Class which defines  custom  user defined endpoints. Custom Endpoint implementations must extend
@@ -55,7 +58,23 @@ public class ClassEndpoint extends AbstractEndpoint  {
 	public Endpoint getClassEndpoint() {
 		return classEndpoint;
 	}
-	
+
+	public void send(MessageContext synCtx) {
+		Integer currentIndex = null;
+		if (getDefinition() != null) {
+			currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+					ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
+		}
+		try {
+			sendMessage(synCtx);
+		} finally {
+			if (currentIndex != null) {
+				CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.MEDIATOR,
+						currentIndex, false);
+			}
+		}
+	}
+
 	/**
 	 * Override the <code>AbstractEndpoint.init()</code> to load a custom synapse
 	 * environment.
@@ -75,7 +94,7 @@ public class ClassEndpoint extends AbstractEndpoint  {
 	 * Override the <code>AbstractEndpoint.send()</code> to have a custom
 	 * message send out logic.
 	 */
-	public void send(MessageContext synMessageContext) {
+	public void sendMessage(MessageContext synMessageContext) {
 
 		logSetter();
 
