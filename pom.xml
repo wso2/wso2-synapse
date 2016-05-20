@@ -979,7 +979,7 @@
       <qfj.version>1.5.3</qfj.version>
       <org.bouncycastle.version>1.52</org.bouncycastle.version>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
-      <httpcore-nio.wso2.version>4.3.3-wso2v3</httpcore-nio.wso2.version>
+      <httpcore-nio.wso2.version>4.3.3-wso2v4-SNAPSHOT</httpcore-nio.wso2.version>
       <hc.httpclient.version>4.3.2</hc.httpclient.version>
       <aspectj.version>1.8.5</aspectj.version>
       <spring.version>1.2.8</spring.version>
@@ -991,7 +991,7 @@
       <synapse.version>${project.version}</synapse.version>
       <commons.dbcp.version>1.2.2</commons.dbcp.version>
       <commons.pool.version>1.3</commons.pool.version>
-      <commons.vfs.version>2.0-wso2v14</commons.vfs.version>
+      <commons.vfs.version>2.0-wso2v15-SNAPSHOT</commons.vfs.version>
       <truezip.version>6.6</truezip.version>
       <commons.net.version>1.4.1</commons.net.version>
       <jsch.version>0.1.49</jsch.version>
@@ -1001,7 +1001,7 @@
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
       <axis2.version>1.6.1-wso2v12</axis2.version>
-      <axis2.transport.version>1.1.1-wso2v3</axis2.transport.version>
+      <axis2.transport.version>1.1.1-wso2v4-SNAPSHOT</axis2.transport.version>
       <axiom.version>1.2.11-wso2v10</axiom.version>
       <xml_schema.version>1.4.3</xml_schema.version>
       <xml_apis.version>1.3.04</xml_apis.version>
