@@ -109,7 +109,7 @@ public class SourceResponse {
 
         if (statusLine != null) {
             response.setStatusLine(version, status, statusLine);
-        } else if (versionChangeRequired){
+        } if(versionChangeRequired){
         	response.setStatusLine(version, status);
         } else {
             response.setStatusCode(status);

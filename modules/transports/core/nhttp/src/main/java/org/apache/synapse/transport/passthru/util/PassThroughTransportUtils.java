@@ -226,26 +226,6 @@ public class PassThroughTransportUtils {
     }
 
     /**
-     * Determine the Http Status Message depending on the message type processed <br>
-     * (normal response versus fault response) as well as Axis2 message context properties set
-     * via Synapse configuration or MessageBuilders.
-     *
-     * @see PassThroughConstants#FAULTS_AS_HTTP_200
-     * @see PassThroughConstants#HTTP_SC
-     *
-     * @param msgContext the Axis2 message context
-     *
-     * @return the HTTP status message string or null
-     */
-    public static String determineHttpStatusLine(MessageContext msgContext) {
-        Object statusLine = msgContext.getProperty(PassThroughConstants.HTTP_SC_DESC);
-        if (statusLine != null) {
-            return (String) statusLine;
-        }
-        return null;
-    }
-
-    /**
      * Whatever this method returns as the IP is ignored by the actual http/s listener when
      * its getServiceEPR is invoked. This was originally copied from axis2
      *
