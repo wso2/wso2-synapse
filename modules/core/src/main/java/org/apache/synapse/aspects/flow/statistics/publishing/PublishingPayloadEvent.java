@@ -20,11 +20,11 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 public class PublishingPayloadEvent {
     private int eventIndex;
-    private String attribute;
+    private Integer attribute;
 
     public PublishingPayloadEvent() {}
 
-    public PublishingPayloadEvent(int eventIndex, String attribute) {
+    public PublishingPayloadEvent(int eventIndex, Integer attribute) {
         this.eventIndex = eventIndex;
         this.attribute = attribute;
     }
@@ -37,11 +37,11 @@ public class PublishingPayloadEvent {
         this.eventIndex = eventIndex;
     }
 
-    public String getAttribute() {
+    public Integer getAttribute() {
         return attribute;
     }
 
-    public void setAttribute(String attribute) {
+    public void setAttribute(Integer attribute) {
         this.attribute = attribute;
     }
 
