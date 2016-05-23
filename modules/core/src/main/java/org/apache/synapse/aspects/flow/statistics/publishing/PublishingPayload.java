@@ -19,19 +19,26 @@
 package org.apache.synapse.aspects.flow.statistics.publishing;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class PublishingPayload {
 
     private String payload;
 
-    private ArrayList<PublishingPayloadEvent> events = new ArrayList<>();
-
-    public PublishingPayloadEvent getEvent(int index) {
-        return events.get(index);
-    }
+    private HashMap<Integer, ArrayList<Integer>> events = new HashMap<Integer, ArrayList<Integer>>();
 
     public boolean addEvent(PublishingPayloadEvent publishingPayloadEvent) {
-        return events.add(publishingPayloadEvent);
+
+        if (events.containsKey(publishingPayloadEvent.getEventIndex())){
+            return events.get(publishingPayloadEvent.getEventIndex()).add(publishingPayloadEvent.getAttribute());
+        } else {
+            ArrayList<Integer> attributes = new ArrayList<>(2);
+            attributes.add(publishingPayloadEvent.getAttribute());
+
+            events.put(publishingPayloadEvent.getEventIndex(), attributes);
+            return true;
+        }
+
     }
 
     public String getPayload() {
@@ -42,12 +49,4 @@ public class PublishingPayload {
         this.payload = payload;
     }
 
-    public ArrayList<PublishingPayloadEvent> getEvents() {
-        return events;
-    }
-
-    public void setEvents(
-            ArrayList<PublishingPayloadEvent> events) {
-        this.events = events;
-    }
 }

@@ -29,7 +29,7 @@ public class PublishingFlow {
 
     private ArrayList<PublishingEvent> events = new ArrayList<>();
 
-    private ArrayList<Map<String, Object>> eventsMap = new ArrayList<>();
+    private ArrayList<ArrayList<Object>> eventsList = new ArrayList<>();
 
     private ArrayList<PublishingPayload> payloads;
 
@@ -40,7 +40,7 @@ public class PublishingFlow {
 
     public boolean addEvent(PublishingEvent publishingEvent) {
 
-        return events.add(publishingEvent) && eventsMap.add(publishingEvent.getObjectAsMap());
+        return events.add(publishingEvent) && eventsList.add(publishingEvent.getObjectAsList());
     }
 
     public String getMessageFlowId() {
@@ -76,7 +76,7 @@ public class PublishingFlow {
 
         Map<String, Object> objectMap = new HashMap<String, Object>();
         objectMap.put(MESSAGE_FLOW_ID, this.messageFlowId);
-        objectMap.put(EVENTS, eventsMap);
+        objectMap.put(EVENTS, eventsList);
         objectMap.put(PAYLOADS, payloads);
 
         return objectMap;

@@ -149,8 +149,8 @@ public class TracingDataCollectionHelper {
 		final String REFER = "#REFER:";
 		final String BEFORE = "before-";
 		final String AFTER = "after-";
-		final String BEFORE_PAYLOAD = "beforePayload";
-		final String AFTER_PAYLOAD = "afterPayload";
+		final Integer BEFORE_PAYLOAD = 8; // 6th attribute setting @PublishingEvent
+		final Integer AFTER_PAYLOAD = 9; // 7th attribute setting @PublishingEvent
 
 
 		String entryPoint = messageFlowLogs.get(0).getComponentName();
@@ -163,7 +163,7 @@ public class TracingDataCollectionHelper {
 			StatisticsLog currentStatLog = messageFlowLogs.get(index);
 
 			// Add each event to Publishing Flow
-			publishingFlow.addEvent(new PublishingEvent(currentStatLog, entryPoint, entrypointHashcode));
+			publishingFlow.addEvent(new PublishingEvent(flowId, index, currentStatLog, entryPoint, entrypointHashcode));
 
 			// Skip the rest of things, if message tracing is disabled
 			if (!RuntimeStatisticCollector.isCollectingPayloads()) {

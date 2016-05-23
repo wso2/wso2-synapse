@@ -20,14 +20,18 @@ package org.apache.synapse.aspects.flow.statistics.publishing;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticsLog;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 public class PublishingEvent {
 
+	private String flowId;
+
 	private String componentType;
 	private String componentName;
+	private Integer componentIndex;
 	private String componentId;
 
 	private long startTime;
@@ -49,9 +53,12 @@ public class PublishingEvent {
 
 	public  PublishingEvent(){}
 
-	public PublishingEvent(StatisticsLog statisticsLog, String entryPoint, Integer entryPointHashcode) {
+	public PublishingEvent(String flowId, int componentIndex, StatisticsLog statisticsLog, String entryPoint, Integer entryPointHashcode) {
+		this.flowId = flowId;
+
 		this.componentType = statisticsLog.getComponentTypeToString();
 		this.componentName = statisticsLog.getComponentName();
+		this.componentIndex = componentIndex;
 		this.componentId = statisticsLog.getComponentId();
 
 		this.startTime = statisticsLog.getStartTime();
@@ -70,6 +77,14 @@ public class PublishingEvent {
 		this.entryPointHashcode = entryPointHashcode;
 		this.faultCount = statisticsLog.getNoOfFaults();
 		this.hashCode = statisticsLog.getHashCode();
+	}
+
+	public String getFlowId() {
+		return flowId;
+	}
+
+	public void setFlowId(String flowId) {
+		this.flowId = flowId;
 	}
 
 	public String getComponentType() {
@@ -231,39 +246,47 @@ public class PublishingEvent {
 		return copy;
 	}
 
-	public Map<String, Object> getObjectAsMap() {
-		Map<String, Object> objectMap = new HashMap<String, Object>();
+	public ArrayList<Object> getObjectAsList() {
+		ArrayList<Object> objectList = new ArrayList<Object>();
 
-		objectMap.put("componentType", this.componentType);
-		objectMap.put("componentName", this.componentName);
-		objectMap.put("componentId", this.componentId);
+		/**
+		 * Important, order of adding to array-list should be preserved
+		 * @TracingDataCollectonHelper.createPublishingFlow() also needs to sync with changes here
+		 */
 
-		objectMap.put("startTime", this.startTime);
-		objectMap.put("endTime", this.endTime);
-		objectMap.put("duration", this.duration);
+		objectList.add(this.flowId);
 
-		objectMap.put("beforePayload", this.beforePayload);
-		objectMap.put("afterPayload", this.afterPayload);
+		objectList.add(this.componentType);
+		objectList.add(this.componentName);
+		objectList.add(this.componentIndex);
+		objectList.add(this.componentId);
+
+		objectList.add(this.startTime);
+		objectList.add(this.endTime);
+		objectList.add(this.duration);
+
+		objectList.add(this.beforePayload);
+		objectList.add(this.afterPayload);
 
 		if (this.contextPropertyMap == null) {
-			objectMap.put("contextPropertyMap", null);
+			objectList.add(null);
 		} else {
-			objectMap.put("contextPropertyMap", this.contextPropertyMap.toString());
+			objectList.add(this.contextPropertyMap.toString());
 		}
 
 		if (this.transportPropertyMap == null) {
-			objectMap.put("transportPropertyMap", null);
+			objectList.add(null);
 		} else {
-			objectMap.put("transportPropertyMap", this.transportPropertyMap.toString());
+			objectList.add(this.transportPropertyMap.toString());
 		}
 
-		objectMap.put("children", Arrays.toString(this.children));
+		objectList.add(Arrays.toString(this.children));
 
-		objectMap.put("entryPoint", this.entryPoint);
-		objectMap.put("entryPointHashcode", String.valueOf(this.entryPointHashcode));
-		objectMap.put("faultCount", this.faultCount);
-		objectMap.put("hashCode", String.valueOf(this.hashCode));
+		objectList.add(this.entryPoint);
+		objectList.add(String.valueOf(this.entryPointHashcode));
+		objectList.add(this.faultCount);
+		objectList.add(String.valueOf(this.hashCode));
 
-		return objectMap;
+		return objectList;
 	}
 }
