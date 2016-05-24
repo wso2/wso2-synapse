@@ -163,7 +163,7 @@ public class TargetConnections {
         HostConnections pool = (HostConnections) conn.getContext().getAttribute(
                 PassThroughConstants.CONNECTION_POOL);
 
-        TargetContext.get(conn).reset();
+        TargetContext.get(conn).release(false);
 
         if (pool != null) {
             pool.release(conn);
