@@ -110,7 +110,7 @@ public class TargetRequestFactory {
                 }
             }
 
-			String cType = getContentType(msgContext);
+			String cType = getContentType(msgContext, configuration.isPreserveHttpHeader(HTTP.CONTENT_TYPE));
 			if (cType != null && (!httpMethod.equals("GET") && !httpMethod.equals("DELETE"))) {
 				String messageType = (String) msgContext.getProperty("messageType");
 				if (messageType != null) {
@@ -198,7 +198,16 @@ public class TargetRequestFactory {
         return null;
     }
 
-    private static String getContentType(MessageContext msgCtx) throws AxisFault {
+    private static String getContentType(MessageContext msgCtx, boolean isContentTypePreservedHeader) throws AxisFault {
+
+        if (isContentTypePreservedHeader) {
+            if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
+                return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
+            } else if (msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE) != null) {
+                return (String) msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE);
+            }
+        }
+
         MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(msgCtx);
         OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgCtx);
         
