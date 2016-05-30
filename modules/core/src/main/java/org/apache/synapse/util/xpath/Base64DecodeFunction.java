@@ -15,7 +15,6 @@
  */
 package org.apache.synapse.util.xpath;
 
-import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
