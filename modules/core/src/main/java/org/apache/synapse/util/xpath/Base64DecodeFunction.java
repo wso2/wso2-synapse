@@ -15,6 +15,7 @@
  */
 package org.apache.synapse.util.xpath;
 
+import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,17 +34,13 @@ public class Base64DecodeFunction implements Function {
 
     private static final Log log = LogFactory.getLog(Base64DecodeFunction.class);
 
-    public static final String NULL_STRING = "";
-
-    private static final String DEFAULT_CHARSET = "UTF-8";
-
     public Object call(Context context, List args) throws FunctionCallException {
 
         if (args == null || args.size() == 0) {
             if (log.isDebugEnabled()) {
                 log.debug("Property key value for lookup is not specified");
             }
-            return NULL_STRING;
+            return SynapseXPathConstants.NULL_STRING;
         }
 
         int size = args.size();
@@ -52,7 +49,7 @@ public class Base64DecodeFunction implements Function {
             String encodedValue = StringFunction.evaluate(args.get(0), context.getNavigator());
 
             // use the default UTF-8 decoding.
-            return decode(log.isDebugEnabled(), DEFAULT_CHARSET, encodedValue);
+            return decode(log.isDebugEnabled(), SynapseXPathConstants.DEFAULT_CHARSET, encodedValue);
         } else if (size == 2) {
             // get the first argument, it can be a function returning a string as well
             String encodedValue = StringFunction.evaluate(args.get(0), context.getNavigator());
@@ -67,7 +64,7 @@ public class Base64DecodeFunction implements Function {
             }
         }
         // return empty string if the arguments are wrong
-        return NULL_STRING;
+        return SynapseXPathConstants.NULL_STRING;
     }
 
 
@@ -78,17 +75,10 @@ public class Base64DecodeFunction implements Function {
                 log.debug("Non empty string value should be provided for decode");
             }
 
-            return NULL_STRING;
+            return SynapseXPathConstants.NULL_STRING;
         }
 
-        byte[] decodedValue;
-        try {
-            decodedValue = new Base64().decode(value.getBytes(charset));
-        } catch (UnsupportedEncodingException e) {
-            String msg = "Unsupported Charset";
-            log.error(msg, e);
-            throw new FunctionCallException(msg, e);
-        }
+        byte[] decodedValue = new Base64().decode(value.getBytes());
 
         String decodedString;
         try {
