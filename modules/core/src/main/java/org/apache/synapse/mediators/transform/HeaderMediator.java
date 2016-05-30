@@ -328,6 +328,17 @@ public class HeaderMediator extends AbstractMediator {
     }
 
     @Override public String getMediatorName() {
-        return super.getMediatorName() + ":" + qName.getLocalPart();
+        String headerName;
+        if(qName != null){
+            headerName = qName.getLocalPart();
+        } else {
+            if(hasEmbeddedXml()){
+                //getting the element name
+                headerName = getEmbeddedXml().get(0).getLocalName();
+            } else {
+                headerName = "";
+            }
+        }
+        return super.getMediatorName() + ":" + headerName;
     }
 }
