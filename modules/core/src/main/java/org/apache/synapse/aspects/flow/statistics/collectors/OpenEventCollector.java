@@ -52,54 +52,52 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	 */
 	public static Integer reportEntryEvent(MessageContext messageContext, String componentName,
 	                                       AspectConfiguration aspectConfiguration, ComponentType componentType) {
-		if (isStatisticsEnabled()) {
-			boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
+		boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
 
-			boolean isCollectingTracing = false;
-			if (isCollectingProperties() || isCollectingPayloads()) {
-				isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+		boolean isCollectingTracing = false;
+		if (isCollectingProperties() || isCollectingPayloads()) {
+			isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
+		}
+
+		Boolean isFlowStatisticEnabled =
+				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+		if (isCollectingStatistics) {
+			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
+			setStatisticsTraceId(messageContext);
+			if (isCollectingTracing) {
+				messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, true);
+			}
+		} else if (isFlowStatisticEnabled == null) {
+			//To signal lower levels that statistics was disabled in upper component in the flow
+			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+		}
+		if (shouldReportStatistic(messageContext)) {
+			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
+			statisticDataUnit.setComponentName(componentName);
+			statisticDataUnit.setComponentType(componentType);
+			statisticDataUnit.setTracingEnabled(isCollectingTracing);
+			statisticDataUnit.setSynapseEnvironment(messageContext.getEnvironment());
+			statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
+			if (aspectConfiguration != null) {
+				statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
+				statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
+			}
+			int parentIndex = StatisticDataCollectionHelper
+					.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
+			statisticDataUnit.setParentIndex(parentIndex);
+			if (statisticDataUnit.getComponentType() != ComponentType.ENDPOINT) {
+				statisticDataUnit.setFlowContinuableMediator(true);
 			}
 
-			Boolean isFlowStatisticEnabled =
-					(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
-			if (isCollectingStatistics) {
-				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
-				setStatisticsTraceId(messageContext);
-				if (isCollectingTracing) {
-					messageContext.setProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED, true);
-				}
-			} else if (isFlowStatisticEnabled == null) {
-				//To signal lower levels that statistics was disabled in upper component in the flow
-				messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
+			if (aspectConfiguration != null) {
+				statisticDataUnit.setIsIndividualStatisticCollected(aspectConfiguration.isStatisticsEnable());
 			}
-			if (shouldReportStatistic(messageContext)) {
-				StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
-				statisticDataUnit.setComponentName(componentName);
-				statisticDataUnit.setComponentType(componentType);
-				statisticDataUnit.setTracingEnabled(isCollectingTracing);
-				statisticDataUnit.setSynapseEnvironment(messageContext.getEnvironment());
-				statisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getFlowPosition(messageContext));
-				if (aspectConfiguration != null) {
-					statisticDataUnit.setComponentId(aspectConfiguration.getUniqueId());
-					statisticDataUnit.setHashCode(aspectConfiguration.getHashCode());
-				}
-				int parentIndex = StatisticDataCollectionHelper
-						.getParentFlowPosition(messageContext, statisticDataUnit.getCurrentIndex());
-				statisticDataUnit.setParentIndex(parentIndex);
-				if (statisticDataUnit.getComponentType() != ComponentType.ENDPOINT) {
-					statisticDataUnit.setFlowContinuableMediator(true);
-				}
+			StatisticDataCollectionHelper.collectData(messageContext, true, isCollectingTracing, statisticDataUnit);
 
-				if(aspectConfiguration != null) {
-					statisticDataUnit.setIsIndividualStatisticCollected(aspectConfiguration.isStatisticsEnable());
-				}
-				StatisticDataCollectionHelper.collectData(messageContext, true, isCollectingTracing, statisticDataUnit);
+			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
+			statisticEventQueue.enqueue(openEvent);
 
-				StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
-				statisticEventQueue.enqueue(openEvent);
-
-				return statisticDataUnit.getCurrentIndex();
-			}
+			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
 	}

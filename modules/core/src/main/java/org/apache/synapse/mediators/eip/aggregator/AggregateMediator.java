@@ -36,6 +36,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
@@ -365,6 +366,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         boolean result;
 
         SequenceMediator onCompleteSequence = getOnCompleteSequence();
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!contState.hasChild()) {
             result = onCompleteSequence.mediate(synCtx, contState.getPosition() + 1);
         } else {
@@ -373,9 +375,13 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
             result = mediator.mediate(synCtx, contState.getChildContState());
 
-            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            if (isStatisticsEnabled) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
-        onCompleteSequence.reportCloseStatistics(synCtx, null);
+        if (isStatisticsEnabled) {
+            onCompleteSequence.reportCloseStatistics(synCtx, null);
+        }
         return result;
     }
 

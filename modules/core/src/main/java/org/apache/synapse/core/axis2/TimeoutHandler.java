@@ -28,6 +28,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.StatisticsCleaner;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -211,7 +212,9 @@ public class TimeoutHandler extends TimerTask {
                                 "timeout of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
                     }
                     callbackStore.remove(key);
-                    CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
+                    if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                        CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
+                    }
                 }
             }
         }
