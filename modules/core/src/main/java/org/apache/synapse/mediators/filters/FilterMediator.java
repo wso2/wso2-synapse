@@ -26,6 +26,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
@@ -230,6 +231,7 @@ public class FilterMediator extends AbstractListMediator implements
 
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (subBranch == 0) {
            if (!continuationState.hasChild()) {
                result = super.mediate(synCtx, continuationState.getPosition() + 1);
@@ -239,7 +241,9 @@ public class FilterMediator extends AbstractListMediator implements
 
                result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-               ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+               if (isStatisticsEnabled) {
+                   ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+               }
            }
         } else {
             if (!continuationState.hasChild()) {
@@ -251,9 +255,13 @@ public class FilterMediator extends AbstractListMediator implements
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                if (isStatisticsEnabled) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
             }
-            elseMediator.reportCloseStatistics(synCtx, null);
+            if (isStatisticsEnabled) {
+                elseMediator.reportCloseStatistics(synCtx, null);
+            }
         }
 
         return result;

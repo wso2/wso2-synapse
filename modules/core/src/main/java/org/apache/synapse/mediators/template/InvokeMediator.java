@@ -26,6 +26,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
@@ -155,7 +156,7 @@ public class InvokeMediator extends AbstractMediator implements
 
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
-
+		boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (subBranch == 0) {
 	        // Default flow
 	        TemplateMediator templateMediator = (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
@@ -170,9 +171,13 @@ public class InvokeMediator extends AbstractMediator implements
 
 		        result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-		        ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+				if (isStatisticsEnabled) {
+					((Mediator) mediator).reportCloseStatistics(synCtx, null);
+				}
 	        }
-	        templateMediator.reportCloseStatistics(synCtx, null);
+			if (isStatisticsEnabled) {
+				templateMediator.reportCloseStatistics(synCtx, null);
+			}
         } else {
 	        // Pre fetching invoke mediator flow
 	        String prefetchInvokeKey = key.evaluateValue(synCtx);
@@ -190,7 +195,9 @@ public class InvokeMediator extends AbstractMediator implements
 		        // after prefetch invoke mediator flow, execute default flow
 		        result = mediate(synCtx, false);
 	        }
-	        prefetchInvoke.reportCloseStatistics(synCtx, null);
+			if (isStatisticsEnabled) {
+				prefetchInvoke.reportCloseStatistics(synCtx, null);
+			}
         }
         return result;
     }

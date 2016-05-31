@@ -31,6 +31,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
@@ -89,10 +90,13 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
-
+        Integer statisticReportingIndex = null;
         //Statistic reporting
-        Integer statisticReportingIndex = OpenEventCollector
-                .reportEntryEvent(synCtx, this.name, proxy.getAspectConfiguration(), ComponentType.PROXYSERVICE);
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        if (isStatisticsEnabled) {
+            statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, this.name,
+                    proxy.getAspectConfiguration(), ComponentType.PROXYSERVICE);
+        }
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -246,8 +250,10 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         } finally {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             //Statistic reporting
-            CloseEventCollector
-                    .closeEntryEvent(synCtx, this.name, ComponentType.PROXYSERVICE, statisticReportingIndex, true);
+            if (isStatisticsEnabled) {
+                CloseEventCollector.closeEntryEvent(synCtx, this.name, ComponentType.PROXYSERVICE,
+                        statisticReportingIndex, true);
+            }
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);

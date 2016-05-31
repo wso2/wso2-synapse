@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -266,14 +267,16 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
     }
 
     void process(MessageContext synCtx) {
-        Integer statisticReportingIndex;
+        Integer statisticReportingIndex = null;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!synCtx.isResponse()) {
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-            statisticReportingIndex = OpenEventCollector
-                    .reportChildEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                           getAspectConfiguration(), true);
+            if (isStatisticsEnabled) {
+                statisticReportingIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getResourceName(synCtx, name),
+                        ComponentType.RESOURCE, getAspectConfiguration(), true);
+            }
         } else {
             statisticReportingIndex = null;
         }
@@ -286,8 +289,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                                    statisticReportingIndex, true);
+                if (isStatisticsEnabled) {
+                    CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                            statisticReportingIndex, true);
+                }
                 return;
             }
 
@@ -318,8 +323,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
-            CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                                statisticReportingIndex, true);
+            if (isStatisticsEnabled) {
+                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                        statisticReportingIndex, true);
+            }
             return;
         }
 
@@ -333,8 +340,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
-            CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
-                                                statisticReportingIndex, true);
+            if (isStatisticsEnabled) {
+                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                        statisticReportingIndex, true);
+            }
             return;
         }
 
@@ -349,9 +358,11 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
-        CloseEventCollector
-                .closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, statisticReportingIndex,
-                                 true);
+        if (isStatisticsEnabled) {
+            CloseEventCollector
+                    .closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, statisticReportingIndex,
+                            true);
+        }
     }
 
     public void registerFaultHandler(MessageContext synCtx) {
