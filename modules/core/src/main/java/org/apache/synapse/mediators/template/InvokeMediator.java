@@ -105,15 +105,16 @@ public class InvokeMediator extends AbstractMediator implements
 		// parameters
 		Mediator mediator = synCtx.getSequenceTemplate(targetTemplate);
 
-        //setting the log appender when external template executor is called a sequence template inside a car file
-        if (mediator instanceof TemplateMediator) {
-            CustomLogSetter.getInstance().setLogAppender(((TemplateMediator) mediator).getArtifactContainerName());
-        }
-
 		if (mediator == null) {
 			handleException("Sequence template " +
 					targetTemplate + " cannot be found", synCtx);
 		}
+
+        //setting the log appender when external template executor is called a sequence template inside a car file
+        if (mediator instanceof TemplateMediator) {
+            CustomLogSetter.getInstance().setLogAppender(((TemplateMediator) mediator)
+                                                                 .getArtifactContainerName());
+        }
 
 		// executing key reference if found defined at configuration.
 		if (executePreFetchingSequence && key != null) {
