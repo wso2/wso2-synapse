@@ -34,7 +34,7 @@ public interface TestConstants {
      * CAUTION: Replace the certificates if they expire or are marked as revoked by their issuers. At the moment they are
      * valid. The expiry dates of the certificates are as follows:
      *
-     * github.com                    : 04/12/2016
+     * github.com                    : 05/17/2018
      * DigiCertHighAssuranceEVCA-1   : 10/22/2028
      * DigiCertHighAssuranceEVRootCA : 11/10/2031
      */
