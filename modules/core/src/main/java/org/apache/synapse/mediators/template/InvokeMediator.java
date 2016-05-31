@@ -35,6 +35,7 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -108,6 +109,12 @@ public class InvokeMediator extends AbstractMediator implements
 			handleException("Sequence template " +
 					targetTemplate + " cannot be found", synCtx);
 		}
+
+        //setting the log appender when external template executor is called a sequence template inside a car file
+        if (mediator instanceof TemplateMediator) {
+            CustomLogSetter.getInstance().setLogAppender(((TemplateMediator) mediator)
+                                                                 .getArtifactContainerName());
+        }
 
 		// executing key reference if found defined at configuration.
 		if (executePreFetchingSequence && key != null) {
