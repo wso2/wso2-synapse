@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.aspects.statistics.StatisticsLog;
 import org.apache.synapse.aspects.statistics.StatisticsRecord;
@@ -144,6 +145,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         SequenceMediator branchSequence = targets.get(subBranch).getSequence();
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!continuationState.hasChild()) {
             result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
@@ -152,9 +154,13 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            if (isStatisticsEnabled) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
-        branchSequence.reportCloseStatistics(synCtx, null);
+        if (isStatisticsEnabled) {
+            branchSequence.reportCloseStatistics(synCtx, null);
+        }
         return result;
     }
 

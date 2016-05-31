@@ -27,6 +27,7 @@ import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -240,6 +241,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         }
 
         boolean result;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
         if (subBranch == 0) {
             if (!continuationState.hasChild()) {
@@ -252,9 +254,13 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                if (isStatisticsEnabled) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
             }
-            onAcceptMediator.reportCloseStatistics(synCtx, null);
+            if (isStatisticsEnabled) {
+                onAcceptMediator.reportCloseStatistics(synCtx, null);
+            }
         } else {
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onRejectMediator).
@@ -266,9 +272,13 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                if (isStatisticsEnabled) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
             }
-            onRejectMediator.reportCloseStatistics(synCtx, null);
+            if (isStatisticsEnabled) {
+                onRejectMediator.reportCloseStatistics(synCtx, null);
+            }
         }
 
         return result;

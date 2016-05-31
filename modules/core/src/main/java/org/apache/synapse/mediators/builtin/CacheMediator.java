@@ -51,6 +51,7 @@ import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -202,7 +203,7 @@ public class
 
     public boolean mediate(MessageContext synCtx, ContinuationState contState) {
         SynapseLog synLog = getLog(synCtx);
-
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Aggregate mediator : Mediating from ContinuationState");
         }
@@ -214,9 +215,13 @@ public class
 
             mediator.mediate(synCtx, contState.getChildContState());
 
-            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            if (isStatisticsEnabled) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
-        onCacheHitSequence.reportCloseStatistics(synCtx, null);
+        if (isStatisticsEnabled) {
+            onCacheHitSequence.reportCloseStatistics(synCtx, null);
+        }
         return false;
     }
 

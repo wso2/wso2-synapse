@@ -32,6 +32,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
@@ -112,19 +113,23 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
     }
 
     public void send(MessageContext synCtx) {
-        Integer currentIndex = null;
-        boolean retry = (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) != null);
-        if ((getDefinition() != null) && !retry) {
-            currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
-                    ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
-        }
-        try {
-            sendMessage(synCtx);
-        } finally {
-            if (currentIndex != null) {
-                CloseEventCollector.closeEntryEvent(synCtx, getReportingName(),
-                        ComponentType.MEDIATOR, currentIndex, false);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            Integer currentIndex = null;
+            boolean retry = (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) != null);
+            if ((getDefinition() != null) && !retry) {
+                currentIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getReportingName(),
+                        ComponentType.ENDPOINT, getDefinition().getAspectConfiguration(), true);
             }
+            try {
+                sendMessage(synCtx);
+            } finally {
+                if (currentIndex != null) {
+                    CloseEventCollector.closeEntryEvent(synCtx, getReportingName(),
+                            ComponentType.MEDIATOR, currentIndex, false);
+                }
+            }
+        } else {
+            sendMessage(synCtx);
         }
     }
 

@@ -30,6 +30,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
@@ -121,7 +122,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
             Mediator errorHandlerMediator = null;
-            Integer statisticReportingIndex = reportOpenStatistics(synCtx, false);
+            Integer statisticReportingIndex = null;
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                statisticReportingIndex = reportOpenStatistics(synCtx, false);
+            }
             // Setting Required property to reportForComponent the sequence aspects
 
             try {
@@ -205,7 +209,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                                 getAspectConfiguration(), ComponentType.SEQUENCE);
                     }
                 }
-                reportCloseStatistics(synCtx, statisticReportingIndex); //end Statistics
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    reportCloseStatistics(synCtx, statisticReportingIndex); //end Statistics
+                }
             }
 
         } else {
@@ -280,7 +286,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 result = mediator.mediate(synCtx,
                                           continuationState.getChildContState());
 
-                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
                 if (result) {
                     // if flow completed remove leaf child
                     continuationState.removeLeafChild();
@@ -514,7 +522,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
         if (key == null) {
             return OpenEventCollector.reportEntryEvent(messageContext, getSequenceNameForStatistics(),
-                                                       getAspectConfiguration(), ComponentType.SEQUENCE);
+                    getAspectConfiguration(), ComponentType.SEQUENCE);
         }
         return null;
     }

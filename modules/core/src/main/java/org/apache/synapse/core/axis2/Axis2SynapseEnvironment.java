@@ -45,7 +45,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
-import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -354,16 +353,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     }
 
     public void injectAsync(final MessageContext synCtx, SequenceMediator seq) {
-
-//        if(synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID)==null){
-//            synCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID, synCtx.getMessageID());
-//        }
-
         if (log.isDebugEnabled()) {
             log.debug("Injecting MessageContext for asynchronous mediation using the : "
                 + (seq.getName() == null? "Anonymous" : seq.getName()) + " Sequence");
         }
-        OpenEventCollector.reportFlowAsynchronousEvent(synCtx);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            OpenEventCollector.reportFlowAsynchronousEvent(synCtx);
+        }
         synCtx.setEnvironment(this);
         executorService.execute(new MediatorWorker(seq, synCtx));
     }
@@ -383,6 +379,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectInbound(final MessageContext synCtx, SequenceMediator seq,
             boolean sequential) throws SynapseException {
         String inboundName = null;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         AspectConfiguration inboundAspectConfiguration = null;
         Integer statisticReportingIndex = null;
         if (log.isDebugEnabled()) {
@@ -414,13 +411,15 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         if (!sequential) {
             try {
-                statisticReportingIndex = OpenEventCollector
-                        .reportEntryEvent(synCtx, inboundName, inboundAspectConfiguration,
-                                          ComponentType.INBOUNDENDPOINT);
+                if (isStatisticsEnabled) {
+                    statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, inboundName,
+                            inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
+                }
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                CloseEventCollector
-                        .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
-                                         false);
+                if (isStatisticsEnabled) {
+                    CloseEventCollector.closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
+                            statisticReportingIndex, false);
+                }
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
@@ -430,8 +429,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
         // Following code is reached if the sequential==true or inbound is
         // reached max level
-        statisticReportingIndex = OpenEventCollector
-                .reportEntryEvent(synCtx, inboundName, inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
+        if (isStatisticsEnabled) {
+            statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, inboundName,
+                    inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
+        }
         try {
 
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -475,8 +476,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             throw new SynapseException(msg, e);
         } finally {
-            CloseEventCollector
-                    .closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex, false);
+            if (isStatisticsEnabled) {
+                CloseEventCollector.closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
+                        statisticReportingIndex, false);
+            }
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
@@ -764,7 +767,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }
 
-        RuntimeStatisticCollector.openContinuationEvents(synCtx);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            RuntimeStatisticCollector.openContinuationEvents(synCtx);
+        }
         boolean result;
         do {
             SeqContinuationState seqContinuationState =
@@ -772,7 +777,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
             //Report Statistics for this continuation call
             result = sequenceMediator.mediate(synCtx, seqContinuationState);
-            sequenceMediator.reportCloseStatistics(synCtx, null);
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                sequenceMediator.reportCloseStatistics(synCtx, null);
+            }
             //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
         return result;
@@ -959,6 +966,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public boolean injectMessage(MessageContext smc, SequenceMediator seq) {
         AspectConfiguration inboundAspectConfiguration = null;
         String inboundName = null;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         Integer statisticReportingIndex = null;
 
         /*
@@ -991,9 +999,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         }
         try {
-            if (inboundName != null) {
-                statisticReportingIndex = OpenEventCollector
-                        .reportEntryEvent(smc, inboundName, inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
+            if (isStatisticsEnabled && inboundName != null) {
+                statisticReportingIndex = OpenEventCollector.reportEntryEvent(smc, inboundName, inboundAspectConfiguration,
+                        ComponentType.INBOUNDENDPOINT);
             }
             seq.mediate(smc);
             return true;
@@ -1030,10 +1038,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             }
             return false;
         } finally {
-            if (inboundName != null) {
-                CloseEventCollector
-                        .closeEntryEvent(smc, inboundName, ComponentType.INBOUNDENDPOINT, statisticReportingIndex,
-                                         false);
+            if (isStatisticsEnabled && inboundName != null) {
+                CloseEventCollector.closeEntryEvent(smc, inboundName, ComponentType.INBOUNDENDPOINT,
+                        statisticReportingIndex, false);
             }
         }
     }

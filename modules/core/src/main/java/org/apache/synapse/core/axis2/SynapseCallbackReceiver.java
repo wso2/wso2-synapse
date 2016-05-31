@@ -40,6 +40,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.statistics.ErrorLogFactory;
 import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -47,7 +48,6 @@ import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
@@ -108,7 +108,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             log.debug("Callback added. Total callbacks waiting for : " + callbackStore.size());
         }
         org.apache.synapse.MessageContext synCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-        CallbackStatisticCollector.addCallback(synCtx, MsgID);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            CallbackStatisticCollector.addCallback(synCtx, MsgID);
+        }
     }
 
     /**
@@ -132,8 +134,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED))) {
             if (callbackStore.containsKey(messageCtx.getMessageID())) {
                 AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
-                CallbackStatisticCollector
-                        .callbackCompletionEvent(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(),
+                            messageCtx.getMessageID());
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
                               " removed from the " +
@@ -175,15 +179,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             if (callback != null) {
                 org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-                CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
-                handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
-                if (log.isDebugEnabled()) {
-                    log.debug("Finished handling the callback.");
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
+                    handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Finished handling the callback.");
+                    }
+                    CallbackStatisticCollector.reportCallbackHandlingCompletion(SynapseOutMsgCtx, messageID);
+                } else {
+                    handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
                 }
-                org.apache.synapse.MessageContext synMsgCtx =
-                        MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
-                CallbackStatisticCollector.reportCallbackHandlingCompletion(SynapseOutMsgCtx, messageID);
-                
             } else {
                 // TODO invoke a generic synapse error handler for this message
                 log.warn("Synapse received a response for the request with message Id : " +

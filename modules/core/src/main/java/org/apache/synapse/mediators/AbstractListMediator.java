@@ -25,6 +25,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -82,14 +83,22 @@ public abstract class AbstractListMediator extends AbstractMediator
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
                 Mediator mediator = mediators.get(i);
-                Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
-                synCtx.setTracingState(myEffectiveTraceState);
-                if (!mediator.mediate(synCtx)) {
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
+                    synCtx.setTracingState(myEffectiveTraceState);
+                    if (!mediator.mediate(synCtx)) {
+                        mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
+                        returnVal = false;
+                        break;
+                    }
                     mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
-                    returnVal = false;
-                    break;
+                } else {
+                    synCtx.setTracingState(myEffectiveTraceState);
+                    if (!mediator.mediate(synCtx)) {
+                        returnVal = false;
+                        break;
+                    }
                 }
-                mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
             }
         } catch (SynapseException synEx) {
             throw synEx;

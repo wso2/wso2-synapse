@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -100,7 +101,9 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
         return result;
     }
