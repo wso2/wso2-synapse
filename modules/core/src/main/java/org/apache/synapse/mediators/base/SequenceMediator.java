@@ -531,7 +531,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
         if (key == null) {
             CloseEventCollector
-                    .closeEntryEvent(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
+                    .tryEndFlow(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
                                      currentIndex, isContentAltering());
         }
     }

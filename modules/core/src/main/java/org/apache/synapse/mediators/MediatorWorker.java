@@ -22,6 +22,9 @@ package org.apache.synapse.mediators;
 import org.apache.synapse.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.debug.SynapseDebugManager;
 
 /**
@@ -112,6 +115,9 @@ public class MediatorWorker implements Runnable {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
+            }
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                CloseEventCollector.closeFlowForcefully(synCtx);
             }
         }
         synCtx = null;

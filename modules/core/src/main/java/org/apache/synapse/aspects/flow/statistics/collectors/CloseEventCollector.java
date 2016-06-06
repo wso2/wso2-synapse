@@ -89,4 +89,21 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			statisticEventQueue.enqueue(endFlowEvent);
 		}
 	}
+
+	/**
+	 * Enqueue statistics events to the event queue to close and try to finish the flow.
+	 *
+	 * @param messageContext    synapse message context.
+	 * @param componentName     name of the component reporting statistics.
+	 * @param componentType     component type of the reporting component.
+	 * @param currentIndex      component's level in this message flow.
+	 * @param isContentAltering true if content is altered
+	 */
+	public static void tryEndFlow(MessageContext messageContext, String componentName, ComponentType componentType,
+								  Integer currentIndex, boolean isContentAltering) {
+		if (shouldReportStatistic(messageContext)) {
+			closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering);
+			closeFlowForcefully(messageContext);
+		}
+	}
 }

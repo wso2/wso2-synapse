@@ -120,7 +120,7 @@ public class RESTRequestHandler {
                         .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
             }
             api.process(synCtx);
-            CloseEventCollector.closeEntryEvent(synCtx, api.getAPIName(), ComponentType.API, statisticReportingIndex, true);
+            CloseEventCollector.tryEndFlow(synCtx, api.getAPIName(), ComponentType.API, statisticReportingIndex, true);
         } else {
             api.process(synCtx);
         }

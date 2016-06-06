@@ -416,14 +416,15 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                             inboundAspectConfiguration, ComponentType.INBOUNDENDPOINT);
                 }
                 executorServiceInbound.execute(new MediatorWorker(seq, synCtx));
-                if (isStatisticsEnabled) {
-                    CloseEventCollector.closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
-                            statisticReportingIndex, false);
-                }
                 return true;
             } catch (RejectedExecutionException re) {
                 // If the pool is full complete the execution with the same thread
                 log.warn("Inbound worker pool has reached the maximum capacity and will be processing current message sequentially.");
+            } finally {
+                if (isStatisticsEnabled) {
+                    CloseEventCollector.tryEndFlow(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
+                            statisticReportingIndex, false);
+                }
             }
         }
 
@@ -477,7 +478,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             throw new SynapseException(msg, e);
         } finally {
             if (isStatisticsEnabled) {
-                CloseEventCollector.closeEntryEvent(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
+                CloseEventCollector.tryEndFlow(synCtx, inboundName, ComponentType.INBOUNDENDPOINT,
                         statisticReportingIndex, false);
             }
             if (synCtx.getEnvironment().isDebuggerEnabled()) {
@@ -1039,7 +1040,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             return false;
         } finally {
             if (isStatisticsEnabled && inboundName != null) {
-                CloseEventCollector.closeEntryEvent(smc, inboundName, ComponentType.INBOUNDENDPOINT,
+                CloseEventCollector.tryEndFlow(smc, inboundName, ComponentType.INBOUNDENDPOINT,
                         statisticReportingIndex, false);
             }
         }

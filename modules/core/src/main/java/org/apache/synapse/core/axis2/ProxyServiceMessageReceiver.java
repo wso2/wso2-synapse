@@ -251,7 +251,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             //Statistic reporting
             if (isStatisticsEnabled) {
-                CloseEventCollector.closeEntryEvent(synCtx, this.name, ComponentType.PROXYSERVICE,
+                CloseEventCollector.tryEndFlow(synCtx, this.name, ComponentType.PROXYSERVICE,
                         statisticReportingIndex, true);
             }
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
