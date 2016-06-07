@@ -45,7 +45,7 @@ public class ValidateMediatorSerializer extends AbstractListMediatorSerializer {
         saveTracingState(validate, mediator);
 
         if (mediator.getSource() != null) {
-            SynapseXPathSerializer.serializeXPath(mediator.getSource(), validate, "source");
+            SynapsePathSerializer.serializePath(mediator.getSource(), validate, "source");
         }
 
         for (Value key : mediator.getSchemaKeys()) {

@@ -889,6 +889,11 @@
             <artifactId>javax.servlet-api</artifactId>
             <version>${javax.servlet.version}</version>
          </dependency>
+          <dependency>
+            <groupId>org.wso2.orbit.com.github.fge</groupId>
+            <artifactId>json-schema-validator-all</artifactId>
+            <version>${fge.json.schema.validator.version}</version>
+          </dependency>
       </dependencies>
    </dependencyManagement>
     <reporting>
@@ -1052,7 +1057,8 @@
       <snmp4j.agent.version>2.0.5</snmp4j.agent.version>
       <project.scm.id>wso2-scm-server</project.scm.id>
       <javax.cache.version>0.5</javax.cache.version>
-      <javax.servlet.version>3.0.1</javax.servlet.version> 
+      <javax.servlet.version>3.0.1</javax.servlet.version>
+      <fge.json.schema.validator.version>2.2.6.wso2v1</fge.json.schema.validator.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->

@@ -164,6 +164,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m0:CheckPriceRequest"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .setBodyFromString(VALID_ENVELOPE).build();
 
@@ -180,6 +181,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m1:Outer"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .addFileEntry("xsd-key-2", "./../../repository/conf/sample/resources/validate/validate2.xsd")
                 .setBodyFromString(VALID_ENVELOPE_TWO_SCHEMAS).build();
@@ -197,6 +199,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m1:Outer"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .addFileEntry("xsd-key-2", "./../../repository/conf/sample/resources/validate/validate2.xsd")
                 .setBodyFromString(INVALID_ENVELOPE_TWO_SCHEMAS).build();
@@ -214,6 +217,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m0:CheckPriceRequest"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .setBodyFromString(IN_VALID_ENVELOPE).build();
 
@@ -230,6 +234,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m0:CheckPriceRequest"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .setBodyFromString(VALID_ENVELOPE_NO_NS).build();
 
@@ -246,6 +251,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m0:CheckPriceRequest"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .setBodyFromString(IN_VALID_ENVELOPE_NO_NS).build();
 
@@ -284,6 +290,7 @@ public class ValidateMediatorTest extends TestCase {
         validate.setSource(createXPath("//m0:CheckPriceRequest"));
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
                 .setBodyFromString(VALID_ENVELOPE).build();
 
@@ -352,6 +359,7 @@ public class ValidateMediatorTest extends TestCase {
         }
 
         MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
                 .addFileEntry(xsdKeyValue, "./../../repository/conf/sample/resources/validate/" + xsdFile + ".xsd")
                 .setBodyFromString(source).build();
 
