@@ -274,11 +274,15 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             } catch (ProcessingException e) {
                 String msg = "";
                 if (sourcePath != null) {
-                    msg = " for " + sourcePath.getExpression();
+                    msg = " for JSONPath " + sourcePath.getExpression();
                 }
                 handleException("Error while validating the JSON Schema" + msg, e, synCtx);
             } catch (IOException e) {
-                handleException("Error while validating the JSON Schema", e, synCtx);
+                String msg = "";
+                if (sourcePath != null) {
+                    msg = " for JSONPath " + sourcePath.getExpression();
+                }
+                handleException("Error while validating the JSON Schema" + msg, e, synCtx);
             }
         } else {
             // Input source for the validation
