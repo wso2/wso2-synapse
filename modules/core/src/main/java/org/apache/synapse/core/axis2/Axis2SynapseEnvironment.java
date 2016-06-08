@@ -46,7 +46,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -97,9 +96,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private List<SynapseHandler> synapseHandlers;
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private SynapseDebugManager synapseDebugManager;
-
-    /** The StatisticsCollector object */
-    private StatisticsCollector statisticsCollector = new StatisticsCollector();
 
     /** The CompletedStatisticStore object*/
     private CompletedStatisticStore completedStatisticStore = new CompletedStatisticStore();
@@ -614,26 +610,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
                 SynapseConstants.DEFAULT_TEMPFILE_SUFIX);
 
         return new OverflowBlob(numberOfChunks, chunkSize, tempPrefix, tempSuffix);
-    }
-
-    /**
-     * This method returns the <code>StatisticsCollector</code> responsible for
-     * collecting stats for this synapse instance.
-     *
-     * @return Returns the <code>StatisticsCollector</code>
-     */
-    public StatisticsCollector getStatisticsCollector() {
-        return statisticsCollector;
-    }
-
-    /**
-     * To set the StatisticsCollector
-     *
-     * @param collector - Statistics collector to be set
-     */
-    @Deprecated
-    public void setStatisticsCollector(StatisticsCollector collector) {
-        this.statisticsCollector = collector;
     }
 
     /**

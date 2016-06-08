@@ -27,9 +27,6 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.AspectConfigurationDetectionStrategy;
-import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 
 /**
  * This message receiver should be configured in the Axis2 configuration as the
@@ -44,10 +41,6 @@ public class SynapseMessageReceiver implements MessageReceiver {
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
-
-        StatisticsReporter.reportForComponent(synCtx,
-                                              AspectConfigurationDetectionStrategy.getAspectConfiguration(synCtx),
-                                              ComponentType.PROXYSERVICE);
 
         boolean traceOn = synCtx.getMainSequence().getTraceState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
@@ -91,8 +84,6 @@ public class SynapseMessageReceiver implements MessageReceiver {
                 warn(traceOn, "Exception encountered but no fault handler found - " +
                     "message dropped", synCtx);
             }
-        } finally {
-            StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
         }
     }
 

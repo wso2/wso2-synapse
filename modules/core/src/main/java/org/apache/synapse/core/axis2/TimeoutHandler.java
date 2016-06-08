@@ -29,8 +29,6 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.StatisticsCleaner;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -65,7 +63,6 @@ public class TimeoutHandler extends TimerTask {
     /*This is the timeout for otherwise non-expiring callbacks to ensure system stability over time */
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private static final String SEND_TIMEOUT_MESSAGE = "Send timeout";
-    private StatisticsCleaner statisticsCleaner;
     private ServerContextInformation contextInfo = null;
 
     public TimeoutHandler(Map callbacks, ServerContextInformation contextInfo) {
@@ -99,17 +96,6 @@ public class TimeoutHandler extends TimerTask {
     }
 
     private void processCallbacks() {
-
-        //clear the expired statistics
-        if (statisticsCleaner == null) {
-            StatisticsCollector collector = SynapseConfigUtils.getStatisticsCollector(contextInfo);
-            if (collector != null) {
-                statisticsCleaner = new StatisticsCleaner(collector);
-            }
-        }
-        if (statisticsCleaner != null) {
-            statisticsCleaner.clean();
-        }
 
         //clear all the expired sessions
         SALSessions.getInstance().clearSessions();
