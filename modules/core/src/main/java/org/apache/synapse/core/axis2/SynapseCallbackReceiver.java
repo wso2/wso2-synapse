@@ -41,8 +41,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.ErrorLogFactory;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
@@ -235,8 +233,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
             }
 
-            StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                    ErrorLogFactory.createErrorLog(response));
             // there is a sending fault. propagate the fault to fault handlers.
 
             Stack faultStack = synapseOutMsgCtx.getFaultStack();
@@ -454,11 +450,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 						                     sourceConfiguration);
 						axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
 					}
-                    
-                    
-                   
-                    StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                            ErrorLogFactory.createErrorLog(response));
+
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
                     
@@ -557,8 +549,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 dispatcher.updateSession(synapseInMessageContext);
             }
 
-            StatisticsReporter.reportForAllOnResponseReceived(synapseInMessageContext);
-            
             // send the response message through the synapse mediation flow
             try {
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);

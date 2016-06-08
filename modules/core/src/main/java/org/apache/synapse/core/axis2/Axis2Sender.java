@@ -36,7 +36,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
@@ -81,12 +80,6 @@ public class Axis2Sender {
                     endpoint,
                     // The Axis2 Message context of the Synapse MC
                     synapseInMessageContext);
-
-            if (synapseInMessageContext.isResponse()) {
-                // report stats for any component at response sending check point
-                StatisticsReporter.reportForAllOnResponseSent(synapseInMessageContext);
-            }
-
         } catch (Exception e) {
             handleException("Unexpected error during sending message out", e);
         }
@@ -189,10 +182,6 @@ public class Axis2Sender {
                     return;
                 }
             }
-
-            // report stats for any component at response sending check point
-            StatisticsReporter.reportForAllOnResponseSent(smc);
-
             // If the request arrives through an inbound endpoint
             if (smc.getProperty(SynapseConstants.IS_INBOUND) != null
                 && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
