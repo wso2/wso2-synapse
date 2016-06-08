@@ -222,6 +222,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
 
+            Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                    .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+            if (pipe != null && pipe.isSerializationComplete()) {
+                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) synapseOutMsgCtx).
+                        getAxis2MessageContext().getProperty("pass-through.Source-Connection");
+                SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
+                        .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+                Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
+                        sourceConfiguration);
+                ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                        .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
+            }
+
             StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
                     ErrorLogFactory.createErrorLog(response));
             // there is a sending fault. propagate the fault to fault handlers.
@@ -234,7 +247,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // fault envelope
                 try {
                     synapseOutMsgCtx.getEnvelope().build();
-                } catch (OMException x) {
+                } catch (Exception x) {
                     synapseOutMsgCtx.setEnvelope(response.getEnvelope());
                 }
 
