@@ -198,7 +198,7 @@ public class VFSUtils {
             }
         } catch (FileSystemException fse) {
             log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI())
-                    + " before processing");
+                    + " before processing", fse);
         }
         return false;
     }
@@ -268,6 +268,33 @@ public class VFSUtils {
             return false;
         }
         return false;
+    }
+
+    /**
+     * Helper method to get last modified date from msgCtx
+     *
+     * @param msgCtx
+     * @return lastModifiedDate
+     */
+    public static Long getLastModified(MessageContext msgCtx) {
+        Object lastModified;
+        Map transportHeaders = (Map) msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null) {
+            lastModified = transportHeaders.get(VFSConstants.LAST_MODIFIED);
+            if (lastModified != null) {
+                if (lastModified instanceof Long) {
+                    return (Long)lastModified;
+                } else if (lastModified instanceof String) {
+                    try {
+                        return Long.parseLong((String) lastModified);
+                    } catch (Exception e) {
+                        log.warn("Cannot create last modified.", e);
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
     }
     
     public synchronized static void markFailRecord(FileSystemManager fsManager, FileObject fo) {
