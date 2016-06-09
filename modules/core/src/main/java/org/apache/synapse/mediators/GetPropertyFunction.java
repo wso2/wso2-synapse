@@ -269,7 +269,7 @@ public class GetPropertyFunction implements Function , XPathFunction {
                 if (result != null) {
                     return result;
                 } else {
-                    return synCtx.getEntry(key);
+                    return synCtx.getLocalEntry(key);
                 }
             }
         } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)
