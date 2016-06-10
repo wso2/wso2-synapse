@@ -795,6 +795,23 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     }
 
     /**
+     * Get the resource from local registry
+     *
+     * @param key the key of the resource required
+     * @return value for the key
+     */
+    public Object getLocalRegistryEntry(String key) {
+        Object o = localRegistry.get(key);
+        if (o != null && o instanceof Entry) {
+            Entry entry = (Entry) o;
+            if (!entry.isDynamic()) {  // Skip dynamic entries
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get the resource with the given key
      *
      * @param key the key of the resource required

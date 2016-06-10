@@ -96,6 +96,18 @@ public class TestMessageContext implements MessageContext {
         }
     }
 
+    @Override
+    public Object getLocalEntry(String key) {
+        Object ret = properties.get(key);
+        if (ret != null) {
+            return ret;
+        } else if (getConfiguration() != null) {
+            return getConfiguration().getLocalRegistryEntry(key);
+        } else {
+            return null;
+        }
+    }
+
     public void setProperty(String key, Object value) {
         properties.put(key, value);
     }
