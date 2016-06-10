@@ -115,11 +115,6 @@ public class TargetHandler implements NHttpClientEventHandler {
                 return;
             }
 
-            if (connState == ProtocolState.RESPONSE_DONE) {
-                TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
-                connState = TargetContext.getState(conn);
-            }
-
             if (connState != ProtocolState.REQUEST_READY) {
                 handleInvalidState(conn, "Request not started");
                 return;
@@ -479,9 +474,7 @@ public class TargetHandler implements NHttpClientEventHandler {
             log.debug("Connection closed by target host while in state " + state.name() + ". Response code : " + conn.getStatus());
         }
         if (state == ProtocolState.REQUEST_READY) {
-            if (log.isDebugEnabled()) {
-                log.debug(conn + ": Keep-Alive Connection closed before sending request out");
-            }
+            log.warn(conn + ": Connection closed before sending request out");
             isFault = true;
         } else if (state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {

@@ -78,8 +78,7 @@ public class TargetConnections {
      * this method will try to connect asynchronously. If the connection is successful it will
      * be notified in a separate thread.
      *
-     * @param host host
-     * @param port port
+     * @param route Http route
      * @return Either returns a connection if already available or returns null and notifies
      *         the delivery agent when the connection is available
      */
@@ -163,7 +162,7 @@ public class TargetConnections {
         HostConnections pool = (HostConnections) conn.getContext().getAttribute(
                 PassThroughConstants.CONNECTION_POOL);
 
-        TargetContext.get(conn).release(false);
+        TargetContext.get(conn).reset(false);
 
         if (pool != null) {
             pool.release(conn);
