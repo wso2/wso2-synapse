@@ -127,6 +127,32 @@ public class TargetContext {
         writer = null;       
     }
 
+    /**
+     * Release the resources associated with this connection. Difference between reset and release is that
+     * in release, it won't change the protocol state to REQUEST_READY
+     *
+     * @param isError whether an error is causing this shutdown of the connection.
+     *                It is very important to set this flag correctly.
+     *                When an error causing the shutdown of the connections we should not
+     *                release associated writer buffer to the pool as it might lead into
+     *                situations like same buffer is getting released to both source and target
+     *                buffer factories
+     */
+    public void release(boolean isError) {
+        request = null;
+        response = null;
+
+        if (writer != null) {
+            if (!isError) {      // If there is an error we do not release the buffer to the factory
+                ControlledByteBuffer buffer = writer.getBuffer();
+                targetConfiguration.getBufferFactory().release(buffer);
+            }
+        }
+
+        reader = null;
+        writer = null;
+    }
+
     public static void create(NHttpConnection conn, ProtocolState state, 
                               TargetConfiguration configuration) {
         TargetContext info = new TargetContext(configuration);
