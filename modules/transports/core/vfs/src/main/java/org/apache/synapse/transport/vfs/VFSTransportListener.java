@@ -267,7 +267,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             !isFailedRecord) {
                         boolean runPostProcess = true;
                         if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
-                                acquireLock(fsManager, fileObject, entry, fso))) {
+                                acquireLock(fsManager, fileObject, entry, fso, true))) {
                             try {
                                 if (fileObject.getType() == FileType.FILE) {
                                     processFile(entry, fileObject);
@@ -393,7 +393,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             }
                             boolean runPostProcess = true;
                             if((!entry.isFileLockingEnabled()
-                                    || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child, fso)))
+                                    || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child, fso, true)))
                                     && !isFailedRecord){
                                 //process the file
                                 try {
@@ -535,12 +535,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     }
 
     private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry,
-                                FileSystemOptions fso){
+                                FileSystemOptions fso, boolean isListener){
         VFSParamDTO vfsParamDTO = new VFSParamDTO();
         vfsParamDTO.setAutoLockRelease(entry.getAutoLockRelease());
         vfsParamDTO.setAutoLockReleaseSameNode(entry.getAutoLockReleaseSameNode());
         vfsParamDTO.setAutoLockReleaseInterval(entry.getAutoLockReleaseInterval());
-        return VFSUtils.acquireLock(fsManager, fileObject, vfsParamDTO, fso);
+        return VFSUtils.acquireLock(fsManager, fileObject, vfsParamDTO, fso, isListener);
     }
 
     /**
@@ -776,6 +776,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         } finally {
             try {
                 if (file != null) {
+                    if (fsManager != null && file.getName() != null && file.getName().getScheme() != null &&
+                            file.getName().getScheme().startsWith("file")) {
+                        fsManager.closeFileSystem(file.getParent().getFileSystem());
+                    }
                     file.close();
                 }
             } catch (FileSystemException warn) {
