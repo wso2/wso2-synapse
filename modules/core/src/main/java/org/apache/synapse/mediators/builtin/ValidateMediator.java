@@ -22,6 +22,8 @@ package org.apache.synapse.mediators.builtin;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.fge.jackson.JsonLoader;
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ListProcessingReport;
+import com.github.fge.jsonschema.core.report.ProcessingMessage;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
@@ -69,6 +71,7 @@ import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -259,10 +262,16 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     }
 
                     // set error message and detail (stack trace) into the message context
-                    synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, report);
-                    synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, new Exception("Validation failed"));
-                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL, report);
-
+                    Iterator<ProcessingMessage> itrErrorMessages = report.iterator();
+                    //there is only one element in the report
+                    while (itrErrorMessages.hasNext()) {
+                        ProcessingMessage processingMessage = itrErrorMessages.next();
+                        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, processingMessage.getMessage());
+                        synCtx.setProperty(SynapseConstants.ERROR_DETAIL, processingMessage.asException()
+                                .getMessage());
+                        synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, processingMessage.asException());
+                        break;
+                    }
                     // super.mediate() invokes the "on-fail" sequence of mediators
                     ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
                     boolean result = super.mediate(synCtx);
