@@ -128,6 +128,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     public static final String DELETE = "DELETE";
     public static final String MOVE = "MOVE";
+    public static final String NONE = "NONE";
 
     /** The VFS file system manager */
     private FileSystemManager fsManager = null;
@@ -379,6 +380,19 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         if(child.getName().getBaseName().endsWith(".lock")){
                             continue;
                         }
+                        //skipping subfolders
+                        if (child.getType() != FileType.FILE) {
+                            continue;
+                        }
+                        //skipping files depending on size limitation
+                        if (entry.getFileSizeLimit() >= 0 && child.getContent().getSize() > entry.getFileSizeLimit()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Ignoring file - " + child.getName().getBaseName() + " size - " +
+                                          child.getContent().getSize() + " since it exceeds file size limit - " +
+                                          entry.getFileSizeLimit());
+                            }
+                            continue;
+                        }
                         boolean isFailedRecord = false;
                         if (entry.getMoveAfterMoveFailure() != null) {
                             isFailedRecord = isFailedRecord(child, entry);
@@ -393,7 +407,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             }
                             boolean runPostProcess = true;
                             if((!entry.isFileLockingEnabled()
-                                    || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child, fso)))
+                                    || (entry.isFileLockingEnabled() && acquireLock(fsManager, child, entry, fso)))
                                     && !isFailedRecord){
                                 //process the file
                                 try {
@@ -555,7 +569,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         try {
             switch (entry.getLastPollState()) {
                 case PollTableEntry.SUCCSESSFUL:
-                    if (entry.getActionAfterProcess() == PollTableEntry.MOVE) {
+                    if (entry.getActionAfterProcess() == PollTableEntry.NONE) {
+                        return;
+                    } else if (entry.getActionAfterProcess() == PollTableEntry.MOVE) {
                         moveToDirectoryURI = entry.getMoveAfterProcess();
                         //Postfix the date given timestamp format
                         String strSubfoldertimestamp = entry.getSubfolderTimestamp();
@@ -580,7 +596,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     break;
 
                 case PollTableEntry.FAILED:
-                    if (entry.getActionAfterFailure() == PollTableEntry.MOVE) {
+                    if (entry.getActionAfterFailure() == PollTableEntry.NONE) {
+                        return;
+                    } else if (entry.getActionAfterFailure() == PollTableEntry.MOVE) {
                         moveToDirectoryURI = entry.getMoveAfterFailure();
                     }
                     break;
@@ -713,7 +731,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             // Determine the message builder to use
             Builder builder;
             if (contentType == null) {
-                log.debug("No content type specified. Using SOAP builder.");
+                if (log.isDebugEnabled()) {
+                    log.debug("No content type specified. Using SOAP builder.");
+                }
                 builder = new SOAPBuilder();
             } else {
                 int index = contentType.indexOf(';');
