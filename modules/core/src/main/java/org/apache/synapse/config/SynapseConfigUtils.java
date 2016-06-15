@@ -32,7 +32,6 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.StatisticSynapseConfigurationObserver;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.wso2.securevault.definition.IdentityKeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformationFactory;
@@ -742,28 +741,6 @@ public class SynapseConfigUtils {
     public static SynapseEnvironment getSynapseEnvironment(AxisConfiguration axisCfg) {
         return axisCfg != null && axisCfg.getParameter(SynapseConstants.SYNAPSE_HOME) != null ? (SynapseEnvironment)
                 axisCfg.getParameterValue(SynapseConstants.SYNAPSE_CONFIG) : null;
-    }
-
-    /**
-     * Get the StatisticsCollector from synapse env.
-     *
-     * @param contextInfo server information
-     * @return StatisticsCollector instance if there is any
-     */
-    public static StatisticsCollector getStatisticsCollector(ServerContextInformation contextInfo) {
-        if (contextInfo != null && (contextInfo.getServerState() == ServerState.INITIALIZED || contextInfo.getServerState() == ServerState.STARTED )) {
-            Object o = contextInfo.getServerContext();
-            if (o instanceof ConfigurationContext) {
-                ConfigurationContext context = (ConfigurationContext) o;
-                SynapseEnvironment environment =
-                        (SynapseEnvironment) context.getAxisConfiguration().getParameterValue(
-                                SynapseConstants.SYNAPSE_ENV);
-                if (environment != null) {
-                    return environment.getStatisticsCollector();
-                }
-            }
-        }
-        return null;
     }
 
     public static OMElement stringToOM(String xml) {

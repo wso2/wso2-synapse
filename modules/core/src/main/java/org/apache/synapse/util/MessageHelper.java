@@ -35,9 +35,6 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.statistics.ErrorLog;
-import org.apache.synapse.aspects.statistics.StatisticsLog;
-import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
@@ -133,11 +130,6 @@ public class MessageHelper {
                         log.debug("Deep clone for Template function stack");
                     }
                     obj = getClonedTemplateStack((Stack<TemplateContext>) obj);
-                } else if (obj instanceof StatisticsRecord) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Deep clone for Statistic Record");
-                    }
-                    obj = getClonedStatisticRecord((StatisticsRecord) obj);
                 } else if (obj instanceof OMElement) {
                     if (log.isDebugEnabled()) {
                         log.debug("Deep clone for OMElement");
@@ -240,43 +232,37 @@ public class MessageHelper {
 			// If there are non String keyed properties neglect them rather than
 			// throw exception
 			if (o instanceof String) {
-				if (synCtx.getProperty((String) o) != null &&
-				    synCtx.getProperty((String) o) instanceof StatisticsRecord) {
-					StatisticsRecord record = getClonedStatisticRecord((StatisticsRecord) synCtx.getProperty((String) o));
-					newCtx.setProperty(SynapseConstants.STATISTICS_STACK, record);
 
-				} else {
-					/**
-					 * Clone the properties and add to new context
-					 * If not cloned can give errors in target configuration
-					 */
-					String strkey = (String) o;
-					Object obj = synCtx.getProperty(strkey);
-					if (obj instanceof String) {
-						// No need to do anything since Strings are immutable
-					} else if (obj instanceof ArrayList) {
-				        if (log.isDebugEnabled()) {
-				            log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
-				        }
-						// Call this method to deep clone ArrayList
-						obj = cloneArrayList((ArrayList) obj);
-				        if (log.isDebugEnabled()) {
-				            log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
-				        }
-					} else {
-						/**
-						 * Need to add conditions according to type if found in
-						 * future
-						 */
-						if (log.isDebugEnabled()) {
-							log.warn("Deep clone not happened for property : " + strkey +
-							         ". Class type : " + obj.getClass().getName());
-						}
-					}
-					newCtx.setProperty(strkey, obj);
-				}
-			}
-		}
+                /**
+                 * Clone the properties and add to new context
+                 * If not cloned can give errors in target configuration
+                 */
+                String strkey = (String) o;
+                Object obj = synCtx.getProperty(strkey);
+                if (obj instanceof String) {
+                    // No need to do anything since Strings are immutable
+                } else if (obj instanceof ArrayList) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
+                    }
+                    // Call this method to deep clone ArrayList
+                    obj = cloneArrayList((ArrayList) obj);
+                    if (log.isDebugEnabled()) {
+                        log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
+                    }
+                } else {
+                    /**
+                     * Need to add conditions according to type if found in
+                     * future
+                     */
+                    if (log.isDebugEnabled()) {
+                        log.warn("Deep clone not happened for property : " + strkey +
+                                 ". Class type : " + obj.getClass().getName());
+                    }
+                }
+                newCtx.setProperty(strkey, obj);
+            }
+        }
 
         // Make deep copy of fault stack so that parent will not be lost it's fault stack
         Stack<FaultHandler> faultStack = synCtx.getFaultStack();
@@ -353,44 +339,6 @@ public class MessageHelper {
         return clonedTemplateStack;
     }
 
-    /**
-     * Get clone of Statistic Record
-     *
-     * @param oriRecord original statistic record
-     * @return clone of Statistic Record
-     */
-    public static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
-
-        StatisticsRecord clonedRecord = new StatisticsRecord(oriRecord.getId(),
-                                                             oriRecord.getClientIP(),
-                                                             oriRecord.getClientHost());
-
-        clonedRecord.setOwner(oriRecord.getOwner());
-        clonedRecord.setEndReported(oriRecord.isEndReported());
-        // Clone stats logs
-        List<StatisticsLog> oriStatisticsLogs = oriRecord.getAllStatisticsLogs();
-        for (StatisticsLog oriLog : oriStatisticsLogs) {
-            StatisticsLog clonedLog = new StatisticsLog(oriLog.getId(), oriLog.getComponentType());
-            clonedLog.setTime(oriLog.getTime());
-            clonedLog.setResponse(oriLog.isResponse());
-            clonedLog.setFault(oriLog.isFault());
-            clonedLog.setEndAnyLog(oriLog.isEndAnyLog());
-            clonedLog.setCollectedByRequestFlow(oriLog.isCollectedByRequestFlow());
-            // Error Log
-            ErrorLog oriErrorLog = oriLog.getErrorLog();
-            if (oriErrorLog != null) {
-                ErrorLog clonedErrorLog = new ErrorLog(oriErrorLog.getErrorCode());
-                if (oriErrorLog.getException() != null) {
-                    clonedErrorLog.setException(oriErrorLog.getException());
-                }
-                clonedErrorLog.setErrorMessage(oriErrorLog.getErrorMessage());
-                clonedErrorLog.setErrorDetail(oriErrorLog.getErrorDetail());
-                clonedLog.setErrorLog(clonedErrorLog);
-            }
-            clonedRecord.collect(clonedLog);
-        }
-        return clonedRecord;
-    }
      /*
      * This method will deep clone array list by creating a new ArrayList and cloning and adding each element in it
      * */

@@ -41,8 +41,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.ErrorLogFactory;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
@@ -222,8 +220,19 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
 
-            StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                    ErrorLogFactory.createErrorLog(response));
+            Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                    .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+            if (pipe != null && pipe.isSerializationComplete()) {
+                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) synapseOutMsgCtx).
+                        getAxis2MessageContext().getProperty("pass-through.Source-Connection");
+                SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
+                        .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+                Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
+                        sourceConfiguration);
+                ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                        .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
+            }
+
             // there is a sending fault. propagate the fault to fault handlers.
 
             Stack faultStack = synapseOutMsgCtx.getFaultStack();
@@ -234,7 +243,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // fault envelope
                 try {
                     synapseOutMsgCtx.getEnvelope().build();
-                } catch (OMException x) {
+                } catch (Exception x) {
                     synapseOutMsgCtx.setEnvelope(response.getEnvelope());
                 }
 
@@ -441,11 +450,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 						                     sourceConfiguration);
 						axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
 					}
-                    
-                    
-                   
-                    StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                            ErrorLogFactory.createErrorLog(response));
+
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
                     
@@ -544,8 +549,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 dispatcher.updateSession(synapseInMessageContext);
             }
 
-            StatisticsReporter.reportForAllOnResponseReceived(synapseInMessageContext);
-            
             // send the response message through the synapse mediation flow
             try {
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);
