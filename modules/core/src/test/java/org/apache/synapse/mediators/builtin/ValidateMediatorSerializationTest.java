@@ -79,5 +79,23 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
 
     }
 
+    public void testValidateMediatorSerializationWithJSONPath() throws Exception {
+
+        validateMediatorFactory = new ValidateMediatorFactory();
+        validateMediatorSerializer = new ValidateMediatorSerializer();
+
+        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" source=\"json-eval($.msg)\">" +
+                                       "<schema key=\"stockQuoteSchema\"/>" +
+                                       "<on-fail><!-- if the request does not validate againt schema throw a fault -->" +
+                                       "<makefault version=\"soap12\">" +
+                                       "<code xmlns:tns=\"http://www.w3.org/2003/05/soap-envelope\" value=\"tns:Receiver\"/>" +
+                                       "<reason expression=\"$ctx:ERROR_DETAIL\"/>" +
+                                       "</makefault>" +
+                                       "<respond/>" +
+                                       "</on-fail>" +
+                                       "</validate>";
+        assertTrue(serialization(validateConfiguration, validateMediatorFactory, validateMediatorSerializer));
+    }
+
 }
 
