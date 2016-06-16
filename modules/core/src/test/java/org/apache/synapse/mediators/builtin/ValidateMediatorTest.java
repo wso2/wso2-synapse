@@ -28,6 +28,7 @@ import org.apache.synapse.config.xml.ValidateMediatorFactory;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.TestMediateHandler;
 import org.apache.synapse.mediators.TestMediator;
+import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -127,10 +128,39 @@ public class ValidateMediatorTest extends TestCase {
         "<m0:DynamicXsdKey>DynamicXsdKey</m0:DynamicXsdKey>\n" +
         "</m0:CheckPriceRequest>\n" ;
 
+    private static final String VALID_JSON_MESSAGE1 = "{\"msg\":{" +
+                                                     "  \"getQuote\": {" +
+                                                     "    \"request\": { \"symbol\": \"WSO2\" }" +
+                                                     "  }" +
+                                                     "}" +
+                                                     "}";
+
+    private static final String INVALID_JSON_MESSAGE1 = "{\"msg\":{" +
+                                                     "  \"getQuote1\": {" +
+                                                     "    \"request\": { \"symbol\": \"WSO2\" }" +
+                                                     "  }" +
+                                                     "}" +
+                                                     "}";
+
+    private static final String VALID_JSON_MESSAGE2 = "{\"getQuote\": {" +
+                                                      "    \"request\": { \"symbol\": \"WSO2\" }" +
+                                                      "  }" +
+                                                      "}";
+
+    private static final String INVALID_JSON_MESSAGE2 = "{\"getQuote1\": {" +
+                                                        "    \"request\": { \"symbol\": \"WSO2\" }" +
+                                                        "  }" +
+                                                        "}";
+
     private SynapseXPath createXPath(String expression) throws JaxenException {
         SynapseXPath xpath = new SynapseXPath(expression);
         xpath.addNamespace("m0", "http://services.samples/xsd");
         xpath.addNamespace("m1", "http://services.samples/xsd2");
+        return xpath;
+    }
+
+    private SynapseJsonPath createJSONPath(String expression) throws JaxenException {
+        SynapseJsonPath xpath = new SynapseJsonPath(expression);
         return xpath;
     }
 
@@ -186,7 +216,7 @@ public class ValidateMediatorTest extends TestCase {
                 .addFileEntry("xsd-key-2", "./../../repository/conf/sample/resources/validate/validate2.xsd")
                 .setBodyFromString(VALID_ENVELOPE_TWO_SCHEMAS).build();
 
-        // test validate mediator, with static enveope
+        // test validate mediator, with static envelope
         test(validate, synCtx, false);
     }
 
@@ -282,6 +312,72 @@ public class ValidateMediatorTest extends TestCase {
         assertTrue("true".equals(validate.getFeature(HONOUR_ALL_SCHEMA_LOCATIONS_FEATURE_ID)));
 
         makeValidInvocation(validate);
+    }
+
+    public void testValidateMediatorJSONSchemaValidCase() throws Exception {
+        // create a validate mediator
+        ValidateMediator validate = new ValidateMediator();
+
+        // set the schema url, source xpath and any name spaces
+        validate.setSchemaKeys(createKeyListFromStaticKey("JSON-key"));
+        validate.setSource(createJSONPath("$.msg"));
+
+        MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
+                .addFileEntry("JSON-key", "./../../repository/conf/sample/resources/validate/StockQuoteSchema.json")
+                .setJsonBodyFromString(VALID_JSON_MESSAGE1).build();
+
+        // test validate mediator, with static enveope
+        test(validate, synCtx, false);
+    }
+
+    public void testValidateMediatorJSONSchemaInValidCase() throws Exception {
+        // create a validate mediator
+        ValidateMediator validate = new ValidateMediator();
+
+        // set the schema url, source xpath and any name spaces
+        validate.setSchemaKeys(createKeyListFromStaticKey("JSON-key"));
+        validate.setSource(createJSONPath("$.msg"));
+
+        MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
+                .addFileEntry("JSON-key", "./../../repository/conf/sample/resources/validate/StockQuoteSchema.json")
+                .setJsonBodyFromString(INVALID_JSON_MESSAGE1).build();
+
+        // test validate mediator, with static enveope
+        test(validate, synCtx, true);
+    }
+
+    public void testValidateMediatorJSONSchemaWithoutSourceValidCase() throws Exception {
+        // create a validate mediator
+        ValidateMediator validate = new ValidateMediator();
+
+        // set the schema url, source xpath and any name spaces
+        validate.setSchemaKeys(createKeyListFromStaticKey("JSON-key"));
+
+        MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
+                .addFileEntry("JSON-key", "./../../repository/conf/sample/resources/validate/StockQuoteSchema.json")
+                .setJsonBodyFromString(VALID_JSON_MESSAGE2).build();
+
+        // test validate mediator, with static enveope
+        test(validate, synCtx, false);
+    }
+
+    public void testValidateMediatorJSONSchemaWithoutSourceInValidCase() throws Exception {
+        // create a validate mediator
+        ValidateMediator validate = new ValidateMediator();
+
+        // set the schema url, source xpath and any name spaces
+        validate.setSchemaKeys(createKeyListFromStaticKey("JSON-key"));
+
+        MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
+                .addFileEntry("JSON-key", "./../../repository/conf/sample/resources/validate/StockQuoteSchema.json")
+                .setJsonBodyFromString(INVALID_JSON_MESSAGE2).build();
+
+        // test validate mediator, with static enveope
+        test(validate, synCtx, true);
     }
 
     private void makeValidInvocation(ValidateMediator validate) throws Exception {
