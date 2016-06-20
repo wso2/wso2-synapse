@@ -61,6 +61,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 		Boolean isFlowStatisticEnabled =
 				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+		Boolean isTracingEnabled;
 		if (isCollectingStatistics) {
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
 			setStatisticsTraceId(messageContext);
@@ -71,6 +72,8 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			//To signal lower levels that statistics was disabled in upper component in the flow
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, false);
 		}
+
+		isTracingEnabled = (Boolean) messageContext.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
 		if (shouldReportStatistic(messageContext)) {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			statisticDataUnit.setComponentName(componentName);
@@ -92,7 +95,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			if (aspectConfiguration != null) {
 				statisticDataUnit.setIsIndividualStatisticCollected(aspectConfiguration.isStatisticsEnable());
 			}
-			StatisticDataCollectionHelper.collectData(messageContext, true, isCollectingTracing, statisticDataUnit);
+			StatisticDataCollectionHelper.collectData(messageContext, true, isTracingEnabled, statisticDataUnit);
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
 			statisticEventQueue.enqueue(openEvent);
