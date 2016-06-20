@@ -60,6 +60,12 @@ public final class SynapseXPathConstants {
     /** Variable prefix for accessing URL parameters of the message through XPath variables */
     public static final String URL_VARIABLE_PREFIX = "url";
 
+    /** The scope name for system properties */
+    public static final String SYSTEM_SCOPE_VARIABLE_PREFIX = "sys";
+
+    /** The scope name for operation scope properties */
+    public static final String OPERATION_SCOPE_VARIABLE_PREFIX = "operation";
+
     /** Variable prefix for accessing URL parameters of the message through XPath variables */
     public static final String NULL_STRING = "";
 

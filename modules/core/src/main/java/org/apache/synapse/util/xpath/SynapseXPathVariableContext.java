@@ -19,9 +19,11 @@
 
 package org.apache.synapse.util.xpath;
 
+import org.apache.axiom.om.OMText;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.description.AxisBindingOperation;
@@ -32,6 +34,7 @@ import org.apache.axis2.transport.http.util.URIEncoderDecoder;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.logging.Log;
 import org.apache.synapse.mediators.template.TemplateContext;
+import org.apache.synapse.registry.Registry;
 import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 import org.jaxen.JaxenException;
 import org.jaxen.UnresolvableException;
@@ -39,6 +42,7 @@ import org.jaxen.VariableContext;
 
 import java.util.Map;
 import java.io.UnsupportedEncodingException;
+import java.util.Properties;
 import java.util.Stack;
 
 /**
@@ -234,6 +238,16 @@ public class SynapseXPathVariableContext implements VariableContext {
                         }
                     }
                     return "";
+                } else if (SynapseXPathConstants.OPERATION_SCOPE_VARIABLE_PREFIX.equals(prefix)) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    return axis2smc.getAxis2MessageContext().getOperationContext().getProperty(localName);
+                } else if (SynapseXPathConstants.SYSTEM_SCOPE_VARIABLE_PREFIX.equals(prefix)) {
+                    String propVal = System.getProperty(localName);
+                    if (propVal != null) {
+                        return propVal;
+                    } else {
+                        return "";
+                    }
                 } else {
                     Object o = synCtx.getProperty(prefix);
                     if (o instanceof Map) {
