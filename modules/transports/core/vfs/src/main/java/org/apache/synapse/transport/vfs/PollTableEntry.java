@@ -42,6 +42,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     // operation after scan
     public static final int DELETE = 0;
     public static final int MOVE   = 1;
+    public static final int NONE   = 2;
 
     /** File or Directory to scan */
     private String fileURI;
@@ -73,6 +74,13 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private int maxRetryCount;
     private long reconnectTimeout;
     private boolean fileLocking;
+
+    /**
+     * Only files smaller than this limit will get processed, it can be configured with param
+     * "transport.vfs.FileSizeLimit", and this will have default value -1 which means unlimited file size
+     * This should be specified in bytes
+     */
+    private double fileSizeLimit = VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
 
     private String moveAfterMoveFailure;
 
@@ -230,6 +238,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return fileLocking;
     }
 
+    public double getFileSizeLimit() {
+        return fileSizeLimit;
+    }
+
     public long getReconnectTimeout() {
         return reconnectTimeout;
     }
@@ -385,8 +397,22 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);
             String option = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS);
-            actionAfterProcess = VFSTransportListener.MOVE.equals(option) ?
-                    PollTableEntry.MOVE : PollTableEntry.DELETE;
+            if (option == null) {
+                option = VFSTransportListener.DELETE;
+            }
+            switch (option) {
+                case VFSTransportListener.MOVE :
+                    actionAfterProcess = PollTableEntry.MOVE;
+                    break;
+                case VFSTransportListener.DELETE :
+                    actionAfterProcess = PollTableEntry.DELETE;
+                    break;
+                case VFSTransportListener.NONE :
+                    actionAfterProcess = PollTableEntry.NONE;
+                    break;
+                default:
+                    actionAfterProcess = PollTableEntry.DELETE;
+            }
 
             option = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_ERRORS);
@@ -395,8 +421,22 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             option = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE);
-            actionAfterFailure = VFSTransportListener.MOVE.equals(option) ?
-                    PollTableEntry.MOVE : PollTableEntry.DELETE;
+            if (option == null) {
+                option = VFSTransportListener.DELETE;
+            }
+            switch (option) {
+                case VFSTransportListener.MOVE :
+                    actionAfterFailure = PollTableEntry.MOVE;
+                    break;
+                case VFSTransportListener.DELETE :
+                    actionAfterFailure = PollTableEntry.DELETE;
+                    break;
+                case VFSTransportListener.NONE :
+                    actionAfterFailure = PollTableEntry.NONE;
+                    break;
+                default:
+                    actionAfterFailure = PollTableEntry.DELETE;
+            }
 
             String moveDirectoryAfterProcess = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
@@ -440,6 +480,17 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 fileLocking = true;
             } else if (VFSConstants.TRANSPORT_FILE_LOCKING_DISABLED.equals(strFileLocking)) {
                 fileLocking = false;
+            }
+
+            String strFileSizeLimit = ParamUtils.getOptionalParam(
+                    params, VFSConstants.TRANSPORT_FILE_SIZE_LIMIT);
+
+            try {
+                fileSizeLimit = strFileSizeLimit != null ? Double.parseDouble(strFileSizeLimit) :
+                                VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
+            } catch (Exception e) {
+                log.warn("Error parsing specified file size limit - " + strFileSizeLimit +
+                         ", using default - unlimited");
             }
 
             moveAfterMoveFailure = ParamUtils.getOptionalParam(params,

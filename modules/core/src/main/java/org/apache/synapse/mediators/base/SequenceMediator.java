@@ -34,7 +34,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -129,11 +128,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             // Setting Required property to reportForComponent the sequence aspects
 
             try {
-                if (isStatisticsEnable()) {
-                    StatisticsReporter.reportForComponent(synCtx,
-                            getAspectConfiguration(), ComponentType.SEQUENCE);
-                }
-
                 // push the errorHandler sequence into the current message as the fault handler
                 if (errorHandler != null) {
                     errorHandlerMediator = synCtx.getSequence(errorHandler);
@@ -196,21 +190,9 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 return result;
 
             } finally {
-
-                if (isStatisticsEnable()) {
-                    boolean shouldReport = Boolean.parseBoolean(
-                            String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-                    if (!shouldReport) {
-                        shouldReport = !(Boolean.parseBoolean(
-                                String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))));
-                    }
-                    if (shouldReport) {
-                        StatisticsReporter.reportForComponent(synCtx,
-                                getAspectConfiguration(), ComponentType.SEQUENCE);
-                    }
-                }
+                // End Statistics
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-                    reportCloseStatistics(synCtx, statisticReportingIndex); //end Statistics
+                    reportCloseStatistics(synCtx, statisticReportingIndex);
                 }
             }
 
@@ -531,7 +513,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
         if (key == null) {
             CloseEventCollector
-                    .closeEntryEvent(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
+                    .tryEndFlow(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
                                      currentIndex, isContentAltering());
         }
     }

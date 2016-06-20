@@ -24,8 +24,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
-import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.debug.SynapseDebugManager;
@@ -105,14 +103,6 @@ public interface SynapseEnvironment {
      */
     public OverflowBlob createOverflowBlob();
 
-   /**
-     * This method returns the <code>StatisticsCollector</code> responsible for
-     * collecting stats for this synapse instance.
-     *
-     * @return Returns the <code>StatisticsCollector</code>
-     */
-    public StatisticsCollector getStatisticsCollector();
-
     /**
      * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
      * instance.
@@ -120,14 +110,6 @@ public interface SynapseEnvironment {
      * @return completedStatisticStore for this synapse instance
      */
     public CompletedStatisticStore getCompletedStatisticStore();
-
-    /**
-     * To set the StatisticsCollector to the environment
-     *
-     * @param statisticsCollector - StatisticsCollector to be set
-     */
-    @Deprecated
-    public void setStatisticsCollector(StatisticsCollector statisticsCollector);
 
     /**
      * This is used by anyone who needs access to a SynapseThreadPool.

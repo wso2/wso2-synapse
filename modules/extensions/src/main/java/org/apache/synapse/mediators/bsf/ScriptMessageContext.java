@@ -340,6 +340,10 @@ public class ScriptMessageContext implements MessageContext {
         return mc.getEntry(key);
     }
 
+    public Object getLocalEntry(String key) {
+        return mc.getLocalEntry(key);
+    }
+
     public void setProperty(String key, Object value) {
         if (value instanceof XMLObject) {
             OMElement omElement = null;

@@ -114,7 +114,6 @@ public class TargetContext {
     public void reset(boolean isError) {
         request = null;
         response = null;
-        state = ProtocolState.REQUEST_READY;
 
         if (writer != null) {
             if (!isError) {      // If there is an error we do not release the buffer to the factory

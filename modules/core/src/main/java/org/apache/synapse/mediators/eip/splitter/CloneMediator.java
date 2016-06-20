@@ -34,8 +34,6 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.aspects.statistics.StatisticsLog;
-import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -182,17 +180,6 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         	
             newCtx = MessageHelper.cloneMessageContext(synCtx);
             
-			StatisticsRecord statRecord =
-			                              (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
-			if (statRecord != null) {
-				for (StatisticsLog statLog : statRecord.getAllStatisticsLogs()) {
-					/*
-					 * Marks that this statistics log is collected by the
-					 * request flow.
-					 */
-					statLog.setCollectedByRequestFlow(true);
-				}
-			}
             // Set isServerSide property in the cloned message context
             ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());

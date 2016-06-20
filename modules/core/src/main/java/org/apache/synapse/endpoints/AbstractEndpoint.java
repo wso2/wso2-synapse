@@ -40,7 +40,6 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -615,15 +614,10 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                         opName);
                 if (oldConfiguration.isStatisticsEnable()) {
                     newConfiguration.enableStatistics();
-                    StatisticsReporter.reportForComponent(synCtx, newConfiguration,
-                            ComponentType.ENDPOINT);
                 }
                 if (oldConfiguration.isTracingEnabled()) {
                     newConfiguration.enableTracing();
                 }
-            } else {
-                StatisticsReporter.reportForComponent(synCtx, oldConfiguration,
-                        ComponentType.ENDPOINT);
             }
         }
     }

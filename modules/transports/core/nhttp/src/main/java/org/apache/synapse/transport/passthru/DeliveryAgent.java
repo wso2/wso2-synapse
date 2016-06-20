@@ -228,8 +228,8 @@ public class DeliveryAgent {
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
+                TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
-
                 submitRequest(conn, route, messageContext);
             } catch (AxisFault e) {
                 log.error("IO error while sending the request out", e);

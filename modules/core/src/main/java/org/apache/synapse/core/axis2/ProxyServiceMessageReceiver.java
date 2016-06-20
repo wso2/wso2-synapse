@@ -35,7 +35,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.Endpoint;
@@ -136,10 +135,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             synCtx.setProperty(SynapseConstants.TRANSPORT_IN_NAME, trpInDesc.getName());
         }
 
-        StatisticsReporter.reportForComponent(synCtx,
-                proxy.getAspectConfiguration(),
-                ComponentType.PROXYSERVICE);
-        
         // get service log for this message and attach to the message context also set proxy name
         Log serviceLog = LogFactory.getLog(SynapseConstants.SERVICE_LOGGER_PREFIX + name);
         ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
@@ -248,10 +243,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                     "message dropped", synCtx);
             }
         } finally {
-            StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
             //Statistic reporting
             if (isStatisticsEnabled) {
-                CloseEventCollector.closeEntryEvent(synCtx, this.name, ComponentType.PROXYSERVICE,
+                CloseEventCollector.tryEndFlow(synCtx, this.name, ComponentType.PROXYSERVICE,
                         statisticReportingIndex, true);
             }
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
