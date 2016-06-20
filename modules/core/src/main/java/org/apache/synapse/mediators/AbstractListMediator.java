@@ -19,19 +19,19 @@
 
 package org.apache.synapse.mediators;
 
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.rest.RESTConstants;
-import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
-import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
@@ -101,11 +101,17 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
             }
         } catch (SynapseException synEx) {
+            if (synEx.getCause() instanceof OMException) {
+                consumeInputOnOmException(synCtx);
+            }
             throw synEx;
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
             if (errorMsg == null) {
                 errorMsg = "Runtime error occurred while mediating the message";
+            }
+            if (ex instanceof OMException || ex.getCause() instanceof OMException) {
+                consumeInputOnOmException(synCtx);
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
@@ -187,6 +193,37 @@ public abstract class AbstractListMediator extends AbstractMediator
     public void setStatisticIdForMediators(ArtifactHolder holder){
         for (Mediator mediator : mediators) {
             mediator.setComponentStatisticsId(holder);
+        }
+    }
+
+
+    /**
+     * This method will read the entire content from the input stream of the request if there is a parsing error.
+     *
+     * @param synCtx Synapse message context.
+     */
+    private void consumeInputOnOmException(MessageContext synCtx) {
+        try {
+            RelayUtils.consumeAndDiscardMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        } catch (AxisFault axisFault) {
+            log.error("Exception while consuming the input stream on Om Exception", axisFault);
+        }
+        SOAPEnvelope soapEnvelope;
+        if (synCtx.isSOAP11()) {
+            soapEnvelope = OMAbstractFactory.
+                    getSOAP11Factory().createSOAPEnvelope();
+            soapEnvelope.addChild(
+                    OMAbstractFactory.getSOAP11Factory().createSOAPBody());
+        } else {
+            soapEnvelope = OMAbstractFactory.
+                    getSOAP12Factory().createSOAPEnvelope();
+            soapEnvelope.addChild(
+                    OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+        }
+        try {
+            synCtx.setEnvelope(soapEnvelope);
+        } catch (Throwable e) {
+            log.error("Exception or Error occurred resetting SOAP Envelope", e);
         }
     }
 }

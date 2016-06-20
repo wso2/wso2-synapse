@@ -211,7 +211,7 @@ public class LogMediator extends AbstractMediator {
                 log.error("Could not replace faulty SOAP Envelop. Error: " + e1.getLocalizedMessage());
                 return sb.toString();
             }
-            handleException("Could not build full log message: " + e.getLocalizedMessage(), synCtx);
+            handleException("Could not build full log message: " + e.getLocalizedMessage(), e, synCtx);
         }
         return trimLeadingSeparator(sb);
     }
