@@ -210,19 +210,15 @@ public abstract class AbstractListMediator extends AbstractMediator
         }
         SOAPEnvelope soapEnvelope;
         if (synCtx.isSOAP11()) {
-            soapEnvelope = OMAbstractFactory.
-                    getSOAP11Factory().createSOAPEnvelope();
-            soapEnvelope.addChild(
-                    OMAbstractFactory.getSOAP11Factory().createSOAPBody());
+            soapEnvelope = OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope();
+            soapEnvelope.addChild(OMAbstractFactory.getSOAP11Factory().createSOAPBody());
         } else {
-            soapEnvelope = OMAbstractFactory.
-                    getSOAP12Factory().createSOAPEnvelope();
-            soapEnvelope.addChild(
-                    OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+            soapEnvelope = OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope();
+            soapEnvelope.addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
         }
         try {
             synCtx.setEnvelope(soapEnvelope);
-        } catch (Throwable e) {
+        } catch (AxisFault e) {
             log.error("Exception or Error occurred resetting SOAP Envelope", e);
         }
     }
