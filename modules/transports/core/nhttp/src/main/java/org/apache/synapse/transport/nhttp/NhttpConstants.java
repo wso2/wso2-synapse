@@ -234,4 +234,9 @@ public class NhttpConstants {
 
     public static final String DISTRIBUTED_TRANSACTION = "distributedTx";
     public static final String DISTRIBUTED_TRANSACTION_MANAGER = "distributedTxMgr";
+
+    /**
+     * Proxy profile target host identification. This is the same value as the passthru constant
+     */
+    public static final String PROXY_PROFILE_TARGET_HOST = "PROXY_PROFILE_TARGET_HOST";
 }
