@@ -94,10 +94,11 @@ public class Value {
             try {
                 String expressionString = keyValue.substring(1, keyValue.length() - 1);
 
-                if ("json-eval".equals(keyValue.substring(1, 10))) {
+                if (expressionString.startsWith("json-eval(")) {
 
                     // Remove "json-eval" and extract the json expression
-                    SynapseJsonPath expressionTypeKey = new SynapseJsonPath(keyValue.substring(11, keyValue.length() - 2));
+                    SynapseJsonPath expressionTypeKey =
+                            new SynapseJsonPath(expressionString.substring(10, expressionString.length() - 1));
                     expression = expressionTypeKey;
 
                 } else {
