@@ -352,6 +352,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
             HttpHost proxy = proxyConfig.selectProxy(target);
+            msgContext.setProperty(NhttpConstants.PROXY_PROFILE_TARGET_HOST, target.getHostName());
 
             HttpRoute route;
             if (proxy != null) {
