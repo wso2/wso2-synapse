@@ -242,6 +242,10 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 } else {
                     jsonPayload = JsonUtil.jsonPayloadToString(a2mc);
                 }
+                if(jsonPayload == null || jsonPayload.length() == 0) {
+                    //making empty json string
+                    jsonPayload = "{}";
+                }
                 report = jsonSchema.validate(JsonLoader.fromString(jsonPayload));
                 if (report.isSuccess()) {
                     return true;
