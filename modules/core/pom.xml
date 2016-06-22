@@ -22,7 +22,7 @@
 
 	<groupId>org.apache.synapse</groupId>
 	<artifactId>synapse-core</artifactId>
-	
+
 	<name>Apache Synapse - Core</name>
 	<description>Apache Synapse - Core</description>
 	<packaging>bundle</packaging>
@@ -290,6 +290,11 @@
         <dependency>
             <groupId>org.apache.axis2</groupId>
             <artifactId>axis2-transport-local</artifactId>
+        </dependency>
+        <!--  JSON Schema validator dependency -->
+        <dependency>
+            <groupId>org.wso2.orbit.com.github.fge</groupId>
+            <artifactId>json-schema-validator-all</artifactId>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
