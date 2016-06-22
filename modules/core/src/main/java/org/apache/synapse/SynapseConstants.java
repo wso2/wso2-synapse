@@ -165,6 +165,8 @@ public final class SynapseConstants {
         public static final String PROXY_SERVICE_TYPE = "proxy";
 
     //- Synapse Message Context Properties -
+        /** The Synapse MC property keep the response state */
+        public static final String RESPONSE_STATE = "__SYNAPSE_RESPONSE_STATE__";
         /** The Synapse MC property name that holds the name of the Proxy service thats handling it */
         public static final String PROXY_SERVICE = "proxy.name";
         /** The Synapse MC property that marks it as a RESPONSE */

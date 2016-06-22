@@ -39,6 +39,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.ResponseState;
 import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import org.apache.synapse.mediators.eip.EIPConstants;
@@ -135,6 +136,8 @@ public class MessageHelper {
                         log.debug("Deep clone for OMElement");
                     }
                     obj = (OMElement) ((OMElement) obj).cloneOMElement();
+                } else if (obj instanceof ResponseState) {
+                    // do nothing and let the same reference to go to the cloned context
                 } else{
                     /**
                      * Need to add conditions according to type if found in
