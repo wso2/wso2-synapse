@@ -209,7 +209,11 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                                 jsonSchemaNode = JsonLoader.fromReader(reader);
                             } finally {
                                 if (reader != null) {
-                                    reader.close();
+                                    try {
+                                        reader.close();
+                                    } catch (IOException e) {
+                                        log.warn("Error while closing registry resource stream. " + e);
+                                    }
                                 }
                             }
 
@@ -217,9 +221,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                             handleException("Can not find valid JSON Schema content", synCtx);
                         }
                         jsonSchema = jsonSchemaFactory.getJsonSchema(jsonSchemaNode);
-                    } catch (ProcessingException e) {
-                        handleException("Error while validating the JSON Schema", e, synCtx);
-                    } catch (IOException e) {
+                    } catch (ProcessingException | IOException e) {
                         handleException("Error while validating the JSON Schema", e, synCtx);
                     }
 
@@ -250,10 +252,8 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     return true;
                 } else {
                     if (synLog.isTraceOrDebugEnabled()) {
-                        String msg = "Validation of JSON " +
-                                     " failed against the given schema(s) " + cachedPropKey +
-                                     "with error : " + report +
-                                     " Executing 'on-fail' sequence";
+                        String msg = "Validation of JSON failed against the given schema(s) " + cachedPropKey
+                                     + " with error : " + report + " Executing 'on-fail' sequence";
                         synLog.traceOrDebug(msg);
 
                         // write a warning to the service log
@@ -267,13 +267,12 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     // set error message and detail (stack trace) into the message context
                     Iterator<ProcessingMessage> itrErrorMessages = report.iterator();
                     //there is only one element in the report
-                    while (itrErrorMessages.hasNext()) {
+                    if (itrErrorMessages.hasNext()) {
                         ProcessingMessage processingMessage = itrErrorMessages.next();
                         synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, processingMessage.getMessage());
                         synCtx.setProperty(SynapseConstants.ERROR_DETAIL, processingMessage.asException()
                                 .getMessage());
                         synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, processingMessage.asException());
-                        break;
                     }
                     // super.mediate() invokes the "on-fail" sequence of mediators
                     ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
@@ -283,13 +282,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     }
                     return result;
                 }
-            } catch (ProcessingException e) {
-                String msg = "";
-                if (sourcePath != null) {
-                    msg = " for JSONPath " + sourcePath.getExpression();
-                }
-                handleException("Error while validating the JSON Schema" + msg, e, synCtx);
-            } catch (IOException e) {
+            } catch (ProcessingException | IOException e) {
                 String msg = "";
                 if (sourcePath != null) {
                     msg = " for JSONPath " + sourcePath.getExpression();
