@@ -18,6 +18,8 @@
  */
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.util.AXIOMUtil;
+
 /**
  * 
  *
@@ -56,5 +58,18 @@ public class ClassMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inputXml, classMediatorFactory, classMediatorSerializer));
         assertTrue(serialization(inputXml, classMediatorSerializer));
     }
-    
+
+    public void testClassMediatorLoadException() throws Exception {
+        String inputXml = "<class xmlns=\"http://ws.apache.org/ns/synapse\" " +
+                "name=\"org.apache.synapse.config.xml.NonExistant\">" +
+                "<property name=\"testElemProp\"><test/></property></class> ";
+        boolean failed = false;
+        try {
+            classMediatorFactory.createSpecificMediator(AXIOMUtil.stringToOM(inputXml), null);
+        } catch (Throwable t) {
+            failed = true;
+        }
+
+        assertTrue(failed);
+    }
 }
