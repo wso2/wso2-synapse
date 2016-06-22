@@ -44,6 +44,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.IndirectEndpoint;
+import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
@@ -91,6 +92,9 @@ public class BlockingMsgSender {
         if (endpoint instanceof  IndirectEndpoint) {
             String endpointKey = ((IndirectEndpoint) endpoint).getKey();
             endpoint = synapseInMsgCtx.getEndpoint(endpointKey);
+        }
+        if (endpoint instanceof TemplateEndpoint) {
+            endpoint = ((TemplateEndpoint) endpoint).getRealEndpoint();
         }
 
         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
