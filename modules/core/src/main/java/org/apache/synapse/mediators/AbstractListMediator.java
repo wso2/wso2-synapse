@@ -69,7 +69,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 synLog.traceOrDebug("Mediation started from mediator position : " + mediatorPosition);
             }
 
-            if (contentAware) {
+            if (isContentAware(mediatorPosition)) {
                 try {
                     if (synLog.isTraceOrDebugEnabled()) {
                         synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
@@ -188,6 +188,21 @@ public abstract class AbstractListMediator extends AbstractMediator
     @Override
     public boolean isContentAware() {
         return contentAware;
+    }
+
+    private boolean isContentAware(int position) {
+        // For first mediator, we can take it from variable initialized at init()
+        if (position == 0) {
+           return contentAware;
+        }
+
+        for (int i = position; i < mediators.size(); i++) {
+            Mediator mediator = mediators.get(i);
+            if (mediator.isContentAware()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void setStatisticIdForMediators(ArtifactHolder holder){
