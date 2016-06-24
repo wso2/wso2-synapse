@@ -33,6 +33,7 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.builtin.CallMediator;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public abstract class AbstractListMediator extends AbstractMediator
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
 
-    private boolean contentAware = false;
+    private boolean sequenceContentAware = false;
 
     public boolean mediate(MessageContext synCtx) {
         return  mediate(synCtx,0);
@@ -70,20 +71,15 @@ public abstract class AbstractListMediator extends AbstractMediator
                 synLog.traceOrDebug("Mediation started from mediator position : " + mediatorPosition);
             }
 
-            if (isContentAware(mediatorPosition)) {
-                try {
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
-                    }
-                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
-                } catch (Exception e) {
-                    handleException("Error while building message", e, synCtx);
-                }
-            }
-
             for (int i = mediatorPosition; i < mediators.size(); i++) {
                 // ensure correct trace state after each invocation of a mediator
                 Mediator mediator = mediators.get(i);
+
+                if (sequenceContentAware && mediator.isContentAware() &&
+                        (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
+                    buildMessage(synCtx, synLog);
+                }
+
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
                     synCtx.setTracingState(myEffectiveTraceState);
@@ -121,6 +117,18 @@ public abstract class AbstractListMediator extends AbstractMediator
         return returnVal;
     }
 
+    private void buildMessage(MessageContext synCtx, SynapseLog synLog) {
+
+        try {
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
+            }
+            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+        } catch (Exception e) {
+            handleException("Error while building message", e, synCtx);
+        }
+    }
+
     public List<Mediator> getList() {
         return mediators;
     }
@@ -153,8 +161,6 @@ public abstract class AbstractListMediator extends AbstractMediator
         if (log.isDebugEnabled()) {
             log.debug("Initializing child mediators of mediator : " + getType());
         }
-        //variable to check whether we found a call mediator in the list
-        boolean isCallMediatorFound = false;
 
         for (int i = 0; i < mediators.size(); i++) {
             Mediator mediator = mediators.get(i);
@@ -164,15 +170,11 @@ public abstract class AbstractListMediator extends AbstractMediator
                 ((ManagedLifecycle) mediator).init(se);
             }
 
-            if (mediator instanceof CallMediator) {
-                isCallMediatorFound = true;
-            }
-
-            if (!(isCallMediatorFound) && mediator.isContentAware()) {
+            if (mediator.isContentAware()) {
                 if (log.isDebugEnabled()) {
                     log.debug(mediator.getType() + " is content aware, setting sequence <" + getType() + "> as content aware");
                 }
-                contentAware = true;
+                sequenceContentAware = true;
             }
         }
     }
@@ -194,22 +196,7 @@ public abstract class AbstractListMediator extends AbstractMediator
 
     @Override
     public boolean isContentAware() {
-        return contentAware;
-    }
-
-    private boolean isContentAware(int position) {
-        // For first mediator, we can take it from variable initialized at init()
-        if (position == 0) {
-           return contentAware;
-        }
-
-        for (int i = position; i < mediators.size(); i++) {
-            Mediator mediator = mediators.get(i);
-            if (mediator.isContentAware()) {
-                return true;
-            }
-        }
-        return false;
+        return sequenceContentAware;
     }
 
     public void setStatisticIdForMediators(ArtifactHolder holder){
