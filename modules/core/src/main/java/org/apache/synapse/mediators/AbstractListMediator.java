@@ -32,6 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.mediators.builtin.CallMediator;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
@@ -152,6 +153,8 @@ public abstract class AbstractListMediator extends AbstractMediator
         if (log.isDebugEnabled()) {
             log.debug("Initializing child mediators of mediator : " + getType());
         }
+        //variable to check whether we found a call mediator in the list
+        boolean isCallMediatorFound = false;
 
         for (int i = 0; i < mediators.size(); i++) {
             Mediator mediator = mediators.get(i);
@@ -161,7 +164,11 @@ public abstract class AbstractListMediator extends AbstractMediator
                 ((ManagedLifecycle) mediator).init(se);
             }
 
-            if (mediator.isContentAware()) {
+            if (mediator instanceof CallMediator) {
+                isCallMediatorFound = true;
+            }
+
+            if (!(isCallMediatorFound) && mediator.isContentAware()) {
                 if (log.isDebugEnabled()) {
                     log.debug(mediator.getType() + " is content aware, setting sequence <" + getType() + "> as content aware");
                 }
