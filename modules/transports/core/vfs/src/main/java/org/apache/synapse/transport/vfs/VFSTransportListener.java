@@ -28,11 +28,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
+import javax.xml.namespace.QName;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -41,6 +44,7 @@ import org.apache.axis2.builder.BuilderUtil;
 import org.apache.axis2.builder.SOAPBuilder;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.format.DataSourceMessageBuilder;
 import org.apache.axis2.format.ManagedDataSource;
 import org.apache.axis2.format.ManagedDataSourceFactory;
@@ -61,11 +65,14 @@ import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
 import org.apache.synapse.commons.vfs.VFSUtils;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecureVaultException;
 
 /**
  * The "vfs" transport is a polling based transport - i.e. it gets kicked off at
@@ -807,7 +814,42 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     @Override
     protected PollTableEntry createEndpoint() {
-        return new PollTableEntry(globalFileLockingFlag);
+        PollTableEntry entry = new PollTableEntry(globalFileLockingFlag);
+        entry.setSecureVaultProperties(generateSecureVaultProperties(getTransportInDescription()));
+        return entry;
+    }
+
+    /**
+     * Helper method to generate securevault properties from given transport configuration.
+     *
+     * @param inDescription
+     * @return properties
+     */
+    private Properties generateSecureVaultProperties(TransportInDescription inDescription) {
+        Properties properties = new Properties();
+        SecretResolver secretResolver = getConfigurationContext().getAxisConfiguration().getSecretResolver();
+        for (Parameter parameter : inDescription.getParameters()) {
+            String propertyValue = parameter.getValue().toString();
+            OMElement paramElement = parameter.getParameterElement();
+            if (paramElement != null) {
+                OMAttribute attribute = paramElement.getAttribute(
+                        new QName(CryptoConstants.SECUREVAULT_NAMESPACE,
+                                  CryptoConstants.SECUREVAULT_ALIAS_ATTRIBUTE));
+                if (attribute != null && attribute.getAttributeValue() != null
+                    && !attribute.getAttributeValue().isEmpty()) {
+                    if (secretResolver == null) {
+                        throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                                                       "is null");
+                    }
+                    if (secretResolver.isTokenProtected(attribute.getAttributeValue())) {
+                        propertyValue = secretResolver.resolve(attribute.getAttributeValue());
+                    }
+                }
+            }
+
+            properties.setProperty(parameter.getName().toString(), propertyValue);
+        }
+        return properties;
     }
 
     private synchronized void addFailedRecord(PollTableEntry pollTableEntry,
