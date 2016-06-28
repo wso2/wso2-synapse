@@ -26,12 +26,16 @@ import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.crypto.CryptoUtil;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Holds information about an entry in the VFS transport poll table used by the
@@ -74,6 +78,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private int maxRetryCount;
     private long reconnectTimeout;
     private boolean fileLocking;
+
+    private CryptoUtil cryptoUtil;
+    private Properties secureVaultProperties;
 
     /**
      * Only files smaller than this limit will get processed, it can be configured with param
@@ -238,6 +245,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return fileLocking;
     }
 
+    public void setSecureVaultProperties(Properties secureVaultProperties) {
+        this.secureVaultProperties = secureVaultProperties;
+    }
+
     public double getFileSizeLimit() {
         return fileSizeLimit;
     }
@@ -380,6 +391,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
         
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
+        fileURI = decryptIfRequired(fileURI);
         if (fileURI == null) {
         	log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
             return false;
@@ -390,6 +402,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }
             
             replyFileURI = ParamUtils.getOptionalParam(params, VFSConstants.REPLY_FILE_URI);
+            replyFileURI = decryptIfRequired(replyFileURI);
             fileNamePattern = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
 
@@ -440,14 +453,17 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             String moveDirectoryAfterProcess = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
+            moveDirectoryAfterProcess = decryptIfRequired(moveDirectoryAfterProcess);
             setMoveAfterProcess(moveDirectoryAfterProcess);
 
             String moveDirectoryAfterErrors = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_ERRORS);
+            moveDirectoryAfterErrors = decryptIfRequired(moveDirectoryAfterErrors);
             setMoveAfterErrors(moveDirectoryAfterErrors);
 
             String moveDirectoryAfterFailure = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
+            moveDirectoryAfterFailure = decryptIfRequired(moveDirectoryAfterFailure);
             setMoveAfterFailure(moveDirectoryAfterFailure);
 
             String moveFileTimestampFormat = ParamUtils.getOptionalParam(
@@ -495,6 +511,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE);
+            moveAfterMoveFailure = decryptIfRequired(moveAfterMoveFailure);
 
             String nextRetryDuration = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FAILED_RECORD_NEXT_RETRY_DURATION);
@@ -634,5 +651,36 @@ public class PollTableEntry extends AbstractPollTableEntry {
             
             return super.loadConfiguration(params);
         }
+    }
+
+    /**
+     * Helper method to decrypt parameters if required.
+     * If the parameter is defined as - {wso2:vault-decrypt('Parameter')}, then this method will treat it as deryption
+     * required and do the relevant decryption for that part.
+     *
+     * @param parameter
+     * @return parameter
+     * @throws AxisFault
+     */
+    private String decryptIfRequired(String parameter) throws AxisFault {
+        if (parameter != null && !parameter.isEmpty()) {
+            // Create a Pattern object
+            Pattern r = Pattern.compile("\\{wso2:vault-decrypt\\('(.*?)'\\)\\}");
+
+            // Now create matcher object.
+            Matcher m = r.matcher(parameter);
+            if (m.find()) {
+                if (cryptoUtil == null) {
+                    cryptoUtil = new CryptoUtil(secureVaultProperties);
+                }
+                if (!cryptoUtil.isInitialized()) {
+                    throw new AxisFault("Error initialising cryptoutil");
+                }
+                String toDecrypt = m.group(1);
+                toDecrypt = new String(cryptoUtil.decrypt(toDecrypt.getBytes()));
+                parameter = m.replaceFirst(toDecrypt);
+            }
+        }
+        return parameter;
     }
 }
