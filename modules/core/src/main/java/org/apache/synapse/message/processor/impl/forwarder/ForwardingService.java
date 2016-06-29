@@ -140,7 +140,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
     
     private boolean isNonHTTP = false;
     
-    Pattern httpPattern = Pattern.compile("^http:");
+    Pattern httpPattern = Pattern.compile("^(http|https):");
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
