@@ -121,6 +121,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private String subfolderTimestamp;
     
     private Long distributedLockTimeout;
+
+    private volatile boolean canceled;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -347,6 +349,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
      */
     public Long getDistributedLockTimeout() {
         return distributedLockTimeout;
+    }
+
+    public boolean isCanceled() {
+        return canceled;
+    }
+
+    public void setCanceled(boolean canceled) {
+        this.canceled = canceled;
     }
 
     public Map<String, String> getVfsSchemeProperties() {
