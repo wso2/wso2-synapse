@@ -383,6 +383,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         log.debug("End Sorting the files.");
                     }                 
                     for (FileObject child : children) {
+                        /**
+                         * Before starting to process another file, see whether the proxy is stopped or not.
+                         */
+                        if (entry.isCanceled()) {
+                            break;
+                        }
                         //skipping *.lock file
                         if(child.getName().getBaseName().endsWith(".lock")){
                             continue;
@@ -817,6 +823,14 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         PollTableEntry entry = new PollTableEntry(globalFileLockingFlag);
         entry.setSecureVaultProperties(generateSecureVaultProperties(getTransportInDescription()));
         return entry;
+    }
+
+    @Override
+    protected void stopEndpoint(PollTableEntry endpoint) {
+        synchronized (endpoint) {
+            endpoint.setCanceled(true);
+        }
+        super.stopEndpoint(endpoint);
     }
 
     /**
