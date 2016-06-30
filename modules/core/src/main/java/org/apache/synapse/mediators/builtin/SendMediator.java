@@ -118,7 +118,9 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         synLog.traceOrDebug("End : Send mediator");
-        return true;
+        //to avoid continuing along the current sequence after send mediator.
+        //mediators will not executed after send mediator in the sequence.
+        return false;
     }
 
     public Endpoint getEndpoint() {
