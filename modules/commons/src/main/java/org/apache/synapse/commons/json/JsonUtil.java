@@ -113,36 +113,39 @@ public final class JsonUtil {
             xmloutMultiplePI = false;
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
-            String process = properties.getProperty("synapse.commons.json.preserve.namespace", "false").trim();
+            String process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, "false").trim();
             preserverNamespacesForJson = Boolean.parseBoolean(process.toLowerCase());
             // Build valid XML NCNames when building XML element names in the JSON -> XML transformation.
-            process = properties.getProperty("synapse.commons.json.buildValidNCNames", "false").trim();
+            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_BUILD_VALID_NC_NAMES, "false").trim();
             processNCNames = Boolean.parseBoolean(process.toLowerCase());
             // Enable primitive types in json out put in the XML -> JSON transformation.
-            process = properties.getProperty("synapse.commons.json.json.output.autoPrimitive", "true").trim();
+            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_OUTPUT_AUTO_PRIMITIVE, "true").trim();
             jsonOutAutoPrimitive = Boolean.parseBoolean(process.toLowerCase());
             // The namespace prefix separate character in the JSON output of the XML -> JSON transformation
-            process = properties.getProperty("synapse.commons.json.json.output.namespaceSepChar", "_").trim();
+            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_OUTPUT_NAMESPACE_SEP_CHAR, "_").trim();
             jsonOutNamespaceSepChar = process.charAt(0);
             // Add XML namespace declarations in the JSON output in the XML -> JSON transformation.
-            process = properties.getProperty("synapse.commons.json.json.output.enableNSDeclarations", "false").trim();
+            process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_OUTPUT_ENABLE_NS_DECLARATIONS,
+                    "false").trim();
             jsonOutEnableNsDeclarations = Boolean.parseBoolean(process.toLowerCase());
 
-            jsonoutcustomRegex = properties.getProperty("synapse.commons.json.json.output.disableAutoPrimitive.regex", null);
+            jsonoutcustomRegex = properties.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX, null);
 
             jsonoutAutoArray = Boolean.parseBoolean(properties.getProperty
-                    ("synapse.commons.json.json.output.jsonoutAutoArray", "true"));
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_AUTO_ARRAY, "true"));
 
             jsonoutMultiplePI = Boolean.parseBoolean(properties.getProperty
-                    ("synapse.commons.json.json.output.jsonoutMultiplePI", "true"));
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_MULTIPLE_PI, "true"));
 
             xmloutAutoArray = Boolean.parseBoolean(properties.getProperty
-                    ("synapse.commons.json.json.output.xmloutAutoArray", "true"));
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_AUTO_ARRAY, "true"));
 
             xmloutMultiplePI = Boolean.parseBoolean(properties.getProperty
-                    ("synapse.commons.json.json.output.xmloutMultiplePI", "false"));
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_MULTIPLE_PI, "false"));
 
-            process = properties.getProperty("synapse.commons.json.json.output.emptyXmlElemToEmptyStr", "true").trim();
+            process = properties.getProperty
+                    (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR, "true").trim();
 
         }
     }
