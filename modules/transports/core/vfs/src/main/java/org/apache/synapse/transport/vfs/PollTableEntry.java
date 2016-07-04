@@ -123,6 +123,8 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private Long distributedLockTimeout;
 
     private volatile boolean canceled;
+
+    private boolean clusterAware;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -357,6 +359,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     public void setCanceled(boolean canceled) {
         this.canceled = canceled;
+    }
+
+    public boolean isClusterAware() {
+        return clusterAware;
+    }
+
+    public void setClusterAware(boolean clusterAware) {
+        this.clusterAware = clusterAware;
     }
 
     public Map<String, String> getVfsSchemeProperties() {
@@ -658,7 +668,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }            
             
             subfolderTimestamp = ParamUtils.getOptionalParam(params, VFSConstants.SUBFOLDER_TIMESTAMP);
-            
+            this.clusterAware = ParamUtils.getOptionalParamBoolean(params, VFSConstants.CLUSTER_AWARE, false);
             return super.loadConfiguration(params);
         }
     }
