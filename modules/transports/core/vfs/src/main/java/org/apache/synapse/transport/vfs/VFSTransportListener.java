@@ -35,6 +35,8 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
@@ -42,6 +44,7 @@ import org.apache.axis2.Constants;
 import org.apache.axis2.builder.Builder;
 import org.apache.axis2.builder.BuilderUtil;
 import org.apache.axis2.builder.SOAPBuilder;
+import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
@@ -193,6 +196,40 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * @param fileURI the file or directory to be scanned
      */
     private void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
+        if (log.isDebugEnabled()) {
+            log.debug("Polling: " + fileURI);
+        }
+        if (entry.isClusterAware()) {
+            boolean leader = true;
+            ClusteringAgent agent = getConfigurationContext().getAxisConfiguration().getClusteringAgent();
+            if (agent != null && agent.getParameter("domain") != null) {
+                String hazelcastInstanceName = agent.getParameter("domain").getValue() + ".instance";
+                HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(hazelcastInstanceName);
+                if (instance != null) {
+                    // dirty leader election
+                    leader = instance.getCluster().getMembers().iterator().next().localMember();
+                } else {
+                    log.warn("Clustering error, running the polling task in this node");
+                }
+            } else {
+                log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
+                         " the polling task in this node");
+            }
+            if (!leader) {
+                if (log.isDebugEnabled()) {
+                    log.debug("This Member is not the leader");
+                }
+                entry.setLastPollState(PollTableEntry.NONE);
+                long now = System.currentTimeMillis();
+                entry.setLastPollTime(now);
+                entry.setNextPollTime(now + entry.getPollInterval());
+                onPollCompletion(entry);
+                return;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("This Member is the leader");
+            }
+        }
         FileSystemOptions fso = null;
         setFileSystemClosed(false);
         try {

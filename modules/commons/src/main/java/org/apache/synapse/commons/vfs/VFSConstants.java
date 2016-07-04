@@ -195,4 +195,6 @@ public final class VFSConstants {
     public static final String LOCAL_TYPE = "LOCAL";
     public static final String ASCII_TYPE = "ASCII";
     public static final String EBCDIC_TYPE = "EBCDIC";
+
+    public static final String CLUSTER_AWARE = "transport.vfs.ClusterAware";
 }
