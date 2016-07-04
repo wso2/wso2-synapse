@@ -203,6 +203,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             boolean leader = true;
             ClusteringAgent agent = getConfigurationContext().getAxisConfiguration().getClusteringAgent();
             if (agent != null && agent.getParameter("domain") != null) {
+                //hazelcast clustering instance name
                 String hazelcastInstanceName = agent.getParameter("domain").getValue() + ".instance";
                 HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(hazelcastInstanceName);
                 if (instance != null) {
