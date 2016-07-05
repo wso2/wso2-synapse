@@ -90,16 +90,13 @@ public class AsyncCallback implements AxisCallback {
         return timeOutOn;
     }
 
-    public void setTimeOutOn(long timeOutOn) {
-        this.timeOutOn = timeOutOn;
-    }
-
     public long getTimeoutDuration() {
         return timeoutDuration;
     }
 
-    public void setTimeoutDuration(long timeoutDuration) {
+    public void setTimeout(long timeoutDuration) {
         this.timeoutDuration = timeoutDuration;
+        this.timeOutOn = System.currentTimeMillis() + timeoutDuration;
     }
 
     public int getTimeOutAction() {
