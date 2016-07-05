@@ -210,6 +210,9 @@ public class ClientHandler implements NHttpClientEventHandler {
         HttpContext context = conn.getContext();
         ProxyTunnelHandler tunnelHandler = (ProxyTunnelHandler) context.getAttribute(TUNNEL_HANDLER);
         if (tunnelHandler != null && !tunnelHandler.isCompleted()) {
+            Axis2HttpRequest axis2HttpRequest = (Axis2HttpRequest) (context.getAttribute(ATTACHMENT_KEY));
+            Object targetHost = axis2HttpRequest.getMsgContext().getProperty(NhttpConstants.PROXY_PROFILE_TARGET_HOST);
+            context.setAttribute(NhttpConstants.PROXY_PROFILE_TARGET_HOST, targetHost);
             if (!tunnelHandler.isRequested()) {
                 HttpRequest request = tunnelHandler.generateRequest(context);
                 if (proxyauthenticator != null) {
@@ -316,6 +319,9 @@ public class ClientHandler implements NHttpClientEventHandler {
             context.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
             context.setAttribute(ExecutionContext.HTTP_TARGET_HOST, route.getTargetHost());
             context.setAttribute(OUTGOING_MESSAGE_CONTEXT, axis2Req.getMsgContext());
+
+            context.setAttribute(NhttpConstants.PROXY_PROFILE_TARGET_HOST,
+                    axis2Req.getMsgContext().getProperty(NhttpConstants.PROXY_PROFILE_TARGET_HOST));
 
             HttpRequest request = axis2Req.getRequest();
             request.setParams(new DefaultedHttpParams(request.getParams(), this.params));

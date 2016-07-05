@@ -110,7 +110,7 @@ public class ClassMediatorFactory extends AbstractMediatorFactory {
 
         try {
             mediator = (Mediator) clazz.newInstance();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             String msg = "Error in instantiating class : " + name.getAttributeValue();
             log.error(msg, e);
             throw new SynapseException(msg, e);

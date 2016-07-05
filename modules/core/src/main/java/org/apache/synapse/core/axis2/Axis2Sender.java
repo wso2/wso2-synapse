@@ -91,6 +91,27 @@ public class Axis2Sender {
      * @param smc the Synapse message context sent as the response
      */
     public static void sendBack(org.apache.synapse.MessageContext smc) {
+        Object responseStateObj = smc.getProperty(SynapseConstants.RESPONSE_STATE);
+
+        // Prevent two responses for a single request message
+        if (responseStateObj != null) {
+            if (responseStateObj instanceof ResponseState) {
+                ResponseState responseState = (ResponseState) responseStateObj;
+                synchronized (responseState) {
+                    if (responseState.isRespondDone()) {
+                        log.warn("Trying to send a response to an already responded client request - " +
+                                getInputInfo(smc));
+                        return;
+                    } else {
+                        responseState.setRespondDone();
+                    }
+                }
+            } else {
+                // This can happen only if the user has used the SynapseConstants.RESPONSE_STATE as a user property
+                handleException("Response State must be of type : " + ResponseState.class +
+                        ". " + SynapseConstants.RESPONSE_STATE + " must not be used as an user property name", null);
+            }
+        }
 
         MessageContext messageContext = ((Axis2MessageContext) smc).getAxis2MessageContext();
 
@@ -259,4 +280,18 @@ public class Axis2Sender {
         return sb.toString();
     }
 
+    /**
+     * Get the information of the input message context.
+     *
+     * @param smc Synapse message context
+     * */
+    private static String getInputInfo(org.apache.synapse.MessageContext smc) {
+        String inputInfo = null;
+        if (smc.getProperty("proxy.name") != null) {
+            inputInfo = "Proxy Name : " + smc.getProperty("proxy.name");
+        } else if (smc.getProperty("REST_API_CONTEXT") != null) {
+            inputInfo = "Rest API Context : " + smc.getProperty("REST_API_CONTEXT");
+        }
+        return inputInfo;
+    }
 }

@@ -149,8 +149,8 @@ public class TracingDataCollectionHelper {
 		final String REFER = "#REFER:";
 		final String BEFORE = "before-";
 		final String AFTER = "after-";
-		final Integer BEFORE_PAYLOAD = 8; // 6th attribute setting @PublishingEvent
-		final Integer AFTER_PAYLOAD = 9; // 7th attribute setting @PublishingEvent
+		final Integer BEFORE_PAYLOAD = 8; // 8th attribute setting @PublishingEvent
+		final Integer AFTER_PAYLOAD = 9; // 9th attribute setting @PublishingEvent
 
 
 		String entryPoint = messageFlowLogs.get(0).getComponentName();

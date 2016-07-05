@@ -36,6 +36,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.vfs2.*;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.synapse.commons.vfs.VFSConstants;
+import org.apache.synapse.commons.vfs.VFSParamDTO;
 import org.apache.synapse.commons.vfs.VFSUtils;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo ;
 
@@ -62,6 +63,8 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
      * FILE LOCKING IS ENABLED
      */
     private boolean globalFileLockingFlag = true;
+
+    private VFSParamDTO vfsParamDTO = null;
 
     /**
      * Map to hold lock object for each host per service when operating in synchronous write mode
@@ -98,6 +101,54 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                     globalFileLockingFlag = false;
                 }
             }
+
+            Parameter strAutoLock = transportOut.getParameter(VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE);
+            boolean autoLockRelease = false;
+            boolean autoLockReleaseSameNode = true;
+            Long autoLockReleaseInterval = null;
+            if (strAutoLock != null && strAutoLock.getValue() != null && !strAutoLock.getValue().toString().isEmpty()) {
+                try {
+                    autoLockRelease = Boolean.parseBoolean(strAutoLock.getValue().toString());
+                } catch (Exception e) {
+                    autoLockRelease = false;
+                    log.warn("VFS Auto lock removal not set properly. Given value is : "
+                             + strAutoLock + ", defaults to - " + autoLockRelease, e);
+                }
+                if (autoLockRelease) {
+                    Parameter strAutoLockInterval = transportOut
+                            .getParameter(VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_INTERVAL);
+                    if (strAutoLockInterval != null && strAutoLockInterval.getValue() != null
+                        && !strAutoLockInterval.getValue().toString().isEmpty()) {
+                        try {
+                            autoLockReleaseInterval = Long.parseLong(strAutoLockInterval.getValue().toString());
+                        } catch (Exception e) {
+                            autoLockReleaseInterval = null;
+                            log.warn(
+                                    "VFS Auto lock release interval is not set properly. Given value is : "
+                                    + strAutoLockInterval + ", defaults to - null", e);
+                        }
+                    }
+                    Parameter strAutoLockReleaseSameNode = transportOut
+                            .getParameter(VFSConstants.TRANSPORT_AUTO_LOCK_RELEASE_SAME_NODE);
+                    if (strAutoLockReleaseSameNode != null && strAutoLockReleaseSameNode.getValue() != null
+                        && !strAutoLockReleaseSameNode.getValue().toString().isEmpty()) {
+                        try {
+                            autoLockReleaseSameNode = Boolean
+                                    .parseBoolean(strAutoLockReleaseSameNode.getValue().toString());
+                        } catch (Exception e) {
+                            autoLockReleaseSameNode = true;
+                            log.warn(
+                                    "VFS Auto lock removal same node property not set properly. Given value is : "
+                                    + autoLockReleaseSameNode + ", defaults to - " + autoLockReleaseSameNode, e);
+                        }
+                    }
+                }
+
+            }
+            vfsParamDTO = new VFSParamDTO();
+            vfsParamDTO.setAutoLockRelease(autoLockRelease);
+            vfsParamDTO.setAutoLockReleaseInterval(autoLockReleaseInterval);
+            vfsParamDTO.setAutoLockReleaseSameNode(autoLockReleaseSameNode);
         } catch (FileSystemException e) {
             handleException("Error initializing the file transport : " + e.getMessage(), e);
         }
@@ -323,6 +374,19 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 messageFormatter.writeTo(msgContext, format, os, true);
             } finally {
                 os.close();
+            }
+
+            //setting last modified
+            Long lastModified = VFSUtils.getLastModified(msgContext);
+            if (lastModified != null) {
+                try {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Set last modified to " + lastModified);
+                    }
+                    responseFile.getContent().setLastModifiedTime(lastModified);
+                } catch (Exception e) {
+                    log.warn("Could not set last modified.", e);
+                }
             }
             
             // update metrics

@@ -159,7 +159,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
                 }
             }
-
+            synCtx.setProperty(SynapseConstants.RESPONSE_STATE, new ResponseState());
             List handlers = synCtx.getEnvironment().getSynapseHandlers();
             Iterator<SynapseHandler> iterator = handlers.iterator();
             while (iterator.hasNext()) {

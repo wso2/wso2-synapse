@@ -401,6 +401,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         } else if (ex instanceof HttpException) {
+            log.error("HttpException occurred ", ex);
             try {
                 if (conn.isResponseSubmitted()) {
                     sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
@@ -426,7 +427,7 @@ public class SourceHandler implements NHttpServerEventHandler {
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
                 conn.close();
             } catch (Exception ex1) {
-                log.error(ex.getMessage(), ex);
+                log.error(ex1.getMessage(), ex1);
                 SourceContext.updateState(conn, ProtocolState.CLOSED);
                 sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
                 isFault = true;

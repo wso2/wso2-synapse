@@ -62,4 +62,46 @@ final class Constants {
 
     public static final String ID_KEY = ID + "_";
 
+    // Constants used to control the behavior of JSON to XML conversion
+    // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
+    public static final String SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE = "synapse.commons.json.preserve.namespace";
+
+    // Build valid XML NCNames when building XML element names in the JSON -> XML transformation.
+    public static final String SYNAPSE_COMMONS_JSON_BUILD_VALID_NC_NAMES = "synapse.commons.json.buildValidNCNames";
+
+    // Enable primitive types in json out put in the XML -> JSON transformation.
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_AUTO_PRIMITIVE = "synapse.commons.json.output.autoPrimitive";
+
+    // The namespace prefix separate character in the JSON output of the XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_NAMESPACE_SEP_CHAR =
+            "synapse.commons.json.output.namespaceSepChar";
+
+    // Add XML namespace declarations in the JSON output in the XML -> JSON transformation.
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_ENABLE_NS_DECLARATIONS =
+            "synapse.commons.json.output.enableNSDeclarations";
+
+    // Disable auto primitive conversion in XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_DISABLE_AUTO_PRIMITIVE_REGEX =
+            "synapse.commons.json.output.disableAutoPrimitive.regex";
+
+    // Property to set the JSON output to an array element in XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_AUTO_ARRAY =
+            "synapse.commons.json.output.jsonoutAutoArray";
+
+    // Property to set the JSON output to an xml multiple processing instruction in XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_JSON_OUT_MULTIPLE_PI =
+            "synapse.commons.json.output.jsonoutMultiplePI";
+
+    // Property to set the XML output to an array element in XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_AUTO_ARRAY =
+            "synapse.commons.json.output.xmloutAutoArray";
+
+    // Property to set the XML output to an xml multiple processing instruction in XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_XML_OUT_MULTIPLE_PI =
+            "synapse.commons.json.output.xmloutMultiplePI";
+
+    // Property to set and empty element to empty JSON string in XML -> JSON transformation
+    public static final String SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR =
+            "synapse.commons.json.output.emptyXmlElemToEmptyStr";
+
 }
