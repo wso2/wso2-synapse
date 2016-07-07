@@ -196,5 +196,9 @@ public class PassThroughConstants {
 
     //Http method type constants to be used in synapse
     public static final String HTTP_HEAD = "HEAD";
-
+    public static final String HTTP_GET = "GET";
+    public static final String HTTP_POST = "POST";
+    public static final String HTTP_DELETE = "DELETE";
+    public static final String HTTP_PUT = "PUT";
+    public static final String HTTP_OPTIONS = "OPTIONS";
 }
