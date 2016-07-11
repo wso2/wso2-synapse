@@ -89,7 +89,16 @@ public final class NHttpConfiguration {
     public static final String BLOCK_SERVICE_LIST = "http.block_service_list";
     /** Default value for BLOCK_SERVICE_LIST*/
     public static final String BLOCK_SERVICE_LIST_DEFAULT = "false";
-    
+
+    /** Reverse proxy mode is enabled or not */
+    private Boolean reverseProxyMode = null;
+
+    /** Default Synapse service name */
+    private String nhttpDefaultServiceName = null;
+
+    private String restUriApiRegex = null;
+    private String restUriProxyRegex = null;
+
     private NHttpConfiguration() {
         try {
             props = MiscellaneousUtil.loadProperties("nhttp.properties");
@@ -188,11 +197,17 @@ public final class NHttpConfiguration {
     }
 
     public String getRestUriApiRegex() {
-        return getStringValue(REST_URI_API_REGEX, "");
+        if (restUriApiRegex == null) {
+            restUriApiRegex = getStringValue(REST_URI_API_REGEX, "");
+        }
+        return restUriApiRegex;
     }
 
     public String getRestUriProxyRegex() {
-        return getStringValue(REST_URI_PROXY_REGEX, "");
+        if (restUriProxyRegex == null) {
+            restUriProxyRegex = getStringValue(REST_URI_PROXY_REGEX, "");
+        }
+        return restUriProxyRegex;
     }
 
     public int getListenerShutdownWaitTime() {
@@ -317,4 +332,27 @@ public final class NHttpConfiguration {
 
     }
 
+    /**
+     * Check for reverse proxy mode
+     *
+     * @return  whether reverse proxy mode is enabled
+     */
+    public boolean isReverseProxyMode() {
+        if (reverseProxyMode == null) {
+            reverseProxyMode = Boolean.parseBoolean(System.getProperty("reverseProxyMode"));
+        }
+        return reverseProxyMode.booleanValue();
+    }
+
+    /**
+     * Get the default synapse service name
+     *
+     * @return default synapse service name
+     */
+    public String getNhttpDefaultServiceName() {
+        if (nhttpDefaultServiceName == null) {
+            nhttpDefaultServiceName = getStringValue("nhttp.default.service", "__SynapseService");
+        }
+        return nhttpDefaultServiceName;
+    }
 }
