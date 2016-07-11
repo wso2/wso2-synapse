@@ -112,8 +112,8 @@ public class VFSUtils {
      * @param fso represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
-    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
-        return acquireLock(fsManager, fo, null, fso);
+    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso, boolean isListener) {
+        return acquireLock(fsManager, fo, null, fso, isListener);
     }
 
     /**
@@ -130,7 +130,7 @@ public class VFSUtils {
      * @return boolean true if the lock has been acquired or false if not
      */
     public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO,
-                                                   FileSystemOptions fso) {
+                                                   FileSystemOptions fso, boolean isListener) {
         
         // generate a random lock value to ensure that there are no two parties
         // processing the same file
@@ -168,6 +168,13 @@ public class VFSUtils {
                             paramDTO.getAutoLockReleaseInterval());
                 }
             } else {
+                if (isListener) {
+                    //Check the original file existence before the lock file to handle concurrent access scenario
+                    FileObject originalFileObject = fsManager.resolveFile(fullPath);
+                    if (!originalFileObject.exists()) {
+                        return false;
+                    }
+                }
                 // write a lock file before starting of the processing, to ensure that the
                 // item is not processed by any other parties
                 lockObject.createFile();

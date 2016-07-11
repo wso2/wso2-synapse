@@ -327,10 +327,14 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                 		VFSUtils.maskURLPassword(vfsOutInfo.getOutFileURI()), e);
             } finally {
                 if (replyFile != null) {
-                    try {/*
-                        if (fsManager != null && replyFile.getParent() != null && replyFile.getParent().getFileSystem() != null) {
-                            fsManager.closeFileSystem(replyFile.getParent().getFileSystem());
-                        }*/
+                    try {
+                        if (fsManager!= null && replyFile.getParent() != null && replyFile.getParent().getFileSystem() != null) {
+                            if (fsManager != null && replyFile.getName() != null &&
+                                    replyFile.getName().getScheme() != null &&
+                                    replyFile.getName().getScheme().startsWith("file")) {
+                                fsManager.closeFileSystem(replyFile.getParent().getFileSystem());
+                            }
+                        }
                         replyFile.close();
                     } catch (FileSystemException ignore) {}
                 }
@@ -409,7 +413,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
         
         int tryNum = 0;
         // wait till we get the lock
-        while (!VFSUtils.acquireLock(fsManager, responseFile, vfsParamDTO, fso)) {
+        while (!VFSUtils.acquireLock(fsManager, responseFile, fso, false)) {
             if (vfsOutInfo.getMaxRetryCount() == tryNum++) {
                 handleException("Couldn't send the message to file : "
                         + VFSUtils.maskURLPassword(responseFile.getName().getURI()) + ", unable to acquire the " +
