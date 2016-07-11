@@ -84,7 +84,7 @@ public class Access {
     public void addAccessToQueue(HttpRequest request) {
         HttpRequestWrapper requestWrapper = new HttpRequestWrapper();
         requestWrapper.setHttpRequest(request);
-        requestWrapper.setDate(AccessTimeUtil.getDate());
+        requestWrapper.setDate(new Date(AccessTimeUtil.getDate().getTime()));
         requestQueue.add(requestWrapper);
     }
 
@@ -96,7 +96,7 @@ public class Access {
     public void addAccessToQueue(HttpResponse response) {
         HttpResponseWrapper responseWrapper = new HttpResponseWrapper();
         responseWrapper.setHttpResponse(response);
-        responseWrapper.setDate(AccessTimeUtil.getDate());
+        responseWrapper.setDate(new Date(AccessTimeUtil.getDate().getTime()));
         responseQueue.add(responseWrapper);
     }
 
