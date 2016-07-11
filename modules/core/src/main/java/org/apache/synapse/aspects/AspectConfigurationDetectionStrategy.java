@@ -27,6 +27,8 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
  */
 public class AspectConfigurationDetectionStrategy {
 
+    private static Boolean statisticsEnable, tracingEnabled;
+
     /**
      * Factory method to create the AspectConfiguration when there is no a defined main sequence and
      * only there is a set of mediators. This is useful when collecting stats for messages going
@@ -38,20 +40,25 @@ public class AspectConfigurationDetectionStrategy {
      */
     public static AspectConfiguration getAspectConfiguration(MessageContext synCtx) {
 
-        boolean statisticsEnable = false;
-        boolean tracingEnabled = false;
-
-        if (XMLConfigConstants.STATISTICS_ENABLE.equals(
-                synCtx.getConfiguration().getProperty(
-                        SynapseConstants.SYNAPSE_STATISTICS_STATE))) {
-            statisticsEnable = true;
-        }
-        if (XMLConfigConstants.TRACE_ENABLE.equals(
-                synCtx.getConfiguration().getProperty(
-                        SynapseConstants.SYNAPSE_TRACE_STATE))) {
-            tracingEnabled = true;
+        if (statisticsEnable == null) {
+            if (XMLConfigConstants.STATISTICS_ENABLE.equals(
+                    synCtx.getConfiguration().getProperty(
+                            SynapseConstants.SYNAPSE_STATISTICS_STATE))) {
+                statisticsEnable = true;
+            } else {
+                statisticsEnable = false;
+            }
         }
 
+        if (tracingEnabled == null) {
+            if (XMLConfigConstants.TRACE_ENABLE.equals(
+                    synCtx.getConfiguration().getProperty(
+                            SynapseConstants.SYNAPSE_TRACE_STATE))) {
+                tracingEnabled = true;
+            } else {
+                tracingEnabled = false;
+            }
+        }
 
         AspectConfiguration configuration = new AspectConfiguration(
                 SynapseConstants.SYNAPSE_ASPECTS);
@@ -65,7 +72,6 @@ public class AspectConfigurationDetectionStrategy {
         if (statisticsEnable || tracingEnabled) {
             return configuration;
         }
-
 
         return null;
     }
