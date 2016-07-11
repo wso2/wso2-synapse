@@ -490,19 +490,16 @@ public class Axis2FlexibleMEPClient {
                 // TimeoutHandler can detect timed out callbacks and take appropriate action.
                 if (!endpoint.isDynamicTimeoutEndpoint()) {
                     long endpointTimeout = endpoint.getEffectiveTimeout();
-                    callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
+                    callback.setTimeout(endpointTimeout);
                     callback.setTimeOutAction(endpoint.getTimeoutAction());
-                    callback.setTimeoutDuration(endpointTimeout);
                 } else {
                     long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
-                    callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
+                    callback.setTimeout(endpointTimeout);
                     callback.setTimeOutAction(endpoint.getTimeoutAction());
-                    callback.setTimeoutDuration(endpointTimeout);
                 }
             } else {
                 long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
-                callback.setTimeOutOn(System.currentTimeMillis() + globalTimeout);
-                callback.setTimeoutDuration(globalTimeout);
+                callback.setTimeout(globalTimeout);
             }
 
         }
