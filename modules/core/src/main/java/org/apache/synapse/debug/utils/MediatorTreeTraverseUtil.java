@@ -16,6 +16,8 @@
 
 package org.apache.synapse.debug.utils;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.SwitchCase;
@@ -36,6 +38,7 @@ import org.apache.synapse.mediators.template.InvokeMediator;
  */
 public class MediatorTreeTraverseUtil {
 
+    private static final Log log = LogFactory.getLog(MediatorTreeTraverseUtil.class);
     /**
      * Returns mediator referece associated with position while traversing the mediator tree.
      *
@@ -49,9 +52,16 @@ public class MediatorTreeTraverseUtil {
                                                 Mediator seqMediator,
                                                 int[] position) {
         Mediator current_mediator = null;
+
+
         for (int counter = 0; counter < position.length; counter++) {
             if (counter == 0) {
-                current_mediator = ((AbstractListMediator) seqMediator).getChild(position[counter]);
+                int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
+                if (mediatorCount > position[counter]) {
+                    current_mediator = ((AbstractListMediator) seqMediator).getChild(position[counter]);
+                } else {
+                    log.warn("Mediator position requested is larger than last index : " + position[counter]);
+                }
             }
             if (current_mediator != null && counter != 0) {
                 if (current_mediator instanceof InvokeMediator) {
@@ -73,8 +83,14 @@ public class MediatorTreeTraverseUtil {
                         } else {
                             counter = counter + 1;
                             if (counter < position.length) {
-                                current_mediator = ((AbstractListMediator) current_mediator)
-                                        .getChild(position[counter]);
+                                int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
+                                if (mediatorCount > position[counter]) {
+                                    current_mediator = ((AbstractListMediator) current_mediator)
+                                            .getChild(position[counter]);
+                                } else {
+                                    log.warn("Mediator position requested is larger than last index : "
+                                            + position[counter]);
+                                }
                             }
                         }
                         continue;
@@ -146,8 +162,12 @@ public class MediatorTreeTraverseUtil {
                             .getInlineSequence(synCfg, 0);
                 }
                 if (current_mediator != null && (current_mediator instanceof AbstractListMediator)) {
-                    current_mediator = ((AbstractListMediator) current_mediator)
-                            .getChild(position[counter]);
+                    int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
+                    if (mediatorCount > position[counter]) {
+                        current_mediator = ((AbstractListMediator) current_mediator).getChild(position[counter]);
+                    } else {
+                        log.warn("Mediator position requested is larger than last index : " + position[counter]);
+                    }
                 } else {
                     current_mediator = null;
                     break;
