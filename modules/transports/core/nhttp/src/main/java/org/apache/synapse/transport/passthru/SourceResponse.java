@@ -174,8 +174,8 @@ public class SourceResponse {
         // the backend response is set as the content length.
         if (entity == null &&
             PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(request.getRequest().getRequestLine().getMethod())) {
-            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && (response
-                    .getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
+            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && response.getFirstHeader(
+		            HTTP.CONTENT_LEN).getValue() != null && (response.getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
                 response.removeHeaders(HTTP.CONTENT_LEN);
             } else {
                 response.removeHeaders(HTTP.CONTENT_LEN);
