@@ -20,9 +20,9 @@
 package org.apache.synapse.mediators;
 
 import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMException;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
@@ -32,7 +32,6 @@ import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCol
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.mediators.builtin.CallMediator;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
@@ -46,6 +45,8 @@ import java.util.List;
  */
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
+
+    private static final String WSTX_IO_EXCEPTION = "WstxIOException";
 
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
@@ -98,7 +99,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
             }
         } catch (SynapseException synEx) {
-            if (synEx.getCause() instanceof OMException) {
+            if (ExceptionUtils.getStackTrace(synEx).contains(WSTX_IO_EXCEPTION)) {
                 consumeInputOnOmException(synCtx);
             }
             throw synEx;
@@ -107,7 +108,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             if (errorMsg == null) {
                 errorMsg = "Runtime error occurred while mediating the message";
             }
-            if (ex instanceof OMException || ex.getCause() instanceof OMException) {
+            if (ExceptionUtils.getStackTrace(ex).contains(WSTX_IO_EXCEPTION)) {
                 consumeInputOnOmException(synCtx);
             }
             handleException(errorMsg, ex, synCtx);
