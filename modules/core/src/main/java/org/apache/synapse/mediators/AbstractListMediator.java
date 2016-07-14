@@ -37,6 +37,8 @@ import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This is the base class for all List mediators
@@ -46,7 +48,7 @@ import java.util.List;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
-    private static final String WSTX_IO_EXCEPTION = "WstxIOException";
+    private static final String WSTX_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)";
 
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
@@ -99,16 +101,27 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
             }
         } catch (SynapseException synEx) {
-            if (ExceptionUtils.getStackTrace(synEx).contains(WSTX_IO_EXCEPTION)) {
+            // Create a Pattern object
+            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
+
+            // Now create matcher object.
+            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
+            if (wstxExMatcher.find()) {
                 consumeInputOnOmException(synCtx);
             }
             throw synEx;
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
+            
+            // Create a Pattern object
+            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
+
+            // Now create matcher object.
+            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(ex));
             if (errorMsg == null) {
                 errorMsg = "Runtime error occurred while mediating the message";
             }
-            if (ExceptionUtils.getStackTrace(ex).contains(WSTX_IO_EXCEPTION)) {
+            if (wstxExMatcher.find()) {
                 consumeInputOnOmException(synCtx);
             }
             handleException(errorMsg, ex, synCtx);
