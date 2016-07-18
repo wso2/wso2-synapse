@@ -54,6 +54,11 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 	                                       AspectConfiguration aspectConfiguration, ComponentType componentType) {
 		boolean isCollectingStatistics = (aspectConfiguration != null && aspectConfiguration.isStatisticsEnable());
 
+		// Enable statistics, if user enabled for all artifacts
+		if (!isCollectingStatistics) {
+			isCollectingStatistics = isCollectingStatistics || RuntimeStatisticCollector.isCollectingAllStatistics();
+		}
+
 		boolean isCollectingTracing = false;
 		if (isCollectingProperties() || isCollectingPayloads()) {
 			isCollectingTracing = (aspectConfiguration != null && aspectConfiguration.isTracingEnabled());
@@ -93,7 +98,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			}
 
 			if (aspectConfiguration != null) {
-				statisticDataUnit.setIsIndividualStatisticCollected(aspectConfiguration.isStatisticsEnable());
+				statisticDataUnit.setIsIndividualStatisticCollected(isCollectingStatistics);
 			}
 			StatisticDataCollectionHelper.collectData(messageContext, true, isTracingEnabled, statisticDataUnit);
 
