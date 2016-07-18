@@ -218,6 +218,7 @@ public abstract class RuntimeStatisticCollector {
 	 */
 	public static void setCollectingAllStatistics(boolean state) {
 		isCollectingAllStatistics = state;
+		log.info("Collecting statistics for all artifacts state changed to: " + state);
 	}
 
 	/**
