@@ -170,7 +170,7 @@ public class VFSUtils {
             } else {
                 if (isListener) {
                     //Check the original file existence before the lock file to handle concurrent access scenario
-                    FileObject originalFileObject = fsManager.resolveFile(fullPath);
+                    FileObject originalFileObject = fsManager.resolveFile(fullPath, fso);
                     if (!originalFileObject.exists()) {
                         return false;
                     }

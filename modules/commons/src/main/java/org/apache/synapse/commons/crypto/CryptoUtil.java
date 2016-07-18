@@ -127,60 +127,10 @@ public class CryptoUtil {
             encryptedBytes = EncodeDecodeHelper.decode(encryptedBytes, inType);
         }
         byte[] response;
-        if (algorithm !=null && !algorithm.isEmpty() && algorithm.equals(CryptoConstants.CIPHER_ALGORITHM_DEFAULT)) {
-            response = rSADecrypt(encryptedBytes);
-        } else {
-            response = baseCipher.decrypt(encryptedBytes);
-        }
+        response = baseCipher.decrypt(encryptedBytes);
         if (outType != null) {
             response = EncodeDecodeHelper.encode(response, outType);
         }
-        return response;
-    }
-
-    /**
-     * Helper method to decrypt RSA values. (This method will decrypt encrypted long values by breaking them to 128
-     * size block sizes, what it does is break to 128byte parts, then decrypt each part separately and append to final
-     * result.
-     *
-     * @param encryptedBytes
-     * @return decryptedValue
-     */
-    private byte[] rSADecrypt(byte[] encryptedBytes) {
-        // hold temp results
-        byte[] temp = new byte[0];
-        // full response
-        byte[] response = new byte[0];
-        //For decryption length required for RSA is 128 (for encryption it is 100)
-        int length = 128;
-        //temp decryption bufffer
-        byte[] buffer;
-        if (encryptedBytes.length < length) {
-            buffer = new byte[encryptedBytes.length];
-        } else {
-            buffer = new byte[length];
-        }
-        for (int i=0; i< encryptedBytes.length; i++){
-            //when buffer is filled, then decrypt
-            if ((i > 0) && (i % length == 0)){
-                temp = baseCipher.decrypt(buffer);
-                // append results
-                response = Util.append(response,temp);
-                int newLength = length;
-
-                // if remaining byte array size is smaller than buffer size, then use smaller buffer
-                if (i + length > encryptedBytes.length) {
-                    newLength = encryptedBytes.length - i;
-                }
-                //create new buffer for that size
-                buffer = new byte[newLength];
-            }
-            //fill the temp buffer
-            buffer[i%length] = encryptedBytes[i];
-        }
-        //decrypt the last remaining part
-        temp = baseCipher.decrypt(buffer);
-        response = Util.append(response,temp);
         return response;
     }
 

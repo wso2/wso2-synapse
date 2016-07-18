@@ -526,7 +526,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                 VFSUtils.releaseLock(fsManager, child, fso);
                                 VFSUtils.releaseLock(fsManager, fileObject, fso);
                             }
-                            if (fsManager.resolveFile(child.getURL().toString()) != null &&
+                            if (fsManager.resolveFile(child.getURL().toString(), fso) != null &&
                                     removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
                                 workerPool.execute(new FileRemoveTask(entry, child, fso));
                             }
