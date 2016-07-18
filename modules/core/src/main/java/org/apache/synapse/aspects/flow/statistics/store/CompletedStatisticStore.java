@@ -18,15 +18,22 @@
 
 package org.apache.synapse.aspects.flow.statistics.store;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class will hold completed statistic entries till they are collected for by carbon mediation.
  */
 public class CompletedStatisticStore {
+    private static Log log = LogFactory.getLog(CompletedStatisticStore.class);
+
 
 	/**
 	 * Completed statistics entries for message flows.
@@ -40,9 +47,26 @@ public class CompletedStatisticStore {
 
 	public void putCompletedStatisticEntry(PublishingFlow publishingFlow) {
 		synchronized (completedStatisticEntries) {
+            logEvent(publishingFlow);
 			completedStatisticEntries.add(publishingFlow);
 		}
 	}
+
+
+    private static void logEvent(PublishingFlow publishingFlow) {
+        Map<String, Object> mapping = publishingFlow.getObjectAsMap();
+        mapping.put("host", "localhost"); // Adding host
+        mapping.put("tenantId", "1234");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonString = null;
+        try {
+            jsonString = mapper.writeValueAsString(mapping);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to convert", e);
+        }
+        log.info("Uncompressed data ********************* :" + jsonString);
+    }
 
 	public boolean isEmpty() {
 		return completedStatisticEntries.isEmpty();

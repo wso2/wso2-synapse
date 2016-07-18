@@ -25,6 +25,7 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
@@ -103,6 +104,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataCollectionHelper.collectData(messageContext, true, isTracingEnabled, statisticDataUnit);
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
+            addEventAndIncrementCount(messageContext, openEvent);
 			statisticEventQueue.enqueue(openEvent);
 
 			return statisticDataUnit.getCurrentIndex();
@@ -253,6 +255,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
+        addEventAndIncrementCount(messageContext, openEvent);
 		statisticEventQueue.enqueue(openEvent);
 	}
 }

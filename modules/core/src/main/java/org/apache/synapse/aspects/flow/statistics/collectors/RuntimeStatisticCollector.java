@@ -23,6 +23,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingCountHolder;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
@@ -142,6 +145,7 @@ public abstract class RuntimeStatisticCollector {
 			basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
 
 			ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
+//            addEventAndIncrementCount(synCtx, parentReopenEvent);
 			statisticEventQueue.enqueue(parentReopenEvent);
 		}
 	}
@@ -229,4 +233,81 @@ public abstract class RuntimeStatisticCollector {
 			statisticEventQueue.setStopped();
 		}
 	}
+
+    protected static void addEventAndIncrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
+        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
+                                       new StatisticsReportingEventHolder());
+        }
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+
+        eventHolder.addEvent(event);
+
+        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
+        }
+
+        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
+        countHolder.incrementAndGetStatCount();
+    }
+
+    protected static int addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
+        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
+                                       new StatisticsReportingEventHolder());
+        }
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+
+        eventHolder.addEvent(event);
+
+        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
+        }
+
+        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
+        return countHolder.decrementAndGetStatCount();
+    }
+
+
+    protected static void addEventAndIncrementCallbackCount(MessageContext messageContext, StatisticsReportingEvent event) {
+        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
+                                       new StatisticsReportingEventHolder());
+        }
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+
+        eventHolder.addEvent(event);
+
+        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
+        }
+
+        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
+        countHolder.incrementAndGetCallBackCount();
+    }
+
+    protected static int addEventAndDecrementCallbackCount(MessageContext messageContext, StatisticsReportingEvent event) {
+        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
+                                       new StatisticsReportingEventHolder());
+        }
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+
+        eventHolder.addEvent(event);
+
+        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
+        }
+
+        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
+                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
+        return countHolder.decrementAndGetCallBackCount();
+    }
 }

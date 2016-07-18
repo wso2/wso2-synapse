@@ -67,6 +67,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
+
 			statisticEventQueue.enqueue(closeEvent);
 		}
 	}
