@@ -25,6 +25,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
+import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -56,6 +57,11 @@ public abstract class RuntimeStatisticCollector {
 	 * Is message context property collection enabled in synapse.properties file.
 	 */
 	private static boolean isCollectingProperties;
+
+	/**
+	 * Is collecting statistics of all artifacts
+	 */
+	private static boolean  isCollectingAllStatistics;
 
 	/**
 	 * Statistic event queue to hold statistic events.
@@ -95,6 +101,9 @@ public abstract class RuntimeStatisticCollector {
 				log.debug("Property collecting is not enabled in \'synapse.properties\' file.");
 			}
 
+			isCollectingAllStatistics = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
+					StatisticsConstants.COLLECT_ALL_STATISTICS, String.valueOf(false)));
+
 			statisticEventQueue = new MessageDataStore(queueSize);
 			//Thread to consume queue and update data structures for publishing
 			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -109,7 +118,9 @@ public abstract class RuntimeStatisticCollector {
 					SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
 					eventConsumerTime;
 			log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
+
 			StatisticEventProcessor.initializeCleaningThread();
+			new MediationFlowController();
 		} else {
 			if (log.isDebugEnabled()) {
 				log.debug("Statistics is not enabled in \'synapse.properties\' file.");
@@ -181,7 +192,7 @@ public abstract class RuntimeStatisticCollector {
 	 * @return true if need to collect payloads.
 	 */
 	public static boolean isCollectingPayloads() {
-		return isStatisticsEnabled & isCollectingPayloads;
+		return isStatisticsEnabled && isCollectingPayloads;
 	}
 
 	/**
@@ -190,7 +201,24 @@ public abstract class RuntimeStatisticCollector {
 	 * @return true if need to collect message-properties.
 	 */
 	public static boolean isCollectingProperties() {
-		return isStatisticsEnabled & isCollectingProperties;
+		return isStatisticsEnabled && isCollectingProperties;
+	}
+
+	/**
+	 * Return whether collecting statistics for all artifacts is enabled (this also needs isStatisticsEnabled)
+	 *
+	 * @return true if need to collect statistics for all artifacts
+     */
+	public static boolean isCollectingAllStatistics() {
+		return isStatisticsEnabled && isCollectingAllStatistics;
+	}
+
+	/**
+	 * Allow external to alter state of collecting statistics for all artifacts, during runtime
+	 */
+	public static void setCollectingAllStatistics(boolean state) {
+		isCollectingAllStatistics = state;
+		log.info("Collecting statistics for all artifacts state changed to: " + state);
 	}
 
 	/**
