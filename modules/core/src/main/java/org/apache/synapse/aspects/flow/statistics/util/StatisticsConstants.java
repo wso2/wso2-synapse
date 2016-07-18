@@ -39,6 +39,11 @@ public class StatisticsConstants {
 	public final static String COLLECT_MESSAGE_PROPERTIES = "mediation.flow.statistics.tracer.collect.properties";
 
 	/**
+	 * Enable statistics collecting for all artifacts
+	 */
+	public final static String COLLECT_ALL_STATISTICS = "mediation.flow.statistics.collect.all";
+
+	/**
 	 * Flow statistic queue size.
 	 */
 	public static final String FLOW_STATISTICS_QUEUE_SIZE = "mediation.flow.statistics.queue.size";
