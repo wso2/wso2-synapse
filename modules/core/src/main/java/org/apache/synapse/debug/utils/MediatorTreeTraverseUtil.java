@@ -24,6 +24,7 @@ import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.debug.constructs.EnclosedInlinedSequence;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.builtin.CacheMediator;
+import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
 import org.apache.synapse.mediators.eip.splitter.CloneMediator;
@@ -57,8 +58,9 @@ public class MediatorTreeTraverseUtil {
         for (int counter = 0; counter < position.length; counter++) {
             if (counter == 0) {
                 int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
-                if (mediatorCount > position[counter]) {
-                    current_mediator = ((AbstractListMediator) seqMediator).getChild(position[counter]);
+                int correctedPosition = getCorrectedPossition((AbstractListMediator) seqMediator, position[counter]);
+                if (mediatorCount > correctedPosition) {
+                    current_mediator = ((AbstractListMediator) seqMediator).getChild(correctedPosition);
                 } else {
                     log.warn("Mediator position requested is larger than last index : " + position[counter]);
                 }
@@ -83,10 +85,11 @@ public class MediatorTreeTraverseUtil {
                         } else {
                             counter = counter + 1;
                             if (counter < position.length) {
-                                int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
-                                if (mediatorCount > position[counter]) {
+                                int mediatorCount = ((AbstractListMediator) current_mediator).getList().size();
+                                int correctedPosition = getCorrectedPossition((AbstractListMediator) current_mediator, position[counter]);
+                                if (mediatorCount > correctedPosition) {
                                     current_mediator = ((AbstractListMediator) current_mediator)
-                                            .getChild(position[counter]);
+                                            .getChild(correctedPosition);
                                 } else {
                                     log.warn("Mediator position requested is larger than last index : "
                                             + position[counter]);
@@ -162,9 +165,10 @@ public class MediatorTreeTraverseUtil {
                             .getInlineSequence(synCfg, 0);
                 }
                 if (current_mediator != null && (current_mediator instanceof AbstractListMediator)) {
-                    int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
-                    if (mediatorCount > position[counter]) {
-                        current_mediator = ((AbstractListMediator) current_mediator).getChild(position[counter]);
+                    int mediatorCount = ((AbstractListMediator) current_mediator).getList().size();
+                    int correctedPosition = getCorrectedPossition((AbstractListMediator) current_mediator, position[counter]);
+                    if (mediatorCount > correctedPosition) {
+                        current_mediator = ((AbstractListMediator) current_mediator).getChild(correctedPosition);
                     } else {
                         log.warn("Mediator position requested is larger than last index : " + position[counter]);
                     }
@@ -175,6 +179,30 @@ public class MediatorTreeTraverseUtil {
             }
         }
         return current_mediator;
+    }
+
+    /**
+     * Developer Studio will send mediator positions without considering "Comment Mediators".
+     * Due to that reason, if there are comments in the source view, mediator positions become incorrect.
+     * This method will return the corrected mediator position considering "Comment Mediators" as well.
+     *
+     * @param seqMediator
+     * @param position
+     * @return correctedPossition considering comment mediators
+     */
+    private static int getCorrectedPossition(AbstractListMediator seqMediator, int position) {
+        int positionWithComments = 0;
+        int positionWithoutComments = 0;
+        for (Mediator mediator : seqMediator.getList()) {
+            if (!(mediator instanceof CommentMediator)) {
+                if (positionWithoutComments == position) {
+                    return positionWithComments;
+                }
+                ++positionWithoutComments;
+            }
+            ++positionWithComments;
+        }
+        return position;
     }
 
 }
