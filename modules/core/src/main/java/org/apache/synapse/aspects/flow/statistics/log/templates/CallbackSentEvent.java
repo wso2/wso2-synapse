@@ -37,4 +37,9 @@ public class CallbackSentEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.addCallbacks(callbackDataUnit);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

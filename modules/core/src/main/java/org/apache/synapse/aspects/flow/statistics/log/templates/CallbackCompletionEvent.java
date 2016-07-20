@@ -40,5 +40,10 @@ public class CallbackCompletionEvent implements StatisticsReportingEvent {
 		StatisticEventProcessor.removeCallback(callbackDataUnit);
 		StatisticEventProcessor.closeStatisticEntry(callbackDataUnit, StatisticsConstants.ATTEMPT_TO_CLOSE);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }
 

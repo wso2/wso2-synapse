@@ -37,4 +37,9 @@ public class StatisticsOpenEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.openStatisticEntry(statisticDataUnit);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

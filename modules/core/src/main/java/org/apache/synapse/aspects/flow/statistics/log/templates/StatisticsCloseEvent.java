@@ -38,4 +38,9 @@ public class StatisticsCloseEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.closeStatisticEntry(statisticDataUnit, StatisticsConstants.GRACEFULLY_CLOSE);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

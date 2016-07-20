@@ -24,10 +24,13 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcesWorker;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
+
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * CloseEventCollector receives  close statistic events from synapse mediation engine. It Receives Statistics for
@@ -67,6 +70,11 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
+            if (addEventAndDecrementCount(messageContext, closeEvent) <= 0) {
+                //todo use a thread to process messages
+                StatisticsProcesWorker eventProcessor = new StatisticsProcesWorker();
+                new ThreadPoolExecutor()
+            }
 
 			statisticEventQueue.enqueue(closeEvent);
 		}

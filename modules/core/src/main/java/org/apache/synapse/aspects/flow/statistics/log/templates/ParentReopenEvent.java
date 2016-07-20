@@ -37,4 +37,9 @@ public class ParentReopenEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.openParents(basicStatisticDataUnit);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

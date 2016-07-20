@@ -38,4 +38,9 @@ public class EndFlowEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

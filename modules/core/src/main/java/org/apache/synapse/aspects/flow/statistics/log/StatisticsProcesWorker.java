@@ -17,24 +17,24 @@
 */
 package org.apache.synapse.aspects.flow.statistics.log;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.axis2.transport.base.threads.WorkerPoolFactory;
 
 /**
- * Created by rajith on 7/15/16.
+ * Created by rajith on 7/19/16.
  */
-public class StatisticsReportingEventHolder {
-    private List<StatisticsReportingEvent> eventList;
+public class StatisticsProcesWorker implements Runnable {
 
-    public StatisticsReportingEventHolder() {
-        eventList = new ArrayList<StatisticsReportingEvent>(2);
+    private StatisticsReportingEventHolder eventHolder;
+
+    public StatisticsProcesWorker(StatisticsReportingEventHolder eventHolder) {
+        this.eventHolder = eventHolder;
     }
 
-    public void addEvent(StatisticsReportingEvent event) {
-        this.eventList.add(event);
-    }
-
-    public List<StatisticsReportingEvent> getEventList() {
-        return this.eventList;
+    @Override
+    public void run() {
+        for (StatisticsReportingEvent event : eventHolder.getEventList()) {
+            event.process();
+        }
     }
 }

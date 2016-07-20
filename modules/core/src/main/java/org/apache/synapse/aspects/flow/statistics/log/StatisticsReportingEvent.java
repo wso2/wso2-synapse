@@ -24,4 +24,6 @@ public interface StatisticsReportingEvent {
 	 * Method that will call corresponding method in RuntimeStatisticCollector.
 	 */
 	void process();
+
+    void processEvents();
 }

@@ -37,4 +37,9 @@ public class FaultEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.reportFault(basicStatisticDataUnit);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

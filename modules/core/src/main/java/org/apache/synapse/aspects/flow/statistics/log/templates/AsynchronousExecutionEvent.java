@@ -33,4 +33,9 @@ public class AsynchronousExecutionEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.reportAsynchronousExecution(basicStatisticDataUnit);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }

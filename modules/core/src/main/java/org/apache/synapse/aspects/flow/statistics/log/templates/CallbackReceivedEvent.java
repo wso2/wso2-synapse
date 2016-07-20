@@ -37,4 +37,9 @@ public class CallbackReceivedEvent implements StatisticsReportingEvent {
 	public void process() {
 		StatisticEventProcessor.updateForReceivedCallback(callbackDataUnit);
 	}
+
+    @Override
+    public void processEvents() {
+
+    }
 }
