@@ -101,7 +101,7 @@ public class MediatorPropertyFactory {
                             propEle, MediatorProperty.ATT_EXPR_Q));
 
                     } catch (JaxenException e) {
-                        String msg = "Invalid XPapth expression : " + attExpr.getAttributeValue();
+                        String msg = "Invalid XPath expression : " + attExpr.getAttributeValue();
                         log.error(msg);
                         throw new SynapseException(msg, e);
                     }
