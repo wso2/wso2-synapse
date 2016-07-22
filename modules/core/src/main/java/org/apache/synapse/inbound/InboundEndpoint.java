@@ -21,7 +21,6 @@ package org.apache.synapse.inbound;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -29,12 +28,17 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.rest.Resource;
+import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 import sun.misc.Service;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Entity which is responsible for exposing ESB message flow as an endpoint which can be invoked
@@ -123,10 +127,37 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         inboundProcessorParams.setProtocol(protocol);
         inboundProcessorParams.setClassImpl(classImpl);
         inboundProcessorParams.setName(name);
-        inboundProcessorParams.setProperties(Utils.paramsToProperties(parametersMap));
         inboundProcessorParams.setInjectingSeq(injectingSeq);
         inboundProcessorParams.setOnErrorSeq(onErrorSeq);
         inboundProcessorParams.setSynapseEnvironment(synapseEnvironment);
+
+        Properties props = Utils.paramsToProperties(parametersMap);
+        //replacing values by secure vault
+        Pattern vaultLookupPattern = Pattern.compile("\\{wso2:vault-lookup\\('(.*?)'\\)\\}");
+
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            String value = (String) entry.getValue();
+            Matcher lookupMatcher = vaultLookupPattern.matcher(value);
+            while (lookupMatcher.find()) {
+                Value expression = null;
+                String expressionStr = lookupMatcher.group(0).substring(1, lookupMatcher.group(0).length() - 1);
+                try {
+                    expression = new Value(new SynapseXPath(expressionStr));
+                } catch (JaxenException e) {
+                    log.error("Error while building the expression : " + expressionStr);
+                }
+                if (expression != null) {
+                    String resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+                    if (resolvedValue == null || resolvedValue.isEmpty()) {
+                        log.warn("Found Empty value for expression : " + expression.getExpression());
+                    }
+                    value = lookupMatcher.replaceFirst(resolvedValue);
+                    props.put(entry.getKey(), value);
+                    lookupMatcher = vaultLookupPattern.matcher(value);
+                }
+            }
+        }
+        inboundProcessorParams.setProperties(props);
         return inboundProcessorParams;
     }
 
