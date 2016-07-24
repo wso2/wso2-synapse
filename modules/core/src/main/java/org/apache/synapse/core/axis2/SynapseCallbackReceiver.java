@@ -219,7 +219,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         }
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
-
+            //This path hits with a fault. Sequence mediator threads should not remove faultSequence.
+            //SynapseCallbackReceiver thread should handle the faultStack.
+            synapseOutMsgCtx.setProperty(SynapseConstants.FAULT_MESSAGE_ID, synapseOutMsgCtx.getMessageID());
             Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
                     .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
             if (pipe != null && pipe.isSerializationComplete()) {
@@ -284,7 +286,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     ((FaultHandler) faultStack.pop()).handleFault(synapseOutMsgCtx, null);
                 }
             }
-
+            synapseOutMsgCtx.setProperty(SynapseConstants.FAULT_MESSAGE_ID, null);
         } else {
 
             // there can always be only one instance of an Endpoint in the faultStack of a message
