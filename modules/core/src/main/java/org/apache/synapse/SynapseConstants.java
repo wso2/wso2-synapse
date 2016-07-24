@@ -204,6 +204,9 @@ public final class SynapseConstants {
         public static final String ERROR_EXCEPTION = "ERROR_EXCEPTION";
         /** The default/generic error code */
         public static final int DEFAULT_ERROR= 0;
+        /** The message context property to indicate the message ID related to a fault */
+        public static final String FAULT_MESSAGE_ID = "FAULT_MESSAGE_ID";
+
 
     /** An Axis2 message context property that indicates the maximum time to spend on sending the message */
     public static final String SEND_TIMEOUT = "SEND_TIMEOUT";
