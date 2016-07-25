@@ -63,6 +63,8 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     /** Whether the deployed inbound endpoint is edited via the management console */
     private boolean isEdited;
     private AspectConfiguration aspectConfiguration;
+    /** regex for secure vault expression */
+    private static final String secureVaultRegex = "\\{wso2:vault-lookup\\('(.*?)'\\)\\}";
 
     public void init(SynapseEnvironment se) {
         log.info("Initializing Inbound Endpoint: " + getName());
@@ -133,35 +135,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
 
         Properties props = Utils.paramsToProperties(parametersMap);
         //replacing values by secure vault
-        String secureVaultRegex = "\\{wso2:vault-lookup\\('(.*?)'\\)\\}";
-        Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
-
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
-            String value = (String) entry.getValue();
-            Matcher lookupMatcher = vaultLookupPattern.matcher(value);
-            //setting value initially
-            String newValue = value;
-            while (lookupMatcher.find()) {
-                Value expression = null;
-                //getting the expression with out curly brackets
-                String expressionStr = lookupMatcher.group(0).substring(1, lookupMatcher.group(0).length() - 1);
-                try {
-                    expression = new Value(new SynapseXPath(expressionStr));
-                } catch (JaxenException e) {
-                    log.error("Error while building the expression : " + expressionStr);
-                }
-                if (expression != null) {
-                    String resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
-                    if (resolvedValue == null || resolvedValue.isEmpty()) {
-                        log.warn("Found Empty value for expression : " + expression.getExpression());
-                        resolvedValue = "";
-                    }
-                    //replacing the expression with resolved value
-                    newValue = newValue.replaceFirst(secureVaultRegex, resolvedValue);
-                    props.put(entry.getKey(), newValue);
-                }
-            }
-        }
+        resolveSecureVaultExpressions(props);
         inboundProcessorParams.setProperties(props);
         return inboundProcessorParams;
     }
@@ -292,5 +266,36 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.INBOUNDENDPOINT, holder);
+    }
+
+    private void resolveSecureVaultExpressions(Properties props) {
+        Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            String value = (String) entry.getValue();
+            Matcher lookupMatcher = vaultLookupPattern.matcher(value);
+            //setting value initially
+            String newParamValue = value;
+            while (lookupMatcher.find()) {
+                Value expression = null;
+                //getting the expression with out curly brackets
+                String expressionStr = lookupMatcher.group(0).substring(1, lookupMatcher.group(0).length() - 1);
+                try {
+                    expression = new Value(new SynapseXPath(expressionStr));
+                } catch (JaxenException e) {
+                    log.error("Error while building the expression : " + expressionStr);
+                }
+                if (expression != null) {
+                    String resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+                    if (resolvedValue == null || resolvedValue.isEmpty()) {
+                        log.warn("Found Empty value for expression : " + expression.getExpression());
+                        resolvedValue = "";
+                    }
+                    //replacing the expression with resolved value
+                    newParamValue = newParamValue.replaceFirst(secureVaultRegex, resolvedValue);
+                    props.put(entry.getKey(), newParamValue);
+                }
+            }
+        }
+
     }
 }
