@@ -23,11 +23,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcessorPool;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingCountHolder;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore2;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -69,7 +71,8 @@ public abstract class RuntimeStatisticCollector {
 	/**
 	 * Statistic event queue to hold statistic events.
 	 */
-	protected static MessageDataStore statisticEventQueue;
+//	protected static MessageDataStore statisticEventQueue;
+	protected static MessageDataStore2 statisticEventQueue2;
 
 	public static long eventExpireTime;
 
@@ -107,8 +110,18 @@ public abstract class RuntimeStatisticCollector {
 			isCollectingAllStatistics = Boolean.parseBoolean(SynapsePropertiesLoader.getPropertyValue(
 					StatisticsConstants.COLLECT_ALL_STATISTICS, String.valueOf(false)));
 
-			statisticEventQueue = new MessageDataStore(queueSize);
+//			statisticEventQueue = new MessageDataStore(queueSize);
 			//Thread to consume queue and update data structures for publishing
+//			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+//				public Thread newThread(Runnable r) {
+//					Thread t = new Thread(r);
+//					t.setName("Mediation Statistic Data consumer Task");
+//					return t;
+//				}
+//			});
+//			executor.scheduleAtFixedRate(statisticEventQueue, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
+            statisticEventQueue2 = new MessageDataStore2(queueSize);
+            //Thread to consume queue and update data structures for publishing
 			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 				public Thread newThread(Runnable r) {
 					Thread t = new Thread(r);
@@ -116,13 +129,13 @@ public abstract class RuntimeStatisticCollector {
 					return t;
 				}
 			});
-			executor.scheduleAtFixedRate(statisticEventQueue, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
+			executor.scheduleAtFixedRate(statisticEventQueue2, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
 			eventExpireTime =
 					SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
 					eventConsumerTime;
 			log.info("Statistics Entry Expiration time set to " + eventExpireTime + " milliseconds");
-
-			StatisticEventProcessor.initializeCleaningThread();
+//            StatisticsProcessorPool.getInstance();
+//			StatisticEventProcessor.initializeCleaningThread();
 			new MediationFlowController();
 		} else {
 			if (log.isDebugEnabled()) {
@@ -146,7 +159,7 @@ public abstract class RuntimeStatisticCollector {
 
 			ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
 //            addEventAndIncrementCount(synCtx, parentReopenEvent);
-			statisticEventQueue.enqueue(parentReopenEvent);
+//			statisticEventQueue.enqueue(parentReopenEvent);
 		}
 	}
 
@@ -174,7 +187,7 @@ public abstract class RuntimeStatisticCollector {
 			return false;
 
 		Boolean isStatCollected =
-				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);//todo try use one object
 		Object statID = messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
 		return (statID != null && isStatCollected != null && isStatCollected);
 	}
@@ -230,84 +243,56 @@ public abstract class RuntimeStatisticCollector {
 	 */
 	public static void stopConsumer() {
 		if (isStatisticsEnabled) {
-			statisticEventQueue.setStopped();
+//			statisticEventQueue.setStopped();
+			statisticEventQueue2.setStopped();
 		}
 	}
 
     protected static void addEventAndIncrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
-        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
-                                       new StatisticsReportingEventHolder());
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if(eventHolder == null) {
+            eventHolder = new StatisticsReportingEventHolder();
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
-        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
 
         eventHolder.addEvent(event);
 
-        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
-        }
-
-        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
-        countHolder.incrementAndGetStatCount();
+        eventHolder.countHolder.incrementAndGetStatCount();
     }
 
     protected static int addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
-        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
-                                       new StatisticsReportingEventHolder());
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if(eventHolder == null) {
+            eventHolder = new StatisticsReportingEventHolder();
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
-        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
-
         eventHolder.addEvent(event);
 
-        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
-        }
-
-        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
-        return countHolder.decrementAndGetStatCount();
+        return eventHolder.countHolder.decrementAndGetStatCount();
     }
 
 
     protected static void addEventAndIncrementCallbackCount(MessageContext messageContext, StatisticsReportingEvent event) {
-        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
-                                       new StatisticsReportingEventHolder());
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if(eventHolder == null) {
+            eventHolder = new StatisticsReportingEventHolder();
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
-        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
 
         eventHolder.addEvent(event);
 
-        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
-        }
-
-        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
-        countHolder.incrementAndGetCallBackCount();
+        eventHolder.countHolder.incrementAndGetCallBackCount();
     }
 
     protected static int addEventAndDecrementCallbackCount(MessageContext messageContext, StatisticsReportingEvent event) {
-        if(messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY,
-                                       new StatisticsReportingEventHolder());
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if(eventHolder == null) {
+            eventHolder = new StatisticsReportingEventHolder();
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
         }
-        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
 
         eventHolder.addEvent(event);
 
-        if (messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT) == null) {
-            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_COUNT, new StatisticsReportingCountHolder());
-        }
-
-        StatisticsReportingCountHolder countHolder = (StatisticsReportingCountHolder)messageContext
-                .getProperty(StatisticsConstants.STAT_COLLECTOR_COUNT);
-        return countHolder.decrementAndGetCallBackCount();
+        return eventHolder.countHolder.decrementAndGetCallBackCount();
     }
 }

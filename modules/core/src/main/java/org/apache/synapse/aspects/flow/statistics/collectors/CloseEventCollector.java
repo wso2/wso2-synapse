@@ -24,13 +24,14 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcesWorker;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcessWorker;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcessWorker2;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcessorPool;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
-
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * CloseEventCollector receives  close statistic events from synapse mediation engine. It Receives Statistics for
@@ -72,11 +73,15 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
             if (addEventAndDecrementCount(messageContext, closeEvent) <= 0) {
                 //todo use a thread to process messages
-                StatisticsProcesWorker eventProcessor = new StatisticsProcesWorker();
-                new ThreadPoolExecutor()
+                StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
+                        .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+                statisticEventQueue2.enqueue(eventHolder);
+//                StatisticsProcessWorker2 eventProcessor = new StatisticsProcessWorker2(eventHolder);
+//                eventProcessor.start();
+//                StatisticsProcessorPool.getInstance().execute(eventProcessor);
             }
 
-			statisticEventQueue.enqueue(closeEvent);
+//			statisticEventQueue.enqueue(closeEvent);
 		}
 	}
 
@@ -95,7 +100,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
-			statisticEventQueue.enqueue(endFlowEvent);
+//			statisticEventQueue.enqueue(endFlowEvent);
 		}
 	}
 

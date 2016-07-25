@@ -44,6 +44,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsObservable;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -99,6 +100,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** The CompletedStatisticStore object*/
     private CompletedStatisticStore completedStatisticStore = new CompletedStatisticStore();
+
+    /**
+     * Observable Statistic object to be used tenantWise
+     */
+    private StatisticsObservable statisticsObservable = new StatisticsObservable();
 
     private ServerContextInformation contextInformation;
 
@@ -658,6 +664,11 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public CompletedStatisticStore getCompletedStatisticStore() {
         return completedStatisticStore;
+    }
+
+    @Override
+    public StatisticsObservable getStatisticsObservable() {
+        return statisticsObservable;
     }
 
     /**

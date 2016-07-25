@@ -17,6 +17,8 @@
  */
 package org.apache.synapse.aspects.flow.statistics.log;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.aspects.ComponentType;
@@ -24,6 +26,7 @@ import org.apache.synapse.aspects.flow.statistics.data.aggregate.StatisticsEntry
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.publishing.PublishingFlow;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticCleaningThread;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -183,9 +186,28 @@ public class StatisticEventProcessor2 {
 			}
 			dataUnit.getSynapseEnvironment().getCompletedStatisticStore()
 			        .putCompletedStatisticEntry(statisticsEntry.getMessageFlowLogs());
+//            logEvent(statisticsEntry.getMessageFlowLogs());
+//            dataUnit.getSynapseEnvironment().getStatisticsObservable().submitToMediationLayer(statisticsEntry.getMessageFlowLogs());
             entry = null;
 		}
 	}
+
+
+    //todo this is only for test, please remove this before committing - rajith
+    private static void logEvent(PublishingFlow publishingFlow) {
+        Map<String, Object> mapping = publishingFlow.getObjectAsMap();
+        mapping.put("host", "localhost"); // Adding host
+        mapping.put("tenantId", "1234");
+
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonString = null;
+        try {
+            jsonString = mapper.writeValueAsString(mapping);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to convert", e);
+        }
+        log.info("Uncompressed data -------------------------- :" + jsonString);
+    }
 
 	/**
 	 * Opens Flow Continuable mediators after callback is received for continuation call to the backend.

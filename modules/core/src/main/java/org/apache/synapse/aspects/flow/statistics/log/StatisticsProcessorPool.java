@@ -27,9 +27,9 @@ public class StatisticsProcessorPool {
     /** the thread pool to execute actual statistics processing invocations */
     protected WorkerPool workerPool = null;
 
-    private static StatisticsProcesWorker eventProcessor;
+    private static StatisticsProcessorPool eventProcessor;
 
-    private StatisticsEventProcessor() {
+    private StatisticsProcessorPool() {
         if (this.workerPool == null) {
 //            this.workerPool = WorkerPoolFactory.getWorkerPool( todo implement to get from config
 //                    config.getServerCoreThreads(),
@@ -39,27 +39,26 @@ public class StatisticsProcessorPool {
 //                    getTransportName() + "Server Worker thread group",
 //                    getTransportName() + "-Worker");
             this.workerPool = WorkerPoolFactory.getWorkerPool(
-                    10,
-                    10,
-                    2,
-                    20,
+                    400,
+                    500,
+                    60,
+                    100,
                     "Statistics processor Thread group",
                     "Statistics-Worker");
         }
     }
 
-    public StatisticsProcesWorker getInstance() {
-        if (this.eventProcessor == null) {
-            createInstance();
+    public static StatisticsProcessorPool getInstance() {
+        if (eventProcessor == null) {
+            synchronized ("dfd") {
+                if (eventProcessor == null) {
+                    eventProcessor = new StatisticsProcessorPool();
+                }
+            }
         }
-        return this.eventProcessor;
+        return eventProcessor;
     }
 
-    private synchronized void createInstance() {
-        if (this.eventProcessor == null) {
-            this.eventProcessor = new StatisticsProcesWorker();
-        }
-    }
 
     public void execute(Runnable executor) {
         this.workerPool.execute(executor);

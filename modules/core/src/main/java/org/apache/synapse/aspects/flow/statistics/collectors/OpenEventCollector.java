@@ -66,7 +66,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		}
 
 		Boolean isFlowStatisticEnabled =
-				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);//todo try to use single object for "FLOW_TRACE_IS_COLLECTED"
 		Boolean isTracingEnabled;
 		if (isCollectingStatistics) {
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
@@ -105,7 +105,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
-			statisticEventQueue.enqueue(openEvent);
+//			statisticEventQueue.enqueue(openEvent);
 
 			return statisticDataUnit.getCurrentIndex();
 		}
@@ -232,7 +232,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
-			statisticEventQueue.enqueue(asynchronousExecutionEvent);
+//			statisticEventQueue.enqueue(asynchronousExecutionEvent);
 		}
 	}
 
@@ -256,6 +256,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
         addEventAndIncrementCount(messageContext, openEvent);
-		statisticEventQueue.enqueue(openEvent);
+//		statisticEventQueue.enqueue(openEvent);
 	}
 }

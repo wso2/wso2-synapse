@@ -47,12 +47,12 @@ public class CompletedStatisticStore {
 
 	public void putCompletedStatisticEntry(PublishingFlow publishingFlow) {
 		synchronized (completedStatisticEntries) {
-            logEvent(publishingFlow);
+//            logEvent(publishingFlow);
 			completedStatisticEntries.add(publishingFlow);
 		}
 	}
 
-
+    //todo this is only for test, please remove this before committing - rajith
     private static void logEvent(PublishingFlow publishingFlow) {
         Map<String, Object> mapping = publishingFlow.getObjectAsMap();
         mapping.put("host", "localhost"); // Adding host

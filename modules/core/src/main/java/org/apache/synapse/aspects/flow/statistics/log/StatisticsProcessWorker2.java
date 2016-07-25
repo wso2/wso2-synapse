@@ -17,27 +17,23 @@
 */
 package org.apache.synapse.aspects.flow.statistics.log;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-
 /**
- * Created by rajith on 7/15/16.
+ * Created by rajith on 7/19/16.
  */
-public class StatisticsReportingEventHolder {
-    private List<StatisticsReportingEvent> eventList;
-    public StatisticsReportingCountHolder countHolder;
+public class StatisticsProcessWorker2 extends Thread {
 
-    public StatisticsReportingEventHolder() {
-        eventList = new LinkedList<StatisticsReportingEvent>();
-        countHolder = new StatisticsReportingCountHolder();
+    private StatisticsReportingEventHolder eventHolder;
+    private StatisticEventProcessor2 eventProcessor;
+
+    public StatisticsProcessWorker2(StatisticsReportingEventHolder eventHolder) {
+        this.eventHolder = eventHolder;
     }
 
-    public void addEvent(StatisticsReportingEvent event) {
-        this.eventList.add(event);
-    }
-
-    public List<StatisticsReportingEvent> getEventList() {
-        return this.eventList;
+    @Override
+    public void run() {
+        eventProcessor = new StatisticEventProcessor2();
+        for (StatisticsReportingEvent event : eventHolder.getEventList()) {
+            event.process();
+        }
     }
 }

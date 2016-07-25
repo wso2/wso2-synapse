@@ -23,18 +23,20 @@ import org.apache.axis2.transport.base.threads.WorkerPoolFactory;
 /**
  * Created by rajith on 7/19/16.
  */
-public class StatisticsProcesWorker implements Runnable {
+public class StatisticsProcessWorker implements Runnable {
 
     private StatisticsReportingEventHolder eventHolder;
+    private StatisticEventProcessor2 eventProcessor;
 
-    public StatisticsProcesWorker(StatisticsReportingEventHolder eventHolder) {
+    public StatisticsProcessWorker(StatisticsReportingEventHolder eventHolder) {
         this.eventHolder = eventHolder;
     }
 
     @Override
     public void run() {
+        eventProcessor = new StatisticEventProcessor2();
         for (StatisticsReportingEvent event : eventHolder.getEventList()) {
-            event.process();
+            event.processEvents(eventProcessor);
         }
     }
 }
