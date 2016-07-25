@@ -22,6 +22,7 @@ package org.apache.synapse;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMNamespace;
 import javax.xml.namespace.QName;
+import java.util.regex.Pattern;
 
 /**
  * Global constants for the Apache Synapse project
@@ -520,5 +521,14 @@ public final class SynapseConstants {
             "synapse.concurrent.access.controller";
     public static final String SYNAPSE_CONCURRENT_ACCESS_REPLICATOR =
             "synapse.concurrent.access.replicator";
+
+    //String constants to identity the type of the timeout
+    public enum ENDPOINT_TIMEOUT_TYPE { ENDPOINT_TIMEOUT, GLOBAL_TIMEOUT, HTTP_CONNECTION_TIMEOUT};
+
+    // URL pattern
+    public static final Pattern URL_PATTERN = Pattern.compile("[a-z]+://.*");
+
+    // Password pattern
+    public static final Pattern PASSWORD_PATTERN = Pattern.compile(":(?:[^/]+)@");
 
 }

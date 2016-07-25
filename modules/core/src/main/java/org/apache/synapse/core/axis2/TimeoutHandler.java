@@ -69,7 +69,8 @@ public class TimeoutHandler extends TimerTask {
         this.callbackStore = callbacks;
         this.contextInfo = contextInfo;
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
-        log.info("This engine will expire all callbacks after : " + (globalTimeout / 1000) +
+        log.info("This engine will expire all callbacks after " +
+                SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT.toString() + ": " + (globalTimeout / 1000) +
                 " seconds, irrespective of the timeout action," +
                 " after the specified or optional timeout");
     }
@@ -195,7 +196,8 @@ public class TimeoutHandler extends TimerTask {
 
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
                         log.warn("Expiring message ID : " + key + "; dropping message after " +
-                                "timeout of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
+                                callback.getTimeoutType().toString() +
+                                " of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
                     }
                     callbackStore.remove(key);
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {

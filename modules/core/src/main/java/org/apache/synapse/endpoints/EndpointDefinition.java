@@ -183,11 +183,15 @@ public class EndpointDefinition implements AspectConfigurable {
     /** A list of error codes which permit the retries for Enabled error Codes */
     private final List<Integer> retryEnabledErrorCodes = new ArrayList<Integer>();
 
+    /** Variable to depict the effective timeout type **/
+    private SynapseConstants.ENDPOINT_TIMEOUT_TYPE endpointTimeoutType;
+
     public EndpointDefinition() {
         try {
             // Set the timeout value to global timeout value.
             // This will be overridden if endpoint timeout is set
             effectiveTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
+            this.endpointTimeoutType = SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT;
         } catch (Exception ex) {
             String msg = "Error while reading global timeout interval";
             log.error(msg, ex);
@@ -536,6 +540,7 @@ public class EndpointDefinition implements AspectConfigurable {
     public void setTimeoutDuration(long timeoutDuration) {
         this.timeoutDuration = timeoutDuration;
         this.effectiveTimeout = timeoutDuration;
+        this.endpointTimeoutType = SynapseConstants.ENDPOINT_TIMEOUT_TYPE.ENDPOINT_TIMEOUT;
     }
 
     public int getTimeoutAction() {
@@ -728,6 +733,14 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public AspectConfiguration getAspectConfiguration() {
         return this.aspectConfiguration;
+    }
+
+    public SynapseConstants.ENDPOINT_TIMEOUT_TYPE getEndpointTimeoutType() {
+        return endpointTimeoutType;
+    }
+
+    public void setEndpointTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE endpointTimeoutType) {
+        this.endpointTimeoutType = endpointTimeoutType;
     }
 
 

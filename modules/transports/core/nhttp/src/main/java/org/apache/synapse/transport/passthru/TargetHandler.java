@@ -38,6 +38,7 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
+import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -474,22 +475,27 @@ public class TargetHandler implements NHttpClientEventHandler {
             log.debug("Connection closed by target host while in state " + state.name() + ". Response code : " + conn.getStatus());
         }
         if (state == ProtocolState.REQUEST_READY) {
-            log.warn(conn + ": Connection closed before sending request out");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + ": Connection closed before sending request out");
             isFault = true;
         } else if (state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": Keep-Alive Connection closed");
+                log.debug(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                        +  ": Keep-Alive Connection closed");
             }
         } else if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
             informWriterError(conn);
-            log.warn("Connection closed by target host while sending the request");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + " Connection closed by target host while sending the request");
             isFault = true;
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
-            log.warn("Connection closed by target host while receiving the response");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + " Connection closed by target host while receiving the response");
             isFault = true;
         } else if (state == ProtocolState.REQUEST_DONE) {
-            log.warn("Connection closed by target host before receiving the response");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + " Connection closed by target host before receiving the response");
             isFault = true;
         }
 
@@ -539,13 +545,14 @@ public class TargetHandler implements NHttpClientEventHandler {
 
         String message = getErrorMessage("Connection timeout", conn);
         if (log.isDebugEnabled()) {
-            log.debug(conn + ": " + message);
+            log.debug(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress() + ": " + message);
         }
 
         if (state != null &&
                 (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE)) {
             if (log.isDebugEnabled()) {
-                log.debug(conn + ": " + getErrorMessage("Keep-alive connection timed out", conn));
+                log.debug(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                        + ": " + getErrorMessage("Keep-alive connection timed out", conn));
             }
         } else if (state != null ) {
             if (state == ProtocolState.REQUEST_BODY) {
@@ -561,7 +568,9 @@ public class TargetHandler implements NHttpClientEventHandler {
             if (state.compareTo(ProtocolState.REQUEST_DONE) <= 0) {
                 MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
 
-                log.warn(conn + ": Connection time out while in state: " + state);
+                log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                        + ": Connection time out after " + PassThroughConstants.HTTP_SOCKET_TIMEOUT + " : " +
+                     conn.getSocketTimeout() +  " while in state: " + state);
                 if (requestMsgCtx != null) {
                     targetErrorHandler.handleError(requestMsgCtx,
                             ErrorCodes.CONNECTION_TIMEOUT,
@@ -658,12 +667,15 @@ public class TargetHandler implements NHttpClientEventHandler {
         
         if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
             informWriterError(conn);
-            log.warn("Exception occured while sending the request");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + " :Exception occured while sending the request");
         } else if (state == ProtocolState.RESPONSE_HEAD || state == ProtocolState.RESPONSE_BODY) {
             informReaderError(conn);
-            log.warn("Exception occured while reading the response");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + " :Exception occured while reading the response");
         } else if (state == ProtocolState.REQUEST_DONE) {
-            log.warn("Exception occured while before reading the response");
+            log.warn(((LoggingNHttpClientConnection) conn).getIOSession().getRemoteAddress()
+                    + " :Exception occured while before reading the response");
         }
         
         if (ex instanceof IOException) {

@@ -61,6 +61,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+
+import static org.apache.synapse.SynapseConstants.PASSWORD_PATTERN;
+import static org.apache.synapse.SynapseConstants.URL_PATTERN;
 
 /**
  *
@@ -970,6 +974,22 @@ public class MessageHelper {
             ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY,
                                                                                 SynapseDebugInfoHolder.DUMMY_MEDIATOR_ID); //
         }
+    }
+
+    /**
+     * Mask the password of the connection url with ***
+     * @param url the actual url
+     * @return the masked url
+     */
+    public static String maskURLPassword(String url) {
+        final Matcher urlMatcher = URL_PATTERN.matcher(url);
+        String maskUrl;
+        if (urlMatcher.find()) {
+            final Matcher pwdMatcher = PASSWORD_PATTERN.matcher(url);
+            maskUrl = pwdMatcher.replaceFirst("\":***@\"");
+            return maskUrl;
+        }
+        return url;
     }
 
 }
