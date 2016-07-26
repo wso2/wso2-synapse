@@ -20,8 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor2;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessorInterface;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -38,11 +37,11 @@ public class EndFlowEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		StatisticEventProcessor.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
+		StatisticEventProcessor3.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
 	}
 
     @Override
-    public void processEvents(StatisticEventProcessor2 eventProcessor) {
+    public void processEvents(StatisticEventProcessor eventProcessor) {
 
     }
 }

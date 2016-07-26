@@ -79,6 +79,7 @@ public class TracingDataCollectionHelper {
 
 		// Remove message-flow-tracer properties
 		propertyMap.remove(SynapseConstants.STATISTICS_STACK);
+		propertyMap.remove(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
 
 		return propertyMap;
 	}

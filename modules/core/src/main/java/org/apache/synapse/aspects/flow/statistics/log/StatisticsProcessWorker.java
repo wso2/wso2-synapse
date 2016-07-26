@@ -17,16 +17,13 @@
 */
 package org.apache.synapse.aspects.flow.statistics.log;
 
-import org.apache.axis2.transport.base.threads.WorkerPool;
-import org.apache.axis2.transport.base.threads.WorkerPoolFactory;
-
 /**
  * Created by rajith on 7/19/16.
  */
 public class StatisticsProcessWorker implements Runnable {
 
     private StatisticsReportingEventHolder eventHolder;
-    private StatisticEventProcessor2 eventProcessor;
+    private StatisticEventProcessor eventProcessor;
 
     public StatisticsProcessWorker(StatisticsReportingEventHolder eventHolder) {
         this.eventHolder = eventHolder;
@@ -34,7 +31,7 @@ public class StatisticsProcessWorker implements Runnable {
 
     @Override
     public void run() {
-        eventProcessor = new StatisticEventProcessor2();
+        eventProcessor = new StatisticEventProcessor();
         for (StatisticsReportingEvent event : eventHolder.getEventList()) {
             event.processEvents(eventProcessor);
         }

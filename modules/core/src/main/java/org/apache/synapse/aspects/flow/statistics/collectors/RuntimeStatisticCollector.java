@@ -22,24 +22,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcessorPool;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingCountHolder;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
-import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore2;
+import org.apache.synapse.aspects.flow.statistics.store.StoreProcessor;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapsePropertiesLoader;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 
 /**
  * RuntimeStatisticCollector receives statistic events and responsible for handling each of these events.
@@ -72,7 +65,7 @@ public abstract class RuntimeStatisticCollector {
 	 * Statistic event queue to hold statistic events.
 	 */
 //	protected static MessageDataStore statisticEventQueue;
-	protected static MessageDataStore2 statisticEventQueue2;
+	protected static MessageDataStore statisticEventQueue2;
 
 	public static long eventExpireTime;
 
@@ -120,16 +113,20 @@ public abstract class RuntimeStatisticCollector {
 //				}
 //			});
 //			executor.scheduleAtFixedRate(statisticEventQueue, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
-            statisticEventQueue2 = new MessageDataStore2(queueSize);
+            statisticEventQueue2 = new MessageDataStore(queueSize);
             //Thread to consume queue and update data structures for publishing
-			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-				public Thread newThread(Runnable r) {
-					Thread t = new Thread(r);
-					t.setName("Mediation Statistic Data consumer Task");
-					return t;
-				}
-			});
-			executor.scheduleAtFixedRate(statisticEventQueue2, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
+//			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+//				public Thread newThread(Runnable r) {
+//					Thread t = new Thread(r);
+//					t.setName("Mediation Statistic Data consumer Task");
+//					return t;
+//				}
+//			});
+//			executor.scheduleAtFixedRate(statisticEventQueue2, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
+            for (int i = 0; i < 100; i++) {
+                StatisticsProcessorPool.getInstance().execute(new StoreProcessor(statisticEventQueue2, "StatProcessorThread-" + i));
+            }
+
 			eventExpireTime =
 					SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
 					eventConsumerTime;

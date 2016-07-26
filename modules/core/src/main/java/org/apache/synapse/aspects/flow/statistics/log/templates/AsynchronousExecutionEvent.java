@@ -20,8 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor2;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessorInterface;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 public class AsynchronousExecutionEvent implements StatisticsReportingEvent {
@@ -33,11 +32,11 @@ public class AsynchronousExecutionEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		StatisticEventProcessor.reportAsynchronousExecution(basicStatisticDataUnit);
+		StatisticEventProcessor3.reportAsynchronousExecution(basicStatisticDataUnit);
 	}
 
     @Override
-    public void processEvents(StatisticEventProcessor2 eventProcessor) {
+    public void processEvents(StatisticEventProcessor eventProcessor) {
 
     }
 }

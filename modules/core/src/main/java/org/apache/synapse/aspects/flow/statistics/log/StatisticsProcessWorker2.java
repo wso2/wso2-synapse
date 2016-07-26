@@ -23,7 +23,7 @@ package org.apache.synapse.aspects.flow.statistics.log;
 public class StatisticsProcessWorker2 extends Thread {
 
     private StatisticsReportingEventHolder eventHolder;
-    private StatisticEventProcessor2 eventProcessor;
+    private StatisticEventProcessor eventProcessor;
 
     public StatisticsProcessWorker2(StatisticsReportingEventHolder eventHolder) {
         this.eventHolder = eventHolder;
@@ -31,7 +31,7 @@ public class StatisticsProcessWorker2 extends Thread {
 
     @Override
     public void run() {
-        eventProcessor = new StatisticEventProcessor2();
+        eventProcessor = new StatisticEventProcessor();
         for (StatisticsReportingEvent event : eventHolder.getEventList()) {
             event.process();
         }

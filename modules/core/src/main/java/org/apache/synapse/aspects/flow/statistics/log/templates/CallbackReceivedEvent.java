@@ -20,8 +20,7 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor2;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessorInterface;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
@@ -37,11 +36,11 @@ public class CallbackReceivedEvent implements StatisticsReportingEvent {
 
 	@Override
 	public void process() {
-		StatisticEventProcessor.updateForReceivedCallback(callbackDataUnit);
+		StatisticEventProcessor3.updateForReceivedCallback(callbackDataUnit);
 	}
 
     @Override
-    public void processEvents(StatisticEventProcessor2 eventProcessor) {
+    public void processEvents(StatisticEventProcessor eventProcessor) {
 
     }
 }
