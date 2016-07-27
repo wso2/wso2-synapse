@@ -328,7 +328,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
         getAspectConfiguration().setUniqueId(cloneId);
 
-        if(endpoint != null){
+        if(endpoint != null && !blocking){
             endpoint.setComponentStatisticsId(holder);
         }
         StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
