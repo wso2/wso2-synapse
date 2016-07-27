@@ -18,6 +18,9 @@
 
 package org.apache.synapse.aspects.flow.statistics.log;
 
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.templates.AbstractStatisticEvent;
+
 public interface StatisticsReportingEvent {
 
 	/**
@@ -26,4 +29,8 @@ public interface StatisticsReportingEvent {
 	void process();
 
     void processEvents(MessageFlowProcessorInterface messageFlowProcessor);
+
+	AbstractStatisticEvent.EventType getEventType();
+
+	BasicStatisticDataUnit getDataUnit();
 }

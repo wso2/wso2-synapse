@@ -18,6 +18,7 @@
 
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.MessageFlowProcessorInterface;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
@@ -26,12 +27,13 @@ import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 /**
  * Event to open statistics for a component.
  */
-public class StatisticsOpenEvent implements StatisticsReportingEvent {
+public class StatisticsOpenEvent extends AbstractStatisticEvent {
 
 	private StatisticDataUnit statisticDataUnit;
 
 	public StatisticsOpenEvent(StatisticDataUnit statisticDataUnit) {
 		this.statisticDataUnit = statisticDataUnit;
+		this.eventType = EventType.STATISTICS_OPEN_EVENT;
 	}
 
 	@Override
@@ -43,4 +45,9 @@ public class StatisticsOpenEvent implements StatisticsReportingEvent {
     public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
         messageFlowProcessor.openStatisticEntry(statisticDataUnit);
     }
+
+	@Override
+	public BasicStatisticDataUnit getDataUnit() {
+		return statisticDataUnit;
+	}
 }

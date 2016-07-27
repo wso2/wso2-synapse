@@ -27,11 +27,12 @@ import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
  * Event to reopen flow continuable mediators after receiving callback for continuation call.
  */
 
-public class ParentReopenEvent implements StatisticsReportingEvent {
+public class ParentReopenEvent extends AbstractStatisticEvent {
 	private BasicStatisticDataUnit basicStatisticDataUnit;
 
 	public ParentReopenEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
+		this.eventType = EventType.PARENT_REOPEN_EVENT;
 	}
 
 	@Override
@@ -43,4 +44,9 @@ public class ParentReopenEvent implements StatisticsReportingEvent {
     public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
         messageFlowProcessor.openParents(basicStatisticDataUnit);
     }
+
+	@Override
+	public BasicStatisticDataUnit getDataUnit() {
+		return basicStatisticDataUnit;
+	}
 }

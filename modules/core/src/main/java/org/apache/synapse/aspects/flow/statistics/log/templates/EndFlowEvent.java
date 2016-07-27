@@ -27,12 +27,13 @@ import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 /**
  * End message-flow forcefully without considering open logs.
  */
-public class EndFlowEvent implements StatisticsReportingEvent {
+public class EndFlowEvent extends AbstractStatisticEvent {
 
 	private final BasicStatisticDataUnit basicStatisticDataUnit;
 
 	public EndFlowEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
+		this.eventType = EventType.ENDFLOW_EVENT;
 	}
 
 	@Override
@@ -44,5 +45,10 @@ public class EndFlowEvent implements StatisticsReportingEvent {
     public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
         messageFlowProcessor.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
     }
+
+	@Override
+	public BasicStatisticDataUnit getDataUnit() {
+		return basicStatisticDataUnit;
+	}
 
 }

@@ -26,12 +26,13 @@ import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 /**
  * Event to represent fault occurred in the message flow.
  */
-public class FaultEvent implements StatisticsReportingEvent {
+public class FaultEvent extends AbstractStatisticEvent {
 
 	private BasicStatisticDataUnit basicStatisticDataUnit;
 
 	public FaultEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
+		this.eventType = EventType.FAULT_EVENT;
 	}
 
 	@Override
@@ -43,4 +44,9 @@ public class FaultEvent implements StatisticsReportingEvent {
     public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
         messageFlowProcessor.reportFault(basicStatisticDataUnit);
     }
+
+	@Override
+	public BasicStatisticDataUnit getDataUnit() {
+		return basicStatisticDataUnit;
+	}
 }

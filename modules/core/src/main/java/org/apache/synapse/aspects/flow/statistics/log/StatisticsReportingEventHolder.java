@@ -50,6 +50,12 @@ public class StatisticsReportingEventHolder {
         return eventQueue.poll();
     }
 
+    public List<StatisticsReportingEvent> getEventList() {
+        return new ArrayList<>(eventQueue);
+    }
+
+
+
     public int getQueueSize() {
         return this.eventQueue.size();
     }
