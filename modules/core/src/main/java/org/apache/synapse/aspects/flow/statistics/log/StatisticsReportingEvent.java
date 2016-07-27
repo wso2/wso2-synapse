@@ -25,5 +25,5 @@ public interface StatisticsReportingEvent {
 	 */
 	void process();
 
-    void processEvents(StatisticEventProcessor eventProcessor);
+    void processEvents(MessageFlowProcessorInterface messageFlowProcessor);
 }

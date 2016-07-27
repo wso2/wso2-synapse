@@ -33,11 +33,26 @@ public class MessageDataStore {
 
     private static Log log = LogFactory.getLog(MessageDataStore.class);
 
+    public static MessageDataStore messageDataStore;
+
     private Queue<StatisticsReportingEventHolder> queue;
 
-    public MessageDataStore(int queueSize) {
+    public MessageDataStore() {
         queue = new ConcurrentLinkedQueue<>();
     }
+
+//    public static MessageDataStore getInstance() {
+//        if (messageDataStore == null) {
+//            createMessageDataStore();
+//        }
+//        return messageDataStore;
+//    }
+//
+//    private synchronized static void createMessageDataStore() {
+//        if (messageDataStore == null) {
+//            messageDataStore = new MessageDataStore();
+//        }
+//    }
 
     /**
      * Add StatisticReportingLog instance to the queue
@@ -65,22 +80,4 @@ public class MessageDataStore {
         return queue.poll();
     }
 
-    /**
-     * Checks whether the queue is empty
-     *
-     * @return Tru if empty/false otherwise
-     */
-    public boolean isEmpty() {
-        return queue.isEmpty();
-    }
-
-    private volatile boolean isStopped = false;
-
-    public void setStopped() {
-        this.isStopped = true;
-    }
-
-    public boolean isStopped() {
-        return isStopped;
-    }
 }

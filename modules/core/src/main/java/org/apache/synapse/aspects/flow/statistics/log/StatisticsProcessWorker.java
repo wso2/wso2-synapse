@@ -31,9 +31,9 @@ public class StatisticsProcessWorker implements Runnable {
 
     @Override
     public void run() {
-        eventProcessor = new StatisticEventProcessor();
-        for (StatisticsReportingEvent event : eventHolder.getEventList()) {
-            event.processEvents(eventProcessor);
-        }
+//        eventProcessor = new StatisticEventProcessor();
+//        for (StatisticsReportingEvent event : eventHolder.getEventList()) {
+//            event.processEvents(eventProcessor);
+//        }
     }
 }

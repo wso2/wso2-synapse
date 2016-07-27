@@ -409,6 +409,10 @@ public class StatisticsEntry {
 		if (closedIndex > -1) {
 			do {
 				StatisticsLog updatingLog = messageFlowLogs.get(closedIndex);
+                if (updatingLog == null) {
+                    int mm = 0;
+                    log.info(closedIndex);
+                }
 				updatingLog.setEndTime(endTime);
 				closedIndex = updatingLog.getParentIndex();
 			} while (closedIndex > StatisticsConstants.DEFAULT_PARENT_INDEX);

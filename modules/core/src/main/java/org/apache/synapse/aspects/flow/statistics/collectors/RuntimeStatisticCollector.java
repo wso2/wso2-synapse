@@ -22,12 +22,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsProcessorPool;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
-import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
-import org.apache.synapse.aspects.flow.statistics.store.StoreProcessor;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -65,7 +62,7 @@ public abstract class RuntimeStatisticCollector {
 	 * Statistic event queue to hold statistic events.
 	 */
 //	protected static MessageDataStore statisticEventQueue;
-	protected static MessageDataStore statisticEventQueue2;
+//	protected static MessageDataStore statisticEventQueue2;
 
 	public static long eventExpireTime;
 
@@ -113,7 +110,7 @@ public abstract class RuntimeStatisticCollector {
 //				}
 //			});
 //			executor.scheduleAtFixedRate(statisticEventQueue, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
-            statisticEventQueue2 = new MessageDataStore(queueSize);
+//            statisticEventQueue2 = new MessageDataStore(queueSize);
             //Thread to consume queue and update data structures for publishing
 //			ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 //				public Thread newThread(Runnable r) {
@@ -123,9 +120,9 @@ public abstract class RuntimeStatisticCollector {
 //				}
 //			});
 //			executor.scheduleAtFixedRate(statisticEventQueue2, 0, eventConsumerTime, TimeUnit.MILLISECONDS);
-            for (int i = 0; i < 100; i++) {
-                StatisticsProcessorPool.getInstance().execute(new StoreProcessor(statisticEventQueue2, "StatProcessorThread-" + i));
-            }
+//            for (int i = 0; i < 100; i++) {
+//                StatisticsProcessorPool.getInstance().execute(new StoreProcessor(statisticEventQueue2, "StatProcessorThread-" + i));
+//            }
 
 			eventExpireTime =
 					SynapseConfigUtils.getGlobalTimeoutInterval() + SynapseConfigUtils.getTimeoutHandlerInterval() +
@@ -241,7 +238,7 @@ public abstract class RuntimeStatisticCollector {
 	public static void stopConsumer() {
 		if (isStatisticsEnabled) {
 //			statisticEventQueue.setStopped();
-			statisticEventQueue2.setStopped();
+//			statisticEventQueue2.setStopped();
 		}
 	}
 
@@ -254,10 +251,11 @@ public abstract class RuntimeStatisticCollector {
 
         eventHolder.addEvent(event);
 
-        eventHolder.countHolder.incrementAndGetStatCount();
+        eventHolder.countHolder.incrementStatCount();
+
     }
 
-    protected static int addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
+    protected static void addEventAndDecrementCount(MessageContext messageContext, StatisticsReportingEvent event) {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if(eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
@@ -265,7 +263,10 @@ public abstract class RuntimeStatisticCollector {
         }
         eventHolder.addEvent(event);
 
-        return eventHolder.countHolder.decrementAndGetStatCount();
+        eventHolder.countHolder.decrementStatCount();
+        if (eventHolder.countHolder.getStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
+            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+        }
     }
 
 
@@ -278,10 +279,10 @@ public abstract class RuntimeStatisticCollector {
 
         eventHolder.addEvent(event);
 
-        eventHolder.countHolder.incrementAndGetCallBackCount();
+        eventHolder.countHolder.incrementCallBackCount();
     }
 
-    protected static int addEventAndDecrementCallbackCount(MessageContext messageContext, StatisticsReportingEvent event) {
+    protected static void addEventAndDecrementCallbackCount(MessageContext messageContext, StatisticsReportingEvent event) {
         StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
         if(eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
@@ -290,6 +291,19 @@ public abstract class RuntimeStatisticCollector {
 
         eventHolder.addEvent(event);
 
-        return eventHolder.countHolder.decrementAndGetCallBackCount();
+        eventHolder.countHolder.decrementCallbackCount();
+        if (eventHolder.countHolder.getStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
+            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+        }
+    }
+
+    protected static void addEvent(MessageContext messageContext, StatisticsReportingEvent event) {
+        StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder) messageContext.getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
+        if(eventHolder == null) {
+            eventHolder = new StatisticsReportingEventHolder();
+            messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
+        }
+
+        eventHolder.addEvent(event);
     }
 }

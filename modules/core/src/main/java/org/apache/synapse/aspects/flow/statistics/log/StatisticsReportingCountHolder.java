@@ -25,28 +25,24 @@ public class StatisticsReportingCountHolder {
 
     private int callBackCount = 0;
 
-    public int incrementAndGetStatCount() {
+    public void incrementStatCount() {
         this.statCount += 1;
-        return this.statCount;
     }
 
-    public int decrementAndGetStatCount() {
+    public void decrementStatCount() {
         this.statCount -= 1;
-        return this.statCount;
     }
 
     public int getStatCount() {
         return this.statCount;
     }
 
-    public int incrementAndGetCallBackCount() {
+    public void incrementCallBackCount() {
         this.callBackCount += 1;
-        return this.callBackCount;
     }
 
-    public int decrementAndGetCallBackCount() {
+    public void decrementCallbackCount() {
         this.callBackCount -= 1;
-        return this.callBackCount;
     }
 
     public int getCallBackCount() {

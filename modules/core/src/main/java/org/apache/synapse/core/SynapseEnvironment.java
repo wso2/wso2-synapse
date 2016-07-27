@@ -25,6 +25,7 @@ import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsObservable;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.debug.SynapseDebugManager;
@@ -111,6 +112,8 @@ public interface SynapseEnvironment {
      * @return completedStatisticStore for this synapse instance
      */
     public CompletedStatisticStore getCompletedStatisticStore();
+
+    public MessageDataStore getMessageDataStore();
 
     /**
      * Method to get statisticsObservable object

@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -68,15 +69,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-            if (addEventAndDecrementCount(messageContext, closeEvent) <= 0) {
-                //todo use a thread to process messages
-                StatisticsReportingEventHolder eventHolder = (StatisticsReportingEventHolder)messageContext
-                        .getProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
-                statisticEventQueue2.enqueue(eventHolder);
-//                StatisticsProcessWorker2 eventProcessor = new StatisticsProcessWorker2(eventHolder);
-//                eventProcessor.start();
-//                StatisticsProcessorPool.getInstance().execute(eventProcessor);
-            }
+            addEventAndDecrementCount(messageContext, closeEvent);
 
 //			statisticEventQueue.enqueue(closeEvent);
 		}
@@ -97,6 +90,8 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
+            addEventAndDecrementCount(messageContext, endFlowEvent);
+
 //			statisticEventQueue.enqueue(endFlowEvent);
 		}
 	}
@@ -114,7 +109,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 								  Integer currentIndex, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering);
-			closeFlowForcefully(messageContext);
+//			closeFlowForcefully(messageContext);
 		}
 	}
 }

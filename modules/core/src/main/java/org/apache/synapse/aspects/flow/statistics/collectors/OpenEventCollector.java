@@ -232,6 +232,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
+            addEventAndIncrementCount(messageContext, asynchronousExecutionEvent);
 //			statisticEventQueue.enqueue(asynchronousExecutionEvent);
 		}
 	}

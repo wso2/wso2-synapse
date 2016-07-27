@@ -36,26 +36,25 @@ public class StoreProcessor implements Runnable {
     public StoreProcessor(MessageDataStore store, String threadName) {
         this.store = store;
         this.threadName = threadName;
-        super()
     }
 
     @Override
     public void run() {
-        StatisticsReportingEventHolder statisticsReportingEventHolder;
-        while (!store.isStopped()) {
-            try {
-                statisticsReportingEventHolder = store.dequeue();
-                if (statisticsReportingEventHolder != null) {
-                    StatisticEventProcessor eventProcessor2 = new StatisticEventProcessor();
-                    for (StatisticsReportingEvent event : statisticsReportingEventHolder.getEventList()) {
-                        event.processEvents(eventProcessor2);
-                    }
-                } else {
-                    Thread.sleep(1);
-                }
-            } catch (Exception exception) {
-                log.error("Error in mediation flow statistic data consumer while consuming data", exception);
-            }
-        }
+//        StatisticsReportingEventHolder statisticsReportingEventHolder;
+//        while (!store.isStopped()) {
+//            try {
+//                statisticsReportingEventHolder = store.dequeue();
+//                if (statisticsReportingEventHolder != null) {
+//                    StatisticEventProcessor eventProcessor2 = new StatisticEventProcessor();
+//                    for (StatisticsReportingEvent event : statisticsReportingEventHolder.getEventList()) {
+//                        event.processEvents(eventProcessor2);
+//                    }
+//                } else {
+//                    Thread.sleep(1);
+//                }
+//            } catch (Exception exception) {
+//                log.error("Error in mediation flow statistic data consumer while consuming data", exception);
+//            }
+//        }
     }
 }

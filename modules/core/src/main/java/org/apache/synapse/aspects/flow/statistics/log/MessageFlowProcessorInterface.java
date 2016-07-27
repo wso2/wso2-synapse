@@ -5,9 +5,10 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 
 /**
- * Created by rajith on 7/20/16.
+ * This is the interface which contains methods required for message flow processor which will be implemented in
+ * mediation layer
  */
-public interface StatisticEventProcessorInterface {
+public interface MessageFlowProcessorInterface {
 
     void openStatisticEntry(StatisticDataUnit statisticDataUnit);
 
