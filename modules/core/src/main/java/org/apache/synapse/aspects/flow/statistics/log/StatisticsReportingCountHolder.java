@@ -17,36 +17,46 @@
 */
 package org.apache.synapse.aspects.flow.statistics.log;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Created by rajith on 7/15/16.
  */
 public class StatisticsReportingCountHolder {
-    private int statCount = 0;
+    private AtomicInteger statCount = new AtomicInteger(0);
+    private AtomicInteger callBackCount = new AtomicInteger(0);
+//    private int statCount = 0;
 
-    private int callBackCount = 0;
+//    private int callBackCount = 0;
 
     public void incrementStatCount() {
-        this.statCount += 1;
+        this.statCount.incrementAndGet();
+//        this.statCount += 1;
     }
 
-    public void decrementStatCount() {
-        this.statCount -= 1;
+    public int decrementAndGetStatCount() {
+        return this.statCount.decrementAndGet();
+//        this.statCount -= 1;
     }
 
     public int getStatCount() {
-        return this.statCount;
+        return this.statCount.get();
+//        return this.statCount;
     }
 
     public void incrementCallBackCount() {
-        this.callBackCount += 1;
+        this.callBackCount.incrementAndGet();
+//        this.callBackCount += 1;
     }
 
-    public void decrementCallbackCount() {
-        this.callBackCount -= 1;
+    public int decrementAndGetCallbackCount() {
+        return this.callBackCount.decrementAndGet();
+//        this.callBackCount -= 1;
     }
 
     public int getCallBackCount() {
-        return this.callBackCount;
+        return this.callBackCount.get();
+//        return this.callBackCount;
     }
 
 }

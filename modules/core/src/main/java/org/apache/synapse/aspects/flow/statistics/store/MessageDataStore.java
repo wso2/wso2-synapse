@@ -62,7 +62,7 @@ public class MessageDataStore {
     public void enqueue(StatisticsReportingEventHolder statisticsReportingEventHolder) {
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Adding event: " + statisticsReportingEventHolder.getEventList());
+                log.debug("Adding eventHolder: " + statisticsReportingEventHolder);
             }
             queue.add(statisticsReportingEventHolder);
         } catch (Exception e) {

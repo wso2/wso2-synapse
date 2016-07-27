@@ -263,10 +263,15 @@ public abstract class RuntimeStatisticCollector {
         }
         eventHolder.addEvent(event);
 
-        eventHolder.countHolder.decrementStatCount();
-        if (eventHolder.countHolder.getStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
+//        eventHolder.countHolder.decrementStatCount();
+		log.info("Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
+				.countHolder.getCallBackCount());
+        if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
             messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+			//log.info("Event Size is: " +eventHolder.getEventList().size());
         }
+		log.info(">>Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
+				.countHolder.getCallBackCount());
     }
 
 
@@ -291,10 +296,15 @@ public abstract class RuntimeStatisticCollector {
 
         eventHolder.addEvent(event);
 
-        eventHolder.countHolder.decrementCallbackCount();
-        if (eventHolder.countHolder.getStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
-            messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+//        eventHolder.countHolder.decrementCallbackCount();
+		log.info("Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
+				.countHolder.getCallBackCount());
+		if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
+			messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
+			//log.info("Event Size is: " +eventHolder.getEventList().size());
         }
+		log.info(">>Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
+				.countHolder.getCallBackCount());
     }
 
     protected static void addEvent(MessageContext messageContext, StatisticsReportingEvent event) {

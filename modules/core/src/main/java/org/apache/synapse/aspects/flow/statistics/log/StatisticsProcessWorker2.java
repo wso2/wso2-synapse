@@ -22,18 +22,18 @@ package org.apache.synapse.aspects.flow.statistics.log;
  */
 public class StatisticsProcessWorker2 extends Thread {
 
-    private StatisticsReportingEventHolder eventHolder;
-    private StatisticEventProcessor eventProcessor;
-
-    public StatisticsProcessWorker2(StatisticsReportingEventHolder eventHolder) {
-        this.eventHolder = eventHolder;
-    }
-
-    @Override
-    public void run() {
-        eventProcessor = new StatisticEventProcessor();
-        for (StatisticsReportingEvent event : eventHolder.getEventList()) {
-            event.process();
-        }
-    }
+//    private StatisticsReportingEventHolder eventHolder;
+//    private StatisticEventProcessor eventProcessor;
+//
+//    public StatisticsProcessWorker2(StatisticsReportingEventHolder eventHolder) {
+//        this.eventHolder = eventHolder;
+//    }
+//
+//    @Override
+//    public void run() {
+//        eventProcessor = new StatisticEventProcessor();
+//        for (StatisticsReportingEvent event : eventHolder.getEventList()) {
+//            event.process();
+//        }
+//    }
 }

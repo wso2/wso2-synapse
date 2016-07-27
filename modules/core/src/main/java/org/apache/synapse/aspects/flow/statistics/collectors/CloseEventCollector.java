@@ -21,6 +21,7 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
@@ -69,7 +70,13 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-            addEventAndDecrementCount(messageContext, closeEvent);
+			log.info("closeEvent Name: "+statisticDataUnit.getComponentName());
+			if(currentIndex == null){
+				addEvent(messageContext, closeEvent);
+			}else {
+				addEventAndDecrementCount(messageContext, closeEvent);
+			}
+
 
 //			statisticEventQueue.enqueue(closeEvent);
 		}
@@ -90,6 +97,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
+			log.info("closeFlowForcefully Name: "+dataUnit.getStatisticId());
             addEventAndDecrementCount(messageContext, endFlowEvent);
 
 //			statisticEventQueue.enqueue(endFlowEvent);

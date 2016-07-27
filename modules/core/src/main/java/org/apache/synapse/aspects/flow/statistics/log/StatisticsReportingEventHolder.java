@@ -20,24 +20,37 @@ package org.apache.synapse.aspects.flow.statistics.log;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by rajith on 7/15/16.
  */
 public class StatisticsReportingEventHolder {
-    private List<StatisticsReportingEvent> eventList;
+    private Queue<StatisticsReportingEvent> eventQueue;
+//    private List<StatisticsReportingEvent> eventList;
     public StatisticsReportingCountHolder countHolder;
 
     public StatisticsReportingEventHolder() {
-        eventList = new LinkedList<StatisticsReportingEvent>();
+        eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
+//        eventList = new LinkedList<StatisticsReportingEvent>();
         countHolder = new StatisticsReportingCountHolder();
     }
 
     public void addEvent(StatisticsReportingEvent event) {
-        this.eventList.add(event);
+        this.eventQueue.add(event);
+//        this.eventList.add(event);
     }
 
-    public List<StatisticsReportingEvent> getEventList() {
-        return this.eventList;
+//    public List<StatisticsReportingEvent> getEventList() {
+//        return this.eventList;
+//    }
+
+    public StatisticsReportingEvent deQueueEvent() {
+        return eventQueue.poll();
+    }
+
+    public int getQueueSize() {
+        return this.eventQueue.size();
     }
 }

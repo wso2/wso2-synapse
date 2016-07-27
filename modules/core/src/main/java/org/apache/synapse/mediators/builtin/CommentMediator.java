@@ -18,6 +18,8 @@ package org.apache.synapse.mediators.builtin;
 
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.mediators.AbstractMediator;
 
@@ -77,5 +79,10 @@ public class CommentMediator extends AbstractMediator {
     public Integer reportOpenStatistics(MessageContext synCtx, boolean isContentAltering) {
         //Do not report statistic for comment mediator
         return null;
+    }
+
+    @Override
+    public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
+        //Do not report statistic for comment mediator
     }
 }

@@ -273,12 +273,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-            if (isStatisticsEnabled) {
-                statisticReportingIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getResourceName(synCtx, name),
-                        ComponentType.RESOURCE, getAspectConfiguration(), true);
-            }
-        } else {
-            statisticReportingIndex = null;
+        }
+        if (isStatisticsEnabled) {
+            statisticReportingIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getResourceName(synCtx, name),
+                    ComponentType.RESOURCE, getAspectConfiguration(), true);
         }
 
         if (log.isDebugEnabled()) {
