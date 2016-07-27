@@ -55,8 +55,9 @@ public class StatisticIdentityGenerator {
     }
 
     public static String getIdReferencingComponent(String name, ComponentType componentType, ArtifactHolder holder) {
-        String idString = name + "@0:" + name;
-        holder.setId(holder.getId()+1);
+        String idString = name + "@" + holder.getIdString() + ":" + name + "@indirect";
+//        String idString = name + "@0:" + name;
+//        holder.setId(holder.getId()+1);
         holder.setHashCode(holder.getHashCode() + idString.hashCode());
         if (log.isDebugEnabled()) {
             log.debug("Adding Referencing Component  : " + idString);
