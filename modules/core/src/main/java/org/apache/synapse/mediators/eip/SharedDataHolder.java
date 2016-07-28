@@ -18,8 +18,11 @@
 
 package org.apache.synapse.mediators.eip;
 
-
-public class EIPDataHolder {
+/**
+ * This class is used to hold the shared data for a particular message set
+ * For an example we can use this to share some data across all the spawned spilt messages in iterate mediator
+ */
+public class SharedDataHolder {
 
     private boolean isTimeoutOccurred = false;
 
