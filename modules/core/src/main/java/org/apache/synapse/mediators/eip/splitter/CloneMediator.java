@@ -26,7 +26,6 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -42,6 +41,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
 import org.apache.synapse.util.MessageHelper;
@@ -99,6 +99,9 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                           EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
 
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
