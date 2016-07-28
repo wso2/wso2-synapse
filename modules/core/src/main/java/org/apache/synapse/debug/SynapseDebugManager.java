@@ -71,6 +71,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class SynapseDebugManager implements Observer {
     private static final java.lang.String METHOD_ARRAY_SEPERATOR = ",";
+    private static final String EMPTY_STRING = "";
     /* to ensure a single mediation flow at a given time */
     private static volatile ReentrantLock mediationFlowLock;
     /* to ensure a synchronization between mediation flow suspension and resumption */
@@ -1223,7 +1224,7 @@ public class SynapseDebugManager implements Observer {
                                 && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
                     org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-                    axis2MessageCtx.getOptions().setProperty(propertyKey, null);
+                    axis2MessageCtx.getOptions().setProperty(propertyKey,EMPTY_STRING);
                 } else if (propertyContext.equals(SynapseDebugCommandConstants.DEBUG_COMMAND_PROPERTY_CONTEXT_TRANSPORT)
                         && synCtx instanceof Axis2MessageContext) {
                     Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
