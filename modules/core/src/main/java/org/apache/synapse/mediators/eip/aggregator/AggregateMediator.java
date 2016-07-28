@@ -29,7 +29,6 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -45,6 +44,7 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.MessageHelper;
@@ -218,6 +218,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                                 + (completionTimeoutMillis / 1000) + "secs" :
                                                 "without expiry time"));
                             }
+                            if (isAlreadyTimedOut(synCtx)) {
+                                return false;
+                            }
 
                             Double minMsg = Double.parseDouble(minMessagesToComplete.evaluateValue(synCtx));
                             Double maxMsg = Double.parseDouble(maxMessagesToComplete.evaluateValue(synCtx));
@@ -267,6 +270,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                             (completionTimeoutMillis > 0 ? "expires in : "
                                                     + (completionTimeoutMillis / 1000) + "secs" :
                                                     "without expiry time"));
+                                }
+
+                                if (isAlreadyTimedOut(synCtx)) {
+                                    return false;
                                 }
 
                                 Double minMsg = -1.0;
@@ -353,6 +360,27 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         return false;
     }
 
+    /*
+     * Check whether aggregate is already timed-out and we are receiving a message after the timeout interval
+     */
+    private boolean isAlreadyTimedOut(MessageContext synCtx) {
+
+        Object aggregateTimeoutHolderObj =
+                synCtx.getProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                                   EIPConstants.EIP_SHARED_DATA_HOLDER);
+
+        if (aggregateTimeoutHolderObj != null) {
+            SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
+            if (sharedDataHolder.isTimeoutOccurred()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Received a response for already timed-out Aggregate");
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean mediate(MessageContext synCtx,
                            ContinuationState contState) {
         SynapseLog synLog = getLog(synCtx);
@@ -405,6 +433,18 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             if (!aggregate.isCompleted()) {
                 aggregate.cancel();
                 aggregate.setCompleted(true);
+
+                MessageContext lastMessage = aggregate.getLastMessage();
+                if (lastMessage != null) {
+                    Object aggregateTimeoutHolderObj =
+                            lastMessage.getProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                                                    EIPConstants.EIP_SHARED_DATA_HOLDER);
+
+                    if (aggregateTimeoutHolderObj != null) {
+                        SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
+                        sharedDataHolder.markTimeoutState();
+                    }
+                }
                 markedCompletedNow = true;
             }
         }

@@ -30,7 +30,6 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -46,6 +45,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.mediators.eip.Target;
@@ -121,6 +121,9 @@ public class IterateMediator extends AbstractMediator implements ManagedLifecycl
             // this original message can go in further mediations and hence we should not change
             // the original message context
             SOAPEnvelope envelope = MessageHelper.cloneSOAPEnvelope(synCtx.getEnvelope());
+
+            synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                               EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
 
             // get the iteration elements and iterate through the list,
             // this call will also detach all the iteration elements
