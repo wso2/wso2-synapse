@@ -70,7 +70,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-			log.info("closeEvent Name: "+statisticDataUnit.getComponentName());
+//			log.info("closeEvent Name: "+statisticDataUnit.getComponentName());
 			if(currentIndex == null){
 				addEvent(messageContext, closeEvent);
 			}else {
@@ -95,9 +95,10 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
+            log.info("*********** aggregate current index - " + dataUnit.getCurrentIndex());
 
 			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
-			log.info("closeFlowForcefully Name: "+dataUnit.getStatisticId());
+//			log.info("closeFlowForcefully Name: "+dataUnit.getStatisticId());
             addEventAndDecrementCount(messageContext, endFlowEvent);
 
 //			statisticEventQueue.enqueue(endFlowEvent);

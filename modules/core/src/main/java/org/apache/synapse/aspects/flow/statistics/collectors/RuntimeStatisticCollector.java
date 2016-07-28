@@ -139,25 +139,6 @@ public abstract class RuntimeStatisticCollector {
 	}
 
 	/**
-	 * Add event in to the event queue. This event will inform statistic collection to put all the flow continuable
-	 * mediators before the index specified by current Index to open state.
-	 *
-	 * @param synCtx synapse message context.
-	 */
-	public static void openContinuationEvents(MessageContext synCtx) {
-		if (shouldReportStatistic(synCtx)) {
-			BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
-
-			basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
-			basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
-
-			ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
-//            addEventAndIncrementCount(synCtx, parentReopenEvent);
-//			statisticEventQueue.enqueue(parentReopenEvent);
-		}
-	}
-
-	/**
 	 * Set message Id of the message context as statistic trace Id at the beginning of the statistic flow.
 	 *
 	 * @param msgCtx synapse message context.
@@ -264,14 +245,14 @@ public abstract class RuntimeStatisticCollector {
         eventHolder.addEvent(event);
 
 //        eventHolder.countHolder.decrementStatCount();
-		log.info("Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
-				.countHolder.getCallBackCount());
+//		log.info("Mediator Count:" + eventHolder.countHolder.getStatCount() + "||Callback Count: " + eventHolder
+//                .countHolder.getCallBackCount());
         if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
             messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
 			//log.info("Event Size is: " +eventHolder.getEventList().size());
         }
-		log.info(">>Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
-				.countHolder.getCallBackCount());
+//		log.info(">>Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
+//				.countHolder.getCallBackCount());
     }
 
 
@@ -297,14 +278,14 @@ public abstract class RuntimeStatisticCollector {
         eventHolder.addEvent(event);
 
 //        eventHolder.countHolder.decrementCallbackCount();
-		log.info("Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
-				.countHolder.getCallBackCount());
+//		log.info("Mediator Count:" + eventHolder.countHolder.getStatCount() + "||Callback Count: " + eventHolder
+//                .countHolder.getCallBackCount());
 		if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
 			messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
 			//log.info("Event Size is: " +eventHolder.getEventList().size());
         }
-		log.info(">>Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
-				.countHolder.getCallBackCount());
+//		log.info(">>Mediator Count:"+ eventHolder.countHolder.getStatCount()+"||Callback Count: "+eventHolder
+//				.countHolder.getCallBackCount());
     }
 
     protected static void addEvent(MessageContext messageContext, StatisticsReportingEvent event) {

@@ -27,6 +27,7 @@ import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUni
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -105,7 +106,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
-			log.info("openEvent Name: "+statisticDataUnit.getComponentId());
+//			log.info("openEvent Name: "+statisticDataUnit.getComponentId());
 //			statisticEventQueue.enqueue(openEvent);
 
 			return statisticDataUnit.getCurrentIndex();
@@ -133,7 +134,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-			log.info("reportChildEntryEvent Name: "+statisticDataUnit.getComponentId());
+//			log.info("reportChildEntryEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -161,7 +162,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowContinuableMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-			log.info("reportFlowContinuableEvent Name: "+statisticDataUnit.getComponentId());
+//			log.info("reportFlowContinuableEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -190,7 +191,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowSplittingMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-			log.info("reportFlowSplittingEvent Name: "+statisticDataUnit.getComponentId());
+//			log.info("reportFlowSplittingEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -219,7 +220,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowAggregateMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-			log.info("reportFlowAggregateEvent Name: "+statisticDataUnit.getComponentId());
+//			log.info("reportFlowAggregateEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -264,4 +265,23 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
         addEventAndIncrementCount(messageContext, openEvent);
 //		statisticEventQueue.enqueue(openEvent);
 	}
+
+    /**
+     * Add event in to the event queue. This event will inform statistic collection to put all the flow continuable
+     * mediators before the index specified by current Index to open state.
+     *
+     * @param synCtx synapse message context.
+     */
+    public static void openContinuationEvents(MessageContext synCtx) {
+        if (shouldReportStatistic(synCtx)) {
+            BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
+
+            basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
+            basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
+
+            ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
+            addEvent(synCtx, parentReopenEvent);
+//			statisticEventQueue.enqueue(parentReopenEvent);
+        }
+    }
 }

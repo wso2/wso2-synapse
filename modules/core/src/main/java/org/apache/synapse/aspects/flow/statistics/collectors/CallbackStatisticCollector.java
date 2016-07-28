@@ -70,7 +70,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
 
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
-			log.info("Callback decrement");
+//			log.info("Callback decrement");
             addEventAndDecrementCallbackCount(oldMessageContext, callbackCompletionEvent);
 
 //			statisticEventQueue.enqueue(callbackCompletionEvent);
@@ -116,7 +116,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synapseOutMsgCtx, null));
 
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
-			log.info("Callback decrement");
+//			log.info("Callback decrement");
             addEventAndDecrementCallbackCount(synapseOutMsgCtx, callbackHandledEvent);
 
 //			statisticEventQueue.enqueue(callbackHandledEvent);

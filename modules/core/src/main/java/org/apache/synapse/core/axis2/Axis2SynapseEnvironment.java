@@ -766,7 +766,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
 
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-            RuntimeStatisticCollector.openContinuationEvents(synCtx);
+            OpenEventCollector.openContinuationEvents(synCtx);
         }
         boolean result;
         do {
