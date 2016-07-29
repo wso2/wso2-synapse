@@ -334,6 +334,9 @@ public class SourceResponse {
     private boolean canResponseHaveContentLength(MessageContext responseMsgContext) {
         Object httpStatus = responseMsgContext.getProperty(PassThroughConstants.HTTP_SC);
         int status;
+        if (httpStatus == null || httpStatus.toString().equals("")) {
+            return false;
+        }
         if (httpStatus instanceof String) {
             status = Integer.parseInt((String)httpStatus);
         } else {
