@@ -25,6 +25,7 @@ import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.NHttpServerEventHandler;
 import org.apache.http.nio.entity.ContentOutputStream;
+import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.util.ContentOutputBuffer;
 import org.apache.http.nio.util.HeapByteBufferAllocator;
 import org.apache.http.nio.util.SimpleOutputBuffer;
@@ -325,21 +326,23 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             informReaderError(conn);
             isTimeoutOccurred = true;
-            log.warn(((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress() +
-                    " :Connection time out after " + PassThroughConstants.HTTP_SOCKET_TIMEOUT + " : " +
-                    conn.getSocketTimeout() +  " while reading the request: ");
+
+            log.warn("Connection time out while reading the request: " + conn +
+                     " Socket Timeout : " + conn.getSocketTimeout() +
+                     getConnectionLoggingInfo(conn));
+
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
             informWriterError(conn);
             isTimeoutOccurred = true;
-            log.warn(((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress() +
-                    " :Connection time out after " + PassThroughConstants.HTTP_SOCKET_TIMEOUT + " : " +
-                    conn.getSocketTimeout() +  " while writing the response: ");
+            log.warn("Connection time out while writing the response: " + conn +
+                     " Socket Timeout : " + conn.getSocketTimeout() +
+                     getConnectionLoggingInfo(conn));
         } else if (state == ProtocolState.REQUEST_DONE){
         	isTimeoutOccurred = true;
-            log.warn(((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress() +
-                    " :Connection time out after " + PassThroughConstants.HTTP_SOCKET_TIMEOUT + " : " +
-                    conn.getSocketTimeout() +  " after request is read: ");
+            log.warn("Connection time out after request is read: " + conn +
+                     " Socket Timeout : " + conn.getSocketTimeout() +
+                     getConnectionLoggingInfo(conn));
         }
 
         SourceContext.updateState(conn, ProtocolState.CLOSED);
@@ -356,24 +359,21 @@ public class SourceHandler implements NHttpServerEventHandler {
         if (state == ProtocolState.REQUEST_READY || state == ProtocolState.RESPONSE_DONE) {
             if (log.isDebugEnabled()) {
                 log.debug(conn + ": Keep-Alive connection was closed: " +
-                        ((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress());
+                          getConnectionLoggingInfo(conn));
             }
         } else if (state == ProtocolState.REQUEST_BODY ||
                 state == ProtocolState.REQUEST_HEAD) {
         	isFault = true;
             informReaderError(conn);
-            log.warn(((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress() +
-                    " :Connection closed while reading the request: ");
+            log.warn("Connection closed while reading the request: " + conn + getConnectionLoggingInfo(conn));
         } else if (state == ProtocolState.RESPONSE_BODY ||
                 state == ProtocolState.RESPONSE_HEAD) {
         	isFault = true;
             informWriterError(conn);
-            log.warn(((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress() +
-                    " :Connection closed while writing the response: ");
+            log.warn("Connection closed while writing the response: " + conn + getConnectionLoggingInfo(conn));
         } else if (state == ProtocolState.REQUEST_DONE) {
         	isFault = true;
-            log.warn(((LoggingNHttpServerConnection) conn).getIOSession().getRemoteAddress() +
-                    " :Connection closed by the client after request is read: ");
+            log.warn("Connection closed by the client after request is read: " + conn + getConnectionLoggingInfo(conn));
         }
 
         metrics.disconnected();
@@ -596,4 +596,14 @@ public class SourceHandler implements NHttpServerEventHandler {
 					+ ex.getMessage() + conn);
 		}
 	}
+
+	private String getConnectionLoggingInfo(NHttpServerConnection conn) {
+        if (conn instanceof LoggingNHttpServerConnection) {
+            IOSession session = ((LoggingNHttpServerConnection) conn).getIOSession();
+            if (session != null) {
+                return " Remote Address : " + session.getRemoteAddress();
+            }
+        }
+	    return "";
+    }
 }
