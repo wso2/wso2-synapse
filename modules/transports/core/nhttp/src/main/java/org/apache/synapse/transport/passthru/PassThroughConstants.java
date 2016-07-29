@@ -201,6 +201,7 @@ public class PassThroughConstants {
     public static final String HTTP_DELETE = "DELETE";
     public static final String HTTP_PUT = "PUT";
     public static final String HTTP_OPTIONS = "OPTIONS";
+    public static final String HTTP_CONNECT = "CONNECT";
 
     //Constant to specify the socket timeout
     public static final String HTTP_SOCKET_TIMEOUT = "HTTP_SOCKET_TIMEOUT";
