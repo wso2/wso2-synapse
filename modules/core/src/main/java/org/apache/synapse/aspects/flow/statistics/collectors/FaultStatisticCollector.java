@@ -48,7 +48,6 @@ public class FaultStatisticCollector extends RuntimeStatisticCollector {
 
 				FaultEvent faultEvent = new FaultEvent(dataUnit);
                 addEventAndIncrementCount(messageContext, faultEvent);
-//				statisticEventQueue.enqueue(faultEvent);
 			}
 		}
 	}

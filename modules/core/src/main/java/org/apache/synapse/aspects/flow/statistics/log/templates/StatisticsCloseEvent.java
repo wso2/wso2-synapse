@@ -20,10 +20,6 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.MessageFlowProcessorInterface;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
  * Event to close opened statistic log.
@@ -36,16 +32,6 @@ public class StatisticsCloseEvent extends AbstractStatisticEvent {
 		this.statisticDataUnit = statisticDataUnit;
 		this.eventType = EventType.STATISTICS_CLOSE_EVENT;
 	}
-
-	@Override
-	public void process() {
-		StatisticEventProcessor3.closeStatisticEntry(statisticDataUnit, StatisticsConstants.GRACEFULLY_CLOSE);
-	}
-
-    @Override
-    public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
-        messageFlowProcessor.closeStatisticEntry(statisticDataUnit, StatisticsConstants.GRACEFULLY_CLOSE);
-    }
 
 	@Override
 	public BasicStatisticDataUnit getDataUnit() {

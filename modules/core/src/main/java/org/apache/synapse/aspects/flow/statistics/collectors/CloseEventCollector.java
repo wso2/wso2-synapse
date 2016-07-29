@@ -70,15 +70,11 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-//			log.info("closeEvent Name: "+statisticDataUnit.getComponentName());
 			if(currentIndex == null){
 				addEvent(messageContext, closeEvent);
 			}else {
 				addEventAndDecrementCount(messageContext, closeEvent);
 			}
-
-
-//			statisticEventQueue.enqueue(closeEvent);
 		}
 	}
 
@@ -88,21 +84,21 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 *
 	 * @param messageContext synapse message context.
 	 */
-	public static void closeFlowForcefully(MessageContext messageContext) {
+	public static void closeFlowForcefully(MessageContext messageContext, boolean error) {
 		if (shouldReportStatistic(messageContext)) {
 			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 			dataUnit.setTime(System.currentTimeMillis());
 			dataUnit.setSynapseEnvironment(messageContext.getEnvironment());
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
-            log.info("*********** aggregate current index - " + dataUnit.getCurrentIndex());
 
-			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
-//			log.info("closeFlowForcefully Name: "+dataUnit.getStatisticId());
-            addEventAndDecrementCount(messageContext, endFlowEvent);
-
-//			statisticEventQueue.enqueue(endFlowEvent);
-		}
+            EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
+            if (!error) {
+                addEventAndDecrementCount(messageContext, endFlowEvent);
+            } else {
+                addEventAndCloseFlow(messageContext, endFlowEvent);
+            }
+        }
 	}
 
 	/**

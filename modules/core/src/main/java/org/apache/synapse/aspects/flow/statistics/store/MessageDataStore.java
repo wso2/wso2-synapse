@@ -32,30 +32,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class MessageDataStore {
 
     private static Log log = LogFactory.getLog(MessageDataStore.class);
-
-    public static MessageDataStore messageDataStore;
-
+    /**
+     * Queue which holds event holder objects with collected events.
+     */
     private Queue<StatisticsReportingEventHolder> queue;
 
     public MessageDataStore() {
         queue = new ConcurrentLinkedQueue<>();
     }
 
-//    public static MessageDataStore getInstance() {
-//        if (messageDataStore == null) {
-//            createMessageDataStore();
-//        }
-//        return messageDataStore;
-//    }
-//
-//    private synchronized static void createMessageDataStore() {
-//        if (messageDataStore == null) {
-//            messageDataStore = new MessageDataStore();
-//        }
-//    }
-
     /**
-     * Add StatisticReportingLog instance to the queue
+     * Add StatisticsReportingEventHolder instance to the queue
      *
      * @param statisticsReportingEventHolder StatisticReportingLog to be stored in the queue
      */
@@ -66,7 +53,7 @@ public class MessageDataStore {
             }
             queue.add(statisticsReportingEventHolder);
         } catch (Exception e) {
-            log.error("Statistics queue became full. Dropping statistics events.");
+            log.error("Error adding statistic event holder to the Queue. Dropping statistics events.");
         }
     }
 
@@ -77,7 +64,15 @@ public class MessageDataStore {
      * @throws Exception
      */
     public StatisticsReportingEventHolder dequeue() throws Exception {
-        return queue.poll();
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Polling statistics event holder object from the Queue");
+            }
+            return queue.poll();
+        } catch (Exception e) {
+            log.error("Error polling statistics event holder objects from Queue");
+            return null;
+        }
     }
 
 }

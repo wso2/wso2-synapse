@@ -44,8 +44,6 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsObservable;
-import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -99,16 +97,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private SynapseDebugManager synapseDebugManager;
 
-    /** The CompletedStatisticStore object*/
-    private CompletedStatisticStore completedStatisticStore = new CompletedStatisticStore();
-
     /** The MessageDataStore object*/
     private MessageDataStore messageDataStore = new MessageDataStore();
-
-    /**
-     * Observable Statistic object to be used tenantWise
-     */
-    private StatisticsObservable statisticsObservable = new StatisticsObservable();
 
     private ServerContextInformation contextInformation;
 
@@ -660,24 +650,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return this.synapseConfig;
     }
 
-    /**
-     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
-     * instance.
-     *
-     * @return completedStatisticStore for this synapse instance
-     */
-    public CompletedStatisticStore getCompletedStatisticStore() {
-        return completedStatisticStore;
-    }
-
     @Override
     public MessageDataStore getMessageDataStore() {
         return messageDataStore;
-    }
-
-    @Override
-    public StatisticsObservable getStatisticsObservable() {
-        return statisticsObservable;
     }
 
     /**

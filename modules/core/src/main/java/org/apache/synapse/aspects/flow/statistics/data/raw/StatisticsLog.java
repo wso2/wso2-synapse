@@ -60,7 +60,7 @@ public class StatisticsLog {
 	/**
 	 * endTime of the Event.
 	 */
-	private long endTime = -1;
+	private long endTime = 0;
 
 	/**
 	 * Is this component is a FlowContinuable Mediator.

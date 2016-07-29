@@ -23,8 +23,6 @@ import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsObservable;
-import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
@@ -106,21 +104,11 @@ public interface SynapseEnvironment {
     public OverflowBlob createOverflowBlob();
 
     /**
-     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
-     * instance.
+     * This method returns message data store which holds a queue of event holder objects.
      *
-     * @return completedStatisticStore for this synapse instance
+     * @return messageDataStore
      */
-    public CompletedStatisticStore getCompletedStatisticStore();
-
     public MessageDataStore getMessageDataStore();
-
-    /**
-     * Method to get statisticsObservable object
-     *
-     * @return statisticsObservable
-     */
-    public StatisticsObservable getStatisticsObservable();
 
     /**
      * This is used by anyone who needs access to a SynapseThreadPool.

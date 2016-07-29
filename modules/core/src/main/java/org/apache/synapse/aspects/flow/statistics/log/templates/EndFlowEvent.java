@@ -19,10 +19,6 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.MessageFlowProcessorInterface;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
 /**
  * End message-flow forcefully without considering open logs.
@@ -35,16 +31,6 @@ public class EndFlowEvent extends AbstractStatisticEvent {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
 		this.eventType = EventType.ENDFLOW_EVENT;
 	}
-
-	@Override
-	public void process() {
-		StatisticEventProcessor3.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
-	}
-
-    @Override
-    public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
-        messageFlowProcessor.closeStatisticEntry(basicStatisticDataUnit, StatisticsConstants.FORCEFULLY_CLOSE);
-    }
 
 	@Override
 	public BasicStatisticDataUnit getDataUnit() {

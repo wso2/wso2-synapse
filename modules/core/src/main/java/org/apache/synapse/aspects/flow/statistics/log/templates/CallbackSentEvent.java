@@ -20,9 +20,6 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.CallbackDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.MessageFlowProcessorInterface;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
  * Event to represent callback sending.
@@ -35,16 +32,6 @@ public class CallbackSentEvent extends AbstractStatisticEvent {
 		this.callbackDataUnit = callbackDataUnit;
 		this.eventType = EventType.CALLBACK_SENT_EVENT;
 	}
-
-	@Override
-	public void process() {
-		StatisticEventProcessor3.addCallbacks(callbackDataUnit);
-	}
-
-    @Override
-    public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
-        messageFlowProcessor.addCallbacks(callbackDataUnit);
-    }
 
 	@Override
 	public BasicStatisticDataUnit getDataUnit() {

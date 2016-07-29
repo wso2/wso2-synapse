@@ -19,9 +19,6 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.MessageFlowProcessorInterface;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
  * Event to represent fault occurred in the message flow.
@@ -34,16 +31,6 @@ public class FaultEvent extends AbstractStatisticEvent {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
 		this.eventType = EventType.FAULT_EVENT;
 	}
-
-	@Override
-	public void process() {
-		StatisticEventProcessor3.reportFault(basicStatisticDataUnit);
-	}
-
-    @Override
-    public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
-        messageFlowProcessor.reportFault(basicStatisticDataUnit);
-    }
 
 	@Override
 	public BasicStatisticDataUnit getDataUnit() {

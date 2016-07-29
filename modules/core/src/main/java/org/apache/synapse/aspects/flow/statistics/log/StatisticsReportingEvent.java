@@ -23,14 +23,17 @@ import org.apache.synapse.aspects.flow.statistics.log.templates.AbstractStatisti
 
 public interface StatisticsReportingEvent {
 
-	/**
-	 * Method that will call corresponding method in RuntimeStatisticCollector.
-	 */
-	void process();
-
-    void processEvents(MessageFlowProcessorInterface messageFlowProcessor);
-
+    /**
+     * Method to retrieve event type.
+     *
+     * @return eventType
+     */
 	AbstractStatisticEvent.EventType getEventType();
 
+    /**
+     * Method to get dataUnit object.
+     *
+     * @return dataUnit
+     */
 	BasicStatisticDataUnit getDataUnit();
 }

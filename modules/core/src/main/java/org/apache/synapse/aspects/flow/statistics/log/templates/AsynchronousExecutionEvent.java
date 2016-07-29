@@ -19,9 +19,6 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.MessageFlowProcessorInterface;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor3;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 public class AsynchronousExecutionEvent extends AbstractStatisticEvent {
 	private BasicStatisticDataUnit basicStatisticDataUnit;
@@ -30,16 +27,6 @@ public class AsynchronousExecutionEvent extends AbstractStatisticEvent {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
 		this.eventType = EventType.ASYNCHRONOUS_EXECUTION_EVENT;
 	}
-
-	@Override
-	public void process() {
-		StatisticEventProcessor3.reportAsynchronousExecution(basicStatisticDataUnit);
-	}
-
-    @Override
-    public void processEvents(MessageFlowProcessorInterface messageFlowProcessor) {
-        messageFlowProcessor.reportAsynchronousExecution(basicStatisticDataUnit);
-    }
 
 	@Override
 	public BasicStatisticDataUnit getDataUnit() {

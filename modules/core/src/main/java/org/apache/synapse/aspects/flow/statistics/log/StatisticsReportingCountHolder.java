@@ -20,43 +20,41 @@ package org.apache.synapse.aspects.flow.statistics.log;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Created by rajith on 7/15/16.
+ * This class is to hold stat count information(stat count, callback count) inside event holder.
  */
 public class StatisticsReportingCountHolder {
+    /**
+     * Which holds count of open events.
+     */
     private AtomicInteger statCount = new AtomicInteger(0);
-    private AtomicInteger callBackCount = new AtomicInteger(0);
-//    private int statCount = 0;
 
-//    private int callBackCount = 0;
+    /**
+     * Which holds count of call backs registered.
+     */
+    private AtomicInteger callBackCount = new AtomicInteger(0);
 
     public void incrementStatCount() {
         this.statCount.incrementAndGet();
-//        this.statCount += 1;
     }
 
     public int decrementAndGetStatCount() {
         return this.statCount.decrementAndGet();
-//        this.statCount -= 1;
     }
 
     public int getStatCount() {
         return this.statCount.get();
-//        return this.statCount;
     }
 
     public void incrementCallBackCount() {
         this.callBackCount.incrementAndGet();
-//        this.callBackCount += 1;
     }
 
     public int decrementAndGetCallbackCount() {
         return this.callBackCount.decrementAndGet();
-//        this.callBackCount -= 1;
     }
 
     public int getCallBackCount() {
         return this.callBackCount.get();
-//        return this.callBackCount;
     }
 
 }

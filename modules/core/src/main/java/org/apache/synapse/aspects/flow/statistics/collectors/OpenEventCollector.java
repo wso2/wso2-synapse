@@ -106,9 +106,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
             addEventAndIncrementCount(messageContext, openEvent);
-//			log.info("openEvent Name: "+statisticDataUnit.getComponentId());
-//			statisticEventQueue.enqueue(openEvent);
-
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -134,7 +131,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataUnit statisticDataUnit = new StatisticDataUnit();
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-//			log.info("reportChildEntryEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -162,7 +158,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowContinuableMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-//			log.info("reportFlowContinuableEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -191,7 +186,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowSplittingMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-//			log.info("reportFlowSplittingEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -220,7 +214,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			statisticDataUnit.setFlowAggregateMediator(true);
 			reportMediatorStatistics(messageContext, componentName, componentType, isContentAltering, statisticDataUnit,
 			                         aspectConfiguration);
-//			log.info("reportFlowAggregateEvent Name: "+statisticDataUnit.getComponentId());
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -239,7 +232,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
             addEventAndIncrementCount(messageContext, asynchronousExecutionEvent);
-//			statisticEventQueue.enqueue(asynchronousExecutionEvent);
 		}
 	}
 
@@ -263,7 +255,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
         addEventAndIncrementCount(messageContext, openEvent);
-//		statisticEventQueue.enqueue(openEvent);
 	}
 
     /**
@@ -281,7 +272,6 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 
             ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
             addEvent(synCtx, parentReopenEvent);
-//			statisticEventQueue.enqueue(parentReopenEvent);
         }
     }
 }

@@ -3,7 +3,7 @@ package org.apache.synapse.aspects.flow.statistics.log.templates;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
- * Created by virajrs on 7/27/16.
+ * Abstract statistic event class to hold common properties.
  */
 public abstract class AbstractStatisticEvent implements StatisticsReportingEvent {
 
@@ -17,6 +17,9 @@ public abstract class AbstractStatisticEvent implements StatisticsReportingEvent
         this.eventType = eventType;
     }
 
+    /**
+     * Event type enum
+     */
     public enum EventType {
         ASYNCHRONOUS_EXECUTION_EVENT,
         CALLBACK_COMPLETION_EVENT,

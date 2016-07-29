@@ -24,27 +24,30 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Created by rajith on 7/15/16.
+ * This class is to hold events and stat count information before starting processing events.
  */
 public class StatisticsReportingEventHolder {
+    /**
+     * Queue to accumulate events, before processing happens.
+     */
     private Queue<StatisticsReportingEvent> eventQueue;
-//    private List<StatisticsReportingEvent> eventList;
+    /**
+     * Count holder which keeps stat count and callback counts.
+     */
     public StatisticsReportingCountHolder countHolder;
+
+    private boolean evenCollectionFinished = false;
+
+    private boolean messageFlowError = false;
 
     public StatisticsReportingEventHolder() {
         eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
-//        eventList = new LinkedList<StatisticsReportingEvent>();
         countHolder = new StatisticsReportingCountHolder();
     }
 
     public void addEvent(StatisticsReportingEvent event) {
         this.eventQueue.add(event);
-//        this.eventList.add(event);
     }
-
-//    public List<StatisticsReportingEvent> getEventList() {
-//        return this.eventList;
-//    }
 
     public StatisticsReportingEvent deQueueEvent() {
         return eventQueue.poll();
@@ -54,9 +57,23 @@ public class StatisticsReportingEventHolder {
         return new ArrayList<>(eventQueue);
     }
 
-
-
     public int getQueueSize() {
         return this.eventQueue.size();
+    }
+
+    public boolean isEvenCollectionFinished() {
+        return evenCollectionFinished;
+    }
+
+    public void setEvenCollectionFinished(boolean evenCollectionFinished) {
+        this.evenCollectionFinished = evenCollectionFinished;
+    }
+
+    public boolean isMessageFlowError() {
+        return messageFlowError;
+    }
+
+    public void setMessageFlowError(boolean messageFlowError) {
+        this.messageFlowError = messageFlowError;
     }
 }
