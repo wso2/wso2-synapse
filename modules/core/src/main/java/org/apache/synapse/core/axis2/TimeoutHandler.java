@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCo
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.ArrayList;
@@ -197,7 +198,10 @@ public class TimeoutHandler extends TimerTask {
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
                         log.warn("Expiring message ID : " + key + "; dropping message after " +
                                 callback.getTimeoutType().toString() +
-                                " of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
+                                " of : " + (callback.getTimeoutDuration() / 1000) +
+                                 " seconds for " + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                                                         callback.getAxis2OutMsgCtx()) +
+                                 ", " + getServiceLogMessage(callback.getSynapseOutMsgCtx())) ;
                     }
                     callbackStore.remove(key);
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
@@ -217,4 +221,30 @@ public class TimeoutHandler extends TimerTask {
     private long currentTime() {
         return System.currentTimeMillis();
     }
+
+
+    private String getEndpointLogMessage(MessageContext synCtx,
+                                                org.apache.axis2.context.MessageContext axisCtx) {
+        return synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) + ", URI : " + axisCtx.getTo().getAddress();
+    }
+
+    private String getServiceLogMessage(MessageContext synCtx) {
+        Object proxyName = synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+        if (proxyName != null) {
+            return "Received through Proxy service : " + proxyName;
+        }
+
+        Object apiName = synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
+        if (apiName != null) {
+            return "Received through API : " + apiName;
+        }
+
+        Object inboundEndpointName = synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
+        if (inboundEndpointName != null) {
+            return "Received through Inbound Endpoint : " + inboundEndpointName;
+        }
+        return "Received through an entry point other than a proxy, an api or an inbound endpoint ";
+    }
+
+
 }

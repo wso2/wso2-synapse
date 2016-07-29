@@ -490,16 +490,31 @@ public class Axis2FlexibleMEPClient {
                     callback.setTimeout(endpointTimeout);
                     callback.setTimeOutAction(endpoint.getTimeoutAction());
                     callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting Timeout for endpoint : " +
+                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                                  " to static timeout value : " + endpointTimeout);
+                    }
                 } else {
                     long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
                     callback.setTimeout(endpointTimeout);
                     callback.setTimeOutAction(endpoint.getTimeoutAction());
                     callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting Timeout for endpoint : " +
+                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                                  " to dynamic timeout value : " + endpointTimeout);
+                    }
                 }
             } else {
                 long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
                 callback.setTimeout(globalTimeout);
                 callback.setTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT);
+                if (log.isDebugEnabled()) {
+                    log.debug("Setting timeout for implicit endpoint : " +
+                              getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                              " to global timeout value of " + globalTimeout);
+                }
             }
 
         }
@@ -663,6 +678,11 @@ public class Axis2FlexibleMEPClient {
         }
         return isRestRequest;
     }
+
+    private static String getEndpointLogMessage(org.apache.synapse.MessageContext synCtx, MessageContext axisCtx) {
+        return synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) + ", URI : " + axisCtx.getTo().getAddress();
+    }
+
 }
 
 // if(Utils.isClientThreadNonBlockingPropertySet(axisOutMsgCtx) ){
