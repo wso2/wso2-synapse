@@ -79,6 +79,7 @@ public class TracingDataCollectionHelper {
 
 		// Remove message-flow-tracer properties
 		propertyMap.remove(SynapseConstants.STATISTICS_STACK);
+		propertyMap.remove(StatisticsConstants.STAT_COLLECTOR_PROPERTY);
 
 		return propertyMap;
 	}
@@ -161,6 +162,9 @@ public class TracingDataCollectionHelper {
 
 		for (int index = 0; index < messageFlowLogs.size(); index++) {
 			StatisticsLog currentStatLog = messageFlowLogs.get(index);
+            if (currentStatLog == null) {
+                continue;
+            }
 
 			// Add each event to Publishing Flow
 			publishingFlow.addEvent(new PublishingEvent(flowId, index, currentStatLog, entryPoint, entrypointHashcode));

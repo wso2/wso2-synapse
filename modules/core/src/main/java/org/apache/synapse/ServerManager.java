@@ -152,7 +152,6 @@ public class ServerManager {
         this.synapseController = null;
         this.serverContextInformation = null;
         this.serverConfigurationInformation = null;
-        RuntimeStatisticCollector.stopConsumer();
         this.initialized = false;
         return ServerState.UNDETERMINED;
     }

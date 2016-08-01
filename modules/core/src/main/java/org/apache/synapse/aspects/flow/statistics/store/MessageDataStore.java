@@ -20,80 +20,59 @@ package org.apache.synapse.aspects.flow.statistics.store;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * MessageDataCollector contains the non-blocking queue and utility methods to store and retrieve elements from the
  * queue.
  */
-public class MessageDataStore implements Runnable {
+public class MessageDataStore {
 
-	private static Log log = LogFactory.getLog(MessageDataStore.class);
+    private static Log log = LogFactory.getLog(MessageDataStore.class);
+    /**
+     * Queue which holds event holder objects with collected events.
+     */
+    private Queue<StatisticsReportingEventHolder> queue;
 
-	private BlockingQueue<StatisticsReportingEvent> queue;
+    public MessageDataStore() {
+        queue = new ConcurrentLinkedQueue<>();
+    }
 
-	public MessageDataStore(int queueSize) {
-		queue = new ArrayBlockingQueue<>(queueSize);
-	}
+    /**
+     * Add StatisticsReportingEventHolder instance to the queue
+     *
+     * @param statisticsReportingEventHolder StatisticReportingLog to be stored in the queue
+     */
+    public void enqueue(StatisticsReportingEventHolder statisticsReportingEventHolder) {
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Adding eventHolder: " + statisticsReportingEventHolder);
+            }
+            queue.add(statisticsReportingEventHolder);
+        } catch (Exception e) {
+            log.error("Error adding statistic event holder to the Queue. Dropping statistics events.");
+        }
+    }
 
-	/**
-	 * Add StatisticReportingLog instance to the queue
-	 *
-	 * @param statisticsReportingEvent StatisticReportingLog to be stored in the queue
-	 */
-	public void enqueue(StatisticsReportingEvent statisticsReportingEvent) {
-		try {
-			if (log.isDebugEnabled()) {
-				log.debug("Adding event: " + statisticsReportingEvent.toString());
-			}
-			queue.add(statisticsReportingEvent);
-		} catch (Exception e) {
-			log.error("Statistics queue became full. Dropping statistics events.");
-		}
-	}
+    /**
+     * Removes and return StatisticReportingLog from the queue
+     *
+     * @return StatisticReportingLog instance
+     * @throws Exception
+     */
+    public StatisticsReportingEventHolder dequeue() throws Exception {
+        try {
+            if (log.isDebugEnabled()) {
+                log.debug("Polling statistics event holder object from the Queue");
+            }
+            return queue.poll();
+        } catch (Exception e) {
+            log.error("Error polling statistics event holder objects from Queue");
+            return null;
+        }
+    }
 
-	/**
-	 * Removes and return StatisticReportingLog from the queue
-	 *
-	 * @return StatisticReportingLog instance
-	 * @throws Exception
-	 */
-	public StatisticsReportingEvent dequeue() throws Exception {
-		try {
-			return queue.take();
-		} catch (InterruptedException exception) {
-			String errorMsg = "Error consuming statistic data queue";
-			throw new Exception(errorMsg, exception);
-		}
-	}
-
-	/**
-	 * Checks whether the queue is empty
-	 *
-	 * @return Tru if empty/false otherwise
-	 */
-	public boolean isEmpty() {
-		return queue.isEmpty();
-	}
-
-	private boolean isStopped = false;
-
-	public void run() {
-		StatisticsReportingEvent statisticsReportingEvent;
-		while (!isStopped && !isEmpty()) {
-			try {
-				statisticsReportingEvent = dequeue();
-				statisticsReportingEvent.process();
-			} catch (Exception exception) {
-				log.error("Error in mediation flow statistic data consumer while consuming data", exception);
-			}
-		}
-	}
-
-	public void setStopped() {
-		this.isStopped = true;
-	}
 }

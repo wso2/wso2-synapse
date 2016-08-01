@@ -18,10 +18,22 @@
 
 package org.apache.synapse.aspects.flow.statistics.log;
 
+import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.templates.AbstractStatisticEvent;
+
 public interface StatisticsReportingEvent {
 
-	/**
-	 * Method that will call corresponding method in RuntimeStatisticCollector.
-	 */
-	void process();
+    /**
+     * Method to retrieve event type.
+     *
+     * @return eventType
+     */
+	AbstractStatisticEvent.EventType getEventType();
+
+    /**
+     * Method to get dataUnit object.
+     *
+     * @return dataUnit
+     */
+	BasicStatisticDataUnit getDataUnit();
 }

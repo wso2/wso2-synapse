@@ -47,7 +47,7 @@ public class FaultStatisticCollector extends RuntimeStatisticCollector {
 				dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 				FaultEvent faultEvent = new FaultEvent(dataUnit);
-				statisticEventQueue.enqueue(faultEvent);
+                addEventAndIncrementCount(messageContext, faultEvent);
 			}
 		}
 	}

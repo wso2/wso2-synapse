@@ -47,7 +47,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
 			CallbackSentEvent callbackSentEvent = new CallbackSentEvent(dataUnit);
-			statisticEventQueue.enqueue(callbackSentEvent);
+            addEventAndIncrementCallbackCount(messageContext, callbackSentEvent);
 		}
 	}
 
@@ -69,7 +69,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
 
 			CallbackCompletionEvent callbackCompletionEvent = new CallbackCompletionEvent(dataUnit);
-			statisticEventQueue.enqueue(callbackCompletionEvent);
+            addEventAndDecrementCallbackCount(oldMessageContext, callbackCompletionEvent);
 		}
 	}
 
@@ -90,7 +90,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setIsOutOnlyFlow(StatisticDataCollectionHelper.isOutOnlyFlow(oldMessageContext));
 
 			CallbackReceivedEvent callbackReceivedEvent = new CallbackReceivedEvent(dataUnit);
-			statisticEventQueue.enqueue(callbackReceivedEvent);
+            addEvent(oldMessageContext, callbackReceivedEvent);
 		}
 	}
 
@@ -111,7 +111,7 @@ public class CallbackStatisticCollector extends RuntimeStatisticCollector {
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synapseOutMsgCtx, null));
 
 			CallbackHandledEvent callbackHandledEvent = new CallbackHandledEvent(dataUnit);
-			statisticEventQueue.enqueue(callbackHandledEvent);
+            addEventAndDecrementCallbackCount(synapseOutMsgCtx, callbackHandledEvent);
 		}
 	}
 }

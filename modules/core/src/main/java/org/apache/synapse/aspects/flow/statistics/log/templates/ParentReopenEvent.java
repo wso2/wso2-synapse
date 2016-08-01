@@ -19,22 +19,21 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
  * Event to reopen flow continuable mediators after receiving callback for continuation call.
  */
 
-public class ParentReopenEvent implements StatisticsReportingEvent {
+public class ParentReopenEvent extends AbstractStatisticEvent {
 	private BasicStatisticDataUnit basicStatisticDataUnit;
 
 	public ParentReopenEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
+		this.eventType = EventType.PARENT_REOPEN_EVENT;
 	}
 
 	@Override
-	public void process() {
-		StatisticEventProcessor.openParents(basicStatisticDataUnit);
+	public BasicStatisticDataUnit getDataUnit() {
+		return basicStatisticDataUnit;
 	}
 }

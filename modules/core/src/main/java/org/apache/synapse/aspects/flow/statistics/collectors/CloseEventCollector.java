@@ -21,11 +21,14 @@ package org.apache.synapse.aspects.flow.statistics.collectors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.EndFlowEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsCloseEvent;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 
@@ -67,7 +70,11 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 					.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 			StatisticsCloseEvent closeEvent = new StatisticsCloseEvent(statisticDataUnit);
-			statisticEventQueue.enqueue(closeEvent);
+			if(currentIndex == null){
+				addEvent(messageContext, closeEvent);
+			}else {
+				addEventAndDecrementCount(messageContext, closeEvent);
+			}
 		}
 	}
 
@@ -77,7 +84,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 	 *
 	 * @param messageContext synapse message context.
 	 */
-	public static void closeFlowForcefully(MessageContext messageContext) {
+	public static void closeFlowForcefully(MessageContext messageContext, boolean error) {
 		if (shouldReportStatistic(messageContext)) {
 			BasicStatisticDataUnit dataUnit = new BasicStatisticDataUnit();
 			dataUnit.setTime(System.currentTimeMillis());
@@ -85,9 +92,13 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 
-			EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
-			statisticEventQueue.enqueue(endFlowEvent);
-		}
+            EndFlowEvent endFlowEvent = new EndFlowEvent(dataUnit);
+            if (!error) {
+                addEventAndDecrementCount(messageContext, endFlowEvent);
+            } else {
+                addEventAndCloseFlow(messageContext, endFlowEvent);
+            }
+        }
 	}
 
 	/**
@@ -103,7 +114,7 @@ public class CloseEventCollector extends RuntimeStatisticCollector {
 								  Integer currentIndex, boolean isContentAltering) {
 		if (shouldReportStatistic(messageContext)) {
 			closeEntryEvent(messageContext, componentName, componentType, currentIndex, isContentAltering);
-			closeFlowForcefully(messageContext);
+//			closeFlowForcefully(messageContext);
 		}
 	}
 }

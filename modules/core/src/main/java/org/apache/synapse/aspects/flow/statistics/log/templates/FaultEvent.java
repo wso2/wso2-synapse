@@ -19,22 +19,21 @@
 package org.apache.synapse.aspects.flow.statistics.log.templates;
 
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticEventProcessor;
-import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 
 /**
  * Event to represent fault occurred in the message flow.
  */
-public class FaultEvent implements StatisticsReportingEvent {
+public class FaultEvent extends AbstractStatisticEvent {
 
 	private BasicStatisticDataUnit basicStatisticDataUnit;
 
 	public FaultEvent(BasicStatisticDataUnit basicStatisticDataUnit) {
 		this.basicStatisticDataUnit = basicStatisticDataUnit;
+		this.eventType = EventType.FAULT_EVENT;
 	}
 
 	@Override
-	public void process() {
-		StatisticEventProcessor.reportFault(basicStatisticDataUnit);
+	public BasicStatisticDataUnit getDataUnit() {
+		return basicStatisticDataUnit;
 	}
 }

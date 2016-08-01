@@ -44,7 +44,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -97,8 +97,8 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private SynapseDebugManager synapseDebugManager;
 
-    /** The CompletedStatisticStore object*/
-    private CompletedStatisticStore completedStatisticStore = new CompletedStatisticStore();
+    /** The MessageDataStore object*/
+    private MessageDataStore messageDataStore = new MessageDataStore();
 
     private ServerContextInformation contextInformation;
 
@@ -650,14 +650,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return this.synapseConfig;
     }
 
-    /**
-     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
-     * instance.
-     *
-     * @return completedStatisticStore for this synapse instance
-     */
-    public CompletedStatisticStore getCompletedStatisticStore() {
-        return completedStatisticStore;
+    @Override
+    public MessageDataStore getMessageDataStore() {
+        return messageDataStore;
     }
 
     /**
@@ -746,7 +741,7 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
 
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-            RuntimeStatisticCollector.openContinuationEvents(synCtx);
+            OpenEventCollector.openContinuationEvents(synCtx);
         }
         boolean result;
         do {

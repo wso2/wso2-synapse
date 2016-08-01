@@ -38,7 +38,7 @@ public class StatisticDataCollectionHelper {
 	 * @return statistic trace id.
 	 */
 	public static String getStatisticTraceId(MessageContext messageContext) {
-		return (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID);
+		return (String) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_ID) + System.nanoTime();
 	}
 
 	/**

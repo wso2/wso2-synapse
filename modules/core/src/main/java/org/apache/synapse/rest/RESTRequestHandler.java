@@ -115,10 +115,8 @@ public class RESTRequestHandler {
 	private void apiProcess(MessageContext synCtx, API api) {
         Integer statisticReportingIndex = 0;
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-            if (!synCtx.isResponse()) {
-                statisticReportingIndex = OpenEventCollector
-                        .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
-            }
+            statisticReportingIndex = OpenEventCollector
+                    .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
             api.process(synCtx);
             CloseEventCollector.tryEndFlow(synCtx, api.getAPIName(), ComponentType.API, statisticReportingIndex, true);
         } else {

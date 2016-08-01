@@ -25,7 +25,9 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.data.raw.BasicStatisticDataUnit;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.log.templates.AsynchronousExecutionEvent;
+import org.apache.synapse.aspects.flow.statistics.log.templates.ParentReopenEvent;
 import org.apache.synapse.aspects.flow.statistics.log.templates.StatisticsOpenEvent;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
@@ -65,7 +67,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 		}
 
 		Boolean isFlowStatisticEnabled =
-				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);
+				(Boolean) messageContext.getProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED);//todo try to use single object for "FLOW_TRACE_IS_COLLECTED"
 		Boolean isTracingEnabled;
 		if (isCollectingStatistics) {
 			messageContext.setProperty(StatisticsConstants.FLOW_STATISTICS_IS_COLLECTED, true);
@@ -103,8 +105,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			StatisticDataCollectionHelper.collectData(messageContext, true, isTracingEnabled, statisticDataUnit);
 
 			StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
-			statisticEventQueue.enqueue(openEvent);
-
+            addEventAndIncrementCount(messageContext, openEvent);
 			return statisticDataUnit.getCurrentIndex();
 		}
 		return null;
@@ -230,7 +231,7 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 			dataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(messageContext));
 			dataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(messageContext, null));
 			AsynchronousExecutionEvent asynchronousExecutionEvent = new AsynchronousExecutionEvent(dataUnit);
-			statisticEventQueue.enqueue(asynchronousExecutionEvent);
+            addEventAndIncrementCount(messageContext, asynchronousExecutionEvent);
 		}
 	}
 
@@ -253,6 +254,24 @@ public class OpenEventCollector extends RuntimeStatisticCollector {
 				.collectData(messageContext, isContentAltering, isCollectingTracing, statisticDataUnit);
 
 		StatisticsOpenEvent openEvent = new StatisticsOpenEvent(statisticDataUnit);
-		statisticEventQueue.enqueue(openEvent);
+        addEventAndIncrementCount(messageContext, openEvent);
 	}
+
+    /**
+     * Add event in to the event queue. This event will inform statistic collection to put all the flow continuable
+     * mediators before the index specified by current Index to open state.
+     *
+     * @param synCtx synapse message context.
+     */
+    public static void openContinuationEvents(MessageContext synCtx) {
+        if (shouldReportStatistic(synCtx)) {
+            BasicStatisticDataUnit basicStatisticDataUnit = new BasicStatisticDataUnit();
+
+            basicStatisticDataUnit.setCurrentIndex(StatisticDataCollectionHelper.getParentFlowPosition(synCtx, null));
+            basicStatisticDataUnit.setStatisticId(StatisticDataCollectionHelper.getStatisticTraceId(synCtx));
+
+            ParentReopenEvent parentReopenEvent = new ParentReopenEvent(basicStatisticDataUnit);
+            addEvent(synCtx, parentReopenEvent);
+        }
+    }
 }
