@@ -223,6 +223,11 @@ public class DeliveryAgent {
                 break;
             }
         }
+        //when connection is not null and message queue is empty, connection is released
+        //otherwise connection remains in busyConnections pool and never be used.
+        if(conn != null && TargetContext.getState(conn) == ProtocolState.REQUEST_READY) {
+            targetConfiguration.getConnections().releaseConnection(conn);
+        }
     }
 
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
