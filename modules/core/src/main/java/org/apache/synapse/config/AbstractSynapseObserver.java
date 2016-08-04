@@ -41,63 +41,125 @@ public abstract class AbstractSynapseObserver implements SynapseObserver {
     }
 
     public void sequenceAdded(Mediator sequence) {
-        log.info("Sequence : " + ((SequenceMediator) sequence).getName() + " was added " +
-                "to the Synapse configuration successfully" );
+        if (((SequenceMediator)sequence).getArtifactContainerName() != null) {
+            log.info("Sequence : " + ((SequenceMediator) sequence).getName() + " was added " +
+                    "to the Synapse configuration successfully - " +
+                    ((SequenceMediator)sequence).getArtifactContainerName());
+        } else {
+            log.info("Sequence : " + ((SequenceMediator) sequence).getName() + " was added " +
+                    "to the Synapse configuration successfully" );
+        }
     }
 
     public void sequenceRemoved(Mediator sequence) {
-        log.info("Sequence : " + ((SequenceMediator) sequence).getName() + " was  removed " +
-                "from the Synapse configuration successfully");
+        if (((SequenceMediator)sequence).getArtifactContainerName() != null) {
+            log.info("Sequence : " + ((SequenceMediator) sequence).getName() + " was  removed " +
+                    "from the Synapse configuration successfully - " +
+                    ((SequenceMediator)sequence).getArtifactContainerName());
+        } else {
+            log.info("Sequence : " + ((SequenceMediator) sequence).getName() + " was  removed " +
+                    "from the Synapse configuration successfully");
+        }
     }
 
     public void sequenceTemplateAdded(Mediator template) {
-        log.info("Template : " + ((TemplateMediator) template).getName() + " was added " +
-                "to the Synapse configuration successfully" );
+        if (((TemplateMediator)template).getArtifactContainerName() != null) {
+            log.info("Template : " + ((TemplateMediator) template).getName() + " was added " +
+                    "to the Synapse configuration successfully - " + ((TemplateMediator)template).getArtifactContainerName());
+        } else {
+            log.info("Template : " + ((TemplateMediator) template).getName() + " was added " +
+                    "to the Synapse configuration successfully" );
+        }
     }
 
     public void sequenceTemplateRemoved(Mediator template) {
-        log.info("Template : " + ((TemplateMediator) template).getName() + " was removed " +
-                "to the Synapse configuration successfully" );
+        if (((TemplateMediator)template).getArtifactContainerName() != null) {
+            log.info("Template : " + ((TemplateMediator) template).getName() + " was removed " +
+                    "to the Synapse configuration successfully - " + ((TemplateMediator)template).getArtifactContainerName());
+        } else {
+            log.info("Template : " + ((TemplateMediator) template).getName() + " was removed " +
+                    "to the Synapse configuration successfully" );
+        }
     }
 
     public void entryAdded(Entry entry) {
-        log.info("Local entry : " + entry.getKey() + " was added " +
-                "to the Synapse configuration successfully");
+        if (entry.getArtifactContainerName() != null) {
+            log.info("Local entry : " + entry.getKey() + " was added " +
+                    "to the Synapse configuration successfully - " + entry.getArtifactContainerName());
+        } else {
+            log.info("Local entry : " + entry.getKey() + " was added " +
+                    "to the Synapse configuration successfully");
+        }
     }
 
     public void entryRemoved(Entry entry) {
-        log.info("Local entry : " + entry.getKey() + " was removed " +
-                "from the Synapse configuration successfully");
+        if (entry.getArtifactContainerName() != null) {
+            log.info("Local entry : " + entry.getKey() + " was removed " +
+                    "from the Synapse configuration successfully - " + entry.getArtifactContainerName());
+        } else {
+            log.info("Local entry : " + entry.getKey() + " was removed " +
+                    "from the Synapse configuration successfully");
+        }
     }
 
     public void endpointAdded(Endpoint endpoint) {
-        log.info("Endpoint : " + endpoint.getName() + " was added " +
-                "to the Synapse configuration successfully");
+        if (endpoint.getArtifactContainerName() != null) {
+            log.info("Endpoint : " + endpoint.getName() + " was added " +
+                    "to the Synapse configuration successfully - " + endpoint.getArtifactContainerName());
+        } else {
+            log.info("Endpoint : " + endpoint.getName() + " was added " +
+                    "to the Synapse configuration successfully");
+        }
     }
 
     public void endpointRemoved(Endpoint endpoint) {
-        log.info("Endpoint : " + endpoint.getName() + " was removed " +
-                "from the Synapse configuration successfully");
+        if (endpoint.getArtifactContainerName() != null) {
+            log.info("Endpoint : " + endpoint.getName() + " was removed " +
+                    "from the Synapse configuration successfully - " + endpoint.getArtifactContainerName());
+        } else {
+            log.info("Endpoint : " + endpoint.getName() + " was removed " +
+                    "from the Synapse configuration successfully");
+        }
     }
 
     public void proxyServiceAdded(ProxyService proxy) {
-        log.info("Proxy service : " + proxy.getName() + " was added " +
-                "to the Synapse configuration successfully");
+        if (proxy.getArtifactContainerName() != null) {
+            log.info("Proxy service : " + proxy.getName() + " was added " +
+                    "to the Synapse configuration successfully - " + proxy.getArtifactContainerName());
+        } else {
+            log.info("Proxy service : " + proxy.getName() + " was added " +
+                    "to the Synapse configuration successfully");
+        }
     }
 
     public void proxyServiceRemoved(ProxyService proxy) {
-        log.info("Proxy service : " + proxy.getName() + " was removed " +
-                "from the Synapse configuration successfully");
+        if (proxy.getArtifactContainerName() != null) {
+            log.info("Proxy service : " + proxy.getName() + " was removed " +
+                    "from the Synapse configuration successfully - " + proxy.getArtifactContainerName());
+        } else {
+            log.info("Proxy service : " + proxy.getName() + " was removed " +
+                    "from the Synapse configuration successfully");
+        }
     }
 
     public void startupAdded(Startup startup) {
-        log.info("Startup : " + startup.getName() + " was added " +
-                "to the Synapse configuration successfully");
+        if (startup.getArtifactContainerName() != null) {
+            log.info("Startup : " + startup.getName() + " was added " +
+                    "to the Synapse configuration successfully - " + startup.getArtifactContainerName());
+        } else {
+            log.info("Startup : " + startup.getName() + " was added " +
+                    "to the Synapse configuration successfully");
+        }
     }
 
     public void startupRemoved(Startup startup) {
-        log.info("Startup : " + startup.getName() + " was removed " +
-                "from the Synapse configuration successfully");
+        if (startup.getArtifactContainerName() != null) {
+            log.info("Startup : " + startup.getName() + " was removed " +
+                    "from the Synapse configuration successfully - " + startup.getArtifactContainerName());
+        } else {
+            log.info("Startup : " + startup.getName() + " was removed " +
+                    "from the Synapse configuration successfully");
+        }
     }
 
     public void eventSourceAdded(SynapseEventSource eventSource) {
@@ -121,29 +183,63 @@ public abstract class AbstractSynapseObserver implements SynapseObserver {
     }
 
     @Override public void apiAdded(API api) {
-        log.info("API : " + api.getName() + " was added to the Synapse configuration successfully");
+        if (api.getArtifactContainerName() != null) {
+            log.info("API : " + api.getName() + " was added to the Synapse configuration successfully - " +
+                    api.getArtifactContainerName());
+        }
+        else {
+            log.info("API : " + api.getName() + " was added to the Synapse configuration successfully");
+        }
     }
 
     @Override public void apiRemoved(API api) {
-        log.info("API : " + api.getName() + " was removed from the Synapse configuration successfully");
+        if (api.getArtifactContainerName() != null) {
+            log.info("API : " + api.getName() + " was removed from the Synapse configuration successfully - " +
+                    api.getArtifactContainerName());
+        } else {
+            log.info("API : " + api.getName() + " was removed from the Synapse configuration successfully");
+        }
     }
 
     @Override public void apiUpdated(API api) {
-        log.info("API : " + api.getName() + " was updated from the Synapse configuration successfully");
+        if (api.getArtifactContainerName() != null) {
+            log.info("API : " + api.getName() + " was updated from the Synapse configuration successfully - " +
+                    api.getArtifactContainerName());
+        } else {
+            log.info("API : " + api.getName() + " was updated from the Synapse configuration successfully");
+        }
     }
 
     @Override public void inboundEndpointAdded(InboundEndpoint inboundEndpoint) {
-        log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
-                 " was added to the Synapse configuration successfully");
+        if (inboundEndpoint.getArtifactContainerName() != null) {
+            log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                    " was added to the Synapse configuration successfully - " +
+                    inboundEndpoint.getArtifactContainerName());
+        } else {
+            log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                    " was added to the Synapse configuration successfully");
+        }
     }
 
     @Override public void inboundEndpointRemoved(InboundEndpoint inboundEndpoint) {
-        log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
-                 " was removed from the Synapse configuration successfully");
+        if (inboundEndpoint.getArtifactContainerName() != null) {
+            log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                    " was removed from the Synapse configuration successfully - " +
+                    inboundEndpoint.getArtifactContainerName());
+        } else {
+            log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                    " was removed from the Synapse configuration successfully");
+        }
     }
 
     @Override public void inboundEndpointUpdated(InboundEndpoint inboundEndpoint) {
-        log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
-                 " was updated from the Synapse configuration successfully");
+        if (inboundEndpoint.getArtifactContainerName() != null) {
+            log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                    " was updated from the Synapse configuration successfully - " +
+                    inboundEndpoint.getArtifactContainerName());
+        } else {
+            log.info("Inbound Endpoint : " + inboundEndpoint.getName() +
+                    " was updated from the Synapse configuration successfully");
+        }
     }
 }
