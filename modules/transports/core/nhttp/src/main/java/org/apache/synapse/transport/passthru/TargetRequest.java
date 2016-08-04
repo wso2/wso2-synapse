@@ -241,9 +241,7 @@ public class TargetRequest {
     		String soapAction = requestMsgCtx.getSoapAction();
             if (soapAction == null) {
                 soapAction = requestMsgCtx.getWSAAction();
-            }
-            if (soapAction == null) {
-            	requestMsgCtx.getAxisOperation().getInputAction();
+                requestMsgCtx.getAxisOperation().getInputAction();
             }
 
             if (requestMsgCtx.isSOAP11() && soapAction != null &&
