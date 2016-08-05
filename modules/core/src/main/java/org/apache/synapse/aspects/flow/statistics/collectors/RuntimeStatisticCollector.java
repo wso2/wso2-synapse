@@ -189,8 +189,9 @@ public abstract class RuntimeStatisticCollector {
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
-            if (eventHolder.isHostNameRetrieved()) {
+            if (!eventHolder.isHostNameRetrieved()) {
                 eventHolder.setHost(StatisticDataCollectionHelper.getHost(messageContext));
+                eventHolder.setHostNameRetrieved(true);
             }
         }
         if (eventHolder.isEvenCollectionFinished()) {
