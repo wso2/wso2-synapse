@@ -74,6 +74,9 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
 
+        // Set the last sequence fault handler for future use
+        synCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, getLastSequenceFaultHandler(synCtx));
+
         if (buildMessage) {
               synCtx.getEnvelope().buildWithAttachments();
         }

@@ -687,7 +687,15 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 // This is the parent . need to inform parent with fault child
                 ((Endpoint) faultHandler).onChildEndpointFail(this, synCtx);
             } else {
-                ((FaultHandler) faultHandler).handleFault(synCtx);
+                Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
+                Object lastSequenceFaultHandler = synCtx.getProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER);
+
+                if (lastSequenceFaultHandler != null &&
+                    errorCode != null && (((Integer) errorCode) == SynapseConstants.NHTTP_CONNECTION_FAILED)) {
+                    ((FaultHandler) lastSequenceFaultHandler).handleFault(synCtx, null);
+                } else {
+                    ((FaultHandler) faultHandler).handleFault(synCtx);
+                }
             }
         }
     }
