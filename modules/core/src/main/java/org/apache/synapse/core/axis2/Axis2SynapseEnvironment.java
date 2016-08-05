@@ -45,6 +45,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfigUtils;
@@ -112,6 +113,9 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
     /** Tenant info configurator */
     TenantInfoConfigurator tenantInfoConfigurator;
+
+    /** Tenant info initiator */
+    TenantInfoInitiator tenantInfoInitiator;
 
     /** Call mediators count */
     private int callMediatorCount = 0;
@@ -703,6 +707,10 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         return tenantInfoConfigurator;
     }
 
+    public TenantInfoInitiator getTenantInfoInitiator() {
+        return tenantInfoInitiator;
+    }
+
     public void setXpathFunctionExtensions(SynapseXpathFunctionContextProvider functionExt){
          if(functionExt!=null) {
              xpathFunctionExtensions.put(functionExt.getResolvingQName(), functionExt);
@@ -722,7 +730,13 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
     }
 
-     /**
+    public void setTenantInfoInitiator(TenantInfoInitiator initiator) {
+        if (initiator != null) {
+            tenantInfoInitiator = initiator;
+        }
+    }
+
+    /**
      * When request is sent using a Call Mediator, mediate the response message using the
      * ContinuationState Stack
      * @param synCtx MessageContext
