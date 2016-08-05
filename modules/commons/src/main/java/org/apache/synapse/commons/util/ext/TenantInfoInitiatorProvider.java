@@ -24,7 +24,7 @@ import org.apache.synapse.commons.util.MiscellaneousUtil;
 
 import java.util.Properties;
 
-public class TenantInfoInitiatorProvider {
+public final class TenantInfoInitiatorProvider {
     private static final Log logger = LogFactory.getLog(TenantInfoInitiator.class.getName());
 
     public static final String CARBON_TENANT_INFO_INITIATOR = "synapse.carbon.ext.tenant.info.initiator";
@@ -32,6 +32,14 @@ public class TenantInfoInitiatorProvider {
 
     private static TenantInfoInitiator TenantInfoInitiatorInstance = null;
 
+    private TenantInfoInitiatorProvider(){
+    }
+
+    /**
+     * Get instance of TenantInfoInitiator loaded based on synapse property path
+     *
+     * @return TenantInfoInitiator instance
+     */
     public static TenantInfoInitiator getTenantInfoInitiator() {
         if (TenantInfoInitiatorInstance == null) {
             try {
