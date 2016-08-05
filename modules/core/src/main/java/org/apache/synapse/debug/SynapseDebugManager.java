@@ -1138,9 +1138,6 @@ public class SynapseDebugManager implements Observer {
             }
         }
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_SOAPHEADER, soapHeader);
-        JSONObject transportHeader = new JSONObject((Map) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
-                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
-        result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_TRANSPORT_HEADERS, transportHeader);
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_EXCESS_TRANSPORT_HEADERS,
                 ((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty("EXCESS_TRANSPORT_HEADERS"));
         result.put(SynapseDebugCommandConstants.AXIS2_PROPERTY_MESSAGE_TYPE,
