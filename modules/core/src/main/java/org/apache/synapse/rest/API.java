@@ -21,6 +21,7 @@ package org.apache.synapse.rest;
 import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
@@ -44,6 +45,7 @@ import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.*;
 
@@ -397,18 +399,55 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
                     }
                     resource.process(synCtx);
-                    processed = true;
+                    return;
+                }
+            }
+            resourceNotFound(synCtx);
+        } else {
+            //This will get executed only in unhappy path. So ok to have the iterator.
+            boolean resourceFound = false;
+            boolean matchingMethodFound = false;
+            for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
+                Resource resource = dispatcher.findResource(synCtx, resources.values());
+                if (resource != null) {
+                    resourceFound = true;
+                    String method = (String) msgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+                    matchingMethodFound = resource.hasMatchingMethod(method);
                     break;
                 }
             }
-        }
-
-        if (!processed) {
-            auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
-            Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
-            if (sequence != null) {
-                sequence.mediate(synCtx);
+            if (!resourceFound) {
+                resourceNotFound(synCtx);
+            } else if (resourceFound && !matchingMethodFound) {
+                //Resource found, but in that resource, requested method not allowed. So sending method not allowed http status (405)
+                msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
+                msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                msgCtx.setProperty("NIO-ACK-Requested", true);
+            } else {
+                //Resource found, and matching method also found, which means request is BAD_REQUEST(400)
+                msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
+                msgCtx.setProperty("NIO-ACK-Requested", true);
             }
+        }
+    }
+
+    /**
+     * Helper method to use when no matching resource found
+     *
+     * @param synCtx
+     */
+    private void resourceNotFound(MessageContext synCtx) {
+        auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
+        Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
+        if (sequence != null) {
+            sequence.mediate(synCtx);
+        } else {
+            //Matching resource with method not found
+            org.apache.axis2.context.MessageContext msgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_NOT_FOUND);
+            msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            msgCtx.setProperty("NIO-ACK-Requested", true);
         }
     }
 

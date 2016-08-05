@@ -158,6 +158,26 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
         return methods.toArray(new String[methods.size()]);
     }
 
+    /**
+     * Helper method to check whether API supports the incoming HTTP method.
+     *
+     * @param method
+     * @return true if support false otherwise.
+     */
+    public boolean hasMatchingMethod(String method) {
+        if (RESTConstants.METHOD_OPTIONS.equals(method)) {
+            return true; // OPTIONS requests are always welcome
+        } else if (!methods.isEmpty()) {
+            if (!methods.contains(method)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("HTTP method does not match");
+                }
+                return false;
+            }
+        }
+        return true;
+    }
+
     public DispatcherHelper getDispatcherHelper() {
         return dispatcherHelper;
     }
