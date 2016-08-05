@@ -243,6 +243,11 @@ public class MessageInjector implements Task, ManagedLifecycle {
             return;
 		}
 
+        if(synapseEnvironment.getTaskManager() != null && !synapseEnvironment.getTaskManager().isInitialized()){
+            log.warn("Task Manager not initialized. Not executing the cycle");
+            return;
+        }
+
 		if (message == null && registryKey == null) {
             handleError("message or registry-key not set");
             return;
