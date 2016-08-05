@@ -217,11 +217,16 @@ public class DeliveryAgent {
 
                 if (messageContext != null) {
                     tryNextMessage(messageContext, route, conn);
+                    conn = null;
                 }
-                conn = null;
             } else {
                 break;
             }
+        }
+        //releasing the connection to pool when connection is not null and message queue is empty,
+        //otherwise connection remains in busyConnections pool till it gets timeout and It is not used.
+        if(conn != null && TargetContext.getState(conn) == ProtocolState.REQUEST_READY) {
+            targetConfiguration.getConnections().releaseConnection(conn);
         }
     }
 
