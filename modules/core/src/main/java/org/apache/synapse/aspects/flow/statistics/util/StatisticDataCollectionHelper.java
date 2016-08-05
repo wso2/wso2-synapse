@@ -22,9 +22,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.raw.StatisticDataUnit;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Provides various methods used for statistic collections.
@@ -59,6 +62,24 @@ public class StatisticDataCollectionHelper {
 			return uniqueIdentifierObject.getNextIndex();
 		}
 	}
+
+    /**
+     * Get host for the current request.
+     *
+     * @param messageContext synapse message context.
+     * @return message flow position
+     */
+    public static String getHost(MessageContext messageContext) {
+        Axis2MessageContext axis2smc = (Axis2MessageContext) messageContext;
+        org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+        Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headers != null && headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            return headersMap.get("HOST") != null ? headersMap.get("HOST").toString() : null;
+        }
+        return null;
+    }
 
 	/**
 	 * Get parent of this statistic component and sets current message flow position as next components parent.

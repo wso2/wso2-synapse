@@ -27,6 +27,8 @@ public class PublishingFlow {
 
     private String messageFlowId;
 
+    private String host;
+
     private ArrayList<PublishingEvent> events = new ArrayList<>();
 
     private ArrayList<ArrayList<Object>> eventsList = new ArrayList<>();
@@ -49,6 +51,14 @@ public class PublishingFlow {
 
     public void setMessageFlowId(String messageFlowId) {
         this.messageFlowId = messageFlowId;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
     }
 
     public ArrayList<PublishingEvent> getEvents() {

@@ -544,20 +544,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
         return true;
     }
 
-    private boolean isWellFormedXML(String value)  {
-        try {
-            XMLReader parser = XMLReaderFactory.createXMLReader();
-            parser.setErrorHandler(null);
-            InputSource source = new InputSource(new ByteArrayInputStream(value.getBytes()));
-            parser.parse(source);
-        } catch (SAXException e) {
-            return  false;
-        } catch (IOException e) {
-           return false;
-        }
-        return true;
-    }
-
     public String getType() {
         return mediaType;
     }

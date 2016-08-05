@@ -308,7 +308,6 @@ public class VFSUtils {
         
         // generate a random fail value to ensure that there are no two parties
         // processing the same file
-        Random random = new Random();
         byte[] failValue = (Long.toString((new Date()).getTime())).getBytes();
         
         try {
