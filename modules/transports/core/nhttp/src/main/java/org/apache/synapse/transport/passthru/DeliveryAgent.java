@@ -217,8 +217,8 @@ public class DeliveryAgent {
 
                 if (messageContext != null) {
                     tryNextMessage(messageContext, route, conn);
+                    conn = null;
                 }
-                conn = null;
             } else {
                 break;
             }
