@@ -24,6 +24,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEvent;
 import org.apache.synapse.aspects.flow.statistics.log.StatisticsReportingEventHolder;
 import org.apache.synapse.aspects.flow.statistics.util.MediationFlowController;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -188,6 +189,9 @@ public abstract class RuntimeStatisticCollector {
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
+            if (eventHolder.isHostNameRetrieved()) {
+                eventHolder.setHost(StatisticDataCollectionHelper.getHost(messageContext));
+            }
         }
         if (eventHolder.isEvenCollectionFinished()) {
             handleError(eventHolder, event);
