@@ -39,6 +39,8 @@ import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Stack;
+
 /**
  * This is the super class of all mediators, and defines common logging, tracing other aspects
  * for all mediators who extend from this.
@@ -537,5 +539,17 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         getAspectConfiguration().setUniqueId(sequenceId);
 
         StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR, holder);
+    }
+
+    protected MediatorFaultHandler getLastSequenceFaultHandler(MessageContext synCtx) {
+        Stack faultStack = synCtx.getFaultStack();
+        if (faultStack != null && !faultStack.isEmpty()) {
+            Object o = faultStack.peek();
+
+            if (o instanceof MediatorFaultHandler) {
+                return (MediatorFaultHandler) o;
+            }
+        }
+        return null;
     }
 }

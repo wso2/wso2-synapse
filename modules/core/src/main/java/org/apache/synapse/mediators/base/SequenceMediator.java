@@ -168,18 +168,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     Stack faultStack = synCtx.getFaultStack();
                     if (faultStack != null && !faultStack.isEmpty()) {
                         Object o = faultStack.peek();
-
                         if (o instanceof MediatorFaultHandler &&
                                 errorHandlerMediator.equals(
                                         ((MediatorFaultHandler) o).getFaultMediator())) {
-                            String faultSynMsgCtxID = (String) synCtx.getProperty(SynapseConstants.FAULT_MESSAGE_ID);
-                            if (faultSynMsgCtxID != null && synCtx.getMessageID().equals(faultSynMsgCtxID)) {
-                                //do not remove errorSequence in this case only. This should be handled in the
-                                //faultHandler
-                                synCtx.setProperty(SynapseConstants.FAULT_MESSAGE_ID, null);
-                            } else {
                                 faultStack.pop();
-                            }
                         }
                     }
                 }
