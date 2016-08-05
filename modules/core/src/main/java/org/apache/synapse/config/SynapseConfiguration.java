@@ -32,6 +32,8 @@ import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
 import org.apache.synapse.commons.executors.PriorityExecutor;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.config.xml.MediatorFactoryFinder;
 import org.apache.synapse.config.xml.TemplateMediatorFactory;
 import org.apache.synapse.config.xml.XMLToTemplateMapper;
@@ -2141,8 +2143,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private void initCarbonTenantConfigurator(SynapseEnvironment se) {
         Axis2SynapseEnvironment axis2SynapseEnvironment = (Axis2SynapseEnvironment) se;
+        //Tenant info configurator
         TenantInfoConfigurator configurator = TenantInfoConfigProvider.getConfigurator();
         axis2SynapseEnvironment.setTenantInfoConfigurator(configurator);
+
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        axis2SynapseEnvironment.setTenantInfoInitiator(tenantInfoInitiator);
     }
 
 

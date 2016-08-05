@@ -35,6 +35,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -184,6 +186,10 @@ public class ClientWorker implements Runnable {
     public void run() {
 
         CustomLogSetter.getInstance().clearThreadLocalContent();
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        if (tenantInfoInitiator != null) {
+            tenantInfoInitiator.initTenantInfo();
+        }
         if (responseMsgCtx == null) {
             return;
         }
