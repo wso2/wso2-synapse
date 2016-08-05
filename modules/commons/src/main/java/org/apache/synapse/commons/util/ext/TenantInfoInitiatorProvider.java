@@ -30,7 +30,7 @@ public final class TenantInfoInitiatorProvider {
     public static final String CARBON_TENANT_INFO_INITIATOR = "synapse.carbon.ext.tenant.info.initiator";
     public static final String PROPERTY_FILE_PATH = "synapse.properties";
 
-    private static TenantInfoInitiator TenantInfoInitiatorInstance = null;
+    private static TenantInfoInitiator tenantInfoInitiatorInstance = null;
 
     private TenantInfoInitiatorProvider(){
     }
@@ -41,20 +41,20 @@ public final class TenantInfoInitiatorProvider {
      * @return TenantInfoInitiator instance
      */
     public static TenantInfoInitiator getTenantInfoInitiator() {
-        if (TenantInfoInitiatorInstance == null) {
+        if (tenantInfoInitiatorInstance == null) {
             try {
                 Properties properties = MiscellaneousUtil.loadProperties(PROPERTY_FILE_PATH);
                 String property = properties.getProperty(CARBON_TENANT_INFO_INITIATOR);
                 if (property != null) {
                     Class clazz = TenantInfoInitiator.class.getClassLoader().
                             loadClass(property.trim());
-                    TenantInfoInitiatorInstance = (TenantInfoInitiator) clazz.newInstance();
+                    tenantInfoInitiatorInstance = (TenantInfoInitiator) clazz.newInstance();
                 }
             } catch (Exception e) {
                 logger.error("Error while initializing tenant info configuration provider. Error:"
                              + e.getLocalizedMessage());
             }
         }
-        return TenantInfoInitiatorInstance;
+        return tenantInfoInitiatorInstance;
     }
 }
