@@ -292,13 +292,15 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (ex != null && ex instanceof AxisFault) {
             AxisFault axisFault = (AxisFault) ex;
 
-            if (axisFault.getFaultCodeElement() != null) {
-                synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        axisFault.getFaultCodeElement().getText());
-            } else {
-                synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        SynapseConstants.CALLOUT_OPERATION_FAILED);
+            int errorCode = SynapseConstants.BLOCKING_CALL_OPERATION_FAILED;
+            if (axisFault.getFaultCodeElement() != null && !"".equals(axisFault.getFaultCodeElement().getText())) {
+                try {
+                    errorCode = Integer.parseInt(axisFault.getFaultCodeElement().getText());
+                } catch (NumberFormatException e) {
+                    errorCode = SynapseConstants.BLOCKING_CALL_OPERATION_FAILED;
+                }
             }
+            synCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
 
             if (axisFault.getMessage() != null) {
                 synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,

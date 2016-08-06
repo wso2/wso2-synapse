@@ -457,6 +457,12 @@ public final class SynapseConstants {
     // callout operation failed
     public static final int CALLOUT_OPERATION_FAILED    = 401000;
 
+    // Blocking call operation failure
+    public static final int BLOCKING_CALL_OPERATION_FAILED    = 401001;
+
+    // Blocking sender operation failure
+    public static final int BLOCKING_SENDER_OPERATION_FAILED    = 401002;
+
     public static final String FORCE_ERROR_PROPERTY = "FORCE_ERROR_ON_SOAP_FAULT";
     public static final int ENDPOINT_CUSTOM_ERROR = 500000;
 

@@ -227,9 +227,19 @@ public class BlockingMsgSender {
                 synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
                 if (ex instanceof AxisFault) {
                     AxisFault fault = (AxisFault) ex;
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
-                                                fault.getFaultCode() != null ?
-                                                fault.getFaultCode().getLocalPart() : "");
+
+                    int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                    if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
+                        !"".equals(fault.getFaultCode().getLocalPart())) {
+                        try {
+                            errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
+                        } catch (NumberFormatException e) {
+                            errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                        }
+
+                    }
+                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
+
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
                                                 fault.getDetail() != null ?
