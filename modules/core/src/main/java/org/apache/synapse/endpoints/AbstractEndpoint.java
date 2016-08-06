@@ -691,7 +691,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 Object lastSequenceFaultHandler = synCtx.getProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER);
 
                 if (lastSequenceFaultHandler != null &&
-                    errorCode != null && (((Integer) errorCode) == SynapseConstants.NHTTP_CONNECTION_FAILED)) {
+                    errorCode != null && errorCode instanceof Integer &&
+                    (((Integer) errorCode) == SynapseConstants.NHTTP_CONNECTION_FAILED)) {
                     ((FaultHandler) lastSequenceFaultHandler).handleFault(synCtx, null);
                 } else {
                     ((FaultHandler) faultHandler).handleFault(synCtx);
