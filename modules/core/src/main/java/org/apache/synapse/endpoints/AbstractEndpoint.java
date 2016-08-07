@@ -686,7 +686,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             if (faultHandler instanceof Endpoint) {
                 // This is the parent . need to inform parent with fault child
                 ((Endpoint) faultHandler).onChildEndpointFail(this, synCtx);
-            } else {
+            } else if (faultHandler instanceof MediatorFaultHandler) {
                 Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
                 Object lastSequenceFaultHandler = synCtx.getProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER);
 
@@ -697,6 +697,8 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 } else {
                     ((FaultHandler) faultHandler).handleFault(synCtx);
                 }
+            } else {
+                ((FaultHandler) faultHandler).handleFault(synCtx);
             }
         }
     }
