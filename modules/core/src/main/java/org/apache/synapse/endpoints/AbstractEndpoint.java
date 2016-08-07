@@ -650,13 +650,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected void informFailure(MessageContext synCtx, int errorCode, String errorMsg) {
 
         if (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) == null) {
-            setErrorOnMessage(synCtx, String.valueOf(errorCode), errorMsg);
+            setErrorOnMessage(synCtx, errorCode, errorMsg);
         }
         invokeNextFaultHandler(synCtx);
     }
 
 
-    protected void setErrorOnMessage(MessageContext synCtx, String errorCode, String errorMsg) {
+    protected void setErrorOnMessage(MessageContext synCtx, Integer errorCode, String errorMsg) {
 		Map<String, Integer> mEndpointLog =
 		                                    (Map<String, Integer>) synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
 		if (mEndpointLog != null) {
