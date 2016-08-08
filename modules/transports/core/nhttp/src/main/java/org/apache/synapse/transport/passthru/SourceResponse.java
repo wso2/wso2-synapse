@@ -342,11 +342,11 @@ public class SourceResponse {
         } else {
             status = (Integer) httpStatus;
         }
-        if (request.getRequest().getRequestLine().getMethod().equals(PassThroughConstants.HTTP_CONNECT)) {
+        if (request != null && PassThroughConstants.HTTP_CONNECT.equals(request.getRequest().getRequestLine()
+                                                                                .getMethod())) {
             return (status / 100 != 2);
         } else {
-            return HttpStatus.SC_NO_CONTENT != status
-                    && (status / 100 != 1);
+            return HttpStatus.SC_NO_CONTENT != status && (status / 100 != 1);
         }
     }
 
