@@ -575,6 +575,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                           "another response is submitted: " + conn);
             }
 
+            pipe.consumerError();
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         }
