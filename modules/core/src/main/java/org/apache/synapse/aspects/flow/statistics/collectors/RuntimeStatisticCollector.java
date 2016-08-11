@@ -347,6 +347,6 @@ public abstract class RuntimeStatisticCollector {
             }
             return;
         }
-        log.error("Events occur after event collection is finished, event - " + event.getDataUnit().getStatisticId());
+        log.warn("Events occur after event collection is finished, event - " + event.getDataUnit().getStatisticId());
     }
 }
