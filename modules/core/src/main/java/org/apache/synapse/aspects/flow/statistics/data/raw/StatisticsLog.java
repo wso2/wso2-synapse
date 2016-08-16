@@ -333,4 +333,20 @@ public class StatisticsLog {
 	public void setTracingEnabled(boolean tracingEnabled) {
 		isTracingEnabled = tracingEnabled;
 	}
+
+	public void setComponentId(String componentId) {
+		this.componentId = componentId;
+	}
+
+	public void setComponentName(String componentName) {
+		this.componentName = componentName;
+	}
+
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
+	}
+
+	public void setComponentType(ComponentType componentType) {
+		this.componentType = componentType;
+	}
 }
