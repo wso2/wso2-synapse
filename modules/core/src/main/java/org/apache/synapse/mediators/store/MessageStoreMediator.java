@@ -23,6 +23,7 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
@@ -118,6 +119,7 @@ public class MessageStoreMediator extends AbstractMediator{
                 MessageContext newCtx = null;
                 try {
                     newCtx = MessageHelper.cloneMessageContext(synCtx);
+                    ContinuationStackManager.clearStack(newCtx);
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }

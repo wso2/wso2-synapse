@@ -189,10 +189,6 @@ public abstract class RuntimeStatisticCollector {
         if (eventHolder == null) {
             eventHolder = new StatisticsReportingEventHolder();
             messageContext.setProperty(StatisticsConstants.STAT_COLLECTOR_PROPERTY, eventHolder);
-            if (!eventHolder.isHostNameRetrieved()) {
-                eventHolder.setHost(StatisticDataCollectionHelper.getHost(messageContext));
-                eventHolder.setHostNameRetrieved(true);
-            }
         }
         if (eventHolder.isEvenCollectionFinished()) {
             handleError(eventHolder, event);
@@ -223,9 +219,6 @@ public abstract class RuntimeStatisticCollector {
         }
         eventHolder.addEvent(event);
 
-//        eventHolder.countHolder.decrementStatCount();
-//		log.info("Mediator Count:" + eventHolder.countHolder.getStatCount() + "||Callback Count: " + eventHolder
-//                .countHolder.getCallBackCount());
         if (eventHolder.countHolder.decrementAndGetStatCount() <= 0 && eventHolder.countHolder.getCallBackCount() <= 0) {
             eventHolder.setEvenCollectionFinished(true);
             messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
@@ -275,9 +268,6 @@ public abstract class RuntimeStatisticCollector {
         }
         eventHolder.addEvent(event);
 
-//        eventHolder.countHolder.decrementCallbackCount();
-//		log.info("Mediator Count:" + eventHolder.countHolder.getStatCount() + "||Callback Count: " + eventHolder
-//                .countHolder.getCallBackCount());
         if (eventHolder.countHolder.decrementAndGetCallbackCount() <= 0 && eventHolder.countHolder.getStatCount() <= 0) {
             eventHolder.setEvenCollectionFinished(true);
             messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
@@ -324,10 +314,6 @@ public abstract class RuntimeStatisticCollector {
             }
             eventHolder.addEvent(event);
 
-//        eventHolder.countHolder.decrementStatCount();
-//		log.info("Mediator Count:" + eventHolder.countHolder.getStatCount() + "||Callback Count: " + eventHolder
-//                .countHolder.getCallBackCount());
-
             eventHolder.setEvenCollectionFinished(true);
             eventHolder.setMessageFlowError(true);
             messageContext.getEnvironment().getMessageDataStore().enqueue(eventHolder);
@@ -347,6 +333,6 @@ public abstract class RuntimeStatisticCollector {
             }
             return;
         }
-        log.error("Events occur after event collection is finished, event - " + event.getDataUnit().getStatisticId());
+        log.warn("Events occur after event collection is finished, event - " + event.getDataUnit().getStatisticId());
     }
 }

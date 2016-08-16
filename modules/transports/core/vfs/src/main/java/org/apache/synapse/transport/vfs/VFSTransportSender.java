@@ -336,7 +336,9 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
                             }
                         }
                         replyFile.close();
-                    } catch (FileSystemException ignore) {}
+                    } catch (Exception ex) {
+                        log.warn("File system manager already closed", ex);
+                    }
                 }
             }
         } else {

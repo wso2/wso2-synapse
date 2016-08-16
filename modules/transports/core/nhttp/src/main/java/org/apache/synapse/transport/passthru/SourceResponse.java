@@ -85,6 +85,9 @@ public class SourceResponse {
         this.statusLine = statusLine;
         this.sourceConfiguration = config;
         this.request = request;
+        if (request != null && request.getVersion() != null) {
+            this.version = request.getVersion();
+        }
     }
 
     public void connect(Pipe pipe) {
@@ -342,11 +345,11 @@ public class SourceResponse {
         } else {
             status = (Integer) httpStatus;
         }
-        if (request.getRequest().getRequestLine().getMethod().equals(PassThroughConstants.HTTP_CONNECT)) {
+        if (request != null && PassThroughConstants.HTTP_CONNECT.equals(request.getRequest().getRequestLine()
+                                                                                .getMethod())) {
             return (status / 100 != 2);
         } else {
-            return HttpStatus.SC_NO_CONTENT != status
-                    && (status / 100 != 1);
+            return HttpStatus.SC_NO_CONTENT != status && (status / 100 != 1);
         }
     }
 

@@ -40,16 +40,6 @@ public class StatisticsReportingEventHolder {
 
     private boolean messageFlowError = false;
 
-    /**
-     * variable to know whether hostname was retrieved at least one time.
-     */
-    private boolean hostNameRetrieved = false;
-
-    /**
-     * host name
-     */
-    private String host;
-
     public StatisticsReportingEventHolder() {
         eventQueue = new ConcurrentLinkedQueue<StatisticsReportingEvent>();
         countHolder = new StatisticsReportingCountHolder();
@@ -87,19 +77,4 @@ public class StatisticsReportingEventHolder {
         this.messageFlowError = messageFlowError;
     }
 
-    public boolean isHostNameRetrieved() {
-        return hostNameRetrieved;
-    }
-
-    public void setHostNameRetrieved(boolean hostNameRetrieved) {
-        this.hostNameRetrieved = hostNameRetrieved;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
 }

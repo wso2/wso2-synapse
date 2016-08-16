@@ -32,7 +32,6 @@ import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
-import org.apache.synapse.aspects.flow.statistics.util.UniqueIdentifierObject;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -45,7 +44,6 @@ import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
 import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
-import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.*;
 
@@ -402,7 +400,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                     return;
                 }
             }
-            resourceNotFound(synCtx);
+            handleResourceNotFound(synCtx);
         } else {
             //This will get executed only in unhappy path. So ok to have the iterator.
             boolean resourceFound = false;
@@ -417,7 +415,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
                 }
             }
             if (!resourceFound) {
-                resourceNotFound(synCtx);
+                handleResourceNotFound(synCtx);
             } else if (resourceFound && !matchingMethodFound) {
                 //Resource found, but in that resource, requested method not allowed. So sending method not allowed http status (405)
                 msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
@@ -436,7 +434,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
      *
      * @param synCtx
      */
-    private void resourceNotFound(MessageContext synCtx) {
+    private void handleResourceNotFound(MessageContext synCtx) {
         auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
         Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
         if (sequence != null) {
