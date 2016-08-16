@@ -85,6 +85,9 @@ public class SourceResponse {
         this.statusLine = statusLine;
         this.sourceConfiguration = config;
         this.request = request;
+        if (request != null && request.getVersion() != null) {
+            this.version = request.getVersion();
+        }
     }
 
     public void connect(Pipe pipe) {
