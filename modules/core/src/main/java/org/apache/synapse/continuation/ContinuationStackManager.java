@@ -228,7 +228,6 @@ public class ContinuationStackManager {
                     // This can happen only if someone delete the sequence while running
                     handleException("Sequence : " + seqContState.getSeqName() + " not found");
                 }
-                pushRootFaultHandlerForSequence(synCtx);
                 break;
             }
             case PROXY_INSEQ: {
@@ -236,7 +235,6 @@ public class ContinuationStackManager {
                 ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
                 if (proxyService != null) {
                     sequence = proxyService.getTargetInLineInSequence();
-                    proxyService.registerFaultHandler(synCtx);
                 } else {
                     handleException("Proxy Service :" + proxyName + " not found");
                 }
@@ -250,7 +248,6 @@ public class ContinuationStackManager {
                     Resource resource = api.getResource(resourceName);
                     if (resource != null) {
                         sequence = resource.getInSequence();
-                        resource.registerFaultHandler(synCtx);
                     } else {
                         handleException("Resource : " + resourceName + " not found");
                     }
@@ -264,7 +261,6 @@ public class ContinuationStackManager {
                 ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
                 if (proxyService != null) {
                     sequence = proxyService.getTargetInLineOutSequence();
-                    proxyService.registerFaultHandler(synCtx);
                 } else {
                     handleException("Proxy Service :" + proxyName + " not found");
                 }
@@ -278,7 +274,6 @@ public class ContinuationStackManager {
                     Resource resource = api.getResource(resourceName);
                     if (resource != null) {
                         sequence = resource.getOutSequence();
-                        resource.registerFaultHandler(synCtx);
                     } else {
                         handleException("Resource : " + resourceName + " not found");
                     }
@@ -316,6 +311,73 @@ public class ContinuationStackManager {
         }
 
         return sequence;
+    }
+
+    /**
+     * Push fault handler for the received continuation call response.
+     *
+     * @param seqContState SeqContinuationState which contain the sequence information
+     * @param synCtx       message context
+     */
+    public static void pushFaultHandler(MessageContext synCtx, SeqContinuationState seqContState) {
+        switch (seqContState.getSeqType()) {
+            case NAMED: {
+                pushRootFaultHandlerForSequence(synCtx);
+                break;
+            }
+            case PROXY_INSEQ: {
+                String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+                ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
+                if (proxyService != null) {
+                    proxyService.registerFaultHandler(synCtx);
+                } else {
+                    handleException("Proxy Service :" + proxyName + " not found");
+                }
+                break;
+            }
+            case API_INSEQ: {
+                String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
+                String resourceName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_RESOURCE);
+                API api = synCtx.getEnvironment().getSynapseConfiguration().getAPI(apiName);
+                if (api != null) {
+                    Resource resource = api.getResource(resourceName);
+                    if (resource != null) {
+                        resource.registerFaultHandler(synCtx);
+                    } else {
+                        handleException("Resource : " + resourceName + " not found");
+                    }
+                } else {
+                    handleException("REST API : " + apiName + " not found");
+                }
+                break;
+            }
+            case PROXY_OUTSEQ: {
+                String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+                ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
+                if (proxyService != null) {
+                    proxyService.registerFaultHandler(synCtx);
+                } else {
+                    handleException("Proxy Service :" + proxyName + " not found");
+                }
+                break;
+            }
+            case API_OUTSEQ: {
+                String apiName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
+                String resourceName = (String) synCtx.getProperty(RESTConstants.SYNAPSE_RESOURCE);
+                API api = synCtx.getEnvironment().getSynapseConfiguration().getAPI(apiName);
+                if (api != null) {
+                    Resource resource = api.getResource(resourceName);
+                    if (resource != null) {
+                        resource.registerFaultHandler(synCtx);
+                    } else {
+                        handleException("Resource : " + resourceName + " not found");
+                    }
+                } else {
+                    handleException("REST API : " + apiName + " not found");
+                }
+                break;
+            }
+        }
     }
 
     /**

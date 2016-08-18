@@ -687,19 +687,33 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 // This is the parent . need to inform parent with fault child
                 ((Endpoint) faultHandler).onChildEndpointFail(this, synCtx);
             } else if (faultHandler instanceof MediatorFaultHandler) {
-                Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
-                Object lastSequenceFaultHandler = synCtx.getProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER);
-
-                if (lastSequenceFaultHandler != null &&
-                    errorCode != null && errorCode instanceof Integer &&
-                    (((Integer) errorCode) == SynapseConstants.NHTTP_CONNECTION_FAILED)) {
-                    ((FaultHandler) lastSequenceFaultHandler).handleFault(synCtx, null);
-                } else {
+                if(!executeLastSequenceFaultHandler(synCtx)){
                     ((FaultHandler) faultHandler).handleFault(synCtx);
                 }
             } else {
                 ((FaultHandler) faultHandler).handleFault(synCtx);
             }
+        } else {
+            executeLastSequenceFaultHandler(synCtx);
+        }
+    }
+
+    /**
+     * If LAST_SEQ_FAULT_HANDLER property is not null, this method will execute the sequence specified by it.
+     *
+     * @param synCtx message context
+     * @return true if LAST_SEQ_FAULT_HANDLER get executed.
+     */
+    private boolean executeLastSequenceFaultHandler(MessageContext synCtx) {
+        Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
+        Object lastSequenceFaultHandler = synCtx.getProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER);
+
+        if (lastSequenceFaultHandler != null && errorCode != null && errorCode instanceof Integer &&
+                (((Integer) errorCode) == SynapseConstants.NHTTP_CONNECTION_FAILED)) {
+            ((FaultHandler) lastSequenceFaultHandler).handleFault(synCtx, null);
+            return true;
+        } else {
+            return false;
         }
     }
 
