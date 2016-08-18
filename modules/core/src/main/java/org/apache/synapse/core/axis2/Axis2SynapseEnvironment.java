@@ -759,17 +759,25 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         }
 
         //First push fault handlers for first continuation state.
-        SeqContinuationState seqContinuationState = (SeqContinuationState) synCtx.getContinuationStateStack().peek();
-        ContinuationStackManager.pushFaultHandler(synCtx, seqContinuationState);
+        SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
+        if (seqContinuationState != null) {
+            ContinuationStackManager.pushFaultHandler(synCtx, seqContinuationState);
+        } else {
+            return false;
+        }
 
-        boolean result;
+        boolean result = false;
         do {
-            seqContinuationState = (SeqContinuationState) synCtx.getContinuationStateStack().peek();
-            SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
-            //Report Statistics for this continuation call
-            result = sequenceMediator.mediate(synCtx, seqContinuationState);
-            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-                sequenceMediator.reportCloseStatistics(synCtx, null);
+            seqContinuationState = (SeqContinuationState) ContinuationStackManager.peakContinuationStateStack(synCtx);
+            if (seqContinuationState != null) {
+                SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
+                //Report Statistics for this continuation call
+                result = sequenceMediator.mediate(synCtx, seqContinuationState);
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    sequenceMediator.reportCloseStatistics(synCtx, null);
+                }
+            } else {
+                break;
             }
             //for any result close the sequence as it will be handled by the callback method in statistics
         } while (result && !synCtx.getContinuationStateStack().isEmpty());
