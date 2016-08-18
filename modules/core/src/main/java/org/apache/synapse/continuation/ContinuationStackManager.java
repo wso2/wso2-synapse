@@ -34,6 +34,7 @@ import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.rest.Resource;
 
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * This is the utility class which manages ContinuationState Stack.
@@ -91,7 +92,7 @@ public class ContinuationStackManager {
     public static void removeSeqContinuationState(MessageContext synCtx, SequenceType seqType) {
         if (synCtx.isContinuationEnabled() && !synCtx.getContinuationStateStack().isEmpty()) {
             if (!SequenceType.ANON.equals(seqType)) {
-                synCtx.getContinuationStateStack().pop();
+                ContinuationStackManager.popContinuationStateStack(synCtx);
             } else {
                 removeReliantContinuationState(synCtx);
             }
@@ -107,9 +108,8 @@ public class ContinuationStackManager {
      */
     public static void updateSeqContinuationState(MessageContext synCtx, int position) {
 		if (synCtx.isContinuationEnabled()) {
-			if (!synCtx.getContinuationStateStack().isEmpty()) {
-				ContinuationState seqContState = synCtx
-						.getContinuationStateStack().peek();
+            ContinuationState seqContState = ContinuationStackManager.peakContinuationStateStack(synCtx);
+			if (seqContState != null) {
 				seqContState.getLeafChild().setPosition(position);
 			} else {
 				// Ideally we should not get here.
@@ -129,16 +129,14 @@ public class ContinuationStackManager {
     public static void addReliantContinuationState(MessageContext synCtx, int subBranch,
                                                    int position) {
         if (synCtx.isContinuationEnabled()) {
-			if (!synCtx.getContinuationStateStack().isEmpty()) {
-				ContinuationState seqContState = synCtx
-						.getContinuationStateStack().peek();
-				seqContState.getLeafChild().setPosition(position);
-				seqContState.addLeafChild(new ReliantContinuationState(
-						subBranch));
-			} else {
-				// Ideally we should not get here.
-				log.warn("Continuation Stack is empty. Probably due to a configuration issue");
-			}
+            ContinuationState seqContState = ContinuationStackManager.peakContinuationStateStack(synCtx);
+            if (seqContState != null) {
+                seqContState.getLeafChild().setPosition(position);
+                seqContState.addLeafChild(new ReliantContinuationState(subBranch));
+            } else {
+                // Ideally we should not get here.
+                log.warn("Continuation Stack is empty. Probably due to a configuration issue");
+            }
         }
     }
 
@@ -150,9 +148,8 @@ public class ContinuationStackManager {
      */
     public static void removeReliantContinuationState(MessageContext synCtx) {
 		if (synCtx.isContinuationEnabled()) {
-			if (!synCtx.getContinuationStateStack().isEmpty()) {
-				ContinuationState seqContState = synCtx
-						.getContinuationStateStack().peek();
+            ContinuationState seqContState = ContinuationStackManager.peakContinuationStateStack(synCtx);
+			if (seqContState != null) {
 				seqContState.removeLeafChild();
 			} else {
 				// Ideally we should not get here.
@@ -205,8 +202,38 @@ public class ContinuationStackManager {
      * @param synCtx MessageContext
      */
     public static void clearStack(MessageContext synCtx) {
+        Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
         if (synCtx.isContinuationEnabled()) {
-            synCtx.getContinuationStateStack().clear();
+            synchronized (continuationStack){
+                continuationStack.clear();
+            }
+        }
+    }
+
+    /**
+     * Peek from Continuation Stack
+     * @return ContinuationState
+     */
+    public static ContinuationState peakContinuationStateStack(MessageContext synCtx){
+        Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
+        synchronized (continuationStack) {
+            if (!continuationStack.isEmpty()) {
+                return continuationStack.peek();
+            } else {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * Pop from Continuation Stack
+     */
+    public static void popContinuationStateStack(MessageContext synCtx){
+        Stack<ContinuationState> continuationStack = synCtx.getContinuationStateStack();
+        synchronized (continuationStack) {
+            if (!continuationStack.isEmpty()) {
+                continuationStack.pop();
+            }
         }
     }
 

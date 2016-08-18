@@ -284,7 +284,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (result) {
             // if flow completed, remove top ContinuationState from stack
-            synCtx.getContinuationStateStack().pop();
+            ContinuationStackManager.popContinuationStateStack(synCtx);
         }
 
         // if we pushed an error handler, pop it from the fault stack
