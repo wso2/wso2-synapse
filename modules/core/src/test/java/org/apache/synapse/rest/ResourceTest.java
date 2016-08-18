@@ -109,7 +109,6 @@ public class ResourceTest extends RESTMediationTestCase {
         mc.setConfigurationContext(((Axis2SynapseEnvironment) synCtx.getEnvironment()).getAxis2ConfigurationContext());
         new SynapseMessageReceiver().receive(mc);
         assertEquals("seq.in.value", mc.getProperty("seq.in"));
-        //Comment this as now we clone the message context in a fault sequence
-        //assertEquals("seq.fault.value", mc.getProperty("seq.fault"));
+        assertEquals("seq.fault.value", mc.getProperty("seq.fault"));
     }
 }

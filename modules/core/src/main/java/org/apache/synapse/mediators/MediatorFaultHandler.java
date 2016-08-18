@@ -80,12 +80,6 @@ public class MediatorFaultHandler extends FaultHandler {
         String name = null;
         if (faultMediator instanceof SequenceMediator) {
             name = ((SequenceMediator) faultMediator).getName();
-            //Cloning Message Context before clearing
-            try {
-                synCtx = MessageHelper.cloneMessageContext(synCtx, true);
-            } catch (AxisFault axisFault) {
-                log.error("Error occurred while cloning the message context");
-            }
             ContinuationStackManager.clearStack(synCtx);
             synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
         }
