@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators;
 
+import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.FaultHandler;
@@ -31,6 +32,7 @@ import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticColle
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.MessageHelper;
 
 /**
  * This implements the FaultHandler interface as a mediator fault handler. That is the fault handler is
@@ -78,6 +80,12 @@ public class MediatorFaultHandler extends FaultHandler {
         String name = null;
         if (faultMediator instanceof SequenceMediator) {
             name = ((SequenceMediator) faultMediator).getName();
+            //Cloning Message Context before clearing
+            try {
+                synCtx = MessageHelper.cloneMessageContext(synCtx, true);
+            } catch (AxisFault axisFault) {
+                log.error("Error occurred while cloning the message context");
+            }
             ContinuationStackManager.clearStack(synCtx);
             synCtx.setProperty(SynapseConstants.CONTINUATION_CALL, false);
         }

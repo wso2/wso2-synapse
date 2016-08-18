@@ -757,10 +757,14 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
             OpenEventCollector.openContinuationEvents(synCtx);
         }
+
+        //First push fault handlers for first continuation state.
+        SeqContinuationState seqContinuationState = (SeqContinuationState) synCtx.getContinuationStateStack().peek();
+        ContinuationStackManager.pushFaultHandler(synCtx, seqContinuationState);
+
         boolean result;
         do {
-            SeqContinuationState seqContinuationState =
-                    (SeqContinuationState) synCtx.getContinuationStateStack().peek();
+            seqContinuationState = (SeqContinuationState) synCtx.getContinuationStateStack().peek();
             SequenceMediator sequenceMediator = ContinuationStackManager.retrieveSequence(synCtx, seqContinuationState);
             //Report Statistics for this continuation call
             result = sequenceMediator.mediate(synCtx, seqContinuationState);
