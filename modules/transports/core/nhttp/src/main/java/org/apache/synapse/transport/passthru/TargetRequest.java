@@ -129,7 +129,7 @@ public class TargetRequest {
 	    }
          
         if (contentLengthHeader != null) {
-            contentLength = Integer.parseInt(contentLengthHeader);
+            contentLength = Long.parseLong(contentLengthHeader);
             headers.remove(HTTP.CONTENT_LEN);
         }
         

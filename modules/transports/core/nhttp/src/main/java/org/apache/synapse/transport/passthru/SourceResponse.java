@@ -123,14 +123,14 @@ public class SourceResponse {
         if (canResponseHaveBody(request.getRequest(), response)) {
             entity = new BasicHttpEntity();
 
-            int contentLength = -1;
+            long contentLength = -1;
             String contentLengthHeader = null;
             if (headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).size() > 0) {
                 contentLengthHeader = headers.get(HTTP.CONTENT_LEN).first();
             }
 
             if (contentLengthHeader != null) {
-                contentLength = Integer.parseInt(contentLengthHeader);
+                contentLength = Long.parseLong(contentLengthHeader);
                 headers.remove(HTTP.CONTENT_LEN);
             }
 
