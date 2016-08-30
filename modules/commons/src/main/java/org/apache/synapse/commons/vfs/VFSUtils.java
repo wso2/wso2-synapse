@@ -18,16 +18,6 @@
 */
 package org.apache.synapse.commons.vfs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
@@ -37,9 +27,27 @@ import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.net.ftp.FTP;
-import org.apache.commons.vfs2.*;
+import org.apache.commons.vfs2.FileContent;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VFSUtils {
 
@@ -147,7 +155,8 @@ public class VFSUtils {
         }
         strLockValue += STR_SPLITER + (new Date()).getTime();
         byte[] lockValue = strLockValue.getBytes();
-        
+        FileObject lockObject = null;
+
         try {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
@@ -157,7 +166,7 @@ public class VFSUtils {
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
             }            
-            FileObject lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
+            lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
                         + maskURLPassword(fo.getName().getURI())
@@ -204,8 +213,14 @@ public class VFSUtils {
                 }
             }
         } catch (FileSystemException fse) {
-            log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI())
-                    + " before processing", fse);
+            log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI()) + " before processing", fse);
+            if (lockObject != null) {
+                try {
+                    fsManager.closeFileSystem(lockObject.getParent().getFileSystem());
+                } catch (FileSystemException e) {
+                    log.warn("Unable to close the lockObject parent file system");
+                }
+            }
         }
         return false;
     }
