@@ -463,8 +463,10 @@ public class Axis2MessageContext implements MessageContext {
 
     public boolean isResponse() {
         Object o = properties.get(SynapseConstants.RESPONSE);
-        return o != null && o instanceof String &&
-               ((String) o).equalsIgnoreCase("true") || response;
+        if(o != null && o instanceof String) {
+            return Boolean.valueOf((String)o);
+        }
+        return response;
     }
 
     public void setFaultResponse(boolean b) {
