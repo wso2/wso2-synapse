@@ -23,7 +23,6 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.debug.constructs.EnclosedInlinedSequence;
 import org.apache.synapse.mediators.AbstractListMediator;
-import org.apache.synapse.mediators.builtin.CacheMediator;
 import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
 import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
@@ -116,13 +115,6 @@ public class MediatorTreeTraverseUtil {
                         }
                     }
                     continue;
-                } else if (current_mediator instanceof CacheMediator) {
-                    if (((CacheMediator) current_mediator).getOnCacheHitSequence() != null) {
-                        current_mediator = ((CacheMediator) current_mediator).getOnCacheHitSequence();
-                    } else if (((CacheMediator) current_mediator).getOnCacheHitRef() != null) {
-                        current_mediator = synCfg
-                                .getSequence(((CacheMediator) current_mediator).getOnCacheHitRef());
-                    }
                 } else if (current_mediator instanceof AggregateMediator) {
                     if (((AggregateMediator) current_mediator).getOnCompleteSequence() != null) {
                         current_mediator = ((AggregateMediator) current_mediator).getOnCompleteSequence();

@@ -30,7 +30,7 @@ public class CalloutMediatorSerializationTest extends AbstractTestCase {
     private CalloutMediatorSerializer calloutMediatorSerializer;
 
     public CalloutMediatorSerializationTest() {
-        super(CacheMediatorSerializationTest.class.getName());
+        super(CalloutMediatorSerializationTest.class.getName());
         calloutMediatorFactory = new CalloutMediatorFactory();
         calloutMediatorSerializer = new CalloutMediatorSerializer();
     }
