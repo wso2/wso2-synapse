@@ -157,4 +157,15 @@ public class JsonXMLConfigBuilder {
         config.setCustomRegex(regex);
         return this;
     }
+
+    public JsonXMLConfigBuilder customReplaceRegex(String customReplaceRegex) {
+        config.setCustomReplaceRegex(customReplaceRegex);
+        return this;
+    }
+
+    public JsonXMLConfigBuilder customReplaceSequence(String customReplaceSequence) {
+        config.setCustomReplaceSequence(customReplaceSequence);
+        return this;
+    }
+
 }
