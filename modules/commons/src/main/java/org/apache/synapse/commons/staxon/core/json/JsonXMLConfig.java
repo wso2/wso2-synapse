@@ -86,6 +86,17 @@ public interface JsonXMLConfig {
         public  String getCustomRegex(){
             return null;
         }
+
+        @Override
+        public String getCustomReplaceRegex() {
+            return null;
+        }
+
+        @Override
+        public String getCustomReplaceSequence() {
+            return "";
+        }
+
     };
 
     /**
@@ -174,5 +185,9 @@ public interface JsonXMLConfig {
      * @return autoprimitive enabled with scientific Number Ignore flag
      */
     public String getCustomRegex();
+
+    public String getCustomReplaceRegex();
+
+    public String getCustomReplaceSequence();
 
 }
