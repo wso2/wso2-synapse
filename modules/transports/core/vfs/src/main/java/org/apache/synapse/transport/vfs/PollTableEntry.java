@@ -26,12 +26,16 @@ import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.crypto.CryptoUtil;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Holds information about an entry in the VFS transport poll table used by the
@@ -42,6 +46,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     // operation after scan
     public static final int DELETE = 0;
     public static final int MOVE   = 1;
+    public static final int NONE   = 2;
 
     /** File or Directory to scan */
     private String fileURI;
@@ -73,6 +78,16 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private int maxRetryCount;
     private long reconnectTimeout;
     private boolean fileLocking;
+
+    private CryptoUtil cryptoUtil;
+    private Properties secureVaultProperties;
+
+    /**
+     * Only files smaller than this limit will get processed, it can be configured with param
+     * "transport.vfs.FileSizeLimit", and this will have default value -1 which means unlimited file size
+     * This should be specified in bytes
+     */
+    private double fileSizeLimit = VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
 
     private String moveAfterMoveFailure;
 
@@ -106,6 +121,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private String subfolderTimestamp;
     
     private Long distributedLockTimeout;
+
+    private volatile boolean canceled;
+
+    private boolean clusterAware;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -230,6 +249,14 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return fileLocking;
     }
 
+    public void setSecureVaultProperties(Properties secureVaultProperties) {
+        this.secureVaultProperties = secureVaultProperties;
+    }
+
+    public double getFileSizeLimit() {
+        return fileSizeLimit;
+    }
+
     public long getReconnectTimeout() {
         return reconnectTimeout;
     }
@@ -326,6 +353,22 @@ public class PollTableEntry extends AbstractPollTableEntry {
         return distributedLockTimeout;
     }
 
+    public boolean isCanceled() {
+        return canceled;
+    }
+
+    public void setCanceled(boolean canceled) {
+        this.canceled = canceled;
+    }
+
+    public boolean isClusterAware() {
+        return clusterAware;
+    }
+
+    public void setClusterAware(boolean clusterAware) {
+        this.clusterAware = clusterAware;
+    }
+
     public Map<String, String> getVfsSchemeProperties() {
         return vfsSchemeProperties;
     }
@@ -368,6 +411,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
         
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
+        fileURI = decryptIfRequired(fileURI);
         if (fileURI == null) {
         	log.warn("transport.vfs.FileURI parameter is missing in the proxy service configuration");
             return false;
@@ -378,6 +422,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }
             
             replyFileURI = ParamUtils.getOptionalParam(params, VFSConstants.REPLY_FILE_URI);
+            replyFileURI = decryptIfRequired(replyFileURI);
             fileNamePattern = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
 
@@ -385,8 +430,22 @@ public class PollTableEntry extends AbstractPollTableEntry {
                     VFSConstants.TRANSPORT_FILE_CONTENT_TYPE);
             String option = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_PROCESS);
-            actionAfterProcess = VFSTransportListener.MOVE.equals(option) ?
-                    PollTableEntry.MOVE : PollTableEntry.DELETE;
+            if (option == null) {
+                option = VFSTransportListener.DELETE;
+            }
+            switch (option) {
+                case VFSTransportListener.MOVE :
+                    actionAfterProcess = PollTableEntry.MOVE;
+                    break;
+                case VFSTransportListener.DELETE :
+                    actionAfterProcess = PollTableEntry.DELETE;
+                    break;
+                case VFSTransportListener.NONE :
+                    actionAfterProcess = PollTableEntry.NONE;
+                    break;
+                default:
+                    actionAfterProcess = PollTableEntry.DELETE;
+            }
 
             option = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_ERRORS);
@@ -395,19 +454,36 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
             option = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_ACTION_AFTER_FAILURE);
-            actionAfterFailure = VFSTransportListener.MOVE.equals(option) ?
-                    PollTableEntry.MOVE : PollTableEntry.DELETE;
+            if (option == null) {
+                option = VFSTransportListener.DELETE;
+            }
+            switch (option) {
+                case VFSTransportListener.MOVE :
+                    actionAfterFailure = PollTableEntry.MOVE;
+                    break;
+                case VFSTransportListener.DELETE :
+                    actionAfterFailure = PollTableEntry.DELETE;
+                    break;
+                case VFSTransportListener.NONE :
+                    actionAfterFailure = PollTableEntry.NONE;
+                    break;
+                default:
+                    actionAfterFailure = PollTableEntry.DELETE;
+            }
 
             String moveDirectoryAfterProcess = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_PROCESS);
+            moveDirectoryAfterProcess = decryptIfRequired(moveDirectoryAfterProcess);
             setMoveAfterProcess(moveDirectoryAfterProcess);
 
             String moveDirectoryAfterErrors = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_ERRORS);
+            moveDirectoryAfterErrors = decryptIfRequired(moveDirectoryAfterErrors);
             setMoveAfterErrors(moveDirectoryAfterErrors);
 
             String moveDirectoryAfterFailure = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILURE);
+            moveDirectoryAfterFailure = decryptIfRequired(moveDirectoryAfterFailure);
             setMoveAfterFailure(moveDirectoryAfterFailure);
 
             String moveFileTimestampFormat = ParamUtils.getOptionalParam(
@@ -442,8 +518,20 @@ public class PollTableEntry extends AbstractPollTableEntry {
                 fileLocking = false;
             }
 
+            String strFileSizeLimit = ParamUtils.getOptionalParam(
+                    params, VFSConstants.TRANSPORT_FILE_SIZE_LIMIT);
+
+            try {
+                fileSizeLimit = strFileSizeLimit != null ? Double.parseDouble(strFileSizeLimit) :
+                                VFSConstants.DEFAULT_TRANSPORT_FILE_SIZE_LIMIT;
+            } catch (Exception e) {
+                log.warn("Error parsing specified file size limit - " + strFileSizeLimit +
+                         ", using default - unlimited");
+            }
+
             moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE);
+            moveAfterMoveFailure = decryptIfRequired(moveAfterMoveFailure);
 
             String nextRetryDuration = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FAILED_RECORD_NEXT_RETRY_DURATION);
@@ -580,8 +668,39 @@ public class PollTableEntry extends AbstractPollTableEntry {
             }            
             
             subfolderTimestamp = ParamUtils.getOptionalParam(params, VFSConstants.SUBFOLDER_TIMESTAMP);
-            
+            this.clusterAware = ParamUtils.getOptionalParamBoolean(params, VFSConstants.CLUSTER_AWARE, false);
             return super.loadConfiguration(params);
         }
+    }
+
+    /**
+     * Helper method to decrypt parameters if required.
+     * If the parameter is defined as - {wso2:vault-decrypt('Parameter')}, then this method will treat it as deryption
+     * required and do the relevant decryption for that part.
+     *
+     * @param parameter
+     * @return parameter
+     * @throws AxisFault
+     */
+    private String decryptIfRequired(String parameter) throws AxisFault {
+        if (parameter != null && !parameter.isEmpty()) {
+            // Create a Pattern object
+            Pattern r = Pattern.compile("\\{wso2:vault-decrypt\\('(.*?)'\\)\\}");
+
+            // Now create matcher object.
+            Matcher m = r.matcher(parameter);
+            if (m.find()) {
+                if (cryptoUtil == null) {
+                    cryptoUtil = new CryptoUtil(secureVaultProperties);
+                }
+                if (!cryptoUtil.isInitialized()) {
+                    throw new AxisFault("Error initialising cryptoutil");
+                }
+                String toDecrypt = m.group(1);
+                toDecrypt = new String(cryptoUtil.decrypt(toDecrypt.getBytes()));
+                parameter = m.replaceFirst(toDecrypt);
+            }
+        }
+        return parameter;
     }
 }

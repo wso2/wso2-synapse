@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
+import org.apache.synapse.commons.throttle.core.ThrottleUtil;
 
 /**
  * This class represents the throttle core declarative service component.
@@ -39,6 +40,10 @@ public class ThrottleServiceComponent {
 
 	protected void activate(ComponentContext context) {
 		log.debug("Activating throttle core service component");
+		if (ThrottleServiceDataHolder.getInstance().getThrottleProperties() == null){
+			ThrottleServiceDataHolder.getInstance().setThrottleProperties(
+					ThrottleUtil.loadThrottlePropertiesFromConfigurations());
+		}
 	}
 
 	protected void deactivate(ComponentContext ctx) {

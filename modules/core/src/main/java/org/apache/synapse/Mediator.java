@@ -20,6 +20,8 @@
 package org.apache.synapse;
 
 
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+
 /**
  * All Synapse mediators must implement this Mediator interface. As a message passes
  * through the Synapse system, each mediator's mediate() method is invoked in the
@@ -66,6 +68,12 @@ public interface Mediator extends SynapseArtifact {
     public boolean isContentAware();
 
     /**
+     * This is used to indicate whether message payload get modified during mediation
+     * @return whether mediator modify the payload
+     */
+    public boolean isContentAltering();
+
+    /**
      * Get the position of the mediator in sequence flow.
      * @return position of the mediator in sequence
      */
@@ -99,18 +107,14 @@ public interface Mediator extends SynapseArtifact {
     public String getMediatorName();
 
     /**
-     * Set Trace flow information from mediators
-     *
-     * @param msgCtx     MessageContext of the mediator
-     * @param mediatorId Mediator/component id
-     * @param mediator   Mediator instance
-     * @param isStart    Is start of mediation
-     * @return Generated unique ID
+     * Report Open Statistic Event for the Mediator
      */
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart);
+    public Integer reportOpenStatistics(MessageContext synCtx, boolean isContentAltering);
 
     /**
-     * Report Statistics for the Mediator
+     * Report Close Statistic Event for the Mediator
      */
-    public void reportStatistic(MessageContext synCtx, String parentName, boolean isCreateLog);
+    public void reportCloseStatistics(MessageContext synCtx, Integer currentIndex);
+
+    public void setComponentStatisticsId(ArtifactHolder holder);
 }

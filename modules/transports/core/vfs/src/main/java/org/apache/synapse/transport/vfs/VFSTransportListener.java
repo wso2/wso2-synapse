@@ -28,19 +28,26 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
+import javax.xml.namespace.QName;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.builder.Builder;
 import org.apache.axis2.builder.BuilderUtil;
 import org.apache.axis2.builder.SOAPBuilder;
+import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
+import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.format.DataSourceMessageBuilder;
 import org.apache.axis2.format.ManagedDataSource;
 import org.apache.axis2.format.ManagedDataSourceFactory;
@@ -61,11 +68,14 @@ import org.apache.commons.vfs2.FileSystemManager;
 import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.impl.StandardFileSystemManager;
+import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.commons.vfs.FileObjectDataSource;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSOutTransportInfo;
 import org.apache.synapse.commons.vfs.VFSParamDTO;
 import org.apache.synapse.commons.vfs.VFSUtils;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecureVaultException;
 
 /**
  * The "vfs" transport is a polling based transport - i.e. it gets kicked off at
@@ -128,6 +138,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     public static final String DELETE = "DELETE";
     public static final String MOVE = "MOVE";
+    public static final String NONE = "NONE";
 
     /** The VFS file system manager */
     private FileSystemManager fsManager = null;
@@ -185,6 +196,41 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      * @param fileURI the file or directory to be scanned
      */
     private void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
+        if (log.isDebugEnabled()) {
+            log.debug("Polling: " + fileURI);
+        }
+        if (entry.isClusterAware()) {
+            boolean leader = true;
+            ClusteringAgent agent = getConfigurationContext().getAxisConfiguration().getClusteringAgent();
+            if (agent != null && agent.getParameter("domain") != null) {
+                //hazelcast clustering instance name
+                String hazelcastInstanceName = agent.getParameter("domain").getValue() + ".instance";
+                HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(hazelcastInstanceName);
+                if (instance != null) {
+                    // dirty leader election
+                    leader = instance.getCluster().getMembers().iterator().next().localMember();
+                } else {
+                    log.warn("Clustering error, running the polling task in this node");
+                }
+            } else {
+                log.warn("Although proxy is cluster aware, clustering config are not present, hence running the" +
+                         " the polling task in this node");
+            }
+            if (!leader) {
+                if (log.isDebugEnabled()) {
+                    log.debug("This Member is not the leader");
+                }
+                entry.setLastPollState(PollTableEntry.NONE);
+                long now = System.currentTimeMillis();
+                entry.setLastPollTime(now);
+                entry.setNextPollTime(now + entry.getPollInterval());
+                onPollCompletion(entry);
+                return;
+            }
+            if (log.isDebugEnabled()) {
+                log.debug("This Member is the leader");
+            }
+        }
         FileSystemOptions fso = null;
         setFileSystemClosed(false);
         try {
@@ -267,7 +313,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             !isFailedRecord) {
                         boolean runPostProcess = true;
                         if (!entry.isFileLockingEnabled() || (entry.isFileLockingEnabled() &&
-                                acquireLock(fsManager, fileObject, entry, fso))) {
+                                acquireLock(fsManager, fileObject, entry, fso, true))) {
                             try {
                                 if (fileObject.getType() == FileType.FILE) {
                                     processFile(entry, fileObject);
@@ -375,8 +421,27 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         log.debug("End Sorting the files.");
                     }                 
                     for (FileObject child : children) {
+                        /**
+                         * Before starting to process another file, see whether the proxy is stopped or not.
+                         */
+                        if (entry.isCanceled()) {
+                            break;
+                        }
                         //skipping *.lock file
                         if(child.getName().getBaseName().endsWith(".lock")){
+                            continue;
+                        }
+                        //skipping subfolders
+                        if (child.getType() != FileType.FILE) {
+                            continue;
+                        }
+                        //skipping files depending on size limitation
+                        if (entry.getFileSizeLimit() >= 0 && child.getContent().getSize() > entry.getFileSizeLimit()) {
+                            if (log.isDebugEnabled()) {
+                                log.debug("Ignoring file - " + child.getName().getBaseName() + " size - " +
+                                          child.getContent().getSize() + " since it exceeds file size limit - " +
+                                          entry.getFileSizeLimit());
+                            }
                             continue;
                         }
                         boolean isFailedRecord = false;
@@ -393,7 +458,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                             }
                             boolean runPostProcess = true;
                             if((!entry.isFileLockingEnabled()
-                                    || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child, fso)))
+                                    || (entry.isFileLockingEnabled() && VFSUtils.acquireLock(fsManager, child, fso, true)))
                                     && !isFailedRecord){
                                 //process the file
                                 try {
@@ -461,7 +526,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                                 VFSUtils.releaseLock(fsManager, child, fso);
                                 VFSUtils.releaseLock(fsManager, fileObject, fso);
                             }
-                            if (fsManager.resolveFile(child.getURL().toString()) != null &&
+                            if (fsManager.resolveFile(child.getURL().toString(), fso) != null &&
                                     removeTaskState == STATE_STOPPED && entry.getMoveAfterMoveFailure() != null) {
                                 workerPool.execute(new FileRemoveTask(entry, child, fso));
                             }
@@ -535,12 +600,12 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
     }
 
     private boolean acquireLock(FileSystemManager fsManager, FileObject fileObject, final PollTableEntry entry,
-                                FileSystemOptions fso){
+                                FileSystemOptions fso, boolean isListener){
         VFSParamDTO vfsParamDTO = new VFSParamDTO();
         vfsParamDTO.setAutoLockRelease(entry.getAutoLockRelease());
         vfsParamDTO.setAutoLockReleaseSameNode(entry.getAutoLockReleaseSameNode());
         vfsParamDTO.setAutoLockReleaseInterval(entry.getAutoLockReleaseInterval());
-        return VFSUtils.acquireLock(fsManager, fileObject, vfsParamDTO, fso);
+        return VFSUtils.acquireLock(fsManager, fileObject, vfsParamDTO, fso, isListener);
     }
 
     /**
@@ -555,7 +620,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         try {
             switch (entry.getLastPollState()) {
                 case PollTableEntry.SUCCSESSFUL:
-                    if (entry.getActionAfterProcess() == PollTableEntry.MOVE) {
+                    if (entry.getActionAfterProcess() == PollTableEntry.NONE) {
+                        return;
+                    } else if (entry.getActionAfterProcess() == PollTableEntry.MOVE) {
                         moveToDirectoryURI = entry.getMoveAfterProcess();
                         //Postfix the date given timestamp format
                         String strSubfoldertimestamp = entry.getSubfolderTimestamp();
@@ -580,7 +647,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     break;
 
                 case PollTableEntry.FAILED:
-                    if (entry.getActionAfterFailure() == PollTableEntry.MOVE) {
+                    if (entry.getActionAfterFailure() == PollTableEntry.NONE) {
+                        return;
+                    } else if (entry.getActionAfterFailure() == PollTableEntry.MOVE) {
                         moveToDirectoryURI = entry.getMoveAfterFailure();
                     }
                     break;
@@ -713,7 +782,9 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
             // Determine the message builder to use
             Builder builder;
             if (contentType == null) {
-                log.debug("No content type specified. Using SOAP builder.");
+                if (log.isDebugEnabled()) {
+                    log.debug("No content type specified. Using SOAP builder.");
+                }
                 builder = new SOAPBuilder();
             } else {
                 int index = contentType.indexOf(';');
@@ -776,6 +847,10 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
         } finally {
             try {
                 if (file != null) {
+                    if (fsManager != null && file.getName() != null && file.getName().getScheme() != null &&
+                            file.getName().getScheme().startsWith("file")) {
+                        fsManager.closeFileSystem(file.getParent().getFileSystem());
+                    }
                     file.close();
                 }
             } catch (FileSystemException warn) {
@@ -787,7 +862,50 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
     @Override
     protected PollTableEntry createEndpoint() {
-        return new PollTableEntry(globalFileLockingFlag);
+        PollTableEntry entry = new PollTableEntry(globalFileLockingFlag);
+        entry.setSecureVaultProperties(generateSecureVaultProperties(getTransportInDescription()));
+        return entry;
+    }
+
+    @Override
+    protected void stopEndpoint(PollTableEntry endpoint) {
+        synchronized (endpoint) {
+            endpoint.setCanceled(true);
+        }
+        super.stopEndpoint(endpoint);
+    }
+
+    /**
+     * Helper method to generate securevault properties from given transport configuration.
+     *
+     * @param inDescription
+     * @return properties
+     */
+    private Properties generateSecureVaultProperties(TransportInDescription inDescription) {
+        Properties properties = new Properties();
+        SecretResolver secretResolver = getConfigurationContext().getAxisConfiguration().getSecretResolver();
+        for (Parameter parameter : inDescription.getParameters()) {
+            String propertyValue = parameter.getValue().toString();
+            OMElement paramElement = parameter.getParameterElement();
+            if (paramElement != null) {
+                OMAttribute attribute = paramElement.getAttribute(
+                        new QName(CryptoConstants.SECUREVAULT_NAMESPACE,
+                                  CryptoConstants.SECUREVAULT_ALIAS_ATTRIBUTE));
+                if (attribute != null && attribute.getAttributeValue() != null
+                    && !attribute.getAttributeValue().isEmpty()) {
+                    if (secretResolver == null) {
+                        throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                                                       "is null");
+                    }
+                    if (secretResolver.isTokenProtected(attribute.getAttributeValue())) {
+                        propertyValue = secretResolver.resolve(attribute.getAttributeValue());
+                    }
+                }
+            }
+
+            properties.setProperty(parameter.getName().toString(), propertyValue);
+        }
+        return properties;
     }
 
     private synchronized void addFailedRecord(PollTableEntry pollTableEntry,

@@ -16,13 +16,17 @@
 
 package org.apache.synapse.debug.utils;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.SwitchCase;
 import org.apache.synapse.debug.constructs.EnclosedInlinedSequence;
 import org.apache.synapse.mediators.AbstractListMediator;
-import org.apache.synapse.mediators.builtin.CacheMediator;
+import org.apache.synapse.mediators.builtin.CommentMediator;
 import org.apache.synapse.mediators.builtin.ForEachMediator;
+import org.apache.synapse.mediators.eip.aggregator.AggregateMediator;
+import org.apache.synapse.mediators.eip.splitter.CloneMediator;
 import org.apache.synapse.mediators.eip.splitter.IterateMediator;
 import org.apache.synapse.mediators.filters.FilterMediator;
 import org.apache.synapse.mediators.filters.SwitchMediator;
@@ -34,6 +38,7 @@ import org.apache.synapse.mediators.template.InvokeMediator;
  */
 public class MediatorTreeTraverseUtil {
 
+    private static final Log log = LogFactory.getLog(MediatorTreeTraverseUtil.class);
     /**
      * Returns mediator referece associated with position while traversing the mediator tree.
      *
@@ -47,9 +52,17 @@ public class MediatorTreeTraverseUtil {
                                                 Mediator seqMediator,
                                                 int[] position) {
         Mediator current_mediator = null;
+
+
         for (int counter = 0; counter < position.length; counter++) {
             if (counter == 0) {
-                current_mediator = ((AbstractListMediator) seqMediator).getChild(position[counter]);
+                int mediatorCount = ((AbstractListMediator) seqMediator).getList().size();
+                int correctedPosition = getCorrectedPossition((AbstractListMediator) seqMediator, position[counter]);
+                if (mediatorCount > correctedPosition) {
+                    current_mediator = ((AbstractListMediator) seqMediator).getChild(correctedPosition);
+                } else {
+                    log.warn("Mediator position requested is larger than last index : " + position[counter]);
+                }
             }
             if (current_mediator != null && counter != 0) {
                 if (current_mediator instanceof InvokeMediator) {
@@ -71,8 +84,15 @@ public class MediatorTreeTraverseUtil {
                         } else {
                             counter = counter + 1;
                             if (counter < position.length) {
-                                current_mediator = ((AbstractListMediator) current_mediator)
-                                        .getChild(position[counter]);
+                                int mediatorCount = ((AbstractListMediator) current_mediator).getList().size();
+                                int correctedPosition = getCorrectedPossition((AbstractListMediator) current_mediator, position[counter]);
+                                if (mediatorCount > correctedPosition) {
+                                    current_mediator = ((AbstractListMediator) current_mediator)
+                                            .getChild(correctedPosition);
+                                } else {
+                                    log.warn("Mediator position requested is larger than last index : "
+                                            + position[counter]);
+                                }
                             }
                         }
                         continue;
@@ -95,12 +115,12 @@ public class MediatorTreeTraverseUtil {
                         }
                     }
                     continue;
-                } else if (current_mediator instanceof CacheMediator) {
-                    if (((CacheMediator) current_mediator).getOnCacheHitSequence() != null) {
-                        current_mediator = ((CacheMediator) current_mediator).getOnCacheHitSequence();
-                    } else if (((CacheMediator) current_mediator).getOnCacheHitRef() != null) {
+                } else if (current_mediator instanceof AggregateMediator) {
+                    if (((AggregateMediator) current_mediator).getOnCompleteSequence() != null) {
+                        current_mediator = ((AggregateMediator) current_mediator).getOnCompleteSequence();
+                    } else if (((AggregateMediator) current_mediator).getOnCompleteSequenceRef() != null) {
                         current_mediator = synCfg
-                                .getSequence(((CacheMediator) current_mediator).getOnCacheHitRef());
+                                .getSequence(((AggregateMediator) current_mediator).getOnCompleteSequenceRef());
                     }
                 } else if (current_mediator instanceof ForEachMediator) {
                     if (((ForEachMediator) current_mediator).getSequence() != null) {
@@ -116,6 +136,14 @@ public class MediatorTreeTraverseUtil {
                         current_mediator = synCfg.getSequence(((IterateMediator) current_mediator)
                                 .getTarget().getSequenceRef());
                     }
+                } else if (current_mediator instanceof CloneMediator) {
+                    if (((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequence() != null) {
+                        current_mediator = ((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequence();
+                    } else if (((CloneMediator) current_mediator).getTargets().get(position[counter]).getSequenceRef() != null) {
+                        current_mediator = synCfg.getSequence(((CloneMediator) current_mediator)
+                                .getTargets().get(position[counter]).getSequenceRef());
+                    }
+                    continue;
                 } else if (current_mediator.getType().equals("ThrottleMediator")) {
                     current_mediator = ((EnclosedInlinedSequence) current_mediator)
                             .getInlineSequence(synCfg, position[counter]);
@@ -129,8 +157,13 @@ public class MediatorTreeTraverseUtil {
                             .getInlineSequence(synCfg, 0);
                 }
                 if (current_mediator != null && (current_mediator instanceof AbstractListMediator)) {
-                    current_mediator = ((AbstractListMediator) current_mediator)
-                            .getChild(position[counter]);
+                    int mediatorCount = ((AbstractListMediator) current_mediator).getList().size();
+                    int correctedPosition = getCorrectedPossition((AbstractListMediator) current_mediator, position[counter]);
+                    if (mediatorCount > correctedPosition) {
+                        current_mediator = ((AbstractListMediator) current_mediator).getChild(correctedPosition);
+                    } else {
+                        log.warn("Mediator position requested is larger than last index : " + position[counter]);
+                    }
                 } else {
                     current_mediator = null;
                     break;
@@ -138,6 +171,30 @@ public class MediatorTreeTraverseUtil {
             }
         }
         return current_mediator;
+    }
+
+    /**
+     * Developer Studio will send mediator positions without considering "Comment Mediators".
+     * Due to that reason, if there are comments in the source view, mediator positions become incorrect.
+     * This method will return the corrected mediator position considering "Comment Mediators" as well.
+     *
+     * @param seqMediator
+     * @param position
+     * @return correctedPossition considering comment mediators
+     */
+    private static int getCorrectedPossition(AbstractListMediator seqMediator, int position) {
+        int positionWithComments = 0;
+        int positionWithoutComments = 0;
+        for (Mediator mediator : seqMediator.getList()) {
+            if (!(mediator instanceof CommentMediator)) {
+                if (positionWithoutComments == position) {
+                    return positionWithComments;
+                }
+                ++positionWithoutComments;
+            }
+            ++positionWithComments;
+        }
+        return position;
     }
 
 }

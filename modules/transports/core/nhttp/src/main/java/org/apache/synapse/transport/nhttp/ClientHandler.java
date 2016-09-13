@@ -48,7 +48,6 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.auth.Credentials;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -77,6 +76,7 @@ import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 import org.apache.synapse.commons.jmx.ThreadingView;
+import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
@@ -168,14 +168,14 @@ public class ClientHandler implements NHttpClientEventHandler {
     public ClientHandler(
             final ConnectionPool connpool,
             final ClientConnFactory connFactory,
-            final Credentials proxycreds,
+            final ProxyConfig proxyConfig,
             final ConfigurationContext cfgCtx,
             final HttpParams params,
-            final NhttpMetricsCollector metrics) {
+            final NhttpMetricsCollector metrics) throws AxisFault {
         super();
         this.connpool = connpool;
         this.connFactory = connFactory;
-        this.proxyauthenticator = proxycreds != null ? new ProxyAuthenticator(proxycreds) : null;
+        this.proxyauthenticator = proxyConfig.createProxyAuthenticator();
         this.cfgCtx = cfgCtx;
         this.params = params;
         this.httpProcessor = getHttpProcessor();
@@ -210,6 +210,9 @@ public class ClientHandler implements NHttpClientEventHandler {
         HttpContext context = conn.getContext();
         ProxyTunnelHandler tunnelHandler = (ProxyTunnelHandler) context.getAttribute(TUNNEL_HANDLER);
         if (tunnelHandler != null && !tunnelHandler.isCompleted()) {
+            Axis2HttpRequest axis2HttpRequest = (Axis2HttpRequest) (context.getAttribute(ATTACHMENT_KEY));
+            Object targetHost = axis2HttpRequest.getMsgContext().getProperty(NhttpConstants.PROXY_PROFILE_TARGET_HOST);
+            context.setAttribute(NhttpConstants.PROXY_PROFILE_TARGET_HOST, targetHost);
             if (!tunnelHandler.isRequested()) {
                 HttpRequest request = tunnelHandler.generateRequest(context);
                 if (proxyauthenticator != null) {
@@ -317,6 +320,9 @@ public class ClientHandler implements NHttpClientEventHandler {
             context.setAttribute(ExecutionContext.HTTP_TARGET_HOST, route.getTargetHost());
             context.setAttribute(OUTGOING_MESSAGE_CONTEXT, axis2Req.getMsgContext());
 
+            context.setAttribute(NhttpConstants.PROXY_PROFILE_TARGET_HOST,
+                    axis2Req.getMsgContext().getProperty(NhttpConstants.PROXY_PROFILE_TARGET_HOST));
+
             HttpRequest request = axis2Req.getRequest();
             request.setParams(new DefaultedHttpParams(request.getParams(), this.params));
 
@@ -374,11 +380,7 @@ public class ClientHandler implements NHttpClientEventHandler {
         if (log.isTraceEnabled()) {
             log.trace(conn + ": " + message);
         }
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
-
-        if (axis2Request == null) {
-            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
-        }
+        Axis2HttpRequest axis2Request = this.getAxis2HttpRequest(conn);
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_CLOSED, message, null);
@@ -408,11 +410,7 @@ public class ClientHandler implements NHttpClientEventHandler {
             log.debug(conn + ": " + message);
         }
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
-
-        if (axis2Request == null) {
-            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
-        }
+        Axis2HttpRequest axis2Request = this.getAxis2HttpRequest(conn);
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             checkAxisRequestComplete(conn, NhttpConstants.CONNECTION_TIMEOUT, message, null);
@@ -513,11 +511,7 @@ public class ClientHandler implements NHttpClientEventHandler {
     private void checkAxisRequestComplete(NHttpClientConnection conn,
         final int errorCode, final String errorMessage, final Exception exceptionToRaise) {
 
-        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
-
-        if (axis2Request == null) {
-            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
-        }
+        Axis2HttpRequest axis2Request = this.getAxis2HttpRequest(conn);
 
         if (axis2Request != null && !axis2Request.isCompleted()) {
             markRequestCompletedWithError(axis2Request, errorCode, errorMessage, exceptionToRaise);
@@ -1139,15 +1133,15 @@ public class ClientHandler implements NHttpClientEventHandler {
                 && statusCode != HttpStatus.SC_RESET_CONTENT) {
             expectEntityBody = true;
         } else if (NhttpConstants.HTTP_HEAD.equals(requestMethod)) {
-	        // When invoking http HEAD request esb set content length as 0 to response header. Since there is no message
-	        // body content length cannot be calculated inside synapse. Hence additional two headers are added to
-	        // which contains content length of the backend response and the request method. These headers are removed
-	        // before submitting the actual response.
-	        response.addHeader(NhttpConstants.HTTP_REQUEST_METHOD, requestMethod);
+	    // When invoking http HEAD request esb set content length as 0 to response header. Since there is no message
+	    // body content length cannot be calculated inside synapse. Hence additional two headers are added to
+	    // which contains content length of the backend response and the request method. These headers are removed
+	    // before submitting the actual response.
+	    response.addHeader(NhttpConstants.HTTP_REQUEST_METHOD, requestMethod);
 
-	        if (response.getFirstHeader(HTTP.CONTENT_LEN) != null) {
-		        response.addHeader(NhttpConstants.ORIGINAL_CONTENT_LEN, response.getFirstHeader(HTTP.CONTENT_LEN).getValue());
-	        }
+	    if (response.getFirstHeader(HTTP.CONTENT_LEN) != null) {
+		    response.addHeader(NhttpConstants.ORIGINAL_CONTENT_LEN, response.getFirstHeader(HTTP.CONTENT_LEN).getValue());
+	    }
         }
 
         if (expectEntityBody) {
@@ -1402,6 +1396,21 @@ public class ClientHandler implements NHttpClientEventHandler {
         for (NHttpClientConnection conn : clientConnections) {
             shutdownConnection(conn, false, " Connection closed to re-loading of Dynamic SSL Configurations ");
         }
+    }
+
+    /**
+     * Get axis2 request from connection
+     *
+     * @param conn the connection being processed
+     */
+    private Axis2HttpRequest getAxis2HttpRequest(NHttpClientConnection conn) {
+        Axis2HttpRequest axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(AXIS2_HTTP_REQUEST);
+
+        if (axis2Request == null) {
+            axis2Request = (Axis2HttpRequest) conn.getContext().getAttribute(ATTACHMENT_KEY);
+        }
+
+        return axis2Request;
     }
 
 }

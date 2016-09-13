@@ -27,6 +27,8 @@ public final class EIPConstants {
      */
     public static final String AGGREGATE_CORRELATION = "aggregateCorelation";
 
+    public static final String EIP_SHARED_DATA_HOLDER = "EIP_SHARED_DATA_HOLDER";
+
     /** Constant for the message sequence property key */
     public static final String MESSAGE_SEQUENCE = "messageSequence";
 

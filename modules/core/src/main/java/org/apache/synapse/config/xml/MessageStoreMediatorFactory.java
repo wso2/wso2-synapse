@@ -44,6 +44,7 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         MessageStoreMediator messageStoreMediator = new MessageStoreMediator();
+        processAuditStatus(messageStoreMediator, elem);
         OMAttribute nameAtt = elem.getAttribute(ATT_NAME);
         if(nameAtt != null) {
             messageStoreMediator.setName(nameAtt.getAttributeValue());

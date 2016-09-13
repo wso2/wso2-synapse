@@ -21,6 +21,7 @@ package org.apache.synapse.commons.throttle.core;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
 import java.util.Set;
 import java.util.concurrent.*;
@@ -37,17 +38,15 @@ public class ThrottleReplicator {
     private static int replicatorPoolSize = REPLICATOR_THREAD_POOL_SIZE;
 
     private ConfigurationContext configContext;
-
+    private ThrottleProperties throttleProperties;
     private int replicatorCount;
 
     private Set<String> set = new ConcurrentSkipListSet<String>();
 
     public ThrottleReplicator() {
+        throttleProperties = ThrottleServiceDataHolder.getInstance().getThrottleProperties();
+        replicatorPoolSize = Integer.parseInt(throttleProperties.getThrottlingPoolSize());
 
-        String replicatorThreads = System.getProperty("throttling.pool.size");
-        if (replicatorThreads != null) {
-            replicatorPoolSize = Integer.parseInt(replicatorThreads);
-        }
         log.debug("Replicator pool size set to " + replicatorPoolSize);
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(replicatorPoolSize,
                 new ThreadFactory() {
@@ -59,15 +58,10 @@ public class ThrottleReplicator {
                         return t;
                     }
                 });
-        String throttleFrequency = System.getProperty("throttling.replication.frequency");
-        if (throttleFrequency == null) {
-            throttleFrequency = "50";
-        }
+        String throttleFrequency =throttleProperties.getThrottlingReplicationFrequency();
+
         log.debug("Throttling Frequency set to " + throttleFrequency);
-        String maxKeysToReplicate = System.getProperty("throttling.keys.to.replicate");
-        if (maxKeysToReplicate != null) {
-            keysToReplicate = Integer.parseInt(maxKeysToReplicate);
-        }
+            keysToReplicate = Integer.parseInt(throttleProperties.getThrottlingKeysToReplicates());
         log.debug("Max keys to Replicate " + keysToReplicate);
         for (int i = 0; i < replicatorPoolSize; i++) {
             executor.scheduleAtFixedRate(new ReplicatorTask(), Integer.parseInt(throttleFrequency),

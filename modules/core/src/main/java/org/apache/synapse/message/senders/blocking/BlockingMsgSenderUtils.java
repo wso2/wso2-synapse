@@ -234,7 +234,11 @@ public class BlockingMsgSenderUtils {
 
         // set the SEND_TIMEOUT for transport sender
         if (endpoint.getEffectiveTimeout() > 0) {
-            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            if (!endpoint.isDynamicTimeoutEndpoint()) {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            } else {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseInMsgCtx));
+            }
         }
 
         // Check for preserve WS-Addressing
@@ -320,6 +324,8 @@ public class BlockingMsgSenderUtils {
 
     private static String[] allowedProperties = {"JSON_OBJECT",
                                                  "JSON_STRING",
+                                                 NhttpConstants.DISTRIBUTED_TRANSACTION,
+                                                 NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,
                                                  Constants.Configuration.HTTP_METHOD,
                                                  Constants.Configuration.MESSAGE_TYPE,
                                                  Constants.Configuration.CONTENT_TYPE,

@@ -27,6 +27,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.SynapseConfigUtils;
+import org.apache.synapse.config.xml.SynapsePath;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,6 +132,11 @@ public class EndpointDefinition implements AspectConfigurable {
     private String charSetEncoding;
 
     /**
+     * The expression to evaluate dynamic timeout.
+     */
+    private SynapsePath dynamicTimeout = null;
+
+    /**
      * Whether endpoint state replication should be disabled or not (only valid in clustered setups)
      */
     private boolean replicationDisabled = false;
@@ -170,10 +176,6 @@ public class EndpointDefinition implements AspectConfigurable {
     private final List<Integer> timeoutErrorCodes = new ArrayList<Integer>();
 
     private AspectConfiguration aspectConfiguration;
-    /**
-     * The variable that indicate tracing on or off for the current mediator
-     */
-    private int traceState = SynapseConstants.TRACING_UNSET;
 
     /** A list of error codes which permit the retries */
     private final List<Integer> retryDisabledErrorCodes = new ArrayList<Integer>();
@@ -181,16 +183,58 @@ public class EndpointDefinition implements AspectConfigurable {
     /** A list of error codes which permit the retries for Enabled error Codes */
     private final List<Integer> retryEnabledErrorCodes = new ArrayList<Integer>();
 
+    /** Variable to depict the effective timeout type **/
+    private SynapseConstants.ENDPOINT_TIMEOUT_TYPE endpointTimeoutType;
+
     public EndpointDefinition() {
         try {
             // Set the timeout value to global timeout value.
             // This will be overridden if endpoint timeout is set
             effectiveTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
+            this.endpointTimeoutType = SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT;
         } catch (Exception ex) {
             String msg = "Error while reading global timeout interval";
             log.error(msg, ex);
             throw new SynapseException(msg, ex);
         }
+    }
+
+    public void setDynamicTimeoutExpression(SynapsePath expression) {
+        this.dynamicTimeout = expression;
+    }
+
+    public SynapsePath getDynamicTimeoutExpression() {
+        return this.dynamicTimeout;
+    }
+
+    public boolean isDynamicTimeoutEndpoint() {
+        if (this.dynamicTimeout != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public long evaluateDynamicEndpointTimeout(MessageContext synCtx) {
+        long timeoutMilliSeconds;
+        try {
+            String stringValue = dynamicTimeout.stringValueOf(synCtx);
+            if (stringValue != null) {
+                timeoutMilliSeconds = Long.parseLong(stringValue.trim());
+            } else {
+                log.warn("Error while evaluating dynamic endpoint timeout expression." +
+                        "Synapse global timeout is taken as effective timeout.");
+                timeoutMilliSeconds = effectiveTimeout;
+            }
+        } catch (NumberFormatException e) {
+            log.warn("Error while evaluating dynamic endpoint timeout expression." +
+                    "Synapse global timeout is taken as effective timeout.");
+            timeoutMilliSeconds = effectiveTimeout;
+        }
+        if (timeoutMilliSeconds > effectiveTimeout) {
+            return effectiveTimeout;
+        }
+        return timeoutMilliSeconds;
     }
 
     /**
@@ -496,6 +540,7 @@ public class EndpointDefinition implements AspectConfigurable {
     public void setTimeoutDuration(long timeoutDuration) {
         this.timeoutDuration = timeoutDuration;
         this.effectiveTimeout = timeoutDuration;
+        this.endpointTimeoutType = SynapseConstants.ENDPOINT_TIMEOUT_TYPE.ENDPOINT_TIMEOUT;
     }
 
     public int getTimeoutAction() {
@@ -550,13 +595,13 @@ public class EndpointDefinition implements AspectConfigurable {
         this.initialSuspendDuration = initialSuspendDuration;
     }
 
-    public int getTraceState() {
-        return traceState;
-    }
-
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
+//    public int getTraceState() {
+//        return traceState;
+//    }
+//
+//    public void setTraceState(int traceState) {
+//        this.traceState = traceState;
+//    }
 
     public float getSuspendProgressionFactor() {
         return suspendProgressionFactor;
@@ -666,12 +711,36 @@ public class EndpointDefinition implements AspectConfigurable {
         }
     }
 
+    public boolean isTracingEnabled() {
+        return this.aspectConfiguration != null && this.aspectConfiguration.isTracingEnabled();
+    }
+
+    public void disableTracing() {
+        if (this.aspectConfiguration != null) {
+            this.aspectConfiguration.disableTracing();
+        }
+    }
+
+    public void enableTracing() {
+        if (this.aspectConfiguration != null) {
+            this.aspectConfiguration.enableTracing();
+        }
+    }
+
     public void configure(AspectConfiguration aspectConfiguration) {
         this.aspectConfiguration = aspectConfiguration;
     }
 
     public AspectConfiguration getAspectConfiguration() {
         return this.aspectConfiguration;
+    }
+
+    public SynapseConstants.ENDPOINT_TIMEOUT_TYPE getEndpointTimeoutType() {
+        return endpointTimeoutType;
+    }
+
+    public void setEndpointTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE endpointTimeoutType) {
+        this.endpointTimeoutType = endpointTimeoutType;
     }
 
 

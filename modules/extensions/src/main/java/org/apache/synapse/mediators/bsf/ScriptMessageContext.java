@@ -31,6 +31,7 @@ import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
+import org.apache.axis2.context.OperationContext;
 import org.apache.bsf.xml.XMLHelper;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
@@ -45,10 +46,14 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
+import org.mozilla.javascript.ConsString;
 import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Wrapper;
 import org.mozilla.javascript.xml.XMLObject;
+import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.http.protocol.HTTP;
+import java.util.*;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
@@ -165,7 +170,11 @@ public class ScriptMessageContext implements MessageContext {
         } else {
             jsonString = serializeJSON(jsonPayload);
         }
-        JsonUtil.newJsonPayload(messageContext, jsonString, true, true);
+        try {
+            JsonUtil.getNewJsonPayload(messageContext, jsonString, true, true);
+        } catch (AxisFault axisFault) {
+            throw new ScriptException(axisFault);
+        }
         //JsonUtil.setContentType(messageContext);
         Object jsonObject = scriptEngine.eval('(' + jsonString + ')');
         setJsonObject(mc, jsonObject);
@@ -331,6 +340,10 @@ public class ScriptMessageContext implements MessageContext {
         return mc.getEntry(key);
     }
 
+    public Object getLocalEntry(String key) {
+        return mc.getLocalEntry(key);
+    }
+
     public void setProperty(String key, Object value) {
         if (value instanceof XMLObject) {
             OMElement omElement = null;
@@ -344,6 +357,82 @@ public class ScriptMessageContext implements MessageContext {
             }
         } else {
             mc.setProperty(key, value);
+        }
+    }
+
+    public void setProperty(String key, Object value, String scope) {
+        if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
+            setProperty(key, value);
+        } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
+            //Setting property into the  Axis2 Message Context
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            axis2MessageCtx.setProperty(key, value);
+            handleSpecialProperties(key, value, axis2MessageCtx);
+
+        } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {
+            //Setting Transport Headers
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+            if (headers != null && headers instanceof Map) {
+                Map headersMap = (Map) headers;
+                headersMap.put(key, value);
+            }
+            if (headers == null) {
+                Map headersMap = new HashMap();
+                headersMap.put(key, value);
+                axis2MessageCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS, headersMap);
+            }
+        } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            axis2smc.getAxis2MessageContext().getOperationContext().setProperty(key, value);
+        }
+    }
+
+    public void removeProperty(String key, String scope) {
+        if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
+            Set pros = mc.getPropertyKeySet();
+            if (pros != null) {
+                pros.remove(key);
+            }
+        } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
+            //Removing property from the Axis2 Message Context
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            axis2MessageCtx.removeProperty(key);
+
+        } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)) {
+            // Removing transport headers
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            Object headers = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            if (headers != null && headers instanceof Map) {
+                Map headersMap = (Map) headers;
+                headersMap.remove(key);
+            }
+        } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
+            // Removing operation scope headers
+            Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
+            org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
+            OperationContext axis2oc = axis2MessageCtx.getOperationContext();
+            axis2oc.removeProperty(key);
+        }
+
+    }
+
+    private void handleSpecialProperties(String key, Object value,
+            org.apache.axis2.context.MessageContext messageContext) {
+        if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(key)) {
+            messageContext.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, value);
+            Object o = messageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            Map _headers = (Map) o;
+            if (_headers != null) {
+                _headers.remove(HTTP.CONTENT_TYPE);
+                _headers.put(HTTP.CONTENT_TYPE, value);
+            }
         }
     }
 
@@ -626,7 +715,11 @@ public class ScriptMessageContext implements MessageContext {
             }
         }
         // save this JSON object as the new payload.
-        JsonUtil.newJsonPayload(messageContext, json, 0, json.length, true, true);
+        try {
+            JsonUtil.getNewJsonPayload(messageContext, json, 0, json.length, true, true);
+        } catch (AxisFault axisFault) {
+            throw new ScriptException(axisFault);
+        }
         //JsonUtil.setContentType(messageContext);
         Object jsonObject = scriptEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
         setJsonObject(mc, jsonObject);
@@ -697,6 +790,12 @@ public class ScriptMessageContext implements MessageContext {
         } else if (obj instanceof String) {
             out.write('"');
             out.write(((String) obj).getBytes());
+            out.write('"');
+        } else if (obj instanceof ConsString) {
+            //This class represents a string composed of two components using the "+" operator
+            //in java script with rhino7 upward. ex:var str = "val1" + "val2";
+            out.write('"');
+            out.write((((ConsString) obj).toString()).getBytes());
             out.write('"');
         } else if (obj instanceof Integer ||
                 obj instanceof Long ||

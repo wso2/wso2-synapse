@@ -89,7 +89,9 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
 
         if (attSource != null) {
             try {
-                validateMediator.setSource(SynapseXPathFactory.getSynapseXPath(elem, ATT_SOURCE));
+                if (attSource.getAttributeValue() != null) {
+                    validateMediator.setSource(SynapsePathFactory.getSynapsePath(elem, ATT_SOURCE));
+                }
             } catch (JaxenException e) {
                 handleException("Invalid XPath expression specified for attribute 'source'", e);
             }

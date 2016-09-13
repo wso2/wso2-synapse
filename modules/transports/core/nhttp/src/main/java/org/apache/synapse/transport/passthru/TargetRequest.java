@@ -39,6 +39,7 @@ import org.apache.http.nio.NHttpClientConnection;
 import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HTTP;
+import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -128,7 +129,7 @@ public class TargetRequest {
 	    }
          
         if (contentLengthHeader != null) {
-            contentLength = Integer.parseInt(contentLengthHeader);
+            contentLength = Long.parseLong(contentLengthHeader);
             headers.remove(HTTP.CONTENT_LEN);
         }
         
@@ -239,9 +240,7 @@ public class TargetRequest {
     		String soapAction = requestMsgCtx.getSoapAction();
             if (soapAction == null) {
                 soapAction = requestMsgCtx.getWSAAction();
-            }
-            if (soapAction == null) {
-            	requestMsgCtx.getAxisOperation().getInputAction();
+                requestMsgCtx.getAxisOperation().getInputAction();
             }
 
             if (requestMsgCtx.isSOAP11() && soapAction != null &&
@@ -275,22 +274,25 @@ public class TargetRequest {
        
 
         // Pre-process HTTP request
-        conn.getContext().setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+        HttpContext httpContext = conn.getContext();
+        httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
 
         if (port == -1) {
-            conn.getContext().setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost()));
+            httpContext.setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost()));
         } else {
-            conn.getContext().setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost(), port));
+            httpContext.setAttribute(ExecutionContext.HTTP_TARGET_HOST, new HttpHost(url.getHost(), port));
         }
 
         conn.getContext().setAttribute(ExecutionContext.HTTP_REQUEST, request);
+        httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST,
+                requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
 
         // start the request
-        targetConfiguration.getHttpProcessor().process(request, conn.getContext());
-        
+        targetConfiguration.getHttpProcessor().process(request, httpContext);
+
         if (targetConfiguration.getProxyAuthenticator() != null 
                 && route.getProxyHost() != null && !route.isTunnelled()) {
-            targetConfiguration.getProxyAuthenticator().authenticatePreemptively(request, conn.getContext());
+            targetConfiguration.getProxyAuthenticator().authenticatePreemptively(request, httpContext);
         }
         
         conn.submitRequest(request);

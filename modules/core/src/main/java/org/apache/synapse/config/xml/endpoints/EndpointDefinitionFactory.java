@@ -25,11 +25,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 public class EndpointDefinitionFactory implements DefinitionFactory{
     public static final Log log = LogFactory.getLog(EndpointDefinitionFactory.class);
@@ -48,19 +52,21 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
         OMAttribute encoding
                 = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "encoding"));
 
+/*
         OMAttribute trace = elem.getAttribute(new QName(
                 XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
         if (trace != null && trace.getAttributeValue() != null) {
             String traceValue = trace.getAttributeValue();
             if (XMLConfigConstants.TRACE_ENABLE.equals(traceValue)) {
-                definition.setTraceState(SynapseConstants.TRACING_ON);
-            } else if (XMLConfigConstants.TRACE_DISABLE.equals(traceValue)) {
-                definition.setTraceState(SynapseConstants.TRACING_OFF);
+                AspectConfiguration aspectConfiguration = definition.getAspectConfiguration();
+                if (aspectConfiguration == null) {
+                    aspectConfiguration = new AspectConfiguration(null);
+                }
+                aspectConfiguration.enableTracing();
+                definition.configure(aspectConfiguration);
             }
-        } else {
-            definition.setTraceState(SynapseConstants.TRACING_UNSET);
         }
-
+*/
 
         if (optimize != null && optimize.getAttributeValue().length() > 0) {
             String method = optimize.getAttributeValue().trim();
@@ -137,11 +143,20 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                 String d = duration.getText();
                 if (d != null) {
                     try {
-                        long timeoutMilliSeconds = Long.parseLong(d.trim());
-                        definition.setTimeoutDuration(timeoutMilliSeconds);
+                        Pattern pattern = Pattern.compile("\\{.*\\}");
+                        if (pattern.matcher(d).matches()) {
+                            d = d.trim().substring(1, d.length() - 1);
+                            SynapseXPath xpath = new SynapseXPath(d);
+                            definition.setDynamicTimeoutExpression(xpath);
+                        } else {
+                            long timeoutMilliSeconds = Long.parseLong(d.trim());
+                            definition.setTimeoutDuration(timeoutMilliSeconds);
+                        }
                     } catch (NumberFormatException e) {
                         handleException("Endpoint timeout duration expected as a " +
                                 "number but was not a number");
+                    } catch (JaxenException e) {
+                        handleException("Couldn't assign dynamic endpoint timeout as Synapse expression");
                     }
                 }
             }

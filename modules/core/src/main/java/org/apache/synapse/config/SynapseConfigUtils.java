@@ -29,7 +29,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.synapse.*;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.StatisticSynapseConfigurationObserver;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.wso2.securevault.definition.IdentityKeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformation;
 import org.wso2.securevault.definition.KeyStoreInformationFactory;
@@ -741,28 +743,6 @@ public class SynapseConfigUtils {
                 axisCfg.getParameterValue(SynapseConstants.SYNAPSE_CONFIG) : null;
     }
 
-    /**
-     * Get the StatisticsCollector from synapse env.
-     *
-     * @param contextInfo server information
-     * @return StatisticsCollector instance if there is any
-     */
-    public static StatisticsCollector getStatisticsCollector(ServerContextInformation contextInfo) {
-        if (contextInfo != null && (contextInfo.getServerState() == ServerState.INITIALIZED || contextInfo.getServerState() == ServerState.STARTED )) {
-            Object o = contextInfo.getServerContext();
-            if (o instanceof ConfigurationContext) {
-                ConfigurationContext context = (ConfigurationContext) o;
-                SynapseEnvironment environment =
-                        (SynapseEnvironment) context.getAxisConfiguration().getParameterValue(
-                                SynapseConstants.SYNAPSE_ENV);
-                if (environment != null) {
-                    return environment.getStatisticsCollector();
-                }
-            }
-        }
-        return null;
-    }
-
     public static OMElement stringToOM(String xml) {
         try {
             return AXIOMUtil.stringToOM(xml);  // Just wrap to add logging for any errors
@@ -797,6 +777,10 @@ public class SynapseConfigUtils {
                     handleException("Error while initializing Synapse observers", e);
                 }
             }
+        }
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            synConfig.registerObserver(new StatisticSynapseConfigurationObserver());
+            StatisticIdentityGenerator.setSynapseConfiguration(synConfig);
         }
         return synConfig;
     }

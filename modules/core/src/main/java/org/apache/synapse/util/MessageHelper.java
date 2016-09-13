@@ -35,21 +35,24 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.flow.statistics.util.StatisticMessageCountHolder;
-import org.apache.synapse.aspects.statistics.ErrorLog;
-import org.apache.synapse.aspects.statistics.StatisticsLog;
-import org.apache.synapse.aspects.statistics.StatisticsRecord;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.ResponseState;
+import org.apache.synapse.debug.constants.SynapseDebugCommandConstants;
+import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.template.TemplateContext;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
+import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,6 +61,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+
+import static org.apache.synapse.SynapseConstants.PASSWORD_PATTERN;
+import static org.apache.synapse.SynapseConstants.URL_PATTERN;
 
 /**
  *
@@ -128,16 +135,13 @@ public class MessageHelper {
                         log.debug("Deep clone for Template function stack");
                     }
                     obj = getClonedTemplateStack((Stack<TemplateContext>) obj);
-                } else if (obj instanceof StatisticsRecord) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Deep clone for Statistic Record");
-                    }
-                    obj = getClonedStatisticRecord((StatisticsRecord) obj);
                 } else if (obj instanceof OMElement) {
                     if (log.isDebugEnabled()) {
                         log.debug("Deep clone for OMElement");
                     }
                     obj = (OMElement) ((OMElement) obj).cloneOMElement();
+                } else if (obj instanceof ResponseState) {
+                    // do nothing and let the same reference to go to the cloned context
                 } else{
                     /**
                      * Need to add conditions according to type if found in
@@ -191,7 +195,6 @@ public class MessageHelper {
             }
         }
         newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
-        RuntimeStatisticCollector.setCloneProperties(synCtx, newCtx);
         return newCtx;
     }
 
@@ -236,43 +239,37 @@ public class MessageHelper {
 			// If there are non String keyed properties neglect them rather than
 			// throw exception
 			if (o instanceof String) {
-				if (synCtx.getProperty((String) o) != null &&
-				    synCtx.getProperty((String) o) instanceof StatisticsRecord) {
-					StatisticsRecord record = getClonedStatisticRecord((StatisticsRecord) synCtx.getProperty((String) o));
-					newCtx.setProperty(SynapseConstants.STATISTICS_STACK, record);
 
-				} else {
-					/**
-					 * Clone the properties and add to new context
-					 * If not cloned can give errors in target configuration
-					 */
-					String strkey = (String) o;
-					Object obj = synCtx.getProperty(strkey);
-					if (obj instanceof String) {
-						// No need to do anything since Strings are immutable
-					} else if (obj instanceof ArrayList) {
-				        if (log.isDebugEnabled()) {
-				            log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
-				        }
-						// Call this method to deep clone ArrayList
-						obj = cloneArrayList((ArrayList) obj);
-				        if (log.isDebugEnabled()) {
-				            log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
-				        }
-					} else {
-						/**
-						 * Need to add conditions according to type if found in
-						 * future
-						 */
-						if (log.isDebugEnabled()) {
-							log.warn("Deep clone not happened for property : " + strkey +
-							         ". Class type : " + obj.getClass().getName());
-						}
-					}
-					newCtx.setProperty(strkey, obj);
-				}
-			}
-		}
+                /**
+                 * Clone the properties and add to new context
+                 * If not cloned can give errors in target configuration
+                 */
+                String strkey = (String) o;
+                Object obj = synCtx.getProperty(strkey);
+                if (obj instanceof String) {
+                    // No need to do anything since Strings are immutable
+                } else if (obj instanceof ArrayList) {
+                    if (log.isDebugEnabled()) {
+                        log.warn("Deep clone Started for  ArrayList property: " + strkey + ".");
+                    }
+                    // Call this method to deep clone ArrayList
+                    obj = cloneArrayList((ArrayList) obj);
+                    if (log.isDebugEnabled()) {
+                        log.warn("Deep clone Ended for  ArrayList property: " + strkey + ".");
+                    }
+                } else {
+                    /**
+                     * Need to add conditions according to type if found in
+                     * future
+                     */
+                    if (log.isDebugEnabled()) {
+                        log.warn("Deep clone not happened for property : " + strkey +
+                                 ". Class type : " + obj.getClass().getName());
+                    }
+                }
+                newCtx.setProperty(strkey, obj);
+            }
+        }
 
         // Make deep copy of fault stack so that parent will not be lost it's fault stack
         Stack<FaultHandler> faultStack = synCtx.getFaultStack();
@@ -313,8 +310,6 @@ public class MessageHelper {
         }
 
         newCtx.setMessageFlowTracingState(synCtx.getMessageFlowTracingState());
-        RuntimeStatisticCollector.setAggregateProperties(synCtx, newCtx);
-
         return newCtx;
     }
 
@@ -351,44 +346,6 @@ public class MessageHelper {
         return clonedTemplateStack;
     }
 
-    /**
-     * Get clone of Statistic Record
-     *
-     * @param oriRecord original statistic record
-     * @return clone of Statistic Record
-     */
-    public static StatisticsRecord getClonedStatisticRecord (StatisticsRecord oriRecord) {
-
-        StatisticsRecord clonedRecord = new StatisticsRecord(oriRecord.getId(),
-                                                             oriRecord.getClientIP(),
-                                                             oriRecord.getClientHost());
-
-        clonedRecord.setOwner(oriRecord.getOwner());
-        clonedRecord.setEndReported(oriRecord.isEndReported());
-        // Clone stats logs
-        List<StatisticsLog> oriStatisticsLogs = oriRecord.getAllStatisticsLogs();
-        for (StatisticsLog oriLog : oriStatisticsLogs) {
-            StatisticsLog clonedLog = new StatisticsLog(oriLog.getId(), oriLog.getComponentType());
-            clonedLog.setTime(oriLog.getTime());
-            clonedLog.setResponse(oriLog.isResponse());
-            clonedLog.setFault(oriLog.isFault());
-            clonedLog.setEndAnyLog(oriLog.isEndAnyLog());
-            clonedLog.setCollectedByRequestFlow(oriLog.isCollectedByRequestFlow());
-            // Error Log
-            ErrorLog oriErrorLog = oriLog.getErrorLog();
-            if (oriErrorLog != null) {
-                ErrorLog clonedErrorLog = new ErrorLog(oriErrorLog.getErrorCode());
-                if (oriErrorLog.getException() != null) {
-                    clonedErrorLog.setException(oriErrorLog.getException());
-                }
-                clonedErrorLog.setErrorMessage(oriErrorLog.getErrorMessage());
-                clonedErrorLog.setErrorDetail(oriErrorLog.getErrorDetail());
-                clonedLog.setErrorLog(clonedErrorLog);
-            }
-            clonedRecord.collect(clonedLog);
-        }
-        return clonedRecord;
-    }
      /*
      * This method will deep clone array list by creating a new ArrayList and cloning and adding each element in it
      * */
@@ -440,6 +397,16 @@ public class MessageHelper {
      */
     public static org.apache.axis2.context.MessageContext cloneAxis2MessageContext(
         org.apache.axis2.context.MessageContext mc, boolean cloneSoapEnvelope) throws AxisFault {
+
+        //building the message payload since buffer can not be cloned. otherwise cloned message will have
+        //empty buffer in PASS_THROUGH_PIPE without the message payload.
+        try {
+            RelayUtils.buildMessage(mc, false);
+        } catch (IOException e) {
+            handleException(e);
+        } catch (XMLStreamException e) {
+            handleException(e);
+        }
 
         org.apache.axis2.context.MessageContext newMC = clonePartially(mc);
         if (cloneSoapEnvelope) {
@@ -694,13 +661,22 @@ public class MessageHelper {
             fac = OMAbstractFactory.getSOAP12Factory();
         }
         SOAPEnvelope newEnvelope = fac.getDefaultEnvelope();
-
+        Iterator childIterator;
         if (envelope.getHeader() != null) {
-            Iterator itr     = envelope.getHeader().cloneOMElement().getChildren();
-            while (itr.hasNext()) {
-                OMNode node = (OMNode) itr.next();
-                itr.remove();
-                newEnvelope.getHeader().addChild(node);
+            SOAPHeader body = envelope.getHeader();
+            childIterator = body.getChildren();
+            while (childIterator.hasNext()) {
+                Object bodyNs = childIterator.next();
+                if (bodyNs instanceof SOAPHeaderBlock) {
+                    try {
+                        newEnvelope.getHeader()
+                                .addChild(ElementHelper.toSOAPHeaderBlock(((OMElement) bodyNs).cloneOMElement(), fac));
+                    } catch (Exception e) {
+                        handleException(e);
+                    }
+                } else if (bodyNs instanceof OMElement) {
+                    newEnvelope.getHeader().addChild(((OMElement) bodyNs).cloneOMElement());
+                }
             }
         }
 
@@ -979,6 +955,41 @@ public class MessageHelper {
     private static void handleException(Exception e) {
         log.error(e);
         throw new SynapseException(e);
+    }
+
+    /**
+     * This method is to set mediatorId property to axis2 message context. This Id will be copied to iosession from the DeliveryAgent.java
+     * class and it will be used at wire level to identify to which mediator the wirelogs belongs.
+     *
+     * @param synCtx
+     */
+    public static void setWireLogHolderProperties(MessageContext synCtx, boolean isBreakPoint, SynapseMediationFlowPoint mediationFlowPoint) {
+        if (isBreakPoint) {
+            String mediatorId = synCtx.getEnvironment().getSynapseDebugManager().createDebugMediationFlowPointJSONForWireLogs(mediationFlowPoint).toString();
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY, mediatorId);
+        } else {
+            /**
+             * this is to be used when there are mediators which sends back-end requests, but not a break point.
+             */
+            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY,
+                                                                                SynapseDebugInfoHolder.DUMMY_MEDIATOR_ID); //
+        }
+    }
+
+    /**
+     * Mask the password of the connection url with ***
+     * @param url the actual url
+     * @return the masked url
+     */
+    public static String maskURLPassword(String url) {
+        final Matcher urlMatcher = URL_PATTERN.matcher(url);
+        String maskUrl;
+        if (urlMatcher.find()) {
+            final Matcher pwdMatcher = PASSWORD_PATTERN.matcher(url);
+            maskUrl = pwdMatcher.replaceFirst("\":***@\"");
+            return maskUrl;
+        }
+        return url;
     }
 
 }

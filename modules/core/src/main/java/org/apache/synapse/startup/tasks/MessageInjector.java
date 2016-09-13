@@ -21,6 +21,8 @@ package org.apache.synapse.startup.tasks;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.util.UIDGenerator;
 import org.apache.axis2.AxisFault;
@@ -40,6 +42,13 @@ import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.util.PayloadHelper;
+
+import javax.xml.stream.XMLStreamException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Injects a Message into a named sequence or a proxy service configured in the Synapse
@@ -104,6 +113,16 @@ public class MessageInjector implements Task, ManagedLifecycle {
     private String proxyName = null;
 
     /**
+     * Registry path for message to inject
+     */
+    private String registryKey = null;
+
+    /**
+     * Store additional properties required at the runtime
+     */
+    private Map<String, Object> runtimeProperties = null;
+
+    /**
      * Initializes the Injector
      *
      * @param se
@@ -111,6 +130,7 @@ public class MessageInjector implements Task, ManagedLifecycle {
      */
     public void init(SynapseEnvironment se) {
 		synapseEnvironment = se;
+        runtimeProperties = new HashMap<String, Object>();
 	}
 
     /**
@@ -176,6 +196,38 @@ public class MessageInjector implements Task, ManagedLifecycle {
         this.proxyName = proxyName;
     }
 
+    public String getRegistryKey() {
+        return registryKey;
+    }
+
+    public void setRegistryKey(String registryKey) {
+        this.registryKey = registryKey;
+    }
+
+    /**
+     * Set a property to be used at runtime. These properties will get inserted in message context created
+     * at here
+     *
+     * @param key    Key of the property
+     * @param value  Value of the property
+     */
+    public void addRuntimeProperty(String key, Object value) {
+        if (runtimeProperties.get(key) != null && log.isDebugEnabled()) {
+            log.debug("Key :" + key + " will be override.");
+        }
+        runtimeProperties.put(key, value);
+    }
+
+    /**
+     * Get a property stored for runtime use
+     *
+     * @param key   Key of the property to retrieve
+     * @return   Value of the property. If property does not exists, this will throw NullPointerException
+     */
+    public Object getRuntimeProperty(String key) throws NullPointerException {
+        return runtimeProperties.get(key);
+    }
+
     /**
      * This will be invoked by the scheduler to inject the message
      * in to the SynapseEnvironment
@@ -191,8 +243,13 @@ public class MessageInjector implements Task, ManagedLifecycle {
             return;
 		}
 
-		if (message == null) {
-            handleError("message not set");
+        if(synapseEnvironment.getTaskManager() != null && !synapseEnvironment.getTaskManager().isInitialized()){
+            log.warn("Task Manager not initialized. Not executing the cycle");
+            return;
+        }
+
+		if (message == null && registryKey == null) {
+            handleError("message or registry-key not set");
             return;
 		}
 
@@ -274,27 +331,75 @@ public class MessageInjector implements Task, ManagedLifecycle {
                 mc.setTo(new EndpointReference(to));
             }
 
-            if (format == null) {
-                PayloadHelper.setXMLPayload(mc, message.cloneOMElement());
-            } else {
-                try {
-                    if (SOAP11_FORMAT.equalsIgnoreCase(format)) {
-                        mc.setEnvelope(OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope());
-                    } else if (SOAP12_FORMAT.equalsIgnoreCase(format)) {
-                        mc.setEnvelope(OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope());
-                    } else if (POX_FORMAT.equalsIgnoreCase(format)) {
-                        mc.setDoingPOX(true);
-                    } else if (GET_FORMAT.equalsIgnoreCase(format)) {
-                        mc.setDoingGET(true);
-                    }
+            if (registryKey == null) {
+                if (format == null) {
                     PayloadHelper.setXMLPayload(mc, message.cloneOMElement());
+                } else {
+                    try {
+                        if (SOAP11_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setEnvelope(OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope());
+                        } else if (SOAP12_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setEnvelope(OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope());
+                        } else if (POX_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setDoingPOX(true);
+                        } else if (GET_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setDoingGET(true);
+                        }
+                        PayloadHelper.setXMLPayload(mc, message.cloneOMElement());
+                    } catch (AxisFault axisFault) {
+                        handleError("Error in setting the message payload : " + message);
+                    }
+                }
+            } else {
+                Object entry = mc.getEntry(registryKey);
+                if (entry == null) {
+                    handleError("Key " + registryKey + " not found ");
+                }
+                String text = "";
+                if (entry instanceof OMElement) {
+                    OMElement e = (OMElement) entry;
+                    removeIndentations(e);
+                    text = e.toString();
+                } else if (entry instanceof OMText) {
+                    text = ((OMText) entry).getText();
+                } else if (entry instanceof String) {
+                    text = (String) entry;
+                }
+
+                OMElement omXML = null;
+                try {
+                    omXML = AXIOMUtil.stringToOM(text);
+
+                    if (format == null) {
+                        PayloadHelper.setXMLPayload(mc, omXML);
+                    } else {
+                        if (SOAP11_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setEnvelope(OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope());
+                        } else if (SOAP12_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setEnvelope(OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope());
+                        } else if (POX_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setDoingPOX(true);
+                        } else if (GET_FORMAT.equalsIgnoreCase(format)) {
+                            mc.setDoingGET(true);
+                        }
+                        PayloadHelper.setXMLPayload(mc, omXML);
+                    }
+                } catch (XMLStreamException e) {
+                    handleError("Error parsing XML for JSON conversion, please check your property values return valid XML");
                 } catch (AxisFault axisFault) {
-                    handleError("Error in setting the message payload : " + message);
+                    handleError("Error in setting the message payload : " + omXML);
                 }
             }
 
             if (soapAction != null) {
                 mc.setSoapAction(soapAction);
+            }
+
+            // Adding runtime properties to SynapseMessageContext, if exists
+            if (runtimeProperties != null && runtimeProperties.size()>0) {
+                for (Map.Entry<String, Object> entry : runtimeProperties.entrySet()) {
+                    mc.setProperty(entry.getKey(), entry.getValue());
+                }
             }
 
             if (INJECT_TO_SEQUENCE.equalsIgnoreCase(injectTo)) {
@@ -335,6 +440,38 @@ public class MessageInjector implements Task, ManagedLifecycle {
     private void handleError(String msg) {
         log.error(msg);
         throw new SynapseException(msg);
+    }
+
+    /**
+     * Helper function to remove indentations.
+     * @param element
+     */
+    private void removeIndentations(OMElement element) {
+        List<OMText> removables = new ArrayList<OMText>();
+        removeIndentations(element, removables);
+        for (OMText node : removables) {
+            node.detach();
+        }
+    }
+
+    /**
+     * Helper function to remove indentations.
+     * @param element
+     * @param removables
+     */
+    private void removeIndentations(OMElement element, List<OMText> removables) {
+        Iterator children = element.getChildren();
+        while (children.hasNext()) {
+            Object next = children.next();
+            if (next instanceof OMText) {
+                OMText text = (OMText) next;
+                if (text.getText().trim().equals("")) {
+                    removables.add(text);
+                }
+            } else if (next instanceof OMElement) {
+                removeIndentations((OMElement) next, removables);
+            }
+        }
     }
 
 }

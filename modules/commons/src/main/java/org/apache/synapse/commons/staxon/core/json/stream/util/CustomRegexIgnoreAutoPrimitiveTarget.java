@@ -45,16 +45,16 @@ public class CustomRegexIgnoreAutoPrimitiveTarget extends StreamTargetDelegate {
     @Override
     public void value(Object value) throws IOException {
         if (value instanceof String && (convertAttributes || !lastName.startsWith("@"))) {
-            if ("true".equals(value)) {
+            if (customRegex != null && customRegex.matcher(value.toString()).matches()) {
+                super.value(value);
+            } else if (number.matcher(value.toString()).matches()) {
+                super.value(new BigDecimal(value.toString()));
+            } else if ("true".equals(value)) {
                 super.value(Boolean.TRUE);
             } else if ("false".equals(value)) {
                 super.value(Boolean.FALSE);
             } else if ("null".equals(value)) {
                 super.value(null);
-            } else if (customRegex != null && customRegex.matcher(value.toString()).matches()) {
-                super.value(value);
-            } else if (number.matcher(value.toString()).matches()) {
-                super.value(new BigDecimal(value.toString()));
             } else {
                 super.value(value);
             }

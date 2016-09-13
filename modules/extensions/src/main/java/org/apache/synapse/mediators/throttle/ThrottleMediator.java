@@ -24,7 +24,11 @@ import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.*;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -104,7 +108,7 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
 
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -237,9 +241,9 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         }
 
         boolean result;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
         if (subBranch == 0) {
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, onAcceptMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onAcceptMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
@@ -247,15 +251,17 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) ((SequenceMediator) onAcceptMediator).
                                 getChild(continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-                ((Mediator) mediator).reportStatistic(synCtx, null, false);
+                if (isStatisticsEnabled) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
             }
-            onAcceptMediator.reportStatistic(synCtx, null, false);
+            if (isStatisticsEnabled) {
+                onAcceptMediator.reportCloseStatistics(synCtx, null);
+            }
         } else {
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, onRejectMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = ((SequenceMediator) onRejectMediator).
                         mediate(synCtx, continuationState.getPosition() + 1);
@@ -263,13 +269,16 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) ((SequenceMediator) onRejectMediator).getChild(
                                 continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-                ((Mediator) mediator).reportStatistic(synCtx, null, false);
+                if (isStatisticsEnabled) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
             }
-            onRejectMediator.reportStatistic(synCtx, null, false);
+            if (isStatisticsEnabled) {
+                onRejectMediator.reportCloseStatistics(synCtx, null);
+            }
         }
 
         return result;
@@ -738,4 +747,28 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         return null;
     }
 
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(mediatorId);
+
+        String childId;
+        if (onAcceptSeqKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(onAcceptSeqKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else if (onAcceptMediator != null) {
+            onAcceptMediator.setComponentStatisticsId(holder);
+        }
+        if (onRejectSeqKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(onRejectSeqKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else if (onRejectMediator != null) {
+            onRejectMediator.setComponentStatisticsId(holder);
+        }
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+    }
 }

@@ -107,8 +107,9 @@ public class SOAPUtils {
                     SOAPHeaderBlock newSOAPHeader = soap12Factory.createSOAPHeaderBlock(
                         soapHeader.getLocalName(), soapHeader.getNamespace());
                     Iterator allAttributes = soapHeader.getAllAttributes();
-
+                    boolean hasAttributes = false;
                     while(allAttributes.hasNext()) {
+                        hasAttributes = true;
                         OMAttribute attr = (OMAttribute) allAttributes.next();
                         if(attr.getNamespace() != null
                             && SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(
@@ -142,8 +143,18 @@ public class SOAPUtils {
                         }
 
                         newEnvelope.getHeader().addChild(newSOAPHeader);
-                    } // while(allAttributes.hasNext())
+                    }
+                    // This block will execute if the header block doesn't have any attribute
+                    if (!hasAttributes) {
+                        Iterator itrChildren = soapHeader.getChildren();
+                        while (itrChildren.hasNext()) {
+                            OMNode node = (OMNode) itrChildren.next();
+                            itrChildren.remove();
+                            newSOAPHeader.addChild(node);
+                        }
 
+                        newEnvelope.getHeader().addChild(newSOAPHeader);
+                    }
                 } else {
                     itr.remove();
                     newEnvelope.getHeader().addChild(omNode);
@@ -263,8 +274,9 @@ public class SOAPUtils {
                         soapHeaderBlock.getLocalName(), soapHeaderBlock.getNamespace());
 
                     Iterator allAttributes = soapHeaderBlock.getAllAttributes();
-
+                    boolean hasAttributes = false;
                     while(allAttributes.hasNext()) {
+                        hasAttributes = true;
                         OMAttribute attr = (OMAttribute) allAttributes.next();
                         if (attr.getNamespace() != null
                             && SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(
@@ -299,7 +311,16 @@ public class SOAPUtils {
 
                         newEnvelope.getHeader().addChild(newSOAPHeader);
                     }
-
+                    // This block will execute if the header block doesn't have any attribute
+                    if (!hasAttributes) {
+                        Iterator itrChildren = soapHeaderBlock.getChildren();
+                        while (itrChildren.hasNext()) {
+                            OMNode node = (OMNode) itrChildren.next();
+                            itrChildren.remove();
+                            newSOAPHeader.addChild(node);
+                        }
+                    }
+                    newEnvelope.getHeader().addChild(newSOAPHeader);
                 } else {
                     itr.remove();
                     newEnvelope.getHeader().addChild(omNode);

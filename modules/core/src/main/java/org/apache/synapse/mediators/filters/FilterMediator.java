@@ -23,7 +23,11 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.config.xml.AnonymousListMediator;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
@@ -115,7 +119,7 @@ public class FilterMediator extends AbstractListMediator implements
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -227,33 +231,37 @@ public class FilterMediator extends AbstractListMediator implements
 
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (subBranch == 0) {
            if (!continuationState.hasChild()) {
                result = super.mediate(synCtx, continuationState.getPosition() + 1);
            } else {
                FlowContinuableMediator mediator =
                        (FlowContinuableMediator) getChild(continuationState.getPosition());
-               RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-               ((Mediator) mediator).reportStatistic(synCtx, null, false);
+               if (isStatisticsEnabled) {
+                   ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+               }
            }
         } else {
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, elseMediator.getMediatorName());
             if (!continuationState.hasChild()) {
                 result = elseMediator.mediate(synCtx, continuationState.getPosition() + 1);
             } else {
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) elseMediator.getChild(
                                 continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-                ((Mediator) mediator).reportStatistic(synCtx, null, false);
+                if (isStatisticsEnabled) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
             }
-            elseMediator.reportStatistic(synCtx, null, false);
+            if (isStatisticsEnabled) {
+                elseMediator.reportCloseStatistics(synCtx, null);
+            }
         }
 
         return result;
@@ -368,4 +376,32 @@ public class FilterMediator extends AbstractListMediator implements
         return false;
     }
 
+    @Override public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        String childId;
+
+        StatisticIdentityGenerator.reportingBranchingEvents(holder);
+        if (thenKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(thenKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else {
+            setStatisticIdForMediators(holder);
+        }
+        StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
+
+        StatisticIdentityGenerator.reportingBranchingEvents(holder);
+        if (elseKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(elseKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else if (elseMediator != null) {
+            elseMediator.setStatisticIdForMediators(holder);
+        }
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+        StatisticIdentityGenerator.reportingEndBranchingEvent(holder);
+    }
 }

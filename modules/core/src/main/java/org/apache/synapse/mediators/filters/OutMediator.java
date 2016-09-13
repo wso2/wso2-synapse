@@ -23,10 +23,14 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractListMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 
@@ -47,7 +51,7 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -94,11 +98,12 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) getChild(continuationState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            ((Mediator) mediator).reportStatistic(synCtx, null, false);
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
         return result;
     }
@@ -122,10 +127,24 @@ public class OutMediator extends AbstractListMediator implements org.apache.syna
         super.init(se);
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String componentId, Mediator mediator, boolean isStart) {
-        if(test(msgCtx)){
-            return super.setTraceFlow(msgCtx, componentId, mediator, isStart);
+    @Override
+    public Integer reportOpenStatistics(MessageContext messageContext,  boolean isContentAltering) {
+        if (messageContext.isResponse()) {
+            return OpenEventCollector
+                    .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                getAspectConfiguration(), isContentAltering() || isContentAltering);
         }
-        return MessageFlowTracerConstants.DEFAULT_COMPONENT_ID;
+        return null;
+    }
+
+    @Override public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        setStatisticIdForMediators(holder);
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
     }
 }

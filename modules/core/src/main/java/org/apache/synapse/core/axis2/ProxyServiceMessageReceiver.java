@@ -29,15 +29,17 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 
 import java.util.Iterator;
 import java.util.List;
@@ -56,9 +58,8 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
     private ProxyService proxy = null;
 
     public void receive(org.apache.axis2.context.MessageContext mc) throws AxisFault {
-        String mediatorId = null;
 
-        boolean traceOn = proxy.getTraceState() == SynapseConstants.TRACING_ON;
+        boolean traceOn = proxy.getAspectConfiguration().isTracingEnabled();
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
 
         CustomLogSetter.getInstance().setLogAppender(proxy.getArtifactContainerName());
@@ -88,9 +89,13 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         }
 
         MessageContext synCtx = MessageContextCreatorForAxis2.getSynapseMessageContext(mc);
-
+        Integer statisticReportingIndex = null;
         //Statistic reporting
-        RuntimeStatisticCollector.reportStatisticsForProxy(synCtx, this.name, proxy.getAspectConfiguration(), true);
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        if (isStatisticsEnabled) {
+            statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, this.name,
+                    proxy.getAspectConfiguration(), ComponentType.PROXYSERVICE);
+        }
 
         Object inboundServiceParam =
                 proxy.getParameterMap().get(SynapseConstants.INBOUND_PROXY_SERVICE_PARAM);
@@ -121,20 +126,6 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             }
         }
 
-        //trace message flow
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled() && traceOn) {
-            if (mc.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW_ID) != null) {
-                MessageFlowTracingDataCollector.setEntryPoint(synCtx, (String) mc.getProperty
-                        (MessageFlowTracerConstants.MESSAGE_FLOW_ENTRY_TYPE), (String) mc.getProperty
-                        (MessageFlowTracerConstants.MESSAGE_FLOW_ID));
-            } else {
-                MessageFlowTracingDataCollector.setEntryPoint(synCtx,
-                                                              MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name,
-                                                              synCtx.getMessageID());
-            }
-            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, true);
-        }
-
         TenantInfoConfigurator configurator = synCtx.getEnvironment().getTenantInfoConfigurator();
         if (configurator != null) {
             configurator.extractTenantInfo(synCtx);
@@ -144,24 +135,31 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
             synCtx.setProperty(SynapseConstants.TRANSPORT_IN_NAME, trpInDesc.getName());
         }
 
-        StatisticsReporter.reportForComponent(synCtx,
-                proxy.getAspectConfiguration(),
-                ComponentType.PROXYSERVICE);
-        
         // get service log for this message and attach to the message context also set proxy name
         Log serviceLog = LogFactory.getLog(SynapseConstants.SERVICE_LOGGER_PREFIX + name);
         ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
 
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
-        synCtx.setTracingState(proxy.getTraceState());
+//        synCtx.setTracingState(proxy.getTraceState());
 
         try {
-            if(synCtx.getEnvironment().isDebugEnabled()) {
+            if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.acquireMediationFlowLock();
                 debugManager.advertiseMediationFlowStartPoint(synCtx);
+                if (!synCtx.isResponse()) {
+                    SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                            .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                    if (wireLogHolder == null) {
+                        wireLogHolder = new SynapseWireLogHolder();
+                    }
+                    if (synCtx.getProperty(SynapseConstants.PROXY_SERVICE) != null && !synCtx.getProperty(SynapseConstants.PROXY_SERVICE).toString().isEmpty()) {
+                        wireLogHolder.setProxyName(synCtx.getProperty(SynapseConstants.PROXY_SERVICE).toString());
+                    }
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
+                }
             }
-
+            synCtx.setProperty(SynapseConstants.RESPONSE_STATE, new ResponseState());
             List handlers = synCtx.getEnvironment().getSynapseHandlers();
             Iterator<SynapseHandler> iterator = handlers.iterator();
             while (iterator.hasNext()) {
@@ -245,11 +243,12 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                     "message dropped", synCtx);
             }
         } finally {
-            StatisticsReporter.endReportForAllOnRequestProcessed(synCtx);
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_PROXY_SERVICE + name, false);
             //Statistic reporting
-            RuntimeStatisticCollector.reportEndProxy(synCtx);
-            if(synCtx.getEnvironment().isDebugEnabled()) {
+            if (isStatisticsEnabled) {
+                CloseEventCollector.tryEndFlow(synCtx, this.name, ComponentType.PROXYSERVICE,
+                        statisticReportingIndex, true);
+            }
+            if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
                 debugManager.releaseMediationFlowLock();
@@ -301,7 +300,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
-        if (proxy.getTraceState() == SynapseConstants.TRACING_ON) {
+        if (proxy.getAspectConfiguration().isTracingEnabled()) {
             trace.error(msg);
         }
         throw new SynapseException(msg);

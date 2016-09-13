@@ -178,6 +178,16 @@ public class PassThroughConstants {
     public static final String HTTP_CONTENT_TYPE = "Content-type";
     public static final String HTTP_CONTENT_LENGTH = "Content-Length";
 
+    // Used to determine the configured proxy profile
+    public static final String PROXY_PROFILE_TARGET_HOST = "PROXY_PROFILE_TARGET_HOST";
+
+    public static final String PROXY_BASIC_REALM = "BASIC realm=\"proxy\"";
+
+    public static final String HTTP_PROXY_HOST = "http.proxyHost";
+    public static final String HTTP_PROXY_PORT = "http.proxyPort";
+    public static final String HTTP_PROXY_USERNAME = "http.proxy.username";
+    public static final String HTTP_PROXY_PASSWORD = "http.proxy.password";
+    public static final String HTTP_NON_PROXY_HOST = "http.nonProxyHosts";
     public static final String HTTP_ETAG_ENABLED = "HTTP_ETAG";
 
     public static final String ENABLE_WS_ADDRESSING ="enforceWSAddressing";
@@ -186,5 +196,13 @@ public class PassThroughConstants {
 
     //Http method type constants to be used in synapse
     public static final String HTTP_HEAD = "HEAD";
+    public static final String HTTP_GET = "GET";
+    public static final String HTTP_POST = "POST";
+    public static final String HTTP_DELETE = "DELETE";
+    public static final String HTTP_PUT = "PUT";
+    public static final String HTTP_OPTIONS = "OPTIONS";
+    public static final String HTTP_CONNECT = "CONNECT";
 
+    //Constant to specify the socket timeout
+    public static final String HTTP_SOCKET_TIMEOUT = "HTTP_SOCKET_TIMEOUT";
 }

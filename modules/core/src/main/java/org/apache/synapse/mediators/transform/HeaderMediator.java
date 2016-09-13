@@ -74,7 +74,7 @@ public class HeaderMediator extends AbstractMediator {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -325,5 +325,20 @@ public class HeaderMediator extends AbstractMediator {
         else {
             return true;
         }
+    }
+
+    @Override public String getMediatorName() {
+        String headerName;
+        if (qName != null) {
+            headerName = qName.getLocalPart();
+        } else {
+            if (hasEmbeddedXml()) {
+                //getting the element name
+                headerName = getEmbeddedXml().get(0).getLocalName();
+            } else {
+                headerName = "";
+            }
+        }
+        return super.getMediatorName() + ":" + headerName;
     }
 }

@@ -19,6 +19,7 @@
 
 package org.apache.synapse.commons.vfs;
 
+import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.OutTransportInfo;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.commons.lang.StringUtils;
@@ -188,6 +189,18 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         }
     }
 
+    public boolean isForceCreateFolder(MessageContext msgCtx) {
+        // first preference to set on the current message context
+        Map transportHeaders = (Map) msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null && "true"
+                .equals((String) transportHeaders.get(VFSConstants.FORCE_CREATE_FOLDER))) {
+            return true;
+        }
+
+        // next check if the OutTransportInfo specifies one
+        return this.isForceCreateFolder();
+    }
+
     public void setContentType(String contentType) {
         this.contentType = contentType;
     }
@@ -245,6 +258,14 @@ public class VFSOutTransportInfo implements OutTransportInfo {
         if (VFSConstants.SCHEME_SFTP.equals(fso.get(VFSConstants.SCHEME))) {
             for (String key: fso.keySet()) {
                 options.put(key.replaceAll(VFSConstants.SFTP_PREFIX, ""), fso.get(key));
+            }
+        }
+
+        if (VFSConstants.SCHEME_FTP.equals(fso.get(VFSConstants.SCHEME)) ||
+                VFSConstants.SCHEME_FTPS.equals(fso.get(VFSConstants.SCHEME))) {
+            if (fso.get(VFSConstants.FILE_TYPE_PREFIX) != null) {
+                options.put(VFSConstants.FILE_TYPE, fso.get(VFSConstants.FILE_TYPE_PREFIX));
+                options.put(VFSConstants.SCHEME, fso.get(VFSConstants.SCHEME));
             }
         }
 

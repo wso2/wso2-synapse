@@ -87,7 +87,7 @@ public class PropertyMediator extends AbstractMediator {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -135,6 +135,11 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2MessageCtx.setProperty(name, resultValue);
+                // If we are changing the status code received via response we need to set the HTTP_SC_DESC to null
+                // and the proper status code will be set from http-core accordingly (ESBJAVA-4729)
+                if (name.equals(PassThroughConstants.HTTP_SC)) {
+                    axis2MessageCtx.setProperty(PassThroughConstants.HTTP_SC_DESC, null);
+                }
                 handleSpecialProperties(resultValue, axis2MessageCtx);
 
             } else if (XMLConfigConstants.SCOPE_CLIENT.equals(scope)
@@ -460,5 +465,9 @@ public class PropertyMediator extends AbstractMediator {
         OMElement result = SynapseConfigUtils.stringToOM(xml);
         result.buildWithAttachments();
         return result;
+    }
+
+    @Override public String getMediatorName() {
+        return super.getMediatorName() + ":" + name;
     }
 }

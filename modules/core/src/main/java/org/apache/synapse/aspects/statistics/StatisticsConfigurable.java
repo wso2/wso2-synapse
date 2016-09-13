@@ -38,4 +38,30 @@ public interface StatisticsConfigurable {
      * To enable statistics
      */
     public void enableStatistics();
+
+    /**
+     * Whether Tracing has been enabled
+     *
+     * @return True if enable , else false
+     */
+    public boolean isTracingEnabled();
+
+    /**
+     * To disable tracing
+     */
+    public void disableTracing();
+
+    /**
+     * To enable tracing
+     */
+    public void enableTracing();
+
+    public String getUniqueId();
+
+    public void setUniqueId(String uniqueId);
+
+    public void setHashCode(String hashCode);
+
+    public Integer getHashCode();
+
 }

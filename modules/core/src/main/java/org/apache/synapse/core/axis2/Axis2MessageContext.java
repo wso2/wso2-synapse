@@ -267,6 +267,21 @@ public class Axis2MessageContext implements MessageContext {
         }
     }
 
+    @Override
+    public Object getLocalEntry(String key) {
+        Object o = localEntries.get(key);
+        if (o != null && o instanceof Entry) {
+            return ((Entry) o).getValue();
+        } else {
+            Object e = getConfiguration().getLocalRegistryEntry(key);
+            if (e != null) {
+                localEntries.put(key, e);
+                return e;
+            }
+        }
+        return null;
+    }
+
     /**
      * Get a read-only view of all the properties currently set on this
      * message context
@@ -448,8 +463,10 @@ public class Axis2MessageContext implements MessageContext {
 
     public boolean isResponse() {
         Object o = properties.get(SynapseConstants.RESPONSE);
-        return o != null && o instanceof String &&
-               ((String) o).equalsIgnoreCase("true") || response;
+        if(o != null && o instanceof String) {
+            return Boolean.valueOf((String)o);
+        }
+        return response;
     }
 
     public void setFaultResponse(boolean b) {

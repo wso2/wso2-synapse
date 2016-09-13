@@ -137,20 +137,6 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
      */
     protected void processAuditStatus(Mediator mediator, OMElement mediatorOmElement) {
 
-        OMAttribute trace = mediatorOmElement.getAttribute(
-            new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
-
-        if (trace != null) {
-            String traceValue = trace.getAttributeValue();
-            if (traceValue != null) {
-                if (traceValue.equals(XMLConfigConstants.TRACE_ENABLE)) {
-                    mediator.setTraceState(org.apache.synapse.SynapseConstants.TRACING_ON);
-                } else if (traceValue.equals(XMLConfigConstants.TRACE_DISABLE)) {
-                    mediator.setTraceState(org.apache.synapse.SynapseConstants.TRACING_OFF);
-                }
-            }
-        }
-
         String name = null;
         if (mediator instanceof Nameable) {
             name = ((Nameable) mediator).getName();
@@ -169,6 +155,17 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
                 if (statisticsValue != null) {
                     if (XMLConfigConstants.STATISTICS_ENABLE.equals(statisticsValue)) {
                         configuration.enableStatistics();
+                    }
+                }
+            }
+
+            OMAttribute trace = mediatorOmElement.getAttribute(
+                    new QName(XMLConfigConstants.NULL_NAMESPACE, XMLConfigConstants.TRACE_ATTRIB_NAME));
+            if (trace != null) {
+                String traceValue = trace.getAttributeValue();
+                if (traceValue != null) {
+                    if (traceValue.equals(XMLConfigConstants.TRACE_ENABLE)) {
+                        configuration.enableTracing();
                     }
                 }
             }

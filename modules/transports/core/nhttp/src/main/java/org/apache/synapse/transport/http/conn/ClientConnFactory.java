@@ -82,9 +82,17 @@ public class ClientConnFactory {
     private SSLContext getSSLContext(final IOSession iosession) {
         InetSocketAddress address = (InetSocketAddress) iosession.getRemoteAddress();
         String host = address.getHostName() + ":" + address.getPort();
+        return  getSSLContextForHost(host);
+    }
+
+    private SSLContext getSSLContext(final org.apache.http.HttpHost httpHost) {
+        String host = httpHost.getHostName() + ":" + httpHost.getPort();
+        return getSSLContextForHost(host);
+    }
+
+    private SSLContext getSSLContextForHost(String host) {
         SSLContext customContext = null;
         if (sslByHostMap != null) {
-            // See if there's a custom SSL profile configured for this server
             customContext = sslByHostMap.get(host);
         }
         if (customContext != null) {
@@ -93,6 +101,8 @@ public class ClientConnFactory {
             return ssl != null ? ssl.getContext() : null;
         }
     }
+
+
 
     public DefaultNHttpClientConnection createConnection(
                final IOSession iosession, final HttpRoute route) {
@@ -104,28 +114,6 @@ public class ClientConnFactory {
             iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
             customSession = ssliosession;
         } else {
-            if (route != null && route.isTunnelled()) {
-                org.apache.http.HttpHost httpHost = route.getTargetHost();
-                String beAddress = null;
-                String proxyAdd = null;
-                if (httpHost != null) {
-                    String hostname = httpHost.getHostName();
-                    int port = httpHost.getPort();
-                    beAddress = hostname + ":" + port;
-                }
-
-                org.apache.http.HttpHost proxyHost = route.getProxyHost();
-                if (proxyHost != null) {
-                    String proxyHostName = proxyHost.getHostName();
-                    int proxyPort = proxyHost.getPort();
-                    proxyAdd = proxyHostName + ":" + proxyPort;
-                }
-
-                if (sslByHostMap != null &&  sslByHostMap.containsKey(beAddress)) {
-                    SSLContext beCtx = sslByHostMap.get(beAddress);
-                    sslByHostMap.put(proxyAdd, beCtx);
-                }
-            }
             customSession = iosession;
         }
         DefaultNHttpClientConnection conn = LoggingUtils.createClientConnection(
@@ -142,6 +130,20 @@ public class ClientConnFactory {
                 SSLContext customContext = getSSLContext(iosession);
                 SSLIOSession ssliosession = new SSLIOSession(
                     iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
+                iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
+                conn.bind(ssliosession);
+            }
+        }
+    }
+
+    public void upgrade(final UpgradableNHttpConnection conn, HttpRoute route) {
+        org.apache.http.HttpHost targetHost = route.getTargetHost();
+        if (ssl != null) {
+            IOSession iosession = conn.getIOSession();
+            if (!(iosession instanceof SSLIOSession)) {
+                SSLContext customContext = getSSLContext(targetHost);
+                SSLIOSession ssliosession = new SSLIOSession(
+                           iosession, SSLMode.CLIENT, customContext, ssl.getHandler());
                 iosession.setAttribute(SSLIOSession.SESSION_KEY, ssliosession);
                 conn.bind(ssliosession);
             }

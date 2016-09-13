@@ -48,6 +48,8 @@ public class AsyncCallback implements AxisCallback {
 
     private long timeoutDuration;
 
+    private SynapseConstants.ENDPOINT_TIMEOUT_TYPE timeoutType;
+
     public AsyncCallback( org.apache.axis2.context.MessageContext messageContext,MessageContext synapseOutMsgCtx) {
         this.synapseOutMsgCtx = synapseOutMsgCtx;
         this.axis2OutMsgCtx = messageContext;
@@ -90,16 +92,13 @@ public class AsyncCallback implements AxisCallback {
         return timeOutOn;
     }
 
-    public void setTimeOutOn(long timeOutOn) {
-        this.timeOutOn = timeOutOn;
-    }
-
     public long getTimeoutDuration() {
         return timeoutDuration;
     }
 
-    public void setTimeoutDuration(long timeoutDuration) {
+    public void setTimeout(long timeoutDuration) {
         this.timeoutDuration = timeoutDuration;
+        this.timeOutOn = System.currentTimeMillis() + timeoutDuration;
     }
 
     public int getTimeOutAction() {
@@ -108,5 +107,13 @@ public class AsyncCallback implements AxisCallback {
 
     public void setTimeOutAction(int timeOutAction) {
         this.timeOutAction = timeOutAction;
+    }
+
+    public SynapseConstants.ENDPOINT_TIMEOUT_TYPE getTimeoutType() {
+        return timeoutType;
+    }
+
+    public void setTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE timeoutType) {
+        this.timeoutType = timeoutType;
     }
 }

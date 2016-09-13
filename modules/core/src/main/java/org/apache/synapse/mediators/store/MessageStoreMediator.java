@@ -23,6 +23,7 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
@@ -65,7 +66,7 @@ public class MessageStoreMediator extends AbstractMediator{
 
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -118,6 +119,7 @@ public class MessageStoreMediator extends AbstractMediator{
                 MessageContext newCtx = null;
                 try {
                     newCtx = MessageHelper.cloneMessageContext(synCtx);
+                    ContinuationStackManager.clearStack(newCtx);
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }
@@ -139,7 +141,7 @@ public class MessageStoreMediator extends AbstractMediator{
                                             + "] in failover store [" + failoverMessageStoreName + "].", synCtx);
                         }
 
-                        if (shouldTrace(synCtx.getTracingState())) {
+                        if (shouldTrace(synCtx)) {
                             trace.error("Message [" + synCtx.getMessageID() + "] store in the failover message store [" + failoverMessageStoreName + "]");
                         }
 
@@ -159,8 +161,11 @@ public class MessageStoreMediator extends AbstractMediator{
                 // with the nio transport, this causes the listener not to write a 202
                 // Accepted response, as this implies that Synapse does not yet know if
                 // a 202 or 200 response would be written back.
-                ((Axis2MessageContext) synCtx).getAxis2MessageContext().getOperationContext().setProperty(
-                        org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+                Axis2MessageContext msgCtx = (Axis2MessageContext) synCtx;
+                if (null != msgCtx.getAxis2MessageContext() && null != msgCtx.getAxis2MessageContext().getOperationContext()) {
+                    msgCtx.getAxis2MessageContext().getOperationContext().setProperty(
+                            org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+                }
 
                 return true;
             } else {

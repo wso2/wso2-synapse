@@ -21,6 +21,7 @@ package org.apache.synapse.transport.http.conn;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -29,6 +30,7 @@ import org.apache.http.impl.nio.DefaultNHttpClientConnection;
 import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpMessageParser;
 import org.apache.http.nio.NHttpMessageWriter;
+import org.apache.http.nio.reactor.EventMask;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.reactor.SessionInputBuffer;
 import org.apache.http.nio.reactor.SessionOutputBuffer;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
@@ -71,7 +74,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         this.accesslog = LogFactory.getLog(LoggingUtils.ACCESS_LOG_ID);
         this.id = "http-outgoing-" + COUNT.incrementAndGet();
         this.original = session;
-        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled()) {
+        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
         }
     }
@@ -105,7 +108,12 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Consume input");
         }
-        super.consumeInput(handler);
+        if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //Debugger not enabled, hence going through normal flow
+            super.consumeInput(handler);
+        } else {
+            consumeInputWire(handler);
+        }
         if (isReleaseConn()) {
             if (handler instanceof TargetHandler) {
                 ((TargetHandler) handler).getTargetConfiguration().getConnections().releaseConnection(this);
@@ -119,7 +127,161 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         if (this.log.isDebugEnabled()) {
             this.log.debug(this.id + ": Produce output");
         }
-        super.produceOutput(handler);
+        if (!SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            //Debugger not enabled, hence going through normal flow
+            super.produceOutput(handler);
+        } else {
+            produceOutputWire(handler);
+        }
+    }
+
+    /**
+     * Helper method for consume input when synapse debugger is enabled
+     * Note that this method need to be changed if we upgrade to new httpcore-nio version, this is override of it's
+     * consumeInput method
+     *
+     * @param handler
+     */
+    private void consumeInputWire(final NHttpClientEventHandler handler) {
+        if (getContext() == null) {
+            return;
+        }
+        SynapseWireLogHolder logHolder = null;
+        if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
+            logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+        } else {
+            logHolder = new SynapseWireLogHolder();
+        }
+        synchronized (logHolder) {
+            logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_READY);
+            getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
+            if (this.status != ACTIVE) {
+                this.session.clearEvent(EventMask.READ);
+                return;
+            }
+            try {
+                if (this.response == null) {
+                    int bytesRead;
+                    do {
+                        bytesRead = this.responseParser.fillBuffer(this.session.channel());
+                        if (bytesRead > 0) {
+                            this.inTransportMetrics.incrementBytesTransferred(bytesRead);
+                        }
+                        this.response = this.responseParser.parse();
+                    } while (bytesRead > 0 && this.response == null);
+                    if (this.response != null) {
+                        if (this.response.getStatusLine().getStatusCode() >= 200) {
+                            final HttpEntity entity = prepareDecoder(this.response);
+                            this.response.setEntity(entity);
+                            this.connMetrics.incrementResponseCount();
+                        }
+                        onResponseReceived(this.response);
+                        handler.responseReceived(this);
+                        if (this.contentDecoder == null) {
+                            resetInput();
+                        }
+                    }
+                    if (bytesRead == -1) {
+                        handler.endOfInput(this);
+                    }
+                }
+                if (this.contentDecoder != null && (this.session.getEventMask() & SelectionKey.OP_READ) > 0) {
+                    handler.inputReady(this, this.contentDecoder);
+                    if (this.contentDecoder.isCompleted()) {
+                        //This is the place where it finishes the response read from back-ends
+                        if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
+                            logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                            logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_DONE);
+                            getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
+                        }
+                        // Response entity received
+                        // Ready to receive a new response
+                        resetInput();
+                    }
+                }
+            } catch (final HttpException ex) {
+                resetInput();
+                handler.exception(this, ex);
+            } catch (final Exception ex) {
+                handler.exception(this, ex);
+            } finally {
+                if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
+                    logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                    logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_RESPONSE_DONE);
+                    getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
+                }
+                // Finally set buffered input flag
+                this.hasBufferedInput = this.inbuf.hasData();
+            }
+        }
+    }
+
+    /**
+     * Helper method for produce output when synapse debugger is enabled
+     * Note that this method need to be changed if we upgrade to new httpcore-nio version, this is override of it's
+     * produceOutput method
+     *
+     * @param handler
+     */
+    private void produceOutputWire(final NHttpClientEventHandler handler) {
+        if (getContext() == null) {
+            return;
+        }
+        SynapseWireLogHolder logHolder = null;
+        if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
+            logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+        } else {
+            logHolder = new SynapseWireLogHolder();
+        }
+        synchronized (logHolder) {
+            logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_REQUEST_READY);
+            getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
+            try {
+                if (this.status == ACTIVE) {
+                    if (this.contentEncoder == null) {
+                        handler.requestReady(this);
+                    }
+                    if (this.contentEncoder != null) {
+                        handler.outputReady(this, this.contentEncoder);
+                        if (this.contentEncoder.isCompleted()) {
+                            resetOutput();
+                        }
+                    }
+                }
+                if (this.outbuf.hasData()) {
+                    final int bytesWritten = this.outbuf.flush(this.session.channel());
+                    if (bytesWritten > 0) {
+                        this.outTransportMetrics.incrementBytesTransferred(bytesWritten);
+                    }
+                }
+                if (!this.outbuf.hasData()) {
+                    if (this.status == CLOSING) {
+                        this.session.close();
+                        this.status = CLOSED;
+                        resetOutput();
+                    }
+                    if (this.contentEncoder == null && this.status != CLOSED) {
+                        //This is the place where it ends wrting the back end request to the wire
+                        if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
+                            logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                            logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_REQUEST_DONE);
+                            getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
+                        }
+                        this.session.clearEvent(EventMask.WRITE);
+                    }
+                }
+            } catch (final Exception ex) {
+                handler.exception(this, ex);
+            } finally {
+                if (getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY) != null) {
+                    logHolder = (SynapseWireLogHolder) getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                    logHolder.setPhase(SynapseWireLogHolder.PHASE.TARGET_REQUEST_DONE);
+                    getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, logHolder);
+                }
+                // Finally set the buffered output flag
+                this.hasBufferedOutput = this.outbuf.hasData();
+            }
+        }
     }
 
     @Override
@@ -146,7 +308,7 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
     @Override
     public void bind(final IOSession session) {
         this.original = session;
-        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled()) {
+        if (this.iolog.isDebugEnabled() || this.wirelog.isDebugEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
             super.bind(new LoggingIOSession(session, this.id, this.iolog, this.wirelog));
         } else {
             super.bind(session);

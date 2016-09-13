@@ -36,7 +36,12 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.commons.transaction.TranscationManger;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -46,10 +51,14 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,12 +95,15 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
     public final static String DEFAULT_CLIENT_REPO = "./repository/deployment/client";
     public final static String DEFAULT_AXIS2_XML = "./repository/conf/axis2/axis2_blocking_client.xml";
     private boolean isWrappingEndpointCreated = false;
+    private Context txContext;
+    private static final String USER_TX_LOOKUP_STR = "java:comp/UserTransaction";
+    private static final String DISTRIBUTED_TX_BEGIN_CHECK_STR = "transport.jms.TransactionCommand=begin";
 
     BlockingMsgSender blockingMsgSender = null;
 
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -149,6 +161,25 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             }
 
+            if (this.serviceURL != null && this.serviceURL.contains(DISTRIBUTED_TX_BEGIN_CHECK_STR)) {
+                try {
+                    initContext(synCtx);
+                    try {
+                        TranscationManger.lookUp(txContext);
+                    } catch (Exception e) {
+                        handleException("Cloud not get the context name " + USER_TX_LOOKUP_STR, e, synCtx);
+                    }
+                    TranscationManger.beginTransaction();
+                    org.apache.axis2.context.MessageContext axis2MsgCtx =
+                            ((Axis2MessageContext)synCtx).getAxis2MessageContext();
+                    axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION, TranscationManger.getTransaction());
+                    axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,TranscationManger.getTransactionManager());
+                } catch (Exception e) {
+                    handleException("Error starting transaction",synCtx);
+                }
+            }
+
+
             MessageContext synapseOutMsgCtx = MessageHelper.cloneMessageContext(synCtx);
             // Send the SOAP Header Blocks to support WS-Addressing
             setSoapHeaderBlock(synapseOutMsgCtx);            
@@ -193,7 +224,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
             }
 
-            if (resultMsgCtx != null) {
+            if (resultMsgCtx != null && resultMsgCtx.getEnvelope() != null) {
                 org.apache.axis2.context.MessageContext resultAxisMsgCtx =
                         ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
                 org.apache.axis2.context.MessageContext inAxisMsgCtx =
@@ -265,10 +296,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             while (iHeader.hasNext()) {
                 try {
                     Object element = iHeader.next();
-                    iHeader.remove();
                     if (element instanceof  OMElement) {
-                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac).cloneOMElement());
                     }
+                    iHeader.remove();
                 } catch (OMException e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 } catch (Exception e) {
@@ -287,13 +318,15 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         if (ex instanceof AxisFault) {
             AxisFault axisFault = (AxisFault) ex;
 
-            if (axisFault.getFaultCodeElement() != null) {
-                synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                                   axisFault.getFaultCodeElement().getText());
-            } else {
-                synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                                   SynapseConstants.CALLOUT_OPERATION_FAILED);
+            int errorCode = SynapseConstants.CALLOUT_OPERATION_FAILED;
+            if (axisFault.getFaultCodeElement() != null && !"".equals(axisFault.getFaultCodeElement().getText())) {
+                try {
+                    errorCode = Integer.parseInt(axisFault.getFaultCodeElement().getText());
+                } catch (NumberFormatException e) {
+                    errorCode = SynapseConstants.CALLOUT_OPERATION_FAILED;
+                }
             }
+            synCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
 
             if (axisFault.getMessage() != null) {
                 synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
@@ -638,4 +671,27 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         }
     }
 
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(cloneId);
+        if (endpointKey != null) {
+            String childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointKey, ComponentType.ENDPOINT, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        } else if (endpoint != null) {
+            endpoint.setComponentStatisticsId(holder);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
+
+    private void initContext(MessageContext synCtx) {
+        try {
+            txContext = new InitialContext();
+        } catch (NamingException e) {
+            handleException("Cloud not create initial context", e, synCtx);
+        }
+    }
 }

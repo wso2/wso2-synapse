@@ -41,9 +41,13 @@ public final class VFSConstants {
     public static final String TRANSPORT_FILE_FILE_URI = "transport.vfs.FileURI";
     public static final String TRANSPORT_FILE_FILE_NAME_PATTERN = "transport.vfs.FileNamePattern";
     public static final String TRANSPORT_FILE_CONTENT_TYPE = "transport.vfs.ContentType";
-    public static final String TRANSPORT_FILE_LOCKING = "transport.vfs.Locking";    
+    public static final String TRANSPORT_FILE_LOCKING = "transport.vfs.Locking";
     public static final String TRANSPORT_FILE_LOCKING_ENABLED = "enable";    
     public static final String TRANSPORT_FILE_LOCKING_DISABLED = "disable";
+
+    //Size limit of the files to be processed, defaults to -1 which means unlimited file size
+    public static final String TRANSPORT_FILE_SIZE_LIMIT = "transport.vfs.FileSizeLimit";
+    public static final double DEFAULT_TRANSPORT_FILE_SIZE_LIMIT = -1;
 
     public static final String REPLY_FILE_URI = "transport.vfs.ReplyFileURI";
     public static final String REPLY_FILE_NAME = "transport.vfs.ReplyFileName";
@@ -180,8 +184,17 @@ public final class VFSConstants {
     public static final String SFTP_PREFIX = "transport.vfs.SFTP";
     // sftp scheme
     public static final String SCHEME_SFTP = "sftp";
+    public static final String SCHEME_FTP = "ftp";
+    public static final String SCHEME_FTPS = "ftps";
     // sftp scheme file option list
     public static enum SFTP_FILE_OPTION {Identities, UserDirIsRoot, IdentityPassPhrase};
 
+    public static final String FILE_TYPE_PREFIX = "transport.vfs.fileType";
+    public static final String FILE_TYPE = "filetype";
+    public static final String BINARY_TYPE = "BINARY";
+    public static final String LOCAL_TYPE = "LOCAL";
+    public static final String ASCII_TYPE = "ASCII";
+    public static final String EBCDIC_TYPE = "EBCDIC";
 
+    public static final String CLUSTER_AWARE = "transport.vfs.ClusterAware";
 }

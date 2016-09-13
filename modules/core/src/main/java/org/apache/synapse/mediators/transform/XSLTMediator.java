@@ -180,7 +180,7 @@ public class XSLTMediator extends AbstractMediator {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -193,7 +193,7 @@ public class XSLTMediator extends AbstractMediator {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
 
-        if (synCtx.getEnvelope().getBody().getFirstElement() == null) {
+        if (source.getXPath() == null && synCtx.getEnvelope().getBody().getFirstElement() == null) {
             synLog.auditWarn("Found empty soap body, skipping XSLT transformation and continuing the mediation");
             return true;
         }
@@ -606,6 +606,12 @@ public class XSLTMediator extends AbstractMediator {
     public void setResourceMap(ResourceMap resourceMap) {
         this.resourceMap = resourceMap;
     }
+
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }
 
 	

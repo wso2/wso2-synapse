@@ -23,11 +23,16 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.MessageHelper;
 
 import java.util.Set;
 
@@ -55,7 +60,8 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
+            MessageHelper.setWireLogHolderProperties(synCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -68,6 +74,9 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             synLog.traceTrace("Message : " + synCtx.getEnvelope());
         }
 
+        // Set the last sequence fault handler for future use
+        synCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, getLastSequenceFaultHandler(synCtx));
+
         if (buildMessage) {
               synCtx.getEnvelope().buildWithAttachments();
         }
@@ -78,6 +87,7 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
             keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
             keySet.remove(SynapseConstants.CONTINUATION_CALL);
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+            keySet.remove(SynapseConstants.LAST_ENDPOINT);
         }
 
         if (receivingSequence != null) {
@@ -112,7 +122,9 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         synLog.traceOrDebug("End : Send mediator");
-        return true;
+        //to avoid continuing along the current sequence after send mediator.
+        //mediators will not executed after send mediator in the sequence.
+        return false;
     }
 
     public Endpoint getEndpoint() {
@@ -156,4 +168,20 @@ public class SendMediator extends AbstractMediator implements ManagedLifecycle {
         return false;
     }
 
+    @Override public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(cloneId);
+        if (endpoint != null) {
+            endpoint.setComponentStatisticsId(holder);
+        }
+        if (receivingSequence != null) {
+            String childId = StatisticIdentityGenerator
+                    .getIdReferencingComponent(receivingSequence.getName(), ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
+    }
 }

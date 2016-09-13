@@ -22,8 +22,13 @@ package org.apache.synapse.mediators.builtin;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
@@ -81,7 +86,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      */
     public boolean mediate(MessageContext synInCtx) {
 
-        if (synInCtx.getEnvironment().isDebugEnabled()) {
+        if (synInCtx.getEnvironment().isDebuggerEnabled()) {
+            MessageHelper.setWireLogHolderProperties(synInCtx, isBreakPoint(), getRegisteredMediationFlowPoint()); //this needs to be set only in mediators where outgoing messages are present
             if (super.divertMediationRoute(synInCtx)) {
                 return true;
             }
@@ -164,11 +170,15 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             }
         }
 
+        // Set the last sequence fault handler for future use
+        synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, getLastSequenceFaultHandler(synInCtx));
+
         // clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();
         if (keySet != null) {
             keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+            keySet.remove(SynapseConstants.LAST_ENDPOINT);
         }
 
         boolean outOnlyMessage = "true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY));
@@ -282,13 +292,15 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (ex != null && ex instanceof AxisFault) {
             AxisFault axisFault = (AxisFault) ex;
 
-            if (axisFault.getFaultCodeElement() != null) {
-                synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        axisFault.getFaultCodeElement().getText());
-            } else {
-                synCtx.setProperty(SynapseConstants.ERROR_CODE,
-                        SynapseConstants.CALLOUT_OPERATION_FAILED);
+            int errorCode = SynapseConstants.BLOCKING_CALL_OPERATION_FAILED;
+            if (axisFault.getFaultCodeElement() != null && !"".equals(axisFault.getFaultCodeElement().getText())) {
+                try {
+                    errorCode = Integer.parseInt(axisFault.getFaultCodeElement().getText());
+                } catch (NumberFormatException e) {
+                    errorCode = SynapseConstants.BLOCKING_CALL_OPERATION_FAILED;
+                }
             }
+            synCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
 
             if (axisFault.getMessage() != null) {
                 synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
@@ -311,6 +323,20 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
         synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
         throw new SynapseException("Error while performing the call operation", ex);
+    }
+
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String cloneId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(cloneId);
+
+        if(endpoint != null && !blocking){
+            endpoint.setComponentStatisticsId(holder);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(cloneId, ComponentType.MEDIATOR, holder);
     }
 
 }

@@ -51,6 +51,7 @@ public class AnnotatedCommandMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         AnnotatedCommandMediator pojoMediator = new AnnotatedCommandMediator();
+        processAuditStatus(pojoMediator, elem);
 
         // Class name of the Command object should be present
         OMAttribute name = elem.getAttribute(ATT_NAME);

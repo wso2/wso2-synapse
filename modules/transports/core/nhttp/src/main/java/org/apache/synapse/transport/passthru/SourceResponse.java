@@ -85,6 +85,9 @@ public class SourceResponse {
         this.statusLine = statusLine;
         this.sourceConfiguration = config;
         this.request = request;
+        if (request != null && request.getVersion() != null) {
+            this.version = request.getVersion();
+        }
     }
 
     public void connect(Pipe pipe) {
@@ -109,7 +112,7 @@ public class SourceResponse {
 
         if (statusLine != null) {
             response.setStatusLine(version, status, statusLine);
-        } if(versionChangeRequired){
+        } else if (versionChangeRequired){
         	response.setStatusLine(version, status);
         } else {
             response.setStatusCode(status);
@@ -120,14 +123,14 @@ public class SourceResponse {
         if (canResponseHaveBody(request.getRequest(), response)) {
             entity = new BasicHttpEntity();
 
-            int contentLength = -1;
+            long contentLength = -1;
             String contentLengthHeader = null;
             if (headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).size() > 0) {
                 contentLengthHeader = headers.get(HTTP.CONTENT_LEN).first();
             }
 
             if (contentLengthHeader != null) {
-                contentLength = Integer.parseInt(contentLengthHeader);
+                contentLength = Long.parseLong(contentLengthHeader);
                 headers.remove(HTTP.CONTENT_LEN);
             }
 
@@ -174,8 +177,8 @@ public class SourceResponse {
         // the backend response is set as the content length.
         if (entity == null &&
             PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(request.getRequest().getRequestLine().getMethod())) {
-            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && (response
-                    .getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
+            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && response.getFirstHeader(
+		            HTTP.CONTENT_LEN).getValue() != null && (response.getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
                 response.removeHeaders(HTTP.CONTENT_LEN);
             } else {
                 response.removeHeaders(HTTP.CONTENT_LEN);
@@ -198,42 +201,55 @@ public class SourceResponse {
     }
 
 	public void checkResponseChunkDisable(MessageContext responseMsgContext) throws IOException {
-		String forceHttp10 = (String) responseMsgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
-		
-		if ("true".equals(forceHttp10) || responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
-			if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
-			                                       false)) {
-				try {
-					RelayUtils.buildMessage(responseMsgContext, false);
-					responseMsgContext.getEnvelope().buildWithAttachments();
-				} catch (Exception e) {
-					throw new AxisFault(e.getMessage());
-				}
-			}
-			
-			if("true".equals(forceHttp10)){
-				version = HttpVersion.HTTP_1_0;
-				versionChangeRequired=true;
-			}
-
-			Boolean noEntityBody =
-			                       (Boolean) responseMsgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
-
-			if (noEntityBody != null && Boolean.TRUE == noEntityBody) {
-				headers.remove(HTTP.CONTENT_TYPE);
-				return;
-			}
-
-			MessageFormatter formatter =
-			                             MessageProcessorSelector.getMessageFormatter(responseMsgContext);
-			OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			formatter.writeTo(responseMsgContext, format, out, false);
-			TreeSet<String> header = new TreeSet<String>();
-			header.add(String.valueOf(out.toByteArray().length));
-			headers.put(HTTP.CONTENT_LEN, header);
-		}
+        if (responseMsgContext.getProperty(PassThroughConstants.HTTP_SC) != null){
+            if (this.canResponseHaveContentLength(responseMsgContext)) {
+                calculateContentlengthForChunckDisabledResponse(responseMsgContext);
+            }
+        } else {
+            calculateContentlengthForChunckDisabledResponse(responseMsgContext);
+        }
 	}
+
+    /**
+     * Calculates the content-length when chunking is disabled.
+     * @param responseMsgContext outflow message context
+     * @throws IOException
+     */
+    private void calculateContentlengthForChunckDisabledResponse(MessageContext responseMsgContext) throws IOException {
+        String forceHttp10 = (String) responseMsgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+        if ("true".equals(forceHttp10) || responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
+            if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
+                    false)) {
+                try {
+                    RelayUtils.buildMessage(responseMsgContext, false);
+                    responseMsgContext.getEnvelope().buildWithAttachments();
+                } catch (Exception e) {
+                    throw new AxisFault(e.getMessage());
+                }
+            }
+
+            if("true".equals(forceHttp10)){
+                version = HttpVersion.HTTP_1_0;
+                versionChangeRequired=true;
+            }
+
+            Boolean noEntityBody =
+                    (Boolean) responseMsgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY);
+
+            if (noEntityBody != null && Boolean.TRUE == noEntityBody) {
+                headers.remove(HTTP.CONTENT_TYPE);
+                return;
+            }
+
+            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(responseMsgContext);
+            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            formatter.writeTo(responseMsgContext, format, out, false);
+            TreeSet<String> header = new TreeSet<String>();
+            header.add(String.valueOf(out.toByteArray().length));
+            headers.put(HTTP.CONTENT_LEN, header);
+        }
+    }
 
     /**
      * Consume the content through the Pipe and write them to the wire
@@ -242,7 +258,7 @@ public class SourceResponse {
      * @throws java.io.IOException if an error occurs
      * @return number of bytes written
      */
-    public int write(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {        
+    public int write(NHttpServerConnection conn, ContentEncoder encoder) throws IOException {
         int bytes = 0;
         if (pipe != null) {
             bytes = pipe.consume(encoder);
@@ -311,6 +327,30 @@ public class SourceResponse {
                && status != HttpStatus.SC_NO_CONTENT
                && status != HttpStatus.SC_NOT_MODIFIED
                && status != HttpStatus.SC_RESET_CONTENT;
+    }
+
+    /**
+     * Checks whether response can have Content-Length header
+     * @param responseMsgContext out flow message context
+     * @return true if response can have Content-Length header else false
+     */
+    private boolean canResponseHaveContentLength(MessageContext responseMsgContext) {
+        Object httpStatus = responseMsgContext.getProperty(PassThroughConstants.HTTP_SC);
+        int status;
+        if (httpStatus == null || httpStatus.toString().equals("")) {
+            return false;
+        }
+        if (httpStatus instanceof String) {
+            status = Integer.parseInt((String)httpStatus);
+        } else {
+            status = (Integer) httpStatus;
+        }
+        if (request != null && PassThroughConstants.HTTP_CONNECT.equals(request.getRequest().getRequestLine()
+                                                                                .getMethod())) {
+            return (status / 100 != 2);
+        } else {
+            return HttpStatus.SC_NO_CONTENT != status && (status / 100 != 1);
+        }
     }
 
     public boolean hasEntity() {

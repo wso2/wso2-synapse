@@ -178,7 +178,7 @@ public class JsonFormatterTest extends TestCase {
 
             MessageFormatter formatter = Util.newJsonFormatter();
             MessageContext messageContext = Util.newMessageContext();
-            JsonUtil.newJsonPayload(messageContext, inputStream, false, false);
+            JsonUtil.getNewJsonPayload(messageContext, inputStream, false, false);
             OutputStream out = Util.newOutputStream();
             formatter.writeTo(messageContext, null, out, false);
             assertTrue(JsonDataSourceTest.expectedJSON.equals(out.toString()));
@@ -229,7 +229,7 @@ public class JsonFormatterTest extends TestCase {
         try {
             MessageFormatter formatter = Util.newJsonFormatter();
             MessageContext messageContext = Util.newMessageContext(xmlInput);
-            JsonUtil.newJsonPayload(messageContext, inputStream, false, false);
+            JsonUtil.getNewJsonPayload(messageContext, inputStream, false, false);
             OutputStream out = Util.newOutputStream();
             formatter.writeTo(messageContext, null, out, false);
             assertTrue(jsonOut.equals(out.toString()));

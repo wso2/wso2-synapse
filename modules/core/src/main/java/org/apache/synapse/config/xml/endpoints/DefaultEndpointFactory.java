@@ -165,5 +165,15 @@ public class DefaultEndpointFactory extends EndpointFactory {
                 }
             }
         }
+        OMAttribute tracing = epOmElement.getAttribute(
+                new QName(XMLConfigConstants.TRACE_ATTRIB_NAME));
+        if (tracing != null) {
+            String tracingValue = tracing.getAttributeValue();
+            if (tracingValue != null) {
+                if (XMLConfigConstants.TRACE_ENABLE.equals(tracingValue)) {
+                    aspectConfiguration.enableTracing();
+                }
+            }
+        }
     }   
 }

@@ -58,7 +58,7 @@ public class SpringMediator extends AbstractMediator implements ManagedLifecycle
 
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -173,6 +173,10 @@ public class SpringMediator extends AbstractMediator implements ManagedLifecycle
 
     public void setAppContext(ApplicationContext appContext) {
         this.appContext = appContext;
+    }
+
+    public boolean isContentAltering() {
+        return true;
     }
 
     public void init(SynapseEnvironment se) {

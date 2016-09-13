@@ -40,11 +40,9 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.UUIDGenerator;
 
 import javax.xml.stream.XMLStreamException;
@@ -166,8 +164,7 @@ public final class MessageConverter {
             // XXX: always this section must come after the above step. ie. after applying Envelope.
             // That is to get the existing headers into the new envelope.
             if (axis2Msg.getJsonStream() != null) {
-                JsonUtil.newJsonPayload(axis2Ctx,
-                        new ByteArrayInputStream(axis2Msg.getJsonStream()), true, true);
+                JsonUtil.getNewJsonPayload(axis2Ctx, new ByteArrayInputStream(axis2Msg.getJsonStream()), true, true);
             }
             SynapseMessage synMsg = message.getSynapseMessage();
             synCtx.setTracingState(synMsg.getTracingState());
@@ -299,7 +296,8 @@ public final class MessageConverter {
                 if (value instanceof String) {
                     synMsg.addProperty(key, (String) value);
                 }
-                if(value instanceof ArrayList && ((ArrayList)value).get(0) instanceof OMElement) {
+                if (value instanceof ArrayList && ((ArrayList) value).size() > 0
+                        && ((ArrayList) value).get(0) instanceof OMElement) {
                     OMElement elem = ((OMElement) ((ArrayList) value).get(0));
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     try {

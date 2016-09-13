@@ -26,12 +26,14 @@ import org.apache.synapse.Nameable;
 import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -92,7 +94,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -113,27 +115,19 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
-        reportStatistic(synCtx, null, true);
 
         if (key == null) {
-            String mediatorId = null;
-            mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_SEQUENCE +
-                                                                                               (name == null ?
-                                                                                        this.sequenceType.name() :
-                                                                                        name), true);
 
             // The onError sequence for handling errors which may occur during the
             // mediation through this sequence
             Mediator errorHandlerMediator = null;
-
+            Integer statisticReportingIndex = null;
+            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                statisticReportingIndex = reportOpenStatistics(synCtx, false);
+            }
             // Setting Required property to reportForComponent the sequence aspects
 
             try {
-                if (isStatisticsEnable()) {
-                    StatisticsReporter.reportForComponent(synCtx,
-                            getAspectConfiguration(), ComponentType.SEQUENCE);
-                }
-
                 // push the errorHandler sequence into the current message as the fault handler
                 if (errorHandler != null) {
                     errorHandlerMediator = synCtx.getSequence(errorHandler);
@@ -174,11 +168,10 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     Stack faultStack = synCtx.getFaultStack();
                     if (faultStack != null && !faultStack.isEmpty()) {
                         Object o = faultStack.peek();
-
                         if (o instanceof MediatorFaultHandler &&
                                 errorHandlerMediator.equals(
                                         ((MediatorFaultHandler) o).getFaultMediator())) {
-                            faultStack.pop();
+                                faultStack.pop();
                         }
                     }
                 }
@@ -193,27 +186,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 }
 
 
-                MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx,
-                                                                  mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_SEQUENCE + (name == null ? this
-                                                                .sequenceType.name() : name), false);
-
                 return result;
 
             } finally {
-
-                if (isStatisticsEnable()) {
-                    boolean shouldReport = Boolean.parseBoolean(
-                            String.valueOf(synCtx.getProperty(SynapseConstants.OUT_ONLY)));
-                    if (!shouldReport) {
-                        shouldReport = !(Boolean.parseBoolean(
-                                String.valueOf(synCtx.getProperty(SynapseConstants.SENDING_REQUEST))));
-                    }
-                    if (shouldReport) {
-                        StatisticsReporter.reportForComponent(synCtx,
-                                getAspectConfiguration(), ComponentType.SEQUENCE);
-                    }
+                // End Statistics
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    reportCloseStatistics(synCtx, statisticReportingIndex);
                 }
-                reportStatistic(synCtx, null, false); //end Statistics
             }
 
         } else {
@@ -237,7 +216,6 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("End : Sequence key=<" + key + ">");
                 }
-                reportStatistic(synCtx, null, false); //end Statistics
                 return result;
             }
         }
@@ -285,12 +263,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             do {
                 FlowContinuableMediator mediator =
                         (FlowContinuableMediator) getChild(continuationState.getPosition());
-                RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
                 result = mediator.mediate(synCtx,
                                           continuationState.getChildContState());
 
-                ((Mediator) mediator).reportStatistic(synCtx, null, false);
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+                }
                 if (result) {
                     // if flow completed remove leaf child
                     continuationState.removeLeafChild();
@@ -305,7 +284,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (result) {
             // if flow completed, remove top ContinuationState from stack
-            synCtx.getContinuationStateStack().pop();
+            ContinuationStackManager.popContinuationStateStack(synCtx);
         }
 
         // if we pushed an error handler, pop it from the fault stack
@@ -508,24 +487,57 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         this.sequenceType = sequenceType;
     }
 
-    public String getSequenceNameForStatistics(MessageContext synCtx) {
+    public String getSequenceNameForStatistics() {
         if (this.name != null) {
             return this.name;
         } else {
-            if (key != null) {
-                return key.evaluateValue(synCtx);
+            if (this.sequenceType != SequenceType.ANON) {
+                return this.sequenceType.toString();
             } else {
-                if (this.sequenceType != SequenceType.ANON) {
-                    return this.sequenceType.toString();
-                } else {
-                    return SynapseConstants.ANONYMOUS_SEQUENCE;
-                }
+                return SynapseConstants.ANONYMOUS_SEQUENCE;
             }
         }
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-	    RuntimeStatisticCollector.reportStatisticForSequence(messageContext, getSequenceNameForStatistics(messageContext),
-                                                parentName, getAspectConfiguration(), isCreateLog);
+    @Override
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
+        if (key == null) {
+            return OpenEventCollector.reportEntryEvent(messageContext, getSequenceNameForStatistics(),
+                    getAspectConfiguration(), ComponentType.SEQUENCE);
+        }
+        return null;
+    }
+
+    @Override
+    public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
+        if (key == null) {
+            CloseEventCollector
+                    .tryEndFlow(messageContext, getSequenceNameForStatistics(), ComponentType.SEQUENCE,
+                                     currentIndex, isContentAltering());
+        }
+    }
+
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        String sequenceId = null;
+//        if (sequenceType != SequenceType.ANON) {
+            if (getAspectConfiguration() == null) {
+                configure(new AspectConfiguration(name));
+            }
+            if (getKey()!= null) {
+                sequenceId = StatisticIdentityGenerator
+                        .getIdReferencingComponent(getKey().getKeyValue(), ComponentType.SEQUENCE, holder);
+            } else {
+                sequenceId = StatisticIdentityGenerator
+                        .getIdForFlowContinuableMediator(getSequenceNameForStatistics(), ComponentType.SEQUENCE, holder);
+            }
+            getAspectConfiguration().setUniqueId(sequenceId);
+//        }
+
+        setStatisticIdForMediators(holder);
+
+        if (sequenceType != SequenceType.ANON) {
+            StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.SEQUENCE, holder);
+        }
     }
 }

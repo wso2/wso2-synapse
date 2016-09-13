@@ -27,11 +27,11 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.StatisticsCleaner;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
+import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 
 import java.util.ArrayList;
@@ -64,14 +64,14 @@ public class TimeoutHandler extends TimerTask {
     /*This is the timeout for otherwise non-expiring callbacks to ensure system stability over time */
     private long globalTimeout = SynapseConstants.DEFAULT_GLOBAL_TIMEOUT;
     private static final String SEND_TIMEOUT_MESSAGE = "Send timeout";
-    private StatisticsCleaner statisticsCleaner;
     private ServerContextInformation contextInfo = null;
 
     public TimeoutHandler(Map callbacks, ServerContextInformation contextInfo) {
         this.callbackStore = callbacks;
         this.contextInfo = contextInfo;
         this.globalTimeout = SynapseConfigUtils.getGlobalTimeoutInterval();
-        log.info("This engine will expire all callbacks after : " + (globalTimeout / 1000) +
+        log.info("This engine will expire all callbacks after " +
+                SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT.toString() + ": " + (globalTimeout / 1000) +
                 " seconds, irrespective of the timeout action," +
                 " after the specified or optional timeout");
     }
@@ -98,17 +98,6 @@ public class TimeoutHandler extends TimerTask {
     }
 
     private void processCallbacks() {
-
-        //clear the expired statistics
-        if (statisticsCleaner == null) {
-            StatisticsCollector collector = SynapseConfigUtils.getStatisticsCollector(contextInfo);
-            if (collector != null) {
-                statisticsCleaner = new StatisticsCleaner(collector);
-            }
-        }
-        if (statisticsCleaner != null) {
-            statisticsCleaner.clean();
-        }
 
         //clear all the expired sessions
         SALSessions.getInstance().clearSessions();
@@ -208,10 +197,16 @@ public class TimeoutHandler extends TimerTask {
 
                     if (!"true".equals(callback.getSynapseOutMsgCtx().getProperty(SynapseConstants.OUT_ONLY))) {
                         log.warn("Expiring message ID : " + key + "; dropping message after " +
-                                "timeout of : " + (callback.getTimeoutDuration() / 1000) + " seconds");
+                                callback.getTimeoutType().toString() +
+                                " of : " + (callback.getTimeoutDuration() / 1000) +
+                                 " seconds for " + getEndpointLogMessage(callback.getSynapseOutMsgCtx(),
+                                                                         callback.getAxis2OutMsgCtx()) +
+                                 ", " + getServiceLogMessage(callback.getSynapseOutMsgCtx())) ;
                     }
                     callbackStore.remove(key);
-                    RuntimeStatisticCollector.reportCallbackReceived(callback.getSynapseOutMsgCtx(), (String) key);
+                    if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                        CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);
+                    }
                 }
             }
         }
@@ -226,4 +221,30 @@ public class TimeoutHandler extends TimerTask {
     private long currentTime() {
         return System.currentTimeMillis();
     }
+
+
+    private String getEndpointLogMessage(MessageContext synCtx,
+                                                org.apache.axis2.context.MessageContext axisCtx) {
+        return synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) + ", URI : " + axisCtx.getTo().getAddress();
+    }
+
+    private String getServiceLogMessage(MessageContext synCtx) {
+        Object proxyName = synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+        if (proxyName != null) {
+            return "Received through Proxy service : " + proxyName;
+        }
+
+        Object apiName = synCtx.getProperty(RESTConstants.SYNAPSE_REST_API);
+        if (apiName != null) {
+            return "Received through API : " + apiName;
+        }
+
+        Object inboundEndpointName = synCtx.getProperty(SynapseConstants.INBOUND_ENDPOINT_NAME);
+        if (inboundEndpointName != null) {
+            return "Received through Inbound Endpoint : " + inboundEndpointName;
+        }
+        return "Received through an entry point other than a proxy, an api or an inbound endpoint ";
+    }
+
+
 }

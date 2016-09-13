@@ -39,20 +39,17 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.ErrorLogFactory;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
-import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
-import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -109,7 +106,9 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             log.debug("Callback added. Total callbacks waiting for : " + callbackStore.size());
         }
         org.apache.synapse.MessageContext synCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-        RuntimeStatisticCollector.addCallbackEntryForStatistics(synCtx, MsgID);
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            CallbackStatisticCollector.addCallback(synCtx, MsgID);
+        }
     }
 
     /**
@@ -133,8 +132,10 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 messageCtx.getProperty(NhttpConstants.HTTP_202_RECEIVED))) {
             if (callbackStore.containsKey(messageCtx.getMessageID())) {
                 AsyncCallback callback = (AsyncCallback) callbackStore.remove(messageCtx.getMessageID());
-                RuntimeStatisticCollector
-                        .reportCallbackReceived(callback.getSynapseOutMsgCtx(), messageCtx.getMessageID());
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(),
+                            messageCtx.getMessageID());
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("CallBack registered with Message id : " + messageCtx.getMessageID() +
                               " removed from the " +
@@ -165,8 +166,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 log.debug("Callback removed for request message id : " + messageID +
                         ". Pending callbacks count : " + callbackStore.size());
             }
-            org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
-            RuntimeStatisticCollector.updateStatisticLogsForReceivedCallbackLog(SynapseOutMsgCtx, messageID);
 
             RelatesTo[] relates = messageCtx.getRelationships();
             if (relates != null && relates.length > 1) {
@@ -177,14 +176,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
-                handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
-                if (log.isDebugEnabled()) {
-                    log.debug("Finished handling the callback.");
+                org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
+                    handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
+                    if (log.isDebugEnabled()) {
+                        log.debug("Finished handling the callback.");
+                    }
+                    CallbackStatisticCollector.reportCallbackHandlingCompletion(SynapseOutMsgCtx, messageID);
+                } else {
+                    handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
                 }
-                org.apache.synapse.MessageContext synMsgCtx =
-                        MessageContextCreatorForAxis2.getSynapseMessageContext(messageCtx);
-                RuntimeStatisticCollector.reportFinishingHandlingCallback(SynapseOutMsgCtx,synMsgCtx,messageID);
-                
             } else {
                 // TODO invoke a generic synapse error handler for this message
                 log.warn("Synapse received a response for the request with message Id : " +
@@ -217,9 +219,21 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         }
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
+            //This path hits with a fault. Sequence mediator threads should not remove faultSequence.
+            //SynapseCallbackReceiver thread should handle the faultStack.
+            Pipe pipe = (Pipe) ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                    .getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+            if (pipe != null && pipe.isSerializationComplete()) {
+                NHttpServerConnection conn = (NHttpServerConnection) ((Axis2MessageContext) synapseOutMsgCtx).
+                        getAxis2MessageContext().getProperty("pass-through.Source-Connection");
+                SourceConfiguration sourceConfiguration = (SourceConfiguration) ((Axis2MessageContext) synapseOutMsgCtx)
+                        .getAxis2MessageContext().getProperty("PASS_THROUGH_SOURCE_CONFIGURATION");
+                Pipe newPipe = new Pipe(conn, sourceConfiguration.getBufferFactory().getBuffer(), "source",
+                        sourceConfiguration);
+                ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext()
+                        .setProperty(PassThroughConstants.PASS_THROUGH_PIPE, newPipe);
+            }
 
-            StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                    ErrorLogFactory.createErrorLog(response));
             // there is a sending fault. propagate the fault to fault handlers.
 
             Stack faultStack = synapseOutMsgCtx.getFaultStack();
@@ -230,7 +244,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 // fault envelope
                 try {
                     synapseOutMsgCtx.getEnvelope().build();
-                } catch (OMException x) {
+                } catch (Exception x) {
                     synapseOutMsgCtx.setEnvelope(response.getEnvelope());
                 }
 
@@ -247,7 +261,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
                 if (synapseOutMsgCtx.getEnvironment().isContinuationEnabled()) {
                     synapseOutMsgCtx.setContinuationEnabled(true);
-                    ContinuationStackManager.clearStack(synapseOutMsgCtx);
                 }
 
                 if (log.isDebugEnabled()) {
@@ -272,7 +285,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     ((FaultHandler) faultStack.pop()).handleFault(synapseOutMsgCtx, null);
                 }
             }
-
         } else {
 
             // there can always be only one instance of an Endpoint in the faultStack of a message
@@ -324,11 +336,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             // If request is REST assume that the response is REST too
             response.setDoingREST(axisOutMsgCtx.isDoingREST());
-            if (axisOutMsgCtx.isDoingMTOM()) {
+            if (axisOutMsgCtx.isDoingMTOM() && (axisOutMsgCtx.getProperty(org.apache.axis2.Constants.Configuration
+                                                                                     .ENABLE_MTOM) == null ||
+                                                Boolean.getBoolean((String) axisOutMsgCtx.
+                                                           getProperty(org.apache.axis2
+                                                                                  .Constants
+                                                                                  .Configuration
+                                                                                  .ENABLE_MTOM)) == true)) {
                 response.setDoingMTOM(true);
                 response.setProperty(
-                        org.apache.axis2.Constants.Configuration.ENABLE_MTOM,
-                        org.apache.axis2.Constants.VALUE_TRUE);
+                           org.apache.axis2.Constants.Configuration.ENABLE_MTOM,
+                           org.apache.axis2.Constants.VALUE_TRUE);
             }
             if (axisOutMsgCtx.isDoingSwA()) {
                 response.setDoingSwA(true);
@@ -432,11 +450,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 						                     sourceConfiguration);
 						axis2OUTMC.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
 					}
-                    
-                    
-                   
-                    StatisticsReporter.reportFaultForAll(synapseOutMsgCtx,
-                            ErrorLogFactory.createErrorLog(response));
+
                     synapseOutMsgCtx.setProperty(SynapseConstants.SENDING_FAULT, Boolean.TRUE);
                     synapseOutMsgCtx.setProperty(SynapseConstants.ERROR_CODE, SynapseConstants.ENDPOINT_CUSTOM_ERROR);
                     
@@ -535,8 +549,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 dispatcher.updateSession(synapseInMessageContext);
             }
 
-            StatisticsReporter.reportForAllOnResponseReceived(synapseInMessageContext);
-            
             // send the response message through the synapse mediation flow
             try {
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);

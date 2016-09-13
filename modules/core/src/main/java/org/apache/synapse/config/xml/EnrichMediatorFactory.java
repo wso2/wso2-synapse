@@ -58,6 +58,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         }
 
         EnrichMediator enrich = new EnrichMediator();
+        processAuditStatus(enrich, elem);
 
         OMElement sourceEle = elem.getFirstChildWithName(SOURCE_Q);
         if (sourceEle == null) {

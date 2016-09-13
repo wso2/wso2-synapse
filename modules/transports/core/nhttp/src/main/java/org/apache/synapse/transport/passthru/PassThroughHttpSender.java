@@ -33,6 +33,7 @@ import org.apache.axis2.transport.TransportSender;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,7 +46,6 @@ import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
-import org.apache.synapse.transport.http.conn.ProxyAuthenticator;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -143,15 +143,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         MBeanRegistrar.getInstance().registerMBean(view, "Transport",
                  "passthru-" + namePrefix.toLowerCase() + "-sender");
         
-        proxyConfig = new ProxyConfigBuilder().parse(transportOutDescription).build();
-        if (log.isInfoEnabled() && proxyConfig.getProxy() != null) {
-            log.info("HTTP Sender using Proxy " + proxyConfig.getProxy() + " bypassing " + 
-                proxyConfig.getProxyBypass());
-        }
-        
+        proxyConfig = new ProxyConfigBuilder().build(transportOutDescription);
+        log.info(proxyConfig.logProxyConfig());
+
         targetConfiguration = new TargetConfiguration(configurationContext,
-                transportOutDescription, workerPool, metrics, 
-                proxyConfig.getCreds() != null ? new ProxyAuthenticator(proxyConfig.getCreds()) : null);
+                transportOutDescription, workerPool, metrics,
+                proxyConfig.createProxyAuthenticator());
         targetConfiguration.build();
 
         PassThroughSenderManager.registerPassThroughHttpSender(this);
@@ -369,6 +366,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     //to ignore any entity enclosed methods available.
                     if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
                         pipe.setSerializationCompleteWithoutData(true);
+                    } else if (messageSize == 0 &&
+                               (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                                (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
+                        pipe.setSerializationCompleteWithoutData(true);
                     } else {
                         pipe.setSerializationComplete(true);
                     }
@@ -526,8 +527,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                    // Skip multipart/related as it should be taken from formatter.
                    if (!contentTypeValueInMsgCtx.contains(
                            PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
-                	   
-						if (format != null) {
+
+                       // adding charset only if charset is not available,
+                       if (contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1
+                           && format != null) {
 							String encoding = format.getCharSetEncoding();
 							if (encoding != null) {
 								sourceResponse.removeHeader(HTTP.CONTENT_TYPE);

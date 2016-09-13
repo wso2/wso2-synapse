@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators;
 
+import org.apache.axis2.AxisFault;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.FaultHandler;
@@ -26,9 +27,12 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.FaultStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.util.MessageHelper;
 
 /**
  * This implements the FaultHandler interface as a mediator fault handler. That is the fault handler is
@@ -68,7 +72,10 @@ public class MediatorFaultHandler extends FaultHandler {
 
         boolean traceOn = synCtx.getTracingState() == SynapseConstants.TRACING_ON;
         boolean traceOrDebugOn = traceOn || log.isDebugEnabled();
-        RuntimeStatisticCollector.reportFault(synCtx);
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        if (isStatisticsEnabled) {
+            FaultStatisticCollector.reportFault(synCtx);
+        }
 
         String name = null;
         if (faultMediator instanceof SequenceMediator) {
@@ -86,7 +93,9 @@ public class MediatorFaultHandler extends FaultHandler {
 
         synCtx.getServiceLog().warn("Executing fault sequence mediator : " + name);
         this.faultMediator.mediate(synCtx);
-        RuntimeStatisticCollector.reportFault(synCtx);
+        if(isStatisticsEnabled) {
+            CloseEventCollector.closeFlowForcefully(synCtx, true);
+        }
     }
 
     /**

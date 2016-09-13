@@ -20,7 +20,6 @@ package org.apache.synapse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.config.SynapsePropertiesLoader;
@@ -107,7 +106,6 @@ public class ServerManager {
         // does the initialization of the controller
         doInit();
         initialized = true;
-        MessageFlowTracingDataCollector.init();
         RuntimeStatisticCollector.init();
 
         return this.serverContextInformation.getServerState();
@@ -154,7 +152,6 @@ public class ServerManager {
         this.synapseController = null;
         this.serverContextInformation = null;
         this.serverConfigurationInformation = null;
-        RuntimeStatisticCollector.stopConsumer();
         this.initialized = false;
         return ServerState.UNDETERMINED;
     }

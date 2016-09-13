@@ -19,16 +19,21 @@
 
 package org.apache.synapse.util.resolver;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.xml.WSDLLocator;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Class that adapts a {@link ResourceMap} object to {@link WSDLLocator}.
  */
 public class CustomWSDLLocator implements WSDLLocator {
+    private static Log log = LogFactory.getLog(CustomWSDLLocator.class);
     private final InputSource baseInputSource;
     private final String baseURI;
     private ResourceMap resourceMap;
@@ -74,7 +79,11 @@ public class CustomWSDLLocator implements WSDLLocator {
         }
         if (result == null) {
             String location = SynapseConfigUtils.resolveRelativeURI(parentLocation, relativeLocation);
-            result = new InputSource(location);
+            try {
+                result = SynapseConfigUtils.getInputSourceFormURI(new URI(location));
+            } catch (URISyntaxException e) {
+                log.error("Malformed URI " + location, e);
+            }
             latestImportURI = location;
         } else {
             latestImportURI = relativeLocation;

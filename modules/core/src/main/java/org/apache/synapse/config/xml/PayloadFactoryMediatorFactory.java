@@ -42,6 +42,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
 
     private static final QName FORMAT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "format");
     private static final QName ARGS_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "args");
+    private static final QName ATT_DEEP_CHECK   = new QName("deepCheck");
 
     private static final QName TYPE_Q = new QName("media-type");// media-type attribute in payloadFactory
 
@@ -53,6 +54,7 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
         PayloadFactoryMediator payloadFactoryMediator = new PayloadFactoryMediator();
+        processAuditStatus(payloadFactoryMediator, elem);
         String mediaTypeValue = elem.getAttributeValue(TYPE_Q);
         //for the backward compatibility.
         if(mediaTypeValue != null) {
@@ -95,6 +97,15 @@ public class PayloadFactoryMediatorFactory extends AbstractMediatorFactory {
                 OMElement argElem = (OMElement) itr.next();
                 Argument arg = new Argument();
                 String value;
+                String deepCheckString;
+                boolean deepCheck = true;
+                if ((deepCheckString = argElem.getAttributeValue(ATT_DEEP_CHECK)) != null) {
+                    //if deepcheckString is 'false' then set deepCheck false, otherwise any other value will defaults to true
+                    if (deepCheckString.equalsIgnoreCase("false")) {
+                        deepCheck = false;
+                    }
+                }
+                arg.setDeepCheck(deepCheck);
 
                 if ((value = argElem.getAttributeValue(ATT_VALUE)) != null) {
                     arg.setValue(value);

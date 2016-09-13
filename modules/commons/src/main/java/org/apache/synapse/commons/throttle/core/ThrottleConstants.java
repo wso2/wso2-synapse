@@ -165,5 +165,22 @@ public final class ThrottleConstants {
     public static final String THROTTLE_INFO_KEY = "throttle_info";
 
     public static final String THROTTLE_TIMESTAMP_KEY = "startedTime-";
+    public static final String THROTTLE_SHARED_COUNTER_KEY = "sharedCounter-";
+    public static final String THROTTLE_CONTEXT_CLEANUP_TASK_FREQUENCY = "throttling.context.cleanup.frequency";
+    public static final String THROTTLE_CONTEXT_DISTRIBUTED_CLEANUP_TASK_FREQUENCY =
+            "throttling.context.distributed.cleanup.frequency";
+    public static final String THROTTLE_CONTEXT_DISTRIBUTED_EXPIRED_INSTANCE_TIME =
+            "throttling.context.distributed.expired.instance.time";
+    public static final String THROTTLE_DISTRIBUTED_CLEANUP_POOL_SIZE =
+            "throttling.context.distributed.cleanup.pool.size";
+    public static final String THROTTLE_DISTRIBUTED_CLEANUP_AMOUNT = "throttling.context.distributed.cleanup.amount";
+    public static final String MAX_NON_ASSOCIATED_COUNTER_CLEANUP_AMOUNT = "stale.counter.references";
+    public static final String THROTTLE_DISTRIBUTED_CLEANUP_TASK_ENABLE =
+            "throttling.context.distributed.cleanup.task.enabled";
+    public static final String THROTTLING_POOL_SIZE = "throttling.pool.size";
+    public static final String THROTTLING_REPLICATION_FREQUENCY = "throttling.replication.frequency";
+    public static final String THROTTLING_KEYS_TO_REPLICATE = "throttling.keys.to.replicate";
+    public static final String WINDOW_REPLICATOR_POOL_SIZE = "throttlingWindowReplicator.pool.size";
+    public static final String WINDOW_REPLICATOR_FREQUENCY = "throttlingWindowReplicator.replication.frequency";
 
 }

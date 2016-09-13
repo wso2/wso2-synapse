@@ -37,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -44,10 +45,12 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.endpoints.IndirectEndpoint;
+import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
 
+import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -91,6 +94,9 @@ public class BlockingMsgSender {
         if (endpoint instanceof  IndirectEndpoint) {
             String endpointKey = ((IndirectEndpoint) endpoint).getKey();
             endpoint = synapseInMsgCtx.getEndpoint(endpointKey);
+        }
+        if (endpoint instanceof TemplateEndpoint) {
+            endpoint = ((TemplateEndpoint) endpoint).getRealEndpoint();
         }
 
         AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
@@ -177,7 +183,7 @@ public class BlockingMsgSender {
         boolean isOutOnly = isOutOnly(synapseInMsgCtx, axisOutMsgCtx);
         try {
             if (isOutOnly) {
-                sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
+                sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
                 final String httpStatusCode =
                                            String.valueOf(axisOutMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
                                                                   .trim();
@@ -188,7 +194,7 @@ public class BlockingMsgSender {
                 axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, httpStatusCode);
             } else {
                 org.apache.axis2.context.MessageContext result =
-                sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
+                sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
                 synapseInMsgCtx.setEnvelope(result.getEnvelope());
                 if (JsonUtil.hasAJsonPayload(result)) {
                 	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
@@ -223,9 +229,19 @@ public class BlockingMsgSender {
                 synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
                 if (ex instanceof AxisFault) {
                     AxisFault fault = (AxisFault) ex;
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE,
-                                                fault.getFaultCode() != null ?
-                                                fault.getFaultCode().getLocalPart() : "");
+
+                    int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                    if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
+                        !"".equals(fault.getFaultCode().getLocalPart())) {
+                        try {
+                            errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
+                        } catch (NumberFormatException e) {
+                            errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                        }
+
+                    }
+                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
+
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
                                                 fault.getDetail() != null ?
@@ -248,8 +264,8 @@ public class BlockingMsgSender {
 
     private void sendRobust(org.apache.axis2.context.MessageContext axisOutMsgCtx,
                             Options clientOptions, AxisService anonymousService,
-                            ServiceContext serviceCtx) throws AxisFault {
-
+                            ServiceContext serviceCtx, MessageContext synapseInMsgCtx) throws AxisFault {
+        this.invokeHandlers(synapseInMsgCtx, false);
         AxisOperation axisAnonymousOperation =
                 anonymousService.getOperation(new QName(AnonymousServiceFactory.OUT_ONLY_OPERATION));
         OperationClient operationClient =
@@ -266,7 +282,7 @@ public class BlockingMsgSender {
             org.apache.axis2.context.MessageContext axisOutMsgCtx,
             Options clientOptions,
             AxisService anonymousService,
-            ServiceContext serviceCtx)
+            ServiceContext serviceCtx, MessageContext synapseInMsgCtx)
             throws AxisFault {
 
         AxisOperation axisAnonymousOperation =
@@ -276,6 +292,7 @@ public class BlockingMsgSender {
         operationClient.addMessageContext(axisOutMsgCtx);
         axisOutMsgCtx.setAxisMessage(
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
+        this.invokeHandlers(synapseInMsgCtx, false);
         operationClient.execute(true);
         org.apache.axis2.context.MessageContext resultMsgCtx =
                 operationClient.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
@@ -294,7 +311,7 @@ public class BlockingMsgSender {
         returnMsgCtx.setProperty(
                 org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
                 resultMsgCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
-
+        this.invokeHandlers(synapseInMsgCtx, true);
         return returnMsgCtx;
     }
 
@@ -341,5 +358,36 @@ public class BlockingMsgSender {
             break;
         }
         return responseStatusCode;
+    }
+
+    /**
+     * Invoke Synapse Handlers
+     *
+     * @param synCtx synapse message context
+     * @param isResponse whether message is response path or not
+     */
+    private void invokeHandlers(MessageContext synCtx, boolean isResponse) {
+
+        Iterator<SynapseHandler> iterator =
+                synCtx.getEnvironment().getSynapseHandlers().iterator();
+
+        if (iterator.hasNext()) {
+
+            if (isResponse) {
+                do {
+                    SynapseHandler handler = iterator.next();
+                    if (!handler.handleResponseInFlow(synCtx)) {
+                        log.warn("Synapse not executed in the response in path");
+                    }
+                } while (iterator.hasNext());
+            } else {
+                do {
+                    SynapseHandler handler = iterator.next();
+                    if (!handler.handleRequestOutFlow(synCtx)) {
+                        log.warn("Synapse not executed in the request out path");
+                    }
+                } while (iterator.hasNext());
+            }
+        }
     }
 }

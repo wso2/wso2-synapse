@@ -23,7 +23,11 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -31,6 +35,7 @@ import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
+import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -81,7 +86,7 @@ public class InvokeMediator extends AbstractMediator implements
 
 	private boolean mediate(MessageContext synCtx, boolean executePreFetchingSequence) {
 
-		if (synCtx.getEnvironment().isDebugEnabled()) {
+		if (synCtx.getEnvironment().isDebuggerEnabled()) {
 			if (super.divertMediationRoute(synCtx)) {
 				return true;
 			}
@@ -104,6 +109,12 @@ public class InvokeMediator extends AbstractMediator implements
 			handleException("Sequence template " +
 					targetTemplate + " cannot be found", synCtx);
 		}
+
+        //setting the log appender when external template executor is called a sequence template inside a car file
+        if (mediator instanceof TemplateMediator) {
+            CustomLogSetter.getInstance().setLogAppender(((TemplateMediator) mediator)
+                                                                 .getArtifactContainerName());
+        }
 
 		// executing key reference if found defined at configuration.
 		if (executePreFetchingSequence && key != null) {
@@ -152,11 +163,10 @@ public class InvokeMediator extends AbstractMediator implements
 
         boolean result;
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
-
+		boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (subBranch == 0) {
 	        // Default flow
 	        TemplateMediator templateMediator = (TemplateMediator) synCtx.getSequenceTemplate(targetTemplate);
-	        RuntimeStatisticCollector.openLogForContinuation(synCtx, templateMediator.getMediatorName());
 	        if (!continuationState.hasChild()) {
 		        result = templateMediator.mediate(synCtx, continuationState.getPosition() + 1);
 		        if (result) {
@@ -165,18 +175,20 @@ public class InvokeMediator extends AbstractMediator implements
 	        } else {
 		        FlowContinuableMediator mediator =
 				        (FlowContinuableMediator) templateMediator.getChild(continuationState.getPosition());
-		        RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
 		        result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-		        ((Mediator) mediator).reportStatistic(synCtx, null, false);
+				if (isStatisticsEnabled) {
+					((Mediator) mediator).reportCloseStatistics(synCtx, null);
+				}
 	        }
-	        templateMediator.reportStatistic(synCtx, null, false);
+			if (isStatisticsEnabled) {
+				templateMediator.reportCloseStatistics(synCtx, null);
+			}
         } else {
 	        // Pre fetching invoke mediator flow
 	        String prefetchInvokeKey = key.evaluateValue(synCtx);
 	        InvokeMediator prefetchInvoke = (InvokeMediator) synCtx.getDefaultConfiguration(prefetchInvokeKey);
-	        RuntimeStatisticCollector.openLogForContinuation(synCtx, prefetchInvoke.getMediatorName());
 
 	        ContinuationState childContinuationState = continuationState.getChildContState();
 	        result = prefetchInvoke.mediate(synCtx, childContinuationState);
@@ -190,7 +202,9 @@ public class InvokeMediator extends AbstractMediator implements
 		        // after prefetch invoke mediator flow, execute default flow
 		        result = mediate(synCtx, false);
 	        }
-	        prefetchInvoke.reportStatistic(synCtx, null, false);
+			if (isStatisticsEnabled) {
+				prefetchInvoke.reportCloseStatistics(synCtx, null);
+			}
         }
         return result;
     }
@@ -275,4 +289,15 @@ public class InvokeMediator extends AbstractMediator implements
             synapseEnv.removeUnavailableArtifactRef(targetTemplate);
         }
     }
+
+	@Override
+	public void setComponentStatisticsId(ArtifactHolder holder) {
+		if (getAspectConfiguration() == null) {
+			configure(new AspectConfiguration(getMediatorName()));
+		}
+		String mediatorId =
+				StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+		getAspectConfiguration().setUniqueId(mediatorId);
+		StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+	}
 }

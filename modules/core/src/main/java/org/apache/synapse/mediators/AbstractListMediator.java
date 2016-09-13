@@ -19,18 +19,26 @@
 
 package org.apache.synapse.mediators;
 
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axis2.AxisFault;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This is the base class for all List mediators
@@ -40,10 +48,12 @@ import java.util.List;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
+    private static final String WSTX_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)";
+
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
 
-    private boolean contentAware = false;
+    private boolean sequenceContentAware = false;
 
     public boolean mediate(MessageContext synCtx) {
         return  mediate(synCtx,0);
@@ -64,52 +74,73 @@ public abstract class AbstractListMediator extends AbstractMediator
                 synLog.traceOrDebug("Mediation started from mediator position : " + mediatorPosition);
             }
 
-            if (contentAware) {
-                try {
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
-                    }
-                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
-                } catch (Exception e) {
-                    handleException("Error while building message", e, synCtx);
-                }
-            }
-
             for (int i = mediatorPosition; i < mediators.size(); i++) {
-                String componentId = null;
                 // ensure correct trace state after each invocation of a mediator
                 Mediator mediator = mediators.get(i);
-                mediator.reportStatistic(synCtx, null, true);
-                synCtx.setTracingState(myEffectiveTraceState);
-                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                    componentId = mediator.setTraceFlow(synCtx, componentId, mediator, true);
+
+                if (sequenceContentAware && mediator.isContentAware() &&
+                        (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
+                    buildMessage(synCtx, synLog);
                 }
-                if (!mediator.mediate(synCtx)) {
-                    mediator.reportStatistic(synCtx, null, false);
-                    if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                        mediator.setTraceFlow(synCtx, componentId, mediator, false);
+
+                if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+                    Integer statisticReportingIndex = mediator.reportOpenStatistics(synCtx, i == mediatorPosition);
+                    synCtx.setTracingState(myEffectiveTraceState);
+                    if (!mediator.mediate(synCtx)) {
+                        mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
+                        returnVal = false;
+                        break;
                     }
-                    returnVal = false;
-                    break;
-                }
-                mediator.reportStatistic(synCtx, null, false);
-                if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-                    mediator.setTraceFlow(synCtx, componentId, mediator, false);
+                    mediator.reportCloseStatistics(synCtx, statisticReportingIndex);
+                } else {
+                    synCtx.setTracingState(myEffectiveTraceState);
+                    if (!mediator.mediate(synCtx)) {
+                        returnVal = false;
+                        break;
+                    }
                 }
             }
         } catch (SynapseException synEx) {
+            // Create a Pattern object
+            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
+
+            // Now create matcher object.
+            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
+            if (wstxExMatcher.find()) {
+                consumeInputOnOmException(synCtx);
+            }
             throw synEx;
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
+            
+            // Create a Pattern object
+            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
+
+            // Now create matcher object.
+            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(ex));
             if (errorMsg == null) {
                 errorMsg = "Runtime error occurred while mediating the message";
+            }
+            if (wstxExMatcher.find()) {
+                consumeInputOnOmException(synCtx);
             }
             handleException(errorMsg, ex, synCtx);
         } finally {
             synCtx.setTracingState(parentsEffectiveTraceState);
         }
-
         return returnVal;
+    }
+
+    private void buildMessage(MessageContext synCtx, SynapseLog synLog) {
+
+        try {
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("Building message. Sequence <" + getType() + "> is content aware");
+            }
+            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+        } catch (Exception e) {
+            handleException("Error while building message", e, synCtx);
+        }
     }
 
     public List<Mediator> getList() {
@@ -157,7 +188,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 if (log.isDebugEnabled()) {
                     log.debug(mediator.getType() + " is content aware, setting sequence <" + getType() + "> as content aware");
                 }
-                contentAware = true;
+                sequenceContentAware = true;
             }
         }
     }
@@ -179,8 +210,39 @@ public abstract class AbstractListMediator extends AbstractMediator
 
     @Override
     public boolean isContentAware() {
-        return contentAware;
+        return sequenceContentAware;
+    }
+
+    public void setStatisticIdForMediators(ArtifactHolder holder){
+        for (Mediator mediator : mediators) {
+            mediator.setComponentStatisticsId(holder);
+        }
     }
 
 
+    /**
+     * This method will read the entire content from the input stream of the request if there is a parsing error.
+     *
+     * @param synCtx Synapse message context.
+     */
+    private void consumeInputOnOmException(MessageContext synCtx) {
+        try {
+            RelayUtils.consumeAndDiscardMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        } catch (AxisFault axisFault) {
+            log.error("Exception while consuming the input stream on Om Exception", axisFault);
+        }
+        SOAPEnvelope soapEnvelope;
+        if (synCtx.isSOAP11()) {
+            soapEnvelope = OMAbstractFactory.getSOAP11Factory().createSOAPEnvelope();
+            soapEnvelope.addChild(OMAbstractFactory.getSOAP11Factory().createSOAPBody());
+        } else {
+            soapEnvelope = OMAbstractFactory.getSOAP12Factory().createSOAPEnvelope();
+            soapEnvelope.addChild(OMAbstractFactory.getSOAP12Factory().createSOAPBody());
+        }
+        try {
+            synCtx.setEnvelope(soapEnvelope);
+        } catch (AxisFault e) {
+            log.error("Exception or Error occurred resetting SOAP Envelope", e);
+        }
+    }
 }

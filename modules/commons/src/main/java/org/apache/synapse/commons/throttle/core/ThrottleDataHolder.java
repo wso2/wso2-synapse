@@ -76,15 +76,23 @@ public class ThrottleDataHolder {
     }
 
     public void addCallerContext(String id, CallerContext callerContext){
-        callerContextMap.put(id,callerContext);
+        if(log.isDebugEnabled()) {
+            log.debug("ADD CALLER CONTEXT WITH ID" + id);
+        }
+        callerContextMap.put(id, callerContext);
     }
 
     public CallerContext getCallerContext(String id){
+        if(log.isDebugEnabled()) {
+            log.debug("GET CALLER CONTEXT WITH ID" + id);
+        }
         return callerContextMap.get(id);
     }
 
     public void removeCaller(String id) {
-        log.debug("Removing caller for "+ id);
+        if(log.isDebugEnabled()) {
+            log.debug("REMOVING CALLER CONTEXT WITH ID " + id);
+        }
         callerContextMap.remove(id);
     }
 }

@@ -23,14 +23,12 @@ import org.apache.axiom.util.blob.OverflowBlob;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseHandler;
-import org.apache.synapse.aspects.flow.statistics.store.CompletedStatisticStore;
-import org.apache.synapse.aspects.statistics.StatisticsCollector;
+import org.apache.synapse.aspects.flow.statistics.store.MessageDataStore;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.debug.SynapseDebugManager;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.synapse.messageflowtracer.processors.MessageDataCollector;
 import org.apache.synapse.task.SynapseTaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
@@ -105,29 +103,12 @@ public interface SynapseEnvironment {
      */
     public OverflowBlob createOverflowBlob();
 
-   /**
-     * This method returns the <code>StatisticsCollector</code> responsible for
-     * collecting stats for this synapse instance.
-     *
-     * @return Returns the <code>StatisticsCollector</code>
-     */
-    public StatisticsCollector getStatisticsCollector();
-
     /**
-     * This method returns the CompletedStatisticStore responsible for collecting completed statistics for this synapse
-     * instance.
+     * This method returns message data store which holds a queue of event holder objects.
      *
-     * @return completedStatisticStore for this synapse instance
+     * @return messageDataStore
      */
-    public CompletedStatisticStore getCompletedStatisticStore();
-
-    /**
-     * To set the StatisticsCollector to the environment
-     *
-     * @param statisticsCollector - StatisticsCollector to be set
-     */
-    @Deprecated
-    public void setStatisticsCollector(StatisticsCollector statisticsCollector);
+    public MessageDataStore getMessageDataStore();
 
     /**
      * This is used by anyone who needs access to a SynapseThreadPool.
@@ -259,18 +240,11 @@ public interface SynapseEnvironment {
     public long getGlobalTimeout();
 
     /**
-     * Get message flow data collector for message flow tracing
-     *
-     * @return MessageDataCollector instance
-     */
-    public MessageDataCollector getMessageDataCollector();
-
-    /**
      * Whether debugging is enabled in the environment.
      *
      * @return whether debugging is enabled in the environment
      */
-    public boolean isDebugEnabled();
+    public boolean isDebuggerEnabled(); 
 
     /**
      * Retrieve the {@link org.apache.synapse.debug.SynapseDebugManager} from the

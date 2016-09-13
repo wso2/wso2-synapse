@@ -194,6 +194,9 @@ public abstract class ThrottleContext {
      */
     public void removeCallerContext(String id) {
         if (id != null) {
+            if(log.isDebugEnabled()) {
+                log.debug("REMOVING CALLER CONTEXT WITH ID" + id);
+            }
             removeCaller(id);
         }
     }
@@ -353,7 +356,10 @@ public abstract class ThrottleContext {
      */
     public void removeAndFlushCaller(String id) {
         if (id != null) {
-	        removeCaller(id);
+            if(log.isDebugEnabled()) {
+                log.debug("REMOVING AND FLUSHING CALLER CONTEXT WITH ID " + id);
+            }
+            removeCaller(id);
             replicateCaller(id);
         }
     }
@@ -365,6 +371,9 @@ public abstract class ThrottleContext {
      */
     public void removeAndDestroyShareParamsOfCaller(String id) {
         if (id != null) {
+            if(log.isDebugEnabled()) {
+                log.info("REMOVE AND DESTROY OF SHARED PARAM OF CALLER WITH ID " + id);
+            }
             removeCaller(id);
             SharedParamManager.removeTimestamp(id);
             SharedParamManager.removeCounter(id);

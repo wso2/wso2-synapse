@@ -60,7 +60,10 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.ssl.SSLIOSession;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.HttpCoreRequestResponseTransport;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -113,12 +116,18 @@ public class ServerWorker implements Runnable {
                 PassThroughConstants.PASS_THROUGH_SOURCE_CONFIGURATION, sourceConfiguration);
         msgContext.setProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION,
                 request.getConnection());
+        msgContext.setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY,
+                               request.getConnection().getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_INIT_TIME,
                 System.currentTimeMillis());
     }
 
     public void run() {
         CustomLogSetter.getInstance().clearThreadLocalContent();
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        if (tenantInfoInitiator != null) {
+            tenantInfoInitiator.initTenantInfo();
+        }
         request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
                 System.currentTimeMillis());
         if (log.isDebugEnabled()) {
@@ -192,7 +201,7 @@ public class ServerWorker implements Runnable {
 				 * This reverseProxyMode was introduce to avoid the LB exposing
 				 * it's own web service when REST call was initiated
 				 */
-				boolean reverseProxyMode = Boolean.parseBoolean(System.getProperty("reverseProxyMode"));
+				boolean reverseProxyMode = NHttpConfiguration.getInstance().isReverseProxyMode();
 				AxisService axisService = null;
 				if (!reverseProxyMode) {
 					RequestURIBasedDispatcher requestDispatcher = new RequestURIBasedDispatcher();
@@ -215,8 +224,7 @@ public class ServerWorker implements Runnable {
 
                 if (!isCustomRESTDispatcher) {
                     if (axisService == null) {
-                        String defaultSvcName = NHttpConfiguration.getInstance().getStringValue("nhttp.default.service",
-                                "__SynapseService");
+                        String defaultSvcName = NHttpConfiguration.getInstance().getNhttpDefaultServiceName();
                         axisService = msgContext.getConfigurationContext().getAxisConfiguration().
                                 getService(defaultSvcName);
                         msgContext.setAxisService(axisService);

@@ -28,14 +28,18 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticsConstants;
 import org.apache.synapse.debug.constructs.SynapseMediationFlowPoint;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import java.util.Stack;
 
 /**
  * This is the super class of all mediators, and defines common logging, tracing other aspects
@@ -89,7 +93,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      * of current child mediator position should be skipped
      */
     public boolean divertMediationRoute(MessageContext synCtx) {
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (isSkipEnabled()) {
                 synCtx.getEnvironment().getSynapseDebugManager()
                         .advertiseMediationFlowSkip(synCtx, getRegisteredMediationFlowPoint());
@@ -200,6 +204,10 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
                 parentTraceState == SynapseConstants.TRACING_ON);
     }
 
+    public boolean shouldTrace(MessageContext msgCtx){
+        return isTracingEnabled() || shouldCaptureTracing(msgCtx);
+    }
+
     /**
      * Should this mediator perform tracing? True if its explicitly asked to
      * trace, or its parent has been asked to trace and it does not reject it
@@ -214,10 +222,11 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
      */
     @Deprecated
     protected boolean isTraceOn(MessageContext msgCtx) {
-        return
-            (traceState == SynapseConstants.TRACING_ON) ||
-            (traceState == SynapseConstants.TRACING_UNSET &&
-                msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
+        return isTracingEnabled() || shouldCaptureTracing(msgCtx);
+//        return
+//            (traceState == SynapseConstants.TRACING_ON) ||
+//            (traceState == SynapseConstants.TRACING_UNSET &&
+//                msgCtx.getTracingState() == SynapseConstants.TRACING_ON);
     }
 
     /**
@@ -296,7 +305,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().info(msg);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.info(msg);
         }
     }
@@ -312,7 +321,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.error(msg);
         }
         throw new SynapseException(msg);
@@ -335,7 +344,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().warn(msg);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.warn(msg);
         }
     }
@@ -352,7 +361,7 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         if (msgContext.getServiceLog() != null) {
             msgContext.getServiceLog().error(msg, e);
         }
-        if (shouldTrace(msgContext.getTracingState())) {
+        if (shouldTrace(msgContext)) {
             trace.error(msg, e);
         }
         throw new SynapseException(msg, e);
@@ -372,6 +381,23 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
     public void enableStatistics() {
         if (this.aspectConfiguration != null) {
             this.aspectConfiguration.enableStatistics();
+        }
+    }
+
+    public boolean isTracingEnabled() {
+        return this.aspectConfiguration != null
+               && this.aspectConfiguration.isTracingEnabled();
+    }
+
+    public void disableTracing() {
+        if (this.aspectConfiguration != null) {
+            this.aspectConfiguration.disableTracing();
+        }
+    }
+
+    public void enableTracing() {
+        if (this.aspectConfiguration != null) {
+            this.aspectConfiguration.enableTracing();
         }
     }
 
@@ -395,6 +421,10 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
 
     public boolean isContentAware() {
         return true;
+    }
+
+    public boolean isContentAltering() {
+        return false;
     }
 
     public int getMediatorPosition() {
@@ -442,23 +472,22 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         return cls.substring(cls.lastIndexOf(".") + 1);
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, Mediator mediator, boolean isStart) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_MEDIATOR + mediator.getMediatorName(), isStart);
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
+        if (this instanceof FlowContinuableMediator) {
+            return OpenEventCollector
+                    .reportFlowContinuableEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                getAspectConfiguration(), isContentAltering() || isContentAltering);
+        } else {
+            return OpenEventCollector.reportChildEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                            getAspectConfiguration(),
+                                                            isContentAltering() || isContentAltering);
+        }
     }
 
-    /**
-     * Report statistics for the mediator
-     *
-     * @param messageContext message context
-     * @param parentName     sequence name that mediator belong to
-     * @param isCreateLog    whether this is a start or end of a mediator execution
-     */
-    public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, false, false);
+    public void reportCloseStatistics(MessageContext messageContext, Integer currentIndex) {
+        CloseEventCollector.closeEntryEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR, currentIndex,
+                                            isContentAltering());
     }
-
     public void registerMediationFlowPoint(SynapseMediationFlowPoint flowPoint) {
         this.flowPoint = flowPoint;
     }
@@ -491,4 +520,36 @@ public abstract class AbstractMediator implements Mediator, AspectConfigurable {
         this.isSkipEnabled = isSkipEnabled;
     }
 
+    protected boolean shouldCaptureTracing(MessageContext synCtx) {
+        Boolean isCollectingTraces = (Boolean) synCtx.getProperty(StatisticsConstants.FLOW_TRACE_IS_COLLECTED);
+
+        if (isCollectingTraces == null) {
+            return false;
+        }
+        else {
+            return isCollectingTraces;
+        }
+    }
+
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(getMediatorName());
+        }
+        String sequenceId = StatisticIdentityGenerator.getIdForComponent(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(sequenceId);
+
+        StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.MEDIATOR, holder);
+    }
+
+    protected MediatorFaultHandler getLastSequenceFaultHandler(MessageContext synCtx) {
+        Stack faultStack = synCtx.getFaultStack();
+        if (faultStack != null && !faultStack.isEmpty()) {
+            Object o = faultStack.peek();
+
+            if (o instanceof MediatorFaultHandler) {
+                return (MediatorFaultHandler) o;
+            }
+        }
+        return null;
+    }
 }

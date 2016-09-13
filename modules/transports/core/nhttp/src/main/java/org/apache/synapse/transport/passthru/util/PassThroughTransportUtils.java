@@ -155,11 +155,6 @@ public class PassThroughTransportUtils {
                 iter.remove();
             }
 
-            if (HTTP.CONTENT_TYPE.equalsIgnoreCase(headerName)
-                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONTENT_TYPE)) {
-                iter.remove();
-            }
-
             if (HTTP.DATE_HEADER.equalsIgnoreCase(headerName)
                 && !targetConfiguration.isPreserveHttpHeader(HTTP.DATE_HEADER)) {
                 iter.remove();
@@ -228,6 +223,26 @@ public class PassThroughTransportUtils {
         }
 
         return httpStatus;
+    }
+
+    /**
+     * Determine the Http Status Message depending on the message type processed <br>
+     * (normal response versus fault response) as well as Axis2 message context properties set
+     * via Synapse configuration or MessageBuilders.
+     *
+     * @see PassThroughConstants#FAULTS_AS_HTTP_200
+     * @see PassThroughConstants#HTTP_SC
+     *
+     * @param msgContext the Axis2 message context
+     *
+     * @return the HTTP status message string or null
+     */
+    public static String determineHttpStatusLine(MessageContext msgContext) {
+        Object statusLine = msgContext.getProperty(PassThroughConstants.HTTP_SC_DESC);
+        if (statusLine != null) {
+            return (String) statusLine;
+        }
+        return null;
     }
 
     /**

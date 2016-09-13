@@ -18,16 +18,6 @@
 */
 package org.apache.synapse.commons.vfs;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
@@ -36,9 +26,28 @@ import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.vfs2.*;
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.vfs2.FileContent;
+import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
+import org.apache.commons.vfs2.FileSystemManager;
+import org.apache.commons.vfs2.FileSystemOptions;
 import org.apache.commons.vfs2.provider.UriParser;
 import org.apache.commons.vfs2.util.DelegatingFileSystemOptionsBuilder;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VFSUtils {
 
@@ -111,8 +120,8 @@ public class VFSUtils {
      * @param fso represents file system options used when resolving file from file system manager.
      * @return boolean true if the lock has been acquired or false if not
      */
-    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso) {
-        return acquireLock(fsManager, fo, null, fso);
+    public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, FileSystemOptions fso, boolean isListener) {
+        return acquireLock(fsManager, fo, null, fso, isListener);
     }
 
     /**
@@ -129,7 +138,7 @@ public class VFSUtils {
      * @return boolean true if the lock has been acquired or false if not
      */
     public synchronized static boolean acquireLock(FileSystemManager fsManager, FileObject fo, VFSParamDTO paramDTO,
-                                                   FileSystemOptions fso) {
+                                                   FileSystemOptions fso, boolean isListener) {
         
         // generate a random lock value to ensure that there are no two parties
         // processing the same file
@@ -146,7 +155,8 @@ public class VFSUtils {
         }
         strLockValue += STR_SPLITER + (new Date()).getTime();
         byte[] lockValue = strLockValue.getBytes();
-        
+        FileObject lockObject = null;
+
         try {
             // check whether there is an existing lock for this item, if so it is assumed
             // to be processed by an another listener (downloading) or a sender (uploading)
@@ -156,7 +166,7 @@ public class VFSUtils {
             if (pos != -1) {
                 fullPath = fullPath.substring(0, pos);
             }            
-            FileObject lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
+            lockObject = fsManager.resolveFile(fullPath + ".lock", fso);
             if (lockObject.exists()) {
                 log.debug("There seems to be an external lock, aborting the processing of the file "
                         + maskURLPassword(fo.getName().getURI())
@@ -167,6 +177,13 @@ public class VFSUtils {
                             paramDTO.getAutoLockReleaseInterval());
                 }
             } else {
+                if (isListener) {
+                    //Check the original file existence before the lock file to handle concurrent access scenario
+                    FileObject originalFileObject = fsManager.resolveFile(fullPath, fso);
+                    if (!originalFileObject.exists()) {
+                        return false;
+                    }
+                }
                 // write a lock file before starting of the processing, to ensure that the
                 // item is not processed by any other parties
                 lockObject.createFile();
@@ -196,8 +213,14 @@ public class VFSUtils {
                 }
             }
         } catch (FileSystemException fse) {
-            log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI())
-                    + " before processing");
+            log.error("Cannot get the lock for the file : " + maskURLPassword(fo.getName().getURI()) + " before processing", fse);
+            if (lockObject != null) {
+                try {
+                    fsManager.closeFileSystem(lockObject.getParent().getFileSystem());
+                } catch (FileSystemException e) {
+                    log.warn("Unable to close the lockObject parent file system");
+                }
+            }
         }
         return false;
     }
@@ -268,12 +291,38 @@ public class VFSUtils {
         }
         return false;
     }
+
+    /**
+     * Helper method to get last modified date from msgCtx
+     *
+     * @param msgCtx
+     * @return lastModifiedDate
+     */
+    public static Long getLastModified(MessageContext msgCtx) {
+        Object lastModified;
+        Map transportHeaders = (Map) msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null) {
+            lastModified = transportHeaders.get(VFSConstants.LAST_MODIFIED);
+            if (lastModified != null) {
+                if (lastModified instanceof Long) {
+                    return (Long)lastModified;
+                } else if (lastModified instanceof String) {
+                    try {
+                        return Long.parseLong((String) lastModified);
+                    } catch (Exception e) {
+                        log.warn("Cannot create last modified.", e);
+                        return null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
     
     public synchronized static void markFailRecord(FileSystemManager fsManager, FileObject fo) {
         
         // generate a random fail value to ensure that there are no two parties
         // processing the same file
-        Random random = new Random();
         byte[] failValue = (Long.toString((new Date()).getTime())).getBytes();
         
         try {
@@ -426,6 +475,28 @@ public class VFSUtils {
             }
         }
 
+        if (options.get(VFSConstants.FILE_TYPE) != null) {
+            delegate.setConfigString(opts, options.get(VFSConstants.SCHEME), VFSConstants.FILE_TYPE,
+                    String.valueOf(getFileType(options.get(VFSConstants.FILE_TYPE))));
+        }
+
         return opts;
+    }
+
+    private static Integer getFileType(String fileType) {
+
+        fileType = fileType.toUpperCase();
+
+        if (VFSConstants.ASCII_TYPE.equals(fileType)) {
+            return FTP.ASCII_FILE_TYPE;
+        } else if (VFSConstants.BINARY_TYPE.equals(fileType)) {
+            return FTP.BINARY_FILE_TYPE;
+        } else if (VFSConstants.EBCDIC_TYPE.equals(fileType)) {
+            return FTP.EBCDIC_FILE_TYPE;
+        } else if (VFSConstants.LOCAL_TYPE.equals(fileType)) {
+            return FTP.LOCAL_FILE_TYPE;
+        } else {
+            return FTP.BINARY_FILE_TYPE;
+        }
     }
 }

@@ -21,15 +21,17 @@ package org.apache.synapse.rest;
 import org.apache.axis2.Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -39,6 +41,8 @@ import org.apache.synapse.rest.version.DefaultStrategy;
 import org.apache.synapse.rest.version.URLBasedVersionStrategy;
 import org.apache.synapse.rest.version.VersionStrategy;
 import org.apache.synapse.config.xml.rest.VersionStrategyFactory;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
+import org.apache.synapse.transport.http.conn.SynapseWireLogHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import java.util.*;
@@ -159,14 +163,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         this.fileName = fileName;
     }
 
-    public int getTraceState() {
-        return traceState;
-    }
-
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
-
     public void addResource(Resource resource) {
         DispatcherHelper dispatcherHelper = resource.getDispatcherHelper();
         if (dispatcherHelper != null) {
@@ -285,7 +281,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     }
 
     void process(MessageContext synCtx) {
-        String mediatorId = null;
 
         auditDebug("Processing message with ID: " + synCtx.getMessageID() + " through the " +
                     "API: " + name);
@@ -294,16 +289,6 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION, versionStrategy.getVersion());
         synCtx.setProperty(RESTConstants.REST_API_CONTEXT, context);
         synCtx.setProperty(RESTConstants.SYNAPSE_REST_API_VERSION_STRATEGY, versionStrategy.getVersionType());
-
-        boolean tracing = (traceState == SynapseConstants.TRACING_ON);
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled() & tracing) {
-            if (!synCtx.isResponse()) {
-                MessageFlowTracingDataCollector.setEntryPoint(synCtx, MessageFlowTracerConstants.ENTRY_TYPE_REST_API +
-                                                                      synCtx.getProperty(RESTConstants.SYNAPSE_REST_API),
-                                                              synCtx.getMessageID());
-                mediatorId = MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName(), true);
-            }
-        }
 
         // get API log for this message and attach to the message context
         ((Axis2MessageContext) synCtx).setServiceLog(apiLog);
@@ -392,23 +377,75 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
             for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
                 Resource resource = dispatcher.findResource(synCtx, acceptableResources);
                 if (resource != null) {
+                    if (synCtx.getEnvironment().isDebuggerEnabled()) {
+                        if (!synCtx.isResponse()) {
+                            SynapseWireLogHolder wireLogHolder = (SynapseWireLogHolder) ((Axis2MessageContext) synCtx).getAxis2MessageContext()
+                                    .getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY);
+                            if (wireLogHolder == null) {
+                                wireLogHolder = new SynapseWireLogHolder();
+                            }
+                            if (synCtx.getProperty(RESTConstants.SYNAPSE_REST_API) != null && !synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString().isEmpty()) {
+                                wireLogHolder.setApiName(synCtx.getProperty(RESTConstants.SYNAPSE_REST_API).toString());
+                                if (resource.getDispatcherHelper() != null) {
+                                    if (resource.getDispatcherHelper().getString() != null && !resource.getDispatcherHelper().getString().isEmpty()) {
+                                        wireLogHolder.setResourceUrlString(resource.getDispatcherHelper().getString());
+                                    }
+                                }
+                            }
+                            ((Axis2MessageContext) synCtx).getAxis2MessageContext().setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, wireLogHolder);
+                        }
+
+                    }
                     resource.process(synCtx);
-                    processed = true;
+                    return;
+                }
+            }
+            handleResourceNotFound(synCtx);
+        } else {
+            //This will get executed only in unhappy path. So ok to have the iterator.
+            boolean resourceFound = false;
+            boolean matchingMethodFound = false;
+            for (RESTDispatcher dispatcher : RESTUtils.getDispatchers()) {
+                Resource resource = dispatcher.findResource(synCtx, resources.values());
+                if (resource != null) {
+                    resourceFound = true;
+                    String method = (String) msgCtx.getProperty(Constants.Configuration.HTTP_METHOD);
+                    matchingMethodFound = resource.hasMatchingMethod(method);
                     break;
                 }
             }
-        }
-
-        if (!processed) {
-            auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
-            Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
-            if (sequence != null) {
-                sequence.mediate(synCtx);
+            if (!resourceFound) {
+                handleResourceNotFound(synCtx);
+            } else if (resourceFound && !matchingMethodFound) {
+                //Resource found, but in that resource, requested method not allowed. So sending method not allowed http status (405)
+                msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_METHOD_NOT_ALLOWED);
+                msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+                msgCtx.setProperty("NIO-ACK-Requested", true);
+            } else {
+                //Resource found, and matching method also found, which means request is BAD_REQUEST(400)
+                msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_BAD_REQUEST);
+                msgCtx.setProperty("NIO-ACK-Requested", true);
             }
         }
+    }
 
-        if (!synCtx.isResponse()) {
-            MessageFlowTracingDataCollector.setTraceFlowEvent(synCtx, mediatorId, MessageFlowTracerConstants.ENTRY_TYPE_REST_API + getName(), false);
+    /**
+     * Helper method to use when no matching resource found
+     *
+     * @param synCtx
+     */
+    private void handleResourceNotFound(MessageContext synCtx) {
+        auditDebug("No matching resource was found for the request: " + synCtx.getMessageID());
+        Mediator sequence = synCtx.getSequence(RESTConstants.NO_MATCHING_RESOURCE_HANDLER);
+        if (sequence != null) {
+            sequence.mediate(synCtx);
+        } else {
+            //Matching resource with method not found
+            org.apache.axis2.context.MessageContext msgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            msgCtx.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_NOT_FOUND);
+            msgCtx.removeProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+            msgCtx.setProperty("NIO-ACK-Requested", true);
         }
     }
 
@@ -491,7 +528,7 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
 
 
     private boolean trace() {
-        return traceState == SynapseConstants.TRACING_ON;
+        return this.aspectConfiguration.isTracingEnabled();
     }
 
     /**
@@ -534,5 +571,17 @@ public class API extends AbstractRESTProcessor implements ManagedLifecycle, Aspe
     @Override
     public AspectConfiguration getAspectConfiguration() {
         return aspectConfiguration;
+    }
+
+    public void setComponentStatisticsId(ArtifactHolder holder){
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(name);
+        }
+        String apiId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.API, holder);
+        aspectConfiguration.setUniqueId(apiId);
+        for (Resource resource : resources.values()) {
+            resource.setComponentStatisticsId(holder);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(apiId, ComponentType.API, holder);
     }
 }

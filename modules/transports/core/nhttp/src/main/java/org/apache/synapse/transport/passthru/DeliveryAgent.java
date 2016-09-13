@@ -27,6 +27,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.nio.NHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyConfig;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.connections.TargetConnections;
 import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
@@ -122,6 +123,8 @@ public class DeliveryAgent {
             boolean secure = "https".equalsIgnoreCase(target.getSchemeName());
 
             HttpHost proxy = proxyConfig.selectProxy(target);
+            msgContext.setProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST, target.getHostName());
+
             HttpRoute route;
             if (proxy != null) {
                 route = new HttpRoute(target, null, proxy, secure);
@@ -214,19 +217,24 @@ public class DeliveryAgent {
 
                 if (messageContext != null) {
                     tryNextMessage(messageContext, route, conn);
+                    conn = null;
                 }
-                conn = null;
             } else {
                 break;
             }
+        }
+        //releasing the connection to pool when connection is not null and message queue is empty,
+        //otherwise connection remains in busyConnections pool till it gets timeout and It is not used.
+        if(conn != null && TargetContext.getState(conn) == ProtocolState.REQUEST_READY) {
+            targetConfiguration.getConnections().releaseConnection(conn);
         }
     }
 
     private void tryNextMessage(MessageContext messageContext, HttpRoute route, NHttpClientConnection conn) {
         if (conn != null) {
             try {
+                TargetContext.updateState(conn, ProtocolState.REQUEST_READY);
                 TargetContext.get(conn).setRequestMsgCtx(messageContext);
-
                 submitRequest(conn, route, messageContext);
             } catch (AxisFault e) {
                 log.error("IO error while sending the request out", e);
@@ -239,6 +247,12 @@ public class DeliveryAgent {
             log.debug("Submitting new request to the connection: " + conn);
         }
 
+        if (SynapseDebugInfoHolder.getInstance().isDebuggerEnabled()) {
+            conn.getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY,
+                                           msgContext.getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
+            conn.getContext().setAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY,
+                                           msgContext.getProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_MEDIATOR_ID_PROPERTY));
+        }
         TargetRequest request = TargetRequestFactory.create(msgContext, route, targetConfiguration);
         TargetContext.setRequest(conn, request);
 

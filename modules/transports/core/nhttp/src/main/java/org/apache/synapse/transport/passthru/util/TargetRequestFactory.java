@@ -70,11 +70,26 @@ public class TargetRequestFactory {
             TargetRequest request = new TargetRequest(configuration, route, url, httpMethod,
                     noEntityBody == null || !noEntityBody);
 
+            //this code block is needed to replace the host header in service chaining with REQUEST_HOST_HEADER
+            //adding host header since it is not available in response message.
+            //otherwise Host header will not replaced after first call
+            if (msgContext.getProperty(NhttpConstants.REQUEST_HOST_HEADER) != null) {
+                Object headers = msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+                if(headers != null) {
+                    Map headersMap = (Map) headers;
+                    if (!headersMap.containsKey(HTTPConstants.HEADER_HOST)) {
+                        headersMap.put(HTTPConstants.HEADER_HOST
+                                , msgContext.getProperty(NhttpConstants.REQUEST_HOST_HEADER));
+                    }
+                }
+            }
+
             // headers
             PassThroughTransportUtils.removeUnwantedHeaders(msgContext, configuration);
 
 
             Object o = msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
+
             if (o != null && o instanceof Map) {
                 Map headers = (Map) o;
                 for (Object entryObj : headers.entrySet()) {
@@ -95,7 +110,7 @@ public class TargetRequestFactory {
                 }
             }
 
-			String cType = getContentType(msgContext);
+			String cType = getContentType(msgContext, configuration.isPreserveHttpHeader(HTTP.CONTENT_TYPE));
 			if (cType != null && (!httpMethod.equals("GET") && !httpMethod.equals("DELETE"))) {
 				String messageType = (String) msgContext.getProperty("messageType");
 				if (messageType != null) {
@@ -183,7 +198,16 @@ public class TargetRequestFactory {
         return null;
     }
 
-    private static String getContentType(MessageContext msgCtx) throws AxisFault {
+    private static String getContentType(MessageContext msgCtx, boolean isContentTypePreservedHeader) throws AxisFault {
+
+        if (isContentTypePreservedHeader) {
+            if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
+                return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
+            } else if (msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE) != null) {
+                return (String) msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE);
+            }
+        }
+
         MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(msgCtx);
         OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgCtx);
         

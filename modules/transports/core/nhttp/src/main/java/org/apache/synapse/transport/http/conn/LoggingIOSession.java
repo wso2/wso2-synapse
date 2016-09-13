@@ -176,7 +176,7 @@ class LoggingIOSession implements IOSession {
 
     public Object removeAttribute(final String name) {
         if (this.log.isDebugEnabled()) {
-            this.log.debug("I/O session " + this.id + " " + this.session + ": Remove attribute " 
+            this.log.debug("I/O session " + this.id + " " + this.session + ": Remove attribute "
                     + name);
         }
         return this.session.removeAttribute(name);
@@ -189,11 +189,12 @@ class LoggingIOSession implements IOSession {
             if (log.isDebugEnabled()) {
                 log.debug("I/O session " + id + " " + session + ": " + bytesRead + " bytes read");
             }
-            if (bytesRead > 0 && wirelog.isEnabled()) {
+            if (bytesRead > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled())) {
                 ByteBuffer b = dst.duplicate();
                 int p = b.position();
                 b.limit(p);
                 b.position(p - bytesRead);
+                wirelog.setSession(session);
                 wirelog.input(b);
             }
             return bytesRead;
@@ -204,11 +205,12 @@ class LoggingIOSession implements IOSession {
             if (log.isDebugEnabled()) {
                 log.debug("I/O session " + id + " " + session + ": " + byteWritten + " bytes written");
             }
-            if (byteWritten > 0 && wirelog.isEnabled()) {
+            if (byteWritten > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled())) {
                 ByteBuffer b = src.duplicate();
                 int p = b.position();
                 b.limit(p);
                 b.position(p - byteWritten);
+                wirelog.setSession(session);
                 wirelog.output(b);
             }
             return byteWritten;

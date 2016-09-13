@@ -153,7 +153,7 @@ public class ScriptMediatorTest extends TestCase {
         ScriptMediator mediator = new ScriptMediator("js", new LinkedHashMap<Value, Object>(), v, "transform", null);
         boolean result = mediator.mediate(mc);
         String response = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
-        String expectedResponse = "[{\"id\":\"ID:7eaf7\", \"tags\":[\"bar\", \"restaurant\", \"food\", \"establishment\"], \"name\":\"Biaggio Cafe\"}, {\"id\":\"ID:3ef98\", \"tags\":[\"food\", \"establishment\"], \"name\":\"Doltone House\"}]";
+        String expectedResponse = "[{\"name\":\"Biaggio Cafe\", \"tags\":[\"bar\", \"restaurant\", \"food\", \"establishment\"], \"id\":\"ID:7eaf7\"}, {\"name\":\"Doltone House\", \"tags\":[\"food\", \"establishment\"], \"id\":\"ID:3ef98\"}]";
         assertEquals(expectedResponse, response);
         assertEquals(true, result);
     }

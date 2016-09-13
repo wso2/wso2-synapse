@@ -37,6 +37,9 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseArtifact;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfigurable;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -218,11 +221,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     private boolean running = false;
 
     public static final String ALL_TRANSPORTS = "all";
-   
-    /**
-     * The variable that indicate tracing on or off for the current mediator
-     */
-    private int traceState = SynapseConstants.TRACING_UNSET;
 
     private AspectConfiguration aspectConfiguration;
 
@@ -248,6 +246,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public ProxyService(String name) {
         this.name = name;
         serviceLog = LogFactory.getLog(SynapseConstants.SERVICE_LOGGER_PREFIX + name);
+        aspectConfiguration = new AspectConfiguration(name);
     }
 
     /**
@@ -261,6 +260,23 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
         auditInfo("Building Axis service for Proxy service : " + name);
         AxisService proxyService = null;
+
+        if (pinnedServers != null && !pinnedServers.isEmpty()) {
+
+            Parameter param = axisCfg.getParameter(SynapseConstants.SYNAPSE_ENV);
+            if (param != null && param.getValue() instanceof SynapseEnvironment) {
+
+                SynapseEnvironment synEnv = (SynapseEnvironment) param.getValue();
+                String serverName = synEnv != null ? synEnv.getServerContextInformation()
+                        .getServerConfigurationInformation().getServerName() : "localhost";
+
+                if (!pinnedServers.contains(serverName)) {
+                    log.info("Server name " + serverName + " not in pinned servers list. " +
+                             "Not deploying Proxy service : " + name);
+                    return null;
+                }
+            }
+        }
 
         // get the wsdlElement as an OMElement
         if (trace()) {
@@ -476,7 +492,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                         if (trace()) {
                             trace.info("Setting up custom resolvers");
                         }
-                        
+
                         // load the UserDefined WSDLResolver and SchemaURIResolver implementations
                         if (synCfg.getProperty(SynapseConstants.SYNAPSE_WSDL_RESOLVER) != null &&
                                 synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER) != null) {
@@ -489,7 +505,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                             if (resourceMap != null) {
                                 // if the resource map is available use it
                                 wsdlToAxisServiceBuilder.setCustomResolver(
-                                        new CustomXmlSchemaURIResolver(resourceMap, synCfg));
+		                                new CustomXmlSchemaURIResolver(resourceMap, synCfg));
                                 // Axis 2 also needs a WSDLLocator for WSDL 1.1 documents
                                 if (wsdlToAxisServiceBuilder instanceof WSDL11ToAxisServiceBuilder) {
                                     ((WSDL11ToAxisServiceBuilder)
@@ -668,7 +684,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             }
         }
 
-        // create a custom message receiver for this proxy service 
+        // create a custom message receiver for this proxy service
         ProxyServiceMessageReceiver msgRcvr = new ProxyServiceMessageReceiver();
         msgRcvr.setName(name);
         msgRcvr.setProxy(this);
@@ -802,9 +818,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         wsdlToAxisServiceBuilder.setCustomResolver(userDefSchemaResolver);
         if (wsdlToAxisServiceBuilder instanceof WSDL11ToAxisServiceBuilder) {
             UserDefinedWSDLLocator userDefWSDLLocator = (UserDefinedWSDLLocator) wsdlClzzObject;
-            userDefWSDLLocator.init(new InputSource(wsdlInputStream),
-                    wsdlURI != null ? wsdlURI.toString() : "", resourceMap, synCfg,
-                    wsdlKey);
+            userDefWSDLLocator.init(new InputSource(wsdlInputStream), wsdlURI != null ? wsdlURI.toString() : "",
+                                    resourceMap, synCfg, wsdlKey);
             ((WSDL11ToAxisServiceBuilder) wsdlToAxisServiceBuilder).
                     setCustomWSDLResolver(userDefWSDLLocator);
         }
@@ -917,7 +932,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      * @return true if tracing is enabled for this service
      */
     private boolean trace() {
-        return traceState == SynapseConstants.TRACING_ON;
+        return aspectConfiguration.isTracingEnabled();
     }
 
     public String getName() {
@@ -1028,24 +1043,24 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public void setRunning(boolean running) {
         this.running = running;
     }
-   
+
     /**
      * Returns the int value that indicate the tracing state
      *
      * @return Returns the int value that indicate the tracing state
      */
-    public int getTraceState() {
-        return traceState;
-    }
+//    public int getTraceState() {
+//        return traceState;
+//    }
 
     /**
      * Set the tracing State variable
      *
-     * @param traceState tracing state
+     *
      */
-    public void setTraceState(int traceState) {
-        this.traceState = traceState;
-    }
+//    public void setTraceState(int traceState) {
+//        this.traceState = traceState;
+//    }
 
     public String getTargetFaultSequence() {
         return targetFaultSequence;
@@ -1186,7 +1201,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public boolean isModuleEngaged() {
         return moduleEngaged;
     }
-       
+
 
     public void setModuleEngaged(boolean moduleEngaged) {
     	this.moduleEngaged = moduleEngaged;
@@ -1202,7 +1217,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
           // Set the names of the two messages so that Axis2 is able to produce a WSDL (see SYNAPSE-366):
           mediateOperation.getMessage(WSDLConstants.MESSAGE_LABEL_IN_VALUE).setName("in");
           mediateOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE).setName("out");
-       // create a custom message receiver for this proxy service 
+       // create a custom message receiver for this proxy service
           ProxyServiceMessageReceiver msgRcvr = new ProxyServiceMessageReceiver();
           msgRcvr.setName(name);
           msgRcvr.setProxy(this);
@@ -1210,7 +1225,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
           mediateOperation.setParent(proxyService);
           proxyService.addParameter("_default_mediate_operation_", mediateOperation);
           return mediateOperation;
-		
+
     }
 
     /**
@@ -1314,4 +1329,43 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public void setLogSetterValue () {
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
+
+	public void setComponentStatisticsId(ArtifactHolder holder) {
+		if (aspectConfiguration == null) {
+			aspectConfiguration = new AspectConfiguration(name);
+		}
+		String proxyId = StatisticIdentityGenerator.getIdForComponent(name, ComponentType.PROXYSERVICE, holder);
+		aspectConfiguration.setUniqueId(proxyId);
+
+		String childId = null;
+		if (targetInSequence != null) {
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetInSequence, ComponentType.SEQUENCE, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+		}
+		if (targetInLineInSequence != null) {
+			targetInLineInSequence.setComponentStatisticsId(holder);
+		}
+		if (targetEndpoint != null) {
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetEndpoint, ComponentType.ENDPOINT, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.ENDPOINT, holder);
+		}
+		if (targetInLineEndpoint != null) {
+			targetInLineEndpoint.setComponentStatisticsId(holder);
+		}
+		if (targetOutSequence != null) {
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetOutSequence, ComponentType.SEQUENCE, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+		}
+		if (targetInLineOutSequence != null) {
+			targetInLineOutSequence.setComponentStatisticsId(holder);
+		}
+		if (targetFaultSequence != null) {
+			childId = StatisticIdentityGenerator.getIdReferencingComponent(targetFaultSequence, ComponentType.SEQUENCE, holder);
+			StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+		}
+		if (targetInLineFaultSequence != null) {
+			targetInLineFaultSequence.setComponentStatisticsId(holder);
+		}
+		StatisticIdentityGenerator.reportingEndEvent(proxyId, ComponentType.PROXYSERVICE, holder);
+	}
 }

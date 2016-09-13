@@ -29,21 +29,22 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.StatisticsLog;
-import org.apache.synapse.aspects.statistics.StatisticsRecord;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.aspects.flow.statistics.util.StatisticDataCollectionHelper;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.EIPUtils;
 import org.apache.synapse.util.MessageHelper;
@@ -163,7 +164,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -217,6 +218,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                                 + (completionTimeoutMillis / 1000) + "secs" :
                                                 "without expiry time"));
                             }
+                            if (isAlreadyTimedOut(synCtx)) {
+                                return false;
+                            }
 
                             Double minMsg = Double.parseDouble(minMessagesToComplete.evaluateValue(synCtx));
                             Double maxMsg = Double.parseDouble(maxMessagesToComplete.evaluateValue(synCtx));
@@ -266,6 +270,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                             (completionTimeoutMillis > 0 ? "expires in : "
                                                     + (completionTimeoutMillis / 1000) + "secs" :
                                                     "without expiry time"));
+                                }
+
+                                if (isAlreadyTimedOut(synCtx)) {
+                                    return false;
                                 }
 
                                 Double minMsg = -1.0;
@@ -352,6 +360,27 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         return false;
     }
 
+    /*
+     * Check whether aggregate is already timed-out and we are receiving a message after the timeout interval
+     */
+    private boolean isAlreadyTimedOut(MessageContext synCtx) {
+
+        Object aggregateTimeoutHolderObj =
+                synCtx.getProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                                   EIPConstants.EIP_SHARED_DATA_HOLDER);
+
+        if (aggregateTimeoutHolderObj != null) {
+            SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
+            if (sharedDataHolder.isTimeoutOccurred()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Received a response for already timed-out Aggregate");
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean mediate(MessageContext synCtx,
                            ContinuationState contState) {
         SynapseLog synLog = getLog(synCtx);
@@ -363,20 +392,22 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         boolean result;
 
         SequenceMediator onCompleteSequence = getOnCompleteSequence();
-        RuntimeStatisticCollector.openLogForContinuation(synCtx,
-                                                         onCompleteSequence.getSequenceNameForStatistics(synCtx));
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!contState.hasChild()) {
             result = onCompleteSequence.mediate(synCtx, contState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) onCompleteSequence.getChild(contState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, contState.getChildContState());
 
-            ((Mediator) mediator).reportStatistic(synCtx, null, false);
+            if (isStatisticsEnabled) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
-        onCompleteSequence.reportStatistic(synCtx, null, false);
+        if (isStatisticsEnabled) {
+            onCompleteSequence.reportCloseStatistics(synCtx, null);
+        }
         return result;
     }
 
@@ -402,6 +433,18 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             if (!aggregate.isCompleted()) {
                 aggregate.cancel();
                 aggregate.setCompleted(true);
+
+                MessageContext lastMessage = aggregate.getLastMessage();
+                if (lastMessage != null) {
+                    Object aggregateTimeoutHolderObj =
+                            lastMessage.getProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                                                    EIPConstants.EIP_SHARED_DATA_HOLDER);
+
+                    if (aggregateTimeoutHolderObj != null) {
+                        SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
+                        sharedDataHolder.markTimeoutState();
+                    }
+                }
                 markedCompletedNow = true;
             }
         }
@@ -471,15 +514,12 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     private MessageContext getAggregatedMessage(Aggregate aggregate) {
 
         MessageContext newCtx = null;
-        StatisticsRecord destinationStatRecord = null;
 
         for (MessageContext synCtx : aggregate.getMessages()) {
             
             if (newCtx == null) {
                 try {
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
-					destinationStatRecord =
-					                        (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
                 } catch (AxisFault axisFault) {
                     handleException("Error creating a copy of the message", axisFault, synCtx);
                 }
@@ -497,13 +537,6 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
                     EIPUtils.enrichEnvelope(
                             newCtx.getEnvelope(), synCtx.getEnvelope(), synCtx, aggregationExpression);
-					if (destinationStatRecord != null &&
-					    synCtx.getProperty(SynapseConstants.STATISTICS_STACK) != null) {
-						// Merge the statistics logs to one single message
-						// context.
-						mergeStatisticsRecords((StatisticsRecord) synCtx.getProperty(SynapseConstants.STATISTICS_STACK),
-						                       destinationStatRecord);
-					}
 
                     if (log.isDebugEnabled()) {
                         log.debug("Merged result : " + newCtx.getEnvelope());
@@ -546,35 +579,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             }
         }
 
-        if(MessageFlowTracingDataCollector.isMessageFlowTracingEnabled()) {
-            List<String> newMessageFlowTrace = new ArrayList<String>();
-            for (MessageContext synCtx : aggregate.getMessages()) {
-                List<String> messageFlowTrace = (List<String>) synCtx.getProperty(MessageFlowTracerConstants.MESSAGE_FLOW);
-                if (null != messageFlowTrace) {
-                    newMessageFlowTrace.addAll(messageFlowTrace);
-                }
-            }
-            newCtx.setProperty(MessageFlowTracerConstants.MESSAGE_FLOW, newMessageFlowTrace);
-        }
-
+        StatisticDataCollectionHelper.collectAggregatedParents(aggregate.getMessages(), newCtx);
         return newCtx;
     }
 
-    
-	/*
-	 * Merges the statistics logs of the ESB artifacts that are not already
-	 * collected by the request flow.
-	 */
-	private void mergeStatisticsRecords(final StatisticsRecord source,
-	                                    final StatisticsRecord destination) {
-		StatisticsRecord clonedSourceStatRecord = MessageHelper.getClonedStatisticRecord(source);
-		for (StatisticsLog clonedSourceStatLog : clonedSourceStatRecord.getAllStatisticsLogs()) {
-			if (!clonedSourceStatLog.isCollectedByRequestFlow()) {
-				destination.collect(clonedSourceStatLog);
-			}
-		}
-
-	}
     public SynapseXPath getCorrelateExpression() {
         return correlateExpression;
     }
@@ -651,9 +659,33 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         this.enclosingElementPropertyName = enclosingElementPropertyName;
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
-                .reportStatisticForAggregateMediator(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                     parentName, isCreateLog, isAggregationMessageCollected);
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
+    @Override
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
+        return OpenEventCollector.reportFlowAggregateEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           getAspectConfiguration(),
+                                                           isContentAltering() || isContentAltering);
+    }
+
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String mediatorId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(mediatorId);
+        if (onCompleteSequence != null) {
+            onCompleteSequence.setComponentStatisticsId(holder);
+        } else if (onCompleteSequenceRef != null) {
+            String childId =
+                    StatisticIdentityGenerator.getIdReferencingComponent(onCompleteSequenceRef, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
     }
 }

@@ -38,6 +38,7 @@ public class EnqueueMediatorFactory extends AbstractMediatorFactory{
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
         EnqueueMediator mediator = new EnqueueMediator();
+        processAuditStatus(mediator, elem);
 
         OMAttribute seqAtt = elem.getAttribute(SEQUENCE_ATT);
         if (seqAtt != null && !"".equals(seqAtt.getAttributeValue())) {

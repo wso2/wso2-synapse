@@ -21,6 +21,7 @@ package org.apache.synapse.commons.throttle.core;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -36,23 +37,18 @@ import java.util.concurrent.TimeUnit;
 public class ThrottleWindowReplicator {
 
 	private static final Log log = LogFactory.getLog(ThrottleWindowReplicator.class);
-	private static final int REPLICATOR_THREAD_POOL_SIZE = 1;
-	private static int replicatorPoolSize = REPLICATOR_THREAD_POOL_SIZE;
-	private static final String WINDOW_REPLICATOR_POOL_SIZE = "throttlingWindowReplicator.pool.size";
-	private static final String WINDOW_REPLICATOR_FREQUENCY = "throttlingWindowReplicator.replication.frequency";
+	private static int replicatorPoolSize ;
 	private ConfigurationContext configContext;
-
+private ThrottleProperties throttleProperties;
 	private int replicatorCount;
 
 	private Set<String> set = new ConcurrentSkipListSet<String>();
 
 	public ThrottleWindowReplicator() {
 
-		String replicatorThreads = System.getProperty(WINDOW_REPLICATOR_POOL_SIZE);
+		throttleProperties = ThrottleServiceDataHolder.getInstance().getThrottleProperties();
+		replicatorPoolSize = Integer.parseInt(throttleProperties.getWindowReplicatorPoolSize());
 
-		if (replicatorThreads != null) {
-			replicatorPoolSize = Integer.parseInt(replicatorThreads);
-		}
 
 		if (log.isDebugEnabled()) {
 			log.debug("Throttle window replicator pool size set to " + replicatorPoolSize);
@@ -67,10 +63,7 @@ public class ThrottleWindowReplicator {
 					}
 				});
 
-		String windowReplicationFrequency = System.getProperty(WINDOW_REPLICATOR_FREQUENCY);
-		if (windowReplicationFrequency == null) {
-			windowReplicationFrequency = "50";
-		}
+		String windowReplicationFrequency = throttleProperties.getWindowReplicatorFrequency();
 
 		if (log.isDebugEnabled()) {
 			log.debug("Throttling window replication frequency set to " + windowReplicationFrequency);

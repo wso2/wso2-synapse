@@ -20,7 +20,6 @@
 package org.apache.synapse.core.axis2;
 
 import org.apache.axiom.om.OMAbstractFactory;
-import org.apache.axiom.om.OMElement;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -28,7 +27,6 @@ import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.client.OperationClient;
 import org.apache.axis2.client.Options;
-import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.context.ServiceContext;
@@ -36,7 +34,6 @@ import org.apache.axis2.context.ServiceGroupContext;
 import org.apache.axis2.description.AxisOperation;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.description.AxisServiceGroup;
-import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.description.WSDL2Constants;
 import org.apache.axis2.engine.AxisConfiguration;
@@ -55,6 +52,8 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.util.MessageHelper;
 
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import java.util.Map;
 import java.util.Set;
@@ -195,13 +194,21 @@ public class Axis2FlexibleMEPClient {
                 if (transportHeaders != null) {
                     // Fix ESBJAVA-3645 Should not do this for multipart/related
                     String trpContentType = (String) transportHeaders.get(HTTP.CONTENT_TYPE);
-                    if (trpContentType != null
-                            && !trpContentType
-                                    .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                    if (trpContentType != null && !trpContentType
+                            .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
                         transportHeaders.remove(HTTP.CONTENT_TYPE);
+                        try {
+                            //ESBJAVA-3447, Appending charset, if exist in property
+                            ContentType contentType = new ContentType(trpContentType);
+                            if (contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING) != null) {
+                                strCharSetEncoding = "; charset=" + contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING);
+                            }
+                        } catch (ParseException e) {
+                            log.warn("Error occurred while parsing ContentType header, using default: "
+                                    + HTTPConstants.MEDIA_TYPE_TEXT_XML);
+                        }
                         transportHeaders.put(HTTP.CONTENT_TYPE,
-                                org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML
-                                        + strCharSetEncoding);
+                                org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML + strCharSetEncoding);
                     }
                 }
 
@@ -209,8 +216,8 @@ public class Axis2FlexibleMEPClient {
                 axisOutMsgCtx.setDoingREST(false);
                 axisOutMsgCtx.removeProperty(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
                 // We need to set this explicitly here in case the request was not a POST
-                axisOutMsgCtx.setProperty(Constants.Configuration.HTTP_METHOD,
-                        Constants.Configuration.HTTP_METHOD_POST);
+                axisOutMsgCtx
+                        .setProperty(Constants.Configuration.HTTP_METHOD, Constants.Configuration.HTTP_METHOD_POST);
                 if (axisOutMsgCtx.getSoapAction() == null && axisOutMsgCtx.getWSAAction() != null) {
                     axisOutMsgCtx.setSoapAction(axisOutMsgCtx.getWSAAction());
                 }
@@ -222,28 +229,34 @@ public class Axis2FlexibleMEPClient {
                 if (transportHeaders != null) {
                     // Fix ESBJAVA-3645 Should not do this for multipart/related
                     String trpContentType = (String) transportHeaders.get(HTTP.CONTENT_TYPE);
-                    if (trpContentType != null
-                            && !trpContentType
-                                    .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                    if (trpContentType != null && !trpContentType
+                            .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
                         transportHeaders.remove(HTTP.CONTENT_TYPE);
+                        try {
+                            //ESBJAVA-3447, Appending charset, if exist in property
+                            ContentType contentType = new ContentType(trpContentType);
+                            if (contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING) != null) {
+                                strCharSetEncoding = "; charset=" + contentType.getParameter(HTTPConstants.CHAR_SET_ENCODING);
+                            }
+                        } catch (ParseException e) {
+                            log.warn("Error occurred while parsing ContentType header in property, using default: "
+                                    + HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML);
+                        }
 
                         if (axisOutMsgCtx.getSoapAction() != null) {
                             String actionHeaderPrefix = ";action=\"";
                             String contentTypeWithAction = new StringBuilder(
                                     org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML
-                                            .length()
-                                            + axisOutMsgCtx.getSoapAction().length()
-                                            + actionHeaderPrefix.length() + 1)
+                                            .length() + axisOutMsgCtx.getSoapAction().length() + actionHeaderPrefix
+                                            .length() + 1)
                                     .append(org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML)
-                                    .append(actionHeaderPrefix)
-                                    .append(axisOutMsgCtx.getSoapAction()).append('\"').toString();
-                            transportHeaders.put(HTTP.CONTENT_TYPE, contentTypeWithAction
-                                    + strCharSetEncoding);
+                                    .append(actionHeaderPrefix).append(axisOutMsgCtx.getSoapAction()).append('\"')
+                                    .toString();
+                            transportHeaders.put(HTTP.CONTENT_TYPE, contentTypeWithAction + strCharSetEncoding);
                         } else {
-                            transportHeaders
-                                    .put(HTTP.CONTENT_TYPE,
-                                            org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML
-                                                    + strCharSetEncoding);
+                            transportHeaders.put(HTTP.CONTENT_TYPE,
+                                    org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML
+                                            + strCharSetEncoding);
                         }
                     }
                 }
@@ -455,7 +468,11 @@ public class Axis2FlexibleMEPClient {
 
         // set the SEND_TIMEOUT for transport sender
         if (endpoint != null && endpoint.getEffectiveTimeout() > 0) {
-            axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            if (!endpoint.isDynamicTimeoutEndpoint()) {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+            } else {
+                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext));
+            }
         }
 
 
@@ -468,14 +485,36 @@ public class Axis2FlexibleMEPClient {
             if (endpoint != null) {
                 // set the timeout time and the timeout action to the callback, so that the
                 // TimeoutHandler can detect timed out callbacks and take appropriate action.
-                long endpointTimeout =  endpoint.getEffectiveTimeout();
-                callback.setTimeOutOn(System.currentTimeMillis() + endpointTimeout);
-                callback.setTimeOutAction(endpoint.getTimeoutAction());
-                callback.setTimeoutDuration(endpointTimeout);
+                if (!endpoint.isDynamicTimeoutEndpoint()) {
+                    long endpointTimeout = endpoint.getEffectiveTimeout();
+                    callback.setTimeout(endpointTimeout);
+                    callback.setTimeOutAction(endpoint.getTimeoutAction());
+                    callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting Timeout for endpoint : " +
+                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                                  " to static timeout value : " + endpointTimeout);
+                    }
+                } else {
+                    long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
+                    callback.setTimeout(endpointTimeout);
+                    callback.setTimeOutAction(endpoint.getTimeoutAction());
+                    callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Setting Timeout for endpoint : " +
+                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                                  " to dynamic timeout value : " + endpointTimeout);
+                    }
+                }
             } else {
                 long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
-                callback.setTimeOutOn(System.currentTimeMillis() + globalTimeout);
-                callback.setTimeoutDuration(globalTimeout);
+                callback.setTimeout(globalTimeout);
+                callback.setTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT);
+                if (log.isDebugEnabled()) {
+                    log.debug("Setting timeout for implicit endpoint : " +
+                              getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
+                              " to global timeout value of " + globalTimeout);
+                }
             }
 
         }
@@ -639,6 +678,11 @@ public class Axis2FlexibleMEPClient {
         }
         return isRestRequest;
     }
+
+    private static String getEndpointLogMessage(org.apache.synapse.MessageContext synCtx, MessageContext axisCtx) {
+        return synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) + ", URI : " + axisCtx.getTo().getAddress();
+    }
+
 }
 
 // if(Utils.isClientThreadNonBlockingPropertySet(axisOutMsgCtx) ){

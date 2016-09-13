@@ -35,7 +35,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiator;
+import org.apache.synapse.commons.util.ext.TenantInfoInitiatorProvider;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
+import org.apache.synapse.transport.http.conn.SynapseDebugInfoHolder;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
@@ -174,6 +177,8 @@ public class ClientWorker implements Runnable {
 
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, response.getPipe());
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_RESPONSE, response);
+        responseMsgCtx.setProperty(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY, response.getConnection()
+                .getContext().getAttribute(SynapseDebugInfoHolder.SYNAPSE_WIRE_LOG_HOLDER_PROPERTY));
         responseMsgCtx.setProperty(PassThroughConstants.PASS_THROUGH_TARGET_CONNECTION,
                 response.getConnection());
     }
@@ -181,6 +186,10 @@ public class ClientWorker implements Runnable {
     public void run() {
 
         CustomLogSetter.getInstance().clearThreadLocalContent();
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        if (tenantInfoInitiator != null) {
+            tenantInfoInitiator.initTenantInfo();
+        }
         if (responseMsgCtx == null) {
             return;
         }
@@ -226,6 +235,7 @@ public class ClientWorker implements Runnable {
                 }
 
                 responseMsgCtx.setServerSide(true);
+	         responseMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
             } else {
                 // there is no response entity-body
                 responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);

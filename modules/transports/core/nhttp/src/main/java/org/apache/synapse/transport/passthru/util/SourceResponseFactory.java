@@ -19,6 +19,8 @@ package org.apache.synapse.transport.passthru.util;
 import org.apache.axiom.om.OMOutputFormat;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.MessageFormatter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
@@ -38,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class SourceResponseFactory {
+    private static Log log = LogFactory.getLog(SourceResponseFactory.class);
 
     public static SourceResponse create(MessageContext msgContext,
                                         SourceRequest sourceRequest,
@@ -45,8 +48,11 @@ public class SourceResponseFactory {
         // determine the status code to be sent
         int statusCode = PassThroughTransportUtils.determineHttpStatusCode(msgContext);
 
+        //determine status message description
+        String statusLine = PassThroughTransportUtils.determineHttpStatusLine(msgContext);
+
         SourceResponse sourceResponse =
-                new SourceResponse(sourceConfiguration, statusCode, sourceRequest);
+                new SourceResponse(sourceConfiguration, statusCode, statusLine, sourceRequest);
 
         // set any transport headers
         Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
@@ -61,7 +67,7 @@ public class SourceResponseFactory {
         // When invoking http HEAD request esb set content length as 0 to response header. Since there is no message
         // body content length cannot be calculated inside synapse. Hence content length of the backend response is
         // set to sourceResponse.
-        if (PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(sourceRequest.getRequest().getRequestLine().getMethod()) &&
+        if (sourceRequest != null && PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(sourceRequest.getRequest().getRequestLine().getMethod()) &&
             msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
             sourceResponse.addHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH, (String) msgContext.getProperty
                     (PassThroughConstants.ORGINAL_CONTEN_LENGTH));
@@ -114,7 +120,23 @@ public class SourceResponseFactory {
 				.getProperty(PassThroughConstants.NO_KEEPALIVE);
 		if ("true".equals(noKeepAlie)) {
 			sourceResponse.setKeepAlive(false);
-		}
+        } else {
+            // If the payload is delayed for GET/HEAD/DELETE, http-core-nio will start processing request, without
+            // waiting for the payload. Therefore the delayed payload will be appended to the next request. To avoid
+            // that, disable keep-alive to avoid re-using the existing connection by client for the next request.
+            if (sourceRequest != null) {
+                String requestMethod = sourceRequest.getRequest().getRequestLine().getMethod();
+                if (requestMethod != null && isPayloadOptionalMethod(requestMethod.toUpperCase()) &&
+                    (sourceRequest.getHeaders().containsKey(HTTP.CONTENT_LEN) ||
+                     sourceRequest.getHeaders().containsKey(HTTP.TRANSFER_ENCODING))) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Disable keep-alive in the client connection : Content-length/Transfer-encoding" +
+                                  " headers present for GET/HEAD/DELETE request");
+                    }
+                    sourceResponse.setKeepAlive(false);
+                }
+            }
+        }
         return sourceResponse;
     }
 
@@ -126,6 +148,12 @@ public class SourceResponseFactory {
 	            sourceResponse.addHeader((String) entry.getKey(), (String) entry.getValue());
 	        }
 	    }
+    }
+
+    private static boolean isPayloadOptionalMethod(String httpMethod) {
+        return (PassThroughConstants.HTTP_GET.equals(httpMethod) ||
+                PassThroughConstants.HTTP_HEAD.equals(httpMethod) ||
+                PassThroughConstants.HTTP_DELETE.equals(httpMethod));
     }
     
 }

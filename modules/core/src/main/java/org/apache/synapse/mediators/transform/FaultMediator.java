@@ -88,7 +88,7 @@ public class FaultMediator extends AbstractMediator {
 
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -543,6 +543,11 @@ public class FaultMediator extends AbstractMediator {
 
     public void addFaultDetailElement(OMElement element) {
         faultDetailElements.add(element);
+    }
+
+    @Override
+    public boolean isContentAltering() {
+        return true;
     }
 
     private void handleException(String msg) {

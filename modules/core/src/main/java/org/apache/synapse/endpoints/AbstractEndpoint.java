@@ -32,13 +32,14 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.PropertyInclude;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.messageflowtracer.util.MessageFlowTracerConstants;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.aspects.statistics.StatisticsReporter;
 import org.apache.synapse.commons.jmx.MBeanRegistrar;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
@@ -291,21 +292,16 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     public void send(MessageContext synCtx) {
 
         logSetter();
-        String endpointId = null;
-        if (isStatisticCollected()) {
-            endpointId = String.valueOf(RuntimeStatisticCollector.getComponentUniqueId(synCtx));
-            RuntimeStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, true);
-        } else {
-            RuntimeStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, true);
+
+        Integer statisticReportingIndex = null;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
+        if (isStatisticsEnabled) {
+            statisticReportingIndex = OpenEventCollector.reportEntryEvent(synCtx, getReportingName(),
+                    definition.getAspectConfiguration(), ComponentType.ENDPOINT);
         }
 
         boolean traceOn = isTraceOn(synCtx);
         boolean traceOrDebugOn = isTraceOrDebugOn(traceOn);
-
-        String componentId = null;
-
 
         if (!initialized) {
             //can't send to a non-initialized endpoint. This is a program fault
@@ -382,23 +378,12 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             synCtx.getEnvelope().build();
         }
 
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            componentId = this.setTraceFlow(synCtx, componentId, getReportingName(), true);
-        }
-
         // Send the message through this endpoint
         synCtx.getEnvironment().send(definition, synCtx);
 
-        if (isStatisticCollected()) {
-            RuntimeStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, endpointId, getReportingName(), true, false);
-        } else {
-            RuntimeStatisticCollector
-                    .reportStatisticForEndpoint(synCtx, null, getReportingName(), false, false);
-        }
-
-        if (MessageFlowTracingDataCollector.isMessageFlowTracingEnabled(synCtx)) {
-            this.setTraceFlow(synCtx, componentId, getReportingName(), false);
+        if (isStatisticsEnabled) {
+            CloseEventCollector.closeEntryEvent(synCtx, getReportingName(), ComponentType.ENDPOINT,
+                    statisticReportingIndex, false);
         }
     }
 
@@ -562,10 +547,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @return true if tracing should be performed
      */
     protected boolean isTraceOn(MessageContext msgCtx) {
-        return definition != null &&
-               ((definition.getTraceState() == SynapseConstants.TRACING_ON) ||
-                (definition.getTraceState() == SynapseConstants.TRACING_UNSET &&
-                    msgCtx.getTracingState() == SynapseConstants.TRACING_ON));
+        return (definition.getAspectConfiguration() != null && definition.getAspectConfiguration().isTracingEnabled());
     }
 
     /**
@@ -627,17 +609,15 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
             AspectConfiguration oldConfiguration = definition.getAspectConfiguration();
             if (opName != null) {
+                AspectConfiguration newConfiguration = new AspectConfiguration(
+                        oldConfiguration.getId() + SynapseConstants.STATISTICS_KEY_SEPARATOR +
+                        opName);
                 if (oldConfiguration.isStatisticsEnable()) {
-                    AspectConfiguration newConfiguration = new AspectConfiguration(
-                            oldConfiguration.getId() + SynapseConstants.STATISTICS_KEY_SEPARATOR +
-                                    opName);
                     newConfiguration.enableStatistics();
-                    StatisticsReporter.reportForComponent(synCtx, newConfiguration,
-                            ComponentType.ENDPOINT);
                 }
-            } else {
-                StatisticsReporter.reportForComponent(synCtx, oldConfiguration,
-                        ComponentType.ENDPOINT);
+                if (oldConfiguration.isTracingEnabled()) {
+                    newConfiguration.enableTracing();
+                }
             }
         }
     }
@@ -670,13 +650,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     protected void informFailure(MessageContext synCtx, int errorCode, String errorMsg) {
 
         if (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) == null) {
-            setErrorOnMessage(synCtx, String.valueOf(errorCode), errorMsg);
+            setErrorOnMessage(synCtx, errorCode, errorMsg);
         }
         invokeNextFaultHandler(synCtx);
     }
 
 
-    protected void setErrorOnMessage(MessageContext synCtx, String errorCode, String errorMsg) {
+    protected void setErrorOnMessage(MessageContext synCtx, Integer errorCode, String errorMsg) {
 		Map<String, Integer> mEndpointLog =
 		                                    (Map<String, Integer>) synCtx.getProperty(SynapseConstants.ENDPOINT_LOG);
 		if (mEndpointLog != null) {
@@ -706,9 +686,34 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             if (faultHandler instanceof Endpoint) {
                 // This is the parent . need to inform parent with fault child
                 ((Endpoint) faultHandler).onChildEndpointFail(this, synCtx);
+            } else if (faultHandler instanceof MediatorFaultHandler) {
+                if(!executeLastSequenceFaultHandler(synCtx)){
+                    ((FaultHandler) faultHandler).handleFault(synCtx);
+                }
             } else {
                 ((FaultHandler) faultHandler).handleFault(synCtx);
             }
+        } else {
+            executeLastSequenceFaultHandler(synCtx);
+        }
+    }
+
+    /**
+     * If LAST_SEQ_FAULT_HANDLER property is not null, this method will execute the sequence specified by it.
+     *
+     * @param synCtx message context
+     * @return true if LAST_SEQ_FAULT_HANDLER get executed.
+     */
+    private boolean executeLastSequenceFaultHandler(MessageContext synCtx) {
+        Object errorCode = synCtx.getProperty(SynapseConstants.ERROR_CODE);
+        Object lastSequenceFaultHandler = synCtx.getProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER);
+
+        if (lastSequenceFaultHandler != null && errorCode != null && errorCode instanceof Integer &&
+                (((Integer) errorCode) == SynapseConstants.NHTTP_CONNECTION_FAILED)) {
+            ((FaultHandler) lastSequenceFaultHandler).handleFault(synCtx, null);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -815,10 +820,6 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         CustomLogSetter.getInstance().setLogAppender(artifactContainerName);
     }
 
-    public String setTraceFlow(MessageContext msgCtx, String mediatorId, String mediatorName, boolean isStart) {
-        return MessageFlowTracingDataCollector.setTraceFlowEvent(msgCtx, mediatorId, MessageFlowTracerConstants.COMPONENT_TYPE_ENDPOINT + mediatorName, isStart);
-    }
-
     public String getReportingName() {
         if (this.endpointName != null) {
             return this.endpointName;
@@ -828,8 +829,28 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     private boolean isStatisticCollected() {
-        return (RuntimeStatisticCollector.isStatisticsEnable() && definition.getAspectConfiguration() != null &&
-                definition.getAspectConfiguration().isStatisticsEnable() &&
-                this.endpointName != null);
+        return (definition.getAspectConfiguration() != null &&
+                definition.getAspectConfiguration().isStatisticsEnable() && this.endpointName != null);
+    }
+
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (this instanceof IndirectEndpoint) {
+            String sequenceId = StatisticIdentityGenerator
+                    .getIdReferencingComponent(((IndirectEndpoint) (this)).getKey(), ComponentType.ENDPOINT, holder);
+
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
+        } else {
+            if (definition == null) {
+                EndpointDefinition definition = new EndpointDefinition();
+                this.setDefinition(definition);
+            }
+            if (definition.getAspectConfiguration() == null) {
+                definition.configure(new AspectConfiguration(getReportingName()));
+            }
+            String sequenceId = StatisticIdentityGenerator.getIdForComponent(getReportingName(), ComponentType.ENDPOINT, holder);
+            definition.getAspectConfiguration().setUniqueId(sequenceId);
+
+            StatisticIdentityGenerator.reportingEndEvent(sequenceId, ComponentType.ENDPOINT, holder);
+        }
     }
 }

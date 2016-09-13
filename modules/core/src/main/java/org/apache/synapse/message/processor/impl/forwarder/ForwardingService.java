@@ -140,7 +140,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
     
     private boolean isNonHTTP = false;
     
-    Pattern httpPattern = Pattern.compile("^http:");
+    Pattern httpPattern = Pattern.compile("^(http|https):");
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
@@ -479,10 +479,18 @@ public class ForwardingService implements Task, ManagedLifecycle {
                             String responseSc =
                                                 ((String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
                                                                                                 .getProperty(SynapseConstants.HTTP_SC));
-                            isSuccessful =
-                                           getHTTPStatusCodeFamily(
-                                                                   Integer.parseInt(responseSc.trim())).equals(HTTPStatusCodeFamily.SUCCESSFUL) ||
-                                                   isNonRetryErrorCode(responseSc);
+							// Some events where response code is null (i.e. sender socket timeout
+							// when there is no response from endpoint)
+							int sc;
+							try {
+								sc = Integer.parseInt(responseSc.trim());
+								isSuccessful =
+										getHTTPStatusCodeFamily(sc).equals(
+												HTTPStatusCodeFamily.SUCCESSFUL) ||
+												isNonRetryErrorCode(responseSc);
+							} catch (NumberFormatException nfe) {
+								isSuccessful = false;
+							}
                         }
 					} catch (Exception e) {
                         // this means send has failed due to some reason so we
@@ -493,15 +501,28 @@ public class ForwardingService implements Task, ManagedLifecycle {
                          */
                         if (isNonHTTP) {
                             isSuccessful = false;
-                        } else {
+						} else if (outCtx != null && "true".equals(outCtx.getProperty(
+								ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
+							isSuccessful = false;
+						} else {
                             if (e instanceof SynapseException) {
                                 String responseSc =
                                                     ((String) ((Axis2MessageContext) messageContext).getAxis2MessageContext()
                                                                                                     .getProperty(SynapseConstants.HTTP_SC));
-                                isSuccessful =
-                                               getHTTPStatusCodeFamily(
-                                                                       Integer.parseInt(responseSc.trim())).equals(HTTPStatusCodeFamily.SUCCESSFUL) ||
-                                                       isNonRetryErrorCode(responseSc);
+								// We can come to this exception where sender has
+								// not responded, in which case there is no SC - we can't guarantee
+								// if send was successful or not in such cases other than those
+								// handled above.
+								int sc;
+								try {
+									sc = Integer.parseInt(responseSc.trim());
+									isSuccessful =
+											getHTTPStatusCodeFamily(sc).equals(
+													HTTPStatusCodeFamily.SUCCESSFUL) ||
+													isNonRetryErrorCode(responseSc);
+								} catch (NumberFormatException nfe) {
+									isSuccessful = false;
+								}
                             }
                         }
 						if (!isSuccessful) {

@@ -26,7 +26,14 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.aspects.AspectConfigurable;
+import org.apache.synapse.aspects.AspectConfiguration;
+import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
@@ -41,7 +48,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class Resource extends AbstractRESTProcessor implements ManagedLifecycle {
+public class Resource extends AbstractRESTProcessor implements ManagedLifecycle, AspectConfigurable {
 
     /**
      * List of HTTP methods applicable on this method. Empty list means all methods
@@ -54,6 +61,8 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     private String userAgent;
 
     private int protocol = RESTConstants.PROTOCOL_HTTP_AND_HTTPS;
+
+    AspectConfiguration aspectConfiguration;
 
     /**
      * In-lined sequence to be executed upon receiving messages
@@ -147,6 +156,26 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
 
     public String[] getMethods() {
         return methods.toArray(new String[methods.size()]);
+    }
+
+    /**
+     * Helper method to check whether API supports the incoming HTTP method.
+     *
+     * @param method
+     * @return true if support false otherwise.
+     */
+    public boolean hasMatchingMethod(String method) {
+        if (RESTConstants.METHOD_OPTIONS.equals(method)) {
+            return true; // OPTIONS requests are always welcome
+        } else if (!methods.isEmpty()) {
+            if (!methods.contains(method)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("HTTP method does not match");
+                }
+                return false;
+            }
+        }
+        return true;
     }
 
     public DispatcherHelper getDispatcherHelper() {
@@ -258,12 +287,16 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
     }
 
     void process(MessageContext synCtx) {
-
+        Integer statisticReportingIndex = null;
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!synCtx.isResponse()) {
             if (getDispatcherHelper() != null) {
                 synCtx.setProperty(RESTConstants.REST_URL_PATTERN, getDispatcherHelper().getString());
             }
-	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, true);
+        }
+        if (isStatisticsEnabled) {
+            statisticReportingIndex = OpenEventCollector.reportChildEntryEvent(synCtx, getResourceName(synCtx, name),
+                    ComponentType.RESOURCE, getAspectConfiguration(), true);
         }
 
         if (log.isDebugEnabled()) {
@@ -274,8 +307,11 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (!synCtx.isResponse()) {
             String method = (String) synCtx.getProperty(RESTConstants.REST_METHOD);
             if (RESTConstants.METHOD_OPTIONS.equals(method) && sendOptions(synCtx)) {
-	            RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
-	            return;
+                if (isStatisticsEnabled) {
+                    CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                            statisticReportingIndex, true);
+                }
+                return;
             }
 
             synCtx.setProperty(RESTConstants.SYNAPSE_RESOURCE, name);
@@ -305,7 +341,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (sequence != null) {
             registerFaultHandler(synCtx);
             sequence.mediate(synCtx);
-	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+            if (isStatisticsEnabled) {
+                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                        statisticReportingIndex, true);
+            }
             return;
         }
 
@@ -319,7 +358,10 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
                 throw new SynapseException("Specified sequence: " + sequenceKey + " cannot " +
                         "be found");
             }
-	        RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+            if (isStatisticsEnabled) {
+                CloseEventCollector.closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE,
+                        statisticReportingIndex, true);
+            }
             return;
         }
 
@@ -334,7 +376,11 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         } else if (log.isDebugEnabled()) {
             log.debug("No in-sequence configured. Dropping the request.");
         }
-	    RuntimeStatisticCollector.reportStatisticForResource(synCtx, name, null, false);
+        if (isStatisticsEnabled) {
+            CloseEventCollector
+                    .closeEntryEvent(synCtx, getResourceName(synCtx, name), ComponentType.RESOURCE, statisticReportingIndex,
+                            true);
+        }
     }
 
     public void registerFaultHandler(MessageContext synCtx) {
@@ -435,5 +481,73 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle 
         if (faultSequence != null && faultSequence.isInitialized()) {
             faultSequence.destroy();
         }
+    }
+
+    private static String getResourceName(MessageContext messageContext, String resourceId) {
+        Object synapseRestApi = messageContext.getProperty(RESTConstants.REST_API_CONTEXT);
+        Object restUrlPattern = messageContext.getProperty(RESTConstants.REST_URL_PATTERN);
+        if (synapseRestApi != null) {
+            String textualStringName;
+            if (restUrlPattern != null) {
+                textualStringName = (String) synapseRestApi + restUrlPattern;
+            } else {
+                textualStringName = (String) synapseRestApi;
+            }
+            return textualStringName;
+        }
+        return resourceId;
+    }
+
+    @Override
+    public void configure(AspectConfiguration aspectConfiguration) {
+        this.aspectConfiguration = aspectConfiguration;
+    }
+
+    @Override
+    public AspectConfiguration getAspectConfiguration() {
+        return aspectConfiguration;
+    }
+
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        StatisticIdentityGenerator.reportingBranchingEvents(holder);
+        if (aspectConfiguration == null) {
+            aspectConfiguration = new AspectConfiguration(name);
+        }
+        String resourceId =
+                StatisticIdentityGenerator.getIdForComponent(getResourceClassName(), ComponentType.RESOURCE, holder);
+        aspectConfiguration.setUniqueId(resourceId);
+
+        String childId = null;
+        if (inSequenceKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(inSequenceKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        if (inSequence != null) {
+            inSequence.setComponentStatisticsId(holder);
+        }
+        if (outSequenceKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(outSequenceKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        if (outSequence != null) {
+            outSequence.setComponentStatisticsId(holder);
+        }
+        if (faultSequenceKey != null) {
+            childId = StatisticIdentityGenerator.getIdReferencingComponent(faultSequenceKey, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+        }
+        if (faultSequence != null) {
+            faultSequence.setComponentStatisticsId(holder);
+        }
+        StatisticIdentityGenerator.reportingEndEvent(resourceId, ComponentType.RESOURCE, holder);
+    }
+
+    /**
+     * Returns the name of the class of Resource.
+     * @return Resource class name.
+     */
+    public String getResourceClassName(){
+        String cls = getClass().getName();
+        return cls.substring(cls.lastIndexOf(".") + 1);
     }
 }

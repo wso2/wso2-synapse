@@ -29,5 +29,6 @@ public enum ComponentType {
     MEDIATOR,
     API,
     RESOURCE,
+    IMAGINARY,
     ANY
 }

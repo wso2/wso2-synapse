@@ -228,7 +228,7 @@ public class ThrottleFactoryTest extends TestCase {
             "</wsp:Policy>";
 
     public void testModuleThrottleAssertBuilder() throws Exception {
-
+        System.setProperty("carbon.config.dir.path","resources");
         OMElement policyOM = createOMElement(modulePolicy);
         Policy policy = PolicyEngine.getPolicy(policyOM);
         Throttle throttle = ThrottleFactory.createModuleThrottle(policy);

@@ -22,6 +22,7 @@ package org.apache.synapse;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMNamespace;
 import javax.xml.namespace.QName;
+import java.util.regex.Pattern;
 
 /**
  * Global constants for the Apache Synapse project
@@ -165,6 +166,8 @@ public final class SynapseConstants {
         public static final String PROXY_SERVICE_TYPE = "proxy";
 
     //- Synapse Message Context Properties -
+        /** The Synapse MC property keep the response state */
+        public static final String RESPONSE_STATE = "__SYNAPSE_RESPONSE_STATE__";
         /** The Synapse MC property name that holds the name of the Proxy service thats handling it */
         public static final String PROXY_SERVICE = "proxy.name";
         /** The Synapse MC property that marks it as a RESPONSE */
@@ -206,6 +209,9 @@ public final class SynapseConstants {
     /** An Axis2 message context property that indicates the maximum time to spend on sending the message */
     public static final String SEND_TIMEOUT = "SEND_TIMEOUT";
 
+    /** Fault Handler which hold the last sequence fault handler */
+    public static final String LAST_SEQ_FAULT_HANDLER = "LAST_SEQ_FAULT_HANDLER";
+
     //- Axis2 Message Context Properties used by Synapse -
     /** an axis2 message context property set to hold the relates to for POX responses */
     public static final String RELATES_TO_FOR_POX = "synapse.RelatesToForPox";
@@ -230,6 +236,7 @@ public final class SynapseConstants {
         public static final String STATISTICS_STACK ="synapse.statistics.stack";     
         
         public static final String SYNAPSE_STATISTICS_STATE = "synapse.statistics.state";
+        public static final String SYNAPSE_TRACE_STATE = "synapse.trace.state";
 
         public static final String SYNAPSE_ASPECT_CONFIGURATION = "synapse.aspects.configuration";
 
@@ -450,6 +457,12 @@ public final class SynapseConstants {
     // callout operation failed
     public static final int CALLOUT_OPERATION_FAILED    = 401000;
 
+    // Blocking call operation failure
+    public static final int BLOCKING_CALL_OPERATION_FAILED    = 401001;
+
+    // Blocking sender operation failure
+    public static final int BLOCKING_SENDER_OPERATION_FAILED    = 401002;
+
     public static final String FORCE_ERROR_PROPERTY = "FORCE_ERROR_ON_SOAP_FAULT";
     public static final int ENDPOINT_CUSTOM_ERROR = 500000;
 
@@ -514,5 +527,14 @@ public final class SynapseConstants {
             "synapse.concurrent.access.controller";
     public static final String SYNAPSE_CONCURRENT_ACCESS_REPLICATOR =
             "synapse.concurrent.access.replicator";
+
+    //String constants to identity the type of the timeout
+    public enum ENDPOINT_TIMEOUT_TYPE { ENDPOINT_TIMEOUT, GLOBAL_TIMEOUT, HTTP_CONNECTION_TIMEOUT};
+
+    // URL pattern
+    public static final Pattern URL_PATTERN = Pattern.compile("[a-z]+://.*");
+
+    // Password pattern
+    public static final Pattern PASSWORD_PATTERN = Pattern.compile(":(?:[^/]+)@");
 
 }

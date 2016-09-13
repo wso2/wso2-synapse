@@ -37,6 +37,8 @@ import java.util.*;
 public class StartUpController extends AbstractStartup {
     private static final Log logger = LogFactory.getLog(StartUpController.class.getName());
 
+    private SynapseEnvironment synapseEnvironment;
+    
     private TaskDescription taskDescription;
 
     private SynapseTaskManager synapseTaskManager;
@@ -51,6 +53,10 @@ public class StartUpController extends AbstractStartup {
         if (!destroyTask()) {
             return;
         }
+        //Need to re initialize startup controller to support updates from source view
+        if (!synapseTaskManager.isInitialized() && synapseEnvironment != null) {
+            init(synapseEnvironment);
+        }        
         if (synapseTaskManager.isInitialized()) {
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
             if (taskScheduler != null && taskScheduler.isInitialized()) {
@@ -64,6 +70,7 @@ public class StartUpController extends AbstractStartup {
     }
 
     public void init(SynapseEnvironment synapseEnvironment) {
+        this.synapseEnvironment = synapseEnvironment;
         if (taskDescription == null) {
             handleException("Error while initializing the startup. TaskDescription is null.");
         }
@@ -82,8 +89,8 @@ public class StartUpController extends AbstractStartup {
         initializeTask(synapseEnvironment);
         if(taskDescription.getResource(TaskDescription.INSTANCE) == null
                 || taskDescription.getResource(TaskDescription.CLASSNAME) == null) {
-        	taskDescription.addResource(TaskDescription.INSTANCE, task);
-        	taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
+            taskDescription.addResource(TaskDescription.INSTANCE, task);
+            taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         }
         try {
             Map<String, Object> map = new HashMap<String, Object>();

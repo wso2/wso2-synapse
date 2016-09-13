@@ -105,7 +105,7 @@ public class XQueryMediator extends AbstractMediator {
 
         try {
 
-            if (synCtx.getEnvironment().isDebugEnabled()) {
+            if (synCtx.getEnvironment().isDebuggerEnabled()) {
                 if (super.divertMediationRoute(synCtx)) {
                     return true;
                 }
@@ -689,4 +689,9 @@ public class XQueryMediator extends AbstractMediator {
     public void setUseDOMSource(boolean useDOMSource) {
         this.useDOMSource = useDOMSource;
     }
+
+    public boolean isContentAltering() {
+        return true;
+    }
+
 }

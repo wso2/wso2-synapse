@@ -26,12 +26,13 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.apache.synapse.aspects.statistics.StatisticsLog;
-import org.apache.synapse.aspects.statistics.StatisticsRecord;
+import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.continuation.ReliantContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -40,9 +41,9 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.FlowContinuableMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
+import org.apache.synapse.mediators.eip.SharedDataHolder;
 import org.apache.synapse.mediators.eip.EIPConstants;
 import org.apache.synapse.mediators.eip.Target;
-import org.apache.synapse.messageflowtracer.processors.MessageFlowTracingDataCollector;
 import org.apache.synapse.util.MessageHelper;
 
 import java.util.ArrayList;
@@ -83,7 +84,7 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
      */
     public boolean mediate(MessageContext synCtx) {
 
-        if (synCtx.getEnvironment().isDebugEnabled()) {
+        if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
             }
@@ -98,6 +99,9 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
             }
         }
+
+        synCtx.setProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
+                           EIPConstants.EIP_SHARED_DATA_HOLDER, new SharedDataHolder());
 
         // get the targets list, clone the message for the number of targets and then
         // mediate the cloned messages using the targets
@@ -142,19 +146,22 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         int subBranch = ((ReliantContinuationState) continuationState).getSubBranch();
 
         SequenceMediator branchSequence = targets.get(subBranch).getSequence();
-        RuntimeStatisticCollector.openLogForContinuation(synCtx, branchSequence.getSequenceNameForStatistics(synCtx));
+        boolean isStatisticsEnabled = RuntimeStatisticCollector.isStatisticsEnabled();
         if (!continuationState.hasChild()) {
             result = branchSequence.mediate(synCtx, continuationState.getPosition() + 1);
         } else {
             FlowContinuableMediator mediator =
                     (FlowContinuableMediator) branchSequence.getChild(continuationState.getPosition());
-            RuntimeStatisticCollector.openLogForContinuation(synCtx, ((Mediator) mediator).getMediatorName());
 
             result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            ((Mediator) mediator).reportStatistic(synCtx, null, false);
+            if (isStatisticsEnabled) {
+                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
+            }
         }
-        branchSequence.reportStatistic(synCtx, null, false);
+        if (isStatisticsEnabled) {
+            branchSequence.reportCloseStatistics(synCtx, null);
+        }
         return result;
     }
 
@@ -176,17 +183,6 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         	
             newCtx = MessageHelper.cloneMessageContext(synCtx);
             
-			StatisticsRecord statRecord =
-			                              (StatisticsRecord) newCtx.getProperty(SynapseConstants.STATISTICS_STACK);
-			if (statRecord != null) {
-				for (StatisticsLog statLog : statRecord.getAllStatisticsLogs()) {
-					/*
-					 * Marks that this statistics log is collected by the
-					 * request flow.
-					 */
-					statLog.setCollectedByRequestFlow(true);
-				}
-			}
             // Set isServerSide property in the cloned message context
             ((Axis2MessageContext) newCtx).getAxis2MessageContext().setServerSide(
                     ((Axis2MessageContext) synCtx).getAxis2MessageContext().isServerSide());
@@ -252,6 +248,11 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         this.sequential = sequential;
     }
 
+    @Override
+    public boolean isContentAltering() {
+        return true;
+    }
+
     public void init(SynapseEnvironment se) {
 
         synapseEnv = se;
@@ -297,10 +298,25 @@ public class CloneMediator extends AbstractMediator implements ManagedLifecycle,
         }
     }
 
-    @Override public void reportStatistic(MessageContext messageContext, String parentName, boolean isCreateLog) {
-        RuntimeStatisticCollector
-                .reportStatisticForMessageComponent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
-                                                    parentName, isCreateLog, true, false);
+    @Override
+    public Integer reportOpenStatistics(MessageContext messageContext, boolean isContentAltering) {
+        return OpenEventCollector.reportFlowSplittingEvent(messageContext, getMediatorName(), ComponentType.MEDIATOR,
+                                                           getAspectConfiguration(),
+                                                           isContentAltering() || isContentAltering);
     }
 
+    @Override
+    public void setComponentStatisticsId(ArtifactHolder holder) {
+        if (getAspectConfiguration() == null) {
+            configure(new AspectConfiguration(getMediatorName()));
+        }
+        String sequenceId =
+                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
+        getAspectConfiguration().setUniqueId(sequenceId);
+        for(Target target: targets){
+            target.setStatisticIdForMediators(holder);
+        }
+
+        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(sequenceId, ComponentType.MEDIATOR, holder);
+    }
 }

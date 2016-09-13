@@ -234,6 +234,16 @@ public class SynapseXPathVariableContext implements VariableContext {
                         }
                     }
                     return "";
+                } else if (SynapseXPathConstants.OPERATION_SCOPE_VARIABLE_PREFIX.equals(prefix)) {
+                    Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                    return axis2smc.getAxis2MessageContext().getOperationContext().getProperty(localName);
+                } else if (SynapseXPathConstants.SYSTEM_SCOPE_VARIABLE_PREFIX.equals(prefix)) {
+                    String propVal = System.getProperty(localName);
+                    if (propVal != null) {
+                        return propVal;
+                    } else {
+                        return "";
+                    }
                 } else {
                     Object o = synCtx.getProperty(prefix);
                     if (o instanceof Map) {

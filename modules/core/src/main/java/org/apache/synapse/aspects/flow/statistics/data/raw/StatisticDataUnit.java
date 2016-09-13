@@ -1,12 +1,12 @@
 /*
- *   Copyright (c) 2015, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *  Copyright (c) 2016, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   WSO2 Inc. licenses this file to you under the Apache License,
- *   Version 2.0 (the "License"); you may not use this file except
- *   in compliance with the License.
- *   You may obtain a copy of the License at
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing,
  *  software distributed under the License is distributed on an
@@ -19,121 +19,207 @@
 package org.apache.synapse.aspects.flow.statistics.data.raw;
 
 import org.apache.synapse.aspects.ComponentType;
-import org.apache.synapse.core.SynapseEnvironment;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
-public class StatisticDataUnit {
-	private String statisticId;
-	private Long time;
+/**
+ * This data unit carries raw statistic data for open and close Events.
+ */
+public class StatisticDataUnit extends BasicStatisticDataUnit {
+
+	/**
+	 * Parent Index for this event.
+	 */
+	private int parentIndex;
+
+	/**
+	 * Should retrieve parent when closing the event.
+	 */
+	private boolean shouldTrackParent;
+
+	/**
+	 * Is this a event from Continuation Call.
+	 */
+	private boolean continuationCall = false;
+
+	/**
+	 * Is this a event from FlowContinuableMediator.
+	 */
+	private boolean flowContinuableMediator = false;
+
+	/**
+	 * Is this a event from Splitting Mediator (clone or iterate).
+	 */
+	private boolean flowSplittingMediator = false;
+
+	/**
+	 * Is this a event from Aggregate Mediator.
+	 */
+	private boolean flowAggregateMediator = false;
+
+	/**
+	 * Is statistic enabled in aspect configuration.
+	 */
+	private boolean isIndividualStatisticCollected = false;
+
+	/**
+	 * Payload of the message context.
+	 */
+	private String payload;
+
+	/**
+	 * Name of the event reporting component.
+	 */
+	private String componentName;
+
+	/**
+	 * Component Type of the reporting component.
+	 */
 	private ComponentType componentType;
-	private String parentId;
+
+	/**
+	 * Unique Id of the reporting component.
+	 */
 	private String componentId;
-	private int cloneId;
-	private boolean isResponse;
-	private SynapseEnvironment synapseEnvironment;
-	private boolean aggregatePoint;
-	private boolean clonePoint;
-	private int parentMsgId;
-	private String timeStamp;
-	private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
-	public StatisticDataUnit(String statisticId, String componentId, ComponentType componentType, String parentId,
-	                         int cloneId, Long time, boolean isResponse) {
-		this.statisticId = statisticId;
-		this.time = time;
-		this.componentType = componentType;
-		this.parentId = parentId;
-		this.componentId = componentId;
-		this.cloneId = cloneId;
-		this.isResponse = isResponse;
-		this.aggregatePoint = false;
-		this.clonePoint = false;
-		this.timeStamp = dateFormatter.format(new Date());
+	/**
+	 * HashCode of the reporting component.
+	 */
+	private Integer hashCode;
+
+	/**
+	 * Parent list for this event.
+	 */
+	private List<Integer> parentList;
+
+	/**
+	 * Message context property map.
+	 */
+	private Map<String, Object> contextPropertyMap;
+
+	/**
+	 * Transport property map.
+	 */
+	private Map<String, Object> transportPropertyMap;
+
+	public String getPayload() {
+		return payload;
 	}
 
-	public StatisticDataUnit(String statisticId, SynapseEnvironment synapseEnvironment, Long time) {
-		this.statisticId = statisticId;
-		this.synapseEnvironment = synapseEnvironment;
-		this.time = time;
+	public void setPayload(String payload) {
+		this.payload = payload;
 	}
 
-	public StatisticDataUnit(String statisticId, String componentId, String parentId, int cloneId, Long time,
-	                         boolean isResponse, SynapseEnvironment synapseEnvironment) {
-		this.statisticId = statisticId;
-		this.time = time;
-		this.parentId = parentId;
-		this.componentId = componentId;
-		this.cloneId = cloneId;
-		this.isResponse = isResponse;
-		this.synapseEnvironment = synapseEnvironment;
-		this.aggregatePoint = false;
-		this.clonePoint = false;
-		this.timeStamp = dateFormatter.format(new Date());
+	public String getComponentName() {
+		return componentName;
 	}
 
-	public String getStatisticId() {
-		return statisticId;
-	}
-
-	public Long getTime() {
-		return time;
+	public void setComponentName(String componentName) {
+		this.componentName = componentName;
 	}
 
 	public ComponentType getComponentType() {
 		return componentType;
 	}
 
-	public String getParentId() {
-		return parentId;
+	public void setComponentType(ComponentType componentType) {
+		this.componentType = componentType;
+	}
+
+	public Map<String, Object> getContextPropertyMap() {
+		return contextPropertyMap;
+	}
+
+	public void setContextPropertyMap(Map<String, Object> contextPropertyMap) {
+		this.contextPropertyMap = contextPropertyMap;
+	}
+
+	public Map<String, Object> getTransportPropertyMap() {
+		return transportPropertyMap;
+	}
+
+	public void setTransportPropertyMap(Map<String, Object> transportPropertyMap) {
+		this.transportPropertyMap = transportPropertyMap;
+	}
+
+	public boolean isFlowContinuableMediator() {
+		return flowContinuableMediator;
+	}
+
+	public void setFlowContinuableMediator(boolean flowContinuableMediator) {
+		this.flowContinuableMediator = flowContinuableMediator;
+	}
+
+	public boolean isIndividualStatisticCollected() {
+		return isIndividualStatisticCollected;
+	}
+
+	public void setIsIndividualStatisticCollected(boolean isIndividualStatisticCollected) {
+		this.isIndividualStatisticCollected = isIndividualStatisticCollected;
+	}
+
+	public int getParentIndex() {
+		return parentIndex;
+	}
+
+	public void setParentIndex(int parentIndex) {
+		this.parentIndex = parentIndex;
+	}
+
+	public boolean isShouldTrackParent() {
+		return shouldTrackParent;
+	}
+
+	public void setShouldTrackParent(boolean shouldTrackParent) {
+		this.shouldTrackParent = shouldTrackParent;
+	}
+
+	public void setFlowSplittingMediator(boolean isSplitting) {
+		flowSplittingMediator = isSplitting;
+	}
+
+	public boolean isFlowSplittingMediator() {
+		return flowSplittingMediator;
+	}
+
+	public List<Integer> getParentList() {
+		return parentList;
+	}
+
+	public void setParentList(List<Integer> parentList) {
+		this.parentList = parentList;
+	}
+
+	public boolean isFlowAggregateMediator() {
+		return flowAggregateMediator;
+	}
+
+	public void setFlowAggregateMediator(boolean flowAggregateMediator) {
+		this.flowAggregateMediator = flowAggregateMediator;
 	}
 
 	public String getComponentId() {
 		return componentId;
 	}
 
-	public int getCloneId() {
-		return cloneId;
+	public void setComponentId(String componentId) {
+		this.componentId = componentId;
 	}
 
-	public void setCloneId(int cloneId) {
-		this.cloneId = cloneId;
+	public Integer getHashCode() {
+		return hashCode;
 	}
 
-	public boolean isResponse() {
-		return isResponse;
+	public void setHashCode(Integer hashCode) {
+		this.hashCode = hashCode;
 	}
 
-	public SynapseEnvironment getSynapseEnvironment() {
-		return synapseEnvironment;
+	public boolean isContinuationCall() {
+		return continuationCall;
 	}
 
-	public void setParentId(String parentId) {
-		this.parentId = parentId;
-	}
-
-	public boolean isAggregatePoint() {
-		return aggregatePoint;
-	}
-
-	public void setAggregatePoint() {
-		this.aggregatePoint = true;
-	}
-
-	public boolean isClonePoint() {
-		return clonePoint;
-	}
-
-	public void setClonePoint() {
-		this.clonePoint = true;
-	}
-
-	public int getParentMsgId() {
-		return parentMsgId;
-	}
-
-	public String getTimeStamp() {
-		return timeStamp;
+	public void setContinuationCall(boolean continuationCall) {
+		this.continuationCall = continuationCall;
 	}
 }

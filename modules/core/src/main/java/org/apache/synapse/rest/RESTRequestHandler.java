@@ -23,6 +23,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.ComponentType;
+import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
+import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.rest.version.DefaultStrategy;
@@ -111,10 +113,14 @@ public class RESTRequestHandler {
 	}
 
 	private void apiProcess(MessageContext synCtx, API api) {
-		if (!synCtx.isResponse()) {
-			RuntimeStatisticCollector
-					.reportApiStatistics(synCtx, api.getAPIName(), api.getAspectConfiguration());
-		}
-		api.process(synCtx);
-	}
+        Integer statisticReportingIndex = 0;
+        if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+            statisticReportingIndex = OpenEventCollector
+                    .reportEntryEvent(synCtx, api.getAPIName(), api.getAspectConfiguration(), ComponentType.API);
+            api.process(synCtx);
+            CloseEventCollector.tryEndFlow(synCtx, api.getAPIName(), ComponentType.API, statisticReportingIndex, true);
+        } else {
+            api.process(synCtx);
+        }
+    }
 }
