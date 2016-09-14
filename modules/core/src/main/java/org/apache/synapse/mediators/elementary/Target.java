@@ -26,13 +26,20 @@ import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.lang.StringUtils;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.util.xpath.SynapseXPathConstants;
 import org.jaxen.JaxenException;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Inset an Axiom element to the current message. The target to insert the OMElement can be
@@ -69,6 +76,8 @@ public class Target {
 
     private String action = ACTION_REPLACE;
 
+    public static final String XPATH_PROPERTY_PATTERN = "'[^']*'";
+
     public void insert(MessageContext synContext,
                        ArrayList<OMNode> sourceNodeList, SynapseLog synLog) throws JaxenException {
 
@@ -81,34 +90,38 @@ public class Target {
             }
 
             Object targetObj = xpath.selectSingleNode(synContext);
-
-            if (targetObj instanceof OMElement) {
-                OMElement targetElem = (OMElement) targetObj;
-                insertElement(sourceNodeList, targetElem, synLog);
-            } else if (targetObj instanceof OMText) {
-                OMText targetText = (OMText) targetObj;
-                if (sourceNodeList.get(0) instanceof OMText) {
-                    if (targetText.getParent() != null) {
-                        Object parent = targetText.getParent();
-                        if (parent instanceof OMElement) {
-                            ((OMElement)parent).setText(((OMText) sourceNodeList.get(0)).getText());
-                        }
-                    }
-                } else if (sourceNodeList.get(0) instanceof OMElement) {
-                    Object targetParent = targetText.getParent();
-                    if (targetParent instanceof OMElement) {
-                        targetText.detach();
-                        synchronized (sourceNodeList.get(0)) {
-                            ((OMElement)targetParent).addChild(sourceNodeList.get(0));
-                        }
-                    }
-                }
-            } else if (targetObj instanceof OMAttribute) {
-                OMAttribute attribute = (OMAttribute) targetObj;
-                attribute.setAttributeValue(((OMText) sourceNodeList.get(0)).getText());
+            //if the type custom is used to enrich a property, It'll be handled in a different method
+            if (xpath.getExpression().startsWith(SynapseXPathConstants.GET_PROPERTY_FUNCTION)) {
+                this.handleProperty(xpath, synContext, sourceNodeList, synLog);
             } else {
-                synLog.error("Invalid Target object to be enrich.");
-                throw new SynapseException("Invalid Target object to be enrich.");
+                if (targetObj instanceof OMElement) {
+                    OMElement targetElem = (OMElement) targetObj;
+                    insertElement(sourceNodeList, targetElem, synLog);
+                } else if (targetObj instanceof OMText) {
+                    OMText targetText = (OMText) targetObj;
+                    if (sourceNodeList.get(0) instanceof OMText) {
+                        if (targetText.getParent() != null) {
+                            Object parent = targetText.getParent();
+                            if (parent instanceof OMElement) {
+                                ((OMElement) parent).setText(((OMText) sourceNodeList.get(0)).getText());
+                            }
+                        }
+                    } else if (sourceNodeList.get(0) instanceof OMElement) {
+                        Object targetParent = targetText.getParent();
+                        if (targetParent instanceof OMElement) {
+                            targetText.detach();
+                            synchronized (sourceNodeList.get(0)) {
+                                ((OMElement) targetParent).addChild(sourceNodeList.get(0));
+                            }
+                        }
+                    }
+                } else if (targetObj instanceof OMAttribute) {
+                    OMAttribute attribute = (OMAttribute) targetObj;
+                    attribute.setAttributeValue(((OMText) sourceNodeList.get(0)).getText());
+                } else {
+                    synLog.error("Invalid Target object to be enrich.");
+                    throw new SynapseException("Invalid Target object to be enrich.");
+                }
             }
         } else if (targetType == EnrichMediator.BODY) {
             SOAPEnvelope env = synContext.getEnvelope();
@@ -198,6 +211,76 @@ public class Target {
                     e.insertSiblingAfter(elem);
                 }
             }
+        }
+    }
+
+    /**
+     * Handles enrichment of properties when defined as a custom type
+     *
+     * @param xpath          expression to get property
+     * @param synContext     messageContext used in the mediation
+     * @param sourceNodeList node list which used to change the target
+     * @param synLog         the Synapse log to use
+     */
+    private void handleProperty(SynapseXPath xpath, MessageContext synContext, ArrayList<OMNode> sourceNodeList, SynapseLog synLog) {
+
+        String scope = XMLConfigConstants.SCOPE_DEFAULT;
+        Pattern p = Pattern.compile(XPATH_PROPERTY_PATTERN);
+        Matcher m = p.matcher(xpath.getExpression());
+        List<String> propList = new ArrayList();
+        while (m.find()) {
+            propList.add(StringUtils.substringBetween(m.group(), "\'", "\'"));
+        }
+
+        if (propList.size() > 1) {
+            property = propList.get(1);
+            scope = propList.get(0);
+        } else {
+            property = propList.get(0);
+        }
+
+        OMElement documentElement = null;
+        Object propertyObj = null;
+        Axis2MessageContext axis2smc = (Axis2MessageContext) synContext;
+
+        if (action != null && property != null) {
+            if (XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
+                propertyObj = synContext.getProperty(property);
+            } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
+                propertyObj = axis2smc.getAxis2MessageContext().getProperty(property);
+            } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
+                propertyObj = axis2smc.getAxis2MessageContext().getOperationContext().getProperty(property);
+            }
+
+            if (propertyObj != null && propertyObj instanceof OMElement && action.equals(ACTION_ADD_CHILD)) {
+                documentElement = (OMElement) propertyObj;
+                documentElement = documentElement.cloneOMElement();
+                //logic should valid only when adding child elements, and other cases
+                //such as sibling and replacement using the else condition
+                insertElement(sourceNodeList, documentElement, synLog);
+                this.setProperty(scope, synContext, documentElement);
+            } else {
+                this.setProperty(scope, synContext, sourceNodeList);
+            }
+        } else {
+            this.setProperty(scope, synContext, sourceNodeList);
+        }
+    }
+
+    /**
+     * Sets the property value in appropriate message context
+     *
+     * @param scope           which property needs to set
+     * @param messageContext  messageContext used in the mediation
+     * @param documentElement target element which needs to set as property
+     */
+    public void setProperty(String scope, MessageContext messageContext, Object documentElement) {
+        if (XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
+            messageContext.setProperty(property, documentElement);
+        } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)) {
+            ((Axis2MessageContext) messageContext).getAxis2MessageContext().setProperty(property, documentElement);
+        } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
+            ((Axis2MessageContext) messageContext).getAxis2MessageContext().getOperationContext().setProperty(property, documentElement);
         }
     }
 
