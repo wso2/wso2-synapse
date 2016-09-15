@@ -24,6 +24,7 @@ public class ArgumentDetails {
     private String pathType;
     private boolean deepCheck = true;
     private boolean isXml = false;
+    private boolean isLiteral = false;
 
     public String getPathType() {
         return pathType;
@@ -47,5 +48,13 @@ public class ArgumentDetails {
 
     public void setXml(boolean isXml) {
         this.isXml = isXml;
+    }
+
+    public boolean isLiteral() {
+        return isLiteral;
+    }
+
+    public void setLiteral(boolean isLiteral) {
+        this.isLiteral = isLiteral;
     }
 }
