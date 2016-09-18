@@ -71,7 +71,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES = "\\\\\"";
     private final static String ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES = "\\\\\\\\\"";
     private final static String ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES = "\\\\\\\\\\\\\\\\";
-    private final static String ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES = "\\\\\\\\\"";
     private final static String ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES = "\\\\\\$";
     private final static String ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES = "\\\\\\\\\\$";
     private final static String ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\b";
@@ -302,6 +301,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                         OMElement omXML = AXIOMUtil.stringToOM(replacementValue);
                         // This is to replace \" with \\" and \\$ with \$. Because for Matcher, $ sign is
                         // a special character and for JSON " is a special character.
+                        //replacing other json special characters i.e \b, \f, \n \r, \t
                         replacementValue = JsonUtil.toJsonString(omXML).toString()
                                 .replaceAll(ESCAPE_DOUBLE_QUOTE_WITH_FIVE_BACK_SLASHES, ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
                                 .replaceAll(ESCAPE_DOLLAR_WITH_TEN_BACK_SLASHES, ESCAPE_DOLLAR_WITH_SIX_BACK_SLASHES)
@@ -338,21 +338,22 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     replacementValue = replacementEntry.getKey();
                     String trimmedReplacementValue = replacementValue.trim();
                     // This is to replace " with \" and \\ with \\\\
+                    //replacing other json special characters i.e \b, \f, \n \r, \t
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = replacementValue
                                 .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
-                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES)
-                                .replaceAll("\\\\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\\\\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                                .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
                     }
                     else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         // This is to handle only the string value
-                        replacementValue = replacementValue.replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_TEN_BACK_SLASHES);
+                        replacementValue = replacementValue.replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES);
                     }
                 }
                 matcher.appendReplacement(result, replacementValue);
@@ -374,7 +375,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private String inferReplacementType(Map.Entry<String, ArgumentDetails> entry) {
-        if(entry.getValue().getPathType().equals(SynapsePath.X_PATH)
+        if (entry.getValue().isLiteral()){
+            return STRING_TYPE;
+        } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
            && entry.getValue().isXml()) {
             return XML_TYPE;
         } else if(entry.getValue().getPathType().equals(SynapsePath.X_PATH)
@@ -488,6 +491,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 value = Matcher.quoteReplacement(value);
             } else if (arg.getExpression() != null) {
                 value = arg.getExpression().stringValueOf(synCtx);
+                details.setLiteral(arg.isLiteral());
                 if (value != null) {
                     // XML escape the result of an expression that produces a literal, if the target format
                     // of the payload is XML.
