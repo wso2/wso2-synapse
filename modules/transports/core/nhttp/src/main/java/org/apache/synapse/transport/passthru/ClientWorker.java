@@ -147,6 +147,8 @@ public class ClientWorker implements Runnable {
 
         //setting the responseMsgCtx PassThroughConstants.INVOKED_REST property to the one set inside PassThroughTransportUtils
         responseMsgCtx.setProperty(PassThroughConstants.INVOKED_REST, outMsgCtx.isDoingREST());
+        responseMsgCtx.setProperty(PassThroughConstants.ORIGINAL_HTTP_SC, response.getStatus());
+        responseMsgCtx.setProperty(PassThroughConstants.ORIGINAL_HTTP_REASON_PHRASE, response.getStatusLine());
 
         // set any transport headers received
         Set<Map.Entry<String, String>> headerEntries = response.getHeaders().entrySet();
