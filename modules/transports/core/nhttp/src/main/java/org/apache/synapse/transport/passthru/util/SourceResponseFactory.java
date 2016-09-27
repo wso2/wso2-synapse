@@ -47,12 +47,20 @@ public class SourceResponseFactory {
                                         SourceConfiguration sourceConfiguration) {
         // determine the status code to be sent
         int statusCode = PassThroughTransportUtils.determineHttpStatusCode(msgContext);
-
-        //determine status message description
+        SourceResponse sourceResponse;
         String statusLine = PassThroughTransportUtils.determineHttpStatusLine(msgContext);
 
-        SourceResponse sourceResponse =
-                new SourceResponse(sourceConfiguration, statusCode, statusLine, sourceRequest);
+        if (msgContext.getProperty(PassThroughConstants.ORIGINAL_HTTP_SC) != null &&
+                statusCode == ((Integer) msgContext.getProperty(PassThroughConstants.ORIGINAL_HTTP_SC))) {
+            sourceResponse = new SourceResponse(sourceConfiguration, statusCode, statusLine, sourceRequest);
+        } else {
+            if (msgContext.getProperty(PassThroughConstants.ORIGINAL_HTTP_REASON_PHRASE) != null &&
+                    (statusLine.equals(msgContext.getProperty(PassThroughConstants.ORIGINAL_HTTP_REASON_PHRASE)))) {
+                sourceResponse = new SourceResponse(sourceConfiguration, statusCode, sourceRequest);
+            } else {
+                sourceResponse = new SourceResponse(sourceConfiguration, statusCode, statusLine, sourceRequest);
+            }
+        }
 
         // set any transport headers
         Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);

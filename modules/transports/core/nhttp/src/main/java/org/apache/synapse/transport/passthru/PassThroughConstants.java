@@ -205,4 +205,8 @@ public class PassThroughConstants {
 
     //Constant to specify the socket timeout
     public static final String HTTP_SOCKET_TIMEOUT = "HTTP_SOCKET_TIMEOUT";
+
+    public static final String ORIGINAL_HTTP_SC = "ORIGINAL_STATUS_CODE";
+    public static final String ORIGINAL_HTTP_REASON_PHRASE = "HTTP_REASON_PHRASE";
+
 }
