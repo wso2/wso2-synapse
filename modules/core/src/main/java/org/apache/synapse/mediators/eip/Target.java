@@ -19,8 +19,10 @@
 
 package org.apache.synapse.mediators.eip;
 
+import org.apache.axis2.addressing.EndpointReference;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.ComponentType;
@@ -29,7 +31,6 @@ import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
-import org.apache.axis2.addressing.EndpointReference;
 
 /**
  * A bean class that holds the target (i.e. sequence or endpoint) information for a message
@@ -128,7 +129,28 @@ public class Target {
                         log.debug("Synchronously mediating using the sequence " +
                                 "named : " + sequenceRef);
                     }
-                    returnValue = refSequence.mediate(synCtx);
+                    try {
+                        returnValue = refSequence.mediate(synCtx);
+                    } catch (SynapseException syne) {
+                        if (!synCtx.getFaultStack().isEmpty()) {
+                            log.warn("Executing fault handler due to exception encountered");
+                            ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, syne);
+                        } else {
+                            log.warn("Exception encountered but no fault handler found - message dropped");
+                        }
+                    } catch (Exception e) {
+                        String msg = "Unexpected error occurred executing the Target";
+                        log.error(msg, e);
+                        if (synCtx.getServiceLog() != null) {
+                            synCtx.getServiceLog().error(msg, e);
+                        }
+                        if (!synCtx.getFaultStack().isEmpty()) {
+                            log.warn("Executing fault handler due to exception encountered");
+                            ((FaultHandler) synCtx.getFaultStack().pop()).handleFault(synCtx, e);
+                        } else {
+                            log.warn("Exception encountered but no fault handler found - message dropped");
+                        }
+                    }
                 }
             } else {
                 handleException("Couldn't find the sequence named : " + sequenceRef);
