@@ -40,7 +40,6 @@ import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 
 import javax.xml.stream.XMLStreamException;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -296,7 +295,9 @@ public class RelayUtils {
             InputStream in = pipe.getInputStream();
             if (in != null) {
                 try {
-                    IOUtils.copy(in, new NullOutputStream());
+                    if (in.available() > 0) {
+                        IOUtils.copy(in, new NullOutputStream());
+                    }
                 } catch (IOException exception) {
                     handleException("Error when consuming the input stream to discard ", exception);
                 }
