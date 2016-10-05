@@ -400,6 +400,18 @@ public class Pipe {
             }
         }
 
+        @Override
+        public int available() throws IOException {
+            lock.lock();
+            try {
+                setOutputMode(buffer);
+                return buffer.remaining();
+            } finally {
+                setInputMode(buffer);
+                lock.unlock();
+            }
+        }
+
         private void waitForData() throws IOException {
             lock.lock();
             try {
