@@ -204,6 +204,12 @@ public class ClientWorker implements Runnable {
             responseMsgCtx.setConfigurationContext(outMsgCtx.getConfigurationContext());
             responseMsgCtx.setTo(null);
 
+            //Flag to keep track on original messageType on response path
+            String messageType = (String) outMsgCtx.getProperty(NhttpConstants.MESSAGE_TYPE);
+            if (messageType != null) {
+                responseMsgCtx.setProperty(NhttpConstants.ORIGINAL_MESSAGE_TYPE, messageType);
+            }
+
             // Ensure MessageContext has a ClientConnectionDebug attached before we start streaming
             ClientConnectionDebug cd = (ClientConnectionDebug)
                 outMsgCtx.getProperty(ClientHandler.CLIENT_CONNECTION_DEBUG);
