@@ -194,6 +194,7 @@ public final class JsonUtil {
             .namespaceSeparator(jsonOutNamespaceSepChar)
             .customReplaceRegex(jsonoutCustomReplaceRegex)
             .customReplaceSequence(jsonoutCustomReplaceSequence)
+            .customRegex(jsonoutcustomRegex)
             .build();
     /// End of JSON/XML INPUT OUTPUT Formatting Configuration.
 
