@@ -49,6 +49,7 @@ import org.apache.axis2.transport.base.ManagementSupport;
 import org.apache.axis2.transport.base.MetricsCollector;
 import org.apache.axis2.transport.base.TransportMBeanSupport;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.ConnectionClosedException;
@@ -427,6 +428,16 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 
         // remove unwanted HTTP headers (if any from the current message)
         removeUnwantedHeaders(msgContext);
+
+        //Check whether original messageType value is changed. if not set the correct value to engage correct message formatter
+        String cType = (String) msgContext.getProperty(NhttpConstants.MC_CONTENT_TYPE);
+        String messageType = (String) msgContext.getProperty(NhttpConstants.MESSAGE_TYPE);
+        String oriMessageType = (String) msgContext.getProperty(NhttpConstants.ORIGINAL_MESSAGE_TYPE);
+        if (cType != null && cType.indexOf(HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED) != -1
+                && messageType != null && messageType.equals(oriMessageType)) {
+            msgContext.setProperty(NhttpConstants.MESSAGE_TYPE, HTTPConstants.MEDIA_TYPE_MULTIPART_RELATED);
+        }
+
         Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
 
         ServerWorker worker = (ServerWorker) msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
