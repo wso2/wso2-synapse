@@ -25,6 +25,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ControlledByteBuffer {
     private ByteBuffer byteBuffer;
 
+    public boolean isInputMode() {
+        return inputMode.get();
+    }
+
     private AtomicBoolean inputMode = new AtomicBoolean(true);
 
     public ControlledByteBuffer(ByteBuffer byteBuffer) {

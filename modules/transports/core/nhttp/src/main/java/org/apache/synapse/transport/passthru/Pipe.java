@@ -351,6 +351,32 @@ public class Pipe {
         }
     }
 
+    /**
+     * This method returns whether buffer consumption is required or not.
+     *
+     * @return boolean
+     * @throws IOException
+     */
+    public boolean isConsumeRequired() throws IOException {
+        lock.lock();
+        boolean isInputMode = buffer.isInputMode();
+        try {
+            if (isInputMode) {
+                setOutputMode(buffer);
+            }
+            int readRemaining = buffer.remaining();
+            int readPosition = buffer.position();
+            setInputMode(buffer);
+            int writeRemaining = buffer.remaining();
+            return readRemaining == 0 && writeRemaining == readPosition;
+        } finally {
+            if (isInputMode) {
+                setInputMode(buffer);
+            }
+            lock.unlock();
+        }
+    }
+
     private class ByteBufferInputStream extends InputStream {
 
         @Override
@@ -396,18 +422,6 @@ public class Pipe {
                 buffer.get(b, off, chunk);
                 return chunk;
             } finally {
-                lock.unlock();
-            }
-        }
-
-        @Override
-        public int available() throws IOException {
-            lock.lock();
-            try {
-                setOutputMode(buffer);
-                return buffer.remaining();
-            } finally {
-                setInputMode(buffer);
                 lock.unlock();
             }
         }

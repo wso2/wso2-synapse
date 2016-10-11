@@ -295,7 +295,7 @@ public class RelayUtils {
             InputStream in = pipe.getInputStream();
             if (in != null) {
                 try {
-                    if (in.available() > 0) {
+                    if (pipe.isConsumeRequired()) {
                         IOUtils.copy(in, new NullOutputStream());
                     }
                 } catch (IOException exception) {
