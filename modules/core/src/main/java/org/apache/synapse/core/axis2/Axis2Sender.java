@@ -208,6 +208,9 @@ public class Axis2Sender {
                     return;
                 }
             }
+
+            doSOAPFormatConversion(smc);
+
             // If the request arrives through an inbound endpoint
             if (smc.getProperty(SynapseConstants.IS_INBOUND) != null
                 && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
