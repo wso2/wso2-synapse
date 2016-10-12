@@ -321,9 +321,6 @@ public class Axis2Sender {
 
 
         Object isClientDoingSOAP11Obj = synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11);
-        if (isClientDoingSOAP11Obj == null) {
-            return; // Request hasn't come through a Proxy or API or main sequence. So skip
-        }
 
         // Determine whether generated response is in SOAP11 format.
         boolean isResponseSOAP11 = false;
