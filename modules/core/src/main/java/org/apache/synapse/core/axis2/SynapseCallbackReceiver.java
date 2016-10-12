@@ -335,7 +335,7 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             response.setTransportOut(axisOutMsgCtx.getTransportOut());
 
             // If request is REST assume that the response is REST too
-            response.setDoingREST(axisOutMsgCtx.isDoingREST());
+            //response.setDoingREST(axisOutMsgCtx.isDoingREST()); This information already present, hence removing
             if (axisOutMsgCtx.isDoingMTOM() && (axisOutMsgCtx.getProperty(org.apache.axis2.Constants.Configuration
                                                                                      .ENABLE_MTOM) == null ||
                                                 Boolean.getBoolean((String) axisOutMsgCtx.
@@ -386,13 +386,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
             // compare original received message (axisOutMsgCtx) soap version with the response
             // if they are different change to original version 
-            if(axisOutMsgCtx.isSOAP11() != response.isSOAP11()) {
+            /*if(axisOutMsgCtx.isSOAP11() != response.isSOAP11()) { //Removing since logic moved to Axis2Sender
             	if(axisOutMsgCtx.isSOAP11()) {
             		SOAPUtils.convertSOAP12toSOAP11(response);
             	} else {
             		SOAPUtils.convertSOAP11toSOAP12(response);
             	}
-            }
+            }*/
 
             if (axisOutMsgCtx.getMessageID() != null) {
                 response.setRelationships(

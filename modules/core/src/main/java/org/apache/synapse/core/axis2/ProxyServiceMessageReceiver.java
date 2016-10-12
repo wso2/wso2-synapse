@@ -142,6 +142,9 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
         synCtx.setProperty(SynapseConstants.PROXY_SERVICE, name);
 //        synCtx.setTracingState(proxy.getTraceState());
 
+        synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());
+        synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
+
         try {
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
