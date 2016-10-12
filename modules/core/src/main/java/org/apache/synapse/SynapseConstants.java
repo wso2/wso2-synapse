@@ -120,6 +120,14 @@ public final class SynapseConstants {
     public static final String SYNAPSE__FUNCTION__STACK = "_SYNAPSE_FUNCTION_STACK";
     public static final String SYNAPSE_WSDL_RESOLVER = "synapse.wsdl.resolver";
     public static final String SYNAPSE_SCHEMA_RESOLVER = "synapse.schema.resolver";
+    /** Whether client request is a soap 11 request **/
+    public static final String IS_CLIENT_DOING_SOAP11 = "IsClientDoingSOAP11";
+    /** Whether client request is a REST request **/
+    public static final String IS_CLIENT_DOING_REST = "IsClientDoingREST";
+    /** Content-type of soap11 request **/
+    public final static String SOAP11_CONTENT_TYPE  = "text/xml";
+    /** Content-type of soap12 request **/
+    public final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
 
     /** Parameter names in the axis2.xml that can be used to configure the synapse */
     public static final class Axis2Param {

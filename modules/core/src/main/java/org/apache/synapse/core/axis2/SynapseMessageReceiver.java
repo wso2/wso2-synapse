@@ -70,6 +70,9 @@ public class SynapseMessageReceiver implements MessageReceiver {
             SynapseConstants.SYNAPSE_SERVICE_NAME);
         ((Axis2MessageContext) synCtx).setServiceLog(serviceLog);
 
+        synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_REST, mc.isDoingREST());
+        synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
+
         try {
             // invoke synapse message mediation through the main sequence
             synCtx.getEnvironment().injectMessage(synCtx);

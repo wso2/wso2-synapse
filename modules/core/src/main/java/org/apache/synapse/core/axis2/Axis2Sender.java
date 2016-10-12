@@ -40,6 +40,7 @@ import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.MessageHelper;
 import org.apache.synapse.util.POXUtils;
 
@@ -53,6 +54,10 @@ import java.util.Map;
 public class Axis2Sender {
 
     private static final Log log = LogFactory.getLog(Axis2Sender.class);
+    /**
+     * Content type header name.
+     */
+    private static final String CONTENT_TYPE_STRING = "Content-Type";
 
     /**
      * Send a message out from the Synapse engine to an external service
@@ -203,6 +208,9 @@ public class Axis2Sender {
                     return;
                 }
             }
+
+            doSOAPFormatConversion(smc);
+
             // If the request arrives through an inbound endpoint
             if (smc.getProperty(SynapseConstants.IS_INBOUND) != null
                 && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
@@ -293,5 +301,84 @@ public class Axis2Sender {
             inputInfo = "Rest API Context : " + smc.getProperty("REST_API_CONTEXT");
         }
         return inputInfo;
+    }
+
+    /**
+     * Convert the response SOAP format to the client format if it is required.
+     * @param synCtx response synapse message context
+     * @throws AxisFault
+     */
+    private static void doSOAPFormatConversion(org.apache.synapse.MessageContext synCtx) throws AxisFault {
+
+        Object isClientDoingRest = synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_REST);
+        if (isClientDoingRest == null) {
+            return; // Request hasn't come through a Proxy or API or main sequence. So skip
+        }
+
+        if ((boolean) isClientDoingRest) {
+            return; // Skip the conversion for REST
+        }
+
+
+        Object isClientDoingSOAP11Obj = synCtx.getProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11);
+
+        // Determine whether generated response is in SOAP11 format.
+        boolean isResponseSOAP11 = false;
+        MessageContext responseCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        Object headers = responseCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (headers != null && headers instanceof Map) {
+            Map headersMap = (Map) headers;
+            Object responseContentType = headersMap.get(CONTENT_TYPE_STRING);
+            if (responseContentType != null && responseContentType instanceof String) {
+                if (((String) responseContentType).trim().startsWith(SynapseConstants.SOAP11_CONTENT_TYPE) &&
+                        !responseCtx.isDoingREST()) {   // REST can also have text/xml
+                    isResponseSOAP11 = true;
+                }
+            }
+        }
+
+        if ((Boolean) isClientDoingSOAP11Obj) {     // If request is in SOAP11 format
+
+            if (isResponseSOAP11) {  // Response is also in the SOAP11 format - no conversion required
+                return;
+            }
+
+            try {                   // Message need to be built prior to the conversion
+                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+            } catch (Exception e) {
+                handleException("Error while building message", e);
+            }
+
+            if (!responseCtx.isSOAP11()) {
+                SOAPUtils.convertSOAP12toSOAP11(responseCtx);
+            }
+
+            responseCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                    SynapseConstants.SOAP11_CONTENT_TYPE);
+            responseCtx.setProperty(Constants.Configuration.CONTENT_TYPE,
+                    SynapseConstants.SOAP11_CONTENT_TYPE);
+        } else {        // If request is in SOAP12 format
+
+            if (!isResponseSOAP11 && !responseCtx.isDoingREST()) {  // Response is not SOAP11 not REST - it is in SOAP12
+                return;
+            }
+
+            try {                   // Message need to be built prior to the conversion
+                RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
+            } catch (Exception e) {
+                handleException("Error while building message", e);
+            }
+
+            if (responseCtx.isSOAP11()) {         // If response is in SOAP11
+                SOAPUtils.convertSOAP11toSOAP12(responseCtx);
+            }
+
+            responseCtx.setProperty(Constants.Configuration.MESSAGE_TYPE,
+                    SynapseConstants.SOAP12_CONTENT_TYPE);
+            responseCtx.setProperty(Constants.Configuration.CONTENT_TYPE,
+                    SynapseConstants.SOAP12_CONTENT_TYPE);
+        }
+        responseCtx.setDoingREST(false);
+
     }
 }
