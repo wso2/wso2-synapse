@@ -19,16 +19,16 @@
 
 package org.apache.synapse.mediators.eip.aggregator;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TimerTask;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.eip.EIPConstants;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.TimerTask;
 
 /**
  * An instance of this class is created to manage each aggregation group, and it holds
@@ -113,7 +113,7 @@ public class Aggregate extends TimerTask {
                 MessageContext mc = messages.get(0);
                 Object prop = mc.getProperty(EIPConstants.MESSAGE_SEQUENCE +
                         (aggregateMediator.getId() != null ? "." + aggregateMediator.getId() : ""));
-            
+
                 if (prop != null && prop instanceof String) {
                     String[] msgSequence = prop.toString().split(
                             EIPConstants.MESSAGE_SEQUENCE_DELEMITER);
@@ -163,7 +163,7 @@ public class Aggregate extends TimerTask {
             synLog.traceOrDebug(
                     "Aggregation already completed - this message will not be processed in aggregation");
         }
-        
+
         return false;
     }
 
