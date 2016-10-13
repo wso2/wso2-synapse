@@ -17,7 +17,10 @@
 package org.apache.synapse.transport.passthru;
 
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +53,8 @@ import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HTTPTransportUtils;
 import org.apache.axis2.util.MessageContextBuilder;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpInetConnection;
@@ -662,9 +667,19 @@ public class ServerWorker implements Runnable {
         msgContext.setProperty(Constants.Configuration.HTTP_METHOD, request.getMethod());
 
 
-        //String uri = request.getUri();
+        String encodedRestUrlPostfix = null;
+        try {
+            encodedRestUrlPostfix = URIUtil.decode(request.getUri(),"UTF-8");
+        } catch (URIException e) {
+            handleException("xception while encoding the URL POST FIX", e);
+        }
         String oriUri = request.getUri();
         String restUrlPostfix = NhttpUtil.getRestUrlPostfix(oriUri, cfgCtx.getServicePath());
+        try {
+            encodedRestUrlPostfix=URIUtil.encodePathQuery(encodedRestUrlPostfix,"UTF-8");
+        } catch (URIException e) {
+            handleException("exception while encoding the URL POST FIX", e);
+        }
 
         String servicePrefix = oriUri.substring(0, oriUri.indexOf(restUrlPostfix));
         if (servicePrefix.indexOf(servicePrefixIndex) == -1) {
@@ -678,7 +693,7 @@ public class ServerWorker implements Runnable {
 
         msgContext.setProperty(PassThroughConstants.SERVICE_PREFIX, servicePrefix);
         msgContext.setTo(new EndpointReference(restUrlPostfix));
-        msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
+        msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, encodedRestUrlPostfix);
 
         if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
                                                                                              "OPTIONS".equals(method)) {

@@ -20,9 +20,12 @@
 package org.apache.synapse.config.xml;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.builtin.PropertyMediator;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
 /**
@@ -52,8 +55,18 @@ public class PropertyMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         if (mediator.getValue() != null) {
-            property.addAttribute(fac.createOMAttribute(
-                    "value", nullNS, mediator.getValue().toString()));
+            if(NhttpConstants.REST_URL_POSTFIX.equals(mediator.getName())) {
+                try {
+                    String rawValue = URIUtil.decode(mediator.getValue().toString(),"UTF-8");
+                    property.addAttribute(fac.createOMAttribute(
+                            "value", nullNS, URIUtil.encodePathQuery(mediator.getValue().toString(),"UTF-8")));
+                } catch (URIException e) {
+                    handleException("exception while encoding the URL POST FIX", e);
+                }
+            } else {
+                property.addAttribute(fac.createOMAttribute(
+                        "value", nullNS, mediator.getValue().toString()));
+            }
         } else if (mediator.getValueElement() != null) {
             property.addChild(mediator.getValueElement());
         } else if (mediator.getExpression() != null) {
