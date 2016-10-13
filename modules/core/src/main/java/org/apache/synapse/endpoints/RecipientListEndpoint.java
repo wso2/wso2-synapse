@@ -203,7 +203,8 @@ public class RecipientListEndpoint extends AbstractEndpoint {
     }
 
     private void sendToDynamicMembers(MessageContext synCtx) {
-        String dynamicUrlStr = dynamicEnpointSet.evaluateValue(synCtx);
+		//remove containing new lines and spaces from the string to create valid url
+	    String dynamicUrlStr = dynamicEnpointSet.evaluateValue(synCtx).replace("\n", "").trim();
         String[] dynamicUrlSet = dynamicUrlStr.split(DELIMETER);
         if (dynamicUrlSet.length == 0) {
             log.warn("No recipient/s was derived from the expression : " + dynamicEnpointSet.toString());
