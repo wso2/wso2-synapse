@@ -20,6 +20,8 @@ import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
+import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.nio.NHttpServerConnection;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
@@ -64,6 +66,8 @@ public class Pipe {
     private boolean consumerError = false;
 
     private boolean producerError = false;
+
+    boolean isStale = false;
 
     private BaseConfiguration baseConfig;
 
@@ -153,9 +157,9 @@ public class Pipe {
                 if (!encoder.isCompleted() && !producerCompleted && hasHttpProducer) {
                     producerIoControl.requestInput();
                 }
-                writeCondition.signalAll();
             }
 
+            writeCondition.signalAll();
             return bytesWritten;
         } finally {
             lock.unlock();
@@ -459,6 +463,10 @@ public class Pipe {
                 setInputMode(outputBuffer);
                 if (!outputBuffer.hasRemaining()) {
                     flushContent();
+                    if (consumerError || isStale) {
+                        buffer.clear();
+                        return;
+                    }
                     setInputMode(outputBuffer);
                 }
                 outputBuffer.put((byte) b);
@@ -475,10 +483,25 @@ public class Pipe {
             try {
                 setInputMode(outputBuffer);
                 int remaining = len;
-                while (remaining > 0 && !consumerError) {
+                if (consumerIoControl instanceof NHttpServerConnection) {
+                    if (((NHttpServerConnection) consumerIoControl).isStale()) {
+                        isStale = true;
+                        writeCondition.signalAll();
+                        buffer.clear();
+                        return;
+                    }
+                } else if (consumerIoControl instanceof NHttpClientConnection) {
+                    if (((NHttpClientConnection) consumerIoControl).isStale()) {
+                        isStale = true;
+                        writeCondition.signalAll();
+                        buffer.clear();
+                        return;
+                    }
+                }
+                while (remaining > 0 && !consumerError && !isStale) {
                     if (!outputBuffer.hasRemaining()) {
                         flushContent();
-                        if(consumerError){
+                        if(consumerError || isStale) {
                             buffer.clear();
                             break;
                         }
@@ -503,12 +526,23 @@ public class Pipe {
 
             try {
                 try {
-                    while (hasData(outputBuffer) && !consumerError) {
+                    while (hasData(outputBuffer) && !consumerError && !isStale) {
                         if(consumerError){
                             break;
                         }
                         if (consumerIoControl != null && writeCondition != null) {
                             consumerIoControl.requestOutput();
+                            if (consumerIoControl instanceof NHttpServerConnection) {
+                                if (((NHttpServerConnection) consumerIoControl).isStale()) {
+                                    isStale = true;
+                                    writeCondition.signalAll();
+                                }
+                            } else if (consumerIoControl instanceof NHttpClientConnection) {
+                                if (((NHttpClientConnection) consumerIoControl).isStale()) {
+                                    isStale = true;
+                                    writeCondition.signalAll();
+                                }
+                            }
                             writeCondition.await();
                         }
                     }
