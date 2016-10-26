@@ -514,6 +514,7 @@ public final class JsonUtil {
         }
         boolean isObject = false;
         boolean isArray = false;
+        boolean isString = false;
         if (inputStream != null) {
             InputStream json = toReadOnlyStream(inputStream);
             messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
@@ -523,7 +524,7 @@ public final class JsonUtil {
             try {
                 // check for empty/all-whitespace streams
                 int c = json.read();
-                while (c != -1 && c != '{' && c != '[') {
+                while (c != -1 && c != '{' && c != '[' && c != '"') {
                     if (c != 32) {
                         isEmptyPayload = false;
                     }
@@ -535,9 +536,15 @@ public final class JsonUtil {
                 if (c == '{') {
                     isObject = true;
                     isArray = false;
+                    isString = false;
                 } else if (c == '[') {
                     isArray = true;
                     isObject = false;
+                    isString = false;
+                } else if (c == '"') {
+                    isObject = false;
+                    isArray = false;
+                    isString = true;
                 }
                 json.reset();
             } catch (IOException e) {
@@ -578,6 +585,17 @@ public final class JsonUtil {
             if (isObject) {
                 jsonElement = JSON_OBJECT;
                 messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, true);
+            }
+            if (isString) {
+                String jsonString = "";
+                try{
+                  jsonString = IOUtils.toString(json, "UTF-8"); 
+                }catch(IOException e){
+                  logger.error(
+                        "#Can not parse stream. MessageID: " +
+                        messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage());
+                }
+                return OMAbstractFactory.getOMFactory().createOMElement(jsonString, null);
             }
             if (isArray) {
                 jsonElement = JSON_ARRAY;
