@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
+import org.apache.synapse.transport.nhttp.util.NhttpConstants;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -35,6 +36,7 @@ public class SSLConfiguration {
     private String httpsProtocolsEl;
     private String revocationVerifier;
     private String sslProtocol;
+    private String preferredCiphersEl;
 
 
     private OMElement keyStoreElement;
@@ -42,17 +44,20 @@ public class SSLConfiguration {
     private OMElement clientAuthElement;
     private OMElement revocationVerifierElement;
     private OMElement httpsProtocolElement;
+    /** Config of Preferred cipher suites **/
+    private OMElement preferredCiphersElement;
 
 
     public SSLConfiguration(String keyStore, String trustStore, String clientAuthEl,
                             String httpsProtocolsEl, String revocationVerifier,
-                            String sslProtocol) {
+                            String sslProtocol, String preferredCiphersEl) {
         this.keyStore = keyStore;
         this.trustStore = trustStore;
         this.clientAuthEl = clientAuthEl;
         this.httpsProtocolsEl = httpsProtocolsEl;
         this.revocationVerifier = revocationVerifier;
         this.sslProtocol = sslProtocol;
+        this.preferredCiphersEl = preferredCiphersEl;
     }
 
 
@@ -107,6 +112,23 @@ public class SSLConfiguration {
             httpsProtocolElement.setText(httpsProtocolsEl);
         }
         return httpsProtocolElement;
+    }
+
+    public String getPreferredCiphersEl() {
+        return preferredCiphersEl;
+    }
+
+    /**
+     * Return a OMElement of preferred ciphers parameter values.
+     * @return OMElement
+     */
+    public OMElement getPreferredCiphersElement() {
+        if (preferredCiphersEl != null) {
+            OMFactory fac = OMAbstractFactory.getOMFactory();
+            preferredCiphersElement = fac.createOMElement(NhttpConstants.PREFERRED_CIPHERS, "", "");
+            preferredCiphersElement.setText(preferredCiphersEl);
+        }
+        return preferredCiphersElement;
     }
 
     public String getSslProtocol() {

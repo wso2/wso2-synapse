@@ -42,6 +42,13 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
     /** Enabled SSL handshake protocols (e.g. SSLv3, TLSv1) */
     private String[] httpsProtocols;
 
+    /**
+     * Preferred Cipher suites config
+     * (e.g. TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256)
+     *
+     **/
+    private String[] preferredCiphers;
+
     static {
         Arrays.sort(LOCALHOSTS);
     }
@@ -148,6 +155,10 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
         if(null != httpsProtocols) {
             sslengine.setEnabledProtocols(httpsProtocols);
         }
+
+        if (preferredCiphers != null) {
+            sslengine.setEnabledCipherSuites(preferredCiphers);
+        }
     }
 
     public void verify(IOSession iosession, SSLSession sslsession) throws SSLException {
@@ -178,6 +189,15 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
      */
     public void setHttpsProtocols(String[] httpsProtocols) {
         this.httpsProtocols = httpsProtocols;
+    }
+
+    /**
+     * Set the enabled Cipher suites. All the ciphers will be enabled if not specified
+     *
+     * @param enabledCiphers Array of ciphers
+     */
+    public void setPreferredCiphers(String[] enabledCiphers) {
+        this.preferredCiphers = enabledCiphers;
     }
 
 }
