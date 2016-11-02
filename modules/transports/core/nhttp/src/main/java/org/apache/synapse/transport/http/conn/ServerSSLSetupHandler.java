@@ -40,8 +40,7 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
     private final String[] preferredCiphers;
 
     public ServerSSLSetupHandler(final SSLClientAuth clientAuth, final String[] httpsProtocols,
-                                 final RevocationVerificationManager verificationManager, final String[]
-            preferredCiphers) {
+            final RevocationVerificationManager verificationManager, final String[] preferredCiphers) {
         this.clientAuth = clientAuth;
         this.httpsProtocols = httpsProtocols;
         this.verificationManager = verificationManager;

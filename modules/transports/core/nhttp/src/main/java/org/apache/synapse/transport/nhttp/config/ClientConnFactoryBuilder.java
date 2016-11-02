@@ -166,15 +166,13 @@ public class ClientConnFactoryBuilder {
             String[] configuredValues = configuredWeakCiphers.trim().split(",");
             List<String> ciphersList = new ArrayList<String>(configuredValues.length);
             for (String cipher : configuredValues) {
-                if (!cipher.trim().isEmpty()) {
-                    ciphersList.add(cipher.trim());
+                cipher = cipher.trim();
+                if (!cipher.isEmpty()) {
+                    ciphersList.add(cipher);
                 }
             }
 
             preferredCiphers = ciphersList.toArray(new String[ciphersList.size()]);
-        }
-
-        if (preferredCiphers != null) {
             clientSSLSetupHandler.setPreferredCiphers(preferredCiphers);
         }
 
