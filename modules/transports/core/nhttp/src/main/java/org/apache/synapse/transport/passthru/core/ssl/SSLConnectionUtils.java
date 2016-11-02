@@ -45,10 +45,11 @@ public class SSLConnectionUtils {
         SSLServerConnFactoryBuilder sslServerConnFactoryBuilder = new SSLServerConnFactoryBuilder(transportInDescription, host);
 
         return sslServerConnFactoryBuilder.
-                   parseSSL(sslConfiguration.getKeyStoreElement(), sslConfiguration.getTrustStoreElement(),
-                            sslConfiguration.getClientAuthElement(), sslConfiguration.getHttpsProtocolElement(),
-                            sslConfiguration.getSslProtocol(), sslConfiguration.getRevocationVerifierElement()).
-                   build(configuration.getSourceConfiguration().getHttpParams());
+                parseSSL(sslConfiguration.getKeyStoreElement(), sslConfiguration.getTrustStoreElement(),
+                        sslConfiguration.getClientAuthElement(), sslConfiguration.getHttpsProtocolElement(),
+                        sslConfiguration.getSslProtocol(), sslConfiguration.getRevocationVerifierElement(),
+                        sslConfiguration.getPreferredCiphersElement()).
+                build(configuration.getSourceConfiguration().getHttpParams());
 
     }
 

@@ -53,6 +53,7 @@ import org.apache.synapse.transport.certificatevalidation.RevocationVerification
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
 
 public class ClientConnFactoryBuilder {
@@ -75,6 +76,7 @@ public class ClientConnFactoryBuilder {
         Parameter keyParam    = transportOut.getParameter("keystore");
         Parameter trustParam  = transportOut.getParameter("truststore");
         Parameter httpsProtocolsParam = transportOut.getParameter("HttpsProtocols");
+        Parameter preferredCiphersParam = transportOut.getParameter(NhttpConstants.PREFERRED_CIPHERS);
 
         OMElement ksEle = null;
         OMElement tsEle = null;
@@ -152,6 +154,26 @@ public class ClientConnFactoryBuilder {
 
         if (null != httpsProtocols) {
             clientSSLSetupHandler.setHttpsProtocols(httpsProtocols);
+        }
+
+        //Process enabled ciphers
+        OMElement preferredCiphersEl = preferredCiphersParam != null ? preferredCiphersParam.getParameterElement() :
+                null;
+        String[] preferredCiphers = null;
+        final String configuredWeakCiphers =
+                preferredCiphersEl != null ? preferredCiphersEl.getText() : null;
+        if (configuredWeakCiphers != null && configuredWeakCiphers.trim().length() != 0) {
+            String[] configuredValues = configuredWeakCiphers.trim().split(",");
+            List<String> ciphersList = new ArrayList<String>(configuredValues.length);
+            for (String cipher : configuredValues) {
+                cipher = cipher.trim();
+                if (!cipher.isEmpty()) {
+                    ciphersList.add(cipher);
+                }
+            }
+
+            preferredCiphers = ciphersList.toArray(new String[ciphersList.size()]);
+            clientSSLSetupHandler.setPreferredCiphers(preferredCiphers);
         }
 
         ssl = new SSLContextDetails(sslContext, clientSSLSetupHandler);

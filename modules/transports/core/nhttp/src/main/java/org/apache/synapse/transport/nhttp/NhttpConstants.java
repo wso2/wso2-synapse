@@ -242,4 +242,9 @@ public class NhttpConstants {
      * Proxy profile target host identification. This is the same value as the passthru constant
      */
     public static final String PROXY_PROFILE_TARGET_HOST = "PROXY_PROFILE_TARGET_HOST";
+
+    /**
+     * axis.xml config parameter that is used to specify the Weak Ciphers that need to be enabled
+     */
+    public static final String PREFERRED_CIPHERS = "PreferredCiphers";
 }

@@ -55,6 +55,7 @@ import org.apache.synapse.transport.http.conn.SSLClientAuth;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 public class ServerConnFactoryBuilder {
 
@@ -78,6 +79,7 @@ public class ServerConnFactoryBuilder {
                final OMElement trustStoreEl,
                final OMElement cientAuthEl,
                final OMElement httpsProtocolsEl,
+               final OMElement preferredCiphersEl,
                final RevocationVerificationManager verificationManager,
                final String sslProtocol) throws AxisFault {
 
@@ -195,6 +197,22 @@ public class ServerConnFactoryBuilder {
             httpsProtocols = protocolList.toArray(new String[protocolList.size()]);
         }
 
+        String[] preferredCiphers = null;
+        final String configuredWeakCiphers =
+                preferredCiphersEl != null ? preferredCiphersEl.getText() : null;
+        if (configuredWeakCiphers != null && configuredWeakCiphers.trim().length() != 0) {
+            String[] configuredValues = configuredWeakCiphers.trim().split(",");
+            List<String> ciphersList = new ArrayList<String>(configuredValues.length);
+            for (String cipher : configuredValues) {
+                cipher = cipher.trim();
+                if (!cipher.isEmpty()) {
+                    ciphersList.add(cipher);
+                }
+            }
+
+            preferredCiphers = ciphersList.toArray(new String[ciphersList.size()]);
+        }
+
 
         try {
             final String sslProtocolValue = sslProtocol != null ? sslProtocol : "TLS";
@@ -202,8 +220,9 @@ public class ServerConnFactoryBuilder {
             sslContext.init(keymanagers, trustManagers, null);
 
             ServerSSLSetupHandler sslSetupHandler =
-                       (clientAuth != null || httpsProtocols != null) ?
-                       new ServerSSLSetupHandler(clientAuth,httpsProtocols,verificationManager) : null;
+                       (clientAuth != null || httpsProtocols != null || preferredCiphers != null) ?
+                       new ServerSSLSetupHandler(clientAuth, httpsProtocols, verificationManager, preferredCiphers) :
+                               null;
 
             return new SSLContextDetails(sslContext, sslSetupHandler);
         } catch (GeneralSecurityException gse) {
@@ -218,11 +237,13 @@ public class ServerConnFactoryBuilder {
         Parameter clientAuthParam = transportIn.getParameter("SSLVerifyClient");
         Parameter httpsProtocolsParam = transportIn.getParameter("HttpsProtocols");
         final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
+        Parameter preferredCiphersParam = transportIn.getParameter(NhttpConstants.PREFERRED_CIPHERS);
         final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
         OMElement keyStoreEl = keyParam != null ? keyParam.getParameterElement().getFirstElement() : null;
         OMElement trustStoreEl = trustParam != null ? trustParam.getParameterElement().getFirstElement() : null;
         OMElement clientAuthEl = clientAuthParam != null ? clientAuthParam.getParameterElement() : null;
         OMElement httpsProtocolsEl = httpsProtocolsParam != null ? httpsProtocolsParam.getParameterElement() : null;
+        OMElement preferredCiphersEl = preferredCiphersParam != null ? preferredCiphersParam.getParameterElement() : null;
 
         final Parameter cvp = transportIn.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
@@ -242,7 +263,9 @@ public class ServerConnFactoryBuilder {
             revocationVerifier = new RevocationVerificationManager(cacheSize, cacheDelay);
         }
 
-        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, revocationVerifier, sslProtocol);
+        ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, preferredCiphersEl,
+                revocationVerifier,
+                sslProtocol);
         return this;
     }
 
@@ -269,9 +292,12 @@ public class ServerConnFactoryBuilder {
             OMElement trustStoreEl = profileEl.getFirstChildWithName(new QName("TrustStore"));
             OMElement clientAuthEl = profileEl.getFirstChildWithName(new QName("SSLVerifyClient"));
             OMElement httpsProtocolsEl = profileEl.getFirstChildWithName(new QName("HttpsProtocols"));
+            OMElement preferredCiphersEl = profileEl.getFirstChildWithName(new QName(NhttpConstants.PREFERRED_CIPHERS));
             final Parameter sslpParameter = transportIn.getParameter("SSLProtocol");
             final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
-            SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl, null, sslProtocol);
+            SSLContextDetails ssl = createSSLContext(keyStoreEl, trustStoreEl, clientAuthEl, httpsProtocolsEl,
+                    preferredCiphersEl, null,
+                    sslProtocol);
             if (sslByIPMap == null) {
                 sslByIPMap = new HashMap<InetSocketAddress, SSLContextDetails>();
             }

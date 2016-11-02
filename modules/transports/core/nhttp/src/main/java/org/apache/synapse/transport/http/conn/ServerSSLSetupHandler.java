@@ -36,12 +36,15 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
     /** Enabled SSL handshake protocols (e.g. SSLv3, TLSv1) */
     private final String[] httpsProtocols;
     private RevocationVerificationManager verificationManager;
+    /** Ciphers enabled in axis2.xml, enabled all if null*/
+    private final String[] preferredCiphers;
 
     public ServerSSLSetupHandler(final SSLClientAuth clientAuth, final String[] httpsProtocols,
-                                 final RevocationVerificationManager verificationManager) {
+            final RevocationVerificationManager verificationManager, final String[] preferredCiphers) {
         this.clientAuth = clientAuth;
         this.httpsProtocols = httpsProtocols;
         this.verificationManager = verificationManager;
+        this.preferredCiphers = preferredCiphers;
     }
 
     public void initalize(
@@ -59,6 +62,11 @@ public class ServerSSLSetupHandler implements SSLSetupHandler {
         // configuration.
         if (httpsProtocols != null) {
             sslengine.setEnabledProtocols(httpsProtocols);
+        }
+
+        //set enabled ciphers if specified, enable all if otherwise
+        if (preferredCiphers != null) {
+            sslengine.setEnabledCipherSuites(preferredCiphers);
         }
 
     }
