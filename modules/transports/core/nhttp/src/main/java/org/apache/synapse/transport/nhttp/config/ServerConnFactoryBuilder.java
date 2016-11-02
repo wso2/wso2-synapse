@@ -55,7 +55,7 @@ import org.apache.synapse.transport.http.conn.SSLClientAuth;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
 import org.apache.synapse.transport.http.conn.ServerSSLSetupHandler;
-import org.apache.synapse.transport.nhttp.util.NhttpConstants;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 public class ServerConnFactoryBuilder {
 

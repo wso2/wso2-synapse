@@ -53,8 +53,8 @@ import org.apache.synapse.transport.certificatevalidation.RevocationVerification
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
-import org.apache.synapse.transport.nhttp.util.NhttpConstants;
 
 public class ClientConnFactoryBuilder {
 

@@ -22,7 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMFactory;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.log4j.Logger;
-import org.apache.synapse.transport.nhttp.util.NhttpConstants;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 import javax.xml.stream.XMLStreamException;
 
