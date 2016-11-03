@@ -21,6 +21,7 @@ import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
@@ -122,11 +123,15 @@ public class Pipe {
      */
     private long getSocketTimeOut(BaseConfiguration baseConfig) {
         if (baseConfig instanceof SourceConfiguration) {
-            return ((SourceConfiguration) baseConfig).getHttpParams()
-                    .getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
+            HttpParams params = ((SourceConfiguration) baseConfig).getHttpParams();
+            if (params != null) {
+                return params.getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
+            }
         } else if (baseConfig instanceof TargetConfiguration) {
-            return ((TargetConfiguration) baseConfig).getHttpParams()
-                    .getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
+            HttpParams params = ((TargetConfiguration) baseConfig).getHttpParams();
+            if (params != null) {
+                return params.getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
+            }
         }
         return DEFAULT_TIME_OUT_VALUE;
     }
