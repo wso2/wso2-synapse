@@ -514,7 +514,6 @@ public class Pipe {
                 outputBuffer.put((byte) b);
             } finally {
                 lock.unlock();
-                awaitInterrupted = true;
             }
         }
 
@@ -526,7 +525,7 @@ public class Pipe {
             try {
                 setInputMode(outputBuffer);
                 int remaining = len;
-                while (remaining > 0 && !consumerError) {
+                while (remaining > 0 && !consumerError && awaitInterrupted) {
                     if (!outputBuffer.hasRemaining()) {
                         flushContent();
                         if(consumerError){
@@ -547,7 +546,6 @@ public class Pipe {
                 }
             } finally {
                 lock.unlock();
-                awaitInterrupted = true;
             }
         }
 
