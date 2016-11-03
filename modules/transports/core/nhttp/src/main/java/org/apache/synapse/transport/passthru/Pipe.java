@@ -20,12 +20,16 @@ import org.apache.http.MalformedChunkCodingException;
 import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
+import org.apache.synapse.transport.passthru.config.SourceConfiguration;
+import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,6 +38,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * This is a buffer shared by both producers and consumers.
  */
 public class Pipe {
+
+    private static final int DEFAULT_TIME_OUT_VALUE = 180000;
 
     /** IOControl of the reader */
     private IOControl producerIoControl;
@@ -65,6 +71,21 @@ public class Pipe {
 
     private boolean producerError = false;
 
+    /**
+     * Socket Time out value specified in the nttp properties file
+     */
+    private long socketTimeOut = 180000;
+
+    /**
+     * Boolean state to identify whether write condition await interrupted or timeout exceeded.
+     * Normal behaviour should be the interruption of the await. If some thing went wrong and the write condition
+     * did not got any notification to allow write to the buffer, the await will time out after socket time out
+     * value specified in the nttp properties file.
+     * "true" - if interrupted
+     * "false"- if time out exceeds
+     */
+    private boolean awaitInterrupted = true;
+
     private BaseConfiguration baseConfig;
 
     private boolean serializationComplete = false;
@@ -82,6 +103,7 @@ public class Pipe {
         this.buffer = buffer;
         this.name += "_" + name;
         this.baseConfig = baseConfig;
+        this.socketTimeOut = getSocketTimeOut(baseConfig);
     }
 
     public Pipe(ControlledByteBuffer buffer, String name, BaseConfiguration baseConfig) {
@@ -89,6 +111,24 @@ public class Pipe {
         this.name += "_" + name;
         this.baseConfig = baseConfig;
         this.hasHttpProducer = false;
+        this.socketTimeOut = getSocketTimeOut(baseConfig);
+    }
+
+    /**
+     * Extract socket time out value from baseConfig and return default value if not found
+     *
+     * @param baseConfig
+     * @return
+     */
+    private long getSocketTimeOut(BaseConfiguration baseConfig) {
+        if (baseConfig instanceof SourceConfiguration) {
+            return ((SourceConfiguration) baseConfig).getHttpParams()
+                    .getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
+        } else if (baseConfig instanceof TargetConfiguration) {
+            return ((TargetConfiguration) baseConfig).getHttpParams()
+                    .getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
+        }
+        return DEFAULT_TIME_OUT_VALUE;
     }
 
     /**
@@ -459,11 +499,17 @@ public class Pipe {
                 setInputMode(outputBuffer);
                 if (!outputBuffer.hasRemaining()) {
                     flushContent();
+                    // check whether await time out exceeded and throw an IOException
+                    if(!awaitInterrupted){
+                        buffer.clear();
+                        throw new IOException("Output buffer write time out exceeded");
+                    }
                     setInputMode(outputBuffer);
                 }
                 outputBuffer.put((byte) b);
             } finally {
                 lock.unlock();
+                awaitInterrupted = true;
             }
         }
 
@@ -482,6 +528,11 @@ public class Pipe {
                             buffer.clear();
                             break;
                         }
+                        // check whether await time out exceeded and throw an IOException
+                        if(!awaitInterrupted){
+                            buffer.clear();
+                            throw new IOException("Output buffer write time out exceeded");
+                        }
                         setInputMode(outputBuffer);
                     }
                     int chunk = Math.min(remaining, outputBuffer.remaining());
@@ -491,6 +542,7 @@ public class Pipe {
                 }
             } finally {
                 lock.unlock();
+                awaitInterrupted = true;
             }
         }
 
@@ -509,7 +561,10 @@ public class Pipe {
                         }
                         if (consumerIoControl != null && writeCondition != null) {
                             consumerIoControl.requestOutput();
-                            writeCondition.await();
+                            awaitInterrupted = writeCondition.await(socketTimeOut, TimeUnit.MILLISECONDS);
+                            if(!awaitInterrupted){
+                                break;
+                            }
                         }
                     }
 
