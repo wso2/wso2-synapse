@@ -23,6 +23,7 @@ import org.apache.http.nio.IOControl;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
@@ -73,9 +74,10 @@ public class Pipe {
     private boolean producerError = false;
 
     /**
-     * Socket Time out value specified in the nttp properties file
+     * Socket Time out value specified in the nttp properties file.
      */
-    private long socketTimeOut = 180000;
+    private static long socketTimeOut = PassThroughConfiguration.getInstance()
+            .getIntProperty(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
 
     /**
      * Boolean state to identify whether write condition await interrupted or timeout exceeded.
@@ -104,7 +106,6 @@ public class Pipe {
         this.buffer = buffer;
         this.name += "_" + name;
         this.baseConfig = baseConfig;
-        this.socketTimeOut = getSocketTimeOut(baseConfig);
     }
 
     public Pipe(ControlledByteBuffer buffer, String name, BaseConfiguration baseConfig) {
@@ -112,28 +113,6 @@ public class Pipe {
         this.name += "_" + name;
         this.baseConfig = baseConfig;
         this.hasHttpProducer = false;
-        this.socketTimeOut = getSocketTimeOut(baseConfig);
-    }
-
-    /**
-     * Extract socket time out value from baseConfig and return default value if not found
-     *
-     * @param baseConfig
-     * @return
-     */
-    private long getSocketTimeOut(BaseConfiguration baseConfig) {
-        if (baseConfig instanceof SourceConfiguration) {
-            HttpParams params = ((SourceConfiguration) baseConfig).getHttpParams();
-            if (params != null) {
-                return params.getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
-            }
-        } else if (baseConfig instanceof TargetConfiguration) {
-            HttpParams params = ((TargetConfiguration) baseConfig).getHttpParams();
-            if (params != null) {
-                return params.getIntParameter(HttpConnectionParams.SO_TIMEOUT, DEFAULT_TIME_OUT_VALUE);
-            }
-        }
-        return DEFAULT_TIME_OUT_VALUE;
     }
 
     /**
