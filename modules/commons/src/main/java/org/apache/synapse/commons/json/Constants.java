@@ -104,4 +104,8 @@ final class Constants {
     public static final String SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR =
             "synapse.commons.json.output.emptyXmlElemToEmptyStr";
 
+    // Property to set whether the user expects synapse to append a default charset encoding(UTF-8)
+    // to the outgoing request
+    public static final String SET_CONTENT_TYPE_CHARACTER_ENCODING = "setCharacterEncoding";
+
 }
