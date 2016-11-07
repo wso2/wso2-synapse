@@ -46,8 +46,17 @@ public final class JsonStreamFormatter implements MessageFormatter {
         if (contentType == null) {
             contentType = (String) messageContext.getProperty(Constants.Configuration.MESSAGE_TYPE);
         }
-        //Check whether there is an existing encoding type defined in the Content-Type header
-        if (encoding != null && contentType != null && !(contentType.contains("charset"))) {
+        String setEncoding = (String) messageContext
+                .getProperty(org.apache.synapse.commons.json.Constants.SET_CONTENT_TYPE_CHARACTER_ENCODING);
+        // If the encoding taken from the OMOutputFormat is not null, "setCharacterEncoding" property is not false,
+        // and ContentType doesn't already contain a character encoding
+        // we append the encoding taken from OMOutputFormat.
+        // The default value for encoding coming from OMOutputFormat is UTF-8.
+        // The last condition is to avoid two character encodings being appended in case ContentType
+        // already contains a character encoding.
+        // This fixes ESBJAVA-4940 and "setCharacterEncoding" property was introduced for this.
+        if (encoding != null && !"false".equals(setEncoding)
+                && contentType != null && !contentType.contains("charset")) {
             contentType += "; charset=" + encoding;
         }
         return contentType;
