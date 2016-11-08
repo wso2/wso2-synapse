@@ -360,4 +360,10 @@ public class ParserTest extends TestCase {
         assertFalse(template.matches("/admin/param1/param2?query=parameter", var));
         assertFalse(template.matches("/admin/param1", var));
     }
+
+    public void testSingleCharacterQueryParameters() throws Exception {
+        Map<String, String> var = new HashMap<String, String>();
+        URITemplate template = new URITemplate("/admin/{a}");
+        assertTrue(template.matches("/admin/param1", var));
+    }
 }
