@@ -460,6 +460,11 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         SourceRequest sourceRequest = SourceContext.getRequest(conn);
 
+        if (sourceRequest == null) { // We'll get here if the connection is already closed
+            log.warn("Trying to submit a response to an already closed connection : " + conn);
+            return;
+        }
+
         SourceResponse sourceResponse = SourceResponseFactory.create(msgContext,
                 sourceRequest, sourceConfiguration);
         sourceResponse.checkResponseChunkDisable(msgContext);
