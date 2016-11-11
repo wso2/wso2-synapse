@@ -67,6 +67,10 @@ public class ControlledByteBuffer {
         return this.byteBuffer.position();
     }
 
+    public int capacity() {
+        return this.byteBuffer.capacity();
+    }
+
     public void put(byte b) {
         this.byteBuffer.put(b);
     }

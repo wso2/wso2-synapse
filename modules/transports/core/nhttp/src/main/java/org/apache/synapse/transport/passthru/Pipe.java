@@ -21,11 +21,8 @@ import org.apache.http.nio.ContentDecoder;
 import org.apache.http.nio.ContentEncoder;
 import org.apache.http.nio.IOControl;
 import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
 import org.apache.synapse.transport.passthru.config.BaseConfiguration;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
-import org.apache.synapse.transport.passthru.config.SourceConfiguration;
-import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.ControlledByteBuffer;
 
 import java.io.IOException;
@@ -391,8 +388,11 @@ public class Pipe {
             int readRemaining = buffer.remaining();
             int readPosition = buffer.position();
             setInputMode(buffer);
+            int writePosition = buffer.position();
             int writeRemaining = buffer.remaining();
-            return readRemaining == 0 && writeRemaining == readPosition;
+            // in this method we will return true when the buffer is full when reading didn't happened : writePosition == buffer.capacity() && readPosition == 0
+            // we will return true if we have consumed the message partially and when there is remaining to read
+            return (readRemaining == 0 && writeRemaining == readPosition) || (writePosition == buffer.capacity() && readPosition == 0);
         } finally {
             if (isInputMode) {
                 setInputMode(buffer);
