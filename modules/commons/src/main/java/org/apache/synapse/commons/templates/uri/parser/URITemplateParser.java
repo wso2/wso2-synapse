@@ -104,7 +104,7 @@ public class URITemplateParser {
             node = new SimpleStringExpression(expression);
         }
 
-        if (expression.length() <= 1) {
+        if (expression.length() < 1) {
             throw new URITemplateException("Invalid template expression: {" + expression + "}");
         }
 
