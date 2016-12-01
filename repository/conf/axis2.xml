@@ -502,6 +502,10 @@
     <phaseOrder type="InFlow">
         <!--  System pre defined phases       -->
         <phase name="Transport">
+            <handler name="VersionedProxyServiceDispatcher"
+                     class="org.apache.synapse.core.axis2.VersionedProxyServiceDispatcher">
+                <order phase="Transport"/>
+            </handler>
             <handler name="RequestURIBasedDispatcher"
                      class="org.apache.axis2.dispatchers.RequestURIBasedDispatcher">
                 <order phase="Transport"/>
