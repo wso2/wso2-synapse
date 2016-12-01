@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
 
 import javax.xml.namespace.QName;
@@ -65,6 +66,7 @@ public class MessageProcessorSerializer {
      * @return  created XML configuration
      */
     public static OMElement serializeMessageProcessor(OMElement parent, MessageProcessor processor) {
+        AbstractMessageProcessor messageProcessor = (AbstractMessageProcessor)processor;
         OMElement processorElem = fac.createOMElement("messageProcessor", synNS);
         if (processor != null) {
             processorElem.addAttribute(fac.createOMAttribute("class", nullNS,
@@ -74,10 +76,11 @@ public class MessageProcessorSerializer {
         }
 
         if (processor.getName() != null) {
-            processorElem.addAttribute(fac.createOMAttribute("name", nullNS, processor.getName()));
+            processorElem.addAttribute(fac.createOMAttribute("name", nullNS, messageProcessor.getArtifactName()));
         } else {
             handleException("Message store Name not specified");
         }
+        processorElem = VersionSerializer.serializeVersioning(messageProcessor.getVersion(),processorElem);
 
         if (FORWARDING_PROCESSOR.equals(processor.getClass().getName())) {
             if (processor.getTargetEndpoint() != null) {

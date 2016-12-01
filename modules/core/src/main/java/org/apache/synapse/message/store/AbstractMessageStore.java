@@ -44,6 +44,11 @@ public abstract class AbstractMessageStore implements MessageStore {
     protected String name;
 
     /**
+     * message store version
+     */
+    protected String version;
+
+    /**
      * name of the sequence to be executed before storing the message
      */
     protected String sequence;
@@ -118,7 +123,11 @@ public abstract class AbstractMessageStore implements MessageStore {
     }
 
     public String getName() {
-        return name;
+        String id = name;
+        if (version != null) {
+            id = id + "/" + version;
+        }
+        return id;
     }
 
     public void setName(String name) {
@@ -127,10 +136,24 @@ public abstract class AbstractMessageStore implements MessageStore {
             return;
         }
         this.name = name;
-        messageStoreMBean = new MessageStoreView(name, this);
-        MBeanRegistrar.getInstance().registerMBean(messageStoreMBean,
-                "MessageStore", this.name);
+        messageStoreMBean = new MessageStoreView(this.getName(), this);
+        MBeanRegistrar.getInstance()
+                      .registerMBean(messageStoreMBean, "MessageStore", this.getName());
     }
+
+    public String getArtifactName() {
+        return name;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+
 
     public void registerObserver(MessageStoreObserver observer) {
         if(observer != null && !messageStoreObservers.contains(observer)) {

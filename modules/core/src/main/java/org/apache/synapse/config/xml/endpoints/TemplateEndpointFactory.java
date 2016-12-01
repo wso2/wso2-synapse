@@ -34,6 +34,10 @@ public class TemplateEndpointFactory extends EndpointFactory {
     public Endpoint createEndpoint(OMElement endpointElement, boolean a, Properties properties) {
         TemplateEndpoint templateEndpoint = new TemplateEndpoint();
 
+        OMAttribute attVersion = endpointElement.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            templateEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         OMAttribute endpointNameAttribute = endpointElement.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
         if (endpointNameAttribute != null) {

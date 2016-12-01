@@ -80,10 +80,15 @@ public class ProxyServiceFactory {
         ProxyService proxy = null;
 
         OMAttribute name = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
+        OMAttribute versionAttribute = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "version"));
         if (name == null) {
             handleException("The 'name' attribute is required for a Proxy service definition");
         } else {
-            proxy = new ProxyService(name.getAttributeValue());
+            if(versionAttribute != null) {
+                proxy = new ProxyService(name.getAttributeValue(), versionAttribute.getAttributeValue());
+            }else{
+                proxy = new ProxyService(name.getAttributeValue());
+            }
         }
 
         OMAttribute trans = elem.getAttribute(

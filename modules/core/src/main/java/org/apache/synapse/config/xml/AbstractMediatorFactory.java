@@ -48,6 +48,7 @@ public abstract class AbstractMediatorFactory implements MediatorFactory {
     /** the standard log for mediators, will assign the logger for the actual subclass */
     static Log log;
     protected static final QName ATT_NAME    = new QName("name");
+    protected static final QName ATT_VERSION    = new QName("version");
     protected static final QName ATT_VALUE   = new QName("value");
     protected static final QName ATT_DESCRIPTION   = new QName("description");
     protected static final QName ATT_XPATH   = new QName("xpath");

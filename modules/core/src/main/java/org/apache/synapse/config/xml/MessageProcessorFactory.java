@@ -26,6 +26,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
+import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import org.apache.synapse.message.processor.impl.forwarder.ScheduledMessageForwardingProcessor;
 import org.apache.synapse.message.processor.impl.sampler.SamplingProcessor;
 
@@ -56,6 +57,7 @@ public class MessageProcessorFactory {
     public static final QName TARGET_ENDPOINT_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "targetEndpoint");
     public static final QName SEQUENCE_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "sequence");
     public static final QName NAME_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "name");
+    public static final QName VERSION_Q = new QName(XMLConfigConstants.NULL_NAMESPACE, "version");
     public static final QName PARAMETER_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE,
             "parameter");
     public static final QName MESSAGE_STORE_Q = new QName(XMLConfigConstants.NULL_NAMESPACE ,
@@ -99,6 +101,11 @@ public class MessageProcessorFactory {
             processor.setName(nameAtt.getAttributeValue());
         } else {
             handleException("Can't create Message processor without a name ");
+        }
+        OMAttribute versionAtt = elem.getAttribute(VERSION_Q);
+        if (nameAtt != null) {
+            assert processor != null;
+            ((AbstractMessageProcessor)processor).setVersion(versionAtt.getAttributeValue());
         }
 
         if (FORWARDING_PROCESSOR.equals(clssAtt.getAttributeValue())) {

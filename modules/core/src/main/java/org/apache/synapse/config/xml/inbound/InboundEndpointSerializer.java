@@ -26,6 +26,7 @@ import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.statistics.StatisticsConfigurable;
+import org.apache.synapse.config.xml.VersionSerializer;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.inbound.InboundEndpointConstants;
@@ -51,7 +52,8 @@ public class InboundEndpointSerializer {
 		OMElement inboundEndpointElt = fac.createOMElement(InboundEndpointConstants.INBOUND_ENDPOINT,
 		                                                   SynapseConstants.SYNAPSE_OMNAMESPACE);
 		inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_NAME,
-		                                inboundEndpoint.getName(), null);
+		                                inboundEndpoint.getArtifactName(), null);
+		inboundEndpointElt = VersionSerializer.serializeVersioning(inboundEndpoint.getVersion(),inboundEndpointElt);
 		if (inboundEndpoint.getInjectingSeq() != null) {
 			inboundEndpointElt.addAttribute(InboundEndpointConstants.INBOUND_ENDPOINT_SEQUENCE,
 											inboundEndpoint.getInjectingSeq(), null);

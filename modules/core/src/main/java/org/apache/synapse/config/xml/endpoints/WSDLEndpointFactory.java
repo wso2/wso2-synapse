@@ -85,6 +85,10 @@ public class WSDLEndpointFactory extends DefaultEndpointFactory {
                                       Properties properties) {
 
         WSDLEndpoint wsdlEndpoint = new WSDLEndpoint();
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            wsdlEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         OMAttribute name = epConfig.getAttribute(new QName(
                 org.apache.synapse.config.xml.XMLConfigConstants.NULL_NAMESPACE, "name"));
 

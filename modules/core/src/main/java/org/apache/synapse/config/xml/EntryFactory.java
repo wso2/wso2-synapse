@@ -69,13 +69,19 @@ public class EntryFactory implements XMLToObjectMapper {
         }
 
         OMAttribute key = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "key"));
+        OMAttribute version = elem.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "version"));
         if (key == null) {
             handleException("The 'key' attribute is required for a local registry entry");
             return null;
 
         } else {
 
-            Entry entry = new Entry(key.getAttributeValue());
+            Entry entry;
+            if(version != null){
+                entry = new Entry(key.getAttributeValue() , version.getAttributeValue());
+            }else {
+                entry = new Entry(key.getAttributeValue());
+            }
 
             OMElement descriptionElem = elem.getFirstChildWithName(DESCRIPTION_Q);
             if (descriptionElem != null) {
@@ -95,7 +101,7 @@ public class EntryFactory implements XMLToObjectMapper {
                     entry.setType(Entry.URL_SRC);
                     entry.setValue(SynapseConfigUtils.getObject(entry.getSrc(), properties));
                 } catch (MalformedURLException e) {
-                    handleException("The entry with key : " + key + " refers to an invalid URL");
+                    handleException("The entry with key : " + entry.getKey() + " refers to an invalid URL");
                 }
 
             } else {

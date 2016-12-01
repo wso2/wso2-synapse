@@ -77,9 +77,13 @@ public class SequenceMediatorFactory extends AbstractListMediatorFactory {
         SequenceMediator seqMediator = new SequenceMediator();
 
         OMAttribute n = elem.getAttribute(ATT_NAME);
+        OMAttribute versionAttribute = elem.getAttribute(ATT_VERSION);
         OMAttribute e = elem.getAttribute(ATT_ONERROR);
         if (n != null) {
             seqMediator.setName(n.getAttributeValue());
+            if(versionAttribute!=null) {
+                seqMediator.setVersion(versionAttribute.getAttributeValue());
+            }
             if (e != null) {
                 seqMediator.setErrorHandler(e.getAttributeValue());
             }

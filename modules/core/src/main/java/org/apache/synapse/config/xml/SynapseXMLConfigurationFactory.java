@@ -35,6 +35,7 @@ import org.apache.synapse.inbound.InboundEndpoint;
 import org.apache.synapse.libraries.imports.SynapseImport;
 import org.apache.synapse.libraries.model.Library;
 import org.apache.synapse.libraries.util.LibDeployerUtils;
+import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
@@ -224,7 +225,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             	MediatorFactoryFinder.getInstance().setSynapseImportMap(config.getSynapseImports());
                 mediator = MediatorFactoryFinder.getInstance().getMediator(ele, properties);
                 if (mediator != null) {
-                    config.addSequence(name, mediator);
+                    config.addSequence(((SequenceMediator)mediator).getName(), mediator);
                     // mandatory sequence is treated as a special sequence because it will be fetched for
                     // each and every message and keeps a direct reference to that from the configuration
                     // this also limits the ability of the mandatory sequence to be dynamic
@@ -276,10 +277,10 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             try {
                 endpoint = EndpointFactory.getEndpointFromElement(ele, false, properties);
                 if (endpoint != null) {
-                    config.addEndpoint(name.trim(), endpoint);
+                    config.addEndpoint(endpoint.getName(), endpoint);
                 }
             } catch (Exception e) {
-                String msg = "Endpoint configuration: " + name + " cannot be built";
+                String msg = "Endpoint configuration: " + endpoint.getName() + " cannot be built";
                 handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_EP, msg, e);
             }
             return endpoint;

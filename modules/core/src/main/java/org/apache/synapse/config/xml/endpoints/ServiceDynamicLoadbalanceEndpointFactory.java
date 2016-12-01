@@ -181,6 +181,10 @@ public class ServiceDynamicLoadbalanceEndpointFactory extends EndpointFactory {
         ServiceDynamicLoadbalanceEndpoint loadbalanceEndpoint =
                 new ServiceDynamicLoadbalanceEndpoint(hostDomainMap, algorithm);
 
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            loadbalanceEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         // set endpoint name
         OMAttribute name =
                 epConfig.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));

@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.ResolvingEndpoint;
 import org.apache.synapse.config.xml.SynapseXPathFactory;
@@ -46,7 +47,11 @@ public class ResolvingEndpointFactory extends EndpointFactory {
     protected Endpoint createEndpoint(OMElement epConfig, boolean anonymousEndpoint,
                                       Properties properties) {
 
-        ResolvingEndpoint resolvingEndpoint = new ResolvingEndpoint();       
+        ResolvingEndpoint resolvingEndpoint = new ResolvingEndpoint();
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            resolvingEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         String name = epConfig.getAttributeValue(new QName("name"));
         if (name != null) {
             resolvingEndpoint.setName(name);

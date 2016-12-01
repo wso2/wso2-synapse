@@ -62,6 +62,11 @@ public class ClassEndpointFactory extends EndpointFactory {
 	                                      Properties properties) {
 	    	
 	    	ClassEndpoint clazzEndpoint = new ClassEndpoint();
+
+		    OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+		    if(attVersion!=null) {
+			    clazzEndpoint.setVersion(attVersion.getAttributeValue());
+		    }
 	    	OMAttribute endpointName =  epConfig.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE,
 		                                                   "name"));
 

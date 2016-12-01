@@ -47,7 +47,7 @@ import java.util.Stack;
 /**
  * The Sequence mediator either refers to a named Sequence mediator instance
  * or is a *Named* list/sequence of other (child) Mediators
- * <p/>
+ * <p/>ce
  * If this instance defines a sequence mediator, then the name is required, and
  * an errorHandler sequence name optional. If this instance refers to another (defined)
  * sequence mediator, the errorHandler will not have a meaning, and if an error in
@@ -58,6 +58,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
     /** The name of the this sequence */
     private String name = null;
+    /**The version of this sequence*/
+    private String version = null;
     /** The local registry key which is used to pick a sequence definition*/
     private Value key = null;
     /** The name of the error handler which is used to handle error during the mediation */
@@ -108,8 +110,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Sequence "
-                    + (name == null ? (key == null ? "<anonymous" : "key=<" + key) : "<"
-                    + name) + ">");
+                    + (this.getName() == null ? (key == null ? "<anonymous" : "key=<" + key) : "<"
+                    + this.getName()) + ">");
 
             if (synLog.isTraceTraceEnabled()) {
                 synLog.traceTrace("Message : " + synCtx.getEnvelope());
@@ -135,13 +137,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     if (errorHandlerMediator != null) {
                         if (synLog.isTraceOrDebugEnabled()) {
                             synLog.traceOrDebug("Setting the onError handler : " +
-                                    errorHandler + " for the sequence : " + name);
+                                    errorHandler + " for the sequence : " + this.getName());
                         }
                         synCtx.pushFaultHandler(
                                 new MediatorFaultHandler(errorHandlerMediator));
                     } else {
                         synLog.auditWarn("onError handler : " + errorHandler + " for sequence : " +
-                                name + " cannot be found");
+                                this.getName() + " cannot be found");
                     }
                 }
 
@@ -151,7 +153,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     if (dynamic && registryKey != null) {
                         ContinuationStackManager.addSeqContinuationState(synCtx, registryKey, sequenceType);
                     } else {
-                        ContinuationStackManager.addSeqContinuationState(synCtx, name, sequenceType);
+                        ContinuationStackManager.addSeqContinuationState(synCtx, this.getName(), sequenceType);
                     }
                 }
 
@@ -182,7 +184,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
                     }
 
                     synLog.traceOrDebug(
-                            "End : Sequence <" + (name == null ? "anonymous" : name) + ">");
+                            "End : Sequence <" + (this.getName() == null ? "anonymous" : this.getName()) + ">");
                 }
 
 
@@ -245,13 +247,13 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
             if (errorHandlerMediator != null) {
                 if (synLog.isTraceOrDebugEnabled()) {
                     synLog.traceOrDebug("Setting the onError handler : " +
-                                        errorHandler + " for the sequence : " + name);
+                                        errorHandler + " for the sequence : " + this.getName());
                 }
                 synCtx.pushFaultHandler(
                         new MediatorFaultHandler(errorHandlerMediator));
             } else {
                 synLog.auditWarn("onError handler : " + errorHandler + " for sequence : " +
-                                 name + " cannot be found");
+                        this.getName() + " cannot be found");
             }
         }
 
@@ -317,7 +319,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
 
             if (!isDynamic()) {
                 // mark as available, if this is marked previously as unavailable in the environment
-                se.clearUnavailabilityOfArtifact(name);
+                se.clearUnavailabilityOfArtifact(this.getName());
             }
 
             if (key != null) {
@@ -371,7 +373,11 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      * @return the name of the sequence
      */
     public String getName() {
-        return name;
+        String id = name;
+        if (version != null) {
+            id = id + "/" + version;
+        }
+        return id;
     }
 
     /**
@@ -380,6 +386,18 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
      */
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getArtifactName() {
+        return name;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     /**
@@ -488,8 +506,8 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
     }
 
     public String getSequenceNameForStatistics() {
-        if (this.name != null) {
-            return this.name;
+        if (this.getName() != null) {
+            return this.getName();
         } else {
             if (this.sequenceType != SequenceType.ANON) {
                 return this.sequenceType.toString();
@@ -522,7 +540,7 @@ public class SequenceMediator extends AbstractListMediator implements Nameable,
         String sequenceId = null;
 //        if (sequenceType != SequenceType.ANON) {
             if (getAspectConfiguration() == null) {
-                configure(new AspectConfiguration(name));
+                configure(new AspectConfiguration(this.getName()));
             }
             if (getKey()!= null) {
                 sequenceId = StatisticIdentityGenerator

@@ -74,7 +74,10 @@ public class RecipientListEndpointFactory extends EndpointFactory {
 			
 			//create endpoint
 			RecipientListEndpoint recipientListEndpoint = new RecipientListEndpoint();
-			
+			OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+			if(attVersion!=null) {
+				recipientListEndpoint.setVersion(attVersion.getAttributeValue());
+			}
 			// set endpoint name
             OMAttribute name = epConfig.getAttribute(new QName(
                     org.apache.synapse.config.xml.XMLConfigConstants.NULL_NAMESPACE, "name"));
