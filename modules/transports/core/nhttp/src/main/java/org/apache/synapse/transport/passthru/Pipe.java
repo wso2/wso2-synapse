@@ -242,6 +242,18 @@ public class Pipe {
         }
     }
 
+    public void forceProducerComplete(final ContentDecoder decoder) {
+        //no need to mark EoS if decoder is completed
+        if (!decoder.isCompleted()) {
+            lock.lock();
+            try {
+                producerCompleted = true;
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return name;

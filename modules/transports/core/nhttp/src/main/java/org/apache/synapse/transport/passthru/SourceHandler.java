@@ -35,6 +35,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.synapse.commons.jmx.ThreadingView;
 import org.apache.synapse.commons.transaction.TranscationManger;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.LoggingNHttpServerConnection;
 import org.apache.synapse.transport.http.conn.Scheme;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
@@ -45,6 +46,7 @@ import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsColl
 import javax.ws.rs.HttpMethod;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Properties;
 
 /**
  * This is the class where transport interacts with the client. This class
@@ -62,6 +64,14 @@ public class SourceHandler implements NHttpServerEventHandler {
     
     private LatencyView s2sLatencyView = null;
     private  ThreadingView threadingView;
+
+    private static boolean isMessageSizeValidationEnabled = false;
+
+    private static int validMaxMessageSize = Integer.MAX_VALUE;
+
+    public static final String PROPERTY_FILE = "passthru-http.properties";
+    public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
+    public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
 
     public SourceHandler(SourceConfiguration sourceConfiguration) {
         this.sourceConfiguration = sourceConfiguration;
@@ -83,6 +93,19 @@ public class SourceHandler implements NHttpServerEventHandler {
             this.threadingView = new ThreadingView(PassThroughConstants.PASSTHOUGH_HTTP_SERVER_WORKER, true, 50);
         }
 
+        Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
+        String validationProperty = MiscellaneousUtil.getProperty(props, MESSAGE_SIZE_VALIDATION, "false");
+        String validMaxMessageSizeStr = MiscellaneousUtil
+                .getProperty(props, VALID_MAX_MESSAGE_SIZE, String.valueOf(Integer.MAX_VALUE));
+        isMessageSizeValidationEnabled = Boolean.valueOf(validationProperty);
+        try {
+            validMaxMessageSize = Integer.valueOf(validMaxMessageSizeStr);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid max message size configured for property \"valid.max.message.size.in.bytes\", "
+                    + "setting the Integer MAX_VALUE as the valid maximum message size");
+            validMaxMessageSize = Integer.MAX_VALUE;
+        }
+
     }
 
     public void connected(NHttpServerConnection conn) {
@@ -98,6 +121,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             HttpContext httpContext = conn.getContext();
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
             httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
+            httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
 
             SourceRequest request = getSourceRequest(conn);
             if (request == null) {
@@ -144,14 +168,58 @@ public class SourceHandler implements NHttpServerEventHandler {
             SourceRequest request = SourceContext.getRequest(conn);
 
             int readBytes = request.read(conn, decoder);
+
+            if (isMessageSizeValidationEnabled) {
+                HttpContext httpContext = conn.getContext();
+                int messageSizeSum = (int) httpContext.getAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM);
+
+                messageSizeSum += readBytes;
+
+                if (messageSizeSum > validMaxMessageSize) {
+                    log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
+                            + messageSizeSum + " bytes to prevent OOM.");
+                    dropSourceConnection(conn);
+                    conn.getContext().setAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED, true);
+                    //stopped http chunk stream from here and mark producer complete
+                    request.getPipe().forceProducerComplete(decoder);
+                }
+                httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, messageSizeSum);
+            }
+
             if (readBytes > 0) {
                 metrics.incrementBytesReceived(readBytes);
             }
+
         } catch (IOException e) {
             logIOException(conn, e);
 
             informReaderError(conn);
 
+            SourceContext.updateState(conn, ProtocolState.CLOSED);
+            sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
+        }
+    }
+
+    private void dropSourceConnection(NHttpServerConnection conn) {
+        try {
+            HttpContext httpContext = conn.getContext();
+
+            HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1, HttpStatus.SC_REQUEST_TOO_LONG,
+                    "Payload Too Large");
+            response.setParams(new DefaultedHttpParams(sourceConfiguration.getHttpParams(), response.getParams()));
+            response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+
+            httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+            httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, null);
+            httpContext.setAttribute(ExecutionContext.HTTP_RESPONSE, response);
+
+            sourceConfiguration.getHttpProcessor().process(response, httpContext);
+
+            conn.submitResponse(response);
+            SourceContext.updateState(conn, ProtocolState.CLOSED);
+            conn.close();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
             SourceContext.updateState(conn, ProtocolState.CLOSED);
             sourceConfiguration.getSourceConnections().shutDownConnection(conn, true);
         }

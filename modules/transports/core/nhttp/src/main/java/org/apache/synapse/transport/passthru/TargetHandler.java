@@ -23,12 +23,7 @@ import org.apache.axis2.engine.MessageReceiver;
 import org.apache.axis2.transport.base.MetricsCollector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.StatusLine;
+import org.apache.http.*;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
 import org.apache.http.nio.ContentDecoder;
@@ -38,6 +33,7 @@ import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.protocol.HttpContext;
+import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.LoggingNHttpClientConnection;
 import org.apache.synapse.transport.http.conn.ProxyTunnelHandler;
@@ -47,6 +43,7 @@ import org.apache.synapse.transport.passthru.connections.HostConnections;
 import org.apache.synapse.transport.passthru.jmx.PassThroughTransportMetricsCollector;
 
 import java.io.IOException;
+import java.util.Properties;
 
 
 /**
@@ -69,6 +66,14 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     private PassThroughTransportMetricsCollector metrics = null;
 
+    private static boolean isMessageSizeValidationEnabled = false;
+
+    private static int validMaxMessageSize = Integer.MAX_VALUE;
+
+    public static final String PROPERTY_FILE = "passthru-http.properties";
+    public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
+    public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
+
     public TargetHandler(DeliveryAgent deliveryAgent,
                          ClientConnFactory connFactory,
                          TargetConfiguration configuration) {
@@ -77,6 +82,20 @@ public class TargetHandler implements NHttpClientEventHandler {
         this.targetConfiguration = configuration;
         this.targetErrorHandler = new TargetErrorHandler(targetConfiguration);
         this.metrics = targetConfiguration.getMetrics();
+
+        Properties props = MiscellaneousUtil.loadProperties(PROPERTY_FILE);
+        String validationProperty = MiscellaneousUtil.getProperty(props, MESSAGE_SIZE_VALIDATION, "false");
+        String validMaxMessageSizeStr = MiscellaneousUtil
+                .getProperty(props, VALID_MAX_MESSAGE_SIZE, String.valueOf(Integer.MAX_VALUE));
+        isMessageSizeValidationEnabled = Boolean.valueOf(validationProperty);
+        try {
+            validMaxMessageSize = Integer.valueOf(validMaxMessageSizeStr);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid max message size configured for property \"valid.max.message.size.in.bytes\", "
+                    + "setting the Integer MAX_VALUE as the valid maximum message size");
+            validMaxMessageSize = Integer.MAX_VALUE;
+        }
+
     }
 
     public void connected(NHttpClientConnection conn, Object o) {
@@ -239,6 +258,7 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void responseReceived(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
+        context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
         HttpResponse response = conn.getHttpResponse();
         ProtocolState connState;
         try {
@@ -390,6 +410,17 @@ public class TargetHandler implements NHttpClientEventHandler {
         return false;
     }
 
+    private void dropTargetConnection(NHttpClientConnection conn) {
+        try {
+            TargetContext.updateState(conn, ProtocolState.CLOSED);
+            conn.close();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            TargetContext.updateState(conn, ProtocolState.CLOSED);
+            targetConfiguration.getConnections().shutdownConnection(conn, true);
+        }
+    }
+
     public void inputReady(NHttpClientConnection conn, ContentDecoder decoder) {
         ProtocolState connState;
         MessageContext msgCtx = TargetContext.get(conn).getRequestMsgCtx();
@@ -412,7 +443,22 @@ public class TargetHandler implements NHttpClientEventHandler {
 			if (response != null) {
                 statusCode = conn.getHttpResponse().getStatusLine().getStatusCode();
 				int responseRead = response.read(conn, decoder);
-                if (metrics.getLevel() == MetricsCollector.LEVEL_FULL) {
+          if (isMessageSizeValidationEnabled) {
+              HttpContext httpContext = conn.getContext();
+              int messageSizeSum = (int) httpContext.getAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM);
+
+              messageSizeSum += responseRead;
+
+              if (messageSizeSum > validMaxMessageSize) {
+                  log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
+                          + messageSizeSum + " bytes to prevent OOM.");
+                  dropTargetConnection(conn);
+                  response.getPipe().forceProducerComplete(decoder);
+              }
+              httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, messageSizeSum);
+          }
+
+          if (metrics.getLevel() == MetricsCollector.LEVEL_FULL) {
                     metrics.incrementBytesReceived(msgCtx, responseRead);
                 } else {
                     metrics.incrementBytesReceived(responseRead);
@@ -656,7 +702,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     public void exception(NHttpClientConnection conn, Exception ex) {
         ProtocolState state = TargetContext.getState(conn);
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
-        
+
         if (state == ProtocolState.REQUEST_HEAD || state == ProtocolState.REQUEST_BODY) {
             informWriterError(conn);
             log.warn("Exception occurred while sending the request " + getConnectionLoggingInfo(conn));

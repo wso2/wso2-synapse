@@ -461,6 +461,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         SourceRequest sourceRequest = SourceContext.getRequest(conn);
 
         if (sourceRequest == null) { // We'll get here if the connection is already closed
+            //this is a special case we dropped source connection where message size exceeds the user defined threshold
+            if (conn.getContext().getAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED) != null &&
+                    (Boolean) conn.getContext().getAttribute(PassThroughConstants.SOURCE_CONNECTION_DROPPED)) {
+                //already submitted response for this case, hence return
+                return;
+            }
             log.warn("Trying to submit a response to an already closed connection : " + conn);
             return;
         }
