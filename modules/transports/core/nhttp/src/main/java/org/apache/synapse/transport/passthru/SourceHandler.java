@@ -203,6 +203,7 @@ public class SourceHandler implements NHttpServerEventHandler {
     /**
      * Closes the source side HTTP connection.
      *
+     * @param conn HTTP server connection reference
      */
     private void dropSourceConnection(NHttpServerConnection conn) {
         try {

@@ -418,6 +418,7 @@ public class TargetHandler implements NHttpClientEventHandler {
     /**
      * Closes the target side HTTP connection.
      *
+     * @param conn HTTP client connection reference
      */
     private void dropTargetConnection(NHttpClientConnection conn) {
         try {
