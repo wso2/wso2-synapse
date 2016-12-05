@@ -263,6 +263,10 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 						}
 
 					} catch (ProcessingException | IOException e) {
+						// Removes the erroneous cached json schema from the map
+						if (cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
+							cachedJsonSchemaMap.remove(cachedJsonSchemaKey.toString());
+						}
 						handleException("Error while validating the JSON Schema", e, synCtx);
 					}
 
