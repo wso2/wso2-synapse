@@ -194,7 +194,12 @@ public class Axis2FlexibleMEPClient {
                 if (transportHeaders != null) {
                     // Fix ESBJAVA-3645 Should not do this for multipart/related
                     String trpContentType = (String) transportHeaders.get(HTTP.CONTENT_TYPE);
-                    if (trpContentType != null && !trpContentType
+                    //https://wso2.org/jira/browse/ESBJAVA-4966
+                    //if content type is not found, setting the content type
+                    if (trpContentType == null) {
+                        transportHeaders.put(HTTP.CONTENT_TYPE,
+                                             org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_TEXT_XML + strCharSetEncoding);
+                    } else if (!trpContentType
                             .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
                         transportHeaders.remove(HTTP.CONTENT_TYPE);
                         try {
@@ -229,7 +234,13 @@ public class Axis2FlexibleMEPClient {
                 if (transportHeaders != null) {
                     // Fix ESBJAVA-3645 Should not do this for multipart/related
                     String trpContentType = (String) transportHeaders.get(HTTP.CONTENT_TYPE);
-                    if (trpContentType != null && !trpContentType
+                    //https://wso2.org/jira/browse/ESBJAVA-4966
+                    //if content type is not found, setting the content type
+                    if (trpContentType == null) {
+                        transportHeaders.put(HTTP.CONTENT_TYPE,
+                                             org.apache.axis2.transport.http.HTTPConstants.MEDIA_TYPE_APPLICATION_SOAP_XML
+                                             + strCharSetEncoding);
+                    } else if (!trpContentType
                             .contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
                         transportHeaders.remove(HTTP.CONTENT_TYPE);
                         try {
