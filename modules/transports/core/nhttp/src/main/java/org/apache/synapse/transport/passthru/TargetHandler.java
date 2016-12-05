@@ -415,6 +415,10 @@ public class TargetHandler implements NHttpClientEventHandler {
         return false;
     }
 
+    /**
+     * Closes the target side HTTP connection.
+     *
+     */
     private void dropTargetConnection(NHttpClientConnection conn) {
         try {
             TargetContext.updateState(conn, ProtocolState.CLOSED);

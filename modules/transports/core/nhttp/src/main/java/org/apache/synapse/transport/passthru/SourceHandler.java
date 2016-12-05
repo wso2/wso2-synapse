@@ -200,6 +200,10 @@ public class SourceHandler implements NHttpServerEventHandler {
         }
     }
 
+    /**
+     * Closes the source side HTTP connection.
+     *
+     */
     private void dropSourceConnection(NHttpServerConnection conn) {
         try {
             HttpContext httpContext = conn.getContext();
