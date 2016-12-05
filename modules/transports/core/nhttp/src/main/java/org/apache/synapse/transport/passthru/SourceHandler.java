@@ -102,7 +102,7 @@ public class SourceHandler implements NHttpServerEventHandler {
             validMaxMessageSize = Integer.valueOf(validMaxMessageSizeStr);
         } catch (NumberFormatException e) {
             log.warn("Invalid max message size configured for property \"valid.max.message.size.in.bytes\", "
-                    + "setting the Integer MAX_VALUE as the valid maximum message size");
+                    + "setting the Integer MAX_VALUE as the valid maximum message size", e);
             validMaxMessageSize = Integer.MAX_VALUE;
         }
 

@@ -242,6 +242,13 @@ public class Pipe {
         }
     }
 
+    /**
+     * Helper method to mark as producer completed. The normal behavior only set the boolean param to true only when
+     * decoder is completed. However in some cases it is needed to intentionally close chunk stream and mark as
+     * producer completed in order to prevent consumer further waiting on end of stream condition.
+     *
+     * @param decoder decoder instance to consume input
+     */
     public void forceProducerComplete(final ContentDecoder decoder) {
         //no need to mark EoS if decoder is completed
         if (!decoder.isCompleted()) {
