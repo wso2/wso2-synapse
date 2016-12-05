@@ -124,6 +124,10 @@ public class LocalEntryDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("LocalEntry Undeployment of the entry named : "
                     + artifactName + " : Started");

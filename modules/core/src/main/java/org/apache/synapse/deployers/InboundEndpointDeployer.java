@@ -131,6 +131,10 @@ public class InboundEndpointDeployer extends AbstractSynapseArtifactDeployer {
 
     public void undeploySynapseArtifact(String artifactName) {
 
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Undeployment of the Inbound Endpoint named : "
                     + artifactName + " : Started");

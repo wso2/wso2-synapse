@@ -148,6 +148,10 @@ public class SequenceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Sequence Undeployment of the sequence named : "
                     + artifactName + " : Started");

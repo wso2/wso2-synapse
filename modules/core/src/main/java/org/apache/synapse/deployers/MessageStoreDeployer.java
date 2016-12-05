@@ -125,7 +125,12 @@ public class MessageStoreDeployer extends AbstractSynapseArtifactDeployer{
 
     @Override
     public void undeploySynapseArtifact(String artifactName) {
-          if (log.isDebugEnabled()) {
+
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
+        if (log.isDebugEnabled()) {
             log.debug("MessageStore Undeployment of the MessageStore named : "
                     + artifactName + " : Started");
         }

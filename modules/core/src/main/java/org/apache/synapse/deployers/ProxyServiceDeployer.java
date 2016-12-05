@@ -203,6 +203,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("ProxyService Undeployment of the proxy named : "
                     + artifactName + " : Started");

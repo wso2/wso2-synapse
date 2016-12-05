@@ -1125,6 +1125,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 handleException("Unknown proxy service for name : " + name);
             } else {
                 try {
+                    removeDefaultProxyKey(proxy.getArtifactName());
                     if (getAxisConfiguration().getServiceForActivation(name) != null) {
                         if (getAxisConfiguration().getServiceForActivation(name)
                                 .isActive()) {

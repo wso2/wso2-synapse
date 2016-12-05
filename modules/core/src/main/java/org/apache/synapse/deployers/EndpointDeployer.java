@@ -145,6 +145,10 @@ public class EndpointDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("Endpoint Undeployment of the endpoint named : "
                     + artifactName + " : Started");
