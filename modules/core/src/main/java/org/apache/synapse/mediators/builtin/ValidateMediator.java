@@ -80,61 +80,61 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Validate a message or an element against a schema
  * <p/>
- * This internally uses the Xerces2-j parser, which cautions a lot about thread-safety and
- * memory leaks. Hence this initial implementation will create a single parser instance
- * for each unique mediator instance, and re-use it to validate multiple messages - even
- * concurrently - by synchronizing access
+ * This internally uses the Xerces2-j parser, which cautions a lot about
+ * thread-safety and memory leaks. Hence this initial implementation will create
+ * a single parser instance for each unique mediator instance, and re-use it to
+ * validate multiple messages - even concurrently - by synchronizing access
  */
 public class ValidateMediator extends AbstractListMediator implements FlowContinuableMediator {
 
-    /**
-     * A list of property keys, referring to the schemas to be used for the validation
-     * key can be static or dynamic(xpath) key
-     */
-    private List<Value> schemaKeys = new ArrayList<Value>();
+	/**
+	 * A list of property keys, referring to the schemas to be used for the
+	 * validation key can be static or dynamic(xpath) key
+	 */
+	private List<Value> schemaKeys = new ArrayList<Value>();
 
-    /**
-     * A list of property keys, referring to the external schema resources to be used for the validation
-     */
-    private ResourceMap resourceMap;
+	/**
+	 * A list of property keys, referring to the external schema resources to be
+	 * used for the validation
+	 */
+	private ResourceMap resourceMap;
 
-    /**
-     * An XPath expression to be evaluated against the message to find the element to be validated.
-     * If this is not specified, the validation will occur against the first child element of the
-     * SOAP body
-     */
-    private final SourceXPathSupport source = new SourceXPathSupport();
+	/**
+	 * An XPath expression to be evaluated against the message to find the
+	 * element to be validated. If this is not specified, the validation will
+	 * occur against the first child element of the SOAP body
+	 */
+	private final SourceXPathSupport source = new SourceXPathSupport();
 
-    /**
-     * A Map containing features to be passed to the actual validator (Xerces)
-     */
-    private final List<MediatorProperty> explicityFeatures = new ArrayList<MediatorProperty>();
-    
+	/**
+	 * A Map containing features to be passed to the actual validator (Xerces)
+	 */
+	private final List<MediatorProperty> explicityFeatures = new ArrayList<MediatorProperty>();
 
-    /**
-     * Lock used to ensure thread-safe creation and use of the above Validator
-     */
-    private final Object validatorLock = new Object();
+	/**
+	 * Lock used to ensure thread-safe creation and use of the above Validator
+	 */
+	private final Object validatorLock = new Object();
 
-    /**
-     * The SchemaFactory used to create new schema instances.
-     */
-    private final SchemaFactory factory = SchemaFactory.newInstance(
-            XMLConstants.W3C_XML_SCHEMA_NS_URI);
-    /**
-     * The JSONSchemaFactory used to create JSONs Schema instance
-     */
-    private  final JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.byDefault();
+	/**
+	 * The SchemaFactory used to create new schema instances.
+	 */
+	private final SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+	/**
+	 * The JSONSchemaFactory used to create JSONs Schema instance
+	 */
+	private final JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.byDefault();
 
-    /**
-     * to hold the json string of the schema
-     */
-    private JsonNode jsonSchemaNode;
-    /**
-     * to hold the Path Expression to be evaluated against the message to find the element to be validated.
-     */
-    private SynapsePath sourcePath;
-    
+	/**
+	 * to hold the json string of the schema
+	 */
+	private JsonNode jsonSchemaNode;
+	/**
+	 * to hold the Path Expression to be evaluated against the message to find
+	 * the element to be validated.
+	 */
+	private SynapsePath sourcePath;
+
 	/**
 	 * Concurrent hash map for cached schemas.
 	 */
@@ -145,49 +145,50 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 	 */
 	private Map<String, JsonSchema> cachedJsonSchemaMap = new ConcurrentHashMap<String, JsonSchema>();
 
+	@SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
+	public boolean mediate(MessageContext synCtx) {
 
-    @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
-    public boolean mediate(MessageContext synCtx) {
-    	
 		// This is the actual schema instance used to create a new schema
 		Schema cachedSchema = null;
 		JsonSchema cachedJsonSchema = null;
 
-        if (synCtx.getEnvironment().isDebuggerEnabled()) {
-            if (super.divertMediationRoute(synCtx)) {
-                return true;
-            }
-        }
+		if (synCtx.getEnvironment().isDebuggerEnabled()) {
+			if (super.divertMediationRoute(synCtx)) {
+				return true;
+			}
+		}
 
-        SynapseLog synLog = getLog(synCtx);
+		SynapseLog synLog = getLog(synCtx);
 
-        synLog.traceOrDebug("Start : Validate mediator");
-        if (synLog.isTraceTraceEnabled()) {
-            synLog.traceTrace("Message : " + synCtx.getEnvelope());
-        }
+		synLog.traceOrDebug("Start : Validate mediator");
+		if (synLog.isTraceTraceEnabled()) {
+			synLog.traceTrace("Message : " + synCtx.getEnvelope());
+		}
 
-        org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-        if (JsonUtil.hasAJsonPayload(a2mc)) {
-            ProcessingReport report;
+		org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+		if (JsonUtil.hasAJsonPayload(a2mc)) {
+			ProcessingReport report;
 
-            // flag to check if we need to initialize/re-initialize the schema
-            boolean reCreate = false;
+			// flag to check if we need to initialize/re-initialize the schema
+			boolean reCreate = false;
 			StringBuilder combinedPropertyKey = new StringBuilder();
 			StringBuilder cachedJsonSchemaKey = new StringBuilder();
-            // if any of the schemas are not loaded, or have expired, load or re-load them
-            for (Value schemaKey : schemaKeys) {
-                // Derive actual key from message context
-                String propKey = schemaKey.evaluateValue(synCtx);
+			// if any of the schemas are not loaded, or have expired, load or
+			// re-load them
+			for (Value schemaKey : schemaKeys) {
+				// Derive actual key from message context
+				String propKey = schemaKey.evaluateValue(synCtx);
 				// Generating a property key
 				combinedPropertyKey.append(propKey);
-                Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
-                if (dp != null && dp.isDynamic()) {
-                    if (!dp.isCached() || dp.isExpired()) {
-                        reCreate = true;       // request re-initialization of Validator
-                    }
-                }
-            }
-            
+				Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
+				if (dp != null && dp.isDynamic()) {
+					if (!dp.isCached() || dp.isExpired()) {
+						reCreate = true; // request re-initialization of
+											// Validator
+					}
+				}
+			}
+
 			/*
 			 * Fixing ESBJAVA-4958, Implementation has done assuming that the
 			 * artifacts are added and removed via a .car file. When a schema is
@@ -205,45 +206,45 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 				reCreate = true;
 			}
 
-            // do not re-initialize schema unless required
-            synchronized (validatorLock) {
-                if (reCreate || cachedJsonSchema == null) {
-                    Object jsonSchemaObj = null;
-                    for (Value schemaKey : schemaKeys) {
-                        // Derive actual key from message context
-                        String propName = schemaKey.evaluateValue(synCtx);
-                        jsonSchemaObj = synCtx.getEntry(propName);
+			// do not re-initialize schema unless required
+			synchronized (validatorLock) {
+				if (reCreate || cachedJsonSchema == null) {
+					Object jsonSchemaObj = null;
+					for (Value schemaKey : schemaKeys) {
+						// Derive actual key from message context
+						String propName = schemaKey.evaluateValue(synCtx);
+						jsonSchemaObj = synCtx.getEntry(propName);
 						cachedJsonSchemaKey.append(propName);
-                    }
-                    
-                    if (jsonSchemaObj == null) {
-                        handleException("Can not find JSON Schema " + cachedJsonSchemaKey.toString(), synCtx);
-                    }
+					}
 
-                    try {
-                        if (jsonSchemaObj instanceof String) {
-                            jsonSchemaNode = JsonLoader.fromString((String) jsonSchemaObj);
-                        } else if (jsonSchemaObj instanceof OMTextImpl) {
-                            //if Schema provides from registry
-                            InputStreamReader reader = null;
-                            try {
-                                reader = new InputStreamReader(((OMTextImpl) jsonSchemaObj).getInputStream());
-                                jsonSchemaNode = JsonLoader.fromReader(reader);
-                            } finally {
-                                if (reader != null) {
-                                    try {
-                                        reader.close();
-                                    } catch (IOException e) {
-                                        log.warn("Error while closing registry resource stream. " + e);
-                                    }
-                                }
-                            }
+					if (jsonSchemaObj == null) {
+						handleException("Can not find JSON Schema " + cachedJsonSchemaKey.toString(), synCtx);
+					}
 
-                        } else {
-                            handleException("Can not find valid JSON Schema content", synCtx);
-                        }
-                        cachedJsonSchema = jsonSchemaFactory.getJsonSchema(jsonSchemaNode);
-                        
+					try {
+						if (jsonSchemaObj instanceof String) {
+							jsonSchemaNode = JsonLoader.fromString((String) jsonSchemaObj);
+						} else if (jsonSchemaObj instanceof OMTextImpl) {
+							// if Schema provides from registry
+							InputStreamReader reader = null;
+							try {
+								reader = new InputStreamReader(((OMTextImpl) jsonSchemaObj).getInputStream());
+								jsonSchemaNode = JsonLoader.fromReader(reader);
+							} finally {
+								if (reader != null) {
+									try {
+										reader.close();
+									} catch (IOException e) {
+										log.warn("Error while closing registry resource stream. " + e);
+									}
+								}
+							}
+
+						} else {
+							handleException("Can not find valid JSON Schema content", synCtx);
+						}
+						cachedJsonSchema = jsonSchemaFactory.getJsonSchema(jsonSchemaNode);
+
 						/*
 						 * Initially adds the cached schema to the map if it's
 						 * not available
@@ -260,96 +261,100 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 							cachedJsonSchemaMap.remove(cachedJsonSchemaKey.toString());
 							cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
 						}
-						
-                    } catch (ProcessingException | IOException e) {
-                        handleException("Error while validating the JSON Schema", e, synCtx);
-                    }
 
-                }
-            }
+					} catch (ProcessingException | IOException e) {
+						handleException("Error while validating the JSON Schema", e, synCtx);
+					}
 
-            try {
-                if (cachedJsonSchema == null) {
-                    handleException("Failed to create JSON Schema Validator", synCtx);
-                }
-                String jsonPayload = null;
-                if (sourcePath != null) {
-                    //evaluating
-                    if (sourcePath instanceof SynapseJsonPath) {
-                        jsonPayload = sourcePath.stringValueOf(synCtx);
-                    } else {
-                        handleException("Could not find the JSONPath evaluator for Source", synCtx);
-                    }
-                } else {
-                    jsonPayload = JsonUtil.jsonPayloadToString(a2mc);
-                }
-                if(jsonPayload == null || jsonPayload.length() == 0) {
-                    //making empty json string
-                    jsonPayload = "{}";
-                }
-                report = cachedJsonSchema.validate(JsonLoader.fromString(jsonPayload));
-                if (report.isSuccess()) {
-                    return true;
-                } else {
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        String msg = "Validation of JSON failed against the given schema(s) " + cachedJsonSchemaKey.toString()
-                                     + " with error : " + report + " Executing 'on-fail' sequence";
-                        synLog.traceOrDebug(msg);
+				}
+			}
 
-                        // write a warning to the service log
-                        synCtx.getServiceLog().warn(msg);
+			try {
+				if (cachedJsonSchema == null) {
+					handleException("Failed to create JSON Schema Validator", synCtx);
+				}
+				String jsonPayload = null;
+				if (sourcePath != null) {
+					// evaluating
+					if (sourcePath instanceof SynapseJsonPath) {
+						jsonPayload = sourcePath.stringValueOf(synCtx);
+					} else {
+						handleException("Could not find the JSONPath evaluator for Source", synCtx);
+					}
+				} else {
+					jsonPayload = JsonUtil.jsonPayloadToString(a2mc);
+				}
+				if (jsonPayload == null || jsonPayload.length() == 0) {
+					// making empty json string
+					jsonPayload = "{}";
+				}
+				report = cachedJsonSchema.validate(JsonLoader.fromString(jsonPayload));
+				if (report.isSuccess()) {
+					return true;
+				} else {
+					if (synLog.isTraceOrDebugEnabled()) {
+						String msg = "Validation of JSON failed against the given schema(s) "
+								+ cachedJsonSchemaKey.toString() + " with error : " + report
+								+ " Executing 'on-fail' sequence";
+						synLog.traceOrDebug(msg);
 
-                        if (synLog.isTraceTraceEnabled()) {
-                            synLog.traceTrace("Failed message envelope : " + synCtx.getEnvelope());
-                        }
-                    }
+						// write a warning to the service log
+						synCtx.getServiceLog().warn(msg);
 
-                    // set error message and detail (stack trace) into the message context
-                    Iterator<ProcessingMessage> itrErrorMessages = report.iterator();
-                    //there is only one element in the report
-                    if (itrErrorMessages.hasNext()) {
-                        ProcessingMessage processingMessage = itrErrorMessages.next();
-                        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, processingMessage.getMessage());
-                        synCtx.setProperty(SynapseConstants.ERROR_DETAIL, processingMessage.asException()
-                                .getMessage());
-                        synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, processingMessage.asException());
-                    }
-                    // super.mediate() invokes the "on-fail" sequence of mediators
-                    ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
-                    boolean result = super.mediate(synCtx);
-                    if (result) {
-                        ContinuationStackManager.removeReliantContinuationState(synCtx);
-                    }
-                    return result;
-                }
-            } catch (ProcessingException | IOException e) {
-                String msg = "";
-                if (sourcePath != null) {
-                    msg = " for JSONPath " + sourcePath.getExpression();
-                }
-                handleException("Error while validating the JSON Schema" + msg, e, synCtx);
-            }
-        } else {
-            // Input source for the validation
-            Source validateSrc = getValidationSource(synCtx, synLog);
+						if (synLog.isTraceTraceEnabled()) {
+							synLog.traceTrace("Failed message envelope : " + synCtx.getEnvelope());
+						}
+					}
 
-            // flag to check if we need to initialize/re-initialize the schema
-            boolean reCreate = false;
+					// set error message and detail (stack trace) into the
+					// message context
+					Iterator<ProcessingMessage> itrErrorMessages = report.iterator();
+					// there is only one element in the report
+					if (itrErrorMessages.hasNext()) {
+						ProcessingMessage processingMessage = itrErrorMessages.next();
+						synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, processingMessage.getMessage());
+						synCtx.setProperty(SynapseConstants.ERROR_DETAIL, processingMessage.asException().getMessage());
+						synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, processingMessage.asException());
+					}
+					// super.mediate() invokes the "on-fail" sequence of
+					// mediators
+					ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
+					boolean result = super.mediate(synCtx);
+					if (result) {
+						ContinuationStackManager.removeReliantContinuationState(synCtx);
+					}
+					return result;
+				}
+			} catch (ProcessingException | IOException e) {
+				String msg = "";
+				if (sourcePath != null) {
+					msg = " for JSONPath " + sourcePath.getExpression();
+				}
+				handleException("Error while validating the JSON Schema" + msg, e, synCtx);
+			}
+		} else {
+			// Input source for the validation
+			Source validateSrc = getValidationSource(synCtx, synLog);
+
+			// flag to check if we need to initialize/re-initialize the schema
+			boolean reCreate = false;
 			StringBuilder combinedPropertyKey = new StringBuilder();
-            // if any of the schemas are not loaded, or have expired, load or re-load them
-            for (Value schemaKey : schemaKeys) {
-                // Derive actual key from message context
-                String propKey = schemaKey.evaluateValue(synCtx);
+			// if any of the schemas are not loaded, or have expired, load or
+			// re-load them
+			for (Value schemaKey : schemaKeys) {
+				// Derive actual key from message context
+				String propKey = schemaKey.evaluateValue(synCtx);
 				// Generating a property key
 				combinedPropertyKey.append(propKey);
-				
-                Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
-                if (dp != null && dp.isDynamic()) {
-                    if (!dp.isCached() || dp.isExpired()) {
-                        reCreate = true;       // request re-initialization of Validator
-                    }
-                }
-            }
+
+				Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
+				if (dp != null && dp.isDynamic()) {
+					if (!dp.isCached() || dp.isExpired()) {
+						reCreate = true; // request re-initialization of
+											// Validator
+					}
+				}
+			}
 			/*
 			 * Fixing ESBJAVA-4958, Implementation has done assuming that the
 			 * artifacts are added and removed via a .car file. When a schema is
@@ -367,34 +372,34 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 				reCreate = true;
 			}
 
-            // This is the reference to the DefaultHandler instance
-            ValidateMediatorErrorHandler errorHandler = new ValidateMediatorErrorHandler();
+			// This is the reference to the DefaultHandler instance
+			ValidateMediatorErrorHandler errorHandler = new ValidateMediatorErrorHandler();
 
-            // do not re-initialize schema unless required
-            synchronized (validatorLock) {
-                if (reCreate || cachedSchema == null) {
+			// do not re-initialize schema unless required
+			synchronized (validatorLock) {
+				if (reCreate || cachedSchema == null) {
 
-                    factory.setErrorHandler(errorHandler);
-                    StreamSource[] sources = new StreamSource[schemaKeys.size()];
+					factory.setErrorHandler(errorHandler);
+					StreamSource[] sources = new StreamSource[schemaKeys.size()];
 					StringBuilder cachedSchemaKey = new StringBuilder();
-                    int i = 0;
-                    for (Value schemaKey : schemaKeys) {
-                        // Derive actual key from message context
-                        String propName = schemaKey.evaluateValue(synCtx);
+					int i = 0;
+					for (Value schemaKey : schemaKeys) {
+						// Derive actual key from message context
+						String propName = schemaKey.evaluateValue(synCtx);
 						// Generating a cached schema key
 						cachedSchemaKey.append(propName);
-                        sources[i++] = SynapseConfigUtils.getStreamSource(synCtx.getEntry(propName)); 
-                    }
-                    // load the UserDefined SchemaURIResolver implementations
-                    try {
-                        SynapseConfiguration synCfg = synCtx.getConfiguration();
-                        if (synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER) != null) {
-                            setUserDefinedSchemaResourceResolver(synCtx);
-                        } else {
-                            factory.setResourceResolver(
-                                    new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap));
-                        }
-                        cachedSchema = factory.newSchema(sources);
+						sources[i++] = SynapseConfigUtils.getStreamSource(synCtx.getEntry(propName));
+					}
+					// load the UserDefined SchemaURIResolver implementations
+					try {
+						SynapseConfiguration synCfg = synCtx.getConfiguration();
+						if (synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER) != null) {
+							setUserDefinedSchemaResourceResolver(synCtx);
+						} else {
+							factory.setResourceResolver(new SchemaResourceResolver(synCtx.getConfiguration(),
+									resourceMap));
+						}
+						cachedSchema = factory.newSchema(sources);
 						/*
 						 * Initially adds the cached schema to the map if it's
 						 * not available
@@ -411,333 +416,350 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 							cachedSchemaMap.remove(cachedSchemaKey.toString());
 							cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
 						}
-                    } catch (SAXException e) {
-                        handleException("Error creating a new schema objects for " +
-                                        "schemas : " + schemaKeys.toString(), e, synCtx);
-                    } catch (RuntimeException e) {
-                        handleException("Error creating a new schema objects for " +
-                                        "schemas : " + schemaKeys.toString(), e, synCtx);
-                    }
+					} catch (SAXException e) {
+						handleException(
+								"Error creating a new schema objects for " + "schemas : " + schemaKeys.toString(), e,
+								synCtx);
+					} catch (RuntimeException e) {
+						handleException(
+								"Error creating a new schema objects for " + "schemas : " + schemaKeys.toString(), e,
+								synCtx);
+					}
 
-                    if (errorHandler.isValidationError()) {
-                        //reset the errorhandler state
-                        errorHandler.setValidationError(false);
-                        cachedSchema = null;
+					if (errorHandler.isValidationError()) {
+						// reset the errorhandler state
+						errorHandler.setValidationError(false);
+						cachedSchema = null;
 						// Removes the erroneous cached schema from the map
 						if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
 							cachedSchemaMap.remove(cachedSchemaKey.toString());
 						}
-                        handleException("Error creating a new schema objects for schemas : "
-                                        + schemaKeys.toString(), errorHandler.getSaxParseException(), synCtx);
-                    }
-                }
-            }
+						handleException("Error creating a new schema objects for schemas : " + schemaKeys.toString(),
+								errorHandler.getSaxParseException(), synCtx);
+					}
+				}
+			}
 
-            // no need to synchronize, schema instances are thread-safe
-            try {
-                Validator validator = cachedSchema.newValidator();
-                validator.setErrorHandler(errorHandler);
+			// no need to synchronize, schema instances are thread-safe
+			try {
+				Validator validator = cachedSchema.newValidator();
+				validator.setErrorHandler(errorHandler);
 
-                // perform actual validation
-                validator.validate(validateSrc);
+				// perform actual validation
+				validator.validate(validateSrc);
 
-                if (errorHandler.isValidationError()) {
+				if (errorHandler.isValidationError()) {
 
-                    if (synLog.isTraceOrDebugEnabled()) {
-                        String msg = "Validation of element returned by XPath : " + source +
-                                     " failed against the given schema(s) " + schemaKeys +
-                                     "with error : " + errorHandler.getSaxParseException().getMessage() +
-                                     " Executing 'on-fail' sequence";
-                        synLog.traceOrDebug(msg);
+					if (synLog.isTraceOrDebugEnabled()) {
+						String msg = "Validation of element returned by XPath : " + source
+								+ " failed against the given schema(s) " + schemaKeys + "with error : "
+								+ errorHandler.getSaxParseException().getMessage() + " Executing 'on-fail' sequence";
+						synLog.traceOrDebug(msg);
 
-                        // write a warning to the service log
-                        synCtx.getServiceLog().warn(msg);
+						// write a warning to the service log
+						synCtx.getServiceLog().warn(msg);
 
-                        if (synLog.isTraceTraceEnabled()) {
-                            synLog.traceTrace("Failed message envelope : " + synCtx.getEnvelope());
-                        }
-                    }
+						if (synLog.isTraceTraceEnabled()) {
+							synLog.traceTrace("Failed message envelope : " + synCtx.getEnvelope());
+						}
+					}
 
-                    // set error message and detail (stack trace) into the message context
-                    synCtx.setProperty(SynapseConstants.ERROR_MESSAGE,
-                                       errorHandler.getAllExceptions());
-                    synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION,
-                                       errorHandler.getSaxParseException());
-                    synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                                       FaultHandler.getStackTrace(errorHandler.getSaxParseException()));
+					// set error message and detail (stack trace) into the
+					// message context
+					synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorHandler.getAllExceptions());
+					synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, errorHandler.getSaxParseException());
+					synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+							FaultHandler.getStackTrace(errorHandler.getSaxParseException()));
 
-                    // super.mediate() invokes the "on-fail" sequence of mediators
-                    ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
-                    boolean result = super.mediate(synCtx);
-                    if (result) {
-                        ContinuationStackManager.removeReliantContinuationState(synCtx);
-                    }
-                    return result;
-                }
-            } catch (SAXException e) {
-                handleException("Error validating " + source + " element", e, synCtx);
-            } catch (IOException e) {
-                handleException("Error validating " + source + " element", e, synCtx);
-            }
-        }
-        if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Validation of element returned by the XPath expression : "
-                + source + " succeeded against the given schemas and the current message");
-            synLog.traceOrDebug("End : Validate mediator");
-        }
+					// super.mediate() invokes the "on-fail" sequence of
+					// mediators
+					ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
+					boolean result = super.mediate(synCtx);
+					if (result) {
+						ContinuationStackManager.removeReliantContinuationState(synCtx);
+					}
+					return result;
+				}
+			} catch (SAXException e) {
+				handleException("Error validating " + source + " element", e, synCtx);
+			} catch (IOException e) {
+				handleException("Error validating " + source + " element", e, synCtx);
+			}
+		}
+		if (synLog.isTraceOrDebugEnabled()) {
+			synLog.traceOrDebug("Validation of element returned by the XPath expression : " + source
+					+ " succeeded against the given schemas and the current message");
+			synLog.traceOrDebug("End : Validate mediator");
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    public boolean mediate(MessageContext synCtx,
-                           ContinuationState continuationState) {
+	public boolean mediate(MessageContext synCtx, ContinuationState continuationState) {
 
-        SynapseLog synLog = getLog(synCtx);
+		SynapseLog synLog = getLog(synCtx);
 
-        if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Validate mediator : Mediating from ContinuationState");
-        }
+		if (synLog.isTraceOrDebugEnabled()) {
+			synLog.traceOrDebug("Validate mediator : Mediating from ContinuationState");
+		}
 
-        boolean result;
-        if (!continuationState.hasChild()) {
-            result = super.mediate(synCtx, continuationState.getPosition() + 1);
-        } else {
-            FlowContinuableMediator mediator =
-                    (FlowContinuableMediator) getChild(continuationState.getPosition());
+		boolean result;
+		if (!continuationState.hasChild()) {
+			result = super.mediate(synCtx, continuationState.getPosition() + 1);
+		} else {
+			FlowContinuableMediator mediator = (FlowContinuableMediator) getChild(continuationState.getPosition());
 
-            result = mediator.mediate(synCtx, continuationState.getChildContState());
+			result = mediator.mediate(synCtx, continuationState.getChildContState());
 
-            if (RuntimeStatisticCollector.isStatisticsEnabled()) {
-                ((Mediator) mediator).reportCloseStatistics(synCtx, null);
-            }
-        }
-        return result;
-    }
+			if (RuntimeStatisticCollector.isStatisticsEnabled()) {
+				((Mediator) mediator).reportCloseStatistics(synCtx, null);
+			}
+		}
+		return result;
+	}
 
-    /**
-     * UserDefined schema resource resolver
+	/**
+	 * UserDefined schema resource resolver
+	 * 
+	 * @param synCtx
+	 *            message context
+	 */
+	private void setUserDefinedSchemaResourceResolver(MessageContext synCtx) {
+		SynapseConfiguration synCfg = synCtx.getConfiguration();
+		String schemaResolverName = synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER);
+		Class schemaClazz;
+		Object schemaClazzObject;
+		try {
+			schemaClazz = Class.forName(schemaResolverName);
+		} catch (ClassNotFoundException e) {
+			String msg = "System could not find the class defined for the specific properties"
+					+ "\n SchemaResolverImplementation:" + schemaResolverName;
+			handleException(msg, e, synCtx);
+			return;
+		}
 
-     * @param synCtx message context
-     */
-    private void setUserDefinedSchemaResourceResolver(MessageContext synCtx) {
-        SynapseConfiguration synCfg = synCtx.getConfiguration();
-        String schemaResolverName = synCfg.getProperty(SynapseConstants.SYNAPSE_SCHEMA_RESOLVER);
-        Class schemaClazz;
-        Object schemaClazzObject;
-        try {
-            schemaClazz = Class.forName(schemaResolverName);
-        } catch (ClassNotFoundException e) {
-            String msg =
-                    "System could not find the class defined for the specific properties" +
-                            "\n SchemaResolverImplementation:" + schemaResolverName;
-            handleException(msg, e, synCtx);
-            return;
-        }
+		try {
+			schemaClazzObject = schemaClazz.newInstance();
 
-        try {
-            schemaClazzObject = schemaClazz.newInstance();
+			UserDefinedXmlSchemaURIResolver userDefSchemaResResolver = (UserDefinedXmlSchemaURIResolver) schemaClazzObject;
+			userDefSchemaResResolver.init(resourceMap, synCfg, schemaKeys);
+			factory.setResourceResolver(userDefSchemaResResolver);
+		} catch (Exception e) {
+			String msg = "Could not create an instance from the class";
+			handleException(msg, e, synCtx);
+		}
+	}
 
-            UserDefinedXmlSchemaURIResolver userDefSchemaResResolver =
-                    (UserDefinedXmlSchemaURIResolver) schemaClazzObject;
-            userDefSchemaResResolver.init(resourceMap, synCfg, schemaKeys);
-            factory.setResourceResolver(userDefSchemaResResolver);
-        } catch (Exception e) {
-            String msg = "Could not create an instance from the class";
-            handleException(msg, e, synCtx);
-        }
-    }
-    
-    /**
-     * Get the validation Source for the message context
-     *
-     * @param synCtx the current message to validate
-     * @param synLog  SynapseLog instance
-     * @return the validation Source for the current message
-     */
-    private Source getValidationSource(MessageContext synCtx, SynapseLog synLog) {
+	/**
+	 * Get the validation Source for the message context
+	 *
+	 * @param synCtx
+	 *            the current message to validate
+	 * @param synLog
+	 *            SynapseLog instance
+	 * @return the validation Source for the current message
+	 */
+	private Source getValidationSource(MessageContext synCtx, SynapseLog synLog) {
 
-        try {
-            OMNode validateSource = source.selectOMNode(synCtx, synLog);
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Validation source : " + validateSource.toString());
-            }
+		try {
+			OMNode validateSource = source.selectOMNode(synCtx, synLog);
+			if (synLog.isTraceOrDebugEnabled()) {
+				synLog.traceOrDebug("Validation source : " + validateSource.toString());
+			}
 
-            return AXIOMUtils.asSource(validateSource);
+			return AXIOMUtils.asSource(validateSource);
 
-        } catch (Exception e) {
-            handleException("Error accessing source element : " + source, e, synCtx);
-        }
-        return null; // never reaches here
-    }
+		} catch (Exception e) {
+			handleException("Error accessing source element : " + source, e, synCtx);
+		}
+		return null; // never reaches here
+	}
 
-    /**
-     * This class handles validation errors to be used for the error reporting
-     */
-    private static class ValidateMediatorErrorHandler extends DefaultHandler {
+	/**
+	 * This class handles validation errors to be used for the error reporting
+	 */
+	private static class ValidateMediatorErrorHandler extends DefaultHandler {
 
-        private boolean validationError = false;
-        private SAXParseException saxParseException = null;
-        private List<SAXParseException> saxParseExceptionList = new ArrayList<SAXParseException>();
+		private boolean validationError = false;
+		private SAXParseException saxParseException = null;
+		private List<SAXParseException> saxParseExceptionList = new ArrayList<SAXParseException>();
 
-        public void error(SAXParseException exception) throws SAXException {
-            validationError = true;
-            saxParseException = exception; 
-            saxParseExceptionList.add(exception);
-        }
+		public void error(SAXParseException exception) throws SAXException {
+			validationError = true;
+			saxParseException = exception;
+			saxParseExceptionList.add(exception);
+		}
 
-        public void fatalError(SAXParseException exception) throws SAXException {
-            validationError = true;
-            saxParseException = exception;
-            saxParseExceptionList.add(exception);
-        }
+		public void fatalError(SAXParseException exception) throws SAXException {
+			validationError = true;
+			saxParseException = exception;
+			saxParseExceptionList.add(exception);
+		}
 
-        public void warning(SAXParseException exception) throws SAXException {
-        }
+		public void warning(SAXParseException exception) throws SAXException {
+		}
 
-        public boolean isValidationError() {
-            return validationError;
-        }
+		public boolean isValidationError() {
+			return validationError;
+		}
 
-        public SAXParseException getSaxParseException() {
-            return saxParseException;
-        }
+		public SAXParseException getSaxParseException() {
+			return saxParseException;
+		}
 
-        public List<SAXParseException> getSaxParseExceptionList() {
-            return saxParseExceptionList;
-        }
+		public List<SAXParseException> getSaxParseExceptionList() {
+			return saxParseExceptionList;
+		}
 
-        public String getAllExceptions() {
-            StringBuilder errors = new StringBuilder();
-            for (SAXParseException e : saxParseExceptionList) {
-                errors.append(e.getMessage());
-                errors.append("\n");
-            }
+		public String getAllExceptions() {
+			StringBuilder errors = new StringBuilder();
+			for (SAXParseException e : saxParseExceptionList) {
+				errors.append(e.getMessage());
+				errors.append("\n");
+			}
 
-            return errors.toString();
-        }
+			return errors.toString();
+		}
 
-        /**
-         * To set explicitly validation error condition
-         * @param validationError  is occur validation error?
-         */
-        public void setValidationError(boolean validationError) {
-            this.validationError = validationError;
-        }
-    }
+		/**
+		 * To set explicitly validation error condition
+		 * 
+		 * @param validationError
+		 *            is occur validation error?
+		 */
+		public void setValidationError(boolean validationError) {
+			this.validationError = validationError;
+		}
+	}
 
-    // setters and getters
+	// setters and getters
 
-    /**
-     * Get a mediator feature. The common use case is a feature for the
-     * underlying Xerces validator
-     *
-     * @param key property key / feature name
-     * @return property string value (usually true|false)
-     */
-    public Object getFeature(String key) {
-        for (MediatorProperty prop : explicityFeatures) {
-            if (key.equals(prop.getName())) {
-                return prop.getValue();
-            }
-        }
-        return null;
-    }
+	/**
+	 * Get a mediator feature. The common use case is a feature for the
+	 * underlying Xerces validator
+	 *
+	 * @param key
+	 *            property key / feature name
+	 * @return property string value (usually true|false)
+	 */
+	public Object getFeature(String key) {
+		for (MediatorProperty prop : explicityFeatures) {
+			if (key.equals(prop.getName())) {
+				return prop.getValue();
+			}
+		}
+		return null;
+	}
 
-    /**
-     * add a feature which need to set for the Schema Factory
-     *
-     * @param  featureName The name of the feature
-     * @param isFeatureEnable should this feature enable?(true|false)
-     * @see #getFeature(String)
-     * @throws SAXException on an unknown feature
-     */
-   public void addFeature(String featureName, boolean isFeatureEnable) throws SAXException {
-        MediatorProperty mp = new MediatorProperty();
-        mp.setName(featureName);
-        if (isFeatureEnable) {
-            mp.setValue("true");
-        } else {
-            mp.setValue("false");
-        }
-        explicityFeatures.add(mp);
-        factory.setFeature(featureName, isFeatureEnable);
-    }
+	/**
+	 * add a feature which need to set for the Schema Factory
+	 *
+	 * @param featureName
+	 *            The name of the feature
+	 * @param isFeatureEnable
+	 *            should this feature enable?(true|false)
+	 * @see #getFeature(String)
+	 * @throws SAXException
+	 *             on an unknown feature
+	 */
+	public void addFeature(String featureName, boolean isFeatureEnable) throws SAXException {
+		MediatorProperty mp = new MediatorProperty();
+		mp.setName(featureName);
+		if (isFeatureEnable) {
+			mp.setValue("true");
+		} else {
+			mp.setValue("false");
+		}
+		explicityFeatures.add(mp);
+		factory.setFeature(featureName, isFeatureEnable);
+	}
 
-    /**
-     * Set a list of local property names which refer to a list of schemas to be
-     * used for validation
-     *
-     * @param schemaKeys list of local property names
-     */
-    public void setSchemaKeys(List<Value> schemaKeys) {
-        this.schemaKeys = schemaKeys;
-    }
+	/**
+	 * Set a list of local property names which refer to a list of schemas to be
+	 * used for validation
+	 *
+	 * @param schemaKeys
+	 *            list of local property names
+	 */
+	public void setSchemaKeys(List<Value> schemaKeys) {
+		this.schemaKeys = schemaKeys;
+	}
 
-    /**
-     * Set the given XPath as the source XPath
-     * @param source an XPath to be set as the source
-     */
-    public void setSource(SynapsePath source) {
-        this.sourcePath = source;
-        if (source instanceof SynapseXPath) {
-            this.source.setXPath((SynapseXPath) source);
-        }
-    }
+	/**
+	 * Set the given XPath as the source XPath
+	 * 
+	 * @param source
+	 *            an XPath to be set as the source
+	 */
+	public void setSource(SynapsePath source) {
+		this.sourcePath = source;
+		if (source instanceof SynapseXPath) {
+			this.source.setXPath((SynapseXPath) source);
+		}
+	}
 
-    /**
-     * Set the External Schema ResourceMap that will required for schema validation
-     * @param resourceMap  the ResourceMap which contains external schema resources
-     */
-    public void setResourceMap(ResourceMap resourceMap) {
-        this.resourceMap = resourceMap;
-    }
+	/**
+	 * Set the External Schema ResourceMap that will required for schema
+	 * validation
+	 * 
+	 * @param resourceMap
+	 *            the ResourceMap which contains external schema resources
+	 */
+	public void setResourceMap(ResourceMap resourceMap) {
+		this.resourceMap = resourceMap;
+	}
 
-    /**
-     * Get the source XPath which yields the source element for validation
-     * @return the XPath which yields the source element for validation
-     */
-    public SynapsePath getSource() {
-        return this.sourcePath;
-    }
+	/**
+	 * Get the source XPath which yields the source element for validation
+	 * 
+	 * @return the XPath which yields the source element for validation
+	 */
+	public SynapsePath getSource() {
+		return this.sourcePath;
+	}
 
-    /**
-     * The keys for the schema resources used for validation
-     * @return schema registry keys
-     */
-    public List<Value> getSchemaKeys() {
-        return schemaKeys;
-    }
+	/**
+	 * The keys for the schema resources used for validation
+	 * 
+	 * @return schema registry keys
+	 */
+	public List<Value> getSchemaKeys() {
+		return schemaKeys;
+	}
 
-    /**
-     * Features for the actual Xerces validator
-     * @return explicityFeatures to be passed to the Xerces validator
-     */
-    public List<MediatorProperty> getFeatures() {
-        return explicityFeatures;
-    }
+	/**
+	 * Features for the actual Xerces validator
+	 * 
+	 * @return explicityFeatures to be passed to the Xerces validator
+	 */
+	public List<MediatorProperty> getFeatures() {
+		return explicityFeatures;
+	}
 
-    /**
-     *ResourceMap for the external schema resources to be used for the validation
-     * @return the ResourceMap with external schema resources
-     */
-    public ResourceMap getResourceMap() {
-        return resourceMap;
-    }
+	/**
+	 * ResourceMap for the external schema resources to be used for the
+	 * validation
+	 * 
+	 * @return the ResourceMap with external schema resources
+	 */
+	public ResourceMap getResourceMap() {
+		return resourceMap;
+	}
 
-    @Override
-    public boolean isContentAware() {
-        return true;
-    }
+	@Override
+	public boolean isContentAware() {
+		return true;
+	}
 
-    @Override
-    public void setComponentStatisticsId(ArtifactHolder holder) {
-        if (getAspectConfiguration() == null) {
-            configure(new AspectConfiguration(getMediatorName()));
-        }
-        String mediatorId =
-                StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(), ComponentType.MEDIATOR, holder);
-        getAspectConfiguration().setUniqueId(mediatorId);
-        StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
-    }
+	@Override
+	public void setComponentStatisticsId(ArtifactHolder holder) {
+		if (getAspectConfiguration() == null) {
+			configure(new AspectConfiguration(getMediatorName()));
+		}
+		String mediatorId = StatisticIdentityGenerator.getIdForFlowContinuableMediator(getMediatorName(),
+				ComponentType.MEDIATOR, holder);
+		getAspectConfiguration().setUniqueId(mediatorId);
+		StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+	}
 
 }
