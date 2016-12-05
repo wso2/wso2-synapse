@@ -26,6 +26,7 @@ import com.github.fge.jsonschema.core.report.ProcessingMessage;
 import com.github.fge.jsonschema.core.report.ProcessingReport;
 import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
+
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.synapse.ContinuationState;
@@ -67,11 +68,14 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Validate a message or an element against a schema
@@ -105,17 +109,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      * A Map containing features to be passed to the actual validator (Xerces)
      */
     private final List<MediatorProperty> explicityFeatures = new ArrayList<MediatorProperty>();
-
-    /**
-     * This is the actual schema instance used to create a new schema
-     * This is a thred-safe instance.
-     */
-    private Schema cachedSchema;
     
-    /**
-     * This is the cached schema key.
-     */
-    private String cachedPropKey;
 
     /**
      * Lock used to ensure thread-safe creation and use of the above Validator
@@ -133,10 +127,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
     private  final JsonSchemaFactory jsonSchemaFactory = JsonSchemaFactory.byDefault();
 
     /**
-     * JSON Schema instance to to validate the payload against the schema
-     */
-    private JsonSchema jsonSchema;
-    /**
      * to hold the json string of the schema
      */
     private JsonNode jsonSchemaNode;
@@ -144,9 +134,25 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      * to hold the Path Expression to be evaluated against the message to find the element to be validated.
      */
     private SynapsePath sourcePath;
+    
+    /**
+	 * Concurrent hash map for cached schemas.
+	 */
+	private Map<String, Schema> cachedSchemaMap = new ConcurrentHashMap<String, Schema>();
+
+	/**
+	 * Concurrent hash map for cached json schemas.
+	 */
+	private Map<String, JsonSchema> cachedJsonSchemaMap = new ConcurrentHashMap<String, JsonSchema>();
+
 
     @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
     public boolean mediate(MessageContext synCtx) {
+    	
+    	// This is the actual schema instance used to create a new schema
+        Schema cachedSchema = null;
+        JsonSchema cachedJsonSchema = null;
+
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
@@ -167,14 +173,14 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
             // flag to check if we need to initialize/re-initialize the schema
             boolean reCreate = false;
+            StringBuilder combinedPropertyKey = new StringBuilder();
+			StringBuilder cachedJsonSchemaKey = new StringBuilder();
             // if any of the schemas are not loaded, or have expired, load or re-load them
             for (Value schemaKey : schemaKeys) {
                 // Derive actual key from message context
                 String propKey = schemaKey.evaluateValue(synCtx);
-                if (!propKey.equals(cachedPropKey)) {
-                    reCreate = true;       // request re-initialization of Validator
-                }
-
+                //Generating a property key
+				combinedPropertyKey.append(propKey);
                 Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
                 if (dp != null && dp.isDynamic()) {
                     if (!dp.isCached() || dp.isExpired()) {
@@ -182,20 +188,37 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     }
                 }
             }
+            
+            /*
+			 * Fixing ESBJAVA-4958, Implementation has done assuming that the
+			 * artifacts are added and removed via a .car file. When a schema is
+			 * getting removed since the .car file is redeploying, the deleted
+			 * items will be removed from the map.
+			 */
+
+			/*
+			 * Check for the cached schema in the map and if it's available get
+			 * the cached schema else re initialize the schema
+			 */
+			if (cachedJsonSchemaMap.containsKey(combinedPropertyKey.toString())) {
+				cachedJsonSchema = cachedJsonSchemaMap.get(combinedPropertyKey.toString());
+			} else {
+				reCreate = true;
+			}
 
             // do not re-initialize schema unless required
             synchronized (validatorLock) {
-                if (reCreate || jsonSchema == null) {
+                if (reCreate || cachedJsonSchema == null) {
                     Object jsonSchemaObj = null;
                     for (Value schemaKey : schemaKeys) {
                         // Derive actual key from message context
                         String propName = schemaKey.evaluateValue(synCtx);
                         jsonSchemaObj = synCtx.getEntry(propName);
-                        cachedPropKey = propName;
+                        cachedJsonSchemaKey.append(propName);
                     }
-
+                    
                     if (jsonSchemaObj == null) {
-                        handleException("Can not find JSON Schema " + cachedPropKey, synCtx);
+                        handleException("Can not find JSON Schema " + cachedJsonSchemaKey.toString(), synCtx);
                     }
 
                     try {
@@ -220,7 +243,25 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         } else {
                             handleException("Can not find valid JSON Schema content", synCtx);
                         }
-                        jsonSchema = jsonSchemaFactory.getJsonSchema(jsonSchemaNode);
+                        cachedJsonSchema = jsonSchemaFactory.getJsonSchema(jsonSchemaNode);
+                        
+                        /*
+						 * Initially adds the cached schema to the map if it's not
+						 * available
+						 */
+						if (!cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
+							cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
+							/*
+							 * Removes the existing cached schema and adds the new
+							 * cached schema This is used when editing a registry
+							 * resource or when the cache expires
+							 */
+						} else if (cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
+
+							cachedJsonSchemaMap.remove(cachedJsonSchemaKey.toString());
+							cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
+						}
+						
                     } catch (ProcessingException | IOException e) {
                         handleException("Error while validating the JSON Schema", e, synCtx);
                     }
@@ -229,7 +270,7 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             }
 
             try {
-                if (jsonSchema == null) {
+                if (cachedJsonSchema == null) {
                     handleException("Failed to create JSON Schema Validator", synCtx);
                 }
                 String jsonPayload = null;
@@ -247,12 +288,12 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     //making empty json string
                     jsonPayload = "{}";
                 }
-                report = jsonSchema.validate(JsonLoader.fromString(jsonPayload));
+                report = cachedJsonSchema.validate(JsonLoader.fromString(jsonPayload));
                 if (report.isSuccess()) {
                     return true;
                 } else {
                     if (synLog.isTraceOrDebugEnabled()) {
-                        String msg = "Validation of JSON failed against the given schema(s) " + cachedPropKey
+                        String msg = "Validation of JSON failed against the given schema(s) " + cachedJsonSchemaKey.toString()
                                      + " with error : " + report + " Executing 'on-fail' sequence";
                         synLog.traceOrDebug(msg);
 
@@ -295,14 +336,14 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
             // flag to check if we need to initialize/re-initialize the schema
             boolean reCreate = false;
+            StringBuilder combinedPropertyKey = new StringBuilder();
             // if any of the schemas are not loaded, or have expired, load or re-load them
             for (Value schemaKey : schemaKeys) {
                 // Derive actual key from message context
                 String propKey = schemaKey.evaluateValue(synCtx);
-                if (!propKey.equals(cachedPropKey)) {
-                    reCreate = true;       // request re-initialization of Validator
-                }
-
+                // Generating a property key
+				combinedPropertyKey.append(propKey);
+				
                 Entry dp = synCtx.getConfiguration().getEntryDefinition(propKey);
                 if (dp != null && dp.isDynamic()) {
                     if (!dp.isCached() || dp.isExpired()) {
@@ -310,6 +351,22 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     }
                 }
             }
+            /*
+			 * Fixing ESBJAVA-4958, Implementation has done assuming that the
+			 * artifacts are added and removed via a .car file. When a schema is
+			 * getting removed since the .car file is redeploying, the deleted
+			 * items will be removed from the map.
+			 */
+
+			/*
+			 * Check for the cached schema in the map and if it's available get
+			 * the cached schema else re initialize the schema
+			 */
+			if (cachedSchemaMap.containsKey(combinedPropertyKey.toString())) {
+				cachedSchema = cachedSchemaMap.get(combinedPropertyKey.toString());
+			} else {
+				reCreate = true;
+			}
 
             // This is the reference to the DefaultHandler instance
             ValidateMediatorErrorHandler errorHandler = new ValidateMediatorErrorHandler();
@@ -320,12 +377,14 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
 
                     factory.setErrorHandler(errorHandler);
                     StreamSource[] sources = new StreamSource[schemaKeys.size()];
+                    StringBuilder cachedSchemaKey = new StringBuilder();
                     int i = 0;
                     for (Value schemaKey : schemaKeys) {
                         // Derive actual key from message context
                         String propName = schemaKey.evaluateValue(synCtx);
-                        sources[i++] = SynapseConfigUtils.getStreamSource(synCtx.getEntry(propName));
-                        cachedPropKey = propName;
+                        // Generating a cached schema key
+						cachedSchemaKey.append(propName);
+                        sources[i++] = SynapseConfigUtils.getStreamSource(synCtx.getEntry(propName)); 
                     }
                     // load the UserDefined SchemaURIResolver implementations
                     try {
@@ -337,6 +396,22 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                                     new SchemaResourceResolver(synCtx.getConfiguration(), resourceMap));
                         }
                         cachedSchema = factory.newSchema(sources);
+                        /*
+						 * Initially adds the cached schema to the map if it's
+						 * not available
+						 */
+						if (!cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
+							cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
+							/*
+							 * Removes the existing cached schema and adds the
+							 * new cached schema This is used when editing a
+							 * registry resource or when the cache expires
+							 */
+						} else if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
+
+							cachedSchemaMap.remove(cachedSchemaKey.toString());
+							cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
+						}
                     } catch (SAXException e) {
                         handleException("Error creating a new schema objects for " +
                                         "schemas : " + schemaKeys.toString(), e, synCtx);
@@ -349,7 +424,10 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         //reset the errorhandler state
                         errorHandler.setValidationError(false);
                         cachedSchema = null;
-                        cachedPropKey = null;
+                        // Removes the erroneous cached schema from the map
+						if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
+							cachedSchemaMap.remove(cachedSchemaKey.toString());
+						} 
                         handleException("Error creating a new schema objects for schemas : "
                                         + schemaKeys.toString(), errorHandler.getSaxParseException(), synCtx);
                     }
