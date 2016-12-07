@@ -263,7 +263,9 @@ public class TargetHandler implements NHttpClientEventHandler {
 
     public void responseReceived(NHttpClientConnection conn) {
         HttpContext context = conn.getContext();
-        context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+        if (isMessageSizeValidationEnabled) {
+            context.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+        }
         HttpResponse response = conn.getHttpResponse();
         ProtocolState connState;
         try {
@@ -455,6 +457,11 @@ public class TargetHandler implements NHttpClientEventHandler {
 				int responseRead = response.read(conn, decoder);
           if (isMessageSizeValidationEnabled) {
               HttpContext httpContext = conn.getContext();
+              //this is introduced as some transports which extends passthrough target handler which have overloaded
+              //method responseReceived()
+              if (httpContext.getAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM) == null) {
+                  httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+              }
               int messageSizeSum = (int) httpContext.getAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM);
 
               messageSizeSum += responseRead;

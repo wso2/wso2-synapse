@@ -121,7 +121,9 @@ public class SourceHandler implements NHttpServerEventHandler {
             HttpContext httpContext = conn.getContext();
             httpContext.setAttribute(PassThroughConstants.REQ_ARRIVAL_TIME, System.currentTimeMillis());
             httpContext.setAttribute(PassThroughConstants.REQ_FROM_CLIENT_READ_START_TIME, System.currentTimeMillis());
-            httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+            if (isMessageSizeValidationEnabled) {
+                httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+            }
 
             SourceRequest request = getSourceRequest(conn);
             if (request == null) {
@@ -171,6 +173,11 @@ public class SourceHandler implements NHttpServerEventHandler {
 
             if (isMessageSizeValidationEnabled) {
                 HttpContext httpContext = conn.getContext();
+                //this is introduced as some transports which extends passthrough source handler which have overloaded
+                //method requestReceived() Eg:- inbound http/https
+                if (httpContext.getAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM) == null) {
+                    httpContext.setAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+                }
                 int messageSizeSum = (int) httpContext.getAttribute(PassThroughConstants.MESSAGE_SIZE_VALIDATION_SUM);
 
                 messageSizeSum += readBytes;
