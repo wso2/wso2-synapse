@@ -255,6 +255,14 @@ public class Pipe {
             lock.lock();
             try {
                 producerCompleted = true;
+                //there can be edge cases where consumer already  waiting on read condition ( buffer is empty )
+                //in that case marking producer complete is not enough need to clear the read condition
+                //consumer is waiting on
+                readCondition.signalAll();
+                //let consumer complete = clear consumerIoControl.suspendOutput();
+                if (consumerIoControl != null) {
+                    consumerIoControl.requestOutput();
+                }
             } finally {
                 lock.unlock();
             }
