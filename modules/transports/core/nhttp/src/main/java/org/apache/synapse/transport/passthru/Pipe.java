@@ -242,6 +242,33 @@ public class Pipe {
         }
     }
 
+    /**
+     * Helper method to mark as producer completed. The normal behavior only set the boolean param to true only when
+     * decoder is completed. However in some cases it is needed to intentionally close chunk stream and mark as
+     * producer completed in order to prevent consumer further waiting on end of stream condition.
+     *
+     * @param decoder decoder instance to consume input
+     */
+    public void forceProducerComplete(final ContentDecoder decoder) {
+        //no need to mark EoS if decoder is completed
+        if (!decoder.isCompleted()) {
+            lock.lock();
+            try {
+                producerCompleted = true;
+                //there can be edge cases where consumer already  waiting on read condition ( buffer is empty )
+                //in that case marking producer complete is not enough need to clear the read condition
+                //consumer is waiting on
+                readCondition.signalAll();
+                //let consumer complete = clear consumerIoControl.suspendOutput();
+                if (consumerIoControl != null) {
+                    consumerIoControl.requestOutput();
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return name;
