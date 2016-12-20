@@ -50,7 +50,9 @@ import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -246,7 +248,7 @@ public class BlockingMsgSender {
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
                     synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
                                                 fault.getDetail() != null ?
-                                                fault.getDetail().getText() : "");
+                                                fault.getDetail().getText() : getStackTrace(fault));
                     org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
                     if (faultMC != null) {
                         Object statusCode = faultMC.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
@@ -256,6 +258,25 @@ public class BlockingMsgSender {
                     }
                 }
                 return synapseInMsgCtx;
+            } else {
+                if (ex instanceof AxisFault) {
+                    AxisFault fault = (AxisFault) ex;
+                    int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                    if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
+                            !"".equals(fault.getFaultCode().getLocalPart())) {
+                        try {
+                            errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
+                        } catch (NumberFormatException e) {
+                            errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                        }
+
+                    }
+                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
+                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
+                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+                            fault.getDetail() != null ?
+                                    fault.getDetail().getText() : getStackTrace(fault));
+                }
             }
             handleException("Error sending Message to url : " +
                             ((AbstractEndpoint) endpoint).getDefinition().getAddress(), ex);
@@ -396,5 +417,12 @@ public class BlockingMsgSender {
                 } while (iterator.hasNext());
             }
         }
+    }
+
+    private String getStackTrace(Throwable aThrowable) {
+        final Writer result = new StringWriter();
+        final PrintWriter printWriter = new PrintWriter(result);
+        aThrowable.printStackTrace(printWriter);
+        return result.toString();
     }
 }
