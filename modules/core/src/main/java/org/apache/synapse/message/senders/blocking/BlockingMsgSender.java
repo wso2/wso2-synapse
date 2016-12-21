@@ -42,7 +42,11 @@ import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.endpoints.*;
+import org.apache.synapse.endpoints.AbstractEndpoint;
+import org.apache.synapse.endpoints.Endpoint;
+import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.endpoints.IndirectEndpoint;
+import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
