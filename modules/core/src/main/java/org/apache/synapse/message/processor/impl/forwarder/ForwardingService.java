@@ -758,12 +758,14 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
     private boolean isNonRetryErrorCode(final String responseHttpSc) {
         boolean isNonRetryErrCode = false;
-        for (String nonretrySc : nonRetryStatusCodes) {
-            if (nonretrySc.trim().contains(responseHttpSc.trim())) {
-                isNonRetryErrCode = true;
-                break;
-            }
-        }
+		if(nonRetryStatusCodes != null) {
+			for (String nonretrySc : nonRetryStatusCodes) {
+				if (nonretrySc.trim().contains(responseHttpSc.trim())) {
+					isNonRetryErrCode = true;
+					break;
+				}
+			}
+		}
         return isNonRetryErrCode;
     }
 
