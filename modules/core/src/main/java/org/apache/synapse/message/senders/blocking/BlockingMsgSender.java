@@ -42,11 +42,7 @@ import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.endpoints.AbstractEndpoint;
-import org.apache.synapse.endpoints.Endpoint;
-import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.endpoints.IndirectEndpoint;
-import org.apache.synapse.endpoints.TemplateEndpoint;
+import org.apache.synapse.endpoints.*;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
@@ -232,23 +228,7 @@ public class BlockingMsgSender {
                 synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
                 if (ex instanceof AxisFault) {
                     AxisFault fault = (AxisFault) ex;
-
-                    int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
-                    if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
-                        !"".equals(fault.getFaultCode().getLocalPart())) {
-                        try {
-                            errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
-                        } catch (NumberFormatException e) {
-                            errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
-                        }
-
-                    }
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
-
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                                                fault.getDetail() != null ?
-                                                fault.getDetail().getText() : getStackTrace(fault));
+                    setErrorDetails(synapseInMsgCtx, fault);
                     org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
                     if (faultMC != null) {
                         Object statusCode = faultMC.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
@@ -261,21 +241,7 @@ public class BlockingMsgSender {
             } else {
                 if (ex instanceof AxisFault) {
                     AxisFault fault = (AxisFault) ex;
-                    int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
-                    if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
-                            !"".equals(fault.getFaultCode().getLocalPart())) {
-                        try {
-                            errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
-                        } catch (NumberFormatException e) {
-                            errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
-                        }
-
-                    }
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
-                    synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
-                            fault.getDetail() != null ?
-                                    fault.getDetail().getText() : getStackTrace(fault));
+                    setErrorDetails(synapseInMsgCtx, fault);
                 }
             }
             handleException("Error sending Message to url : " +
@@ -417,6 +383,23 @@ public class BlockingMsgSender {
                 } while (iterator.hasNext());
             }
         }
+    }
+
+    private void setErrorDetails(MessageContext synapseInMsgCtx, AxisFault fault) {
+        int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+
+        if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
+                !"".equals(fault.getFaultCode().getLocalPart())) {
+            try {
+                errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
+            } catch (NumberFormatException e) {
+                errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+            }
+        }
+        synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
+        synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
+        synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+                fault.getDetail() != null ? fault.getDetail().getText() : getStackTrace(fault));
     }
 
     private String getStackTrace(Throwable aThrowable) {
