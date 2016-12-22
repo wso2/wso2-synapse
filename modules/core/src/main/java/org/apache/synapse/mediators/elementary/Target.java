@@ -167,7 +167,7 @@ public class Target {
 	                //just ignoring the phaser error
                 }
                 if(documentElement ==null){
-                    //read property value if property is an OMElement
+                    //read property value if property is an OMElement.
                     try {
                         documentElement = (OMElement) propertyObj;
                     }catch (Exception e1){
@@ -178,7 +178,7 @@ public class Target {
 					//logic should valid only when adding child elements, and other cases
 					//such as sibling and replacement using the else condition
 					insertElement(sourceNodeList, documentElement, synLog);
-					synContext.setProperty(property, documentElement.toString());
+					synContext.setProperty(property, documentElement);
 				}else{
 					synContext.setProperty(property, sourceNodeList);  
 				}
