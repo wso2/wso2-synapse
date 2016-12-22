@@ -311,6 +311,13 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
         }
     }
 
+    public void addPreserveHttpHeader(String headerName) {
+        targetConfiguration.getPreserveHttpHeaders().add(headerName.toUpperCase());
+    }
+
+    public void removePreserveHttpHeader(String headerName) {
+        targetConfiguration.getPreserveHttpHeaders().remove(headerName.toUpperCase());
+    }
 
 	private void sendRequestContent(final MessageContext msgContext) throws AxisFault {
 		

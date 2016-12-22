@@ -129,6 +129,10 @@ public class TargetConfiguration extends BaseConfiguration {
         return preserveHttpHeaders.contains(headerName.toUpperCase());
     }
 
+    public List<String> getPreserveHttpHeaders() {
+        return preserveHttpHeaders;
+    }
+
     /**
      * Populate preserve http headers from comma separate string
      *

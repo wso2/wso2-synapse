@@ -114,6 +114,19 @@ public final class NHttpConfiguration {
         return getProperty(S_T_CORE, WORKERS_CORE_THREADS);
     }
 
+    public void addPreserveHeader(String header) {
+        if (preserveHeaders == null) {
+            preserveHeaders = new ArrayList<>();
+        }
+        preserveHeaders.add(header);
+    }
+
+    public void removePreserveHeader(String header) {
+        if (preserveHeaders != null) {
+            preserveHeaders.remove(header);
+        }
+    }
+
     public int getServerMaxThreads() {
         return getProperty(S_T_MAX, WORKERS_MAX_THREADS);
     }
