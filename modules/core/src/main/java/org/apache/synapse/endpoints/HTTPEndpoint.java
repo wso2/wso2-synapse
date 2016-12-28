@@ -136,10 +136,10 @@ public class HTTPEndpoint extends AbstractEndpoint {
                     if (objProperty != null) {
                         if (objProperty instanceof String) {
                             variables.put(propertyKey.toString(),
-                                          decodeString((String) synCtx.getProperty(propertyKey.toString())));
+                                          (String) synCtx.getProperty(propertyKey.toString()));
                         } else {
                             variables.put(propertyKey.toString(),
-                                          decodeString(String.valueOf(synCtx.getProperty(propertyKey.toString()))));
+                                          String.valueOf(synCtx.getProperty(propertyKey.toString())));
                         }
                     }
                 }
@@ -152,7 +152,7 @@ public class HTTPEndpoint extends AbstractEndpoint {
                 if(property.getName().toString() != null
                         && (property.getName().toString().startsWith(RESTConstants.REST_URI_VARIABLE_PREFIX) ||
                         property.getName().toString().startsWith(RESTConstants.REST_QUERY_PARAM_PREFIX) )) {
-                    variables.put(property.getName(), decodeString((String) property.getValue()));
+                    variables.put(property.getName(), (String) property.getValue());
                 }
             }
 
@@ -172,6 +172,9 @@ public class HTTPEndpoint extends AbstractEndpoint {
                     URI uri = new URI(url.getProtocol(), url.getUserInfo(), url.getHost(), url.getPort(),
                             url.getPath(), url.getQuery(), url.getRef());// this to avoid url.toURI which causes exceptions
                     evaluatedUri = uri.toURL().toString();
+                    evaluatedUri = decodeString(evaluatedUri);
+                    evaluatedUri = evaluatedUri.replace(" ", "%20");
+
                     if (log.isDebugEnabled()) {
                         log.debug("Expanded URL : " + evaluatedUri);
                     }
