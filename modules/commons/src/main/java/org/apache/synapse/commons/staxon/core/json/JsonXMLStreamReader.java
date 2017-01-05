@@ -48,6 +48,8 @@ public class JsonXMLStreamReader extends AbstractXMLStreamReader<JsonXMLStreamRe
     private final boolean multiplePI;
     private final char namespaceSeparator;
 
+    private final boolean xmlNilReadWriteEnabled;
+
     private boolean documentArray = false;
 
     /**
@@ -63,6 +65,26 @@ public class JsonXMLStreamReader extends AbstractXMLStreamReader<JsonXMLStreamRe
         this.source = source;
         this.multiplePI = multiplePI;
         this.namespaceSeparator = namespaceSeparator;
+        xmlNilReadWriteEnabled = false;
+        initialize();
+    }
+
+    /**
+     * Create reader instance.
+     *
+     * @param source             stream source
+     * @param multiplePI         whether to produce <code>&lt;xml-multiple?&gt;</code> PIs to signal array start
+     * @param namespaceSeparator namespace prefix separator
+     * @param xmlNilReadWriteEnabled       Supports reading and writing of XML Nil elements as defined by http://www.w3.org/TR/xmlschema-1/#xsi_nil when the XML/JSON inputs contains nil/null values.
+     * @throws XMLStreamException
+     */
+    public JsonXMLStreamReader(JsonStreamSource source, boolean multiplePI, char namespaceSeparator,
+                               boolean xmlNilReadWriteEnabled) throws XMLStreamException {
+        super(new ScopeInfo(), source);
+        this.source = source;
+        this.multiplePI = multiplePI;
+        this.namespaceSeparator = namespaceSeparator;
+        this.xmlNilReadWriteEnabled = xmlNilReadWriteEnabled;
         initialize();
     }
 
@@ -182,6 +204,9 @@ public class JsonXMLStreamReader extends AbstractXMLStreamReader<JsonXMLStreamRe
                     Value value = source.value();
                     if (value != JsonStreamSource.NULL) {
                         readData(value, XMLStreamConstants.CHARACTERS);
+                    }
+                    if (value == JsonStreamSource.NULL && xmlNilReadWriteEnabled) {
+                        readAttrNsDecl("nil", "true");
                     }
                     readEndElementTag();
                 }

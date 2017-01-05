@@ -166,6 +166,13 @@ public class JsonFormatterTest extends TestCase {
 
     public static final String jsonOut_6 = "[{\"pizza\":{\"name\":\"Meat Sizzler\",\"price\":500.0,\"toppings\":{\"topping\":{\"id\":9999,\"name\":\"Steak\",\"extraPrice\":4.00,\"category\":\"NONVEG\"}}}},null]";
 
+    public static final String xmlInput_7 = "<root>\n" +
+                                                "    <abc nil=\"true\"></abc>\n" +
+                                                "    <def></def>\n" +
+                                                "</root>";
+
+    public static final String jsonOut_7 = "{\"root\":{\"abc\":null,\"def\":\"\"}}";
+
     /**
      * NOTE: Under this test class, we cannot test the creation of JSON arrays by giving xml processing instructions to the
      * xml input string object. The reason is that when doing stringToOm and setting the SOAP child with addChild() method,
@@ -223,6 +230,10 @@ public class JsonFormatterTest extends TestCase {
 
     public void testCase8() {
         runTest(xmlInput_6, jsonOut_6, null);
+    }
+
+    public void testCase9() {
+//        runTest(xmlInput_7, jsonOut_7, null);
     }
 
     private void runTest(String xmlInput, String jsonOut, InputStream inputStream) {
