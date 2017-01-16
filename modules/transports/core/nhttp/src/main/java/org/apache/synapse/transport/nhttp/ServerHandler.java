@@ -87,6 +87,18 @@ public class ServerHandler implements NHttpServerEventHandler {
     private final WorkerPool workerPool;
     /** the metrics collector */
     private final NhttpMetricsCollector metrics;
+
+    /**
+     * Configuration which decides if message size validation is enabled/disabled. If enabled, messages of a size
+     * greater than 'validMaxMessageSize' will be dropped.
+     */
+    private static boolean isMessageSizeValidationEnabled = false;
+
+    /**
+     * The maximum messsage size that can be handled. This will only be valid, if 'isMessageSizeValidationEnabled' is
+     * enabled.
+     */
+    private static int validMaxMessageSize = Integer.MAX_VALUE;
     /**
      * This parset is used by the priority executor to parse a given HTTP message and
      * determine the priority of the message
@@ -156,6 +168,18 @@ public class ServerHandler implements NHttpServerEventHandler {
             this.executor = listenerContext.getExecutor();
             this.parser = listenerContext.getParser();
         }
+
+        //load properties related to message size validation
+        isMessageSizeValidationEnabled = cfg.getMessageSizeValidationEnabled();
+        if (isMessageSizeValidationEnabled) {
+            try {
+                validMaxMessageSize = cfg.getMaxMessageSize();
+            } catch (NumberFormatException e) {
+                log.warn("Invalid max message size configured for property \"valid.max.message.size.in.bytes\", "
+                         + "setting the Integer MAX_VALUE as the valid maximum message size", e);
+                validMaxMessageSize = Integer.MAX_VALUE;
+            }
+        }
     }
 
     /**
@@ -171,6 +195,10 @@ public class ServerHandler implements NHttpServerEventHandler {
         HttpRequest request = conn.getHttpRequest();
         context.setAttribute(ExecutionContext.HTTP_REQUEST, request);
         context.setAttribute(NhttpConstants.MESSAGE_IN_FLIGHT, "true");
+
+        if (isMessageSizeValidationEnabled) {
+            context.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+        }
 
         // prepare to collect debug information
         conn.getContext().setAttribute(
@@ -268,6 +296,26 @@ public class ServerHandler implements NHttpServerEventHandler {
 
         try {
             int bytesRead = inBuf.consumeContent(decoder);
+
+            if (isMessageSizeValidationEnabled) {
+                HttpContext httpContext = conn.getContext();
+                if (httpContext.getAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM) == null) {
+                    httpContext.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+                }
+                int messageSizeSum = (int) httpContext.getAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM);
+
+                messageSizeSum += bytesRead;
+
+                if (messageSizeSum > validMaxMessageSize) {
+                    log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
+                             + messageSizeSum + " bytes to prevent OOM.");
+                    dropServerConnection(conn);
+                    conn.getContext().setAttribute(NhttpConstants.CONNECTION_DROPPED, true);
+                    //stopped http chunk stream from here and mark producer complete
+                }
+                httpContext.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, messageSizeSum);
+            }
+
             if (metrics != null && bytesRead > 0) {
                 metrics.incrementBytesReceived(bytesRead);
             }
@@ -760,5 +808,36 @@ public class ServerHandler implements NHttpServerEventHandler {
                && status != HttpStatus.SC_NO_CONTENT
                && status != HttpStatus.SC_NOT_MODIFIED
                && status != HttpStatus.SC_RESET_CONTENT;
+    }
+
+    /**
+     * Closes the server side HTTP connection.
+     *
+     * @param conn HTTP server connection reference
+     */
+    private void dropServerConnection(NHttpServerConnection conn) {
+        String errorMessage = "Payload Too Large";
+        try {
+            HttpContext httpContext = conn.getContext();
+            HttpResponse response = responseFactory.newHttpResponse(HttpVersion.HTTP_1_1,
+                    HttpStatus.SC_REQUEST_TOO_LONG, httpContext);
+            byte[] msg = EncodingUtils.getAsciiBytes(errorMessage);
+            ByteArrayEntity entity = new ByteArrayEntity(msg);
+            entity.setContentType("text/plain; charset=US-ASCII");
+            response.setEntity(entity);
+
+            response.addHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
+
+            httpContext.setAttribute(ExecutionContext.HTTP_CONNECTION, conn);
+            httpContext.setAttribute(ExecutionContext.HTTP_REQUEST, null);
+            httpContext.setAttribute(ExecutionContext.HTTP_RESPONSE, response);
+
+            httpProcessor.process(response, httpContext);
+
+            conn.close();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            shutdownConnection(conn, true, errorMessage);
+        }
     }
 }

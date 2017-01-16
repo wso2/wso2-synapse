@@ -78,6 +78,10 @@ public final class NHttpConfiguration {
     public static final String TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME = "transport.listener.shutdown.wait.sec";
     public static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
 
+    //Properties to limit the message size that can be handled
+    public static final String MESSAGE_SIZE_VALIDATION = "message.size.validation.enabled";
+    public static final String VALID_MAX_MESSAGE_SIZE = "valid.max.message.size.in.bytes";
+
     private static final Log log = LogFactory.getLog(NHttpConfiguration.class);
     private static NHttpConfiguration _instance = new NHttpConfiguration();
     private Properties props;
@@ -225,6 +229,14 @@ public final class NHttpConfiguration {
 
     public int getListenerShutdownWaitTime() {
         return getProperty(TRANSPORT_LISTENER_SHUTDOWN_WAIT_TIME, DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME)*1000;
+    }
+
+    public boolean getMessageSizeValidationEnabled(){
+        return getBooleanValue(MESSAGE_SIZE_VALIDATION, false);
+    }
+
+    public int getMaxMessageSize(){
+        return getProperty(VALID_MAX_MESSAGE_SIZE, Integer.MAX_VALUE);
     }
 
     /**

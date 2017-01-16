@@ -63,6 +63,7 @@ import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.NHttpClientConnection;
+import org.apache.http.nio.NHttpServerConnection;
 import org.apache.http.nio.reactor.IOEventDispatch;
 import org.apache.http.nio.reactor.IOReactorExceptionHandler;
 import org.apache.http.nio.reactor.SessionRequest;
@@ -441,6 +442,17 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         Map transportHeaders = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
 
         ServerWorker worker = (ServerWorker) msgContext.getProperty(Constants.OUT_TRANSPORT_INFO);
+        NHttpServerConnection conn = worker.getConn();
+
+        if (null == conn.getHttpRequest()) {
+            // We'll get here if the connection is already closed
+            // this is a special case we dropped the connection when message size exceeds the user defined threshold
+            if (conn.getContext().getAttribute(NhttpConstants.CONNECTION_DROPPED) != null &&
+                (Boolean) conn.getContext().getAttribute(NhttpConstants.CONNECTION_DROPPED)) {
+                //already submitted response for this case, hence return
+                return;
+            }
+        }
         HttpResponse response = worker.getResponse();
 
         OMOutputFormat format = NhttpUtil.getOMOutputFormat(msgContext);
