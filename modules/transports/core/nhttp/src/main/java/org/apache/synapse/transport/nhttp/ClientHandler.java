@@ -158,6 +158,18 @@ public class ClientHandler implements NHttpClientEventHandler {
     private static final String CONTENT_TYPE = "Content-Type";
 
     /**
+     * Configuration which decides if message size validation is enabled/disabled. If enabled, messages of a size
+     * greater than 'validMaxMessageSize' will be dropped.
+     */
+    private static boolean isMessageSizeValidationEnabled = false;
+
+    /**
+     * The maximum messsage size that can be handled. This will only be valid, if 'isMessageSizeValidationEnabled' is
+     * enabled.
+     */
+    private static int validMaxMessageSize = Integer.MAX_VALUE;
+
+    /**
      * Create an instance of this client connection handler using the Axis2 configuration
      * context and Http protocol parameters given
      * 
@@ -203,6 +215,18 @@ public class ClientHandler implements NHttpClientEventHandler {
 
         // set the latest openConnections map to MBean data during connection creation
         metrics.setConnectionsPerHosts(openConnections);
+
+        //load properties related to message size validation
+        isMessageSizeValidationEnabled = cfg.getMessageSizeValidationEnabled();
+        if (isMessageSizeValidationEnabled) {
+            try {
+                validMaxMessageSize = cfg.getMaxMessageSize();
+            } catch (NumberFormatException e) {
+                log.warn("Invalid max message size configured for property \"valid.max.message.size.in.bytes\", "
+                         + "setting the Integer MAX_VALUE as the valid maximum message size", e);
+                validMaxMessageSize = Integer.MAX_VALUE;
+            }
+        }
     }
 
     public void requestReady(final NHttpClientConnection conn) throws IOException, HttpException{
@@ -630,6 +654,24 @@ public class ClientHandler implements NHttpClientEventHandler {
 
         try {
             int bytesRead = inBuf.consumeContent(decoder);
+
+            if (isMessageSizeValidationEnabled) {
+                HttpContext httpContext = conn.getContext();
+                if (httpContext.getAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM) == null) {
+                    httpContext.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+                }
+                int messageSizeSum = (int) httpContext.getAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM);
+
+                messageSizeSum += bytesRead;
+                if (messageSizeSum > validMaxMessageSize) {
+                    log.warn("Payload exceeds valid payload size range, hence discontinuing chunk stream at "
+                             + messageSizeSum + " bytes to prevent OOM.");
+                    dropClientConnection(conn);
+                    conn.getContext().setAttribute(NhttpConstants.CONNECTION_DROPPED, true);
+                }
+                httpContext.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, messageSizeSum);
+            }
+
             if (metrics != null && bytesRead > 0) {
                 if (metrics.getLevel() == MetricsCollector.LEVEL_FULL) {
                     metrics.incrementBytesReceived(getMessageContext(conn), bytesRead);
@@ -764,6 +806,11 @@ public class ClientHandler implements NHttpClientEventHandler {
                                               System.currentTimeMillis(), conn);
 
         HttpContext context = conn.getContext();
+
+        //set the current message size to zero
+        if (isMessageSizeValidationEnabled) {
+            context.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, 0);
+        }
         HttpResponse response = conn.getHttpResponse();
 
         ProxyTunnelHandler tunnelHandler = (ProxyTunnelHandler) context.getAttribute(TUNNEL_HANDLER);
@@ -1411,6 +1458,21 @@ public class ClientHandler implements NHttpClientEventHandler {
         }
 
         return axis2Request;
+    }
+
+    /**
+     * Closes the client side HTTP connection.
+     *
+     * @param conn HTTP server connection reference
+     */
+    private void dropClientConnection(NHttpClientConnection conn) {
+        String errorMessage = "Payload Too Large";
+        try {
+            conn.close();
+        } catch (Exception ex) {
+            log.error(ex.getMessage(), ex);
+            shutdownConnection(conn, true, errorMessage);
+        }
     }
 
 }

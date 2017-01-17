@@ -247,4 +247,14 @@ public class NhttpConstants {
      * axis.xml config parameter that is used to specify the Weak Ciphers that need to be enabled
      */
     public static final String PREFERRED_CIPHERS = "PreferredCiphers";
+
+    /**
+     * The largest request/response size the nhttp transport will be handling. Same as the passthru constant.
+     */
+    public static final String MESSAGE_SIZE_VALIDATION_SUM = "MESSAGE_SIZE_VALIDATION_SUM";
+
+    /**
+     * Constant string to define the if the server/client connection is dropped.
+     */
+    public static final String CONNECTION_DROPPED = "CONNECTION_DROPPED";
 }
