@@ -40,6 +40,7 @@ import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
 
+import java.nio.file.Paths;
 import java.util.Set;
 
 /**
@@ -64,7 +65,18 @@ import java.util.Set;
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public final static String DEFAULT_CLIENT_REPO = "./repository/deployment/client";
-    public final static String DEFAULT_AXIS2_XML = "./repository/conf/axis2/axis2_blocking_client.xml";
+    public final static String DEFAULT_AXIS2_XML;
+
+    static {
+        String confPath = System.getProperty("conf.location");
+        if (confPath == null) {
+            confPath = System.getProperty("carbon.config.dir.path");
+            if (confPath == null) {
+                confPath = Paths.get("repository", "conf").toString();
+            }
+        }
+        DEFAULT_AXIS2_XML = Paths.get(confPath, "axis2", "axis2_blocking_client.xml").toString();
+    }
 
     private BlockingMsgSender blockingMsgSender = null;
 
