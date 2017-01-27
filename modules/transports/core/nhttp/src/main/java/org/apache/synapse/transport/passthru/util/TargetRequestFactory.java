@@ -200,7 +200,12 @@ public class TargetRequestFactory {
 
     private static String getContentType(MessageContext msgCtx, boolean isContentTypePreservedHeader) throws AxisFault {
 
-        if (isContentTypePreservedHeader) {
+        Object trpHeaders = msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+
+        //If incoming transport isn't HTTP, transport headers can be null. Therefore null check is required
+        // and if headers not null check whether request comes with Content-Type header before preserving Content-Type
+        if (trpHeaders != null && trpHeaders instanceof Map && ((Map) trpHeaders).
+                get(HTTPConstants.HEADER_CONTENT_TYPE) != null && isContentTypePreservedHeader) {
             if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
                 return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
             } else if (msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE) != null) {
