@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -88,6 +89,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     private SynapseEnvironment synapseEnv;
 
+    //State whether actual endpoint(when null) is wrapped by a default endpoint
+    private boolean isWrappingEndpointCreated;
+
     /**
      * This will call the send method on the messages with implicit message parameters
      * or else if there is an endpoint, with that endpoint parameters
@@ -130,6 +134,15 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         MessageContext resultMsgCtx = null;
+        // fixing ESBJAVA-4976, if no endpoint is defined in call mediator, this is required to avoid NPEs in
+        // blocking sender.
+        if (endpoint == null) {
+            endpoint = new DefaultEndpoint();
+            EndpointDefinition endpointDefinition = new EndpointDefinition();
+            ((DefaultEndpoint) endpoint).setDefinition(endpointDefinition);
+            isWrappingEndpointCreated = true;
+        }
+
         try {
             if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                 blockingMsgSender.send(endpoint, synInCtx);
@@ -246,6 +259,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     }
 
     public Endpoint getEndpoint() {
+        if (isWrappingEndpointCreated) {
+            return null;
+        }
         return endpoint;
     }
 
