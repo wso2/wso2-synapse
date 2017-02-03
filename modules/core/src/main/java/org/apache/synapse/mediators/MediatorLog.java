@@ -53,7 +53,14 @@ public class MediatorLog implements SynapseLog {
     }
 
     public boolean isDebugEnabled() {
-        return defaultLog.isDebugEnabled();
+    	// Returns true if either default or service log has debug enabled
+    	if (defaultLog.isDebugEnabled()) {
+    		return true;
+    	}
+    	if (synCtx.getServiceLog() != null && synCtx.getServiceLog().isDebugEnabled()) {
+    		return true;
+    	}
+        return false;
     }    
 
     public boolean isTraceEnabled() {
@@ -114,8 +121,10 @@ public class MediatorLog implements SynapseLog {
      * Log a message at level DEBUG to all available/enabled logs.
      */
     public void auditDebug(Object msg) {
-        defaultLog.debug(msg);
-        if (synCtx.getServiceLog() != null) {
+    	if (defaultLog.isDebugEnabled()) { 
+    		defaultLog.debug(msg);
+    	}
+        if (synCtx.getServiceLog() != null && synCtx.getServiceLog().isDebugEnabled()) {
             synCtx.getServiceLog().debug(msg);
         }
         if (traceOn) {
