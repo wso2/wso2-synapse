@@ -24,7 +24,6 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
 import org.apache.axis2.builder.BuilderUtil;
-import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.WSDL2Constants;
@@ -225,6 +224,7 @@ public class ClientWorker implements Runnable {
                             Constants.Configuration.CHARACTER_SET_ENCODING,
                             contentType.indexOf("charset") > 0 ?
                             charSetEnc : MessageContext.DEFAULT_CHAR_SET_ENCODING);
+                    responseMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
                 }
                 
                 responseMsgCtx.setServerSide(false);
@@ -237,7 +237,6 @@ public class ClientWorker implements Runnable {
                 }
 
                 responseMsgCtx.setServerSide(true);
-	         responseMsgCtx.removeProperty(PassThroughConstants.NO_ENTITY_BODY);
             } else {
                 // there is no response entity-body
                 responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
@@ -301,9 +300,11 @@ public class ClientWorker implements Runnable {
 
         // When the response from backend does not have the body(Content-Length is 0 )
         // and Content-Type is not set; ESB should not do any modification to the response and pass-through as it is.
-        if (headers.get(HTTP.CONTENT_LEN) == null || "0".equals(headers.get(HTTP.CONTENT_LEN))) {
-             return null;
-         }
+        if ((headers.get(HTTP.CONTENT_LEN) == null && headers.get(HTTP.TRANSFER_ENCODING) == null)
+                || "0".equals(headers.get(HTTP.CONTENT_LEN))) {
+            responseMsgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+            return null;
+        }
 
         // Unable to determine the content type - Return default value
         return PassThroughConstants.DEFAULT_CONTENT_TYPE;

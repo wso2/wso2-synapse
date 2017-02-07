@@ -31,6 +31,7 @@ import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -40,6 +41,7 @@ import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.SynapseException;
 
+import java.nio.file.Paths;
 import java.util.Set;
 
 /**
@@ -64,7 +66,18 @@ import java.util.Set;
 public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public final static String DEFAULT_CLIENT_REPO = "./repository/deployment/client";
-    public final static String DEFAULT_AXIS2_XML = "./repository/conf/axis2/axis2_blocking_client.xml";
+    public final static String DEFAULT_AXIS2_XML;
+
+    static {
+        String confPath = System.getProperty("conf.location");
+        if (confPath == null) {
+            confPath = System.getProperty("carbon.config.dir.path");
+            if (confPath == null) {
+                confPath = Paths.get("repository", "conf").toString();
+            }
+        }
+        DEFAULT_AXIS2_XML = Paths.get(confPath, "axis2", "axis2_blocking_client.xml").toString();
+    }
 
     private BlockingMsgSender blockingMsgSender = null;
 
@@ -75,6 +88,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     private boolean blocking = false;
 
     private SynapseEnvironment synapseEnv;
+
+    //State whether actual endpoint(when null) is wrapped by a default endpoint
+    private boolean isWrappingEndpointCreated;
 
     /**
      * This will call the send method on the messages with implicit message parameters
@@ -118,6 +134,15 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         MessageContext resultMsgCtx = null;
+        // fixing ESBJAVA-4976, if no endpoint is defined in call mediator, this is required to avoid NPEs in
+        // blocking sender.
+        if (endpoint == null) {
+            endpoint = new DefaultEndpoint();
+            EndpointDefinition endpointDefinition = new EndpointDefinition();
+            ((DefaultEndpoint) endpoint).setDefinition(endpointDefinition);
+            isWrappingEndpointCreated = true;
+        }
+
         try {
             if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
                 blockingMsgSender.send(endpoint, synInCtx);
@@ -234,6 +259,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
     }
 
     public Endpoint getEndpoint() {
+        if (isWrappingEndpointCreated) {
+            return null;
+        }
         return endpoint;
     }
 

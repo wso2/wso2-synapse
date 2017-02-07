@@ -24,6 +24,8 @@ import org.apache.synapse.securevault.SecureVaultException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -34,6 +36,7 @@ import java.util.Properties;
 public class MiscellaneousUtil {
 
     private static Log log = LogFactory.getLog(MiscellaneousUtil.class);
+    private static String CONF_LOCATION = "conf.location";
 
     private MiscellaneousUtil() {
     }
@@ -122,7 +125,21 @@ public class MiscellaneousUtil {
             log.debug("Loading a file ' " + filePath + " ' from classpath");
         }
 
-        InputStream in = cl.getResourceAsStream(filePath);
+        InputStream in = null;
+        //if we reach to this assume that the we may have to looking to the customer provided external location for the
+        //given properties
+
+        if (System.getProperty(CONF_LOCATION) != null) {
+            try {
+                in = new FileInputStream(System.getProperty(CONF_LOCATION) + File.separator + filePath);
+            } catch (FileNotFoundException e) {
+                String msg = "Error loading properties from file: " + filePath;
+                log.warn(msg);
+            }
+        }
+        if (in == null) {
+            in = cl.getResourceAsStream(filePath);
+        }
         if (in == null) {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to load file  ' " + filePath + " '");
