@@ -22,7 +22,6 @@ package org.apache.synapse.mediators.transform;
  */
 public class ArgumentDetails {
     private String pathType;
-    private boolean deepCheck = true;
     private boolean isXml = false;
     private boolean isLiteral = false;
 
@@ -32,14 +31,6 @@ public class ArgumentDetails {
 
     public void setPathType(String pathType) {
         this.pathType = pathType;
-    }
-
-    public boolean isDeepCheck() {
-        return deepCheck;
-    }
-
-    public void setDeepCheck(boolean deepCheck) {
-        this.deepCheck = deepCheck;
     }
 
     public boolean isXml() {
