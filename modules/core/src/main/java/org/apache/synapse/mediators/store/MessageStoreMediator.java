@@ -27,6 +27,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
+import org.apache.synapse.message.store.impl.jms.JmsStore;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 
@@ -63,9 +64,13 @@ public class MessageStoreMediator extends AbstractMediator{
     private static final String PRODUCER_GUARANTEED_DELIVERY = "store.producer.guaranteed.delivery.enable";
     private static final String FAILOVER_MESSAGE_STORE_NAME = "store.failover.message.store.name";
 
+    /**
+     * Lock for store message operation
+     */
+    private final Object storeMessageLock = new Object();
 
     public boolean mediate(MessageContext synCtx) {
-
+        boolean produceStatus;
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
@@ -123,8 +128,17 @@ public class MessageStoreMediator extends AbstractMediator{
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }
-                boolean produceStatus = messageStore.getProducer().storeMessage(newCtx);
+
+                synchronized (storeMessageLock) {
+                   produceStatus = messageStore.getProducer().storeMessage(newCtx);
+                }
+
                 if (!produceStatus) {
+
+                    //Fix ESBJAVA-5011, since connection is already null need to nullify producer also
+                    if (messageStore instanceof JmsStore) {
+                        ((JmsStore) messageStore).setProducer(null);
+                    }
 
                     if (isGuaranteedDeliveryEnabled && failoverMessageStoreName != null && !failoverMessageStoreName
                             .isEmpty()) {
