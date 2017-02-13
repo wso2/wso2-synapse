@@ -204,8 +204,10 @@ public class TargetRequestFactory {
 
         //If incoming transport isn't HTTP, transport headers can be null. Therefore null check is required
         // and if headers not null check whether request comes with Content-Type header before preserving Content-Type
+        //Need to avoid this for multipart headers, need to add MIME Boundary property
         if (trpHeaders != null && trpHeaders instanceof Map && ((Map) trpHeaders).
-                get(HTTPConstants.HEADER_CONTENT_TYPE) != null && isContentTypePreservedHeader) {
+                get(HTTPConstants.HEADER_CONTENT_TYPE) != null && isContentTypePreservedHeader && !isMultipartContent
+                (((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE).toString())) {
             if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
                 return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
             } else if (msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE) != null) {
@@ -242,5 +244,18 @@ public class TargetRequestFactory {
     private static void handleException(String s, Exception e) throws AxisFault {
         log.error(s, e);
         throw new AxisFault(s, e);
+    }
+
+    /**
+     * Check whether the content type is multipart or not
+     * @param contentType
+     * @return true for multipart content types
+     */
+    private static boolean isMultipartContent(String contentType) {
+        if (HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA.equals(contentType) || HTTPConstants
+                .HEADER_ACCEPT_MULTIPART_RELATED.equals(contentType)) {
+            return true;
+        }
+        return false;
     }
 }

@@ -111,13 +111,20 @@ public class JmsStore extends AbstractMessageStore {
     /** Preserve session for caching */
     private MessageProducer cachedProducer;
 
+    private MessageProducer producer = null;
+
     public MessageProducer getProducer() {
         if (cacheLevel == 1 && cachedProducer != null) {
             return cachedProducer;
         }
 
-        JmsProducer producer = new JmsProducer(this);
-        producer.setId(nextProducerId());
+        if (this.producer == null) {
+            this.producer = new JmsProducer(this);
+            this.producer.setId(nextProducerId());
+        } else {
+            return producer;
+        }
+
         Throwable throwable = null;
         Session session = null;
         javax.jms.MessageProducer messageProducer;
@@ -131,22 +138,23 @@ public class JmsStore extends AbstractMessageStore {
                     }
                 }
             }
-            try {
-                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
-            } catch (JMSException e) {
-                synchronized (producerLock) {
-                    boolean ok = newWriteConnection();
-                    if (!ok) {
-                        return producer;
+            if (((JmsProducer) this.producer).getSession() == null) {
+                try {
+                    session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                } catch (JMSException e) {
+                    synchronized (producerLock) {
+                        boolean ok = newWriteConnection();
+                        if (!ok) {
+                            return this.producer;
+                        }
                     }
+                    session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                    logger.info(nameString() + " established a connection to the broker.");
                 }
-                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
-                logger.info(nameString() + " established a connection to the broker.");
+                messageProducer = newProducer(session);
+                ((JmsProducer) this.producer).setConnection(producerConnection()).setSession(session).
+                        setProducer(messageProducer);
             }
-            messageProducer = newProducer(session);
-            producer.setConnection(producerConnection())
-                    .setSession(session)
-                    .setProducer(messageProducer);
         } catch (Throwable t) {
             error = true;
             throwable = t;
@@ -159,15 +167,15 @@ public class JmsStore extends AbstractMessageStore {
                 cleanup(producerConnection, session, true);
                 producerConnection = null;
             }
-            return producer;
+            return this.producer;
         }
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " created message producer " + producer.getId());
+            logger.debug(nameString() + " created message producer " + this.producer.getId());
         }
         if (cacheLevel == 1) {
             cachedProducer = producer;
         }
-        return producer;
+        return this.producer;
     }
 
     public MessageConsumer getConsumer() {
@@ -744,5 +752,9 @@ public class JmsStore extends AbstractMessageStore {
 
     private String nameString() {
         return "Store [" + getName() + "]";
+    }
+
+    public void setProducer(MessageProducer producer) {
+        this.producer = producer;
     }
 }
