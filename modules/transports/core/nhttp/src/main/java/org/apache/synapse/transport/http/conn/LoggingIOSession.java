@@ -18,17 +18,20 @@
  */
 package org.apache.synapse.transport.http.conn;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpRequest;
+import org.apache.http.message.BasicHttpRequest;
+import org.apache.http.nio.reactor.IOSession;
+import org.apache.http.nio.reactor.SessionBufferStatus;
+
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.http.nio.reactor.IOSession;
-import org.apache.http.nio.reactor.SessionBufferStatus;
+import java.util.regex.Pattern;
 
 /**
  * Decorator class intended to transparently extend an {@link IOSession} 
@@ -190,6 +193,17 @@ class LoggingIOSession implements IOSession {
                 log.debug("I/O session " + id + " " + session + ": " + bytesRead + " bytes read");
             }
             if (bytesRead > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled())) {
+                String skipLogging = System.getProperty("skip.logging");
+                if ("true".equals(skipLogging)) {
+                    Object request = session.getAttribute("http.request");
+                    if (request != null) {
+                        String uri = ((HttpRequest) request).getRequestLine().toString();
+                        Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                        if (pattern != null && pattern.matcher(uri).find()) {
+                            return bytesRead;
+                        }
+                    }
+                }
                 ByteBuffer b = dst.duplicate();
                 int p = b.position();
                 b.limit(p);
@@ -206,6 +220,17 @@ class LoggingIOSession implements IOSession {
                 log.debug("I/O session " + id + " " + session + ": " + byteWritten + " bytes written");
             }
             if (byteWritten > 0 && (wirelog.isEnabled() || SynapseDebugInfoHolder.getInstance().isDebuggerEnabled())) {
+                String skipLogging = System.getProperty("skip.logging");
+                if ("true".equals(skipLogging)) {
+                    Object request = session.getAttribute("http.request");
+                    if (request != null) {
+                        String uri = ((HttpRequest) request).getRequestLine().toString();
+                        Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                        if (pattern != null && pattern.matcher(uri).find()) {
+                            return byteWritten;
+                        }
+                    }
+                }
                 ByteBuffer b = src.duplicate();
                 int p = b.position();
                 b.limit(p);
