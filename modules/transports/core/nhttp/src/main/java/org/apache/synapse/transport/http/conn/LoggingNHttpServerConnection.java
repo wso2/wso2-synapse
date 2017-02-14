@@ -24,6 +24,7 @@ import java.net.SocketAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,6 +36,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestFactory;
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.nio.DefaultNHttpServerConnection;
+import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.NHttpMessageParser;
 import org.apache.http.nio.NHttpMessageWriter;
 import org.apache.http.nio.NHttpServerEventHandler;
@@ -334,12 +336,26 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
             this.writer.reset();
         }
 
+        private void printLog(final HttpResponse message) {
+            headerlog.debug(id + " << " + message.getStatusLine().toString());
+            Header[] headers = message.getAllHeaders();
+            for (Header header : headers) {
+                headerlog.debug(id + " << " + header.toString());
+            }
+        }
+
         public void write(final HttpResponse message) throws IOException, HttpException {
             if (message != null && headerlog.isDebugEnabled()) {
-                headerlog.debug(id + " << " + message.getStatusLine().toString());
-                Header[] headers = message.getAllHeaders();
-                for (int i = 0; i < headers.length; i++) {
-                    headerlog.debug(id + " << " + headers[i].toString());
+                String skipLogging = System.getProperty("skip.logging");
+                Object request = session.getAttribute("http.request");
+                if ("true".equals(skipLogging) && request != null) {
+                    String uri = ((HttpRequest) request).getRequestLine().toString();
+                    Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                    if (pattern != null && !pattern.matcher(uri).find()) {
+                        printLog(message);
+                    }
+                } else {
+                    printLog(message);
                 }
             }
 
@@ -371,6 +387,14 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
             this.parser = parser;
         }
 
+        private void printLog(final HttpRequest message) {
+            headerlog.debug(id + " >> " + message.getRequestLine().toString());
+            Header[] headers = message.getAllHeaders();
+            for (Header header : headers) {
+                headerlog.debug(id + " >> " + header.toString());
+            }
+        }
+
         public void reset() {
             this.parser.reset();
         }
@@ -382,10 +406,15 @@ public class LoggingNHttpServerConnection extends DefaultNHttpServerConnection
         public HttpRequest parse() throws IOException, HttpException {
             HttpRequest message = this.parser.parse();
             if (message != null && headerlog.isDebugEnabled()) {
-                headerlog.debug(id + " >> " + message.getRequestLine().toString());
-                Header[] headers = message.getAllHeaders();
-                for (int i = 0; i < headers.length; i++) {
-                    headerlog.debug(id + " >> " + headers[i].toString());
+                String skipLogging = System.getProperty("skip.logging");
+                if ("true".equals(skipLogging)) {
+                    String uri = message.getRequestLine().toString();
+                    Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                    if (pattern != null && !pattern.matcher(uri).find()) {
+                        printLog(message);
+                    }
+                } else {
+                    printLog(message);
                 }
             }
             if (message != null && accesslog.isInfoEnabled()) {

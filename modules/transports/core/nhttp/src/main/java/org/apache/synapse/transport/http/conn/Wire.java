@@ -21,6 +21,7 @@ package org.apache.synapse.transport.http.conn;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.http.nio.reactor.IOSession;
@@ -52,7 +53,15 @@ class Wire {
                     buffer.insert(0, "\"");
                     buffer.insert(0, header);
                     if (isEnabled()) {
-                        this.log.debug(Thread.currentThread().getName() + " " + buffer.toString());
+                        String line = buffer.toString();
+                        String skipLogging = System.getProperty("skip.logging");
+                        if ("true".equals(skipLogging)) {
+                            Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                            if (pattern != null && pattern.matcher(line).find()) {
+                                break;
+                            }
+                        }
+                        this.log.debug(Thread.currentThread().getName() + " " + line);
                     }
 //                    this.log.debug(buffer.toString());
                     synapseBuffer.append(tmpBuffer.toString());
@@ -71,7 +80,16 @@ class Wire {
             buffer.insert(0, '\"');
             buffer.insert(0, header);
             if (isEnabled()) {
-                this.log.debug(Thread.currentThread().getName() + " " + buffer.toString());
+                String line = buffer.toString();
+                String skipLogging = System.getProperty("skip.logging");
+                if ("true".equals(skipLogging)) {
+                    Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                    if (pattern != null && !pattern.matcher(line).find()) {
+                        this.log.debug(Thread.currentThread().getName() + " " + line);
+                    }
+                } else {
+                    this.log.debug(Thread.currentThread().getName() + " " + line);
+                }
             }
             tmpBuffer.setLength(0);
             tmpBuffer.append(buffer.toString());
