@@ -79,7 +79,7 @@ public class RESTUtils {
 
         if (url.startsWith("http://") || url.startsWith("https://")) {
             try {
-                url = new URL(url).getPath();
+                url = new URL(url).getFile();
             } catch (MalformedURLException e) {
                 handleException("Request URL: " + url + " is malformed", e);
             }
