@@ -579,6 +579,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean isXML(String value) {
         try {
             AXIOMUtil.stringToOM(value);
+            value = value.trim();
             if (!value.endsWith(">") || value.length() < 4) {
                 return false;
             }
