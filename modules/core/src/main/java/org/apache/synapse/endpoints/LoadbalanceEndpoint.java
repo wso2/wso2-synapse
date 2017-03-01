@@ -39,7 +39,9 @@ import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -159,7 +161,12 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 // We have to build the envelop when we are supporting failover, as we
                 // may have to retry this message for failover support
                 if (failover) {
-                    synCtx.getEnvelope().build();
+                    try {
+                        RelayUtils.buildMessage(((Axis2MessageContext)synCtx).getAxis2MessageContext());
+                    } catch (IOException | XMLStreamException ex) {
+                        String msg = "Error while building the message";
+                        handleException(msg, ex);
+                    }
                     //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
                     if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
                             PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
