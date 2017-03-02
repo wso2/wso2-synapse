@@ -251,14 +251,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
                     // This is to replace " with \" and \\ with \\\\
                     //replacing other json special characters i.e \b, \f, \n \r, \t
-                    replaceValue = replaceValue
-                            .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
-                            .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
-                            .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
-                            .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
-                            .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
-                            .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
-                            .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                    replaceValue = escapeSpecialChars(replaceValue);
 
                 }
             } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
@@ -338,14 +331,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
                         // This is to replace " with \" and \\ with \\\\
                         //replacing other json special characters i.e \b, \f, \n \r, \t
-                        replacementValue = replacementValue
-                                .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
-                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
-                                .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                        replacementValue = escapeSpecialChars(replacementValue);
 
                     }
                 } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
@@ -374,14 +360,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     //replacing other json special characters i.e \b, \f, \n \r, \t
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
-                        replacementValue = replacementValue
-                                .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
-                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
-                                .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                        replacementValue = escapeSpecialChars(replacementValue);
                     }
                     else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
@@ -395,6 +374,22 @@ public class PayloadFactoryMediator extends AbstractMediator {
             log.error("#replace. Mis-match detected between number of formatters and arguments", e);
         }
         matcher.appendTail(result);
+    }
+
+    /**
+     * Helper method to replace required char values with escape characters.
+     *
+     * @param replaceString
+     * @return replacedString
+     */
+    private String escapeSpecialChars(String replaceString) {
+        return replaceString.replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
+                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
     }
 
     /**
@@ -579,6 +574,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private boolean isXML(String value) {
         try {
             AXIOMUtil.stringToOM(value);
+            value = value.trim();
             if (!value.endsWith(">") || value.length() < 4) {
                 return false;
             }
