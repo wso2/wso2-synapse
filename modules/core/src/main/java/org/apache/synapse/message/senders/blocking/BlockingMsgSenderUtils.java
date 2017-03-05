@@ -56,6 +56,9 @@ public class BlockingMsgSenderUtils {
             if (wsSecurityEnabled) {
                 String wsSecPolicyKey = endpoint.getWsSecPolicyKey();
                 if (wsSecPolicyKey != null) {
+                    if (endpoint.isDynamicPolicy()) {
+                        wsSecPolicyKey = endpoint.evaluateDynamicEndpointSecurityPolicy(synapseInMsgCtx);
+                    }
                     clientOptions.setProperty(
                             SynapseConstants.RAMPART_POLICY,
                             MessageHelper.getPolicy(synapseInMsgCtx, wsSecPolicyKey));

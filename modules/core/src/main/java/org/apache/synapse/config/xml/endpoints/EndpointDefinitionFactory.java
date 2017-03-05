@@ -120,8 +120,23 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
             OMAttribute outboundPolicyKey = wsSec.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "outboundPolicy"));
 
+            //Checks whether the specified policy is dynamic or static and modify the endpoint definition accordingly
             if (policyKey != null && policyKey.getAttributeValue() != null) {
-                definition.setWsSecPolicyKey(policyKey.getAttributeValue());
+                String p = policyKey.getAttributeValue();
+                Pattern pattern = Pattern.compile("\\{.*\\}");
+                if (pattern.matcher(p).matches()) {
+                    try {
+                        p = p.trim().substring(1, p.length() - 1);
+                        SynapseXPath xpath = null;
+                        xpath = new SynapseXPath(p);
+                        definition.setDynamicPolicy(xpath);
+                    } catch (JaxenException e) {
+                        handleException("Couldn't assign dynamic endpoint policy as Synapse expression");
+                    }
+                } else {
+                    String wsSecPolicy = p.trim();
+                    definition.setWsSecPolicyKey(wsSecPolicy);
+                }
             } else {
                 if (inboundPolicyKey != null && inboundPolicyKey.getAttributeValue() != null) {
                     definition.setInboundWsSecPolicyKey(inboundPolicyKey.getAttributeValue());

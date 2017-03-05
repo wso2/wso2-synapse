@@ -449,6 +449,9 @@ public class Axis2FlexibleMEPClient {
         if (wsSecurityEnabled) {
             // if a WS-Sec policy is specified, use it
             if (wsSecPolicyKey != null) {
+                if (endpoint.isDynamicPolicy()) {
+                    wsSecPolicyKey = endpoint.evaluateDynamicEndpointSecurityPolicy(synapseOutMessageContext);
+                }
                 clientOptions.setProperty(
                         SynapseConstants.RAMPART_POLICY,
                         MessageHelper.getPolicy(synapseOutMessageContext, wsSecPolicyKey));

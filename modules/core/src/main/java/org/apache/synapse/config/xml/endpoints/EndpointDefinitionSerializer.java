@@ -82,8 +82,13 @@ public class EndpointDefinitionSerializer {
             OMElement sec = fac.createOMElement("enableSec", SynapseConstants.SYNAPSE_OMNAMESPACE);
 
             if (endpointDefinition.getWsSecPolicyKey() != null) {
-                sec.addAttribute(fac.createOMAttribute(
-                        "policy", null, endpointDefinition.getWsSecPolicyKey()));
+                if (!endpointDefinition.isDynamicPolicy()) {
+                    sec.addAttribute(fac.createOMAttribute(
+                            "policy", null, endpointDefinition.getWsSecPolicyKey()));
+                } else {
+                    sec.addAttribute(fac.createOMAttribute(
+                            "policy", null, '{' + endpointDefinition.getDynamicPolicy().getExpression() + '}'));
+                }
             } else {
                 if (endpointDefinition.getInboundWsSecPolicyKey() != null) {
                     sec.addAttribute(fac.createOMAttribute(
