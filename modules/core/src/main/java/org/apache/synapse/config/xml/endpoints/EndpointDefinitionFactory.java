@@ -130,6 +130,7 @@ public class EndpointDefinitionFactory implements DefinitionFactory{
                         SynapseXPath xpath = null;
                         xpath = new SynapseXPath(p);
                         definition.setDynamicPolicy(xpath);
+                        definition.setWsSecPolicyKey(p);
                     } catch (JaxenException e) {
                         handleException("Couldn't assign dynamic endpoint policy as Synapse expression");
                     }
