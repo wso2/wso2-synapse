@@ -118,10 +118,12 @@ public abstract class ThrottleContext {
                         return (CallerContext) co;
                     } else if (co instanceof LinkedList) {    // callers with same time window
                         LinkedList callers = (LinkedList) co;
-                        for (Iterator it = callers.iterator(); it.hasNext(); ) {
-                            CallerContext cc = (CallerContext) it.next();
-                            if (cc != null && id.equals(cc.getId())) {
-                                return cc;
+                        synchronized (callers) {
+                            for (Iterator it = callers.iterator(); it.hasNext(); ) {
+                                CallerContext cc = (CallerContext) it.next();
+                                if (cc != null && id.equals(cc.getId())) {
+                                    return cc;
+                                }
                             }
                         }
                     }
@@ -179,7 +181,9 @@ public abstract class ThrottleContext {
                     callersMap.put(time, callersWithSameTimeStamp);
                 } else if (callerObject instanceof LinkedList) {
                     LinkedList callersWithSameTimeStamp = (LinkedList) callerObject;
-                    callersWithSameTimeStamp.add(callerContext);
+                    synchronized (callersWithSameTimeStamp) {
+                        callersWithSameTimeStamp.add(callerContext);
+                    }
                 }
             }
         }
@@ -255,19 +259,21 @@ public abstract class ThrottleContext {
                         }
                         if (o instanceof LinkedList) { //In the case nextAccessTime of callers are same
                             LinkedList callers = (LinkedList) o;
-                            for (Iterator ite = callers.iterator(); ite.hasNext(); ) {
-                                CallerContext c = (CallerContext) ite.next();
-                                String key = c.getId();
-                                String role = c.getRoleId();
-                                if (key != null) {
-                                    if (dataHolder != null && keyPrefix != null) {
-                                        c = (CallerContext) dataHolder.getCallerContext(keyPrefix + key);
-                                    }
-                                    if (c != null) {
-                                        c.cleanUpCallers(
-                                                this.throttleConfiguration.getCallerConfiguration(role)
-                                                , this
-                                                , time);
+                            synchronized (callers) {
+                                for (Iterator ite = callers.iterator(); ite.hasNext(); ) {
+                                    CallerContext c = (CallerContext) ite.next();
+                                    String key = c.getId();
+                                    String role = c.getRoleId();
+                                    if (key != null) {
+                                        if (dataHolder != null && keyPrefix != null) {
+                                            c = (CallerContext) dataHolder.getCallerContext(keyPrefix + key);
+                                        }
+                                        if (c != null) {
+                                            c.cleanUpCallers(
+                                                    this.throttleConfiguration.getCallerConfiguration(role)
+                                                    , this
+                                                    , time);
+                                        }
                                     }
                                 }
                             }
