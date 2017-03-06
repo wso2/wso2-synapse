@@ -22,10 +22,13 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.SOAPHeader;
+import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
@@ -60,6 +63,8 @@ public final class MessageConverter {
     private static final String ABSTRACT_MC_PROPERTIES = "ABSTRACT_MC_PROPERTIES";
 
     private static final String JMS_PRIORITY = "JMS_PRIORITY";
+
+    private static final String HEADER_STRING = "Header";
 
     //Prefix to identify a OMElemet type property
     private static final String OM_ELEMENT_PREFIX = "OM_ELEMENT_PREFIX_";
@@ -317,29 +322,41 @@ public final class MessageConverter {
     }
 
     private static SOAPEnvelope getSoapEnvelope(String soapEnvelpe) {
+        OMElement response;
         try {
-            //This is a temporary fix for ESBJAVA-1157 for Andes based(QPID) Client libraries
-            //Thread.currentThread().setContextClassLoader(SynapseEnvironment.class.getClassLoader());
-            XMLStreamReader xmlReader = StAXUtils
-                    .createXMLStreamReader(new ByteArrayInputStream(getUTF8Bytes(soapEnvelpe)));
-            StAXBuilder builder = new StAXSOAPModelBuilder(xmlReader);
-            SOAPEnvelope soapEnvelope = (SOAPEnvelope) builder.getDocumentElement();
-            soapEnvelope.build();
-            String soapNamespace = soapEnvelope.getNamespace().getNamespaceURI();
-            if (soapEnvelope.getHeader() == null) {
-                SOAPFactory soapFactory;
-                if (soapNamespace.equals(SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI)) {
-                    soapFactory = OMAbstractFactory.getSOAP12Factory();
-                } else {
-                    soapFactory = OMAbstractFactory.getSOAP11Factory();
-                }
-                soapFactory.createSOAPHeader(soapEnvelope);
-            }
-            return soapEnvelope;
-        } catch (XMLStreamException e) {
+            response = AXIOMUtil.stringToOM(soapEnvelpe);
+        } catch (Exception e) {
             logger.error("Cannot create SOAP Envelop. Error:" + e.getLocalizedMessage(), e);
             return null;
         }
+
+        SOAPFactory soapFactory;
+        String soapNamespace = response.getNamespace().getNamespaceURI();
+        if (soapNamespace.equals(SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI)) {
+            soapFactory = OMAbstractFactory.getSOAP12Factory();
+        } else {
+            soapFactory = OMAbstractFactory.getSOAP11Factory();
+        }
+        SOAPEnvelope soapEnvelope = soapFactory.getDefaultEnvelope();
+
+        // Set the headers of the message
+        if (response.getFirstElement().getLocalName().contains(HEADER_STRING)) {
+            SOAPHeader header = soapEnvelope.getHeader();
+            SOAPFactory fac = (SOAPFactory) soapEnvelope.getOMFactory();
+            Iterator headers = response.getFirstElement().getChildElements();
+            while (headers.hasNext()) {
+                OMElement soapHeader = (OMElement) headers.next();
+                SOAPHeaderBlock hb = header.addHeaderBlock(soapHeader.getLocalName(),
+                        fac.createOMNamespace(soapHeader.getNamespace().getNamespaceURI(),
+                                soapHeader.getNamespace().getPrefix()));
+                hb.setText(soapHeader.getText());
+            }
+            response.getFirstElement().detach();
+        }
+
+        soapEnvelope.getBody().addChild(response.getFirstElement().getFirstElement());
+
+        return soapEnvelope;
     }
 
 	private static byte[] getUTF8Bytes(String soapEnvelpe) {
