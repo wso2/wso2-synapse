@@ -186,6 +186,9 @@ public class EndpointDefinition implements AspectConfigurable {
     /** Variable to depict the effective timeout type **/
     private SynapseConstants.ENDPOINT_TIMEOUT_TYPE endpointTimeoutType;
 
+    /** Expression to evaluate dynamic ws policy */
+    private SynapsePath dynamicPolicy = null;
+
     public EndpointDefinition() {
         try {
             // Set the timeout value to global timeout value.
@@ -741,6 +744,56 @@ public class EndpointDefinition implements AspectConfigurable {
 
     public void setEndpointTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE endpointTimeoutType) {
         this.endpointTimeoutType = endpointTimeoutType;
+    }
+
+    /**
+     * GET expression to evaluate dynamic ws policy
+     *
+     * @return SynapsePath to the policy
+     */
+    public SynapsePath getDynamicPolicy() {
+        return dynamicPolicy;
+    }
+
+    /**
+     * Set expression to evaluate dynamic ws policy
+     *
+     * @param dynamicPolicy SynapsePath to the policy
+     */
+    public void setDynamicPolicy(SynapsePath dynamicPolicy) {
+        this.dynamicPolicy = dynamicPolicy;
+    }
+
+    /**
+     * Checks ws security policy is a dynamic or static one
+     *
+     * @return true if policy is dynamic else false.
+     */
+    public boolean isDynamicPolicy() {
+        if (this.dynamicPolicy != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Evaluates the ws security policy path dynamically
+     *
+     * @param synCtx MessageContext
+     * @return string value of policy path
+     */
+    public String evaluateDynamicEndpointSecurityPolicy(MessageContext synCtx) {
+        String wsSePolicy;
+        String stringValue = dynamicPolicy.stringValueOf(synCtx);
+        if (stringValue != null) {
+            wsSePolicy = stringValue.trim();
+        } else {
+            log.warn("Error while evaluating dynamic endpoint timeout expression."+
+                    "Synapse global timeout is taken as effective timeout.");
+            wsSePolicy = wsSecPolicyKey;
+        }
+        return wsSePolicy;
     }
 
 
