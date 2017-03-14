@@ -210,9 +210,11 @@ public class BlockingMsgSender {
             } else {
                 org.apache.axis2.context.MessageContext result =
                 sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
-                synapseInMsgCtx.setEnvelope(result.getEnvelope());
-                if (JsonUtil.hasAJsonPayload(result)) {
-                	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                if(result.getEnvelope() != null) {
+                    synapseInMsgCtx.setEnvelope(result.getEnvelope());
+                    if (JsonUtil.hasAJsonPayload(result)) {
+                        JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                    }
                 }
                 final String statusCode =
                                           String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
