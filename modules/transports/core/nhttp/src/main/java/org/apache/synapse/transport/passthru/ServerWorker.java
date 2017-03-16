@@ -159,6 +159,7 @@ public class ServerWorker implements Runnable {
         }
 
         sendAck(msgContext);
+        msgContext.destroyCurrentMessageContext();
     }
 
     private boolean isRequestToFetchWSDL() {
