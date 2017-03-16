@@ -125,6 +125,7 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
     private String customRegex;
     private String customReplaceRegex;
     private String customReplaceSequence;
+    private boolean xmlNilReadWriteEnabled;
 
     public JsonXMLOutputFactory() throws FactoryConfigurationError {
         this(JsonXMLConfig.DEFAULT);
@@ -150,6 +151,7 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
         this.customRegex= config.getCustomRegex();
         this.customReplaceRegex = config.getCustomReplaceRegex();
         this.customReplaceSequence = config.getCustomReplaceSequence();
+        this.xmlNilReadWriteEnabled = config.isReadWriteXmlNil();
 
 		/*
          * initialize standard properties
@@ -189,7 +191,8 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
     public JsonXMLStreamWriter createXMLStreamWriter(Writer stream) throws XMLStreamException {
         boolean repairNamespaces = Boolean.TRUE.equals(getProperty(IS_REPAIRING_NAMESPACES));
         try {
-            return new JsonXMLStreamWriter(decorate(streamFactory.createJsonStreamTarget(stream, prettyPrint)), repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations);
+            return new JsonXMLStreamWriter(decorate(streamFactory.createJsonStreamTarget(stream, prettyPrint)),
+                    repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations, xmlNilReadWriteEnabled);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }
@@ -199,7 +202,8 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
     public JsonXMLStreamWriter createXMLStreamWriter(OutputStream stream) throws XMLStreamException {
         boolean repairNamespaces = Boolean.TRUE.equals(getProperty(IS_REPAIRING_NAMESPACES));
         try {
-            return new JsonXMLStreamWriter(decorate(streamFactory.createJsonStreamTarget(stream, prettyPrint)), repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations);
+            return new JsonXMLStreamWriter(decorate(streamFactory.createJsonStreamTarget(stream, prettyPrint)),
+                    repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations, xmlNilReadWriteEnabled);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }

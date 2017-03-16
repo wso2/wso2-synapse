@@ -78,6 +78,7 @@ public class JsonXMLInputFactory extends AbstractXMLInputFactory {
     private boolean multiplePI;
     private QName virtualRoot;
     private char namespaceSeparator;
+    private boolean xmlNilReadWriteEnabled;
 
     public JsonXMLInputFactory() throws FactoryConfigurationError {
         this(JsonXMLConfig.DEFAULT);
@@ -96,6 +97,7 @@ public class JsonXMLInputFactory extends AbstractXMLInputFactory {
         this.virtualRoot = config.getVirtualRoot();
         this.namespaceSeparator = config.getNamespaceSeparator();
         this.streamFactory = streamFactory;
+        this.xmlNilReadWriteEnabled = config.isReadWriteXmlNil();
 
 		/*
 		 * initialize standard properties
@@ -137,7 +139,8 @@ public class JsonXMLInputFactory extends AbstractXMLInputFactory {
     @Override
     public JsonXMLStreamReader createXMLStreamReader(Reader reader) throws XMLStreamException {
         try {
-            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(reader)), multiplePI, namespaceSeparator);
+            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(reader)), multiplePI,
+                    namespaceSeparator, xmlNilReadWriteEnabled);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }
@@ -145,7 +148,8 @@ public class JsonXMLInputFactory extends AbstractXMLInputFactory {
 
     public JsonXMLStreamReader createXMLStreamReader(Reader reader, Constants.SCANNER scanner) throws XMLStreamException {
         try {
-            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(reader, scanner)), multiplePI, namespaceSeparator);
+            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(reader, scanner)), multiplePI,
+                    namespaceSeparator, xmlNilReadWriteEnabled);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }
@@ -154,7 +158,8 @@ public class JsonXMLInputFactory extends AbstractXMLInputFactory {
     @Override
     public JsonXMLStreamReader createXMLStreamReader(InputStream stream) throws XMLStreamException {
         try {
-            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(stream)), multiplePI, namespaceSeparator);
+            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(stream)), multiplePI,
+                    namespaceSeparator, xmlNilReadWriteEnabled);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }
@@ -162,7 +167,8 @@ public class JsonXMLInputFactory extends AbstractXMLInputFactory {
 
     public JsonXMLStreamReader createXMLStreamReader(InputStream stream, Constants.SCANNER scanner) throws XMLStreamException {
         try {
-            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(stream, scanner)), multiplePI, namespaceSeparator);
+            return new JsonXMLStreamReader(decorate(streamFactory.createJsonStreamSource(stream, scanner)), multiplePI,
+                    namespaceSeparator, xmlNilReadWriteEnabled);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }

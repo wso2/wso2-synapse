@@ -104,6 +104,7 @@ public final class JsonUtil {
 
     private static final String jsonoutCustomReplaceSequence;
 
+    private static final boolean xmlNilReadWriteEnabled;
 
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
@@ -118,6 +119,7 @@ public final class JsonUtil {
             jsonoutMultiplePI = false;
             xmloutAutoArray = true;
             xmloutMultiplePI = false;
+            xmlNilReadWriteEnabled = false;
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
             String process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, "false").trim();
@@ -157,6 +159,8 @@ public final class JsonUtil {
             process = properties.getProperty
                     (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR, "true").trim();
 
+            xmlNilReadWriteEnabled = Boolean.parseBoolean(properties.getProperty("synapse.commons.enableXmlNilReadWrite", "false"));
+
         }
     }
 
@@ -170,6 +174,7 @@ public final class JsonUtil {
             .namespaceDeclarations(false)
             .namespaceSeparator('\u0D89')
             .customRegex(jsonoutcustomRegex)
+            .readWriteXmlNil(xmlNilReadWriteEnabled)
             .build();
 
     /**
@@ -181,6 +186,7 @@ public final class JsonUtil {
             .autoPrimitive(true)
             .namespaceDeclarations(false)
             .namespaceSeparator('\u0D89')
+            .readWriteXmlNil(xmlNilReadWriteEnabled)
             .build();
 
     /**
@@ -195,6 +201,7 @@ public final class JsonUtil {
             .customReplaceRegex(jsonoutCustomReplaceRegex)
             .customReplaceSequence(jsonoutCustomReplaceSequence)
             .customRegex(jsonoutcustomRegex)
+            .readWriteXmlNil(xmlNilReadWriteEnabled)
             .build();
     /// End of JSON/XML INPUT OUTPUT Formatting Configuration.
 
