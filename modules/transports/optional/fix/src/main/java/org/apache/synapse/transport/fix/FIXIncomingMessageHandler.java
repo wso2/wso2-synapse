@@ -32,6 +32,7 @@ import org.apache.axis2.transport.base.AbstractTransportSender;
 import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.BaseUtils;
 import org.apache.axis2.transport.base.threads.WorkerPool;
+import org.apache.synapse.transport.fix.FIXConstants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import quickfix.*;
@@ -56,14 +57,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FIXIncomingMessageHandler implements Application {
 
     private ConfigurationContext cfgCtx;
-    /** A thread pool used to process incoming FIX messages */
+    /**
+     * A thread pool used to process incoming FIX messages
+     */
     private WorkerPool workerPool;
-    /** AxisService to which this FIX application is bound to */
+    /**
+     * AxisService to which this FIX application is bound to
+     */
     private AxisService service;
     private Log log;
-    /** A boolean value indicating the type of the FIX application */
+    /**
+     * A boolean value indicating the type of the FIX application
+     */
     private boolean acceptor;
-    /** A Map of counters with one counter per session */
+    /**
+     * A Map of counters with one counter per session
+     */
     private Map<SessionID, AtomicInteger> countersMap;
     private Queue<MessageContext> outgoingMessages;
     private boolean allNewApproach = true;
@@ -72,7 +81,7 @@ public class FIXIncomingMessageHandler implements Application {
     private SessionEventHandler eventHandler;
 
     public FIXIncomingMessageHandler(ConfigurationContext cfgCtx, WorkerPool workerPool,
-                             AxisService service, boolean acceptor) {
+                                     AxisService service, boolean acceptor) {
         this.cfgCtx = cfgCtx;
         this.workerPool = workerPool;
         this.service = service;
@@ -91,17 +100,17 @@ public class FIXIncomingMessageHandler implements Application {
         }
 
         if (eventHandlerParam != null && eventHandlerParam.getValue() != null &&
-                !"".equals(eventHandlerParam.getValue())) {
+            !"".equals(eventHandlerParam.getValue())) {
             try {
                 Class clazz = getClass().getClassLoader().loadClass(
                         (String) eventHandlerParam.getValue());
                 eventHandler = (SessionEventHandler) clazz.newInstance();
             } catch (ClassNotFoundException e) {
                 log.error("Unable to find the session event handler class: " +
-                        eventHandlerParam.getValue(), e);
+                          eventHandlerParam.getValue(), e);
             } catch (Exception e) {
                 log.error("Error while initializing the session event handler class: " +
-                        eventHandlerParam.getValue(), e);
+                          eventHandlerParam.getValue(), e);
             }
         }
     }
@@ -146,7 +155,7 @@ public class FIXIncomingMessageHandler implements Application {
     public void onCreate(SessionID sessionID) {
         log.info("New FIX session created: " + sessionID.toString());
         if (eventHandler != null) {
-            eventHandler.onCreate(sessionID);
+            eventHandler.onCreate(this, sessionID);
         }
     }
 
@@ -166,7 +175,7 @@ public class FIXIncomingMessageHandler implements Application {
         semaphore.release();
 
         if (eventHandler != null) {
-            eventHandler.onLogon(sessionID);
+            eventHandler.onLogon(this, sessionID);
         }
     }
 
@@ -185,7 +194,7 @@ public class FIXIncomingMessageHandler implements Application {
         log.info("FIX session logged out: " + sessionID.toString());
 
         if (eventHandler != null) {
-            eventHandler.onLogout(sessionID);
+            eventHandler.onLogout(this, sessionID);
         }
     }
 
@@ -195,7 +204,7 @@ public class FIXIncomingMessageHandler implements Application {
      * normally not useful for an application however it is provided for any
      * logging one may wish to do.
      *
-     * @param message QuickFIX message
+     * @param message   QuickFIX message
      * @param sessionID QuickFIX session ID
      */
     public void toAdmin(Message message, SessionID sessionID) {
@@ -215,9 +224,27 @@ public class FIXIncomingMessageHandler implements Application {
                 log.trace("Message: " + message.toString());
             }
         }
+        try {
+            // Before FIX server sends (35=A) admin login message get username/password values from proxy configuration
+            if (message.getHeader().getField(new StringField(FIXConstants.FIX_MESSAGE_TYPE)).getValue().equals(FIXConstants.LOGON)) {
+
+                Parameter userName = service.getParameter(FIXConstants.FIX_USERNAME);
+                Parameter passWord = service.getParameter(FIXConstants.FIX_PASSWORD);
+
+                if (userName != null && passWord != null) {
+                    message.setString(FIXConstants.USERNAME_TAG, userName.getValue().toString());
+                    message.setString(FIXConstants.PASSWORD_TAG, passWord.getValue().toString());
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("Username:" + userName + " or password:" + passWord + "from proxy configuration..");
+                }
+            }
+        } catch (FieldNotFound e) {
+            log.error("One or more required fields are not found in the response message", e);
+        }
 
         if (eventHandler != null) {
-            eventHandler.toAdmin(message, sessionID);
+            eventHandler.toAdmin(this, message, sessionID);
         }
     }
 
@@ -225,15 +252,17 @@ public class FIXIncomingMessageHandler implements Application {
      * This callback notifies when an administrative message is sent from a
      * counterparty to the FIX engine.
      *
-     * @param message QuickFIX message
+     * @param message   QuickFIX message
      * @param sessionID QuickFIX session ID
      * @throws FieldNotFound
      * @throws IncorrectDataFormat
      * @throws IncorrectTagValue
-     * @throws RejectLogon causes a logon reject
+     * @throws RejectLogon         causes a logon reject
      */
     public void fromAdmin(Message message, SessionID sessionID) throws FieldNotFound,
-            IncorrectDataFormat, IncorrectTagValue, RejectLogon {
+                                                                       IncorrectDataFormat,
+                                                                       IncorrectTagValue,
+                                                                       RejectLogon {
 
         if (log.isDebugEnabled()) {
             StringBuffer sb = new StringBuffer();
@@ -248,7 +277,7 @@ public class FIXIncomingMessageHandler implements Application {
         }
 
         if (eventHandler != null) {
-            eventHandler.fromAdmin(message, sessionID);
+            eventHandler.fromAdmin(this, message, sessionID);
         }
     }
 
@@ -256,12 +285,12 @@ public class FIXIncomingMessageHandler implements Application {
      * This is a callback for application messages that are being sent to a
      * counter party.
      *
-     * @param message QuickFIX message
+     * @param message   QuickFIX message
      * @param sessionID QuickFIX session ID
      * @throws DoNotSend This exception aborts message transmission
      */
     public void toApp(Message message, SessionID sessionID) throws DoNotSend {
-          if (log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             StringBuffer sb = new StringBuffer();
             try {
                 sb.append("Sending application level FIX message to ").append(message.getHeader().getField(new TargetCompID()).getValue());
@@ -279,7 +308,7 @@ public class FIXIncomingMessageHandler implements Application {
         }
 
         if (eventHandler != null) {
-            eventHandler.toApp(message, sessionID);
+            eventHandler.toApp(this, message, sessionID);
         }
     }
 
@@ -289,15 +318,16 @@ public class FIXIncomingMessageHandler implements Application {
      * request will come through here. A new thread will be spawned from the
      * thread pool for each incoming message.
      *
-     * @param message QuickFIX message
+     * @param message   QuickFIX message
      * @param sessionID QuickFIX session ID
      * @throws FieldNotFound
      * @throws IncorrectDataFormat
      * @throws IncorrectTagValue
      * @throws UnsupportedMessageType
      */
-    public void fromApp(Message message, SessionID sessionID) throws FieldNotFound, IncorrectDataFormat,
-            IncorrectTagValue, UnsupportedMessageType {
+    public void fromApp(Message message, SessionID sessionID)
+            throws FieldNotFound, IncorrectDataFormat,
+                   IncorrectTagValue, UnsupportedMessageType {
         if (log.isDebugEnabled()) {
             StringBuffer sb = new StringBuffer();
             sb.append("Received FIX message from ").append(message.getHeader().getField(new SenderCompID()).getValue());
@@ -337,7 +367,7 @@ public class FIXIncomingMessageHandler implements Application {
         private void handleIncomingRequest() {
             if (log.isDebugEnabled()) {
                 log.debug("Source session: " + sessionID + " - Received message with sequence " +
-                        "number " + counter);
+                          "number " + counter);
             }
 
             //Create message context for the incoming message
@@ -353,7 +383,7 @@ public class FIXIncomingMessageHandler implements Application {
                 // find the operation for the message, or default to one
                 Parameter operationParam = service.getParameter(BaseConstants.OPERATION_PARAM);
                 QName operationQName = (
-                    operationParam != null ?
+                        operationParam != null ?
                         BaseUtils.getQNameFromString(operationParam.getValue()) :
                         BaseConstants.DEFAULT_OPERATION);
 
@@ -388,7 +418,7 @@ public class FIXIncomingMessageHandler implements Application {
 
         private void handleIncomingResponse(MessageContext outMsgCtx) {
             AbstractTransportSender trpSender = (AbstractTransportSender) cfgCtx.getAxisConfiguration().
-                        getTransportOut(FIXConstants.TRANSPORT_NAME).getSender();
+                    getTransportOut(FIXConstants.TRANSPORT_NAME).getSender();
 
             MessageContext msgCtx = trpSender.createResponseMessageContext(outMsgCtx);
 
@@ -412,13 +442,11 @@ public class FIXIncomingMessageHandler implements Application {
             if (allNewApproach) {
                 //treat all messages (including responses) as new messages
                 handleIncomingRequest();
-            }
-            else {
+            } else {
                 if (acceptor) {
                     //treat messages coming from an acceptor as new request messages
                     handleIncomingRequest();
-                }
-                else {
+                } else {
                     MessageContext outMsgCtx = outgoingMessages.poll();
                     if (outMsgCtx != null) {
                         //handle as a response to an outgoing message

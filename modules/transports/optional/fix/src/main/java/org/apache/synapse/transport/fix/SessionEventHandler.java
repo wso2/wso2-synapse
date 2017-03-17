@@ -21,16 +21,16 @@ package org.apache.synapse.transport.fix;
 
 public interface SessionEventHandler {
 
-    void onCreate(quickfix.SessionID sessionID);
+    void onCreate(FIXIncomingMessageHandler fixIncomingMessageHandler, quickfix.SessionID sessionID);
 
-    void onLogon(quickfix.SessionID sessionID);
+    void onLogon(FIXIncomingMessageHandler fixIncomingMessageHandler, quickfix.SessionID sessionID);
 
-    void onLogout(quickfix.SessionID sessionID);
+    void onLogout(FIXIncomingMessageHandler fixIncomingMessageHandler, quickfix.SessionID sessionID);
 
-    void toAdmin(quickfix.Message message, quickfix.SessionID sessionID);
+    void toAdmin(FIXIncomingMessageHandler fixIncomingMessageHandler, quickfix.Message message, quickfix.SessionID sessionID);
 
-    void fromAdmin(quickfix.Message message, quickfix.SessionID sessionID);
+    void fromAdmin(FIXIncomingMessageHandler fixIncomingMessageHandler, quickfix.Message message, quickfix.SessionID sessionID);
 
-    void toApp(quickfix.Message message, quickfix.SessionID sessionID);
+    void toApp(FIXIncomingMessageHandler fixIncomingMessageHandler, quickfix.Message message, quickfix.SessionID sessionID);
 
 }
