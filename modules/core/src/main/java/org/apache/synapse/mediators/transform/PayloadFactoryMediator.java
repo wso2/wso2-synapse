@@ -59,10 +59,10 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private String formatRaw;
     private String mediaType = XML_TYPE;
     private final static String JSON_CONTENT_TYPE = "application/json";
-    private final static String XML_CONTENT_TYPE  = "application/xml";
-    private final static String TEXT_CONTENT_TYPE  = "text/plain";
-    private final static String SOAP11_CONTENT_TYPE  = "text/xml";
-    private final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
+    private final static String XML_CONTENT_TYPE = "application/xml";
+    private final static String TEXT_CONTENT_TYPE = "text/plain";
+    private final static String SOAP11_CONTENT_TYPE = "text/xml";
+    private final static String SOAP12_CONTENT_TYPE = "application/soap+xml";
     private final static String JSON_TYPE = "json";
     private final static String XML_TYPE = "xml";
     private final static String TEXT_TYPE = "text";
@@ -82,12 +82,14 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
     private Pattern ctxPattern = Pattern.compile("\\$(ctx.[^,\"'<>\n}\\]]*)");
+    private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
     /**
      * Contains 2 paths - one when JSON Streaming is in use (mediateJsonStreamPayload) and the other for regular
      * builders (mediatePayload).
+     *
      * @param synCtx the current message for mediation
      * @return
      */
@@ -106,14 +108,15 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Sets the content type based on the request content type and payload factory media type. This should be called
      * at the end before returning from the mediate() function.
+     *
      * @param synCtx
      */
     private void setContentType(MessageContext synCtx) {
         org.apache.axis2.context.MessageContext a2mc = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         if (mediaType.equals(XML_TYPE)) {
             if (!XML_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
-                    !SOAP11_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
-                    !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) ) {
+                !SOAP11_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE)) &&
+                !SOAP12_CONTENT_TYPE.equals(a2mc.getProperty(Constants.Configuration.MESSAGE_TYPE))) {
                 a2mc.setProperty(Constants.Configuration.MESSAGE_TYPE, XML_CONTENT_TYPE);
                 a2mc.setProperty(Constants.Configuration.CONTENT_TYPE, XML_CONTENT_TYPE);
                 handleSpecialProperties(XML_CONTENT_TYPE, a2mc);
@@ -152,7 +155,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         StringBuffer result = new StringBuffer();
         StringBuffer resultCTX = new StringBuffer();
         regexTransformCTX(resultCTX, synCtx, format);
-        replace(resultCTX.toString(),result, synCtx);
+        replace(resultCTX.toString(), result, synCtx);
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
             log.debug("#mediate. Transformed payload format>>> " + out);
@@ -167,17 +170,17 @@ public class PayloadFactoryMediator extends AbstractMediator {
             } catch (XMLStreamException e) {
                 handleException("Error creating SOAP Envelope from source " + out, synCtx);
             }
-        } else if  (mediaType.equals(JSON_TYPE)) {
+        } else if (mediaType.equals(JSON_TYPE)) {
             try {
                 JsonUtil.getNewJsonPayload(axis2MessageContext, out, true, true);
             } catch (AxisFault axisFault) {
                 handleException("Error creating JSON Payload from source " + out, synCtx);
             }
-        } else if  (mediaType.equals(TEXT_TYPE)) {
+        } else if (mediaType.equals(TEXT_TYPE)) {
             JsonUtil.removeJsonPayload(axis2MessageContext);
             axis2MessageContext.getEnvelope().getBody().addChild(getTextElement(out));
         }
-        //need to honour a content-type of the payload media-type as output from the payload 
+        //need to honour a content-type of the payload media-type as output from the payload
         //{re-merging patch https://wso2.org/jira/browse/ESBJAVA-3014}
         setContentType(synCtx);
         return true;
@@ -186,6 +189,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Calls the replaceCTX function. isFormatDynamic check is used to remove indentations which come from registry based
      * configurations.
+     *
      * @param resultCTX
      * @param synCtx
      * @param format
@@ -194,7 +198,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
-            if(entry == null){
+            if (entry == null) {
                 handleException("Key " + key + " not found ", synCtx);
             }
             String text = "";
@@ -203,12 +207,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 removeIndentations(e);
                 text = e.toString();
             } else if (entry instanceof OMText) {
-                text =  ((OMText) entry).getText();
+                text = ((OMText) entry).getText();
             } else if (entry instanceof String) {
                 text = (String) entry;
             }
             replaceCTX(text, resultCTX, synCtx);
-            } else {
+        } else {
             replaceCTX(format, resultCTX, synCtx);
         }
     }
@@ -224,9 +228,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
         Matcher ctxMatcher;
 
         if (mediaType != null && (mediaType.equals(JSON_TYPE) || mediaType.equals(TEXT_TYPE))) {
-            ctxMatcher=ctxPattern.matcher(format);
+            ctxMatcher = ctxPattern.matcher(format);
         } else {
-            ctxMatcher=ctxPattern.matcher("<pfPadding>" + format + "</pfPadding>");
+            ctxMatcher = ctxPattern.matcher("<pfPadding>" + format + "</pfPadding>");
         }
         while (ctxMatcher.find()) {
             String ctxMatchSeq = ctxMatcher.group();
@@ -234,7 +238,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
             String replaceValue = synCtx.getProperty(expressionTxt).toString();
 
-            if(mediaType.equals(JSON_TYPE) && inferReplacementType(replaceValue).equals(XML_TYPE)) {
+            if (mediaType.equals(JSON_TYPE) && inferReplacementType(replaceValue).equals(XML_TYPE)) {
                 // XML to JSON conversion here
                 try {
                     String xmlReplaceValue = "<jsonObject>" + replaceValue + "</jsonObject>";
@@ -254,7 +258,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     replaceValue = escapeSpecialChars(replaceValue);
 
                 }
-            } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
+            } else if (mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
                 // JSON to XML conversion here
                 try {
                     OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replaceValue), false);
@@ -299,11 +303,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 try {
                     argIndex = Integer.parseInt(matchSeq.substring(1, matchSeq.length()));
                 } catch (NumberFormatException e) {
-                    argIndex = Integer.parseInt(matchSeq.substring(2, matchSeq.length()-1));
+                    argIndex = Integer.parseInt(matchSeq.substring(2, matchSeq.length() - 1));
                 }
-                replacement = argValues[argIndex-1];
-                replacementEntry =  replacement.entrySet().iterator().next();
-                if(mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(XML_TYPE)) {
+                replacement = argValues[argIndex - 1];
+                replacementEntry = replacement.entrySet().iterator().next();
+                if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(XML_TYPE)) {
                     // XML to JSON conversion here
                     try {
                         replacementValue = "<jsonObject>" + replacementEntry.getKey() + "</jsonObject>";
@@ -334,7 +338,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                         replacementValue = escapeSpecialChars(replacementValue);
 
                     }
-                } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
+                } else if (mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
                     // JSON to XML conversion here
                     try {
                         OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replacementEntry.getKey()), false);
@@ -359,11 +363,17 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // This is to replace " with \" and \\ with \\\\
                     //replacing other json special characters i.e \b, \f, \n \r, \t
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
-                            (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
+                        (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = escapeSpecialChars(replacementValue);
-                    }
-                    else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
-                            (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
+                        // skip double quotes if replacement is boolean or null or valid json number
+                        if (!trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
+                            && !trimmedReplacementValue.equals("null") && !validJsonNumber
+                                .matcher(trimmedReplacementValue).matches()) {
+                            replacementValue = "\"" + replacementValue + "\"";
+                        }
+
+                    } else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
+                               (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         // This is to handle only the string value
                         replacementValue = replacementValue.replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES);
                     }
@@ -395,7 +405,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Helper function that takes a Map of String, ArgumentDetails where key contains the value of an evaluated SynapsePath
      * expression and value contains the type of SynapsePath + deepcheck status in use.
-     *
+     * <p>
      * It returns the type of conversion required (XML | JSON | String) based on the actual returned value and the path
      * type.
      *
@@ -403,19 +413,19 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * @return
      */
     private String inferReplacementType(Map.Entry<String, ArgumentDetails> entry) {
-        if (entry.getValue().isLiteral()){
+        if (entry.getValue().isLiteral()) {
             return STRING_TYPE;
         } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
-           && entry.getValue().isXml()) {
+                   && entry.getValue().isXml()) {
             return XML_TYPE;
-        } else if(entry.getValue().getPathType().equals(SynapsePath.X_PATH)
-                  && !entry.getValue().isXml()) {
+        } else if (entry.getValue().getPathType().equals(SynapsePath.X_PATH)
+                   && !entry.getValue().isXml()) {
             return STRING_TYPE;
-        } else if(entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
-                  && isJson(entry.getKey())) {
+        } else if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
+                   && isJson(entry.getKey())) {
             return JSON_TYPE;
-        } else if(entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
-                  && !isJson((entry.getKey()))) {
+        } else if (entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
+                   && !isJson((entry.getKey()))) {
             return STRING_TYPE;
         } else {
             return STRING_TYPE;
@@ -423,11 +433,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     private String inferReplacementType(String entry) {
-        if(isXML(entry)) {
+        if (isXML(entry)) {
             return XML_TYPE;
-        } else if(isJson(entry)) {
+        } else if (isJson(entry)) {
             return JSON_TYPE;
-        } else if(!isJson((entry))) {
+        } else if (!isJson((entry))) {
             return STRING_TYPE;
         } else {
             return STRING_TYPE;
@@ -439,8 +449,8 @@ public class PayloadFactoryMediator extends AbstractMediator {
         QName resultQName = firstChild.getQName();
         if (resultQName.getLocalPart().equals("Envelope") && (
                 resultQName.getNamespaceURI().equals(SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI) ||
-                        resultQName.getNamespaceURI().
-                                equals(SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI))) {
+                resultQName.getNamespaceURI().
+                        equals(SOAP12Constants.SOAP_ENVELOPE_NAMESPACE_URI))) {
             SOAPEnvelope soapEnvelope = AXIOMUtils.getSOAPEnvFromOM(resultElement.getFirstElement());
             if (soapEnvelope != null) {
                 try {
@@ -458,6 +468,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function that returns true if value passed is of JSON type.
+     *
      * @param value
      * @return
      */
@@ -467,6 +478,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function to remove indentations.
+     *
      * @param element
      */
     private void removeIndentations(OMElement element) {
@@ -479,6 +491,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     /**
      * Helper function to remove indentations.
+     *
      * @param element
      * @param removables
      */
@@ -500,6 +513,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     /**
      * Goes through SynapsePath argument list, evaluating each by calling stringValueOf and returns a HashMap String, String
      * array where each item will contain a hash map with key "evaluated expression" and value "SynapsePath type".
+     *
      * @param synCtx
      * @return
      */
@@ -525,7 +539,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // of the payload is XML.
                     details.setXml(isXML(value));
                     if (!details.isXml() && !arg.getExpression().getPathType().equals(SynapsePath.JSON_PATH)
-                            && XML_TYPE.equals(getType())) {
+                        && XML_TYPE.equals(getType())) {
                         value = StringEscapeUtils.escapeXml(value);
                     }
                     value = Matcher.quoteReplacement(value);
@@ -630,13 +644,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
         return !isDoingJson(messageContext);
     }
 
-	public String getInputType() {
-        if(pathArgumentList.size()>0) {
+    public String getInputType() {
+        if (pathArgumentList.size() > 0) {
             Object argument = pathArgumentList.get(0);
             if (argument != null && argument instanceof SynapseXPath) {
                 return XML_TYPE;
-            }
-            else if (argument != null && argument instanceof SynapseJsonPath) {
+            } else if (argument != null && argument instanceof SynapseJsonPath) {
                 return JSON_TYPE;
             }
         }
