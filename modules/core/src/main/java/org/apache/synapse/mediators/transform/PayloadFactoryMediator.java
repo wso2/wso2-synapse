@@ -82,6 +82,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
     private Pattern ctxPattern = Pattern.compile("\\$(ctx.[^,\"'<>\n}\\]]*)");
+    private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
@@ -361,6 +362,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = escapeSpecialChars(replacementValue);
+                        // skip double quotes if replacement is boolean or null or valid json number
+                        if (!trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
+                            && !trimmedReplacementValue.equals("null") && !validJsonNumber
+                                .matcher(trimmedReplacementValue).matches()) {
+                            replacementValue = "\"" + replacementValue + "\"";
+                        }
                     }
                     else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
