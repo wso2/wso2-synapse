@@ -53,19 +53,13 @@ public class RelaySecuirtyMessageBuilderDispatchandler  extends AbstractDispatch
 	private static final String PROXY = "proxy";
 	private static final String SERVICE_TYPE = "serviceType";
 	public static final String NAME = "RelaySecuirtyMessageBuilderDispatchandler";
-	public static final String ADMIN_SERVICE = "adminService";
-
+	
 	
 	@Override
 	public InvocationResponse invoke(MessageContext messageContext) throws AxisFault {
 		InvocationResponse invocationResponse = super.invoke(messageContext);
 
 		EndpointReference toEPR = messageContext.getTo();
-		/* This parameter is used to identify Carbon App deployments through AdminService calls and it will
-		 * bypass message building for such requests.
-		 * Added as a requirement for EI
-		 */
-		boolean isAdminService = false;
 
 		Pipe pipe = (Pipe) messageContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
 		
@@ -87,25 +81,20 @@ public class RelaySecuirtyMessageBuilderDispatchandler  extends AbstractDispatch
 					    serviceOpPart != null) {
 						axisService = registry.getService(serviceOpPart);
 						if (axisService != null) {
-							isAdminService = ((axisService.getParameter(ADMIN_SERVICE) != null)
-									? Boolean.TRUE.toString().equals(axisService.getParameter(ADMIN_SERVICE).getValue())
-									: Boolean.FALSE);
-							if (!isAdminService) {
-								Parameter parameter = axisService.getParameter(SERVICE_TYPE);
-								if (parameter != null) {
-									if (!parameter.getValue().equals(PROXY)) {
-										build(messageContext);
-									}
-								} else {
+							Parameter parameter = axisService.getParameter(SERVICE_TYPE);
+							if (parameter != null) {
+								if (!parameter.getValue().equals(PROXY)) {
 									build(messageContext);
 								}
+							} else {
+								build(messageContext);
 							}
 						}
 					}
 				}
 
 			}
-			if (messageContext.isEngaged(PassThroughConstants.SECURITY_MODULE_NAME) && !isAdminService) {
+			if (messageContext.isEngaged(PassThroughConstants.SECURITY_MODULE_NAME)) {
 				SOAPHeader header = null;
 				if (messageContext.getEnvelope().getHeader() != null) {
 					header = messageContext.getEnvelope().getHeader();
