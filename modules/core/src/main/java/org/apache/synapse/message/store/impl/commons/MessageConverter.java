@@ -48,8 +48,6 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.util.UUIDGenerator;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -58,6 +56,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
 public final class MessageConverter {
     private static final String ABSTRACT_MC_PROPERTIES = "ABSTRACT_MC_PROPERTIES";
@@ -107,8 +107,9 @@ public final class MessageConverter {
             axis2Ctx.setDoingREST(axis2Msg.isDoingPOX());
             axis2Ctx.setDoingMTOM(axis2Msg.isDoingMTOM());
             axis2Ctx.setDoingSwA(axis2Msg.isDoingSWA());
-            if (axis2Msg.getService() != null) {
-                AxisService axisService = axisConfig.getServiceForActivation(axis2Msg.getService());
+            AxisService axisService;
+            if (axis2Msg.getService() != null &&
+                    (axisService = axisConfig.getServiceForActivation(axis2Msg.getService())) != null) {
                 AxisOperation axisOperation = axisService.getOperation(axis2Msg.getOperationName());
                 axis2Ctx.setFLOW(axis2Msg.getFLOW());
                 ArrayList executionChain = new ArrayList();
@@ -131,6 +132,10 @@ public final class MessageConverter {
                 axis2Ctx.setOperationContext(operationContext);
                 axis2Ctx.setAxisService(axisService);
                 axis2Ctx.setAxisOperation(axisOperation);
+            } else {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Axis2 service is not available. Hence skipping execution of out flow handlers");
+                }
             }
             if (axis2Msg.getReplyToAddress() != null) {
                 axis2Ctx.setReplyTo(new EndpointReference(axis2Msg.getReplyToAddress().trim()));
