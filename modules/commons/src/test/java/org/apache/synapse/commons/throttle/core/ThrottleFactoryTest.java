@@ -344,7 +344,7 @@ public class ThrottleFactoryTest extends TestCase {
         ThrottleContext throttleContext = throttle.getThrottleContext(ThrottleConstants.IP_BASED_THROTTLE_KEY);
 
         RoleBasedAccessRateController roleBasedAccessRateController = new RoleBasedAccessRateController();
-        int noOfThreads = 1500;
+        int noOfThreads = 750;
         ExecutorService executorService = Executors.newFixedThreadPool(noOfThreads * 2);
         String roleId = "testRoleId";
         List<String> keys = getRandomKeys(noOfThreads);
