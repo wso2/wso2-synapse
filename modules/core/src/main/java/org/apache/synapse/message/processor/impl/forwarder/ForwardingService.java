@@ -139,8 +139,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
     private boolean isDeactivatedAtStartup= false;
     
     private boolean isNonHTTP = false;
+
+	private boolean isHL7 = false;
     
     Pattern httpPattern = Pattern.compile("^(http|https):");
+
+	Pattern hl7Pattern = Pattern.compile("^(hl7):");
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
@@ -433,6 +437,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	        if (endpointDefinition.getAddress() != null) {
 	            endpointReferenceValue = endpointDefinition.getAddress();
 	            isNonHTTP = !isHTTPEndPoint(endpointReferenceValue);
+		        isHL7 = isHL7Endpoint(endpointReferenceValue);
 	        } 
 			try {
 				// Send message to the client
@@ -468,7 +473,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							outCtx = sender.send(ep, messageContext);
 						}
 
-                        if (isNonHTTP) {
+                        if (isNonHTTP && !isHL7) {
                             /*
                              * There is no status codes to deal with JMS eps. So
                              * merely set it as a success if there's no any
@@ -823,7 +828,17 @@ public class ForwardingService implements Task, ManagedLifecycle {
         Matcher match = httpPattern.matcher(epAddress);
         return match.find();
     }
-    
+
+	/**
+	 * Return true if this is a hl7 endpoint.
+	 * @param epAddress
+	 * @return true if endpoint starts with hl7
+     */
+	private boolean isHL7Endpoint(String epAddress) {
+		Matcher match = hl7Pattern.matcher(epAddress);
+		return match.find();
+	}
+
     /**
      * + * Used to determine the family of HTTP status codes to which the given
      * code
