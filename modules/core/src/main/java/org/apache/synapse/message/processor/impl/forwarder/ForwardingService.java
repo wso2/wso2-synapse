@@ -137,7 +137,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * Specifies whether the service should be started as deactivated or not
      */
     private boolean isDeactivatedAtStartup= false;
-    
+
+    /**
+     * Specifies whether we should consider the response of the message in determining the success of message forwarding
+     */
     private boolean isResponseValidationNotRequired = false;
     
     Pattern httpPattern = Pattern.compile("^(http|https|hl7):");
@@ -431,9 +434,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
 			String endpointReferenceValue = null;
 	        if (endpointDefinition.getAddress() != null) {
-	            endpointReferenceValue = endpointDefinition.getAddress();
+		        endpointReferenceValue = endpointDefinition.getAddress();
 		        isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(endpointReferenceValue);
-	        } 
+	        }
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
