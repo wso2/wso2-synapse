@@ -78,6 +78,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\n";
     private final static String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
     private final static String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
+    public static final String QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON = "QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON";
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
@@ -362,10 +363,13 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
                         replacementValue = escapeSpecialChars(replacementValue);
+                        // Check for following property which will force the string to include quotes
+                        Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
                         // skip double quotes if replacement is boolean or null or valid json number
-                        if (!trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
-                            && !trimmedReplacementValue.equals("null") && !validJsonNumber
-                                .matcher(trimmedReplacementValue).matches()) {
+                        if (force_string_quote != null && ((String) force_string_quote).equalsIgnoreCase("true")
+                                && !trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
+                                && !trimmedReplacementValue.equals("null")
+                                && !validJsonNumber.matcher(trimmedReplacementValue).matches()) {
                             replacementValue = "\"" + replacementValue + "\"";
                         }
                     }
