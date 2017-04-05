@@ -101,22 +101,6 @@ public class MessageStoreMediator extends AbstractMediator{
                     log.debug("Message Store mediator storing the message : \n " + synCtx.getEnvelope());
                 }
 
-                // Here we set the server name in the message context before storing the message.
-                //This can be used by the Processors in a clustering setup.
-                if(synCtx instanceof Axis2MessageContext) {
-
-                    String serverName =
-                                        getAxis2ParameterValue(((Axis2MessageContext)synCtx).
-                                        getAxis2MessageContext().
-                                        getConfigurationContext().getAxisConfiguration(),
-                                        SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-                    if(serverName != null) {
-                        synCtx.setProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME,
-                                serverName);
-                    }
-
-                }
-
                 // Ensure that the message is fully read
                 synCtx.getEnvelope().buildWithAttachments();
                 //Clone the message before sending to the producer
@@ -213,25 +197,4 @@ public class MessageStoreMediator extends AbstractMediator{
         this.onStoreSequence = onStoreSequence;
     }
 
-     /**
-     * Helper method to get a value of a parameters in the AxisConfiguration
-     *
-     * @param axisConfiguration AxisConfiguration instance
-     * @param paramKey The name / key of the parameter
-     * @return The value of the parameter
-     */
-    private static String getAxis2ParameterValue(AxisConfiguration axisConfiguration,
-                                                 String paramKey) {
-
-        Parameter parameter = axisConfiguration.getParameter(paramKey);
-        if (parameter == null) {
-            return null;
-        }
-        Object value = parameter.getValue();
-        if (value != null && value instanceof String) {
-            return (String) parameter.getValue();
-        } else {
-            return null;
-        }
-    }
 }
