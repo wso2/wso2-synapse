@@ -41,6 +41,7 @@ public class DBLookupMediator extends AbstractDBMediator {
         // set as message context properties, any results that have been specified
         Connection con = null;
         ResultSet rs = null;
+        PreparedStatement ps = null;
         boolean threadInTx = false;
         try {
         	if(TranscationManger.isThreadHasEnlistment()){
@@ -58,7 +59,7 @@ public class DBLookupMediator extends AbstractDBMediator {
         	}
         	
         	 
-            PreparedStatement ps = getPreparedStatement(stmnt, con, msgCtx);
+            ps = getPreparedStatement(stmnt, con, msgCtx);
             rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -111,6 +112,11 @@ public class DBLookupMediator extends AbstractDBMediator {
                 try {
                     rs.close();
                 } catch (SQLException e) {}
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException ignore) {}
             }
             if (con != null && !threadInTx) {
                 try {
