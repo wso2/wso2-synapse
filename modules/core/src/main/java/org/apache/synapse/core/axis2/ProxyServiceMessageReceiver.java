@@ -78,7 +78,18 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 (mc.getWSAAction() != null ? mc.getWSAAction() : "null")));
 
             if (traceOn && trace.isTraceEnabled()) {
-                String[] cids = mc.getAttachmentMap().getAllContentIDs();
+                String[] cids = null;
+                try {
+                    cids = mc.getAttachmentMap().getAllContentIDs();
+                } catch (Exception ex){
+                    //partially read stream could lead to corrupted attachment map and hence this exception
+                    //corrupted attachment map leads to inconsistent runtime exceptions and behavior
+                    //discard the attachment map for the fault handler invocation
+                    //ensure the successful completion for fault handler flow
+                    mc.setAttachmentMap(null);
+                    log.debug("Synapse encountered an exception when reading attachments from bytes stream. " +
+                            "Hence Attachments map is dropped from the message context.");
+                }
                 if (cids != null && cids.length > 0) {
                     for (String cid : cids) {
                         trace.trace("With attachment content ID : " + cid);
