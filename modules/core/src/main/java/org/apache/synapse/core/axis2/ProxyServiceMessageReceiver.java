@@ -87,8 +87,8 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                     //discard the attachment map for the fault handler invocation
                     //ensure the successful completion for fault handler flow
                     mc.setAttachmentMap(null);
-                    log.debug("Synapse encountered an exception when reading attachments from bytes stream. " +
-                            "Hence Attachments map is dropped from the message context.");
+                    log.error("Synapse encountered an exception when reading attachments from bytes stream. " +
+                            "Hence Attachments map is dropped from the message context.", ex);
                 }
                 if (cids != null && cids.length > 0) {
                     for (String cid : cids) {

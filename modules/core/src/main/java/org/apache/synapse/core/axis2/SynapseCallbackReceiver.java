@@ -318,8 +318,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     //discard the attachment map for the fault handler invocation
                     //ensure the successful completion for fault handler flow
                     response.setAttachmentMap(null);
-                    log.debug("Synapse encountered an exception when reading attachments from bytes stream. " +
-                            "Hence Attachments map is dropped from the message context.");
+                    log.error("Synapse encountered an exception when reading attachments from bytes stream. " +
+                            "Hence Attachments map is dropped from the message context.", ex);
                 }
                 if (cids != null && cids.length > 0) {
                     for (String cid : cids) {
@@ -579,10 +579,8 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     //ensure the successful completion for fault handler flow
                     ((Axis2MessageContext) synapseInMessageContext)
                             .getAxis2MessageContext().setAttachmentMap(null);
-                    if (log.isDebugEnabled()) {
-                        log.debug("Synapse encountered an exception when reading attachments from bytes stream. " +
-                                "Hence Attachments map is dropped from the message context.");
-                    }
+                    log.error("Synapse encountered an exception when reading attachments from bytes stream. " +
+                                "Hence Attachments map is dropped from the message context.", syne);
                 }
                 Stack stack = synapseInMessageContext.getFaultStack();
                 if (stack != null && stack.isEmpty()) {
