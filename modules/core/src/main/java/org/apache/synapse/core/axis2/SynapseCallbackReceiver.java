@@ -74,7 +74,6 @@ import java.util.regex.Pattern;
 public class SynapseCallbackReceiver extends CallbackReceiver {
 
     private static final Log log = LogFactory.getLog(SynapseCallbackReceiver.class);
-    private static final String STREAM_COPY_EXCEPTION_PATTERN = ".*(org.apache.axiom.ext.io.StreamCopyException).*";
 
     /** This is the synchronized callbackStore that maps outgoing messageID's to callback objects */
 //    private final Map<String, AxisCallback> callbackStore;  // will made thread safe in the constructor
@@ -568,20 +567,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             try {
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);
             } catch (Exception syne) {
-                //matching a regex is inefficient however, it is mandatory to consider scenarios where OMException
-                //is propagated to higher layer as different Exception TYPE such as Eg:- IOException, SynapseException
-                if (syne instanceof OMException ||
-                        Pattern.compile(STREAM_COPY_EXCEPTION_PATTERN)
-                                .matcher(ExceptionUtils.getStackTrace(syne)).find()) {
-                    //partially read stream could lead to corrupted attachment map and hence this exception
-                    //corrupted attachment map leads to inconsistent runtime exceptions and behavior
-                    //discard the attachment map for the fault handler invocation
-                    //ensure the successful completion for fault handler flow
-                    ((Axis2MessageContext) synapseInMessageContext)
-                            .getAxis2MessageContext().setAttachmentMap(null);
-                    log.error("Synapse encountered an exception when reading attachments from bytes stream. " +
-                                "Hence Attachments map is dropped from the message context.", syne);
-                }
+                //introduced to handle runtime exceptions which are occurred inside Synapse handlers
+                //partially read stream could lead to corrupted attachment map and hence this exception
+                //corrupted attachment map leads to inconsistent runtime exceptions and behavior
+                //discard the attachment map for the fault handler invocation
+                //ensure the successful completion for fault handler flow
+                //even we drop attachment map for both cases messages which have attachment /
+                //messages which do not have attachments it would still not be any impact.
+                //However setting attachment map to null for messages which do not have attachments is not required.
+                //introduced due to the fact conflicts between Axiom exceptions for attachment/ non attachments cases
+                //and performance impact that could cause of regular expression matching of exceptional stack traces.
+                ((Axis2MessageContext) synapseInMessageContext)
+                        .getAxis2MessageContext().setAttachmentMap(null);
                 Stack stack = synapseInMessageContext.getFaultStack();
                 if (stack != null && stack.isEmpty()) {
                     registerFaultHandler(synapseInMessageContext);
