@@ -100,6 +100,9 @@ public class RelayUtils {
                         }
                         bis.reset();
                         in = bis;
+                    } else {
+                        messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+                        return;
                     }
                 }
 
