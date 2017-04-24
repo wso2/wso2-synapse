@@ -91,9 +91,16 @@ public class RelayUtils {
 
                 Object http_sc = messageContext.getProperty(NhttpConstants.HTTP_SC);
                 if (http_sc != null && http_sc instanceof Integer && http_sc.equals(202)) {
-                    messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
-                                               Boolean.TRUE);
-                    return;
+                    if (in != null) {
+                        InputStream bis = new ReadOnlyBIS(in);
+                        int c = bis.read();
+                        if (c == -1) {
+                            messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+                            return;
+                        }
+                        bis.reset();
+                        in = bis;
+                    }
                 }
 
                 builldMessage(messageContext, earlyBuild, in);
@@ -302,6 +309,51 @@ public class RelayUtils {
                     handleException("Error when consuming the input stream to discard ", exception);
                 }
             }
+        }
+    }
+
+    /**
+     * An Un-closable, Read-Only, Reusable, BufferedInputStream
+     */
+    private static class ReadOnlyBIS extends BufferedInputStream {
+        private static final String LOG_STREAM = "org.apache.synapse.transport.passthru.util.ReadOnlyStream";
+        private static final Log logger = LogFactory.getLog(LOG_STREAM);
+
+        public ReadOnlyBIS(InputStream inputStream) {
+            super(inputStream);
+            super.mark(Integer.MAX_VALUE);
+            if (logger.isDebugEnabled()) {
+                logger.debug("<init>");
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            super.reset();
+            //super.mark(Integer.MAX_VALUE);
+            if (logger.isDebugEnabled()) {
+                logger.debug("#close");
+            }
+        }
+
+        @Override
+        public void mark(int readlimit) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("#mark");
+            }
+        }
+
+        @Override
+        public boolean markSupported() {
+            return true; //but we don't mark.
+        }
+
+        @Override
+        public long skip(long n) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("#skip");
+            }
+            return 0;
         }
     }
 }
