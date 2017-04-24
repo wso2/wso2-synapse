@@ -668,6 +668,8 @@ public class ClientHandler implements NHttpClientEventHandler {
                              + messageSizeSum + " bytes to prevent OOM.");
                     dropClientConnection(conn);
                     conn.getContext().setAttribute(NhttpConstants.CONNECTION_DROPPED, true);
+                    //stopped http chunk stream from here and mark end of stream
+                    ((SharedInputBuffer)inBuf).close();
                 }
                 httpContext.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, messageSizeSum);
             }
