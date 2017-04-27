@@ -96,13 +96,11 @@ public class RelayUtils {
                         int c = bis.read();
                         if (c == -1) {
                             messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+                            messageContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
                             return;
                         }
                         bis.reset();
                         in = bis;
-                    } else {
-                        messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
-                        return;
                     }
                 }
 
