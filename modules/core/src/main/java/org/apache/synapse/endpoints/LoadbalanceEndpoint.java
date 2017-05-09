@@ -82,6 +82,13 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
      */
     private List<Member> inactiveMembers = null;
 
+    /**
+     * Variable to indicate that LoadbalanceEndpoint is completely initialized
+     * NOTE: This is added (even there is super.initialized exists) since in super.init() it set as true (which indicate
+     * other threads which refer this LoadbalanceEndpoint as initialized) even though LoadbalanceEndpoint initialization
+     * not yet completed. To avoid that
+     */
+    private boolean loadBalanceEPInitialized = false;
 
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
@@ -99,6 +106,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 ManagedLifecycle lifecycle = (ManagedLifecycle) algorithm;
                 lifecycle.init(synapseEnvironment);
             }
+            loadBalanceEPInitialized = true;
         }
     }
 
@@ -112,6 +120,17 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
             ManagedLifecycle lifecycle = (ManagedLifecycle) algorithm;
             lifecycle.destroy();
         }
+    }
+
+    /**
+     * NOTE: Override org.apache.synapse.endpoints.AbstractEndpoint#isInitialized() to ensure return true only after LB
+     * Endpoint get fully initialized. This is done to avoid super.isInitialized return true while LoadbalanceEndpoint
+     * initializing during request burst *at server startup*
+     * @return
+     */
+    @Override
+    public boolean isInitialized() {
+        return loadBalanceEPInitialized;
     }
 
     public void send(MessageContext synCtx) {
