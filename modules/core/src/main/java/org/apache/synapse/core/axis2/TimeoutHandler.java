@@ -128,7 +128,13 @@ public class TimeoutHandler extends TimerTask {
 
                     if (callback.getTimeOutOn() <= currentTime) {
 
-                        toRemove.add(key);
+                        synchronized (callback) {
+                            if (callback.isMarkedForRemoval()) {
+                                return;
+                            }
+                            callback.setMarkedForRemoval();
+                            toRemove.add(key);
+                        }
 
                         if (callback.getTimeOutAction() == SynapseConstants.DISCARD_AND_FAULT) {
 
