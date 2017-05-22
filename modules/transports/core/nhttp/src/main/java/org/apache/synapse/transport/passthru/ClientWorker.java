@@ -192,6 +192,7 @@ public class ClientWorker implements Runnable {
             tenantInfoInitiator.initTenantInfo();
         }
         if (responseMsgCtx == null) {
+            cleanup();
             return;
         }
         if (responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
@@ -317,7 +318,7 @@ public class ClientWorker implements Runnable {
      */
     private void cleanup () {
         //clean threadLocal variables
-        responseMsgCtx.destroyCurrentMessageContext();
+        MessageContext.destroyCurrentMessageContext();
     }
 
 

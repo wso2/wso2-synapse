@@ -715,7 +715,7 @@ public class ServerWorker implements Runnable {
      */
     private void cleanup () {
         //clean threadLocal variables
-        msgContext.destroyCurrentMessageContext();
+        MessageContext.destroyCurrentMessageContext();
     }
 
 }
