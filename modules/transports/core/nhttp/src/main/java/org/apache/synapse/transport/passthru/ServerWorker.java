@@ -123,43 +123,46 @@ public class ServerWorker implements Runnable {
     }
 
     public void run() {
-        CustomLogSetter.getInstance().clearThreadLocalContent();
-        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
-        if (tenantInfoInitiator != null) {
-            tenantInfoInitiator.initTenantInfo();
-        }
-        request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
-                System.currentTimeMillis());
-        if (log.isDebugEnabled()) {
-            log.debug("Starting a new Server Worker instance");
-        }
-        String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
+        try {
+            CustomLogSetter.getInstance().clearThreadLocalContent();
+            TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+            if (tenantInfoInitiator != null) {
+                tenantInfoInitiator.initTenantInfo();
+            }
+            request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
+            if (log.isDebugEnabled()) {
+                log.debug("Starting a new Server Worker instance");
+            }
+            String method =
+                    request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
 
-        processHttpRequestUri(msgContext, method);
+            processHttpRequestUri(msgContext, method);
 
-        //For requests to fetch wsdl, return the message flow without going through the normal flow
-        if (isRequestToFetchWSDL()) {
-            return;
+            //For requests to fetch wsdl, return the message flow without going through the normal flow
+            if (isRequestToFetchWSDL()) {
+                return;
+            }
+
+            //need special case to handle REST
+            boolean isRest = isRESTRequest(msgContext, method);
+
+            //should be process normally
+            if (!isRest) {
+                if (request.isEntityEnclosing()) {
+                    processEntityEnclosingRequest(msgContext, true);
+                } else {
+                    processNonEntityEnclosingRESTHandler(null, msgContext, true);
+                }
+            } else {
+                String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
+                SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
+                processNonEntityEnclosingRESTHandler(soapEnvelope, msgContext, true);
+            }
+
+            sendAck(msgContext);
+        } finally {
+            cleanup();
         }
-		
-		//need special case to handle REST
-		boolean isRest = isRESTRequest(msgContext, method);
-
-		//should be process normally
-		if (!isRest) {
-			if (request.isEntityEnclosing()) {
-				processEntityEnclosingRequest(msgContext, true);
-			} else {
-				processNonEntityEnclosingRESTHandler(null, msgContext, true);
-			}
-		}else {
-            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
-            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
-            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
-        }
-
-        sendAck(msgContext);
-        msgContext.destroyCurrentMessageContext();
     }
 
     private boolean isRequestToFetchWSDL() {
@@ -705,6 +708,14 @@ public class ServerWorker implements Runnable {
      */
     public SourceConfiguration getSourceConfiguration() {
         return sourceConfiguration;
+    }
+
+    /**
+     * Perform cleanup of ServerWorker
+     */
+    private void cleanup () {
+        //clean threadLocal variables
+        MessageContext.destroyCurrentMessageContext();
     }
 
 }
