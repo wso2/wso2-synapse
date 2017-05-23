@@ -28,12 +28,17 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.xml.stream.XMLStreamException;
 
 /**
  * FailoverEndpoint can have multiple child endpoints. It will always try to send messages to
@@ -51,6 +56,17 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
     /** The fail-over mode supported by this endpoint. By default we do dynamic fail-over */
     private boolean dynamic = true;
+
+    /** check message need to be built before sending */
+    private boolean buildMessage = false;
+
+    public void init(SynapseEnvironment synapseEnvironment) {
+        if (!initialized) {
+            super.init(synapseEnvironment);
+            buildMessage = Boolean.parseBoolean(
+                    SynapsePropertiesLoader.getPropertyValue(SynapseConstants.BUILD_MESSAGE_ON_FAILOVER, "false"));
+        }
+    }
 
     public void send(MessageContext synCtx) {
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
@@ -92,8 +108,17 @@ public class FailoverEndpoint extends AbstractEndpoint {
             if (log.isDebugEnabled()) {
                 log.debug(this + " Building the SoapEnvelope");
             }
-            // If not yet a retry, we have to build the envelope since we need to support failover
-            synCtx.getEnvelope().build();
+            //preserving the payload to send next endpoint if needed
+            if(buildMessage) {
+                try {
+                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+                } catch (IOException | XMLStreamException ex) {
+                    String msg = "Error while building the message";
+                    handleException(msg, ex);
+
+                }
+            }
+            synCtx.getEnvelope().buildWithAttachments();
             //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
             if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
                     PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {

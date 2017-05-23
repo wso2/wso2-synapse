@@ -503,6 +503,9 @@ public final class SynapseConstants {
     //Streaming Json Path
     public static final String STREAMING_JSONPATH_PROCESSING = "synapse.streaming.jsonpath.enabled";
 
+    //Enable message building when doing failover
+    public static final String BUILD_MESSAGE_ON_FAILOVER = "build.message.on.failover.enable";
+
     /**
      * Message content property of incoming transport-in name
      */
