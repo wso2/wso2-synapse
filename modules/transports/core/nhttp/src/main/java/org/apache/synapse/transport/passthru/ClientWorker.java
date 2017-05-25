@@ -192,7 +192,6 @@ public class ClientWorker implements Runnable {
             tenantInfoInitiator.initTenantInfo();
         }
         if (responseMsgCtx == null) {
-            cleanup();
             return;
         }
         if (responseMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_SOURCE_CONNECTION) != null) {
@@ -266,9 +265,7 @@ public class ClientWorker implements Runnable {
             }
 
         } catch (AxisFault af) {
-            log.error("Fault creating response SOAP envelope", af);
-        } finally {
-            cleanup();
+            log.error("Fault creating response SOAP envelope", af);            
         }
     }
 
@@ -311,14 +308,6 @@ public class ClientWorker implements Runnable {
 
         // Unable to determine the content type - Return default value
         return PassThroughConstants.DEFAULT_CONTENT_TYPE;
-    }
-
-    /**
-     * Perform cleanup of ClientWorker
-     */
-    private void cleanup () {
-        //clean threadLocal variables
-        MessageContext.destroyCurrentMessageContext();
     }
 
 }
