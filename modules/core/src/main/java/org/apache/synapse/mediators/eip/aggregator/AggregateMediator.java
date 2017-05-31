@@ -477,7 +477,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         activeAggregates.remove(aggregate.getCorrelation());
 
         if ((correlateExpression != null &&
-            !correlateExpression.toString().equals(aggregate.getCorrelation())) ||
+            correlateExpression.toString().equals(aggregate.getCorrelation())) ||
             correlateExpression == null) {
 
             if (onCompleteSequence != null) {
