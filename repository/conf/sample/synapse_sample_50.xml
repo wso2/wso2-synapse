@@ -24,7 +24,7 @@
     <sequence name="main">
         <!-- filtering of messages with XPath and regex matches -->
         <header name="Action" value="urn:getQuote"/>
-        <filter source="get-property('To')" regex=".*/StockQuote.*">
+        <filter source="get-property('To')" regex="/services/StockQuote">
             <then>
                 <send>
                     <endpoint>
