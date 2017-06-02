@@ -709,7 +709,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
             if (attemptCount >= maxDeliverAttempts) {
 
                 if (this.isMaxDeliveryAttemptDropEnabled) {
-                    dropMessageAndContinueMessageProcessor();
+                    dropMessageAndContinueMessageProcessor(msgCtx);
                     if (log.isDebugEnabled()) {
                         log.debug("Message processor [" + messageProcessor.getName() +
                                 "] Dropped the failed message and continue due to reach of max attempts");
@@ -776,10 +776,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		return (cronExpression != null) && (throttlingInterval > -1);
 	}
 
-	private void dropMessageAndContinueMessageProcessor() {
+	private void dropMessageAndContinueMessageProcessor(MessageContext messageContext) {
 		messageConsumer.ack();
 		attemptCount = 0;
 		isSuccessful = true;
+		sendThroughDeactivateSeq(messageContext);
 		log.info("Removed failed message and continue the message processor [" +
 		         this.messageProcessor.getName() + "]");
 	}
