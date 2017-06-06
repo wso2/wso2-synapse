@@ -29,7 +29,10 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.processor.MessageProcessorCleanupService;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
+import org.apache.synapse.message.processor.impl.failover.FailoverForwardingService;
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorConstants;
+import org.apache.synapse.message.processor.impl.forwarder.ForwardingService;
+import org.apache.synapse.message.processor.impl.sampler.SamplingService;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
@@ -71,6 +74,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	protected SynapseEnvironment synapseEnvironment;
 
 	private TaskManager taskManager = null;
+	/**
+	 * Task associated with Message Processor
+	 */
+	private Task task;
 
 	private int memberCount = 1;
 
@@ -141,7 +148,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			 * and consumer properly. Otherwise you may get NullPointer
 			 * exceptions.
 			 */
-			Task task = this.getTask();
+			task = this.getTask();
 			TaskDescription taskDescription = new TaskDescription();
 			taskDescription.setName(TASK_PREFIX + name + i);
 			taskDescription.setTaskGroup(MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
@@ -368,6 +375,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
     @Override
     public void pauseService() {
+	    if (task instanceof ForwardingService) {
+		    ((ForwardingService) task).terminate();
+	    } else if (task instanceof SamplingService) {
+		    ((SamplingService) task).terminate();
+	    } else if (task instanceof FailoverForwardingService) {
+		    ((FailoverForwardingService) task).terminate();
+	    }
 		for (int i = 0; i < memberCount; i++) {
 			taskManager.pause(TASK_PREFIX + name + i);
 		}
