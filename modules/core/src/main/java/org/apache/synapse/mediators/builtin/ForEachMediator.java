@@ -29,6 +29,7 @@ import org.apache.axis2.AxisFault;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.MessageHelper;
@@ -173,6 +174,7 @@ public class ForEachMediator extends AbstractMediator {
             if (log.isDebugEnabled()) {
                 log.debug("Synchronously mediating using the in-line anonymous sequence");
             }
+            ContinuationStackManager.addReliantContinuationState(synCtx, 1, getMediatorPosition());
             return sequence.mediate(synCtx);
 
         } else if (sequenceRef != null) {
