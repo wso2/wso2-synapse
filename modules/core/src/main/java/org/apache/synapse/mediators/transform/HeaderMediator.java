@@ -19,7 +19,10 @@
 
 package org.apache.synapse.mediators.transform;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.ElementHelper;
+import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axiom.soap.SOAPHeader;
@@ -230,12 +233,29 @@ public class HeaderMediator extends AbstractMediator {
                                                        fac.createOMNamespace(qName.getNamespaceURI(), qName.getPrefix()));
             hb.setText(value);
         } else if (hasEmbeddedXml()) {
-            for (OMElement e : embeddedXmlContent) {
-                header.addChild(e.cloneOMElement());
-            }
+            addHeaderChildrenToMessageContext(synCtx, embeddedXmlContent);
         } else {
             // header mediator has an implicit xml element but its content cannot be found.
             handleException("Header mediator has an implicit xml element but its content cannot be found.", synCtx);
+        }
+    }
+
+    private void addHeaderChildrenToMessageContext(MessageContext synCtx, List<OMElement> headerElements) {
+        // Convert SOAP Header Blocks to support WS-Addressing
+        SOAPFactory factory;
+        if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(
+                synCtx.getEnvelope().getBody().getNamespace().getNamespaceURI())) {
+            factory = OMAbstractFactory.getSOAP11Factory();
+        } else {
+            factory = OMAbstractFactory.getSOAP12Factory();
+        }
+
+        for (OMElement headerElement : headerElements) {
+            try {
+                synCtx.getEnvelope().getHeader().addChild(ElementHelper.toSOAPHeaderBlock(headerElement, factory));
+            } catch (Exception e) {
+                log.error("Unable to convert to SoapHeader Block", e);
+            }
         }
     }
 
