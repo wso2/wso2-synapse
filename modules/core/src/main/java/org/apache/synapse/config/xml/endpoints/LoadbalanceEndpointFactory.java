@@ -70,6 +70,10 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
 
             LoadbalanceEndpoint loadbalanceEndpoint = new LoadbalanceEndpoint();
 
+            OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+            if(attVersion!=null) {
+                loadbalanceEndpoint.setVersion(attVersion.getAttributeValue());
+            }
             // set endpoint name
             OMAttribute name = epConfig.getAttribute(new QName(
                     org.apache.synapse.config.xml.XMLConfigConstants.NULL_NAMESPACE, "name"));

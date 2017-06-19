@@ -19,17 +19,20 @@
 
 package org.apache.synapse.deployers;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.deployment.DeploymentException;
 import org.apache.axis2.description.AxisService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.config.xml.ProxyServiceFactory;
 import org.apache.synapse.config.xml.ProxyServiceSerializer;
 import org.apache.synapse.core.axis2.ProxyService;
 
+import javax.xml.namespace.QName;
 import java.io.File;
 import java.util.Properties;
 
@@ -58,6 +61,22 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             ProxyService proxy = ProxyServiceFactory.createProxy(artifactConfig, properties);
+            OMAttribute isDefaultAttribute = artifactConfig.getAttribute(
+                    new QName(XMLConfigConstants.NULL_NAMESPACE, "isDefault"));
+            if (isDefaultAttribute != null) {
+                if (isDefaultAttribute.getAttributeValue().equalsIgnoreCase("true")) {
+                    if(getSynapseConfiguration().getDefaultProxyKey(proxy.getArtifactName())==null){
+                        proxy.setDefault(true);
+                        getSynapseConfiguration()
+                                .addDefaultProxyKey(proxy.getArtifactName(), proxy.getName());
+                    } else {
+                        log.warn(
+                                "Hot deployment thread picked up an already deployed default proxy - Ignoring");
+                        return proxy.getName();
+                    }
+
+                }
+            }
             proxy.setArtifactContainerName(customLogContent);
             if (proxy != null) {
                 if (getSynapseConfiguration().getProxyService(proxy.getName()) != null) {
@@ -184,11 +203,15 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
     @Override
     public void undeploySynapseArtifact(String artifactName) {
 
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
         if (log.isDebugEnabled()) {
             log.debug("ProxyService Undeployment of the proxy named : "
                     + artifactName + " : Started");
         }
-        
+
         try {
             ProxyService proxy = getSynapseConfiguration().getProxyService(artifactName);
             if (proxy != null) {
@@ -198,6 +221,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 }
                 proxy.stop(getSynapseConfiguration());
                 getSynapseConfiguration().removeProxyService(artifactName);
+                if(getSynapseConfiguration().getDefaultProxyKey(proxy.getArtifactName())!=null){
+                    getSynapseConfiguration()
+                            .removeDefaultProxyKey(proxy.getArtifactName());
+                }
                 if (log.isDebugEnabled()) {
                     log.debug("ProxyService Undeployment of the proxy named : "
                             + artifactName + " : Completed");

@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.message.store.AbstractMessageStore;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.message.store.impl.memory.InMemoryStore;
 
@@ -64,11 +65,13 @@ public class MessageStoreSerializer {
             handleException("Invalid MessageStore. Provider is required");
         }
 
+        AbstractMessageStore abstractMessageStore = (AbstractMessageStore)messageStore;
         if (messageStore.getName() != null) {
-            store.addAttribute(fac.createOMAttribute("name", nullNS, messageStore.getName()));
+            store.addAttribute(fac.createOMAttribute("name", nullNS, abstractMessageStore.getArtifactName()));
         } else {
             handleException("Message store Name not specified");
         }
+        VersionSerializer.serializeVersioning(abstractMessageStore.getVersion(),store);
 
         if (messageStore.getParameters() != null) {
             Iterator iter = messageStore.getParameters().keySet().iterator();

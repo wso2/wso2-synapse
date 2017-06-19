@@ -58,6 +58,10 @@ public class HTTPEndpointFactory extends DefaultEndpointFactory {
     @Override
     protected Endpoint createEndpoint(OMElement epConfig, boolean anonymousEndpoint, Properties properties) {
         HTTPEndpoint httpEndpoint = new HTTPEndpoint();
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            httpEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         OMAttribute name = epConfig.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
 

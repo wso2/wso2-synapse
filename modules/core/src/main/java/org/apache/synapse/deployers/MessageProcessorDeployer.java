@@ -129,6 +129,11 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
 
     @Override
     public void undeploySynapseArtifact(String artifactName) {
+
+        if (artifactName.contains("-v")) {
+            artifactName = artifactName.replace("-v", "/");
+        }
+
          if (log.isDebugEnabled()) {
             log.debug("MessageProcessor Undeployment of the MessageProcessor named : "
                     + artifactName + " : Started");

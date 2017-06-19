@@ -73,6 +73,12 @@ public class AddressEndpointFactory extends DefaultEndpointFactory {
                                       Properties properties) {
 
         AddressEndpoint addressEndpoint = new AddressEndpoint();
+
+        OMAttribute version = epConfig.getAttribute(
+                new QName(XMLConfigConstants.NULL_NAMESPACE, "version"));
+        if (version != null) {
+            addressEndpoint.setVersion(version.getAttributeValue());
+        }
         OMAttribute name = epConfig.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
 

@@ -223,6 +223,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
     /** The Completed StructureStore object */
     private CompletedStructureStore completedStructureStore = new CompletedStructureStore();
 
+    /*
+    This stores proxy service names with respective default service keys
+    */
+
+    private Map<String,String> defaultProxyServiceKeys = new ConcurrentHashMap<String, String>();
+
 
     /**
      * Add a named sequence into the local registry. If a sequence already exists by the specified
@@ -1119,6 +1125,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 handleException("Unknown proxy service for name : " + name);
             } else {
                 try {
+                    removeDefaultProxyKey(proxy.getArtifactName());
                     if (getAxisConfiguration().getServiceForActivation(name) != null) {
                         if (getAxisConfiguration().getServiceForActivation(name)
                                 .isActive()) {
@@ -2220,6 +2227,32 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public CompletedStructureStore getCompletedStructureStore() {
         return completedStructureStore;
+    }
+
+    /**
+     * This method adds given name and id to the defaultdefaultProxyServiceKeys map
+     *
+     */
+    public void addDefaultProxyKey(String name, String id){
+        defaultProxyServiceKeys.put(name,id);
+    }
+    /**
+     * This method returns default proxy service id for specified proxy service name
+     *
+     * @return String default proxy service id for specified proxy service name
+     */
+    public String getDefaultProxyKey(String name){
+        if(defaultProxyServiceKeys.containsKey(name)){
+            return defaultProxyServiceKeys.get(name);
+        }
+        return null;
+    }
+    /**
+     * This method removes given name and id to the defaultdefaultProxyServiceKeys map
+     *
+     */
+    public void removeDefaultProxyKey(String name){
+        defaultProxyServiceKeys.remove(name);
     }
 
 }

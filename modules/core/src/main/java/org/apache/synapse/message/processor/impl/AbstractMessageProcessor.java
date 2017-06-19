@@ -47,6 +47,8 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     protected String name;
 
+    protected String version;
+
     protected String fileName;
 
     protected SynapseConfiguration configuration;
@@ -97,12 +99,28 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
 
     @Override
     public String getName() {
-        return name;
+        String id = name;
+        if (version != null) {
+            id = id + "/" + version;
+        }
+        return id;
     }
 
     @Override
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getArtifactName() {
+        return name;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     @Override

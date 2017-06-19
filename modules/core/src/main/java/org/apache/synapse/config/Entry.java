@@ -38,6 +38,8 @@ public class Entry implements SynapseArtifact {
 
     /** The key of the entry */
     private String key;
+    /** The version of the entry */
+    private String entryVersion;
     /** The type of the entry */
     private int type;
     /** Source URL of the entry if it is a URL_SRC */
@@ -69,6 +71,11 @@ public class Entry implements SynapseArtifact {
     
     public Entry(String key) {
         this.key = key;
+    }
+
+    public Entry(String key , String entryVersion) {
+        this.key = key;
+        this.entryVersion = entryVersion;
     }
 
     public int getType() {
@@ -108,11 +115,27 @@ public class Entry implements SynapseArtifact {
     }
 
     public String getKey() {
-        return this.key;
+        String id = key;
+        if (entryVersion != null) {
+            id = id + "/" + entryVersion;
+        }
+        return id;
     }
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public String getArtifactKey() {
+        return key;
+    }
+
+    public String getEntryVersion() {
+        return entryVersion;
+    }
+
+    public void setEntryVersion(String entryVersion) {
+        this.entryVersion = entryVersion;
     }
 
     /**

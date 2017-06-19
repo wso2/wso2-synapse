@@ -97,6 +97,10 @@ public class SALoadbalanceEndpointFactory extends EndpointFactory {
                     "have a session element in the configuration.");
         }
 
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            loadbalanceEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         // set endpoint name
         OMAttribute name = epConfig.getAttribute(new QName(
                 org.apache.synapse.config.xml.XMLConfigConstants.NULL_NAMESPACE, "name"));

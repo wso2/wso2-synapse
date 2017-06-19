@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -57,6 +58,10 @@ public class FailoverEndpointFactory extends EndpointFactory {
         if (failoverElement != null) {
 
             FailoverEndpoint failoverEndpoint = new FailoverEndpoint();
+            OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+            if(attVersion!=null) {
+                failoverEndpoint.setVersion(attVersion.getAttributeValue());
+            }
             // set endpoint name
             String name = epConfig.getAttributeValue(new QName("name"));
             if (name != null) {

@@ -48,6 +48,7 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     protected static final Log log = LogFactory.getLog(InboundEndpoint.class);
 
     private String name;
+    private String version;
     private String protocol;
     private String classImpl;
     private boolean isSuspend;
@@ -148,7 +149,23 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
     }
 
     public String getName() {
+        String id = name;
+        if (version != null) {
+            id = id + "/" + version;
+        }
+        return id;
+    }
+
+    public String getArtifactName() {
         return name;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 
     public void setName(String name) {

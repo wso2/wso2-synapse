@@ -43,6 +43,8 @@ public class InboundEndpointFactory {
     private static final Log log = LogFactory.getLog(InboundEndpointFactory.class);
     private static final QName ATT_NAME
             = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_NAME);
+    private static final QName ATT_VERSION
+            = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_VERSION);
     private static final QName ATT_PROTOCOL
             = new QName(InboundEndpointConstants.INBOUND_ENDPOINT_PROTOCOL);
     private static final QName ATT_ENDPOINT_CLASS
@@ -62,6 +64,9 @@ public class InboundEndpointFactory {
             String msg = "Inbound Endpoint name cannot be null";
             log.error(msg);
             throw new SynapseException(msg);
+        }
+        if (inboundEndpointElem.getAttribute(ATT_VERSION) != null) {
+            inboundEndpoint.setVersion(inboundEndpointElem.getAttributeValue(ATT_VERSION));
         }
         if (inboundEndpointElem.getAttributeValue(ATT_PROTOCOL) != null) {
             inboundEndpoint.setProtocol(inboundEndpointElem.getAttributeValue(ATT_PROTOCOL));

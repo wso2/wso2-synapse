@@ -76,6 +76,10 @@ public class DynamicLoadbalanceEndpointFactory extends EndpointFactory {
 
             DynamicLoadbalanceEndpoint loadbalanceEndpoint = new DynamicLoadbalanceEndpoint();
 
+            OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+            if(attVersion!=null) {
+                loadbalanceEndpoint.setVersion(attVersion.getAttributeValue());
+            }
             // set endpoint name
             OMAttribute name =
                     epConfig.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));

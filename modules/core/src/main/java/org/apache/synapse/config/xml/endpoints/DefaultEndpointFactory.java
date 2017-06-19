@@ -72,6 +72,10 @@ public class DefaultEndpointFactory extends EndpointFactory {
                                       Properties properties) {
 
         DefaultEndpoint defaultEndpoint = new DefaultEndpoint();
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            defaultEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         OMAttribute name = epConfig.getAttribute(
                 new QName(XMLConfigConstants.NULL_NAMESPACE, "name"));
 

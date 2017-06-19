@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml.endpoints;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.IndirectEndpoint;
@@ -47,6 +48,11 @@ public class IndirectEndpointFactory extends EndpointFactory {
                                       Properties properties) {
 
         IndirectEndpoint indirectEndpoint = new IndirectEndpoint();
+
+        OMAttribute attVersion = epConfig.getAttribute(new QName("version"));
+        if(attVersion!=null) {
+            indirectEndpoint.setVersion(attVersion.getAttributeValue());
+        }
         String ref = epConfig.getAttributeValue(new QName("key"));
         String name = epConfig.getAttributeValue(new QName("name"));
         if (name != null) {

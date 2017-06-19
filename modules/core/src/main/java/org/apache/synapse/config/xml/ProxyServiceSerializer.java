@@ -51,9 +51,12 @@ public class ProxyServiceSerializer {
     public static OMElement serializeProxy(OMElement parent, ProxyService service) {
 
         OMElement proxy = fac.createOMElement("proxy", synNS);
-        if (service.getName() != null) {
+        if (service.getArtifactName() != null) {
             proxy.addAttribute(fac.createOMAttribute(
-                    "name", nullNS, service.getName()));
+                    "name", nullNS, service.getArtifactName()));
+            proxy = VersionSerializer.serializeVersioning(service.getVersion(),proxy);
+            proxy.addAttribute("isDefault", String.valueOf((service.isDefault())), null);
+
         } else {
             handleException("Invalid proxy service. Service name is required");
         }

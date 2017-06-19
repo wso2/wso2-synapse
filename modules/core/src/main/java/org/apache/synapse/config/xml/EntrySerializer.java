@@ -78,7 +78,8 @@ public class EntrySerializer {
         OMElement entryElement = fac.createOMElement("localEntry", synNS);
 
         entryElement.addAttribute(fac.createOMAttribute(
-                "key", nullNS, entry.getKey().trim()));
+                "key", nullNS, entry.getArtifactKey().trim()));
+        entryElement = VersionSerializer.serializeVersioning(entry.getEntryVersion(),entryElement);
         int type = entry.getType();
         if (type == Entry.URL_SRC) {
             URL srcUrl = entry.getSrc();

@@ -68,6 +68,9 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     /** Hold the logical name of an endpoint */
     private String endpointName = null;
 
+    /** Hold the version of an endpoint */
+    private String endpointVersion = null;
+
     /** Hold the description of an endpoint */
     private String description = null;
 
@@ -128,7 +131,19 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     public String getName() {
+        String id = endpointName;
+        if (endpointVersion != null) {
+            id = id + "/" + endpointVersion;
+        }
+        return id;
+    }
+
+    public String getArtifactName(){
         return endpointName;
+    }
+
+    public String getVersion(){
+        return endpointVersion;
     }
 
     public boolean isInitialized() {
@@ -186,9 +201,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
 
     public String toString() {
         if (endpointName != null) {
-            return "Endpoint [" + endpointName + "]";
+            return "Endpoint [" +this.getName() + "]";
         }
         return SynapseConstants.ANONYMOUS_ENDPOINT;
+    }
+
+    public void setVersion(String version){
+        endpointVersion = version;
     }
 
     public void setName(String endpointName) {
@@ -199,12 +218,12 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
                 log.warn("Endpoint Name not found. Skipped JMX statistics collection for this endpoint");
                 return;
             }*/
-            metricsMBean = new EndpointView(endpointName, this);
+            metricsMBean = new EndpointView(this.getName(), this);
 //            if(metricsMBean != null) {
 //                metricsMBean.destroy();
 //            }
 
-            MBeanRegistrar.getInstance().registerMBean(metricsMBean, "Endpoint", endpointName);
+            MBeanRegistrar.getInstance().registerMBean(metricsMBean, "Endpoint", this.getName());
         }
     }
 
@@ -335,13 +354,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
             if (errorHandlerMediator != null) {
                 if (traceOrDebugOn) {
                     traceOrDebug(traceOn, "Setting the onError handler : " +
-                                          errorHandler + " for the endpoint : " + endpointName);
+                                          errorHandler + " for the endpoint : " + this.getName());
                 }
                 synCtx.pushFaultHandler(
                         new MediatorFaultHandler(errorHandlerMediator));
             } else {
                 log.warn("onError handler sequence : " + errorHandler + " for : " +
-                         endpointName + " cannot be found");
+                         this.getName() + " cannot be found");
             }
         }
 
@@ -480,7 +499,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Encountered an error sending to endpoint : " + endpointName +
+            log.debug("Encountered an error sending to endpoint : " +this.getName() +
                     ", with error code : " + errorCode + ", but not a retry disabled error");
         }
         return true;
@@ -723,7 +742,7 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
         }
 
         if (enableMBeanStats) {
-            MBeanRegistrar.getInstance().unRegisterMBean("Endpoint", endpointName);
+            MBeanRegistrar.getInstance().unRegisterMBean("Endpoint",this.getName());
         }
         metricsMBean = null;
 

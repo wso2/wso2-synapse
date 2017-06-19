@@ -63,7 +63,8 @@ public class SequenceMediatorSerializer extends AbstractListMediatorSerializer {
         // except make sure that we refer back to the registry key used when we loaded ourself
         if (mediator.isDynamic()) {
             sequence.addAttribute(fac.createOMAttribute(
-                    "name", nullNS, mediator.getName()));
+                    "name", nullNS, mediator.getArtifactName()));
+            sequence = VersionSerializer.serializeVersioning(mediator.getVersion(),sequence);
             sequence.addAttribute(fac.createOMAttribute(
                     "key", nullNS, mediator.getRegistryKey()));
 
@@ -74,9 +75,10 @@ public class SequenceMediatorSerializer extends AbstractListMediatorSerializer {
                 ValueSerializer keySerializer = new ValueSerializer();
                 keySerializer.serializeValue(mediator.getKey(), XMLConfigConstants.KEY, sequence);
                 
-            } else if (mediator.getName() != null) {
+            } else if (mediator.getArtifactName() != null) {
                 sequence.addAttribute(fac.createOMAttribute(
-                        "name", nullNS, mediator.getName()));
+                        "name", nullNS, mediator.getArtifactName()));
+                sequence = VersionSerializer.serializeVersioning(mediator.getVersion(),sequence);
 
                 if (mediator.getErrorHandler() != null) {
                     sequence.addAttribute(fac.createOMAttribute(
