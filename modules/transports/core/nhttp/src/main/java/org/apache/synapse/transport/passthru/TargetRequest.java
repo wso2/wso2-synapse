@@ -124,9 +124,11 @@ public class TargetRequest {
 
         long contentLength = -1;
         String contentLengthHeader = null;
+        LinkedHashSet<String> httpContentLengthHeader = headers.get(HTTP.CONTENT_LEN);
+         
 	
-	    if(headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).iterator().hasNext()) {   
-	    	contentLengthHeader = headers.get(HTTP.CONTENT_LEN).iterator().next();
+	    if(httpContentLengthHeader != null && httpContentLengthHeader.iterator().hasNext()) {   
+	    	contentLengthHeader = httpContentLengthHeader.iterator().next();
 	    }
          
         if (contentLengthHeader != null) {
