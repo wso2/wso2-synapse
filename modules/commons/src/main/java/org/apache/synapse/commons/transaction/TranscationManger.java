@@ -388,12 +388,7 @@ public class TranscationManger {
 		    if (log.isDebugEnabled()) {
 			    log.debug("getTransaction Called");
 		    }
-
-		    TransactionManager txMgr = txManagers.get().get(key);
-		    txMgr.begin();
-		    Transaction tx = txMgr.getTransaction();
-		    transactions.get().put(key, tx);
-		    return tx;
+		    return transactions.get().get(key);
 
 	    } catch (Exception ex) {
 		    log.error(" BEGIN ERROR  : " + txManagers.get().get(key).getStatus());
