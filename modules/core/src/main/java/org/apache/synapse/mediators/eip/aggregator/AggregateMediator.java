@@ -689,10 +689,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
         StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
     }
     
-    private void handleException(Aggregate aggregate, String msg, Exception e, MessageContext msgContext) {
+    private void handleException(Aggregate aggregate, String msg, Exception exception, MessageContext msgContext) {
         aggregate.clear();
-        if (e != null) {
-            super.handleException(msg, e, msgContext);
+        if (exception != null) {
+            super.handleException(msg, exception, msgContext);
         } else {
             super.handleException(msg, msgContext);
         }
