@@ -521,7 +521,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                 try {
                     newCtx = MessageHelper.cloneMessageContextForAggregateMediator(synCtx);
                 } catch (AxisFault axisFault) {
-                    handleException("Error creating a copy of the message", axisFault, synCtx);
+                    handleException(aggregate, "Error creating a copy of the message", axisFault, synCtx);
                 }
 
                 if (log.isDebugEnabled()) {
@@ -543,10 +543,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     }
 
                 } catch (JaxenException e) {
-                    handleException("Error merging aggregation results using XPath : " +
+                    handleException(aggregate, "Error merging aggregation results using XPath : " +
                             aggregationExpression.toString(), e, synCtx);
                 } catch (SynapseException e) {
-                    handleException("Error evaluating expression: " + aggregationExpression.toString() , e, synCtx);
+                    handleException(aggregate, "Error evaluating expression: " + aggregationExpression.toString() , e, synCtx);
                 }
             }
         }
@@ -570,12 +570,12 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                     return newCtx;
 
                 } else {
-                    handleException("Enclosing Element defined in the property: " +
-                                    enclosingElementPropertyName + " is not an OMElement ", newCtx);
+                    handleException(aggregate, "Enclosing Element defined in the property: " +
+                                    enclosingElementPropertyName + " is not an OMElement ", null, newCtx);
                 }
             } else {
-                handleException("Enclosing Element property: " +
-                                enclosingElementPropertyName + " not found ", newCtx);
+                handleException(aggregate, "Enclosing Element property: " +
+                                enclosingElementPropertyName + " not found ", null, newCtx);
             }
         }
 
@@ -687,5 +687,14 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
             StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
         }
         StatisticIdentityGenerator.reportingFlowContinuableEndEvent(mediatorId, ComponentType.MEDIATOR, holder);
+    }
+    
+    private void handleException(Aggregate aggregate, String msg, Exception exception, MessageContext msgContext) {
+        aggregate.clear();
+        if (exception != null) {
+            super.handleException(msg, exception, msgContext);
+        } else {
+            super.handleException(msg, msgContext);
+        }
     }
 }

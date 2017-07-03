@@ -348,7 +348,8 @@ public class PropertyMediator extends AbstractMediator {
         if (value != null) {
             return value;
         } else if (valueElement != null) {
-            return valueElement;
+            //Need to clone to prevent same reference sharing accross all requests
+            return valueElement.cloneOMElement();
         } else {
             if(expression != null) {
                 return convertValue(expression.stringValueOf(synCtx), type);
