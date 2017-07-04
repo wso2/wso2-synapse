@@ -269,10 +269,10 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     //there is only one element in the report
                     if (itrErrorMessages.hasNext()) {
                         ProcessingMessage processingMessage = itrErrorMessages.next();
-                        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, processingMessage.getMessage());
-                        synCtx.setProperty(SynapseConstants.ERROR_DETAIL, processingMessage.asException()
-                                .getMessage());
-                        synCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, processingMessage.asException());
+                        String errorMessage = processingMessage.getMessage();
+                        synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
+                        synCtx.setProperty(SynapseConstants.ERROR_DETAIL, "Error while validating Json message "
+                                + errorMessage);
                     }
                     // super.mediate() invokes the "on-fail" sequence of mediators
                     ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
