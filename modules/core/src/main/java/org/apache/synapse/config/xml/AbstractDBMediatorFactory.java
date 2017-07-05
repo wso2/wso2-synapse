@@ -160,19 +160,46 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
 
         DataSourceInformation dataSourceInformation = new DataSourceInformation();
 
-        dataSourceInformation.setDriver(getValue(pool, DRIVER_Q));
-        dataSourceInformation.setUrl(getValue(pool, URL_Q));
+
+        String driver = getKey(pool, DRIVER_Q);
+        if (driver != null) {
+            mediator.setRegistryBasedDriverConfig(true);
+        } else {
+            driver = getValue(pool, DRIVER_Q);
+        }
+        dataSourceInformation.setDriver(driver);
+        mediator.addDataSourceProperty(DRIVER_Q, driver);
+
+        String url = getKey(pool, URL_Q);
+        if (url != null) {
+            mediator.setRegistryBasedUrlConfig(true);
+        } else {
+            url = getValue(pool, URL_Q);
+        }
+        dataSourceInformation.setUrl(url);
+        mediator.addDataSourceProperty(URL_Q, url);
 
         SecretInformation secretInformation = new SecretInformation();
-        secretInformation.setUser(getValue(pool, USER_Q));
-        secretInformation.setAliasSecret(getValue(pool, PASS_Q));
-        dataSourceInformation.setSecretInformation(secretInformation);
 
-        // Save element configuration for later de-serialization
-        saveElementConfig(pool, DRIVER_Q, mediator);
-        saveElementConfig(pool, URL_Q, mediator);
-        saveElementConfig(pool, USER_Q, mediator);
-        saveElementConfig(pool, PASS_Q, mediator);
+        String user = getKey(pool, USER_Q);
+        if (user != null) {
+            mediator.setRegistryBasedUserConfig(true);
+        } else {
+            user = getValue(pool, USER_Q);
+        }
+        secretInformation.setUser(user);
+        mediator.addDataSourceProperty(USER_Q, user);
+
+        String password = getKey(pool, PASS_Q);
+        if (password != null) {
+            mediator.setRegistryBasedPassConfig(true);
+        } else {
+            password = getValue(pool, PASS_Q);
+        }
+        secretInformation.setAliasSecret(password);
+        mediator.addDataSourceProperty(PASS_Q, password);
+
+        dataSourceInformation.setSecretInformation(secretInformation);
 
         Iterator poolPropIter = pool.getChildrenWithName(PROP_Q);
         while (poolPropIter.hasNext()) {
@@ -181,6 +208,16 @@ public abstract class AbstractDBMediatorFactory extends AbstractMediatorFactory 
         }
 
         mediator.setDataSourceInformation(dataSourceInformation);
+    }
+
+    private String getKey(OMElement pool, QName qName) {
+        OMElement ele = pool.getFirstChildWithName(qName);
+        if (ele != null) {
+            return ele.getAttributeValue(ATT_KEY);
+        } else {
+            handleException("Unable to read configuration value for : " + qName);
+        }
+        return null;
     }
 
     private void readPoolProperty(AbstractDBMediator mediator, DataSourceInformation dataSourceInformation,

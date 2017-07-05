@@ -37,10 +37,10 @@ import java.sql.Types;
  *   <connection>
  *     <pool>
  *     (
- *       <driver/>
- *       <url/>
- *       <user/>
- *       <password/>
+ *       <driver/> | <driver key="$registry:conf:...."/>
+ *       <url/> | <url key="$registry:conf:..."/>
+ *       <user/> | <user key="$registry:conf:..."/>
+ *       <password/> | <password key="$registry:conf:..."/>
  *     |
  *       <dsName/>
  *     |
@@ -95,17 +95,66 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
 
     private OMNode createPoolElement(AbstractDBMediator mediator) {
         OMElement poolElt = fac.createOMElement("pool", synNS);
+
+        if (mediator.getDataSourceProps().get(AbstractDBMediatorFactory.DRIVER_Q) != null) {
+            //set values or registry key attribute for each mandatory element in connection Pool.
+            if (mediator.isRegistryBasedDriverConfig()) {
+                poolElt.addChild(createElementWithKey(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.DRIVER_Q),
+                        AbstractDBMediatorFactory.DRIVER_Q));
+            } else {
+                poolElt.addChild(
+                        creteElementWithValue(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.DRIVER_Q),
+                                AbstractDBMediatorFactory.DRIVER_Q));
+            }
+
+            if (mediator.isRegistryBasedUrlConfig()) {
+                poolElt.addChild(createElementWithKey(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.URL_Q),
+                        AbstractDBMediatorFactory.URL_Q));
+            } else {
+                poolElt.addChild(
+                        creteElementWithValue(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.URL_Q),
+                                AbstractDBMediatorFactory.URL_Q));
+            }
+
+            if (mediator.isRegistryBasedUserConfig()) {
+                poolElt.addChild(createElementWithKey(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.USER_Q),
+                        AbstractDBMediatorFactory.USER_Q));
+            } else {
+                poolElt.addChild(
+                        creteElementWithValue(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.USER_Q),
+                                AbstractDBMediatorFactory.USER_Q));
+            }
+
+            if (mediator.isRegistryBasedPassConfig()) {
+                poolElt.addChild(createElementWithKey(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.PASS_Q),
+                        AbstractDBMediatorFactory.PASS_Q));
+            } else {
+                poolElt.addChild(
+                        creteElementWithValue(mediator.getDataSourceProps().get(AbstractDBMediatorFactory.PASS_Q),
+                                AbstractDBMediatorFactory.PASS_Q));
+            }
+        } else {
+            //set values for carbon or external datasource
+            for (Object o : mediator.getDataSourceProps().keySet()) {
+
+                String value = mediator.getDataSourceProps().get(o);
+
+                if (o instanceof QName) {
+                    QName name = (QName) o;
+                    OMElement elt = fac.createOMElement(name.getLocalPart(), synNS);
+                    elt.setText(value);
+                    poolElt.addChild(elt);
+                }
+            }
+        }
+
+
+        //other properties are String instances
         for (Object o : mediator.getDataSourceProps().keySet()) {
 
             String value = mediator.getDataSourceProps().get(o);
 
-            if (o instanceof QName) {
-                QName name = (QName) o;
-                OMElement elt = fac.createOMElement(name.getLocalPart(), synNS);
-                elt.setText(value);
-                poolElt.addChild(elt);
-
-            } else if (o instanceof String) {
+            if (o instanceof String) {
                 OMElement elt = fac.createOMElement(
                     AbstractDBMediatorFactory.PROP_Q.getLocalPart(), synNS);
                 elt.addAttribute(fac.createOMAttribute("name", nullNS, (String) o));
@@ -114,6 +163,30 @@ public abstract class AbstractDBMediatorSerializer extends AbstractMediatorSeria
              }
         }
         return poolElt;
+    }
+
+    /**
+     * Create an OMElement with given value and QName
+     * @param value
+     * @param qName
+     * @return OMElement
+     */
+    private OMElement creteElementWithValue(String value, QName qName) {
+        OMElement elt = fac.createOMElement(qName.getLocalPart(), synNS);
+        elt.setText(value);
+        return elt;
+    }
+
+    /**
+     * Create a OMElement with given QName and given value as "key" attribute.
+     * @param value
+     * @param qName
+     * @return OMElement
+     */
+    private OMElement createElementWithKey (String value, QName qName) {
+        OMElement elt = fac.createOMElement(qName.getLocalPart(), synNS);
+        elt.addAttribute(fac.createOMAttribute("key", nullNS, value));
+        return elt;
     }
 
     private OMNode createStatementElement(Statement statement) {
