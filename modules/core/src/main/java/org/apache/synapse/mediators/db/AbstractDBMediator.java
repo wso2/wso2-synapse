@@ -28,7 +28,12 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
-import org.apache.synapse.commons.datasource.*;
+import org.apache.synapse.commons.datasource.DBPoolView;
+import org.apache.synapse.commons.datasource.DataSourceFinder;
+import org.apache.synapse.commons.datasource.DataSourceInformation;
+import org.apache.synapse.commons.datasource.DataSourceRepositoryHolder;
+import org.apache.synapse.commons.datasource.DatasourceMBeanRepository;
+import org.apache.synapse.commons.datasource.RepositoryBasedDataSourceFinder;
 import org.apache.synapse.commons.datasource.factory.DataSourceFactory;
 import org.apache.synapse.commons.jmx.MBeanRepository;
 import org.wso2.securevault.secret.SecretManager;
@@ -40,9 +45,18 @@ import javax.naming.Context;
 import javax.sql.DataSource;
 import javax.xml.namespace.QName;
 import java.math.BigDecimal;
-import java.sql.*;
+import java.sql.Connection;
 import java.sql.Date;
-import java.util.*;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * This abstract DB mediator will perform common DB connection pooling etc. for all DB mediators
@@ -111,11 +125,18 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
      */
     public void init(SynapseEnvironment se) {
         // check whether we shall try to lookup an existing data source or create a new custom data source
-        if (dataSourceName != null) {
-            dataSource = lookupDataSource(dataSourceName, jndiProperties);
-        } else if (dataSourceInformation != null) {
-            updateWithRegistryValues(se);
-            dataSource = createCustomDataSource(dataSourceInformation);
+        try {
+            if (dataSourceName != null) {
+                dataSource = lookupDataSource(dataSourceName, jndiProperties);
+            } else if (dataSourceInformation != null) {
+                updateWithRegistryValues(se);
+                dataSource = createCustomDataSource(dataSourceInformation);
+            }
+            initialized = true;
+        } catch (RuntimeException e) {
+            log.warn("DataSource: " + dataSourceName + " was not initialized for given JNDI properties :" +
+                             jndiProperties);
+            initialized = false;
         }
     }
 
@@ -176,6 +197,19 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
      * @return true, always
      */
     public boolean mediate(MessageContext synCtx) {
+        // Initialize the datasource, if it is not already initialized in the case of TenantService is available
+        // before DataSourceService in tenant mode
+        if (!initialized) {
+            synchronized (lock) {
+                if (!initialized && dataSourceName != null) {
+                    dataSource = lookupDataSource(dataSourceName, jndiProperties);
+
+                    if (dataSource != null) {
+                        initialized = true;
+                    }
+                }
+            }
+        }
 
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
@@ -500,19 +534,15 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
 
             // lookup the data source using the specified jndi properties
             dataSource = DataSourceFinder.find(dataSourceName, jndiProperties);
-            if (dataSource == null) {
-                handleException("Cannot find a DataSource " + dataSourceName + " for given JNDI" +
-                        " properties :" + jndiProperties);
+        }
+        if (dataSource != null) {
+            MBeanRepository mBeanRepository = DatasourceMBeanRepository.getInstance();
+            Object mBean = mBeanRepository.getMBean(dataSourceName);
+            if (mBean instanceof DBPoolView) {
+                setDbPoolView((DBPoolView) mBean);
             }
+            log.info("Successfully looked up datasource " + dataSourceName + ".");
         }
-
-        MBeanRepository mBeanRepository = DatasourceMBeanRepository.getInstance();
-        Object mBean = mBeanRepository.getMBean(dataSourceName);
-        if (mBean instanceof DBPoolView) {
-            setDbPoolView((DBPoolView) mBean);
-        }
-        log.info("Successfully looked up datasource " + dataSourceName + ".");
-
         return dataSource;
     }
 

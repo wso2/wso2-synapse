@@ -53,10 +53,10 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 /**
  * This is a class for representing a request to be sent to a target.
@@ -67,7 +67,7 @@ public class TargetRequest {
     private HttpRoute route;
     private Pipe pipe = null;
     /** Headers map */
-    private Map<String, TreeSet<String>> headers = new HashMap<String, TreeSet<String>>();
+    private Map<String, LinkedHashSet<String>> headers = new HashMap<String, LinkedHashSet<String>>();
     /** URL */
     private URL url;
     /** HTTP Method */
@@ -124,8 +124,11 @@ public class TargetRequest {
 
         long contentLength = -1;
         String contentLengthHeader = null;
-	    if(headers.get(HTTP.CONTENT_LEN) != null && headers.get(HTTP.CONTENT_LEN).size() > 0) {
-	        contentLengthHeader = headers.get(HTTP.CONTENT_LEN).first();
+        LinkedHashSet<String> httpContentLengthHeader = headers.get(HTTP.CONTENT_LEN);
+         
+	
+	    if(httpContentLengthHeader != null && httpContentLengthHeader.iterator().hasNext()) {   
+	    	contentLengthHeader = httpContentLengthHeader.iterator().next();
 	    }
          
         if (contentLengthHeader != null) {
@@ -224,8 +227,8 @@ public class TargetRequest {
                     version != null ? version : HttpVersion.HTTP_1_1);
         }
 
-        Set<Map.Entry<String, TreeSet<String>>> entries = headers.entrySet();
-        for (Map.Entry<String, TreeSet<String>> entry : entries) {
+        Set<Map.Entry<String, LinkedHashSet<String>>> entries = headers.entrySet();
+        for (Map.Entry<String, LinkedHashSet<String>> entry : entries) {
              if (entry.getKey() != null) {
                 Iterator<String> i = entry.getValue().iterator();
                  while(i.hasNext()) {
@@ -392,7 +395,7 @@ public class TargetRequest {
 
 	public void addHeader(String name, String value) {
 		if (headers.get(name) == null) {
-			TreeSet<String> values = new TreeSet<String>();
+			LinkedHashSet<String> values = new LinkedHashSet<String>();
 			values.add(value);
 			if (HTTP.CONTENT_TYPE.equalsIgnoreCase(name)) {
 				headers.put(HTTP.CONTENT_TYPE, values);
@@ -402,11 +405,11 @@ public class TargetRequest {
 		} else {
 			if (HTTP.CONTENT_TYPE.equalsIgnoreCase(name)) {
 				headers.remove(HTTP.CONTENT_TYPE);
-				TreeSet<String> values = new TreeSet<String>();
+				LinkedHashSet<String> values = new LinkedHashSet<String>();
 				values.add(value);
 				headers.put(HTTP.CONTENT_TYPE, values);
 			} else {
-				TreeSet<String> values = headers.get(name);
+				LinkedHashSet<String> values = headers.get(name);
 				values.add(value);
 			}
 		}

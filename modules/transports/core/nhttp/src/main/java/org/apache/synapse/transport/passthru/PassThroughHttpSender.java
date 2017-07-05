@@ -66,12 +66,12 @@ import org.apache.synapse.transport.passthru.util.SourceResponseFactory;
 import org.wso2.caching.CachingConstants;
 import org.wso2.caching.digest.DigestGenerator;
 
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
 import java.util.Locale;
 import java.util.Map;
+import javax.xml.stream.XMLStreamException;
 
 /**
  * PassThroughHttpSender for Synapse based on HttpCore and NIO extensions
@@ -463,6 +463,17 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             String hash = digestGenerator.getDigest(msgContext);
             Map headers = (Map) msgContext.getProperty(MessageContext.TRANSPORT_HEADERS);
             headers.put(HttpHeaders.ETAG,"\""+hash+"\"");
+        }
+
+        if (msgContext.getProperty(Constants.Configuration.ENABLE_MTOM) != null
+                && !Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+            try {
+                RelayUtils.buildMessage(msgContext);
+            } catch (IOException e) {
+                handleException("IO Error occurred while building the message", e);
+            } catch (XMLStreamException e) {
+                handleException("XML Error occurred while building the message", e);
+            }
         }
 
         SourceRequest sourceRequest = SourceContext.getRequest(conn);
