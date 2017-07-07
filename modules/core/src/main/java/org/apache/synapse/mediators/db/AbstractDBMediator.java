@@ -19,6 +19,8 @@
 
 package org.apache.synapse.mediators.db;
 
+import org.apache.axiom.om.OMText;
+import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbcp.datasources.PerUserPoolDataSource;
 import org.apache.commons.logging.LogFactory;
@@ -34,9 +36,10 @@ import org.apache.synapse.commons.datasource.DatasourceMBeanRepository;
 import org.apache.synapse.commons.datasource.RepositoryBasedDataSourceFinder;
 import org.apache.synapse.commons.datasource.factory.DataSourceFactory;
 import org.apache.synapse.commons.jmx.MBeanRepository;
+import org.wso2.securevault.secret.SecretManager;
+import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.wso2.securevault.secret.SecretManager;
 
 import javax.naming.Context;
 import javax.sql.DataSource;
@@ -106,6 +109,14 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
     private final Object lock = new Object();
 
     /**
+     * Keep track for registry based configurations for custom datasource
+     */
+    private boolean isRegistryBasedDriverConfig = false;
+    private boolean isRegistryBasedUrlConfig = false;
+    private boolean isRegistryBasedUserConfig = false;
+    private boolean isRegistryBasedPassConfig = false;
+
+    /**
      * Initializes the mediator - either an existing data source will be looked up
      * from an in- or external JNDI provider or a custom data source will be created
      * based on the provide configuration (using Apache DBCP).
@@ -118,6 +129,7 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
             if (dataSourceName != null) {
                 dataSource = lookupDataSource(dataSourceName, jndiProperties);
             } else if (dataSourceInformation != null) {
+                updateWithRegistryValues(se);
                 dataSource = createCustomDataSource(dataSourceInformation);
             }
             initialized = true;
@@ -125,6 +137,34 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
             log.warn("DataSource: " + dataSourceName + " was not initialized for given JNDI properties :" +
                              jndiProperties);
             initialized = false;
+        }
+    }
+
+    /**
+     * Update datasource config with actual values if it is from a registry config(Only the registry paths were added
+     * in the factory class)
+     * @param se SynapseEnvironment
+     */
+    private void updateWithRegistryValues(SynapseEnvironment se) {
+
+        SynapseConfiguration config = se.getSynapseConfiguration();
+
+        if (isRegistryBasedDriverConfig) {
+            dataSourceInformation.setDriver(fetchFromRegistry(config, dataSourceInformation.getDriver()));
+        }
+
+        if (isRegistryBasedUrlConfig) {
+            dataSourceInformation.setUrl(fetchFromRegistry(config, dataSourceInformation.getUrl()));
+        }
+
+        if (isRegistryBasedPassConfig) {
+            dataSourceInformation.getSecretInformation().setAliasSecret(fetchFromRegistry(config, dataSourceInformation
+                    .getSecretInformation().getAliasSecret()));
+        }
+
+        if (isRegistryBasedUserConfig) {
+            dataSourceInformation.getSecretInformation().setUser(fetchFromRegistry(config, dataSourceInformation
+                    .getSecretInformation().getUser()));
         }
     }
 
@@ -545,4 +585,61 @@ public abstract class AbstractDBMediator extends AbstractMediator implements Man
     public Map<Object, String> getDataSourceProps() {
         return dataSourceProps;
     }
+
+    public boolean isRegistryBasedDriverConfig() {
+        return isRegistryBasedDriverConfig;
+    }
+
+    public void setRegistryBasedDriverConfig(boolean registryBasedDriverConfig) {
+        isRegistryBasedDriverConfig = registryBasedDriverConfig;
+    }
+
+    public boolean isRegistryBasedUrlConfig() {
+        return isRegistryBasedUrlConfig;
+    }
+
+    public void setRegistryBasedUrlConfig(boolean registryBasedUrlConfig) {
+        isRegistryBasedUrlConfig = registryBasedUrlConfig;
+    }
+
+    public boolean isRegistryBasedUserConfig() {
+        return isRegistryBasedUserConfig;
+    }
+
+    public void setRegistryBasedUserConfig(boolean registryBasedUserConfig) {
+        isRegistryBasedUserConfig = registryBasedUserConfig;
+    }
+
+    public boolean isRegistryBasedPassConfig() {
+        return isRegistryBasedPassConfig;
+    }
+
+    public void setRegistryBasedPassConfig(boolean registryBasedPassConfig) {
+        isRegistryBasedPassConfig = registryBasedPassConfig;
+    }
+
+    /**
+     * Fetch the registry resources pointed by registry path.
+     * @param config
+     * @param key
+     * @return Resource value
+     */
+    private String fetchFromRegistry(SynapseConfiguration config, String key) {
+        Object obj = config.getEntry(key);
+        if (obj == null) {
+            config.getEntryDefinition(key);
+            obj = config.getEntry(key);
+        }
+        if (obj != null && obj instanceof OMTextImpl) {
+            OMText objText = (OMText) obj;
+            return objText.getText();
+        } else {
+            String msg = "Error DB Mediator datasource: "
+                    + dataSourceName + ".Registry entry defined with key: "
+                    + key + " not found.";
+            log.error(msg);
+            throw new SynapseException(msg);
+        }
+    }
+
 }
