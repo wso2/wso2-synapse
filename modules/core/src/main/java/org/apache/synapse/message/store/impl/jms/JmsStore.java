@@ -654,13 +654,13 @@ public class JmsStore extends AbstractMessageStore {
     }
 
     /**
-     * Use secure vault to secure password in JMS Message Store
-     * @param newParamValue
+     * Use secure vault to secure password in JMS Message Store. This method will return the actual password from the Secure Vault Password Management.
+     * @param value
      * @return
      */
-    private String resolveSecureVaultExpressions(String newParamValue) {
+    private String resolveSecureVaultExpressions(String value) {
         Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
-        Matcher lookupMatcher = vaultLookupPattern.matcher(newParamValue);
+        Matcher lookupMatcher = vaultLookupPattern.matcher(value);
         //setting value initially
         if(lookupMatcher.find()) {
             Value expression = null;
@@ -678,10 +678,10 @@ public class JmsStore extends AbstractMessageStore {
                     resolvedValue = "";
                 }
                 //replacing the expression with resolved value
-                newParamValue = newParamValue.replaceFirst(secureVaultRegex, resolvedValue);
+                value = value.replaceFirst(secureVaultRegex, resolvedValue);
             }
         }
-        return newParamValue;
+        return value;
     }
 
     private Destination getDestination(Session session) {
