@@ -55,7 +55,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class JmsStore extends AbstractMessageStore {
-    protected static final Log log = LogFactory.getLog(InboundEndpoint.class);
+    protected static final Log log = LogFactory.getLog(JmsStore.class);
 
     /** JMS Broker username */
     public static final String USERNAME = "store.jms.username";
@@ -653,6 +653,11 @@ public class JmsStore extends AbstractMessageStore {
         return true;
     }
 
+    /**
+     * Use secure vault to secure password in JMS Message Store
+     * @param newParamValue
+     * @return
+     */
     private String resolveSecureVaultExpressions(String newParamValue) {
         Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
         Matcher lookupMatcher = vaultLookupPattern.matcher(newParamValue);
