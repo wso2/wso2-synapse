@@ -389,7 +389,12 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 						return;
 					}
 
-					if ((disableChunking == null || !"true".equals(disableChunking)) ||
+                    else if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                            (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
+                        pipe.setSerializationCompleteWithoutData(true);
+                    }
+
+                    else if ((disableChunking == null || !"true".equals(disableChunking)) ||
 					    (forceHttp10 == null || !"true".equals(forceHttp10))) {
 						MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
 						OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
@@ -397,15 +402,13 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 					}
 
                     if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
-                         (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
+                            (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
                         pipe.setSerializationCompleteWithoutData(true);
-                    } else if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
-                                (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
-                        pipe.setSerializationCompleteWithoutData(true);
-                    } else {
-                        pipe.setSerializationComplete(true);
                     }
 
+                    else {
+                        pipe.setSerializationComplete(true);
+                    }
                 }
 			}
 		}
