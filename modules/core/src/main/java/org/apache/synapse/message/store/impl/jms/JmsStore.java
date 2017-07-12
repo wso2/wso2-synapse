@@ -18,6 +18,7 @@
 
 package org.apache.synapse.message.store.impl.jms;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -123,7 +124,9 @@ public class JmsStore extends AbstractMessageStore {
 
     private SynapseEnvironment synapseEnvironment;
     /** regex for secure vault expression */
-    private static final String secureVaultRegex = "\\{(wso2:vault-lookup\\('(.*?)'\\))\\}";
+    private static final String SECURE_VAULT_REGEX = "\\{(wso2:vault-lookup\\('(.*?)'\\))\\}";
+
+    private Pattern vaultLookupPattern = Pattern.compile(SECURE_VAULT_REGEX);
 
     public MessageProducer getProducer() {
         if (cacheLevel == 1 && cachedProducer != null) {
@@ -654,34 +657,30 @@ public class JmsStore extends AbstractMessageStore {
     }
 
     /**
-     * Use secure vault to secure password in JMS Message Store. This method will return the actual password from the Secure Vault Password Management.
-     * @param value
-     * @return
+     * Use secure vault to secure password in JMS Message Store.
+     *
+     * @param value Value of password from JMS Message Store
+     * @return the actual password from the Secure Vault Password Management.
      */
     private String resolveSecureVaultExpressions(String value) {
-        Pattern vaultLookupPattern = Pattern.compile(secureVaultRegex);
         Matcher lookupMatcher = vaultLookupPattern.matcher(value);
-        //setting value initially
-        if(lookupMatcher.find()) {
+        String resolvedValue = value;
+        if (lookupMatcher.find()) {
             Value expression = null;
             //getting the expression with out curly brackets
             String expressionStr = lookupMatcher.group(1);
             try {
                 expression = new Value(new SynapseXPath(expressionStr));
             } catch (JaxenException e) {
-                log.error("Error while building the expression : " + expressionStr);
+                throw new SynapseException("Error while building the expression : " + expressionStr, e);
             }
-            if (expression != null) {
-                String resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
-                if (resolvedValue == null || resolvedValue.isEmpty()) {
-                    log.warn("Found Empty value for expression : " + expression.getExpression());
-                    resolvedValue = "";
-                }
-                //replacing the expression with resolved value
-                value = value.replaceFirst(secureVaultRegex, resolvedValue);
+            resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+            if (StringUtils.isEmpty(resolvedValue)) {
+                log.warn("Found Empty value for expression : " + expression.getExpression());
+                resolvedValue = "";
             }
         }
-        return value;
+        return resolvedValue;
     }
 
     private Destination getDestination(Session session) {
