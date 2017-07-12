@@ -404,11 +404,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
                         pipe.setSerializationCompleteWithoutData(true);
-                    }
-                    else {
+                    } else {
                         pipe.setSerializationComplete(true);
                     }
-                }
+
 			}
 		}
 	}
