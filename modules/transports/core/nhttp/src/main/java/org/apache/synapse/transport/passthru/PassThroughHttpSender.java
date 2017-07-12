@@ -389,23 +389,22 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 						return;
 					}
 
-                    else if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                    if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
                         pipe.setSerializationCompleteWithoutData(true);
+                        return;
                     }
 
-                    else if ((disableChunking == null || !"true".equals(disableChunking)) ||
+                    if ((disableChunking == null || !"true".equals(disableChunking)) ||
 					    (forceHttp10 == null || !"true".equals(forceHttp10))) {
 						MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
 						OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
 						formatter.writeTo(msgContext, format, out, false);
 					}
-
                     if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
                         pipe.setSerializationCompleteWithoutData(true);
                     }
-
                     else {
                         pipe.setSerializationComplete(true);
                     }
