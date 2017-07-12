@@ -82,6 +82,8 @@ public final class JsonUtil {
 
     private static boolean preserverNamespacesForJson = false;
 
+    private static boolean isJsonToXmlPiEnabled = false;
+
     private static final boolean processNCNames;
 
     private static final boolean jsonOutAutoPrimitive;
@@ -156,6 +158,9 @@ public final class JsonUtil {
 
             process = properties.getProperty
                     (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR, "true").trim();
+
+            isJsonToXmlPiEnabled = Boolean.parseBoolean(properties.getProperty
+                    (Constants.SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE, "false").trim());
 
         }
     }
@@ -1172,5 +1177,14 @@ public final class JsonUtil {
             isRequired = false;
         }
         return isRequired;
+    }
+
+    /**
+     * Returns the configured value of the parameter (synapse.json.to.xml.process.instruction.enabled).
+     *
+     * @return true to inform staxon library to add PIs to JSON -> XML conversion
+     */
+    public static boolean isPiEnabled() {
+        return isJsonToXmlPiEnabled;
     }
 }
