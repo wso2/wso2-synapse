@@ -77,7 +77,7 @@ public final class VFSConstants {
     public static final String FILE_SORT_VALUE_NAME = "Name";
     public static final String FILE_SORT_VALUE_SIZE = "Size";
     public static final String FILE_SORT_VALUE_LASTMODIFIEDTIMESTAMP = "Lastmodifiedtimestamp";
-    public static final String FILE_SORT_ORDER = "transport.vfs.FileSortAsscending";
+    public static final String FILE_SORT_ORDER = "transport.vfs.FileSortAscending";
     
     
     /**
