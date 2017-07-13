@@ -320,74 +320,74 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     }
 
 	private void sendRequestContent(final MessageContext msgContext) throws AxisFault {
-		
-		//NOTE:this a special case where, when the backend service expects content-length but,there is no desire that the message
-		//should be build, if FORCE_HTTP_CONTENT_LENGTH and COPY_CONTENT_LENGTH_FROM_INCOMING, we assume that the content
-		//comming from the client side has not been changed
-		boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
-	    boolean forceContentLengthCopy = msgContext.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
-	            
-		if (forceContentLength && forceContentLengthCopy && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
-			 msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong((String)msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) ));
-		}
-		
-		if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
-			synchronized (msgContext) {
-				while (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE)) &&
-				       !Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
-					try {
-						msgContext.wait();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
 
-			if (Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
-				return;
-			}
-			
-			
-			OutputStream out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
-			if (out != null) {
-				String disableChunking = (String) msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING);
-				String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
-				Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-				
-				if("true".equals(disableChunking) || "true".equals(forceHttp10) ){
+        //NOTE:this a special case where, when the backend service expects content-length but,there is no desire that the message
+        //should be build, if FORCE_HTTP_CONTENT_LENGTH and COPY_CONTENT_LENGTH_FROM_INCOMING, we assume that the content
+        //comming from the client side has not been changed
+        boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
+        boolean forceContentLengthCopy = msgContext.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
 
-					MessageFormatter formatter =  MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
-					OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-                    long messageSize=0;
+        if (forceContentLength && forceContentLengthCopy && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
+            msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong((String) msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH)));
+        }
 
-					try {
-	                    OverflowBlob overflowBlob =setStreamAsTempData(formatter,msgContext,format);
+        if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+            synchronized (msgContext) {
+                while (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE)) &&
+                        !Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
+                    try {
+                        msgContext.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            if (Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
+                return;
+            }
+
+
+            OutputStream out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
+            if (out != null) {
+                String disableChunking = (String) msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING);
+                String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+                Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+
+                if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
+
+                    MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
+                    OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
+                    long messageSize = 0;
+
+                    try {
+                        OverflowBlob overflowBlob = setStreamAsTempData(formatter, msgContext, format);
                         messageSize = overflowBlob.getLength();
-	                    msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH,messageSize);
-	                    overflowBlob.writeTo(out);
+                        msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, messageSize);
+                        overflowBlob.writeTo(out);
                     } catch (IOException e) {
-	                    // TODO Auto-generated catch block
-                    	 handleException("IO while building message", e);
+                        // TODO Auto-generated catch block
+                        handleException("IO while building message", e);
                     }
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
                     if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else if (messageSize == 0 &&
-                               (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
-                                (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
+                            (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
+                                    (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else {
                         pipe.setSerializationComplete(true);
                     }
 
-				}else {
-					//if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
-					//to ignore any entity enclosed methods available.
+                } else {
+                    //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
+                    //to ignore any entity enclosed methods available.
                     if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
-						pipe.setSerializationCompleteWithoutData(true);
-						return;
-					}
+                        pipe.setSerializationCompleteWithoutData(true);
+                        return;
+                    }
 
                     if ((msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY))) {
@@ -396,11 +396,11 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
 
                     if ((disableChunking == null || !"true".equals(disableChunking)) ||
-					    (forceHttp10 == null || !"true".equals(forceHttp10))) {
-						MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
-						OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
-						formatter.writeTo(msgContext, format, out, false);
-					}
+                            (forceHttp10 == null || !"true".equals(forceHttp10))) {
+                        MessageFormatter formatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
+                        OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(msgContext);
+                        formatter.writeTo(msgContext, format, out, false);
+                    }
                     if ((msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE) != null &&
                             (Boolean) msgContext.getProperty(PassThroughConstants.REST_GET_DELETE_INVOKE))) {
                         pipe.setSerializationCompleteWithoutData(true);
@@ -408,9 +408,10 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                         pipe.setSerializationComplete(true);
                     }
 
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 	
 	
 	/**
