@@ -48,6 +48,9 @@ public class AsyncCallback implements AxisCallback {
 
     private long timeoutDuration;
 
+    /** Whether callback is marked for removal from the store */
+    private boolean markedForRemoval = false;
+
     private SynapseConstants.ENDPOINT_TIMEOUT_TYPE timeoutType;
 
     public AsyncCallback( org.apache.axis2.context.MessageContext messageContext,MessageContext synapseOutMsgCtx) {
@@ -115,5 +118,21 @@ public class AsyncCallback implements AxisCallback {
 
     public void setTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE timeoutType) {
         this.timeoutType = timeoutType;
+    }
+
+    /**
+     * Check whether callback is marked for removal from the callback store
+     *
+     * @return whether callback is marked for removal from the callback store
+     */
+    public boolean isMarkedForRemoval() {
+        return markedForRemoval;
+    }
+
+    /**
+     * Mark callback to be removed from the callback store
+     */
+    public void setMarkedForRemoval() {
+        this.markedForRemoval = true;
     }
 }
