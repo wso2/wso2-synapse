@@ -26,10 +26,12 @@ import org.apache.axis2.transport.base.AbstractPollTableEntry;
 import org.apache.axis2.transport.base.ParamUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.synapse.commons.crypto.CryptoUtil;
 import org.apache.synapse.commons.vfs.VFSConstants;
 import org.apache.synapse.commons.vfs.VFSUtils;
 
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Map;
@@ -125,6 +127,12 @@ public class PollTableEntry extends AbstractPollTableEntry {
     private volatile boolean canceled;
 
     private boolean clusterAware;
+
+    /**
+     * This parameter is used decide whether the resolving hostname IP of URIs are done at deployment or dynamically.
+     * At usage default id 'false' which lead hostname resolution at deployment
+     */
+    private boolean resolveHostsDynamically = false;
     
     private static final Log log = LogFactory.getLog(PollTableEntry.class);
     
@@ -138,10 +146,25 @@ public class PollTableEntry extends AbstractPollTableEntry {
     }
 
     public String getFileURI() {
-        return fileURI;
+        if (resolveHostsDynamically) {
+            try {
+                return resolveHost(fileURI);
+            } catch (AxisFault axisFault) {
+                log.warn("Unable to resolving hostname of transport.vfs.FileURI : " + VFSUtils.maskURLPassword(fileURI));
+            }
+        }
+        return  fileURI;
     }
 
     public String getReplyFileURI() {
+        if (resolveHostsDynamically) {
+            try {
+                return resolveHost(replyFileURI);
+            } catch (AxisFault axisFault) {
+                log.warn("Unable to resolving hostname of transport.vfs.ReplyFileURI : " +
+                        VFSUtils.maskURLPassword(replyFileURI));
+            }
+        }
         return replyFileURI;
     }
 
@@ -166,10 +189,26 @@ public class PollTableEntry extends AbstractPollTableEntry {
     }
 
     public String getMoveAfterProcess() {
+        if (resolveHostsDynamically) {
+            try {
+                return resolveHost(moveAfterProcess);
+            } catch (AxisFault axisFault) {
+                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterProcess: " +
+                        VFSUtils.maskURLPassword(moveAfterProcess));
+            }
+        }
         return moveAfterProcess;
     }
 
     public String getMoveAfterMoveFailure() {
+        if (resolveHostsDynamically) {
+            try {
+                return resolveHost(moveAfterMoveFailure);
+            } catch (AxisFault axisFault) {
+                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterFailedMove: " +
+                        VFSUtils.maskURLPassword(moveAfterMoveFailure));
+            }
+        }
         return moveAfterMoveFailure;
     }
 
@@ -197,43 +236,59 @@ public class PollTableEntry extends AbstractPollTableEntry {
 		return fileProcessingCount;
 	}
 
-	private void setMoveAfterProcess(String moveAfterProcess) {
+	private void setMoveAfterProcess(String moveAfterProcess) throws AxisFault {
         if (moveAfterProcess == null) {
             this.moveAfterProcess = null;
         } else if (moveAfterProcess.startsWith(VFSConstants.VFS_PREFIX)) {
             // to recover a good directory location if user entered with the vfs: prefix
             // because transport uris are given like that
-            this.moveAfterProcess = moveAfterProcess.substring(VFSConstants.VFS_PREFIX.length());
+            this.moveAfterProcess = resolveHostAtDeployment(moveAfterProcess.substring(VFSConstants.VFS_PREFIX.length()));
         } else {
-            this.moveAfterProcess = moveAfterProcess;
+            this.moveAfterProcess = resolveHostAtDeployment(moveAfterProcess);
         }
     }
 
     public String getMoveAfterErrors() {
+        if (resolveHostsDynamically) {
+            try {
+                return resolveHost(moveAfterErrors);
+            } catch (AxisFault axisFault) {
+                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterErrors: " +
+                        VFSUtils.maskURLPassword(moveAfterErrors));
+            }
+        }
         return moveAfterErrors;
     }
 
-    private void setMoveAfterErrors(String moveAfterErrors) {
+    private void setMoveAfterErrors(String moveAfterErrors) throws AxisFault {
         if (moveAfterErrors == null) {
             this.moveAfterErrors = null;
         } else if (moveAfterErrors.startsWith(VFSConstants.VFS_PREFIX)) {
-            this.moveAfterErrors = moveAfterErrors.substring(VFSConstants.VFS_PREFIX.length());
+            this.moveAfterErrors = resolveHostAtDeployment(moveAfterErrors.substring(VFSConstants.VFS_PREFIX.length()));
         } else {
-            this.moveAfterErrors = moveAfterErrors;
+            this.moveAfterErrors = resolveHostAtDeployment(moveAfterErrors);
         }  
     }
 
     public String getMoveAfterFailure() {
+        if (resolveHostsDynamically) {
+            try {
+                return resolveHost(moveAfterFailure);
+            } catch (AxisFault axisFault) {
+                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterFailure: " +
+                        VFSUtils.maskURLPassword(moveAfterFailure));
+            }
+        }
         return moveAfterFailure;
     }
 
-    private void setMoveAfterFailure(String moveAfterFailure) {
+    private void setMoveAfterFailure(String moveAfterFailure) throws AxisFault {
         if (moveAfterFailure == null) {
             this.moveAfterFailure = null;
         } else if (moveAfterFailure.startsWith(VFSConstants.VFS_PREFIX)) {
-            this.moveAfterFailure = moveAfterFailure.substring(VFSConstants.VFS_PREFIX.length());
+            this.moveAfterFailure = resolveHostAtDeployment(moveAfterFailure.substring(VFSConstants.VFS_PREFIX.length()));
         } else {
-            this.moveAfterFailure = moveAfterFailure;
+            this.moveAfterFailure = resolveHostAtDeployment(moveAfterFailure);
         }
     }
 
@@ -369,6 +424,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
         this.clusterAware = clusterAware;
     }
 
+    public boolean isResolveHostsDynamically() {
+        return resolveHostsDynamically;
+    }
+
     public Map<String, String> getVfsSchemeProperties() {
         return vfsSchemeProperties;
     }
@@ -409,7 +468,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
 
     @Override
     public boolean loadConfiguration(ParameterInclude params) throws AxisFault {
-        
+
+        resolveHostsDynamically = ParamUtils.getOptionalParamBoolean(params,
+                VFSConstants.TRANSPORT_FILE_RESOLVEHOST_DYNAMICALLY, false);
+
         fileURI = ParamUtils.getOptionalParam(params, VFSConstants.TRANSPORT_FILE_FILE_URI);
         fileURI = decryptIfRequired(fileURI);
         if (fileURI == null) {
@@ -420,9 +482,12 @@ public class PollTableEntry extends AbstractPollTableEntry {
             if (fileURI.startsWith(VFSConstants.VFS_PREFIX)) {
                 fileURI = fileURI.substring(VFSConstants.VFS_PREFIX.length());
             }
-            
+            fileURI = resolveHostAtDeployment(fileURI);
+
             replyFileURI = ParamUtils.getOptionalParam(params, VFSConstants.REPLY_FILE_URI);
             replyFileURI = decryptIfRequired(replyFileURI);
+            replyFileURI = resolveHostAtDeployment(replyFileURI);
+
             fileNamePattern = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_FILE_NAME_PATTERN);
 
@@ -532,6 +597,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             moveAfterMoveFailure = ParamUtils.getOptionalParam(params,
                     VFSConstants.TRANSPORT_FILE_MOVE_AFTER_FAILED_MOVE);
             moveAfterMoveFailure = decryptIfRequired(moveAfterMoveFailure);
+            moveAfterMoveFailure = resolveHostAtDeployment(moveAfterMoveFailure);
 
             String nextRetryDuration = ParamUtils.getOptionalParam(
                     params, VFSConstants.TRANSPORT_FAILED_RECORD_NEXT_RETRY_DURATION);
@@ -671,6 +737,34 @@ public class PollTableEntry extends AbstractPollTableEntry {
             this.clusterAware = ParamUtils.getOptionalParamBoolean(params, VFSConstants.CLUSTER_AWARE, false);
             return super.loadConfiguration(params);
         }
+    }
+
+    private String resolveHost(String uri) throws AxisFault {
+
+        try {
+            return VFSUtils.resolveUriHost(uri, new StringBuilder());
+        } catch (FileSystemException e) {
+            String errorMsg = "Unable to decode the malformed URI : " + VFSUtils.maskURLPassword(uri);
+            //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
+            // identify root cause to users
+            log.error(errorMsg, e);
+            throw new AxisFault(errorMsg, e);
+
+        } catch (UnknownHostException e) {
+            String errorMsg = "Error occurred while resolving hostname of URI : " + VFSUtils.maskURLPassword(uri);
+            //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
+            // identify root cause to users
+            log.error(errorMsg, e);
+            throw new AxisFault(errorMsg, e);
+        }
+
+    }
+
+    private String resolveHostAtDeployment(String uri) throws AxisFault {
+        if (!resolveHostsDynamically) {
+            return resolveHost(uri);
+        }
+        return uri;
     }
 
     /**

@@ -45,6 +45,12 @@ public final class VFSConstants {
     public static final String TRANSPORT_FILE_LOCKING_ENABLED = "enable";    
     public static final String TRANSPORT_FILE_LOCKING_DISABLED = "disable";
 
+    /**
+     * This parameter is used decide whether the resolving hostname IP of URIs are done at deployment or dynamically.
+     * At usage default id 'false' which lead hostname resolution at deployment
+     */
+    public static final String TRANSPORT_FILE_RESOLVEHOST_DYNAMICALLY = "transport.vfs.ResolveHostsDynamically";
+
     //Size limit of the files to be processed, defaults to -1 which means unlimited file size
     public static final String TRANSPORT_FILE_SIZE_LIMIT = "transport.vfs.FileSizeLimit";
     public static final double DEFAULT_TRANSPORT_FILE_SIZE_LIMIT = -1;
