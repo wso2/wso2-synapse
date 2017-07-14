@@ -179,7 +179,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
-                org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
+                synchronized (callback) {
+                    if (callback.isMarkedForRemoval()) {
+                        return;
+                    }
+                    callback.setMarkedForRemoval();
+                }
+                org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
                     handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
