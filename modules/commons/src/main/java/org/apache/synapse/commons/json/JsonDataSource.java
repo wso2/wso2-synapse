@@ -151,6 +151,6 @@ final class JsonDataSource implements OMDataSource {
             throw new XMLStreamException("Could not reuse JSON stream from JSON Data Source.", e);
         }
         // Inform reader to add or remove PI's from XML output as per the configurations
-        return JsonUtil.getReader(inputStream, JsonUtil.isPiEnabled()); // Do not add PIs to the XML output of this reader
+        return JsonUtil.getReader(inputStream, JsonUtil.isPiEnabled());
     }
 }
