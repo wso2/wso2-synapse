@@ -150,6 +150,7 @@ final class JsonDataSource implements OMDataSource {
             logger.error("#getReader. Could not reuse JSON stream from JSON Data Source. Error>> " + e.getLocalizedMessage());
             throw new XMLStreamException("Could not reuse JSON stream from JSON Data Source.", e);
         }
-        return JsonUtil.getReader(inputStream, false); // Do not add PIs to the XML output of this reader
+        // Inform reader to add or remove PI's from XML output as per the configurations
+        return JsonUtil.getReader(inputStream, JsonUtil.isPiEnabled()); // Do not add PIs to the XML output of this reader
     }
 }
