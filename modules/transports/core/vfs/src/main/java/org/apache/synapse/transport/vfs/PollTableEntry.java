@@ -148,9 +148,9 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public String getFileURI() {
         if (resolveHostsDynamically) {
             try {
-                return resolveHost(fileURI);
-            } catch (AxisFault axisFault) {
-                log.warn("Unable to resolving hostname of transport.vfs.FileURI : " + VFSUtils.maskURLPassword(fileURI));
+                return VFSUtils.resolveUriHost(fileURI);
+            } catch (UnknownHostException | FileSystemException e) {
+                log.warn("Unable to resolving hostname of transport.vfs.FileURI : " + VFSUtils.maskURLPassword(fileURI), e);
             }
         }
         return  fileURI;
@@ -159,10 +159,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public String getReplyFileURI() {
         if (resolveHostsDynamically) {
             try {
-                return resolveHost(replyFileURI);
-            } catch (AxisFault axisFault) {
+                return VFSUtils.resolveUriHost(replyFileURI);
+            } catch (UnknownHostException | FileSystemException e) {
                 log.warn("Unable to resolving hostname of transport.vfs.ReplyFileURI : " +
-                        VFSUtils.maskURLPassword(replyFileURI));
+                        VFSUtils.maskURLPassword(replyFileURI), e);
             }
         }
         return replyFileURI;
@@ -191,10 +191,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public String getMoveAfterProcess() {
         if (resolveHostsDynamically) {
             try {
-                return resolveHost(moveAfterProcess);
-            } catch (AxisFault axisFault) {
+                return VFSUtils.resolveUriHost(moveAfterProcess);
+            }  catch (UnknownHostException | FileSystemException e) {
                 log.warn("Unable to resolving hostname of transport.vfs.MoveAfterProcess: " +
-                        VFSUtils.maskURLPassword(moveAfterProcess));
+                        VFSUtils.maskURLPassword(moveAfterProcess), e);
             }
         }
         return moveAfterProcess;
@@ -203,10 +203,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public String getMoveAfterMoveFailure() {
         if (resolveHostsDynamically) {
             try {
-                return resolveHost(moveAfterMoveFailure);
-            } catch (AxisFault axisFault) {
+                return VFSUtils.resolveUriHost(moveAfterMoveFailure);
+            }  catch (UnknownHostException | FileSystemException e) {
                 log.warn("Unable to resolving hostname of transport.vfs.MoveAfterFailedMove: " +
-                        VFSUtils.maskURLPassword(moveAfterMoveFailure));
+                        VFSUtils.maskURLPassword(moveAfterMoveFailure), e);
             }
         }
         return moveAfterMoveFailure;
@@ -251,10 +251,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public String getMoveAfterErrors() {
         if (resolveHostsDynamically) {
             try {
-                return resolveHost(moveAfterErrors);
-            } catch (AxisFault axisFault) {
+                return VFSUtils.resolveUriHost(moveAfterErrors);
+            } catch (UnknownHostException | FileSystemException e) {
                 log.warn("Unable to resolving hostname of transport.vfs.MoveAfterErrors: " +
-                        VFSUtils.maskURLPassword(moveAfterErrors));
+                        VFSUtils.maskURLPassword(moveAfterErrors), e);
             }
         }
         return moveAfterErrors;
@@ -273,10 +273,10 @@ public class PollTableEntry extends AbstractPollTableEntry {
     public String getMoveAfterFailure() {
         if (resolveHostsDynamically) {
             try {
-                return resolveHost(moveAfterFailure);
-            } catch (AxisFault axisFault) {
+                return VFSUtils.resolveUriHost(moveAfterFailure);
+            } catch (UnknownHostException | FileSystemException e) {
                 log.warn("Unable to resolving hostname of transport.vfs.MoveAfterFailure: " +
-                        VFSUtils.maskURLPassword(moveAfterFailure));
+                        VFSUtils.maskURLPassword(moveAfterFailure), e);
             }
         }
         return moveAfterFailure;
@@ -739,30 +739,24 @@ public class PollTableEntry extends AbstractPollTableEntry {
         }
     }
 
-    private String resolveHost(String uri) throws AxisFault {
-
-        try {
-            return VFSUtils.resolveUriHost(uri, new StringBuilder());
-        } catch (FileSystemException e) {
-            String errorMsg = "Unable to decode the malformed URI : " + VFSUtils.maskURLPassword(uri);
-            //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
-            // identify root cause to users
-            log.error(errorMsg, e);
-            throw new AxisFault(errorMsg, e);
-
-        } catch (UnknownHostException e) {
-            String errorMsg = "Error occurred while resolving hostname of URI : " + VFSUtils.maskURLPassword(uri);
-            //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
-            // identify root cause to users
-            log.error(errorMsg, e);
-            throw new AxisFault(errorMsg, e);
-        }
-
-    }
-
     private String resolveHostAtDeployment(String uri) throws AxisFault {
         if (!resolveHostsDynamically) {
-            return resolveHost(uri);
+            try {
+                return VFSUtils.resolveUriHost(uri, new StringBuilder());
+            } catch (FileSystemException e) {
+                String errorMsg = "Unable to decode the malformed URI : " + VFSUtils.maskURLPassword(uri);
+                //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
+                // identify root cause to users
+                log.error(errorMsg, e);
+                throw new AxisFault(errorMsg, e);
+
+            } catch (UnknownHostException e) {
+                String errorMsg = "Error occurred while resolving hostname of URI : " + VFSUtils.maskURLPassword(uri);
+                //log the error since if we only throw AxisFault, we won't get the entire stacktrace in logs to
+                // identify root cause to users
+                log.error(errorMsg, e);
+                throw new AxisFault(errorMsg, e);
+            }
         }
         return uri;
     }
