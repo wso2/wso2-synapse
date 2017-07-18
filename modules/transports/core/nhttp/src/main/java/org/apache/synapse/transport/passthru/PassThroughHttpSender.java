@@ -556,8 +556,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 if (contentTypeInMsgCtx != null) {
                    String contentTypeValueInMsgCtx = contentTypeInMsgCtx.toString();
                    // Skip multipart/related as it should be taken from formatter.
-                   if (!contentTypeValueInMsgCtx.contains(
-                           PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+                   if (!(contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED) ||
+                           contentTypeValueInMsgCtx.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_FORM_DATA))) {
 
                        // adding charset only if charset is not available,
                        if (contentTypeValueInMsgCtx.indexOf(HTTPConstants.CHAR_SET_ENCODING) == -1
