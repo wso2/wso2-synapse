@@ -663,6 +663,10 @@ public class JmsStore extends AbstractMessageStore {
      * @return the actual password from the Secure Vault Password Management.
      */
     private String resolveSecureVaultExpressions(String value) {
+        //Password can be null, it is optional
+        if (value == null) {
+            return null;
+        }
         Matcher lookupMatcher = vaultLookupPattern.matcher(value);
         String resolvedValue = value;
         if (lookupMatcher.find()) {

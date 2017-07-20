@@ -19,6 +19,7 @@
 
 package org.apache.synapse.mediators.eip.aggregator;
 
+import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
@@ -28,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Stack;
 import java.util.TimerTask;
 
 /**
@@ -255,8 +257,20 @@ public class Aggregate extends TimerTask {
         }
 
         public void run() {
-            aggregateMediator.completeAggregate(aggregate);
-            log.warn("Aggregate Mediator Time out occured.");
+            MessageContext msgCtx = aggregate.getLastMessage();
+            try {
+                log.warn("Aggregate Mediator Time out occurred.");
+                aggregateMediator.completeAggregate(aggregate);
+            } catch (Exception ex) {
+                Stack stack = msgCtx.getFaultStack();
+                if (stack != null &&
+                        !stack.isEmpty()) {
+                    ((FaultHandler) stack.pop()).handleFault(msgCtx, ex);
+                } else {
+                    log.error("Synapse encountered an exception, " +
+                            "No error handlers found - [Message Dropped]\n" + ex.getMessage());
+                }
+            }
         }
     }
 
