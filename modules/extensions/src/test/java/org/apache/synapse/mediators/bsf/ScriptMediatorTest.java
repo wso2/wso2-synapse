@@ -137,6 +137,7 @@ public class ScriptMediatorTest extends TestCase {
                 "        l.name = location_object.name;\n" +
                 "        l.tags = location_object.types;\n" +
                 "        l.id = \"ID:\" + (location_object.id);\n" +
+                "        l.long_id = 123456789123 + i\n" +
                 "        response[i] = l;\n" +
                 "    }\n" +
                 "    mc.setPayloadJSON(response);\n" +
@@ -153,7 +154,7 @@ public class ScriptMediatorTest extends TestCase {
         ScriptMediator mediator = new ScriptMediator("js", new LinkedHashMap<Value, Object>(), v, "transform", null);
         boolean result = mediator.mediate(mc);
         String response = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
-        String expectedResponse = "[{\"name\":\"Biaggio Cafe\", \"tags\":[\"bar\", \"restaurant\", \"food\", \"establishment\"], \"id\":\"ID:7eaf7\"}, {\"name\":\"Doltone House\", \"tags\":[\"food\", \"establishment\"], \"id\":\"ID:3ef98\"}]";
+        String expectedResponse = "[{\"name\":\"Biaggio Cafe\", \"tags\":[\"bar\", \"restaurant\", \"food\", \"establishment\"], \"id\":\"ID:7eaf7\", \"long_id\":123456789123}, {\"name\":\"Doltone House\", \"tags\":[\"food\", \"establishment\"], \"id\":\"ID:3ef98\", \"long_id\":123456789124}]";
         assertEquals(expectedResponse, response);
         assertEquals(true, result);
     }
