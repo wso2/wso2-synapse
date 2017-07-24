@@ -150,7 +150,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(fileURI);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolving hostname of transport.vfs.FileURI : " + VFSUtils.maskURLPassword(fileURI), e);
+                log.warn("Unable to resolve the hostname of transport.vfs.FileURI : " + VFSUtils.maskURLPassword(fileURI), e);
             }
         }
         return  fileURI;
@@ -161,7 +161,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(replyFileURI);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolving hostname of transport.vfs.ReplyFileURI : " +
+                log.warn("Unable to resolve the hostname of transport.vfs.ReplyFileURI : " +
                         VFSUtils.maskURLPassword(replyFileURI), e);
             }
         }
@@ -193,7 +193,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterProcess);
             }  catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterProcess: " +
+                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterProcess: " +
                         VFSUtils.maskURLPassword(moveAfterProcess), e);
             }
         }
@@ -205,7 +205,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterMoveFailure);
             }  catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterFailedMove: " +
+                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterFailedMove: " +
                         VFSUtils.maskURLPassword(moveAfterMoveFailure), e);
             }
         }
@@ -253,7 +253,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterErrors);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterErrors: " +
+                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterErrors: " +
                         VFSUtils.maskURLPassword(moveAfterErrors), e);
             }
         }
@@ -275,7 +275,7 @@ public class PollTableEntry extends AbstractPollTableEntry {
             try {
                 return VFSUtils.resolveUriHost(moveAfterFailure);
             } catch (UnknownHostException | FileSystemException e) {
-                log.warn("Unable to resolving hostname of transport.vfs.MoveAfterFailure: " +
+                log.warn("Unable to resolve the hostname of transport.vfs.MoveAfterFailure: " +
                         VFSUtils.maskURLPassword(moveAfterFailure), e);
             }
         }

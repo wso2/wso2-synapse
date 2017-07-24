@@ -485,10 +485,10 @@ public class VFSUtils {
 
     /**
      * Function to resolve hostname of the vfs uri
-     * @param uri
-     * @return
-     * @throws FileSystemException
-     * @throws UnknownHostException
+     * @param uri URI need to resolve
+     * @return hostname resolved uri
+     * @throws FileSystemException Unable to decode due to malformed URI
+     * @throws UnknownHostException Error occurred while resolving hostname of URI
      */
     public static String resolveUriHost (String uri) throws FileSystemException, UnknownHostException {
         return resolveUriHost(uri, new StringBuilder());
@@ -499,10 +499,10 @@ public class VFSUtils {
      * same uri provided for {uri}
      * Protocols resolved : SMB
      * @param uri URI need to resolve
-     * @param strBuilder
+     * @param strBuilder string builder to use to build the resulting uri
      * @return hostname resolved uri
-     * @throws FileSystemException
-     * @throws UnknownHostException
+     * @throws FileSystemException Unable to decode due to malformed URI
+     * @throws UnknownHostException Error occurred while resolving hostname of URI
      */
     public static String resolveUriHost (String uri, StringBuilder strBuilder)
             throws FileSystemException, UnknownHostException {
@@ -558,6 +558,7 @@ public class VFSUtils {
         int pos = 0;
         for (; pos < maxlen; pos++) {
             char ch = name.charAt(pos);
+            //if /;?:@&=+$, characters found means, we have passed the hostname, hence break
             if (ch == '/' || ch == ';' || ch == '?' || ch == ':'
                     || ch == '@' || ch == '&' || ch == '=' || ch == '+'
                     || ch == '$' || ch == ',') {
@@ -565,6 +566,7 @@ public class VFSUtils {
             }
         }
         if (pos == 0) {
+            //haven't found the hostname
             return null;
         }
 
