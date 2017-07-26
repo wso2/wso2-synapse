@@ -57,6 +57,16 @@ public class FailoverEndpoint extends AbstractEndpoint {
     /** The fail-over mode supported by this endpoint. By default we do dynamic fail-over */
     private boolean dynamic = true;
 
+    /**
+     * Check if buildMessage attribute explicitly mentioned in config
+     */
+    private boolean isBuildMessageAttAvailable = false;
+
+    /**
+     * Overwrite the global synapse property build.message.on.failover.enable. Default false.
+     */
+    private boolean buildMessageAtt = false;
+
     /** check message need to be built before sending */
     private boolean buildMessage = false;
 
@@ -109,14 +119,14 @@ public class FailoverEndpoint extends AbstractEndpoint {
                 log.debug(this + " Building the SoapEnvelope");
             }
             //preserving the payload to send next endpoint if needed
-            if(buildMessage) {
-                try {
-                    RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
-                } catch (IOException | XMLStreamException ex) {
-                    String msg = "Error while building the message";
-                    handleException(msg, ex);
-
+            //If buildMessage attribute available in failover config it is honoured.
+            //else global property is considered
+            if (isBuildMessageAttAvailable) {
+                if (buildMessageAtt) {
+                    buildMessage(synCtx);
                 }
+            } else if (buildMessage) {
+               buildMessage(synCtx);
             }
             synCtx.getEnvelope().buildWithAttachments();
             //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
@@ -278,5 +288,35 @@ public class FailoverEndpoint extends AbstractEndpoint {
 
     public void setDynamic(boolean dynamic) {
         this.dynamic = dynamic;
+    }
+
+    /**
+     * Set buildMessage Attribute from failover config
+     * @param buildMessage true or false
+     */
+    public void setBuildMessageAtt(boolean buildMessage) {
+        this.buildMessageAtt = buildMessage;
+    }
+
+    /**
+     * Set whether failover config has the buildMessage config
+     * @param available true or false
+     */
+    public void setBuildMessageAttAvailable(boolean available) {
+        this.isBuildMessageAttAvailable = available;
+    }
+
+    /**
+     * Build the message
+     * @param synCtx Synapse Context
+     */
+    private void buildMessage(MessageContext synCtx) {
+        try {
+            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        } catch (IOException | XMLStreamException ex) {
+            String msg = "Error while building the message";
+            handleException(msg, ex);
+
+        }
     }
 }
