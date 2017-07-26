@@ -119,14 +119,13 @@ public class FailoverEndpoint extends AbstractEndpoint {
                 log.debug(this + " Building the SoapEnvelope");
             }
             //preserving the payload to send next endpoint if needed
-            //If buildMessage attribute available in failover config it is honoured.
-            //else global property is considered
+            // If buildMessage attribute available in failover config it is honoured, else global property is considered
             if (isBuildMessageAttAvailable) {
                 if (buildMessageAtt) {
                     buildMessage(synCtx);
                 }
             } else if (buildMessage) {
-               buildMessage(synCtx);
+                buildMessage(synCtx);
             }
             synCtx.getEnvelope().buildWithAttachments();
             //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
@@ -314,8 +313,7 @@ public class FailoverEndpoint extends AbstractEndpoint {
         try {
             RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         } catch (IOException | XMLStreamException ex) {
-            String msg = "Error while building the message";
-            handleException(msg, ex);
+            handleException("Error while building the message", ex);
 
         }
     }

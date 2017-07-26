@@ -197,8 +197,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 // may have to retry this message for failover support
                 if (failover) {
                     //preserving the payload to send next endpoint if needed
-                    //If buildMessage attribute available in failover config it is honoured.
-                    //else global property is considered
+                    // If buildMessage attribute available in LB config it is used, else global property is considered
                     if (isBuildMessageAttAvailable) {
                         if (buildMessageAtt) {
                             buildMessage(synCtx);
@@ -509,8 +508,7 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         try {
             RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
         } catch (IOException | XMLStreamException ex) {
-            String msg = "Error while building the message";
-            handleException(msg, ex);
+            handleException("Error while building the message", ex);
 
         }
     }
