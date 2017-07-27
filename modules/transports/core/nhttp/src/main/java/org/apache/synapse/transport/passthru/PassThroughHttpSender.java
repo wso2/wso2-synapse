@@ -574,8 +574,11 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 }catch (RemoteException fault){
                     IOUtils.closeQuietly(out);
                     throw fault;
+                } finally {
+                    //Serialization should be set as complete so that the state of the socket can be
+                    // reset to readable
+                    pipe.setSerializationComplete(true);
                 }
-                pipe.setSerializationComplete(true);
                 out.close();
             }
             
