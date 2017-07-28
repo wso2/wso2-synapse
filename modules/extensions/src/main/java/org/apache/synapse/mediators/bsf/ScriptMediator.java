@@ -26,6 +26,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.bsf.xml.XMLHelper;
@@ -311,7 +312,12 @@ public class ScriptMediator extends AbstractMediator {
             } else {
                 helper = XMLHelper.getArgHelper(sew.getEngine());
             }
-            ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, helper);
+            CommonScriptMessageContext scriptMC;
+            if (language.equals("nashornJs")) {
+                scriptMC = new NashornJavaScriptMessageContext(synCtx, helper);
+            } else {
+                scriptMC = new ScriptMessageContext(synCtx, helper);
+            }
             processJSONPayload(synCtx, scriptMC);
             Invocable invocableScript = (Invocable) sew.getEngine();
 
@@ -335,7 +341,12 @@ public class ScriptMediator extends AbstractMediator {
      * @throws ScriptException For any errors , when compile , run the script
      */
     private Object mediateForInlineScript(MessageContext synCtx) throws ScriptException {
-        ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
+        CommonScriptMessageContext scriptMC;
+        if (language.equals("nashornJs")) {
+            scriptMC = new NashornJavaScriptMessageContext(synCtx, xmlHelper);
+        } else {
+            scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
+        }
         processJSONPayload(synCtx, scriptMC);
         Bindings bindings = scriptEngine.createBindings();
         bindings.put(MC_VAR_NAME, scriptMC);
@@ -349,7 +360,7 @@ public class ScriptMediator extends AbstractMediator {
         return response;
     }
 
-    private void processJSONPayload(MessageContext synCtx, ScriptMessageContext scriptMC) throws ScriptException {
+    private void processJSONPayload(MessageContext synCtx, CommonScriptMessageContext scriptMC) throws ScriptException {
         if (!(synCtx instanceof Axis2MessageContext)) {
             return;
         }
@@ -377,7 +388,7 @@ public class ScriptMediator extends AbstractMediator {
         }
     }
 
-    private void prepareForJSON(ScriptMessageContext scriptMC) {
+    private void prepareForJSON(CommonScriptMessageContext scriptMC) {
         if (jsonParser == null) {
             jsonParser = new JsonParser();
         }
@@ -536,11 +547,17 @@ public class ScriptMediator extends AbstractMediator {
             log.debug("Initializing script mediator for language : " + language);
         }
 
+
         engineManager = new ScriptEngineManager();
+        if (language.equals("nashornJs")) {
+            engineManager.registerEngineExtension("jsEngine", new NashornScriptEngineFactory());
+        } else {
+            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+        }
+        engineManager.registerEngineExtension("nashornJs", new NashornScriptEngineFactory());
         engineManager.registerEngineExtension("js", new RhinoScriptEngineFactory());
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
-        engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
         this.scriptEngine = engineManager.getEngineByExtension(language);
 
@@ -555,13 +572,15 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
-        //Invoking a custom Helper class since there is an api change in rhino17 for js
-        if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
-            xmlHelper = new JavaScriptXmlHelper();
-        } else {
-            xmlHelper = XMLHelper.getArgHelper(scriptEngine);
-        }
 
+        if (!language.equals("nashornJs")) {
+            //Invoking a custom Helper class since there is an api change in rhino17 for js
+            if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
+                xmlHelper = new JavaScriptXmlHelper();
+            } else {
+                xmlHelper = XMLHelper.getArgHelper(scriptEngine);
+            }
+        }
 
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
         log.debug("Script mediator for language : " + language +

@@ -65,8 +65,8 @@ import java.util.*;
  * message payload XML in a way natural to the scripting languageS
  */
 @SuppressWarnings({"UnusedDeclaration"})
-public class NashornJavaScriptMessageContext implements MessageContext {
-    private static final Log logger = LogFactory.getLog(ScriptMessageContext.class.getName());
+public class NashornJavaScriptMessageContext implements CommonScriptMessageContext {
+    private static final Log logger = LogFactory.getLog(NashornJavaScriptMessageContext.class.getName());
 
     private static final String JSON_OBJECT = "JSON_OBJECT";
     private static final String JSON_TEXT = "JSON_TEXT";
@@ -680,7 +680,7 @@ public class NashornJavaScriptMessageContext implements MessageContext {
     }
 
     public Log getServiceLog() {
-        return LogFactory.getLog(ScriptMessageContext.class);
+        return LogFactory.getLog(NashornJavaScriptMessageContext.class);
     }
 
     public Mediator getSequenceTemplate(String key) {

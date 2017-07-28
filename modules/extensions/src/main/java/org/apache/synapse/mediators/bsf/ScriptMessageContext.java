@@ -70,7 +70,7 @@ import java.util.Stack;
  * message payload XML in a way natural to the scripting languageS
  */
 @SuppressWarnings({"UnusedDeclaration"})
-public class ScriptMessageContext implements MessageContext {
+public class ScriptMessageContext implements CommonScriptMessageContext {
     private static final Log logger = LogFactory.getLog(ScriptMessageContext.class.getName());
 
     private static final String JSON_OBJECT = "JSON_OBJECT";
@@ -97,6 +97,7 @@ public class ScriptMessageContext implements MessageContext {
      * @throws ScriptException in-case of an error in getting
      * the XML representation of SOAP Body payload
      */
+    @Override
     public Object getPayloadXML() throws ScriptException {
         return xmlHelper.toScriptXML(mc.getEnvelope().getBody().getFirstElement());
     }
@@ -109,6 +110,7 @@ public class ScriptMessageContext implements MessageContext {
      * @throws OMException     For errors in OM manipulation
      */
 
+    @Override
     public void setPayloadXML(Object payload) throws OMException, ScriptException {
         SOAPBody body = mc.getEnvelope().getBody();
         OMElement firstChild = body.getFirstElement();
@@ -126,10 +128,12 @@ public class ScriptMessageContext implements MessageContext {
      *
      * @return JSON object of the message body
      */
+    @Override
     public Object getPayloadJSON() {
         return jsonObject(mc);
     }
 
+    @Override
     public Object getJsonText() {
         if (mc == null) {
             return "";
@@ -143,6 +147,7 @@ public class ScriptMessageContext implements MessageContext {
      *
      * @return Payload as text
      */
+    @Override
     public String getPayloadText() {
         if (JsonUtil.hasAJsonPayload(((Axis2MessageContext) mc).getAxis2MessageContext())) {
             return JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
@@ -160,6 +165,7 @@ public class ScriptMessageContext implements MessageContext {
      * @throws ScriptException in case of creating a JSON object out of
      *                         the javascript native object.
      */
+    @Override
     public void setPayloadJSON0(Object jsonPayload) throws ScriptException {
         org.apache.axis2.context.MessageContext messageContext;
         messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
@@ -186,6 +192,7 @@ public class ScriptMessageContext implements MessageContext {
      * @param jsonObject
      * @return
      */
+    @Override
     public boolean setJsonObject(MessageContext messageContext, Object jsonObject) {
         if (jsonObject == null) {
             logger.error("Setting null JSON object.");
@@ -200,6 +207,7 @@ public class ScriptMessageContext implements MessageContext {
      * @param jsonObject
      * @return
      */
+    @Override
     public boolean setJsonText(MessageContext messageContext, Object jsonObject) {
         if (messageContext == null) {
             return false;
@@ -216,6 +224,7 @@ public class ScriptMessageContext implements MessageContext {
      * @param messageContext
      * @return
      */
+    @Override
     public Object jsonObject(MessageContext messageContext) {
         if (messageContext == null) {
             return null;
@@ -241,6 +250,7 @@ public class ScriptMessageContext implements MessageContext {
      *
      * @param scriptEngine a ScriptEngine instance
      */
+    @Override
     public void setScriptEngine(ScriptEngine scriptEngine) {
         this.scriptEngine = scriptEngine;
         if (this.scriptEngine == null) {
@@ -255,6 +265,7 @@ public class ScriptMessageContext implements MessageContext {
      * @param content the XML for the new header
      * @throws ScriptException if an error occurs when converting the XML to OM
      */
+    @Override
     public void addHeader(boolean mustUnderstand, Object content) throws ScriptException {
         SOAPEnvelope envelope = mc.getEnvelope();
         SOAPFactory factory = (SOAPFactory)envelope.getOMFactory();
@@ -286,23 +297,28 @@ public class ScriptMessageContext implements MessageContext {
      * @throws ScriptException in-case of an error in getting
      * the XML representation of SOAP envelope
      */
+    @Override
     public Object getEnvelopeXML() throws ScriptException {
         return xmlHelper.toScriptXML(mc.getEnvelope());
     }
 
     // helpers to set EPRs from a script string
+    @Override
     public void setTo(String reference) {
         mc.setTo(new EndpointReference(reference));
     }
 
+    @Override
     public void setFaultTo(String reference) {
         mc.setFaultTo(new EndpointReference(reference));
     }
 
+    @Override
     public void setFrom(String reference) {
         mc.setFrom(new EndpointReference(reference));
     }
 
+    @Override
     public void setReplyTo(String reference) {
         mc.setReplyTo(new EndpointReference(reference));
     }
@@ -360,6 +376,7 @@ public class ScriptMessageContext implements MessageContext {
         }
     }
 
+    @Override
     public void setProperty(String key, Object value, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
             setProperty(key, value);
@@ -392,6 +409,7 @@ public class ScriptMessageContext implements MessageContext {
         }
     }
 
+    @Override
     public void removeProperty(String key, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
             Set pros = mc.getPropertyKeySet();
@@ -697,6 +715,7 @@ public class ScriptMessageContext implements MessageContext {
         return json.toString();
     }
 
+    @Override
     public void setPayloadJSON(Object jsonPayload) throws ScriptException {
         org.apache.axis2.context.MessageContext messageContext;
         messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
@@ -817,6 +836,7 @@ public class ScriptMessageContext implements MessageContext {
 	    return null;
     }
 
+    @Override
     public void addComponentToMessageFlow(String mediatorId){
     }
 
