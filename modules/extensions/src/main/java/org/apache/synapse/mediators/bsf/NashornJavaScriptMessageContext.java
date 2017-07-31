@@ -24,7 +24,6 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
-import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axiom.soap.*;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
@@ -42,27 +41,18 @@ import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
-import org.mozilla.javascript.ConsString;
-import org.mozilla.javascript.NativeArray;
-import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.Wrapper;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.*;
 
 /**
- * ScriptMessageContext decorates the Synapse MessageContext adding methods to use the
- * message payload XML in a way natural to the scripting languageS
+ * NashornJavaScriptMessageContext impliments the CommonScriptMessageContext specific to Nashorn java script engine
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class NashornJavaScriptMessageContext implements CommonScriptMessageContext {
@@ -96,15 +86,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         SOAPEnvelope envelope = mc.getEnvelope();
         SOAPBody soapBody = envelope.getBody();
         OMElement omElement = soapBody.getFirstElement();
-        Object obj;
-        try {
-            obj = omElement.toStringWithConsume();
-        } catch (XMLStreamException e) {
-            ScriptException scriptException = new ScriptException("Failed to convert OMElement to a string");
-            scriptException.initCause(e);
-            throw scriptException;
-        }
-        return obj;
+        return xmlHelper.toScriptXML(omElement);
     }
 
     /**
@@ -118,21 +100,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     public void setPayloadXML(Object payload) throws OMException, ScriptException {
         SOAPBody body = mc.getEnvelope().getBody();
         OMElement firstChild = body.getFirstElement();
-        OMElement omElement;
-        if (payload instanceof String) {
-            try {
-                String xmlSt = payload.toString();
-                omElement = AXIOMUtil.stringToOM(xmlSt);
-
-            } catch (XMLStreamException e) {
-                ScriptException scriptException = new ScriptException("Failed to create OMElement with provided "
-                        + "payload");
-                scriptException.initCause(e);
-                throw scriptException;
-            }
-        } else {
-            omElement = xmlHelper.toOMElement(payload);
-        }
+        OMElement omElement = xmlHelper.toOMElement(payload);
         if (firstChild == null) {
             body.addChild(omElement);
         } else {
@@ -169,35 +137,6 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         } else {
             return mc.getEnvelope().toString();
         }
-    }
-
-    /**
-
-     /**
-     * Saves the payload of this message context as a JSON payload.
-     *
-     * @param jsonPayload Javascript native object to be set as the message body
-     * @throws ScriptException in case of creating a JSON object out of
-     *                         the javascript native object.
-     */
-    public void setPayloadJSON0(Object jsonPayload) throws ScriptException {
-        org.apache.axis2.context.MessageContext messageContext;
-        messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
-
-        String jsonString;
-        if (jsonPayload instanceof String) {
-            jsonString = (String) jsonPayload;
-        } else {
-            jsonString = serializeJSON(jsonPayload);
-        }
-        try {
-            JsonUtil.getNewJsonPayload(messageContext, jsonString, true, true);
-        } catch (AxisFault axisFault) {
-            throw new ScriptException(axisFault);
-        }
-        //JsonUtil.setContentType(messageContext);
-        Object jsonObject = scriptEngine.eval('(' + jsonString + ')');
-        setJsonObject(mc, jsonObject);
     }
 
     /**
@@ -280,7 +219,6 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         try {
             parser.parse(sax);
             doc = parser.getDocument();
-            doc.getDocumentElement();
             doc.getDocumentElement().normalize();
         } catch (SAXException | IOException e) {
             ScriptException scriptException = new ScriptException("Failed to parse provided xml");
@@ -305,20 +243,8 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         if (header == null) {
             header = factory.createSOAPHeader(envelope);
         }
-        OMElement element;
-        if (content instanceof String) {
-            try {
-                String xmlContent = content.toString();
-                element = AXIOMUtil.stringToOM(xmlContent);
-            } catch (XMLStreamException e) {
-                ScriptException scriptException = new ScriptException("Failed to create OMElement with provided " +
-                        "content");
-                scriptException.initCause(e);
-                throw scriptException;
-            }
-        } else {
-            element = xmlHelper.toOMElement(content);
-        }
+
+        OMElement element = xmlHelper.toOMElement(content);
         // We can't add the element directly to the SOAPHeader. Instead, we need to copy the
         // information over to a SOAPHeaderBlock.
         SOAPHeaderBlock headerBlock = header.addHeaderBlock(element.getLocalName(),
@@ -344,7 +270,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
      */
     public Object getEnvelopeXML() throws ScriptException {
         SOAPEnvelope envelope = mc.getEnvelope();
-        String xmlBasedEnvelope = mc.toString();
+        String xmlBasedEnvelope = envelope.toString();
         return xmlBasedEnvelope;
     }
 
@@ -403,16 +329,10 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     public void setProperty(String key, Object value) {
-        if (value instanceof String) {
-            OMElement omElement = null;
-            try {
-                String xmlValue = value.toString();
-                omElement = AXIOMUtil.stringToOM(xmlValue);
-                mc.setProperty(key, omElement);
-            } catch (XMLStreamException | OMException e) {
-                mc.setProperty(key, value);
-            }
-        } else {
+        try {
+            OMElement omElement = xmlHelper.toOMElement(value);
+            mc.setProperty(key, omElement);
+        } catch (ScriptException e) {
             mc.setProperty(key, value);
         }
     }
@@ -445,7 +365,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         } else if (XMLConfigConstants.SCOPE_OPERATION.equals(scope)) {
             Axis2MessageContext axis2smc = (Axis2MessageContext) mc;
             org.apache.axis2.context.MessageContext axis2MessageCtx = axis2smc.getAxis2MessageContext();
-            axis2smc.getAxis2MessageContext().getOperationContext().setProperty(key, value);
+            axis2MessageCtx.getOperationContext().setProperty(key, value);
         }
     }
 
@@ -687,73 +607,15 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         return mc.getSequenceTemplate(key);
     }
 
-    private String serializeJSON(Object obj) {
-        StringWriter json = new StringWriter();
-        if(obj instanceof Wrapper) {
-            obj = ((Wrapper) obj).unwrap();
-        }
+    /**
 
-        if (obj instanceof NativeObject) {
-            json.append("{");
-            NativeObject o = (NativeObject) obj;
-            Object[] ids = o.getIds();
-            boolean first = true;
-            for (Object id : ids) {
-                String key = (String) id;
-                Object value = o.get((String) id, o);
-                if (!first) {
-                    json.append(", ");
-                } else {
-                    first = false;
-                }
-                json.append("\"").append(key).append("\" : ").append(serializeJSON(value));
-            }
-            json.append("}");
-        } else if (obj instanceof NativeArray) {
-            json.append("[");
-            NativeArray o = (NativeArray) obj;
-            Object[] ids = o.getIds();
-            boolean first = true;
-            for (Object id : ids) {
-                Object value = o.get((Integer) id, o);
-                if (!first) {
-                    json.append(", ");
-                } else {
-                    first = false;
-                }
-                json.append(serializeJSON(value));
-            }
-            json.append("]");
-        } else if (obj instanceof Object[]) {
-            json.append("[");
-            boolean first = true;
-            for (Object value : (Object[]) obj) {
-                if (!first) {
-                    json.append(", ");
-                } else {
-                    first = false;
-                }
-                json.append(serializeJSON(value));
-            }
-            json.append("]");
-
-        } else if (obj instanceof String) {
-            json.append("\"").append(obj.toString()).append("\"");
-        } else if (obj instanceof Integer ||
-                obj instanceof Long ||
-                obj instanceof Float ||
-                obj instanceof Double ||
-                obj instanceof Short ||
-                obj instanceof BigInteger ||
-                obj instanceof BigDecimal ||
-                obj instanceof Boolean) {
-            json.append(obj.toString());
-        } else {
-            json.append("{}");
-        }
-        return json.toString();
-    }
-
+     /**
+     * Saves the payload of this message context as a JSON payload.
+     *
+     * @param jsonPayload Javascript native object to be set as the message body
+     * @throws ScriptException in case of creating a JSON object out of
+     *                         the javascript native object.
+     */
     public void setPayloadJSON(Object jsonPayload) throws ScriptException {
         org.apache.axis2.context.MessageContext messageContext;
         messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
@@ -764,7 +626,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         } else if (jsonPayload != null) {
             try {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
-                serializeJSON_(jsonPayload, out);
+                serializeJSON(jsonPayload, out);
                 json = out.toByteArray();
             } catch (IOException | ScriptException e) {
                 logger.error("#setPayloadJSON. Could not retrieve bytes from JSON object. Error>>> "
@@ -782,96 +644,10 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         setJsonObject(mc, jsonObject);
     }
 
-    private void serializeJSON_(Object obj, OutputStream out) throws IOException, ScriptException {
-        if (out == null) {
-            logger.warn("#serializeJSON_. Did not serialize JSON object. Object: " + obj + "  Stream: " + out);
-            return;
-        }
-        if(obj instanceof Wrapper) {
-            obj = ((Wrapper) obj).unwrap();
-        }
-
-        if(obj == null){
-            out.write("null".getBytes());
-        }
-        else if (obj instanceof NativeObject) {
-            out.write('{');
-            NativeObject o = (NativeObject) obj;
-            Object[] ids = o.getIds();
-            boolean first = true;
-            for (Object id : ids) {
-                String key = (String) id;
-                Object value = o.get((String) id, o);
-                if (!first) {
-                    out.write(',');
-                    out.write(' ');
-                } else {
-                    first = false;
-                }
-                out.write('"');
-                out.write(key.getBytes());
-                out.write('"');
-                out.write(':');
-                serializeJSON_(value, out);
-            }
-            out.write('}');
-        } else if (obj instanceof NativeArray) {
-            out.write('[');
-            NativeArray o = (NativeArray) obj;
-            Object[] ids = o.getIds();
-            boolean first = true;
-            for (Object id : ids) {
-                Object value = o.get((Integer) id, o);
-                if (!first) {
-                    out.write(',');
-                    out.write(' ');
-                } else {
-                    first = false;
-                }
-                serializeJSON_(value, out);
-            }
-            out.write(']');
-        } else if (obj instanceof Object[]) {
-            out.write('[');
-            boolean first = true;
-            for (Object value : (Object[]) obj) {
-                if (!first) {
-                    out.write(',');
-                    out.write(' ');
-                } else {
-                    first = false;
-                }
-                serializeJSON_(value, out);
-            }
-            out.write(']');
-        } else if (obj instanceof String) {
-            out.write('"');
-            out.write(((String) obj).getBytes());
-            out.write('"');
-        } else if (obj instanceof ConsString) {
-            //This class represents a string composed of two components using the "+" operator
-            //in java script with rhino7 upward. ex:var str = "val1" + "val2";
-            out.write('"');
-            out.write((((ConsString) obj).toString()).getBytes());
-            out.write('"');
-        } else if (obj instanceof Integer ||
-                obj instanceof Long ||
-                obj instanceof Float ||
-                obj instanceof Double ||
-                obj instanceof Short ||
-                obj instanceof BigInteger ||
-                obj instanceof BigDecimal ||
-                obj instanceof Boolean) {
-            out.write(obj.toString().getBytes());
-        } else if (obj instanceof ScriptObjectMirror) {
-            ScriptObjectMirror json = null;
-            json = (ScriptObjectMirror) scriptEngine.eval("JSON");
-            String jsonString = (String) json.callMember("stringify", obj);
-            out.write(jsonString.getBytes());
-        } else {
-            out.write('{');
-            out.write('}');
-        }
+    private void serializeJSON(Object obj, OutputStream out) throws IOException, ScriptException {
+        ScriptObjectMirror json = (ScriptObjectMirror) scriptEngine.eval("JSON");
+        String jsonString = (String) json.callMember("stringify", obj);
+        out.write(jsonString.getBytes());
     }
 
     public Mediator getDefaultConfiguration(String arg0) {

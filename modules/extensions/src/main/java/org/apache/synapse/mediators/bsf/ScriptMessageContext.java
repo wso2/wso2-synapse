@@ -165,7 +165,6 @@ public class ScriptMessageContext implements CommonScriptMessageContext {
      * @throws ScriptException in case of creating a JSON object out of
      *                         the javascript native object.
      */
-    @Override
     public void setPayloadJSON0(Object jsonPayload) throws ScriptException {
         org.apache.axis2.context.MessageContext messageContext;
         messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();

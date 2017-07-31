@@ -19,16 +19,11 @@
 package org.apache.synapse.mediators.bsf;
 
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.util.XMLUtils;
 import org.apache.bsf.xml.DefaultXMLHelper;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlObject;
-import org.mozilla.javascript.Context;
 import org.w3c.dom.Document;
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
-import org.mozilla.javascript.xml.XMLObject;
 import org.w3c.dom.Element;
 
 import javax.script.ScriptException;
@@ -56,7 +51,7 @@ public class NashornJavaScriptXmlHelper extends DefaultXMLHelper {
                 String xmlString = scriptXML.toString();
                 omElement = AXIOMUtil.stringToOM(xmlString);
 
-            } catch (XMLStreamException e) {
+            } catch (XMLStreamException | OMException e) {
                 ScriptException scriptException = new ScriptException("Failed to create OMElement with provided " +
                         "payload");
                 scriptException.initCause(e);
@@ -86,10 +81,18 @@ public class NashornJavaScriptXmlHelper extends DefaultXMLHelper {
      * @throws ScriptException when error
      */
     public Object toScriptXML(OMElement omElement) throws ScriptException {
+        String xmlString;
         if (omElement == null) {
             return null;
         }
-        
+        try {
+            xmlString = omElement.toStringWithConsume();
+        } catch (XMLStreamException e) {
+            ScriptException scriptException = new ScriptException("Failed to convert OMElement to a string");
+            scriptException.initCause(e);
+            throw scriptException;
+        }
+        return xmlString;
     }
 }
 

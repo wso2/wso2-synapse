@@ -39,8 +39,6 @@ public interface CommonScriptMessageContext extends MessageContext{
 
     String getPayloadText();
 
-    void setPayloadJSON0(Object jsonPayload) throws ScriptException;
-
     boolean setJsonObject(MessageContext messageContext, Object jsonObject);
 
     boolean setJsonText(MessageContext messageContext, Object jsonObject);

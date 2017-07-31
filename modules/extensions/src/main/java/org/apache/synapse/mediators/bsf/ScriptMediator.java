@@ -85,6 +85,11 @@ public class ScriptMediator extends AbstractMediator {
     private static final String JAVA_SCRIPT = "js";
 
     /**
+     * Name of the java script language with usage of nashorn engine
+     */
+    private static final String NASHORN_JAVA_SCRIPT = "nashornJs";
+
+    /**
      * The registry entry key for a script loaded from the registry
      * Handle both static and dynamic(Xpath) Keys
      */
@@ -307,13 +312,13 @@ public class ScriptMediator extends AbstractMediator {
         try {
             sew = prepareExternalScript(synCtx);
             XMLHelper helper;
-            if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
+            if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT)) {
                 helper = xmlHelper;
             } else {
                 helper = XMLHelper.getArgHelper(sew.getEngine());
             }
             CommonScriptMessageContext scriptMC;
-            if (language.equals("nashornJs")) {
+            if (language.equals(NASHORN_JAVA_SCRIPT)) {
                 scriptMC = new NashornJavaScriptMessageContext(synCtx, helper);
             } else {
                 scriptMC = new ScriptMessageContext(synCtx, helper);
@@ -342,7 +347,7 @@ public class ScriptMediator extends AbstractMediator {
      */
     private Object mediateForInlineScript(MessageContext synCtx) throws ScriptException {
         CommonScriptMessageContext scriptMC;
-        if (language.equals("nashornJs")) {
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
             scriptMC = new NashornJavaScriptMessageContext(synCtx, xmlHelper);
         } else {
             scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
@@ -549,7 +554,7 @@ public class ScriptMediator extends AbstractMediator {
 
 
         engineManager = new ScriptEngineManager();
-        if (language.equals("nashornJs")) {
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
             engineManager.registerEngineExtension("jsEngine", new NashornScriptEngineFactory());
         } else {
             engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
@@ -572,15 +577,15 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
-
-        if (!language.equals("nashornJs")) {
-            //Invoking a custom Helper class since there is an api change in rhino17 for js
-            if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
-                xmlHelper = new JavaScriptXmlHelper();
-            } else {
-                xmlHelper = XMLHelper.getArgHelper(scriptEngine);
-            }
+        //Invoking a custom Helper class for api change in rhino17 and also for Nashorn engine based implimentation
+        if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
+            xmlHelper = new JavaScriptXmlHelper();
+        } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            xmlHelper = new NashornJavaScriptXmlHelper();
+        } else {
+            xmlHelper = XMLHelper.getArgHelper(scriptEngine);
         }
+
 
         this.multiThreadedEngine = scriptEngine.getFactory().getParameter("THREADING") != null;
         log.debug("Script mediator for language : " + language +
