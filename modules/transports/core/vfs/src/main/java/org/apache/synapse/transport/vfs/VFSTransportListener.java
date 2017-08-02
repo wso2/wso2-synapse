@@ -422,7 +422,8 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                     }                 
                     for (FileObject child : children) {
                         // Stop processing any further when put to maintenance mode (shutting down or restarting)
-                        if (state != BaseConstants.STARTED) {
+                        // Stop processing when service get undeployed
+                        if (state != BaseConstants.STARTED || !entry.getService().isActive()) {
                             return;
                         }
                         /**

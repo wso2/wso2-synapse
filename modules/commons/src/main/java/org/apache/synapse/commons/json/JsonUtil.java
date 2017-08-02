@@ -18,6 +18,7 @@
 
 package org.apache.synapse.commons.json;
 
+import org.apache.axiom.om.impl.llom.OMElementImpl;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfig;
 import org.apache.synapse.commons.staxon.core.json.JsonXMLConfigBuilder;
@@ -67,6 +68,7 @@ public final class JsonUtil {
 
     private static final QName JSON_ARRAY = new QName("jsonArray");
 
+    private static final QName JSON_VALUE = new QName("jsonValue");
     /**
      * If this property is set to <tt>true</tt> the input stream of the JSON payload will be reset
      * after writing to the output stream within the #writeAsJson method.
@@ -79,6 +81,8 @@ public final class JsonUtil {
     // TODO: Build this configuration into a separate class.
     // TODO: Property to remove root element from XML output
     // TODO: Axis2 property/synapse static property add XML Namespace to the root element
+
+    private static boolean isJsonToXmlPiEnabled = false;
 
     private static boolean preserverNamespacesForJson = false;
 
@@ -159,7 +163,11 @@ public final class JsonUtil {
             process = properties.getProperty
                     (Constants.SYNAPSE_COMMONS_JSON_OUTPUT_EMPTY_XML_ELEM_TO_EMPTY_STR, "true").trim();
 
-            xmlNilReadWriteEnabled = Boolean.parseBoolean(properties.getProperty("synapse.commons.enableXmlNilReadWrite", "false"));
+            isJsonToXmlPiEnabled = Boolean.parseBoolean(
+                    properties.getProperty(Constants.SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE, "false").trim());
+
+            xmlNilReadWriteEnabled = Boolean
+                    .parseBoolean(properties.getProperty("synapse.commons.enableXmlNilReadWrite", "false"));
 
         }
     }
@@ -362,6 +370,11 @@ public final class JsonUtil {
         }
         transformElement(element, true);
         try {
+            if (JSON_VALUE.getLocalPart().equals(element.getLocalName())) {
+                outputStream.write(element.getText().getBytes());
+                outputStream.flush();
+                return;
+            }
             org.apache.commons.io.output.ByteArrayOutputStream xmlStream =
                     new org.apache.commons.io.output.ByteArrayOutputStream();
             element.serialize(xmlStream);
@@ -521,6 +534,7 @@ public final class JsonUtil {
         }
         boolean isObject = false;
         boolean isArray = false;
+        boolean isValue = false;
         if (inputStream != null) {
             InputStream json = toReadOnlyStream(inputStream);
             messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
@@ -528,9 +542,15 @@ public final class JsonUtil {
             boolean isEmptyPayload = true;
             boolean valid = false;
             try {
-                // check for empty/all-whitespace streams
+                /*
+                * Checks for all empty or all whitespace streams and if found  sets isEmptyPayload to false. The while
+                * loop exits if one of the valid literals is found. If no valid literal is found the it will loop to
+                * the end of the stream and the next if statement after the loop makes sure that valid will remain false
+                * */
                 int c = json.read();
-                while (c != -1 && c != '{' && c != '[') {
+                while (c != -1 && c != '{' && c != '[' && c != '"' && c != 't' && c != 'n' && c != 'f' && c != '-' &&
+                        c != '0' && c != '1' && c != '2' && c != '3' && c != '4' && c != '5' && c != '6' && c != '7' &&
+                        c != '8' && c != '9') {
                     if (c != 32) {
                         isEmptyPayload = false;
                     }
@@ -539,12 +559,24 @@ public final class JsonUtil {
                 if (c != -1) {
                     valid = true;
                 }
+                /*
+                * A valid JSON can be an object, array or a value (http://json.org/). The following conditions check
+                * the beginning char to see if the json stream could fall into one of this category
+                * */
                 if (c == '{') {
                     isObject = true;
                     isArray = false;
+                    isValue = false;
                 } else if (c == '[') {
                     isArray = true;
                     isObject = false;
+                    isValue = false;
+                } else if (c == '"' || c == 't' || c == 'n' || c == 'f' || c == '-' || c == '0' || c == '1' ||
+                        c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' ||
+                        c == '8' || c == '9') {
+                    isArray = false;
+                    isObject = false;
+                    isValue = true;
                 }
                 json.reset();
             } catch (IOException e) {
@@ -572,10 +604,9 @@ public final class JsonUtil {
                      * https://wso2.org/jira/browse/ESBJAVA-4270
                      */
                     if (isValidPayloadRequired(messageContext)) {
-                        logger.error(
-                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. MessageID: " +
-                                messageContext.getMessageID());
-                        throw new AxisFault("Payload is not a JSON string.");
+                        throw new AxisFault(
+                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. Payload" +
+                                        " is not a JSON string.");
                     } else {
                         return null;
                     }
@@ -585,6 +616,29 @@ public final class JsonUtil {
             if (isObject) {
                 jsonElement = JSON_OBJECT;
                 messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, true);
+            }
+            if (isValue) {
+                String jsonString = "";
+                try {
+                    jsonString = IOUtils.toString(json, "UTF-8");
+
+                    messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_IS_JSON_OBJECT, false);
+                    if (jsonString.startsWith("\"") && jsonString.endsWith("\"")|| jsonString.equals("true") || jsonString.equals("false") ||
+                            jsonString.equals("null") || jsonString.matches("-?\\d+(\\.\\d+)?")) {
+                        jsonElement = JSON_VALUE;
+                    } else {
+                        throw new AxisFault(
+                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. Payload" +
+                                        " is not a JSON string.");
+                    }
+                    OMElement element = OMAbstractFactory.getOMFactory().createOMElement(jsonElement, null);
+                    element.addChild(OMAbstractFactory.getOMFactory().createOMText(jsonString));
+                    return element;
+                } catch (IOException e) {
+                    throw new AxisFault(
+                            "#Can not parse stream. MessageID: " +
+                                    messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage(), e);
+                }
             }
             if (isArray) {
                 jsonElement = JSON_ARRAY;
@@ -968,7 +1022,7 @@ public final class JsonUtil {
      * @return <tt>true</tt> if the element is a sourced JSON object (ie. an <tt>OMSourcedElement</tt> instance containing a JSON stream).
      */
     public static boolean hasAJsonPayload(OMElement element) {
-        return (element instanceof OMSourcedElementImpl) && isAJsonPayloadElement(element);
+        return ((element instanceof OMSourcedElementImpl) || (element instanceof OMElementImpl)) && isAJsonPayloadElement(element);
     }
 
     /**
@@ -980,7 +1034,8 @@ public final class JsonUtil {
     public static boolean isAJsonPayloadElement(OMElement element) {
         return element != null
                 && (JSON_OBJECT.getLocalPart().equals(element.getLocalName())
-                || JSON_ARRAY.getLocalPart().equals(element.getLocalName()));
+                || JSON_ARRAY.getLocalPart().equals(element.getLocalName())
+                || JSON_VALUE.getLocalPart().equals(element.getLocalName()));
     }
 
     /**
@@ -1179,5 +1234,14 @@ public final class JsonUtil {
             isRequired = false;
         }
         return isRequired;
+    }
+
+    /**
+     * Returns the configured value of the parameter (synapse.json.to.xml.process.instruction.enabled).
+     *
+     * @return true to inform staxon library to add PIs to JSON -> XML conversion
+     */
+    public static boolean isPiEnabled() {
+        return isJsonToXmlPiEnabled;
     }
 }

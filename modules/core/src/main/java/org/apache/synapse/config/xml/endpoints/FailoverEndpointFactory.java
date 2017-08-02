@@ -80,6 +80,15 @@ public class FailoverEndpointFactory extends EndpointFactory {
             if (dynamicFO != null && JavaUtils.isFalseExplicitly(dynamicFO)) {
                 failoverEndpoint.setDynamic(false);
             }
+
+            //set buildMassage property
+            String  buildMessageAtt = failoverElement.getAttributeValue(new QName("buildMessage"));
+            if (buildMessageAtt != null) {
+                failoverEndpoint.setBuildMessageAttAvailable(true);
+                if (JavaUtils.isTrueExplicitly(buildMessageAtt)) {
+                    failoverEndpoint.setBuildMessageAtt(true);
+                }
+            }
             
             // process the parameters
             processProperties(failoverEndpoint, epConfig);
