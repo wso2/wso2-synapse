@@ -28,7 +28,8 @@ import javax.script.ScriptException;
  * CommonScriptMessageContext decorates the MessageContext interface by adding methods to use when
  * deals with message payload XML/Json, in a way natural to the scripting languageS
  */
-public interface CommonScriptMessageContext extends MessageContext{
+public interface CommonScriptMessageContext extends MessageContext {
+
     Object getPayloadXML() throws ScriptException;
 
     void setPayloadXML(Object payload) throws OMException, ScriptException;
