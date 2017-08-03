@@ -92,7 +92,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         // type attribue
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
-            source.setSourceType(convertTypeToInit(typeAttr.getAttributeValue()));
+            source.setSourceType(convertTypeToInt(typeAttr.getAttributeValue()));
         }
 
         OMAttribute cloneAttr = sourceEle.getAttribute(ATT_CLONE);
@@ -141,7 +141,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         // type attribute
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
-            int type = convertTypeToInit(typeAttr.getAttributeValue());
+            int type = convertTypeToInt(typeAttr.getAttributeValue());
             if (type >= 0) {
                 target.setTargetType(type);
             } else {
@@ -175,7 +175,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         }
     }
 
-    private int convertTypeToInit(String type) {
+    private int convertTypeToInt(String type) {
         if (type.equals(ENVELOPE)) {
             return EnrichMediator.ENVELOPE;
         } else if (type.equals(BODY)) {
@@ -201,7 +201,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         // source type attribute
         OMAttribute sourceTypeAttr = sourceEle.getAttribute(ATT_TYPE);
         if (sourceTypeAttr != null && sourceTypeAttr.getAttributeValue() != null) {
-            sourceType = convertTypeToInit(sourceTypeAttr.getAttributeValue());
+            sourceType = convertTypeToInt(sourceTypeAttr.getAttributeValue());
+
+            // Source type is different form the existing (0-custom, 1-envelope, 2-body, 3-property, 4-inline)
             if (sourceType < 0) {
                 logger.info("Un-expected source type");
             }
@@ -210,16 +212,28 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         // target type attribute
         OMAttribute targetTypeAttr = targetEle.getAttribute(ATT_TYPE);
         if (targetTypeAttr != null && targetTypeAttr.getAttributeValue() != null) {
-            targetType = convertTypeToInit(targetTypeAttr.getAttributeValue());
+            targetType = convertTypeToInt(targetTypeAttr.getAttributeValue());
+
+            // check if target type is different form the existing (0-custom, 1-envelope, 2-body, 3-property, 4-inline)
             if (targetType < 0) {
                 logger.info("Un-expected target type");
             }
+            // check if target type is 1-envelope
             if (targetType == 1) {
                 throw new SynapseException("Envelope not support for target attribute");
             }
+            // check if target type is 4-inline
+            if (targetType == 4) {
+                throw new SynapseException("Inline not support for target attribute");
+            }
         }
+        /*
+            check the wrong combination such as
+            sourceType = 1-envelope and targetType = 0-custom
+            sourceType = 1-envelope and targetType = 2-body
+            sourceType = 2-body and targetType = 2-body
 
-        // check combination
+         */
         if ((sourceType == 1 && targetType == 0) || (sourceType == 1 && targetType == 2) || (sourceType == 2
                 && targetType == 2)) {
             throw new SynapseException("Wrong combination of source and target type");
