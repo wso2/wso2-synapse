@@ -797,15 +797,16 @@ public class ScriptMessageContext implements MessageContext {
             out.write('"');
             out.write((((ConsString) obj).toString()).getBytes());
             out.write('"');
-        } else if (obj instanceof Integer ||
-                obj instanceof Long ||
-                obj instanceof Float ||
-                obj instanceof Double ||
-                obj instanceof Short ||
-                obj instanceof BigInteger ||
-                obj instanceof BigDecimal ||
-                obj instanceof Boolean) {
-            out.write(obj.toString().getBytes());
+        } else if (obj instanceof Number) {   
+        	
+        	if(((Number)obj).longValue() - ((Number)obj).doubleValue() == 0)
+    			out.write(String.format("%.0f", obj).getBytes());
+    		else
+    			out.write(obj.toString().getBytes());
+        	
+        } else if(obj instanceof Boolean) {
+        	out.write(obj.toString().getBytes());
+        	
         } else {
             out.write('{');
             out.write('}');
