@@ -24,7 +24,14 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMException;
 import org.apache.axiom.om.OMNode;
-import org.apache.axiom.soap.*;
+import org.apache.axiom.om.OMXMLBuilderFactory;
+import org.apache.axiom.om.OMXMLParserWrapper;
+import org.apache.axiom.om.xpath.AXIOMXPath;
+import org.apache.axiom.soap.SOAPBody;
+import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.SOAPHeader;
+import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
@@ -34,39 +41,50 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
-import org.apache.synapse.*;
+import org.apache.synapse.ContinuationState;
+import org.apache.synapse.FaultHandler;
+import org.apache.synapse.Mediator;
+import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.*;
 
 /**
- * NashornJavaScriptMessageContext impliments the CommonScriptMessageContext specific to Nashorn java script engine
+ * NashornJavaScriptMessageContext impliments the ScriptMessageContext specific to Nashorn java script engine.
  */
 @SuppressWarnings({"UnusedDeclaration"})
-public class NashornJavaScriptMessageContext implements CommonScriptMessageContext {
+public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     private static final Log logger = LogFactory.getLog(NashornJavaScriptMessageContext.class.getName());
 
     private static final String JSON_OBJECT = "JSON_OBJECT";
     private static final String JSON_TEXT = "JSON_TEXT";
 
-    /** The actual Synapse message context reference */
+    /** The actual Synapse message context reference. */
     private final MessageContext mc;
-    /** The OMElement to scripting language object converter for the selected language */
+
+    /** The OMElement to scripting language object converter for the selected language. */
     private final XMLHelper xmlHelper;
 
-
+    /** To keep Script Engine instance. */
     private ScriptEngine scriptEngine;
 
     public NashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper) {
@@ -90,13 +108,12 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     /**
-     * Set the SOAP body payload from XML
+     * Set the SOAP body payload from XML.
      *
      * @param payload Message payload
      * @throws ScriptException For errors in converting xml To OM
      * @throws OMException     For errors in OM manipulation
      */
-
     public void setPayloadXML(Object payload) throws OMException, ScriptException {
         SOAPBody body = mc.getEnvelope().getBody();
         OMElement firstChild = body.getFirstElement();
@@ -127,7 +144,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     /**
-     * Get the Message Payload as a text
+     * Get the Message Payload as a text.
      *
      * @return Payload as text
      */
@@ -141,30 +158,24 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
 
     /**
      * Saves the JavaScript Object to the message context.
-     * @param messageContext
-     * @param jsonObject
-     * @return
+     * @param messageContext The message context of the sequence
+     * @param jsonObject JavaScript Object which is passed to be saved in message context
+     * @return true
      */
     public boolean setJsonObject(MessageContext messageContext, Object jsonObject) {
-        if (jsonObject == null) {
-            logger.error("Setting null JSON object.");
-        }
         messageContext.setProperty(JSON_OBJECT, jsonObject);
         return true;
     }
 
     /**
      * Saves the JSON String to the message context.
-     * @param messageContext
-     * @param jsonObject
-     * @return
+     * @param messageContext The message context of the sequence
+     * @param jsonObject JavaScript string which is passed to be saved in message context
+     * @return false if messageContext is null return true otherwise
      */
     public boolean setJsonText(MessageContext messageContext, Object jsonObject) {
         if (messageContext == null) {
             return false;
-        }
-        if (jsonObject == null) {
-            logger.error("Setting null JSON text.");
         }
         messageContext.setProperty(JSON_TEXT, jsonObject);
         return true;
@@ -172,8 +183,8 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
 
     /**
      * Returns the JavaScript Object saved in this message context.
-     * @param messageContext
-     * @return
+     * @param messageContext The message context of the sequence
+     * @return o JavaScript Object saved in this message context
      */
     public Object jsonObject(MessageContext messageContext) {
         if (messageContext == null) {
@@ -181,7 +192,6 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         }
         Object o = messageContext.getProperty(JSON_OBJECT);
         if (o == null) {
-            logger.error("JSON object is null.");
             if (this.scriptEngine == null) {
                 logger.error("Cannot create empty JSON object. ScriptEngine instance not available.");
                 return null;
@@ -189,22 +199,19 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
             try {
                 return this.scriptEngine.eval("({})");
             } catch (ScriptException e) {
-                logger.error("Could not return an empty JSON object. Error>>> " + e.getLocalizedMessage());
+                logger.error("Could not return an empty JSON object.", e);
             }
         }
         return o;
     }
 
     /**
-     * Set a script engine
+     * Set a script engine.
      *
      * @param scriptEngine a ScriptEngine instance
      */
     public void setScriptEngine(ScriptEngine scriptEngine) {
         this.scriptEngine = scriptEngine;
-        if (this.scriptEngine == null) {
-            logger.error("Script engine is invalid.");
-        }
     }
 
     /**
@@ -230,6 +237,25 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     /**
+     * Returns the parsed xml document.
+     * @param stream input stream of xml string or document needed to be parsed
+     * @return parsed document
+     */
+    public OMElement getParsedOMElement(InputStream stream) {
+        OMXMLParserWrapper builder = OMXMLBuilderFactory.createOMBuilder(stream);
+        return builder.getDocumentElement();
+    }
+
+    /**
+     * Returns the Axiom xpath.
+     * @param expression Xpath expression
+     * @return Axiom xpath is returned
+     */
+    public AXIOMXPath getXpathResult(String expression) throws JaxenException {
+        return new AXIOMXPath(expression);
+    }
+
+    /**
      * Add a new SOAP header to the message.
      *
      * @param mustUnderstand the value for the <code>soapenv:mustUnderstand</code> attribute
@@ -238,7 +264,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
      */
     public void addHeader(boolean mustUnderstand, Object content) throws ScriptException {
         SOAPEnvelope envelope = mc.getEnvelope();
-        SOAPFactory factory = (SOAPFactory)envelope.getOMFactory();
+        SOAPFactory factory = (SOAPFactory) envelope.getOMFactory();
         SOAPHeader header = envelope.getHeader();
         if (header == null) {
             header = factory.createSOAPHeader(envelope);
@@ -250,7 +276,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         SOAPHeaderBlock headerBlock = header.addHeaderBlock(element.getLocalName(),
                 element.getNamespace());
         for (Iterator it = element.getAllAttributes(); it.hasNext(); ) {
-            headerBlock.addAttribute((OMAttribute)it.next());
+            headerBlock.addAttribute((OMAttribute) it.next());
         }
         headerBlock.setMustUnderstand(mustUnderstand);
         OMNode child = element.getFirstOMChild();
@@ -263,18 +289,21 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     /**
-     * Get the XML representation of the complete SOAP envelope
+     * Get the XML representation of the complete SOAP envelope.
      * @return return an object that represents the payload in the current scripting language
      * @throws ScriptException in-case of an error in getting
      * the XML representation of SOAP envelope
      */
     public Object getEnvelopeXML() throws ScriptException {
         SOAPEnvelope envelope = mc.getEnvelope();
-        String xmlBasedEnvelope = envelope.toString();
-        return xmlBasedEnvelope;
+        return envelope.toString();
     }
 
-    // helpers to set EPRs from a script string
+    /**
+     *
+     * Helpers to set EPRs from a script string.
+     *
+     */
     public void setTo(String reference) {
         mc.setTo(new EndpointReference(reference));
     }
@@ -291,7 +320,9 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         mc.setReplyTo(new EndpointReference(reference));
     }
 
-    // -- all the remainder just use the underlying MessageContext
+    /**
+     * All the remainder just use the underlying MessageContext.
+     */
     public SynapseConfiguration getConfiguration() {
         return mc.getConfiguration();
     }
@@ -333,6 +364,8 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
             OMElement omElement = xmlHelper.toOMElement(value);
             mc.setProperty(key, omElement);
         } catch (ScriptException e) {
+            //Try to convert the value into OMElement if it fails it means value is not a representation of xml so
+            // set as key value pair
             mc.setProperty(key, value);
         }
     }
@@ -405,10 +438,9 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(key)) {
             messageContext.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, value);
             Object o = messageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-            Map _headers = (Map) o;
-            if (_headers != null) {
-                _headers.remove(HTTP.CONTENT_TYPE);
-                _headers.put(HTTP.CONTENT_TYPE, value);
+            Map headers = (Map) o;
+            if (headers != null) {
+                headers.put(HTTP.CONTENT_TYPE, value);
             }
         }
     }
@@ -430,7 +462,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     public OMElement getFormat(String s) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+       return mc.getFormat(s);
     }
 
     public Endpoint getEndpoint(String key) {
@@ -607,8 +639,6 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         return mc.getSequenceTemplate(key);
     }
 
-    /**
-
      /**
      * Saves the payload of this message context as a JSON payload.
      *
@@ -629,8 +659,7 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
                 serializeJSON(jsonPayload, out);
                 json = out.toByteArray();
             } catch (IOException | ScriptException e) {
-                logger.error("#setPayloadJSON. Could not retrieve bytes from JSON object. Error>>> "
-                        + e.getLocalizedMessage());
+                logger.error("#setPayloadJSON. Could not retrieve bytes from JSON object.", e);
             }
         }
         // save this JSON object as the new payload.
@@ -639,7 +668,6 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }
-        //JsonUtil.setContentType(messageContext);
         Object jsonObject = scriptEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
         setJsonObject(mc, jsonObject);
     }
@@ -651,21 +679,18 @@ public class NashornJavaScriptMessageContext implements CommonScriptMessageConte
     }
 
     public Mediator getDefaultConfiguration(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
+        return mc.getDefaultConfiguration(arg0);
     }
 
-    public void addComponentToMessageFlow(String mediatorId){
+    public String getMessageString() {
+        return mc.getMessageString();
     }
 
-    public String getMessageString(){
-        return null;
+    public void setMessageFlowTracingState(int state) {
+        mc.setMessageFlowTracingState(state);
     }
 
-    public void setMessageFlowTracingState(int state){
-    }
-
-    public int getMessageFlowTracingState(){
+    public int getMessageFlowTracingState() {
         return SynapseConstants.TRACING_OFF;
     }
 }

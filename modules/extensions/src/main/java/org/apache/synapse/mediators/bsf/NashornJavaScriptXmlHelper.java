@@ -32,11 +32,10 @@ import javax.xml.stream.XMLStreamException;
 /**
  * This class will provide the operations to convert between xml elements of scripts and OMElements.
  */
-
 public class NashornJavaScriptXmlHelper extends DefaultXMLHelper {
 
     /**
-     * This method will convert the message payload in to xml
+     * This method will convert the message payload in to xml.
      *
      * @param scriptXML from java script
      * @return XML content as OMElement
@@ -67,6 +66,8 @@ public class NashornJavaScriptXmlHelper extends DefaultXMLHelper {
                 scriptException.initCause(e);
                 throw scriptException;
             }
+        } else if (scriptXML instanceof OMElement) {
+            omElement = (OMElement) scriptXML;
         } else {
             throw new ScriptException("Unsupported type provide for XML. type: " + scriptXML.getClass());
         }
@@ -74,9 +75,9 @@ public class NashornJavaScriptXmlHelper extends DefaultXMLHelper {
     }
 
     /**
-     * This method will convert the message payload in to xml string
+     * This method will convert the message payload in to xml string.
      *
-     * @param omElement
+     * @param omElement axiom element representation of xml document
      * @return xml string by adding the xml content
      * @throws ScriptException when error
      */
