@@ -685,8 +685,7 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(restUrlPostfix));
         msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
 
-        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
-                                                                                             "OPTIONS".equals(method)) {
+        if (HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)|| "OPTIONS".equals(method)) {
             HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
                     request.getVersion(), HttpStatus.SC_OK,
                     request.getConnection().getContext());

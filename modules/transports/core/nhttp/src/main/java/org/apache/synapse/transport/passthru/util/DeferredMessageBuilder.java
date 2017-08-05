@@ -125,7 +125,7 @@ public class DeferredMessageBuilder {
 		}
 
     	OMElement element = null;
-        Builder builder;
+        Builder builder = null;
         if (contentType != null) {
             // loading builder from externally..
             //builder = configuration.getMessageBuilder(_contentType,useFallbackBuilder);
@@ -154,7 +154,42 @@ public class DeferredMessageBuilder {
             }
         }
 
-        if (element == null) {
+        if (element != null && HTTPConstants.HEADER_DELETE.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) {
+
+            if (element instanceof SOAPEnvelope) {
+                /*Since some message builders build empty SOAP envelop for empty payload, if SOAP body does not contain
+                any payload it can be considered as no entity body for the DELETE request*/
+
+                //Get element wrapped within SOAP body
+                OMElement soapMsgBodyContent = ((SOAPEnvelope) element).getBody() == null ?
+                        null : ((SOAPEnvelope) element).getBody().getFirstElement();
+
+                if (soapMsgBodyContent == null) {
+                    //SOAP body is empty, consider as no payload
+                    msgCtx.setProperty(PassThroughConstants.DELETE_REQUEST_WITH_PAYLOAD, false);
+
+                } else if (soapMsgBodyContent.getLocalName().equals(PassThroughConstants.XFORM_VALUES_ELEMENT.getLocalPart()) &&
+                        soapMsgBodyContent.getFirstElement() == null) {
+
+                    /**This need to check when HTTP DELETE request doesn't have content type, synapse consider default type as
+                     * application/x-www-form-urlencoded and use assigned builder to build.
+                     * The org.apache.synapse.commons.builders.XFormURLEncodedBuilder will add <xformValues/> element
+                     * within the SOAPBody when there is no payload. Hence if there it is empty <xformValues/> element,
+                     * then we consider as a DELETE request without payload
+                     */
+                    msgCtx.setProperty(PassThroughConstants.DELETE_REQUEST_WITH_PAYLOAD, false);
+
+                } else {
+                    //If the request HTTP DELETE with payload, we have to treat as special case. Hence setting property
+                    msgCtx.setProperty(PassThroughConstants.DELETE_REQUEST_WITH_PAYLOAD, true);
+                }
+
+            } else {
+                //If the request HTTP DELETE with payload, we have to treat as special case. Hence setting property
+                msgCtx.setProperty(PassThroughConstants.DELETE_REQUEST_WITH_PAYLOAD, true);
+            }
+
+        } else if (element == null && builder == null) {
             if (msgCtx.isDoingREST()) {
                 try {
                     element = BuilderUtil.getPOXBuilder(in, null).getDocumentElement();

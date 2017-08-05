@@ -16,6 +16,8 @@
 
 package org.apache.synapse.transport.passthru;
 
+import javax.xml.namespace.QName;
+
 public class PassThroughConstants {
 
     public static final int DEFAULT_IO_THREAD_COUNT = Runtime.getRuntime().availableProcessors();
@@ -107,6 +109,13 @@ public class PassThroughConstants {
     public final static String SECURITY_MODULE_NAME = "rampart";
     
     public final static String REST_GET_DELETE_INVOKE ="rest_get_delete_invoke";
+
+    /**
+     * This property is introduced to provide support for payloads for HTTP DELETE requests
+     *  this property is set "True" when current message that processed is a DELETE request with payload
+     */
+    public final static String DELETE_REQUEST_WITH_PAYLOAD ="DELETE_REQUEST_WITH_PAYLOAD";
+
 
     public final static String FORCE_POST_PUT_NOBODY ="FORCE_POST_PUT_NOBODY";
 
@@ -212,4 +221,6 @@ public class PassThroughConstants {
 
     public static final String MESSAGE_SIZE_VALIDATION_SUM = "MESSAGE_SIZE_VALIDATION_SUM";
     public static final String SOURCE_CONNECTION_DROPPED = "SOURCE_CONNECTION_DROPPED";
+
+    public static final QName XFORM_VALUES_ELEMENT = new QName("xformValues");
 }

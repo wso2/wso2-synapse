@@ -32,7 +32,7 @@ public final class JsonBuilder implements Builder {
 
     public OMElement processDocument(InputStream inputStream, String s,
                                      MessageContext messageContext) throws AxisFault {
-        OMElement element = JsonUtil.toXml(inputStream, true);
+        OMElement element = JsonUtil.toXml(messageContext, inputStream, true);
         if (logger.isDebugEnabled()) {
             logger.debug("#processDocument. Built XML payload from JSON stream. MessageID: " + messageContext.getMessageID());
         }

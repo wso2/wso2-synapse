@@ -30,6 +30,7 @@ import org.apache.axis2.engine.Handler;
 import org.apache.axis2.engine.Phase;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
@@ -166,6 +167,29 @@ public class RelayUtils {
             }
         }
         return;
+    }
+
+    /**
+     * Function to check whether the processing request (eclosed within message context) is a DELETE request without payload
+     * Since we allow to have payload for DELETE requests, we treat same as POST. Hence this function can be used to deviate
+     * DELETE requests without payloads
+     * @param msgContext MessageContext
+     * @return whether the request is a DELETE without payload
+     */
+    public static boolean isDeleteRequestWithoutPayload (MessageContext msgContext) {
+        if (HTTPConstants.HEADER_DELETE.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+
+            //If message builder not invoked OR delete with payload
+            if (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) ||
+                    Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.DELETE_REQUEST_WITH_PAYLOAD))) {
+                //HTTP DELETE request with payload
+                return false;
+            }
+            //Empty payload delete request
+            return true;
+        }
+        //Not a HTTP DELETE request
+        return false;
     }
 
     private static void processAddressing(MessageContext messageContext) throws AxisFault {

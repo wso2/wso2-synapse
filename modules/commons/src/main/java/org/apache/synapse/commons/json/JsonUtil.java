@@ -305,6 +305,77 @@ public final class JsonUtil {
     }
 
     /**
+     * Converts a JSON input stream to its XML representation.
+     * @param messageContext
+     * @param jsonStream JSON input stream
+     * @param pIs Whether or not to add XML processing instructions to the output XML.<br/>
+     *            This property is useful when converting JSON payloads with array objects.
+     * @return OMElement that is the XML representation of the input JSON data.
+     * @throws AxisFault
+     */
+    public static OMElement toXml(MessageContext messageContext, InputStream jsonStream, boolean pIs) throws AxisFault {
+        if (jsonStream == null) {
+            logger.error("Could not convert JSON Stream to XML. JSON input stream is null.");
+            return null;
+        }
+
+        if (messageContext == null) {
+            logger.error("Could not save JSON stream. Message context is null.");
+            return null;
+        }
+
+        InputStream jsonROStream = toReadOnlyStream(jsonStream);
+
+        // read ahead few characters to see if the stream is valid and not empty
+        boolean isEmptyPayload = true;
+        boolean valid = false;
+        try {
+            // check for empty/all-whitespace streams
+            int c = jsonROStream.read();
+            while (c != -1 && c != '{' && c != '[') {
+                if (c != 32) {
+                    isEmptyPayload = false;
+                }
+                c = jsonROStream.read();
+            }
+            if (c != -1) {
+                valid = true;
+            }
+            jsonROStream.reset();
+            jsonStream.reset();
+        } catch (IOException e) {
+            logger.error("Could not determine availability of the JSON input stream. MessageID: " +
+                    messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage());
+            return null;
+        }
+
+        if (!valid && isEmptyPayload) {
+            //This is a empty payload so return null without doing further processing.
+            if (logger.isDebugEnabled()) {
+                logger.debug("Empty payload found. MessageID: " + messageContext.getMessageID());
+            }
+             /*
+                 * This method required to introduce due the GET request failure with query parameter and
+                 * contenttype=application/json. Because of the logic implemented with '=' sign below,
+                 * it expects a valid JSON string as the query parameter value (string after '=' sign) for GET
+                 * requests with application/json content type. Therefore it fails for requests like
+                 * https://localhost:8243/services/customer?format=xml and throws axis fault. With this fix,
+                 * HTTP method is checked and avoid throwing axis2 fault for GET requests.
+                 * https://wso2.org/jira/browse/ESBJAVA-4270
+                 */
+            if (isValidPayloadRequired(messageContext)) {
+                logger.error("Could not save JSON payload. Invalid input stream found. MessageID: " +
+                        messageContext.getMessageID());
+                throw new AxisFault("Payload is not a JSON string.");
+            }
+            return null;
+        }
+
+        //At this point we confirmed that payload is not empty, hence continuing to build the message
+        return toXml(jsonStream, pIs);
+    }
+
+    /**
      * Returns an XMLStreamReader for a JSON input stream
      *
      * @param jsonStream InputStream of JSON
