@@ -25,6 +25,7 @@ import org.apache.axis2.builder.Builder;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.MessageFormatter;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -118,7 +119,11 @@ public class BuilderFormatterTest extends TestCase {
             MessageContext message = Util.newMessageContext();
             Builder jsonBuilder = Util.newJsonBuilder();
             InputStream inputStream = Util.getJson(1);
-            OMElement element  = jsonBuilder.processDocument(inputStream, "application/json", message);
+            assertNotNull(inputStream);
+            //Since FileInputStream doesn't allow mark/reset
+            BufferedInputStream bufferedIs = new BufferedInputStream(inputStream);
+            bufferedIs.mark(Integer.MAX_VALUE);
+            OMElement element  = jsonBuilder.processDocument(bufferedIs, "application/json", message);
             message.getEnvelope().getBody().addChild(element);
             //System.out.println(element.toString());
             //assertTrue(xmlOut.equals(element.toString()));
