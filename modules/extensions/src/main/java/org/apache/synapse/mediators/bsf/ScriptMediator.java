@@ -1,20 +1,19 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *   * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.synapse.mediators.bsf;
@@ -26,6 +25,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
+import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.bsf.xml.XMLHelper;
@@ -41,9 +41,6 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.mozilla.javascript.Context;
-
-import javax.activation.DataHandler;
-import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -52,6 +49,15 @@ import java.util.Properties;
 import java.util.TreeMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import javax.activation.DataHandler;
+import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
+import javax.script.Invocable;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -71,6 +77,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * does not then true is assumed.
  */
 public class ScriptMediator extends AbstractMediator {
+
     private static final Log logger = LogFactory.getLog(ScriptMediator.class.getName());
 
     /**
@@ -82,6 +89,11 @@ public class ScriptMediator extends AbstractMediator {
      * Name of the java script language
      */
     private static final String JAVA_SCRIPT = "js";
+
+    /**
+     * Name of the java script language with usage of nashorn engine
+     */
+    private static final String NASHORN_JAVA_SCRIPT = "nashornJs";
 
     /**
      * The registry entry key for a script loaded from the registry
@@ -156,12 +168,12 @@ public class ScriptMediator extends AbstractMediator {
     private ClassLoader loader;
 
     /**
-     * Create a script mediator for the given language and given script source
+     * Create a script mediator for the given language and given script source.
      *
      * @param language         the BSF language
      * @param scriptSourceCode the source code of the script
      */
-    public ScriptMediator(String language, String scriptSourceCode,ClassLoader classLoader) {
+    public ScriptMediator(String language, String scriptSourceCode, ClassLoader classLoader) {
         this.language = language;
         this.scriptSourceCode = scriptSourceCode;
         this.setLoader(classLoader);
@@ -170,7 +182,7 @@ public class ScriptMediator extends AbstractMediator {
     }
 
     /**
-     * Create a script mediator for the given language and given script entry key and function
+     * Create a script mediator for the given language and given script entry key and function.
      *
      * @param language       the BSF language
      * @param includeKeysMap Include script keys
@@ -178,7 +190,7 @@ public class ScriptMediator extends AbstractMediator {
      * @param function       the function to be invoked
      */
     public ScriptMediator(String language, Map<Value, Object> includeKeysMap,
-                          Value key, String function,ClassLoader classLoader) {
+                          Value key, String function, ClassLoader classLoader) {
         this.language = language;
         this.key = key;
         this.setLoader(classLoader);
@@ -198,7 +210,7 @@ public class ScriptMediator extends AbstractMediator {
     }
 
     /**
-     * Perform Script mediation
+     * Perform Script mediation.
      *
      * @param synCtx the Synapse message context
      * @return the boolean result from the script invocation
@@ -306,12 +318,13 @@ public class ScriptMediator extends AbstractMediator {
         try {
             sew = prepareExternalScript(synCtx);
             XMLHelper helper;
-            if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
+            if (language.equalsIgnoreCase(JAVA_SCRIPT) || language.equals(NASHORN_JAVA_SCRIPT)) {
                 helper = xmlHelper;
             } else {
                 helper = XMLHelper.getArgHelper(sew.getEngine());
             }
-            ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, helper);
+            ScriptMessageContext scriptMC;
+            scriptMC = getScriptMessageContext(synCtx, helper);
             processJSONPayload(synCtx, scriptMC);
             Invocable invocableScript = (Invocable) sew.getEngine();
 
@@ -327,6 +340,16 @@ public class ScriptMediator extends AbstractMediator {
         return obj;
     }
 
+    private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper) {
+        ScriptMessageContext scriptMC;
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            scriptMC = new NashornJavaScriptMessageContext(synCtx, helper);
+        } else {
+            scriptMC = new CommonScriptMessageContext(synCtx, helper);
+        }
+        return scriptMC;
+    }
+
     /**
      * Perform mediation with static inline script of the given scripting language
      *
@@ -335,7 +358,8 @@ public class ScriptMediator extends AbstractMediator {
      * @throws ScriptException For any errors , when compile , run the script
      */
     private Object mediateForInlineScript(MessageContext synCtx) throws ScriptException {
-        ScriptMessageContext scriptMC = new ScriptMessageContext(synCtx, xmlHelper);
+        ScriptMessageContext scriptMC;
+        scriptMC = getScriptMessageContext(synCtx, xmlHelper);
         processJSONPayload(synCtx, scriptMC);
         Bindings bindings = scriptEngine.createBindings();
         bindings.put(MC_VAR_NAME, scriptMC);
@@ -537,10 +561,15 @@ public class ScriptMediator extends AbstractMediator {
         }
 
         engineManager = new ScriptEngineManager();
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            engineManager.registerEngineExtension("jsEngine", new NashornScriptEngineFactory());
+        } else {
+            engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
+        }
+        engineManager.registerEngineExtension("nashornJs", new NashornScriptEngineFactory());
         engineManager.registerEngineExtension("js", new RhinoScriptEngineFactory());
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
-        engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
         this.scriptEngine = engineManager.getEngineByExtension(language);
 
@@ -555,9 +584,11 @@ public class ScriptMediator extends AbstractMediator {
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
-        //Invoking a custom Helper class since there is an api change in rhino17 for js
+        //Invoking a custom Helper class for api change in rhino17 and also for Nashorn engine based implimentation
         if (language.equalsIgnoreCase(JAVA_SCRIPT)) {
             xmlHelper = new JavaScriptXmlHelper();
+        } else if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            xmlHelper = new NashornJavaScriptXmlHelper();
         } else {
             xmlHelper = XMLHelper.getArgHelper(scriptEngine);
         }
