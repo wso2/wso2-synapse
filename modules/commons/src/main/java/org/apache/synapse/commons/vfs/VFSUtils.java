@@ -483,6 +483,123 @@ public class VFSUtils {
         return opts;
     }
 
+    /**
+     * Function to resolve hostname of the vfs uri
+     * @param uri URI need to resolve
+     * @return hostname resolved uri
+     * @throws FileSystemException Unable to decode due to malformed URI
+     * @throws UnknownHostException Error occurred while resolving hostname of URI
+     */
+    public static String resolveUriHost (String uri) throws FileSystemException, UnknownHostException {
+        return resolveUriHost(uri, new StringBuilder());
+    }
+
+    /**
+     * Function to resolve the hostname of uri to ip for following vfs protocols. if not the protocol listed, return
+     * same uri provided for {uri}
+     * Protocols resolved : SMB
+     * @param uri URI need to resolve
+     * @param strBuilder string builder to use to build the resulting uri
+     * @return hostname resolved uri
+     * @throws FileSystemException Unable to decode due to malformed URI
+     * @throws UnknownHostException Error occurred while resolving hostname of URI
+     */
+    public static String resolveUriHost (String uri, StringBuilder strBuilder)
+            throws FileSystemException, UnknownHostException {
+
+        if (uri != null && strBuilder != null) {
+            // Extract the scheme
+            String scheme = UriParser.extractScheme(uri, strBuilder);
+
+            //need to resolve hosts of smb URIs due to limitation in jcifs library
+            if (scheme != null && (scheme.equals("smb"))) {
+                // Expecting "//"
+                if (strBuilder.length() < 2 || strBuilder.charAt(0) != '/' || strBuilder.charAt(1) != '/') {
+                    throw new FileSystemException("vfs.provider/missing-double-slashes.error", uri);
+                }
+                strBuilder.delete(0, 2);
+
+                // Extract userinfo
+                String userInfo = extractUserInfo(strBuilder);
+
+                // Extract hostname
+                String hostName = extractHostName(strBuilder);
+
+                //resolve host name
+                InetAddress hostAddress = InetAddress.getByName(hostName);
+                String resolvedHostAddress = hostAddress.getHostAddress();
+
+                //build resolved uri
+                StringBuilder uriStrBuilder = new StringBuilder();
+                uriStrBuilder.append(scheme).append("://");
+
+                if (userInfo != null) {
+                    //user information can be null since it's optional
+                    uriStrBuilder.append(userInfo).append("@");
+                }
+
+                uriStrBuilder.append(resolvedHostAddress).append(strBuilder);
+
+                return uriStrBuilder.toString();
+            }
+        }
+
+        return uri;
+    }
+
+
+    /**
+     * Extracts the hostname from a URI.  The scheme://userinfo@ part has
+     * been removed.
+     * extracted hostname will be reoved from the StringBuilder
+     */
+    private static String extractHostName(StringBuilder name) {
+        final int maxlen = name.length();
+        int pos = 0;
+        for (; pos < maxlen; pos++) {
+            char ch = name.charAt(pos);
+            //if /;?:@&=+$, characters found means, we have passed the hostname, hence break
+            if (ch == '/' || ch == ';' || ch == '?' || ch == ':'
+                    || ch == '@' || ch == '&' || ch == '=' || ch == '+'
+                    || ch == '$' || ch == ',') {
+                break;
+            }
+        }
+        if (pos == 0) {
+            //haven't found the hostname
+            return null;
+        }
+
+        String hostname = name.substring(0, pos);
+        name.delete(0, pos);
+        return hostname;
+    }
+
+    /**
+     * Extracts the user info from a URI.  The scheme:// part has been removed
+     * already.
+     * extracted user info will be removed from the StringBuilder
+     */
+    private static String extractUserInfo(StringBuilder name) {
+        int maxlen = name.length();
+        for (int pos = 0; pos < maxlen; pos++) {
+            char ch = name.charAt(pos);
+            if (ch == '@') {
+                // Found the end of the user info
+                String userInfo = name.substring(0, pos);
+                name.delete(0, pos + 1);
+                return userInfo;
+            }
+            if (ch == '/' || ch == '?') {
+                // Not allowed in user info
+                break;
+            }
+        }
+
+        // Not found
+        return null;
+    }
+
     private static Integer getFileType(String fileType) {
 
         fileType = fileType.toUpperCase();
