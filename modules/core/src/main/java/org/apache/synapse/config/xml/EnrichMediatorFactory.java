@@ -91,8 +91,6 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         OMAttribute cloneAttr = sourceEle.getAttribute(ATT_CLONE);
         if (cloneAttr != null && cloneAttr.getAttributeValue() != null) {
             source.setClone(Boolean.parseBoolean(cloneAttr.getAttributeValue()));
-        } else {
-            source.setClone(false);
         }
 
         if (source.getSourceType() == EnrichMediator.CUSTOM) {
