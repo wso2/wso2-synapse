@@ -529,7 +529,8 @@ public class SynapseXPath extends SynapsePath {
         domXpath.setNamespaceContext(domNamespaceMap);
         domXpath.setXPathFunctionResolver(new GetPropertyFunctionResolver(synCtx));
         domXpath.setXPathVariableResolver(new DOMSynapseXPathVariableResolver(this.getVariableContext(), synCtx));
-        XPathExpression expr = domXpath.compile(this.getRootExpr().getText());
+        /* Compile the original expression again with Saxon to be evaluated with XPath 2.0 */
+        XPathExpression expr = domXpath.compile(getExpression());
         Object result = expr.evaluate(doomElement);
 
         if (result != null) {
