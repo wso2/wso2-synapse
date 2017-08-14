@@ -26,6 +26,7 @@ import org.apache.synapse.config.xml.MessageProcessorSerializer;
 import org.apache.synapse.config.xml.MessageStoreSerializer;
 import org.apache.synapse.config.xml.MultiXMLConfigurationBuilder;
 import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 
 import java.io.File;
 import java.util.Properties;
@@ -104,7 +105,11 @@ public class    MessageProcessorDeployer extends AbstractSynapseArtifactDeployer
 
             MessageProcessor existingMp = getSynapseConfiguration().getMessageProcessors().
                     get(existingArtifactName);
-            existingMp.destroy();
+            if (existingMp instanceof AbstractMessageProcessor) {
+                ((AbstractMessageProcessor) existingMp).destroy(true);
+            } else {
+                existingMp.destroy();
+            }
             // We should add the updated MessageProcessor as a new MessageProcessor
             // and remove the old one
 
