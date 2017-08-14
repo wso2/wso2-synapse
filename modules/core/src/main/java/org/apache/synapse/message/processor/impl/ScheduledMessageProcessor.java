@@ -20,6 +20,7 @@ package org.apache.synapse.message.processor.impl;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -34,6 +35,7 @@ import org.apache.synapse.message.processor.impl.forwarder.ForwardingProcessorCo
 import org.apache.synapse.message.processor.impl.forwarder.ForwardingService;
 import org.apache.synapse.message.processor.impl.sampler.SamplingService;
 import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
+import org.apache.synapse.registry.Registry;
 import org.apache.synapse.task.Task;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskManager;
@@ -81,6 +83,12 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 
 	private int memberCount = 1;
 
+	private Registry registry;
+
+	private static final String REG_PROCESSOR_BASE_PATH = "/repository/components/org.apache.synapse.message.processor/";
+
+	private static final String MP_STATE = "MESSAGE_PROCESSOR_STATE";
+
     private static final String TASK_PREFIX = "MSMP_";
 
     private static final String DEFAULT_TASK_SUFFIX = "0";
@@ -89,6 +97,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
     public void init(SynapseEnvironment se) {
 		this.synapseEnvironment = se;
 		initMessageSender(parameters);
+		registry = se.getSynapseConfiguration().getRegistry();
 		super.init(se);
 		/*
 		 * initialize the task manager only once to alleviate complexities
@@ -136,8 +145,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         return isActivated;
     }
 
-    protected boolean isProcessorStartAsDeactivated(){
-        return !getIsActivatedParamValue();
+    protected boolean isProcessorStartAsDeactivated() {
+        // the Activate parameter is only helpful for the message processor to deploy for the very first time.
+        // once it is deployed, the message processor should you its own state
+
+        if (getProcessorState() == ProcessorState.INITIAL) {
+            return !getIsActivatedParamValue();
+        }
+        return (getProcessorState() == ProcessorState.PAUSED);
     }
 
     @Override
@@ -185,7 +200,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
          * If the Message Processor is Deactivated through the Advanced parameter 
          * explicitly, then we deactivate the task immediately.
          */
-        if (!getIsActivatedParamValue()) {
+        if (isProcessorStartAsDeactivated()) {
             deactivate();
         }
         return true;
@@ -277,8 +292,13 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		return false;
 	}
 
-    @Override
-    public void destroy() {
+	@Override
+	public void destroy(){
+		destroy(false);
+	}
+
+
+	public void destroy(boolean preserveState) {
         try {
             stop();
         }
@@ -320,6 +340,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
             logger.info("Successfully destroyed message processor [" + getName() + "].");
         }
 
+		if(!preserveState) {
+			registry.delete(REG_PROCESSOR_BASE_PATH + getName());
+		}
     }
 
     @Override
@@ -331,6 +354,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
                 }
 
                 pauseService();
+                setMessageProcessorState(ProcessorState.PAUSED);
 
                 logger.info("Successfully deactivated the message processor [" + getName() + "]");
 
@@ -364,6 +388,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 			}
 
 			resumeService();
+			setMessageProcessorState(ProcessorState.RUNNING);
 
 			logger.info("Successfully re-activated the message processor [" + getName() + "]");
 
@@ -501,4 +526,27 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
         }
         return null;
     }
+
+	private ProcessorState getProcessorState() {
+		Properties resourceProperties = registry.getResourceProperties(REG_PROCESSOR_BASE_PATH + getName());
+
+		if (resourceProperties == null) {
+			return ProcessorState.INITIAL;
+		}
+
+		String state = resourceProperties.getProperty(MP_STATE);
+		if (ProcessorState.RUNNING.toString().equalsIgnoreCase(state)) {
+			return ProcessorState.RUNNING;
+		}
+		return ProcessorState.PAUSED;
+	}
+
+	private enum ProcessorState {
+		INITIAL, RUNNING, PAUSED
+	}
+
+	private void setMessageProcessorState(ProcessorState state) {
+		registry.newNonEmptyResource(REG_PROCESSOR_BASE_PATH + getName(), false, "text/plain", state.toString(),
+				MP_STATE);
+	}
 }

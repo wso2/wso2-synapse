@@ -182,4 +182,11 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
     public void setArtifactContainerName(String artifactContainerName) {
         this.artifactContainerName = artifactContainerName;
     }
+
+    /**
+     * Undeploy the artifact but keeps the current state based on the preserveState argument.
+     * if true keep the current state, else remove the state as well as the artifact.
+     * @param preserveState determine whether to preserve the artifacts state or not
+     */
+    public void destroy(boolean preserveState){}
 }
