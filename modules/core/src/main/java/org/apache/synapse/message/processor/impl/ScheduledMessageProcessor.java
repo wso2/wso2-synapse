@@ -340,9 +340,9 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
             logger.info("Successfully destroyed message processor [" + getName() + "].");
         }
 
-		if(!preserveState) {
-			registry.delete(REG_PROCESSOR_BASE_PATH + getName());
-		}
+        if (!preserveState) {
+            deleteMessageProcessorState();
+        }
     }
 
     @Override
@@ -549,4 +549,10 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 		registry.newNonEmptyResource(REG_PROCESSOR_BASE_PATH + getName(), false, "text/plain", state.toString(),
 				MP_STATE);
 	}
+
+    private void deleteMessageProcessorState() {
+        if (registry.getResourceProperties(REG_PROCESSOR_BASE_PATH + getName()) != null) {
+            registry.delete(REG_PROCESSOR_BASE_PATH + getName());
+        }
+    }
 }
