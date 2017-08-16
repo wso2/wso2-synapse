@@ -25,7 +25,6 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.bsf.xml.XMLHelper;
@@ -95,6 +94,7 @@ public class ScriptMediator extends AbstractMediator {
      */
     private static final String NASHORN_JAVA_SCRIPT = "nashornJs";
 
+    private static final String NASHORN = "nashorn";
     /**
      * The registry entry key for a script loaded from the registry
      * Handle both static and dynamic(Xpath) Keys
@@ -561,26 +561,36 @@ public class ScriptMediator extends AbstractMediator {
         }
 
         engineManager = new ScriptEngineManager();
-        if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            engineManager.registerEngineExtension("jsEngine", new NashornScriptEngineFactory());
-        } else {
+        if (!language.equals(NASHORN_JAVA_SCRIPT)) {
             engineManager.registerEngineExtension("jsEngine", new RhinoScriptEngineFactory());
         }
-        engineManager.registerEngineExtension("nashornJs", new NashornScriptEngineFactory());
+
         engineManager.registerEngineExtension("js", new RhinoScriptEngineFactory());
         engineManager.registerEngineExtension("groovy", new GroovyScriptEngineFactory());
         engineManager.registerEngineExtension("rb", new JRubyScriptEngineFactory());
         engineManager.registerEngineExtension("py", new JythonScriptEngineFactory());
-        this.scriptEngine = engineManager.getEngineByExtension(language);
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            this.scriptEngine = engineManager.getEngineByName(NASHORN);
+        } else {
+            this.scriptEngine = engineManager.getEngineByExtension(language);
+        }
 
         pool = new LinkedBlockingQueue<ScriptEngineWrapper>(poolSize);
 
         for (int i = 0; i< poolSize; i++) {
-            ScriptEngineWrapper sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
+            ScriptEngineWrapper sew;
+            if (language.equals(NASHORN_JAVA_SCRIPT)) {
+                sew = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            } else {
+                sew = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
+            }
             pool.add(sew);
         }
-
-        this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+        if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            this.jsEngine = engineManager.getEngineByName(NASHORN);
+        } else {
+            this.jsEngine = engineManager.getEngineByExtension("jsEngine");
+        }
         if (scriptEngine == null) {
             handleException("No script engine found for language: " + language);
         }
@@ -636,7 +646,11 @@ public class ScriptMediator extends AbstractMediator {
 
         ScriptEngineWrapper scriptEngineWrapper = pool.poll();
         if (scriptEngineWrapper == null) {
-            scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
+            if (language.equals(NASHORN_JAVA_SCRIPT)) {
+                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByName(NASHORN));
+            } else {
+                scriptEngineWrapper = new ScriptEngineWrapper(engineManager.getEngineByExtension(language));
+            }
         }
         // fall back
         return scriptEngineWrapper;
