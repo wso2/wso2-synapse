@@ -153,8 +153,8 @@ public class TargetRequest {
         
         
         //fix GET request empty body
-		if ((("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
-				|| (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))) {
+		if ((("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
+                (RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
 			hasEntityBody = false;
 			MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
 			OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
@@ -266,7 +266,8 @@ public class TargetRequest {
 
         //Chucking is not performed for request has "http 1.0" and "GET" http method
        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
-                              (("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))))) {
+               (("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
+               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
             this.processChunking(conn, requestMsgCtx);
         }
 

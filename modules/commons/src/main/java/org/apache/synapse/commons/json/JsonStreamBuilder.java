@@ -38,8 +38,6 @@ public final class JsonStreamBuilder implements Builder {
 
     public OMElement processDocument(InputStream inputStream, String s,
                                      MessageContext messageContext) throws AxisFault {
-        SOAPFactory factory = OMAbstractFactory.getSOAP12Factory();
-        SOAPEnvelope envelope = factory.getDefaultEnvelope();
 
         if (inputStream != null) {
             OMElement element = JsonUtil.getNewJsonPayload(messageContext, inputStream, false, false);
@@ -78,6 +76,8 @@ public final class JsonStreamBuilder implements Builder {
         if (logger.isDebugEnabled()) {
             logger.debug("#processDocument. No JSON payload found in request. MessageID: " + messageContext.getMessageID());
         }
-        return envelope;
+        //TODO If we decide to return null without returning default soap envelop, return null here
+        SOAPFactory factory = OMAbstractFactory.getSOAP12Factory();
+        return factory.getDefaultEnvelope();
     }
 }
