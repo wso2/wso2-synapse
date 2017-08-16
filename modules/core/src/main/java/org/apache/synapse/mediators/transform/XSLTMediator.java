@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
@@ -64,25 +66,41 @@ public class XSLTMediator extends AbstractMediator {
     private static class ErrorListenerImpl implements ErrorListener {
         private final SynapseLog synLog;
         private final String activity;
-        
+        private static final Log logger = LogFactory.getLog(XSLTMediator.class);
+
+
         public ErrorListenerImpl(SynapseLog synLog, String activity) {
-            this.synLog = synLog;
             this.activity = activity;
+            if (XSLT_TRANSFORMATION_ACTIVITY.equals(activity)) {
+                this.synLog = synLog;
+            } else {
+                this.synLog = null;
+            }
         }
         
         public void warning(TransformerException e) throws TransformerException {
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebugWarn("Warning encountered during " + activity + " : " + e);
+            if (XSLT_TRANSFORMATION_ACTIVITY.equals(this.activity) && synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebugWarn("Warning encountered during " + this.activity + " : " + e);
+            } else if (STYLESHEET_PARSING_ACTIVITY.equals(this.activity)) {
+                logger.warn("Warning encountered during " + this.activity + " : " + e);
             }
         }
         
         public void error(TransformerException e) throws TransformerException {
-            synLog.error("Error occurred in " + activity + " : " + e);
+            if(XSLT_TRANSFORMATION_ACTIVITY.equals(this.activity)) {
+                this.synLog.error("Error occurred in " + this.activity + " : " + e);
+            } else {
+                logger.error("Error occurred in " + this.activity + ". ", e);
+            }
             throw e;
         }
         
         public void fatalError(TransformerException e) throws TransformerException {
-            synLog.error("Fatal error occurred in " + activity + " : " + e);
+            if(XSLT_TRANSFORMATION_ACTIVITY.equals(this.activity)) {
+                this.synLog.error("Fatal error occurred in " + this.activity + " : " + e);
+            } else {
+                logger.error("Fatal error occurred in " + this.activity + ". ", e);
+            }
             throw e;
         }
     }
@@ -105,6 +123,13 @@ public class XSLTMediator extends AbstractMediator {
      */
     public static final String RESULT_BUILDER_FACTORY =
         "http://ws.apache.org/ns/synapse/transform/attribute/rbf";
+
+    /**
+     * Two template creation activities
+     */
+    public static final String XSLT_TRANSFORMATION_ACTIVITY = "XSLT transformation";
+
+    public static final String STYLESHEET_PARSING_ACTIVITY = "stylesheet parsing";
     
     /**
      * The resource key which refers to the XSLT to be used for the transformation
@@ -266,7 +291,7 @@ public class XSLTMediator extends AbstractMediator {
                 applyProperties(transformer, synCtx, synLog);
             }
 
-            transformer.setErrorListener(new ErrorListenerImpl(synLog, "XSLT transformation"));
+            transformer.setErrorListener(new ErrorListenerImpl(synLog, XSLT_TRANSFORMATION_ACTIVITY));
             
             String outputMethod = transformer.getOutputProperty(OutputKeys.METHOD);
             String encoding = transformer.getOutputProperty(OutputKeys.ENCODING);
@@ -385,7 +410,7 @@ public class XSLTMediator extends AbstractMediator {
         Templates cachedTemplates = null;
 
         // Set an error listener (SYNAPSE-307).
-        transFact.setErrorListener(new ErrorListenerImpl(synLog, "stylesheet parsing"));
+        transFact.setErrorListener(new ErrorListenerImpl(synLog, STYLESHEET_PARSING_ACTIVITY));
         // Allow xsl:import and xsl:include resolution
         transFact.setURIResolver(new CustomJAXPURIResolver(resourceMap,
                 synCtx.getConfiguration()));

@@ -19,17 +19,16 @@
 
 package org.apache.synapse.mediators.eip.aggregator;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.eip.EIPConstants;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Stack;
+import java.util.List;
 import java.util.TimerTask;
 
 /**
@@ -57,16 +56,21 @@ public class Aggregate extends TimerTask {
     private SynapseEnvironment synEnv = null;
 
     /**
+     * Fault handler for the aggregate mediator
+     */
+    private FaultHandler faultHandler;
+
+    /**
      * Save aggregation properties and timeout
-     *
-     * @param corelation representing the corelation name of the messages in the aggregate
+     *  @param corelation representing the corelation name of the messages in the aggregate
      * @param timeoutMillis the timeout duration in milliseconds
      * @param min the minimum number of messages to be aggregated
      * @param max the maximum number of messages to be aggregated
      * @param mediator
+     * @param faultHandler
      */
     public Aggregate(SynapseEnvironment synEnv, String corelation, long timeoutMillis, int min,
-        int max, AggregateMediator mediator) {
+                     int max, AggregateMediator mediator, FaultHandler faultHandler) {
 
         this.synEnv = synEnv;
         this.correlation = corelation;
@@ -79,6 +83,7 @@ public class Aggregate extends TimerTask {
         if (max > 0) {
             maxCount = max;
         }
+        this.faultHandler = faultHandler;
         this.aggregateMediator = mediator;
     }
 
@@ -257,18 +262,16 @@ public class Aggregate extends TimerTask {
         }
 
         public void run() {
-            MessageContext msgCtx = aggregate.getLastMessage();
+            MessageContext messageContext = aggregate.getLastMessage();
             try {
                 log.warn("Aggregate Mediator Time out occurred.");
                 aggregateMediator.completeAggregate(aggregate);
             } catch (Exception ex) {
-                Stack stack = msgCtx.getFaultStack();
-                if (stack != null &&
-                        !stack.isEmpty()) {
-                    ((FaultHandler) stack.pop()).handleFault(msgCtx, ex);
+                if (faultHandler != null && messageContext != null) {
+                    faultHandler.handleFault(messageContext, ex);
                 } else {
-                    log.error("Synapse encountered an exception, " +
-                            "No error handlers found - [Message Dropped]\n" + ex.getMessage());
+                    log.error("Synapse encountered an exception, No error handlers found or no messages were " +
+                            "aggregated - [Message Dropped]\n" + ex.getMessage());
                 }
             }
         }

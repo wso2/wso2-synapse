@@ -230,7 +230,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                     correlateExpression.toString(),
                                     completionTimeoutMillis,
                                     minMsg.intValue(),
-                                    maxMsg.intValue(), this);
+                                    maxMsg.intValue(), this, synCtx.getFaultStack().peek());
 
                             if (completionTimeoutMillis > 0) {
                                 synCtx.getConfiguration().getSynapseTimer().
@@ -290,7 +290,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                         correlation,
                                         completionTimeoutMillis,
                                         minMsg.intValue(),
-                                        maxMsg.intValue(), this);
+                                        maxMsg.intValue(), this, synCtx.getFaultStack().peek());
 
                                 if (completionTimeoutMillis > 0) {
                                     synchronized(aggregate) {
