@@ -48,7 +48,7 @@ public abstract class Node {
         int matchLength = match(uriFragment, variables);
         if (matchLength < 0) {
             return -1;
-        } else if (matchLength <= uriFragment.length()) {
+        } else if (matchLength < uriFragment.length()) {
             if (next != null) {
                 uriFragment = uriFragment.substring(matchLength);
                 return matchLength + next.matchAll(uriFragment, variables);
