@@ -70,6 +70,10 @@ public abstract class Node {
             {
                 return matchLength;
             }
+            if (next.getToken().startsWith("{")) {
+                uriFragment = uriFragment.substring(matchLength);
+                return matchLength + next.matchAll(uriFragment, variables);
+            }
             // We have matched all the characters in the URI
             // But there are some nodes left to be matched against
             return -1;
