@@ -76,7 +76,6 @@ public final class JsonStreamBuilder implements Builder {
         if (logger.isDebugEnabled()) {
             logger.debug("#processDocument. No JSON payload found in request. MessageID: " + messageContext.getMessageID());
         }
-        //TODO If we decide to return null without returning default soap envelop, return null here
         SOAPFactory factory = OMAbstractFactory.getSOAP12Factory();
         return factory.getDefaultEnvelope();
     }
