@@ -111,8 +111,9 @@ public class TargetRequestFactory {
             }
 
 			String cType = getContentType(msgContext, configuration.isPreserveHttpHeader(HTTP.CONTENT_TYPE));
-			if (cType != null && (!httpMethod.equals("GET") && !httpMethod.equals("DELETE"))) {
-				String messageType = (String) msgContext.getProperty("messageType");
+			if (cType != null && (!httpMethod.equals(HTTPConstants.HTTP_METHOD_GET) &&
+                    !RelayUtils.isDeleteRequestWithoutPayload(msgContext))) {
+				String messageType = (String) msgContext.getProperty(NhttpConstants.MESSAGE_TYPE);
 				if (messageType != null) {
 					boolean builderInvoked = false;
 					final Pipe pipe = (Pipe) msgContext
