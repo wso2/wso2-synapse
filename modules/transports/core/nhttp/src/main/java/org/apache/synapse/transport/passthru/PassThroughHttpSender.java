@@ -34,6 +34,7 @@ import org.apache.axis2.transport.base.BaseConstants;
 import org.apache.axis2.transport.base.threads.NativeThreadFactory;
 import org.apache.axis2.transport.base.threads.WorkerPool;
 import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -371,7 +372,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                    if ((HTTPConstants.HTTP_METHOD_GET).equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
                             RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else if (messageSize == 0 &&
@@ -385,7 +386,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 } else {
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                    if ((HTTPConstants.HTTP_METHOD_GET).equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
                             RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
                         pipe.setSerializationCompleteWithoutData(true);
                         return;
