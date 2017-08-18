@@ -97,14 +97,9 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * The payload is the first element inside the SOAP <Body> tags
      *
      * @return the XML SOAP Body
-     * @throws ScriptException in-case of an error in getting
-     * the XML representation of SOAP Body payload
      */
-    public Object getPayloadXML() throws ScriptException {
-        SOAPEnvelope envelope = mc.getEnvelope();
-        SOAPBody soapBody = envelope.getBody();
-        OMElement omElement = soapBody.getFirstElement();
-        return xmlHelper.toScriptXML(omElement);
+    public Object getPayloadXML() {
+        return mc.getEnvelope().getBody().getFirstElement();
     }
 
     /**
@@ -273,8 +268,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         OMElement element = xmlHelper.toOMElement(content);
         // We can't add the element directly to the SOAPHeader. Instead, we need to copy the
         // information over to a SOAPHeaderBlock.
-        SOAPHeaderBlock headerBlock = header.addHeaderBlock(element.getLocalName(),
-                element.getNamespace());
+        SOAPHeaderBlock headerBlock = header.addHeaderBlock(element.getLocalName(), element.getNamespace());
         for (Iterator it = element.getAllAttributes(); it.hasNext(); ) {
             headerBlock.addAttribute((OMAttribute) it.next());
         }
