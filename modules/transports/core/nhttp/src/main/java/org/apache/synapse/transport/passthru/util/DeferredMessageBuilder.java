@@ -26,6 +26,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.MessageFormatter;
+import org.apache.axis2.transport.TransportUtils;
 import org.apache.axis2.transport.http.*;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.axis2.util.MessageProcessorSelector;
@@ -88,7 +89,16 @@ public class DeferredMessageBuilder {
 
     public OMElement getDocument(MessageContext msgCtx, InputStream in) throws
             XMLStreamException, IOException {
-   	  
+
+		/**
+		 * HTTP Delete requests may contain entity body or not. Hence if the request is a HTTP DELETE, we have to verify
+		 * that the payload stream is empty or not.
+		 */
+		if (HTTPConstants.HEADER_DELETE.equals(msgCtx.getProperty(Constants.Configuration.HTTP_METHOD)) &&
+				RelayUtils.isEmptyPayloadStream(in)) {
+			msgCtx.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
+			return TransportUtils.createSOAPEnvelope(null);
+		}
     	
 		String contentType = (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
 		String _contentType = getContentType(contentType, msgCtx);
@@ -132,11 +142,6 @@ public class DeferredMessageBuilder {
             builder = MessageProcessorSelector.getMessageBuilder(_contentType, msgCtx);
             if (builder != null) {
                 try {
-                    /*try {
-                        throw new Exception("Building message");
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }*/
                     if (contentLength != null && "0".equals(contentLength)) {
                         element = new org.apache.axiom.soap.impl.llom.soap11.SOAP11Factory().getDefaultEnvelope();
                         //since we are setting an empty envelop to achieve the empty body, we have to set a different
