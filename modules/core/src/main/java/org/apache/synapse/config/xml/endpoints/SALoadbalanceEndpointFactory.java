@@ -21,6 +21,7 @@ package org.apache.synapse.config.xml.endpoints;
 
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.util.JavaUtils;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory;
 import org.apache.synapse.endpoints.Endpoint;
@@ -120,6 +121,15 @@ public class SALoadbalanceEndpointFactory extends EndpointFactory {
             LoadbalanceAlgorithm algorithm = LoadbalanceAlgorithmFactory.
                     createLoadbalanceAlgorithm(loadbalanceElement, endpoints);
             loadbalanceEndpoint.setAlgorithm(algorithm);
+
+            //set buildMessage attribute
+            String  buildMessageAtt = loadbalanceElement.getAttributeValue(new QName("buildMessage"));
+            if (buildMessageAtt != null) {
+                loadbalanceEndpoint.setBuildMessageAttAvailable(true);
+                if (JavaUtils.isTrueExplicitly(buildMessageAtt)) {
+                    loadbalanceEndpoint.setBuildMessageAtt(true);
+                }
+            }
 
             // process the parameters
             processProperties(loadbalanceEndpoint, epConfig);

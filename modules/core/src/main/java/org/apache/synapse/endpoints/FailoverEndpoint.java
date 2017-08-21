@@ -285,6 +285,10 @@ public class FailoverEndpoint extends AbstractEndpoint {
         return dynamic;
     }
 
+    public boolean isBuildMessageAtt() {
+        return buildMessageAtt;
+    }
+
     public void setDynamic(boolean dynamic) {
         this.dynamic = dynamic;
     }
