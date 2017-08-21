@@ -371,7 +371,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+                    if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else if (messageSize == 0 &&
                             (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
@@ -384,7 +385,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 } else {
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+                    if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
                         pipe.setSerializationCompleteWithoutData(true);
                         return;
                     }

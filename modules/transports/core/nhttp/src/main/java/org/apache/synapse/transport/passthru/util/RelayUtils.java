@@ -30,6 +30,7 @@ import org.apache.axis2.engine.Handler;
 import org.apache.axis2.engine.Phase;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
@@ -163,6 +164,64 @@ public class RelayUtils {
             }
         }
         return;
+    }
+
+    /**
+     * Function to check whether the processing request (enclosed within MessageContext) is a DELETE request without
+     * entity body since we allow to have payload for DELETE requests, we treat same as POST. Hence this function can be
+     * used to deviate DELETE requests without payloads
+     * @param msgContext MessageContext
+     * @return whether the request is a DELETE without payload
+     */
+    public static boolean isDeleteRequestWithoutPayload (MessageContext msgContext) {
+        if (PassThroughConstants.HTTP_DELETE.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+
+            //If message builder not invoked (Passthrough may contain entity body) OR delete with payload
+            if (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) ||
+                    !Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.NO_ENTITY_BODY))) {
+                //HTTP DELETE request with payload
+                return false;
+            }
+            //Empty payload delete request
+            return true;
+        }
+        //Not a HTTP DELETE request
+        return false;
+    }
+
+    /**
+     * Function to check given inputstream is empty or not
+     * Used to check whether content of the payload input stream is empty or not
+     * @param inputStream target inputstream
+     * @return true if it is a empty stream
+     * @throws IOException
+     */
+    public static boolean isEmptyPayloadStream (InputStream inputStream) throws IOException {
+
+        boolean isEmptyPayload = true;
+
+        if (inputStream != null) {
+            // read ahead few characters to see if the stream is valid.
+            ReadOnlyBIS readOnlyStream = new ReadOnlyBIS(inputStream);
+
+            /**
+            * Checks for all empty or all whitespace streams and if found  sets isEmptyPayload to false. The while
+            * loop exits if found any character other than space or end of stream reached.
+            **/
+            int c = readOnlyStream.read();
+            while (c != -1) {
+                if (c != 32) {
+                    //if not a space, should be some character in entity body
+                    isEmptyPayload = false;
+                    break;
+                }
+                c = readOnlyStream.read();
+            }
+            readOnlyStream.reset();
+            inputStream.reset();
+        }
+
+        return isEmptyPayload;
     }
 
     private static void processAddressing(MessageContext messageContext) throws AxisFault {

@@ -23,7 +23,9 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.xpath.SynapseJsonPath;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
@@ -48,7 +50,22 @@ public class SynapsePathFactory {
             if(pathAttrib.getAttributeValue().startsWith("json-eval(")) {
                 path = new SynapseJsonPath(pathAttrib.getAttributeValue().substring(10, pathAttrib.getAttributeValue().length() - 1));
             } else {
-                path = new SynapseXPath(pathAttrib.getAttributeValue());
+                try {
+                    path = new SynapseXPath(pathAttrib.getAttributeValue());
+                } catch (org.jaxen.XPathSyntaxException ex) {
+                    /* Try and see whether the expression can be compiled with XPath 2.0
+                     * This will only be done if the failover DOM XPath 2.0 is enabled */
+                    if (Boolean.parseBoolean(SynapsePropertiesLoader.loadSynapseProperties().
+                            getProperty(SynapseConstants.FAIL_OVER_DOM_XPATH_PROCESSING))) {
+                        if(log.isDebugEnabled()) {
+                            log.debug(
+                                    "Trying to compile the expression in XPath 2.0: " + pathAttrib.getAttributeValue());
+                        }
+                        path = new SynapseXPath(pathAttrib.getAttributeValue(), elem);
+                    } else {
+                        throw ex;
+                    }
+                }
             }
 
             OMElementUtils.addNameSpaces(path, elem, log);

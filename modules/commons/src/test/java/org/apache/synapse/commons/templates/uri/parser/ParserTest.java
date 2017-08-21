@@ -219,6 +219,15 @@ public class ParserTest extends TestCase {
         assertFalse(template.matches("/sanjeewa/test", var));
         var.clear();
 
+        template = new URITemplate("/pattern1?latitude={+latitude}&longitude={+longitude}&floor={+floor}");
+        assertTrue(template.matches("/pattern1?latitude=10&longitude=20&floor=", var));
+        var.clear();
+        assertTrue(template.matches("/pattern1?latitude=10&longitude=&floor=30", var));
+        var.clear();
+        assertTrue(template.matches("/pattern1?latitude=&longitude=20&floor=30", var));
+        var.clear();
+        assertTrue(template.matches("/pattern1?latitude=&longitude=&floor=", var));
+        var.clear();
     }
 
     public void testReservedStringExpansion() throws Exception {
