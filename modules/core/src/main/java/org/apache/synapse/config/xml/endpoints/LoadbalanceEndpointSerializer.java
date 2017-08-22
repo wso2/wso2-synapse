@@ -61,8 +61,6 @@ public class LoadbalanceEndpointSerializer extends EndpointSerializer {
             loadbalanceElement.addAttribute("failover", "false", null);
         }
 
-        loadbalanceElement.addAttribute("buildMessage", Boolean.toString(loadbalanceEndpoint.isBuildMessageAtt()), null);
-
         // Serialize endpoint elements which are children of the loadbalance element
         if (loadbalanceEndpoint.getChildren() != null) {
             for (Endpoint childEndpoint : loadbalanceEndpoint.getChildren()) {
