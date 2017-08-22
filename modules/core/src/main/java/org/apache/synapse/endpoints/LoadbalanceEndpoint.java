@@ -365,10 +365,6 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         return failover;
     }
 
-    public boolean isBuildMessageAtt() {
-        return buildMessageAtt;
-    }
-
     public void setFailover(boolean failover) {
         this.failover = failover;
     }

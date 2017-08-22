@@ -85,7 +85,6 @@ public class SALoadbalanceEndpointSerializer extends EndpointSerializer {
         loadbalanceElement.addAttribute(XMLConfigConstants.LOADBALANCE_ALGORITHM,
                 loadbalanceEndpoint.getAlgorithm().getClass().getName(),
                 null);
-        loadbalanceElement.addAttribute("buildMessage", Boolean.toString(loadbalanceEndpoint.isBuildMessageAtt()), null);
 
         for (Endpoint childEndpoint : loadbalanceEndpoint.getChildren()) {
             loadbalanceElement.addChild(EndpointSerializer.getElementFromEndpoint(childEndpoint));
