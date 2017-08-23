@@ -533,6 +533,11 @@
              <artifactId>slf4j-api</artifactId>
              <version>${slf4j.version}</version>
          </dependency>
+          <dependency>
+             <groupId>org.slf4j</groupId>
+             <artifactId>slf4j-log4j12</artifactId>
+             <version>${slf4j.version}</version>
+         </dependency>
          <dependency>
              <groupId>org.apache.mina</groupId>
              <artifactId>mina-core</artifactId>
@@ -980,7 +985,7 @@
       <com.damnhandy.version>1.1.7</com.damnhandy.version>
       <javax.jms.version>1.1</javax.jms.version>
       <org.antlr.version>3.4</org.antlr.version>
-      <com.jayway.jsonpath.version>0.8.0</com.jayway.jsonpath.version>
+      <com.jayway.jsonpath.version>2.4.0</com.jayway.jsonpath.version>
       <qfj.version>1.5.3</qfj.version>
       <org.bouncycastle.version>1.52</org.bouncycastle.version>
       <hc.httpcore.version>4.3.3</hc.httpcore.version>
@@ -1001,7 +1006,7 @@
       <commons.net.version>1.4.1</commons.net.version>
       <jsch.version>0.1.51.wso2v1</jsch.version>
       <oro.version>2.0.8</oro.version>
-      <slf4j.version>1.5.6</slf4j.version>
+      <slf4j.version>1.7.25</slf4j.version>
       <mina.version>1.1.0</mina.version>
       <jms-1.1-spec.version>1.1</jms-1.1-spec.version>
       <!-- Axis2 and its dependencies -->
