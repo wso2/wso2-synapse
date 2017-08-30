@@ -22,7 +22,6 @@ package org.apache.synapse.mediators.builtin;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -143,37 +142,35 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             isWrappingEndpointCreated = true;
         }
 
-        try {
-            if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
-                blockingMsgSender.send(endpoint, synInCtx);
-            } else {
-                resultMsgCtx = blockingMsgSender.send(endpoint, synInCtx);
-                if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-                    handleFault(synInCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
-                }
-            }
-        } catch (Exception ex) {
-            handleFault(synInCtx, ex);
+        // set the blockingMsgSender with synapse message Context
+        synInCtx.setProperty("blockingMsgSender",blockingMsgSender);
+        Set keySet = synInCtx.getPropertyKeySet();
+        if (keySet != null) {
+            keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
+            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+            keySet.remove(SynapseConstants.LAST_ENDPOINT);
         }
 
-        if (resultMsgCtx != null) {
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
-            }
-            try {
-                synInCtx.setEnvelope(resultMsgCtx.getEnvelope());
-
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("End : Call mediator - Blocking Call");
+        synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, getLastSequenceFaultHandler(synInCtx));
+        endpoint.send(synInCtx);
+        if ("false".equals(synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))){
+            if ("false".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
+                if (synInCtx.getEnvelope()!= null) {
+                    if (synLog.isTraceTraceEnabled()) {
+                        synLog.traceTrace("Response payload received : " + synInCtx.getEnvelope());
+                    }
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("End : Call mediator - Blocking Call");
+                    }
+                } else {
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Service returned a null response");
+                    }
                 }
-                return true;
-            } catch (Exception e) {
-                handleFault(synInCtx, e);
             }
-        } else {
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Service returned a null response");
-            }
+        }else{
+            log.info("Error while performing the call operation in blocking mode");
+            return false;
         }
 
         return true;
@@ -204,6 +201,7 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
             keySet.remove(SynapseConstants.LAST_ENDPOINT);
+            keySet.remove("blockingMsgSender");
         }
 
         boolean outOnlyMessage = "true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY));
