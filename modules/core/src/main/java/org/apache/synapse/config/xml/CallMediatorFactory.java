@@ -27,6 +27,7 @@ import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.builtin.CallMediator;
 
 import javax.xml.namespace.QName;
+import java.io.File;
 import java.util.Properties;
 
 /**
@@ -76,6 +77,9 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
     private static final QName CALL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "call");
     private static final QName ENDPOINT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
     private static final QName BLOCKING_Q = new QName("blocking");
+    private static final QName ATT_INIT_AXI2_CLIENT_OPTIONS = new QName("initAxis2ClientOptions");
+    private static final QName ATT_AXIS2XML = new QName("axis2xml");
+    private static final QName ATT_REPOSITORY = new QName("repository");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -97,9 +101,35 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
         OMAttribute blockingAtt = elem.getAttribute(BLOCKING_Q);
         if (blockingAtt != null) {
             callMediator.setBlocking(Boolean.parseBoolean(blockingAtt.getAttributeValue()));
+            if(callMediator.isBlocking()){
+                OMAttribute initAxis2ClientOptions = elem.getAttribute(ATT_INIT_AXI2_CLIENT_OPTIONS);
+                OMAttribute axis2xmlAttr = elem.getAttribute(ATT_AXIS2XML);
+                OMAttribute repoAttr = elem.getAttribute(ATT_REPOSITORY);
+
+                if (initAxis2ClientOptions != null) {
+                    callMediator.setInitClientOptions(Boolean.parseBoolean(initAxis2ClientOptions.getAttributeValue()));
+                }
+
+                if (axis2xmlAttr != null && axis2xmlAttr.getAttributeValue() != null) {
+                    File axis2xml = new File(axis2xmlAttr.getAttributeValue());
+                    if (axis2xml.exists() && axis2xml.isFile()) {
+                        callMediator.setAxis2xml(axis2xmlAttr.getAttributeValue());
+                    } else {
+                        handleException("Invalid axis2.xml path: " + axis2xmlAttr.getAttributeValue());
+                    }
+                }
+
+                if (repoAttr != null && repoAttr.getAttributeValue() != null) {
+                    File repo = new File(repoAttr.getAttributeValue());
+                    if (repo.exists() && repo.isDirectory()) {
+                        callMediator.setClientRepository(repoAttr.getAttributeValue());
+                    } else {
+                        handleException("Invalid repository path: " + repoAttr.getAttributeValue());
+                    }
+                }
+            }
         }
         return callMediator;
-
     }
 
     public QName getTagQName() {

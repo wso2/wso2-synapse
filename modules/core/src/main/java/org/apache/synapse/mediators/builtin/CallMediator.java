@@ -87,6 +87,12 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     private boolean blocking = false;
 
+    private boolean initClientOptions = true;
+
+    private String clientRepository = null;
+
+    private String axis2xml = null;
+
     private SynapseEnvironment synapseEnv;
 
     //State whether actual endpoint(when null) is wrapped by a default endpoint
@@ -134,6 +140,10 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         MessageContext resultMsgCtx = null;
+
+        if (!initClientOptions) {
+            blockingMsgSender.setInitClientOptions(false);
+        }
         // fixing ESBJAVA-4976, if no endpoint is defined in call mediator, this is required to avoid NPEs in
         // blocking sender.
         if (endpoint == null) {
@@ -279,7 +289,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (blocking) {
             try {
                 configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
-                        DEFAULT_CLIENT_REPO, DEFAULT_AXIS2_XML);
+                        clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
+                        axis2xml != null ? axis2xml : DEFAULT_AXIS2_XML);
                 blockingMsgSender = new BlockingMsgSender();
                 blockingMsgSender.setConfigurationContext(configCtx);
                 blockingMsgSender.init();
@@ -312,6 +323,30 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public void setBlocking(boolean blocking) {
         this.blocking = blocking;
+    }
+
+    public boolean getInitClientOptions() {
+        return initClientOptions;
+    }
+
+    public void setInitClientOptions(boolean initClientOptions) {
+        this.initClientOptions = initClientOptions;
+    }
+
+    public String getClientRepository() {
+        return clientRepository;
+    }
+
+    public void setClientRepository(String clientRepository) {
+        this.clientRepository = clientRepository;
+    }
+
+    public String getAxis2xml() {
+        return axis2xml;
+    }
+
+    public void setAxis2xml(String axis2xml) {
+        this.axis2xml = axis2xml;
     }
 
     private void handleFault(MessageContext synCtx, Exception ex) {
