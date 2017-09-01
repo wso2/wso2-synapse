@@ -130,6 +130,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
             }
         }
         return callMediator;
+
     }
 
     public QName getTagQName() {

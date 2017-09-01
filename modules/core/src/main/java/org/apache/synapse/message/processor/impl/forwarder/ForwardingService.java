@@ -56,7 +56,7 @@ import org.apache.synapse.util.MessageHelper;
  * This task is responsible for forwarding a request to a given endpoint. This
  * is based on a blocking implementation and can send only one message at a
  * time. Also this supports Throttling and reliable messaging.
- * 
+ *
  */
 public class ForwardingService implements Task, ManagedLifecycle {
     private static final Log log = LogFactory.getLog(ForwardingService.class);
@@ -119,7 +119,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * Throttling-interval is the forwarding interval when cron scheduling is enabled.
      */
     private long throttlingInterval = -1;
-    
+
 	// Message Queue polling interval value.
 	private long interval;
 
@@ -128,7 +128,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 	 * the message processor after maximum number of delivery
 	 */
 	private boolean isMaxDeliveryAttemptDropEnabled = false;
-    
+
 	private SynapseEnvironment synapseEnvironment;
 
 	private boolean initialized = false;
@@ -142,9 +142,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * Specifies whether we should consider the response of the message in determining the success of message forwarding
      */
     private boolean isResponseValidationNotRequired = false;
-    
+
     Pattern httpPattern = Pattern.compile("^(http|https|hl7):");
-	
+
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
 		this.messageProcessor = messageProcessor;
@@ -347,7 +347,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			isThrottling =
 			               Boolean.parseBoolean((String) parametersMap.get(ForwardingProcessorConstants.THROTTLE));
 		}
-		
+
 		if (parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION) != null) {
 			cronExpression =
 			                 String.valueOf(parametersMap.get(ForwardingProcessorConstants.CRON_EXPRESSION));
@@ -379,7 +379,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		 */
 		initialized = true;
 	}
-    
+
     private Set<Integer> getNonRetryStatusCodes() {
         Set<Integer>nonRetryCodes = new HashSet<Integer>();
         if (nonRetryStatusCodes != null) {
@@ -393,10 +393,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
         }
          return nonRetryCodes;
     }
-    
+
 	/**
 	 * Receives the next message from the message store.
-	 * 
+	 *
 	 * @param msgConsumer
 	 *            message consumer
 	 * @return {@link MessageContext} of the last message received from the
@@ -408,7 +408,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Sends the mesage to a given endpoint.
-	 * 
+	 *
 	 * @param messageContext
 	 *            synapse {@link MessageContext} to be sent
      */
@@ -468,7 +468,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						                         getNonRetryStatusCodes());
 
 						if (messageConsumer != null && messageConsumer.isAlive()) {
-							outCtx = sender.send(ep, messageContext);
+                            messageContext.setProperty("blockingMsgSender",sender);
+							ep.send(messageContext);
+							outCtx =messageContext;
 						}
 
                         if (isResponseValidationNotRequired) {
@@ -580,12 +582,12 @@ public class ForwardingService implements Task, ManagedLifecycle {
                                       "] failed to send message to the endpoint");
                         }
                     }
-					
+
 					if (!isSuccessful) {
 						// Then we have to retry sending the message to the
 						// client.
 						prepareToRetry(messageContext);
-					} 
+					}
 				}
 			} catch (Exception e) {
 				log.error("Message processor [" + messageProcessor.getName() +
@@ -609,7 +611,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Sending the out message through the fault sequence.
-	 * 
+	 *
 	 * @param msgCtx
 	 *            Synapse {@link MessageContext} to be sent through the fault
      *            sequence.
@@ -652,7 +654,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Sending the out message through the reply sequence.
-	 * 
+	 *
 	 * @param outCtx
 	 *            Synapse out {@link MessageContext} to be sent through the
 	 *            reply sequence.
@@ -677,7 +679,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Terminates the job of the message processor.
-	 * 
+	 *
 	 * @return <code>true</code> if the job is terminated successfully,
 	 *         <code>false</code> otherwise.
 	 */
@@ -783,13 +785,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		log.info("Removed failed message and continue the message processor [" +
 		         this.messageProcessor.getName() + "]");
 	}
-    
+
 	private boolean setMessageConsumer() {
 		final String messageStore = messageProcessor.getMessageStoreName();
 		messageConsumer =
 		                  synapseEnvironment.getSynapseConfiguration()
 		                                    .getMessageStore(messageStore).getConsumer();
-		
+
         /*
          * If Message Processor is deactivated via Advanced params, then we need
          * to cleanup the JMS consumers here. Ideally a deactivated MP should
@@ -809,7 +811,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	/**
 	 * Checks whether this TaskService is properly initialized or not.
-	 * 
+	 *
 	 * @return <code>true</code> if this TaskService is properly initialized.
 	 *         <code>false</code> otherwise.
 	 */
@@ -821,7 +823,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 		terminate();
 
 	}
-    
+
     private boolean isResponseValidationRequiredEndpoint(String epAddress) {
         Matcher match = httpPattern.matcher(epAddress);
         return match.find();

@@ -56,7 +56,7 @@ public class TestMessageContext implements MessageContext {
     private EndpointReference to = null;
 
     private String soapAction = null;
-    
+
     public SynapseConfiguration getConfiguration() {
         return synCfg;
     }
