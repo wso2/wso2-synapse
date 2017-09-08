@@ -1,4 +1,6 @@
 /*
+ *  Copyright (c) 2005-2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
@@ -34,6 +36,11 @@ import org.apache.synapse.mediators.elementary.Source;
 import org.apache.synapse.mediators.elementary.Target;
 
 import java.util.Properties;
+
+/**
+ * Factory for {@link EnrichMediator} instances.
+ *
+ */
 
 public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private static final Log logger = LogFactory.getLog(EnrichMediatorFactory.class.getName());
@@ -200,34 +207,45 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         return XML_Q;
     }
 
-    private void validateTypeCombination(OMElement sourceEle, OMElement targetEle) {
+    /**
+     *
+     * @param sourceElement
+     * @param targetElement
+     *
+     */
+
+    private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
         int sourceType = -1;
         int targetType = -1;
 
         // source type attribute
-        OMAttribute sourceTypeAttr = sourceEle.getAttribute(ATT_TYPE);
+        OMAttribute sourceTypeAttr = sourceElement.getAttribute(ATT_TYPE);
         if (sourceTypeAttr != null && sourceTypeAttr.getAttributeValue() != null) {
             sourceType = convertTypeToInt(sourceTypeAttr.getAttributeValue());
 
             // Source type is different form the existing (0-custom, 1-envelope, 2-body, 3-property, 4-inline)
             if (sourceType < 0) {
-                logger.info("Un-expected source type");
+                throw new SynapseException("Un-expected source type");
             }
+        } else {
+            throw new SynapseException("Source type attribute can't be null");
         }
 
         // target type attribute
-        OMAttribute targetTypeAttr = targetEle.getAttribute(ATT_TYPE);
+        OMAttribute targetTypeAttr = targetElement.getAttribute(ATT_TYPE);
         if (targetTypeAttr != null && targetTypeAttr.getAttributeValue() != null) {
             targetType = convertTypeToInt(targetTypeAttr.getAttributeValue());
 
             // check if target type is different form the existing (0-custom, 1-envelope, 2-body, 3-property, 4-inline)
             if (targetType < 0) {
-                logger.info("Un-expected target type");
+                throw new SynapseException("Un-expected target type");
             }
             // check if target type is 4-inline
             if (targetType == 4) {
                 throw new SynapseException("Inline not support for target attribute");
             }
+        } else {
+            throw new SynapseException("Target type attribute can't be null");
         }
         /*
             check the wrong combination such as
