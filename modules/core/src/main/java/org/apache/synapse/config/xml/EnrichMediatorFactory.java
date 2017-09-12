@@ -208,10 +208,9 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     }
 
     /**
-     *
      * @param sourceElement
      * @param targetElement
-     *
+     * Check the combination of the source and target types are valid or not and throw proper exception.
      */
 
     private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
