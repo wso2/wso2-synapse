@@ -18,11 +18,9 @@
 package org.apache.synapse.mediators.store;
 
 import org.apache.axis2.AxisFault;
-import org.apache.axis2.description.Parameter;
-import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
@@ -45,6 +43,11 @@ public class MessageStoreMediator extends AbstractMediator{
      *MessageStore Name
      */
     private String messageStoreName;
+
+    /**
+     *MessageStore Name Expression
+     */
+    private SynapsePath messageStoreExp;
 
     /**
      * Sequence name to be invoked when the message is stored
@@ -78,7 +81,13 @@ public class MessageStoreMediator extends AbstractMediator{
         }
 
         if(synCtx != null) {
-            MessageStore messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
+            MessageStore messageStore;
+            if (messageStoreExp != null) {
+                messageStore = synCtx.getConfiguration().getMessageStore(messageStoreExp.stringValueOf(synCtx));
+            } else {
+                messageStore = synCtx.getConfiguration().getMessageStore(messageStoreName);
+            }
+
             if(messageStore != null) {
 
                 if (messageStore.getParameters().get(PRODUCER_GUARANTEED_DELIVERY) != null) {
@@ -197,4 +206,11 @@ public class MessageStoreMediator extends AbstractMediator{
         this.onStoreSequence = onStoreSequence;
     }
 
+    public void setMessageStoreExp(SynapsePath messageStoreExp) {
+        this.messageStoreExp = messageStoreExp;
+    }
+
+    public SynapsePath getMessageStoreExp() {
+        return messageStoreExp;
+    }
 }

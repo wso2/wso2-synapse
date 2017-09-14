@@ -49,6 +49,8 @@ public class MessageStoreMediatorSerializer extends AbstractMediatorSerializer {
 
         MessageStoreMediator messageStoreMediator = (MessageStoreMediator)m;
 
+        SynapsePath messageStoreExp = messageStoreMediator.getMessageStoreExp();
+
         String messageStoreName = messageStoreMediator.getMessageStoreName();
 
         OMElement storeElem = fac.createOMElement("store",synNS);
@@ -61,9 +63,11 @@ public class MessageStoreMediatorSerializer extends AbstractMediatorSerializer {
         }
 
         //In normal operations messageStoreName can't be null
-        //But we do a null check here since in run time there can be manuel modifications
-        if(messageStoreName != null ) {
-            OMAttribute msName = fac.createOMAttribute(ATT_MESSAGE_STORE ,nullNS,messageStoreName);
+        //But we do a null check here since in run time there can be manual modifications
+        if (messageStoreExp != null) {
+            SynapsePathSerializer.serializePathWithBraces(messageStoreExp, storeElem, "messageStore");
+        } else if (messageStoreName != null) {
+            OMAttribute msName = fac.createOMAttribute(ATT_MESSAGE_STORE, nullNS, messageStoreName);
             storeElem.addAttribute(msName);
         } else {
             handleException("Can't serialize MessageStore Mediator message store is null ");
