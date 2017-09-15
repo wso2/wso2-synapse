@@ -45,7 +45,7 @@ public class ForEachMediator extends AbstractMediator implements ManagedLifecycl
     /* The xpath that will list the elements to be split */
     private SynapseXPath expression = null;
 
-    /** Reference to the synapse environment */
+    /* Reference to the synapse environment */
     private SynapseEnvironment synapseEnv;
 
     private SequenceMediator sequence;
