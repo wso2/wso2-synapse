@@ -64,7 +64,7 @@ public class SynapseJsonPath extends SynapsePath {
         }
         Object read;
         read = jsonPath.read(jsonString);
-        return (null == read ? "null" : read.toString());
+        return (null == read ? "null" : JsonPath.parse(read).jsonString());
     }
 
     public String stringValueOf(MessageContext synCtx) {
@@ -118,7 +118,7 @@ public class SynapseJsonPath extends SynapsePath {
             if (log.isDebugEnabled()) {
                 log.debug("#stringValueOf. Evaluated JSON path <" + jsonPath.getPath() + "> : <" + (read == null ? null : read.toString()) + ">");
             }
-            return (null == read ? "null" : read.toString());
+            return (null == read ? "null" : JsonPath.parse(read).jsonString());
         } catch (IOException e) {
             handleException("Error evaluating JSON Path <" + jsonPath.getPath() + ">", e);
         } catch (Exception e) { // catch invalid json paths that do not match with the existing JSON payload.
