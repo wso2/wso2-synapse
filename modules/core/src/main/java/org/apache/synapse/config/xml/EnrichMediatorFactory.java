@@ -23,6 +23,7 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
@@ -39,7 +40,6 @@ import java.util.Properties;
 
 /**
  * Factory for {@link EnrichMediator} instances.
- *
  */
 
 public class EnrichMediatorFactory extends AbstractMediatorFactory {
@@ -132,7 +132,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
             if (inlineElem != null) {
                 source.setInlineOMNode(inlineElem);
-            } else if (sourceEle.getText() != null && (!sourceEle.getText().equals(""))) {
+            } else if (!StringUtils.isBlank(sourceEle.getText())) {
                 source.setInlineOMNode(OMAbstractFactory.getOMFactory().createOMText(sourceEle.getText()));
             } else if (sourceEle.getAttributeValue(ATT_KEY) != null) {
                 source.setInlineKey(sourceEle.getAttributeValue(ATT_KEY));
@@ -208,9 +208,12 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     }
 
     /**
+     * Check the combination of the source and target types are valid or not and throw proper exception.
+     * Here the integers 0-4 refer as below
+     * 0-custom, 1-envelope, 2-body, 3-property, 4-inline
+     *
      * @param sourceElement
      * @param targetElement
-     * Check the combination of the source and target types are valid or not and throw proper exception.
      */
 
     private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
@@ -222,7 +225,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         if (sourceTypeAttr != null && sourceTypeAttr.getAttributeValue() != null) {
             sourceType = convertTypeToInt(sourceTypeAttr.getAttributeValue());
 
-            // Source type is different form the existing (0-custom, 1-envelope, 2-body, 3-property, 4-inline)
+            // check if source type is different form the existing
             if (sourceType < 0) {
                 throw new SynapseException("Un-expected source type");
             }
@@ -235,7 +238,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         if (targetTypeAttr != null && targetTypeAttr.getAttributeValue() != null) {
             targetType = convertTypeToInt(targetTypeAttr.getAttributeValue());
 
-            // check if target type is different form the existing (0-custom, 1-envelope, 2-body, 3-property, 4-inline)
+            // check if target type is different form the existing
             if (targetType < 0) {
                 throw new SynapseException("Un-expected target type");
             }
@@ -256,9 +259,15 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
             sourceType = 2-body and targetType = 1-envelope
 
          */
-        if ((sourceType == 1 && targetType == 0) || (sourceType == 1 && targetType == 2) || (sourceType == 2
-                && targetType == 2) || (sourceType == 0 && targetType == 1) || (sourceType == 1 && targetType == 1) || (
-                sourceType == 2 && targetType == 1)) {
+        if (sourceType == 1) {
+            if (targetType == 0 || targetType == 1 || targetType == 2) {
+                throw new SynapseException("Wrong combination of source and target type");
+            }
+        } else if (sourceType == 2) {
+            if (targetType == 1 || targetType == 2) {
+                throw new SynapseException("Wrong combination of source and target type");
+            }
+        } else if (sourceType == 0 && targetType == 1) {
             throw new SynapseException("Wrong combination of source and target type");
         }
     }
