@@ -41,7 +41,6 @@ import java.util.Properties;
 /**
  * Factory for {@link EnrichMediator} instances.
  */
-
 public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private static final Log logger = LogFactory.getLog(EnrichMediatorFactory.class.getName());
 
@@ -215,7 +214,6 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
      * @param sourceElement
      * @param targetElement
      */
-
     private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
         int sourceType = -1;
         int targetType = -1;
