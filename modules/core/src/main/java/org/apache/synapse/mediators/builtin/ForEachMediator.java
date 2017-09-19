@@ -26,10 +26,12 @@ import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.AxisFault;
+import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.util.MessageHelper;
@@ -38,10 +40,13 @@ import org.apache.synapse.util.xpath.SynapseXPath;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ForEachMediator extends AbstractMediator {
+public class ForEachMediator extends AbstractMediator implements ManagedLifecycle {
 
     /* The xpath that will list the elements to be split */
     private SynapseXPath expression = null;
+
+    /* Reference to the synapse environment */
+    private SynapseEnvironment synapseEnv;
 
     private SequenceMediator sequence;
 
@@ -283,6 +288,38 @@ public class ForEachMediator extends AbstractMediator {
         }
         resultContainer.setDetachedElements(elementList);
         return resultContainer;
+    }
+
+    @Override
+    public void init(SynapseEnvironment se) {
+        synapseEnv = se;
+
+        if (null != sequence) {
+            sequence.init(se);
+        } else if (null != sequenceRef) {
+            SequenceMediator refferedSeq =
+                    (SequenceMediator) se.getSynapseConfiguration().
+                            getSequence(sequenceRef);
+
+            if (refferedSeq == null || refferedSeq.isDynamic()) {
+                se.addUnavailableArtifactRef(sequenceRef);
+            }
+        }
+    }
+
+    @Override
+    public void destroy() {
+        if (null != sequence) {
+            sequence.destroy();
+        } else if (null != sequenceRef) {
+            SequenceMediator refferedSeq =
+                    (SequenceMediator) synapseEnv.getSynapseConfiguration().
+                            getSequence(sequenceRef);
+
+            if (refferedSeq == null || refferedSeq.isDynamic()) {
+                synapseEnv.removeUnavailableArtifactRef(sequenceRef);
+            }
+        }
     }
 
     /**
