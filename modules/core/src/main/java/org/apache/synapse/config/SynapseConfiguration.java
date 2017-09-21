@@ -56,6 +56,7 @@ import org.apache.synapse.libraries.util.LibDeployerUtils;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
 import org.apache.synapse.message.processor.MessageProcessor;
+import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.API;
@@ -1399,6 +1400,10 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      * and will destroy all the stateful managed parts of the configuration.
      */
     public synchronized void destroy() {
+        destroy(false);
+    }
+
+    public synchronized void destroy(boolean preserverState) {
 
         if (log.isDebugEnabled()) {
             log.debug("Destroying the Synapse Configuration");
@@ -1459,7 +1464,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         // destroy the Message Stores
         for (MessageStore ms : messageStores.values()) {
-            ms.destroy();
+            if (ms instanceof AbstractMessageProcessor) {
+                ((AbstractMessageProcessor) ms).destroy(preserverState);
+            } else {
+                ms.destroy();
+            }
         }
 
         // destroy the Message processors

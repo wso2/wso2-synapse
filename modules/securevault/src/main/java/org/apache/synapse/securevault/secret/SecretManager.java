@@ -3,6 +3,7 @@
  */
 package org.apache.synapse.securevault.secret;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.securevault.SecureVaultException;
@@ -242,24 +243,41 @@ public class SecretManager {
         throw new SecureVaultException(msg);
     }
 
+    /**
+     * <p>
+     * Validates whether the passwords are present
+     * </p>
+     * <p>
+     * <b>Note :</b> It would be essential to have either the trust store password or the identity store password
+     * </p>
+     *
+     * @param identityStorePass the password of the identity store
+     * @param identityKeyPass   the identity store key password
+     * @param trustStorePass    password of the trust store
+     * @return true if either trust store or identity store password is present
+     */
     private boolean validatePasswords(String identityStorePass,
                                       String identityKeyPass, String trustStorePass) {
         boolean isValid = false;
-        if (trustStorePass != null && !"".equals(trustStorePass)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Trust Store Password cannot be found.");
-            }
+        if (trustStorePass != null && !StringUtils.EMPTY.equals(trustStorePass)) {
             isValid = true;
         } else {
-            if (identityStorePass != null && !"".equals(identityStorePass) &&
-                    identityKeyPass != null && !"".equals(identityKeyPass)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Identity Store Password " +
-                            "and Identity Store private key Password cannot be found.");
-                }
+            //If the trust store password is present, it is not required to have identity store password
+            if (log.isDebugEnabled()) {
+                log.debug("Trust-Store password cannot be found. Hence validating the identity sore password");
+            }
+            //If trust store password is not present it would be essential to have the identity store passwords
+            if (identityStorePass != null && !StringUtils.EMPTY.equals(identityStorePass) &&
+                    identityKeyPass != null && !StringUtils.EMPTY.equals(identityKeyPass)) {
                 isValid = true;
+            } else {
+                //If the identity store password cannot be found
+                if (log.isDebugEnabled()) {
+                    log.debug("Identity store password and identity store private key password cannot be found.");
+                }
             }
         }
+
         return isValid;
     }
 }

@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
 
 
@@ -684,8 +683,8 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(restUrlPostfix));
         msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
 
-        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
-                                                                                             "OPTIONS".equals(method)) {
+        if (PassThroughConstants.HTTP_GET.equals(method) ||  PassThroughConstants.HTTP_HEAD.equals(method)||
+                PassThroughConstants.HTTP_OPTIONS.equals(method)) {
             HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
                     request.getVersion(), HttpStatus.SC_OK,
                     request.getConnection().getContext());

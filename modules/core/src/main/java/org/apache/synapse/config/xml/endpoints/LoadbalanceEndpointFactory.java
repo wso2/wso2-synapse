@@ -141,7 +141,7 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
             }
 
             //set buildMessage attribute
-            String  buildMessageAtt = loadbalanceElement.getAttributeValue(new QName("buildMessage"));
+            String  buildMessageAtt = loadbalanceElement.getAttributeValue(new QName(XMLConfigConstants.BUILD_MESSAGE));
             if (buildMessageAtt != null) {
                 loadbalanceEndpoint.setBuildMessageAttAvailable(true);
                 if (JavaUtils.isTrueExplicitly(buildMessageAtt)) {
