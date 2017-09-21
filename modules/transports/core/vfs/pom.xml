@@ -92,8 +92,34 @@
                             <value>target/cobertura.ser</value>
                         </property>
                     </systemProperties>
-                    <argLine>-javaagent:target/lib/aspectjweaver.jar -Xms64m -Xmx128m</argLine>
+                    <argLine>${argLine} -javaagent:target/lib/aspectjweaver.jar -Xms64m -Xmx128m</argLine>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <destFile>${basedir}/target/coverage-reports/jacoco-unit-vfs.exec</destFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>jacoco-initialize</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-site</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                        <configuration>
+                            <dataFile>${basedir}/target/coverage-reports/jacoco-unit-vfs.exec</dataFile>
+                            <outputDirectory>${basedir}/target/coverage-reports/site</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
