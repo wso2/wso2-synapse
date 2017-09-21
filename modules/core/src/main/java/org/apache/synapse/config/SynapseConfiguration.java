@@ -60,6 +60,7 @@ import org.apache.synapse.message.processor.impl.AbstractMessageProcessor;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.registry.Registry;
 import org.apache.synapse.rest.API;
+import org.apache.synapse.startup.quartz.StartUpController;
 import org.apache.synapse.task.TaskManager;
 import org.apache.synapse.util.xpath.ext.SynapseXpathFunctionContextProvider;
 import org.apache.synapse.util.xpath.ext.SynapseXpathVariableResolver;
@@ -1403,7 +1404,14 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         destroy(false);
     }
 
-    public synchronized void destroy(boolean preserverState) {
+    /**
+     * Method to destroy the stateful managed parts of the configuration preserving state as required and specifying
+     * if destroy is being called in a shut down.
+     *
+     * @param preserveState whether state should be preserved
+     * @param isShuttingDown whether destroy is being called in a shut down
+     */
+    public synchronized void destroy(boolean preserveState, boolean isShuttingDown) {
 
         if (log.isDebugEnabled()) {
             log.debug("Destroying the Synapse Configuration");
@@ -1447,7 +1455,11 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         
         // destroy the startups
         for (ManagedLifecycle stp : startups.values()) {
-            stp.destroy();
+            if (stp instanceof StartUpController) {
+                ((StartUpController) stp).destroy(isShuttingDown);
+            } else {
+                stp.destroy();
+            }
         }
 
         // clear session information used for SA load balancing
@@ -1465,7 +1477,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         // destroy the Message Stores
         for (MessageStore ms : messageStores.values()) {
             if (ms instanceof AbstractMessageProcessor) {
-                ((AbstractMessageProcessor) ms).destroy(preserverState);
+                ((AbstractMessageProcessor) ms).destroy(preserveState);
             } else {
                 ms.destroy();
             }
@@ -1473,12 +1485,21 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 
         // destroy the Message processors
         for (MessageProcessor mp : messageProcessors.values()) {
-            mp.destroy();
+            ((AbstractMessageProcessor) mp).destroy(preserveState, isShuttingDown);
         }
 
         for (API api : apiTable.values()) {
             api.destroy();
         }
+    }
+
+    /**
+     * Method to destroy, in a non-shut down scenario.
+     *
+     * @param preserveState whether state should be preserved
+     */
+    public synchronized void destroy(boolean preserveState) {
+        this.destroy(preserveState, false);
     }
 
     /**

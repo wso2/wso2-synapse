@@ -243,8 +243,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 
-    @Override
-    public boolean stop() {
+    public boolean stop(boolean isShuttingDown) {
 		/*
 		 * There could be servers that are disabled at startup time.
 		 * therefore not started but initiated.
@@ -255,10 +254,14 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				/*
 				 * This is to immediately stop the scheduler to avoid firing new
 				 * services
+				 * The task will not be paused if undeployment is being done in a
+				 * shutdown of a node in a cluster, to allow another node to pick up the task.
 				 */
-				if (taskManager.isTaskExist(TASK_PREFIX + name + i) &&
-						taskManager.isTaskRunning(TASK_PREFIX + name + i)) {
-					taskManager.pause(TASK_PREFIX + name + i);
+				if (!isShuttingDown || !taskManager.isClusteredTaskManager()) {
+					if (taskManager.isTaskExist(TASK_PREFIX + name + i) &&
+							taskManager.isTaskRunning(TASK_PREFIX + name + i)) {
+						taskManager.pause(TASK_PREFIX + name + i);
+					}
 				}
 				if (logger.isDebugEnabled()) {
 					logger.debug("ShuttingDown Message Processor Scheduler : " +
@@ -271,7 +274,7 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 				 * manager.
 				 */
 				taskManager.delete(TASK_PREFIX + name + i + "::" +
-				                    MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP);
+				                    MessageProcessorConstants.SCHEDULED_MESSAGE_PROCESSOR_GROUP, isShuttingDown);
 				//even the task is existed or not at Task REPO we need to clear the NTaskAdaptor
 				//synapseTaskProperties map which holds taskName and TASK Instance for expired TASK at undeployment.
 				//taskManager.delete() method does that. There is a possibility to reinitialize those expired tasks
@@ -293,14 +296,28 @@ public abstract class ScheduledMessageProcessor extends AbstractMessageProcessor
 	}
 
 	@Override
+	public boolean stop() {
+        return stop(false);
+	}
+
+	@Override
 	public void destroy(){
 		destroy(false);
 	}
 
-
+	/**
+	 * {@inheritDoc}
+	 */
 	public void destroy(boolean preserveState) {
+		destroy(preserveState, false);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public void destroy(boolean preserveState, boolean isShuttingDown) {
         try {
-            stop();
+            stop(isShuttingDown);
         }
 
         finally {

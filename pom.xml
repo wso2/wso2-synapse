@@ -1024,7 +1024,7 @@
       <js.version>1.7.0.R4.wso2v1</js.version>
       <!-- startup, quartz -->
       <commons-collections.version>3.2.1</commons-collections.version>
-      <quartz.version>2.1.1</quartz.version>
+      <quartz.version>2.3.0</quartz.version>
       <geronimo-spec.version>1.1</geronimo-spec.version>
       <!-- xalan xsltc  -->
       <bcel.version>5.2</bcel.version>

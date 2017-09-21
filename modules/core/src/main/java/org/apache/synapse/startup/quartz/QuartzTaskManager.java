@@ -210,6 +210,14 @@ public class QuartzTaskManager implements TaskManager {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean delete(String taskName, boolean isShuttingDown) {
+        return delete(taskName);
+    }
+
     @Override
     public boolean pause(String name) {
         logger.error("pause not supported. Task name : " + name);
@@ -488,6 +496,14 @@ public class QuartzTaskManager implements TaskManager {
     }
 
     public boolean isTaskExist(String arg0) {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isClusteredTaskManager(){
         return false;
     }
 }

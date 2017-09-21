@@ -160,12 +160,16 @@ public class TaskScheduler {
     }
 
     public void deleteTask(String name, String group) {
+        deleteTask(name, group, false);
+    }
+
+    public void deleteTask(String name, String group, boolean isShuttingDown) {
         synchronized (lock) {
             if (!initialized) {
                 logger.error("Could not delete task[" + name + "," + group + "]. Task scheduler not properly initialized.");
                 return;
             }
-            taskManager.delete(name + "::" + group);
+            taskManager.delete(name + "::" + group, isShuttingDown);
         }
     }
     
