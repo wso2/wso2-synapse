@@ -22,16 +22,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.apache.synapse</groupId>
-        <artifactId>synapse-transports</artifactId>
-        <version>2.1.7-wso2v22-SNAPSHOT</version>
+        <artifactId>Apache-Synapse</artifactId>
+        <version>2.1.7-wso2v20-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>org.apache.synapse</groupId>
-    <artifactId>synapse-pipe-transport</artifactId>
-    <name>Apache Synapse - PIPE Transport</name>
-    <description>Apache Synapse - PIPE Transport</description>
-    <packaging>bundle</packaging>
+    <artifactId>synapse-code-coverage</artifactId>
+
+    <name>Apache Synapse - Code Coverage</name>
+    <description>Apache Synapse - Code Coverage</description>
+    <packaging>pom</packaging>
+    <url>http://synapse.apache.org</url>
 
     <build>
         <plugins>
@@ -39,54 +41,31 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>${argLine}</argLine>
+                    <argLine>${argLine} -Xms256m -Xmx2048m</argLine>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <configuration>
-                    <destFile>${basedir}/target/coverage-reports/jacoco-unit-pipe.exec</destFile>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>jacoco-initialize</id>
+                        <id>report-aggregate</id>
+                        <phase>prepare-package</phase>
                         <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>jacoco-site</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
+                            <goal>report-aggregate</goal>
                         </goals>
                         <configuration>
-                            <dataFile>${basedir}/target/coverage-reports/jacoco-unit-pipe.exec</dataFile>
                             <outputDirectory>${basedir}/target/coverage-reports/site</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <extensions>true</extensions>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Export-Package>
-                            org.apache.synapse.transport.pipe.*,
-                        </Export-Package>
-                        <Import-Package>
-                            *; resolution:=optional
-                        </Import-Package>
-                    </instructions>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
-
     <dependencies>
+        <dependency>
+            <groupId>org.apache.synapse</groupId>
+            <artifactId>synapse-core</artifactId>
+        </dependency>
     </dependencies>
 </project>

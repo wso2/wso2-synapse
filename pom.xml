@@ -246,8 +246,13 @@
                  <artifactId>maven-surefire-plugin</artifactId>
                  <version>${maven.surefire.plugin.version}</version>
                  <configuration>
-                     <argLine>-Xms128m -Xmx256m</argLine>
+                     <argLine>${argLine} -Xms128m -Xmx256m</argLine>
                  </configuration>
+             </plugin>
+             <plugin>
+                 <groupId>org.jacoco</groupId>
+                 <artifactId>jacoco-maven-plugin</artifactId>
+                 <version>${maven.jacoco.plugin.version}</version>
              </plugin>
              <plugin>
                  <groupId>org.apache.maven.plugins</groupId>
@@ -987,6 +992,7 @@
       <maven.resources.plugin.version>2.2</maven.resources.plugin.version>
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.2</maven.surefire.plugin.version>
+      <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
       <maven.bundle.plugin.version>1.4.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
