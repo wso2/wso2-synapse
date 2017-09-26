@@ -981,6 +981,7 @@
       <module>modules/distribution</module>
       <module>modules/packaging/package-skeleton</module>
       <module>modules/packaging/package-archetype</module>
+      <module>modules/coverage-report</module>
    </modules>
    <properties>
       <maven.javadoc.plugin.version>2.1</maven.javadoc.plugin.version>
@@ -993,6 +994,7 @@
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.2</maven.surefire.plugin.version>
       <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+      <jacoco.version>0.7.9</jacoco.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
       <maven.bundle.plugin.version>1.4.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
