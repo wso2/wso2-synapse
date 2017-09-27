@@ -32,6 +32,7 @@ import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
@@ -289,10 +290,12 @@ public class SamplingService implements Task, ManagedLifecycle {
 			while (iHeader.hasNext()) {
 				try {
 					Object element = iHeader.next();
-					if (element instanceof OMElement) {
-						newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+					if (!(element instanceof SOAPHeaderBlock)) {
+						if (element instanceof OMElement) {
+							newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+						}
+						iHeader.remove();
 					}
-					iHeader.remove();
 				} catch (OMException e) {
 					log.error("Unable to convert to SoapHeader Block", e);
 				} catch (Exception e) {
