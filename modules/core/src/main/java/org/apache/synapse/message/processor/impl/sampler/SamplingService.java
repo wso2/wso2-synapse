@@ -18,10 +18,20 @@
 
 package org.apache.synapse.message.processor.impl.sampler;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.util.ElementHelper;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
@@ -201,6 +211,8 @@ public class SamplingService implements Task, ManagedLifecycle {
 	 */
     public void dispatch(final MessageContext messageContext) {
 
+		setSoapHeaderBlock(messageContext);
+
         final ExecutorService executor = messageContext.getEnvironment().
                 getExecutorService();
         executor.submit(new Runnable() {
@@ -260,5 +272,36 @@ public class SamplingService implements Task, ManagedLifecycle {
 	public void destroy() {
 		terminate();
 
+	}
+
+	private void setSoapHeaderBlock(MessageContext synCtx) {
+		// Send the SOAP Header Blocks to support WS-Addressing
+		if (synCtx.getEnvelope().getHeader() != null) {
+			Iterator iHeader = synCtx.getEnvelope().getHeader().getChildren();
+			SOAPFactory fac;
+			if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(synCtx.getEnvelope().getBody()
+					.getNamespace().getNamespaceURI())) {
+				fac = OMAbstractFactory.getSOAP11Factory();
+			} else {
+				fac = OMAbstractFactory.getSOAP12Factory();
+			}
+			List<OMNode> newHeaderNodes = new ArrayList<OMNode>();
+			while (iHeader.hasNext()) {
+				try {
+					Object element = iHeader.next();
+					if (element instanceof OMElement) {
+						newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+					}
+					iHeader.remove();
+				} catch (OMException e) {
+					log.error("Unable to convert to SoapHeader Block", e);
+				} catch (Exception e) {
+					log.error("Unable to convert to SoapHeader Block", e);
+				}
+			}
+			for (OMNode newHeaderNode : newHeaderNodes) {
+				synCtx.getEnvelope().getHeader().addChild(newHeaderNode);
+			}
+		}
 	}
 }
