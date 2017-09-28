@@ -22,7 +22,6 @@ package org.apache.synapse.mediators.builtin;
 import org.apache.axis2.AxisFault;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SequenceType;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
@@ -87,6 +86,12 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     private boolean blocking = false;
 
+    private boolean initClientOptions = true;
+
+    private String clientRepository = null;
+
+    private String axis2xml = null;
+
     private SynapseEnvironment synapseEnv;
 
     //State whether actual endpoint(when null) is wrapped by a default endpoint
@@ -133,7 +138,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             }
         }
 
-        MessageContext resultMsgCtx = null;
+        if (!initClientOptions) {
+            blockingMsgSender.setInitClientOptions(false);
+        }
         // fixing ESBJAVA-4976, if no endpoint is defined in call mediator, this is required to avoid NPEs in
         // blocking sender.
         if (endpoint == null) {
@@ -143,37 +150,35 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
             isWrappingEndpointCreated = true;
         }
 
-        try {
-            if ("true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
-                blockingMsgSender.send(endpoint, synInCtx);
-            } else {
-                resultMsgCtx = blockingMsgSender.send(endpoint, synInCtx);
-                if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-                    handleFault(synInCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
-                }
-            }
-        } catch (Exception ex) {
-            handleFault(synInCtx, ex);
+        // set the blockingMsgSender with synapse message Context
+        synInCtx.setProperty("blockingMsgSender",blockingMsgSender);
+        Set keySet = synInCtx.getPropertyKeySet();
+        if (keySet != null) {
+            keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
+            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+            keySet.remove(SynapseConstants.LAST_ENDPOINT);
         }
 
-        if (resultMsgCtx != null) {
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
-            }
-            try {
-                synInCtx.setEnvelope(resultMsgCtx.getEnvelope());
-
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("End : Call mediator - Blocking Call");
+        synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, getLastSequenceFaultHandler(synInCtx));
+        endpoint.send(synInCtx);
+        if ("false".equals(synInCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))){
+            if ("false".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY))) {
+                if (synInCtx.getEnvelope()!= null) {
+                    if (synLog.isTraceTraceEnabled()) {
+                        synLog.traceTrace("Response payload received : " + synInCtx.getEnvelope());
+                    }
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("End : Call mediator - Blocking Call");
+                    }
+                } else {
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Service returned a null response");
+                    }
                 }
-                return true;
-            } catch (Exception e) {
-                handleFault(synInCtx, e);
             }
-        } else {
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Service returned a null response");
-            }
+        }else{
+            log.info("Error while performing the call operation in blocking mode");
+            return false;
         }
 
         return true;
@@ -198,12 +203,13 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         // Set the last sequence fault handler for future use
         synInCtx.setProperty(SynapseConstants.LAST_SEQ_FAULT_HANDLER, getLastSequenceFaultHandler(synInCtx));
 
-        // clear the message context properties related to endpoint in last service invocation
+         // clear the message context properties related to endpoint in last service invocation
         Set keySet = synInCtx.getPropertyKeySet();
         if (keySet != null) {
             keySet.remove(SynapseConstants.RECEIVING_SEQUENCE);
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
             keySet.remove(SynapseConstants.LAST_ENDPOINT);
+            keySet.remove("blockingMsgSender");
         }
 
         boolean outOnlyMessage = "true".equals(synInCtx.getProperty(SynapseConstants.OUT_ONLY));
@@ -279,7 +285,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (blocking) {
             try {
                 configCtx = ConfigurationContextFactory.createConfigurationContextFromFileSystem(
-                        DEFAULT_CLIENT_REPO, DEFAULT_AXIS2_XML);
+                        clientRepository != null ? clientRepository : DEFAULT_CLIENT_REPO,
+                        axis2xml != null ? axis2xml : DEFAULT_AXIS2_XML);
                 blockingMsgSender = new BlockingMsgSender();
                 blockingMsgSender.setConfigurationContext(configCtx);
                 blockingMsgSender.init();
@@ -312,6 +319,30 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
 
     public void setBlocking(boolean blocking) {
         this.blocking = blocking;
+    }
+
+    public boolean getInitClientOptions() {
+        return initClientOptions;
+    }
+
+    public void setInitClientOptions(boolean initClientOptions) {
+        this.initClientOptions = initClientOptions;
+    }
+
+    public String getClientRepository() {
+        return clientRepository;
+    }
+
+    public void setClientRepository(String clientRepository) {
+        this.clientRepository = clientRepository;
+    }
+
+    public String getAxis2xml() {
+        return axis2xml;
+    }
+
+    public void setAxis2xml(String axis2xml) {
+        this.axis2xml = axis2xml;
     }
 
     private void handleFault(MessageContext synCtx, Exception ex) {
