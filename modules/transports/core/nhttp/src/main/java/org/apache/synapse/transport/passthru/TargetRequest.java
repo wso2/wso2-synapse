@@ -264,10 +264,10 @@ public class TargetRequest {
         request.setParams(new DefaultedHttpParams(request.getParams(),
                 targetConfiguration.getHttpParams()));
 
-        //Chucking is not performed for request has "http 1.0" and "GET" http method
+        //Chunking is not performed for request has "http 1.0" and "GET" http method
        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
                (PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
-               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx) || !(hasEntityBody))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
