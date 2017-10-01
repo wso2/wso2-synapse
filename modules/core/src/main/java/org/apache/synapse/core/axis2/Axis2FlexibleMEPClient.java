@@ -47,6 +47,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
 import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
+import org.apache.synapse.message.senders.blocking.BlockingMsgSender;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -419,180 +420,179 @@ public class Axis2FlexibleMEPClient {
                             Boolean.parseBoolean(preserveAddressingProperty)));
         }
 
+        //checking blockingMsgSender
+        if (synapseOutMessageContext.getProperty(SynapseConstants.BLOCKING_MSG_SENDER) != null) {
+            BlockingMsgSender blockingMsgSender = (BlockingMsgSender) synapseOutMessageContext
+                    .getProperty(SynapseConstants.BLOCKING_MSG_SENDER);
+            blockingMsgSender.send(endpoint, synapseOutMessageContext, axisOutMsgCtx);
+        } else {
+            ConfigurationContext axisCfgCtx = axisOutMsgCtx.getConfigurationContext();
+            AxisConfiguration axisCfg = axisCfgCtx.getAxisConfiguration();
 
-        ConfigurationContext axisCfgCtx = axisOutMsgCtx.getConfigurationContext();
-        AxisConfiguration axisCfg = axisCfgCtx.getAxisConfiguration();
+            AxisService anoymousService = AnonymousServiceFactory
+                    .getAnonymousService(synapseOutMessageContext.getConfiguration(), axisCfg, wsAddressingEnabled,
+                            wsRMEnabled, wsSecurityEnabled);
+            // mark the anon services created to be used in the client side of synapse as hidden
+            // from the server side of synapse point of view
+            anoymousService.getParent().addParameter(SynapseConstants.HIDDEN_SERVICE_PARAM, "true");
+            ServiceGroupContext sgc = new ServiceGroupContext(axisCfgCtx,
+                    (AxisServiceGroup) anoymousService.getParent());
+            ServiceContext serviceCtx = sgc.getServiceContext(anoymousService);
 
-        AxisService anoymousService =
-                AnonymousServiceFactory.getAnonymousService(synapseOutMessageContext.getConfiguration(),
-                        axisCfg, wsAddressingEnabled, wsRMEnabled, wsSecurityEnabled);
-        // mark the anon services created to be used in the client side of synapse as hidden
-        // from the server side of synapse point of view
-        anoymousService.getParent().addParameter(SynapseConstants.HIDDEN_SERVICE_PARAM, "true");
-        ServiceGroupContext sgc = new ServiceGroupContext(
-                axisCfgCtx, (AxisServiceGroup) anoymousService.getParent());
-        ServiceContext serviceCtx = sgc.getServiceContext(anoymousService);
+            boolean outOnlyMessage = "true".equals(synapseOutMessageContext.getProperty(SynapseConstants.OUT_ONLY));
 
-        boolean outOnlyMessage = "true".equals(synapseOutMessageContext.getProperty(
-                SynapseConstants.OUT_ONLY));
+            // get a reference to the DYNAMIC operation of the Anonymous Axis2 service
+            AxisOperation axisAnonymousOperation = anoymousService.getOperation(outOnlyMessage ?
+                    new QName(AnonymousServiceFactory.OUT_ONLY_OPERATION) :
+                    new QName(AnonymousServiceFactory.OUT_IN_OPERATION));
 
-        // get a reference to the DYNAMIC operation of the Anonymous Axis2 service
-        AxisOperation axisAnonymousOperation = anoymousService.getOperation(
-                outOnlyMessage ?
-                        new QName(AnonymousServiceFactory.OUT_ONLY_OPERATION) :
-                        new QName(AnonymousServiceFactory.OUT_IN_OPERATION));
+            Options clientOptions = MessageHelper.cloneOptions(originalInMsgCtx.getOptions());
+            clientOptions.setUseSeparateListener(separateListener);
 
-        Options clientOptions = MessageHelper.cloneOptions(originalInMsgCtx.getOptions());
-        clientOptions.setUseSeparateListener(separateListener);
-
-        // if security is enabled,
-        if (wsSecurityEnabled) {
-            // if a WS-Sec policy is specified, use it
-            if (wsSecPolicyKey != null) {
-                if (endpoint.isDynamicPolicy()) {
-                    wsSecPolicyKey = endpoint.evaluateDynamicEndpointSecurityPolicy(synapseOutMessageContext);
+            // if security is enabled,
+            if (wsSecurityEnabled) {
+                // if a WS-Sec policy is specified, use it
+                if (wsSecPolicyKey != null) {
+                    if (endpoint.isDynamicPolicy()) {
+                        wsSecPolicyKey = endpoint.evaluateDynamicEndpointSecurityPolicy(synapseOutMessageContext);
+                    }
+                    clientOptions.setProperty(SynapseConstants.RAMPART_POLICY,
+                            MessageHelper.getPolicy(synapseOutMessageContext, wsSecPolicyKey));
+                } else {
+                    if (inboundWsSecPolicyKey != null) {
+                        clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY,
+                                MessageHelper.getPolicy(synapseOutMessageContext, inboundWsSecPolicyKey));
+                    }
+                    if (outboundWsSecPolicyKey != null) {
+                        clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY,
+                                MessageHelper.getPolicy(synapseOutMessageContext, outboundWsSecPolicyKey));
+                    }
                 }
-                clientOptions.setProperty(
-                        SynapseConstants.RAMPART_POLICY,
-                        MessageHelper.getPolicy(synapseOutMessageContext, wsSecPolicyKey));
-            } else {
-                if (inboundWsSecPolicyKey != null) {
-                    clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY,
-                            MessageHelper.getPolicy(
-                                    synapseOutMessageContext, inboundWsSecPolicyKey));
-                }
-                if (outboundWsSecPolicyKey != null) {
-                    clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY,
-                            MessageHelper.getPolicy(
-                                    synapseOutMessageContext, outboundWsSecPolicyKey));
+                // temporary workaround for https://issues.apache.org/jira/browse/WSCOMMONS-197
+                if (axisOutMsgCtx.getEnvelope().getHeader() == null) {
+                    SOAPFactory fac = axisOutMsgCtx.isSOAP11() ?
+                            OMAbstractFactory.getSOAP11Factory() :
+                            OMAbstractFactory.getSOAP12Factory();
+                    fac.createSOAPHeader(axisOutMsgCtx.getEnvelope());
                 }
             }
-            // temporary workaround for https://issues.apache.org/jira/browse/WSCOMMONS-197
-            if (axisOutMsgCtx.getEnvelope().getHeader() == null) {
-                SOAPFactory fac = axisOutMsgCtx.isSOAP11() ?
-                        OMAbstractFactory.getSOAP11Factory() : OMAbstractFactory.getSOAP12Factory();
-                fac.createSOAPHeader(axisOutMsgCtx.getEnvelope());
-            }
-        }
 
-        OperationClient mepClient = axisAnonymousOperation.createClient(serviceCtx, clientOptions);
-        mepClient.addMessageContext(axisOutMsgCtx);
-        axisOutMsgCtx.setAxisMessage(
-                axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
+            OperationClient mepClient = axisAnonymousOperation.createClient(serviceCtx, clientOptions);
+            mepClient.addMessageContext(axisOutMsgCtx);
+            axisOutMsgCtx.setAxisMessage(axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
 
-        // set the SEND_TIMEOUT for transport sender
-        if (endpoint != null && endpoint.getEffectiveTimeout() > 0) {
-            if (!endpoint.isDynamicTimeoutEndpoint()) {
-                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
-            } else {
-                axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext));
-            }
-        }
-
-
-        // always set a callback as we decide if the send it blocking or non blocking within
-        // the MEP client. This does not cause an overhead, as we simply create a 'holder'
-        // object with a reference to the outgoing synapse message context
-        // synapseOutMessageContext
-        AsyncCallback callback = new AsyncCallback(axisOutMsgCtx, synapseOutMessageContext);
-        if (!outOnlyMessage) {
-            if (endpoint != null) {
-                // set the timeout time and the timeout action to the callback, so that the
-                // TimeoutHandler can detect timed out callbacks and take appropriate action.
+            // set the SEND_TIMEOUT for transport sender
+            if (endpoint != null && endpoint.getEffectiveTimeout() > 0) {
                 if (!endpoint.isDynamicTimeoutEndpoint()) {
-                    long endpointTimeout = endpoint.getEffectiveTimeout();
-                    callback.setTimeout(endpointTimeout);
-                    callback.setTimeOutAction(endpoint.getTimeoutAction());
-                    callback.setTimeoutType(endpoint.getEndpointTimeoutType());
-                    if (log.isDebugEnabled()) {
-                        log.debug("Setting Timeout for endpoint : " +
-                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
-                                  " to static timeout value : " + endpointTimeout);
+                    axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT, endpoint.getEffectiveTimeout());
+                } else {
+                    axisOutMsgCtx.setProperty(SynapseConstants.SEND_TIMEOUT,
+                            endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext));
+                }
+            }
+
+            // always set a callback as we decide if the send it blocking or non blocking within
+            // the MEP client. This does not cause an overhead, as we simply create a 'holder'
+            // object with a reference to the outgoing synapse message context
+            // synapseOutMessageContext
+            AsyncCallback callback = new AsyncCallback(axisOutMsgCtx, synapseOutMessageContext);
+            if (!outOnlyMessage) {
+                if (endpoint != null) {
+                    // set the timeout time and the timeout action to the callback, so that the
+                    // TimeoutHandler can detect timed out callbacks and take appropriate action.
+                    if (!endpoint.isDynamicTimeoutEndpoint()) {
+                        long endpointTimeout = endpoint.getEffectiveTimeout();
+                        callback.setTimeout(endpointTimeout);
+                        callback.setTimeOutAction(endpoint.getTimeoutAction());
+                        callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                        if (log.isDebugEnabled()) {
+                            log.debug(
+                                    "Setting Timeout for endpoint : " + getEndpointLogMessage(synapseOutMessageContext,
+                                            axisOutMsgCtx) + " to static timeout value : " + endpointTimeout);
+                        }
+                    } else {
+                        long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
+                        callback.setTimeout(endpointTimeout);
+                        callback.setTimeOutAction(endpoint.getTimeoutAction());
+                        callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                        if (log.isDebugEnabled()) {
+                            log.debug(
+                                    "Setting Timeout for endpoint : " + getEndpointLogMessage(synapseOutMessageContext,
+                                            axisOutMsgCtx) + " to dynamic timeout value : " + endpointTimeout);
+                        }
                     }
                 } else {
-                    long endpointTimeout = endpoint.evaluateDynamicEndpointTimeout(synapseOutMessageContext);
-                    callback.setTimeout(endpointTimeout);
-                    callback.setTimeOutAction(endpoint.getTimeoutAction());
-                    callback.setTimeoutType(endpoint.getEndpointTimeoutType());
+                    long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
+                    callback.setTimeout(globalTimeout);
+                    callback.setTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT);
                     if (log.isDebugEnabled()) {
-                        log.debug("Setting Timeout for endpoint : " +
-                                  getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
-                                  " to dynamic timeout value : " + endpointTimeout);
+                        log.debug("Setting timeout for implicit endpoint : " + getEndpointLogMessage(
+                                synapseOutMessageContext, axisOutMsgCtx) + " to global timeout value of "
+                                + globalTimeout);
                     }
                 }
-            } else {
-                long globalTimeout = synapseOutMessageContext.getEnvironment().getGlobalTimeout();
-                callback.setTimeout(globalTimeout);
-                callback.setTimeoutType(SynapseConstants.ENDPOINT_TIMEOUT_TYPE.GLOBAL_TIMEOUT);
-                if (log.isDebugEnabled()) {
-                    log.debug("Setting timeout for implicit endpoint : " +
-                              getEndpointLogMessage(synapseOutMessageContext, axisOutMsgCtx) +
-                              " to global timeout value of " + globalTimeout);
+
+            }
+            mepClient.setCallback(callback);
+            //
+            //        if (Utils.isClientThreadNonBlockingPropertySet(axisOutMsgCtx)) {
+            //            SynapseCallbackReceiver synapseCallbackReceiver = (SynapseCallbackReceiver) axisOutMsgCtx.getAxisOperation().getMessageReceiver();
+            //            synapseCallbackReceiver.addCallback(axisOutMsgCtx.getMessageID(), new FaultCallback(axisOutMsgCtx, synapseOutMessageContext));
+            //        }
+
+            // this is a temporary fix for converting messages from HTTP 1.1 chunking to HTTP 1.0.
+            // Without this HTTP transport can block & become unresponsive because we are streaming
+            // HTTP 1.1 messages and HTTP 1.0 require the whole message to caculate the content length
+            if (originalInMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_1_0)) {
+                synapseOutMessageContext.getEnvelope().toString();
+            }
+
+            // with the nio transport, this causes the listener not to write a 202
+            // Accepted response, as this implies that Synapse does not yet know if
+            // a 202 or 200 response would be written back.
+            originalInMsgCtx.getOperationContext().setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+
+            // if the transport out is explicitly set use it
+            Object o = originalInMsgCtx.getProperty("TRANSPORT_OUT_DESCRIPTION");
+            if (o != null && o instanceof TransportOutDescription) {
+                axisOutMsgCtx.setTransportOut((TransportOutDescription) o);
+                clientOptions.setTransportOut((TransportOutDescription) o);
+                clientOptions.setProperty("TRANSPORT_OUT_DESCRIPTION", o);
+            }
+
+            // clear the message context properties related to endpoint in last service invocation
+            Set keySet = synapseOutMessageContext.getPropertyKeySet();
+            if (keySet != null) {
+                keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+            }
+
+            //at the last point of mediation engine where the client get invoked we reduce concurrent
+            // throttling count for OUT_ONLY messages
+            if (outOnlyMessage) {
+                Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMessageContext
+                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+                if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
+                    ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController) synapseOutMessageContext
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+                    int available = concurrentAccessController.incrementAndGet();
+                    int concurrentLimit = concurrentAccessController.getLimit();
+                    if (log.isDebugEnabled()) {
+                        log.debug(
+                                "Concurrency Throttle : Connection returned" + " :: " + available + " of available of "
+                                        + concurrentLimit + " connections");
+                    }
+                    ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator) synapseOutMessageContext
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+                    String throttleKey = (String) synapseOutMessageContext
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+                    if (concurrentAccessReplicator != null) {
+                        concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+                    }
                 }
             }
 
+            mepClient.execute(true);
         }
-        mepClient.setCallback(callback);
-//
-//        if (Utils.isClientThreadNonBlockingPropertySet(axisOutMsgCtx)) {
-//            SynapseCallbackReceiver synapseCallbackReceiver = (SynapseCallbackReceiver) axisOutMsgCtx.getAxisOperation().getMessageReceiver();
-//            synapseCallbackReceiver.addCallback(axisOutMsgCtx.getMessageID(), new FaultCallback(axisOutMsgCtx, synapseOutMessageContext));
-//        }
-
-        // this is a temporary fix for converting messages from HTTP 1.1 chunking to HTTP 1.0.
-        // Without this HTTP transport can block & become unresponsive because we are streaming
-        // HTTP 1.1 messages and HTTP 1.0 require the whole message to caculate the content length
-        if (originalInMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_1_0)) {
-            synapseOutMessageContext.getEnvelope().toString();
-        }
-
-        // with the nio transport, this causes the listener not to write a 202
-        // Accepted response, as this implies that Synapse does not yet know if
-        // a 202 or 200 response would be written back.
-        originalInMsgCtx.getOperationContext().setProperty(
-                org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
-
-        // if the transport out is explicitly set use it
-        Object o = originalInMsgCtx.getProperty("TRANSPORT_OUT_DESCRIPTION");
-        if (o != null && o instanceof TransportOutDescription) {
-            axisOutMsgCtx.setTransportOut((TransportOutDescription) o);
-            clientOptions.setTransportOut((TransportOutDescription) o);
-            clientOptions.setProperty("TRANSPORT_OUT_DESCRIPTION", o);
-        }
-
-        // clear the message context properties related to endpoint in last service invocation
-        Set keySet = synapseOutMessageContext.getPropertyKeySet();
-        if (keySet != null) {
-            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
-        }
-
-        //at the last point of mediation engine where the client get invoked we reduce concurrent
-        // throttling count for OUT_ONLY messages
-        if (outOnlyMessage) {
-            Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMessageContext
-                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
-            if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
-                ConcurrentAccessController concurrentAccessController =
-                        (ConcurrentAccessController) synapseOutMessageContext
-                                .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
-                int available = concurrentAccessController.incrementAndGet();
-                int concurrentLimit = concurrentAccessController.getLimit();
-                if (log.isDebugEnabled()) {
-                    log.debug("Concurrency Throttle : Connection returned" + " :: " +
-                            available + " of available of " + concurrentLimit + " connections");
-                }
-                ConcurrentAccessReplicator concurrentAccessReplicator =
-                        (ConcurrentAccessReplicator) synapseOutMessageContext
-                                .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
-                String throttleKey = (String) synapseOutMessageContext
-                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
-                if (concurrentAccessReplicator != null) {
-                    concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
-                }
-            }
-        }
-
-        mepClient.execute(true);
     }
 
     private static MessageContext cloneForSend(MessageContext ori, String preserveAddressing)

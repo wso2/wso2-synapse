@@ -218,68 +218,61 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             }
 
-            MessageContext resultMsgCtx = null;
-            try {
-                if ("true".equals(synCtx.getProperty(SynapseConstants.OUT_ONLY))) {
-                    blockingMsgSender.send(endpoint, synapseOutMsgCtx);
-                } else {
-                    resultMsgCtx = blockingMsgSender.send(endpoint, synapseOutMsgCtx);
-                    setResponseHttpSc(resultMsgCtx, synCtx);
-                    if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-                        handleFault(synCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+            synapseOutMsgCtx.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, blockingMsgSender);
+            endpoint.send(synapseOutMsgCtx);
+
+            if ("false".equals(synapseOutMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+                if ("false".equals(synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY))) {
+                    setResponseHttpSc(synapseOutMsgCtx, synCtx);
+                    if (synLog.isTraceTraceEnabled()) {
+                        synLog.traceTrace("Response payload received : " + synapseOutMsgCtx.getEnvelope());
                     }
-                }
-            } catch (Exception ex) {
-                handleFault(synCtx, ex);
-            }
-
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
-            }
-
-            if (resultMsgCtx != null && resultMsgCtx.getEnvelope() != null) {
-                org.apache.axis2.context.MessageContext resultAxisMsgCtx =
-                        ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
-                org.apache.axis2.context.MessageContext inAxisMsgCtx =
-                                        ((Axis2MessageContext) synCtx).getAxis2MessageContext();
-                if (JsonUtil.hasAJsonPayload(resultAxisMsgCtx)) {
-                    JsonUtil.cloneJsonPayload(resultAxisMsgCtx, inAxisMsgCtx);
-                } else {
-                    if (targetXPath != null) {
-                        Object o = targetXPath.evaluate(synCtx);
-                        OMElement result = resultMsgCtx.getEnvelope().getBody().getFirstElement();
-                        if (o != null && o instanceof OMElement) {
-                            OMNode tgtNode = (OMElement) o;
-                            tgtNode.insertSiblingAfter(result);
-                            tgtNode.detach();
-                        } else if (o != null && o instanceof List && !((List) o).isEmpty()) {
-                            // Always fetches *only* the first
-                            OMNode tgtNode = (OMElement) ((List) o).get(0);
-                            tgtNode.insertSiblingAfter(result);
-                            tgtNode.detach();
+                    if (synapseOutMsgCtx.getEnvelope() != null) {
+                        org.apache.axis2.context.MessageContext resultAxisMsgCtx = ((Axis2MessageContext) synapseOutMsgCtx)
+                                .getAxis2MessageContext();
+                        org.apache.axis2.context.MessageContext inAxisMsgCtx = ((Axis2MessageContext) synCtx)
+                                .getAxis2MessageContext();
+                        if (JsonUtil.hasAJsonPayload(resultAxisMsgCtx)) {
+                            JsonUtil.cloneJsonPayload(resultAxisMsgCtx, inAxisMsgCtx);
                         } else {
-                            handleException("Evaluation of target XPath expression : " +
-                                    targetXPath.toString() + " did not yeild an OMNode", synCtx);
+                            if (targetXPath != null) {
+                                Object o = targetXPath.evaluate(synCtx);
+                                OMElement result = synapseOutMsgCtx.getEnvelope().getBody().getFirstElement();
+                                if (o != null && o instanceof OMElement) {
+                                    OMNode tgtNode = (OMElement) o;
+                                    tgtNode.insertSiblingAfter(result);
+                                    tgtNode.detach();
+                                } else if (o != null && o instanceof List && !((List) o).isEmpty()) {
+                                    // Always fetches *only* the first
+                                    OMNode tgtNode = (OMElement) ((List) o).get(0);
+                                    tgtNode.insertSiblingAfter(result);
+                                    tgtNode.detach();
+                                } else {
+                                    handleException("Evaluation of target XPath expression : " + targetXPath.toString()
+                                            + " did not yeild an OMNode", synCtx);
+                                }
+                            } else if (targetKey != null) {
+                                OMElement result = synapseOutMsgCtx.getEnvelope().getBody().getFirstElement();
+                                synCtx.setProperty(targetKey, result);
+                            } else {
+                                synCtx.setEnvelope(synapseOutMsgCtx.getEnvelope());
+                            }
                         }
-                    } else if (targetKey != null) {
-                        OMElement result = resultMsgCtx.getEnvelope().getBody().getFirstElement();
-                        synCtx.setProperty(targetKey, result);
+                        // Set HTTP Status code
+                        inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC,
+                                resultAxisMsgCtx.getProperty(SynapseConstants.HTTP_SC));
+                        if ("false".equals(synCtx.getProperty(SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
+                            inAxisMsgCtx.setProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                                    resultAxisMsgCtx
+                                            .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                        }
                     } else {
-                    	synCtx.setEnvelope(resultMsgCtx.getEnvelope());
+                        synLog.traceOrDebug("Service returned a null response");
                     }
-                }
-                // Set HTTP Status code
-                inAxisMsgCtx.setProperty(SynapseConstants.HTTP_SC,
-                                         resultAxisMsgCtx.getProperty(SynapseConstants.HTTP_SC));
-                if ("false".equals(synCtx.getProperty(
-                        SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
-                    inAxisMsgCtx.setProperty(
-                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
-                            resultAxisMsgCtx.getProperty(
-                                    org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
                 }
             } else {
-                synLog.traceOrDebug("Service returned a null response");
+                log.info("Error while performing the callout operation");
+                return false;
             }
 
         } catch (AxisFault e) {
@@ -442,6 +435,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                         endpointDefinition.setOutboundWsSecPolicyKey(outboundWsSecPolicyKey);
                     }
                 }
+            }
+
+            if (endpoint != null) {
+                endpoint.init(synEnv);
             }
         } catch (AxisFault e) {
             String msg = "Error initializing callout mediator : " + e.getMessage();
