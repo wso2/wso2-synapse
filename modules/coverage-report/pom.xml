@@ -108,9 +108,6 @@
                                         <fileset dir="../transports/core/nhttp/target/coverage-reports">
                                             <include name="jacoco-unit*.exec" />
                                         </fileset>
-                                        <fileset dir="../transports/core/pipe/target/coverage-reports">
-                                            <include name="jacoco-unit*.exec" />
-                                        </fileset>
                                         <fileset dir="../transports/core/vfs/target/coverage-reports">
                                             <include name="jacoco-unit*.exec" />
                                         </fileset>
@@ -157,14 +154,6 @@
                                             </classfiles>
                                             <sourcefiles encoding="UTF-8">
                                                 <fileset dir="../transports/core/nhttp/src/main/java" />
-                                            </sourcefiles>
-                                        </group>
-                                        <group name="synapse-transport-pipe">
-                                            <classfiles>
-                                                <fileset dir="../transports/core/pipe/target/classes" />
-                                            </classfiles>
-                                            <sourcefiles encoding="UTF-8">
-                                                <fileset dir="../transports/core/pipe/src/main/java" />
                                             </sourcefiles>
                                         </group>
                                         <group name="synapse-transport-vfs">
