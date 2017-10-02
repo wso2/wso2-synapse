@@ -46,6 +46,7 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
+                    <skip>true</skip>
                     <destFile>${basedir}/target/coverage-reports/jacoco-unit-pipe.exec</destFile>
                 </configuration>
                 <executions>
