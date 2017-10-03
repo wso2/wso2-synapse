@@ -140,10 +140,8 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         }
 
         MessageContext resultMsgCtx = null;
-        //If initClientOption is False then set it with blockingMsgsender
-        if (!initClientOptions) {
-            blockingMsgSender.setInitClientOptions(false);
-        }
+        //set initClientOption with blockingMsgsender
+        blockingMsgSender.setInitClientOptions(initClientOptions);
         // fixing ESBJAVA-4976, if no endpoint is defined in call mediator, this is required to avoid NPEs in
         // blocking sender.
         if (endpoint == null) {

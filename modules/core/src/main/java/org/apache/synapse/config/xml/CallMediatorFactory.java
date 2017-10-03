@@ -77,7 +77,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
     private static final QName CALL_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "call");
     private static final QName ENDPOINT_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "endpoint");
     private static final QName BLOCKING_Q = new QName("blocking");
-    private static final QName ATT_INIT_AXI2_CLIENT_OPTIONS = new QName("initAxis2ClientOptions");
+    private static final QName ATT_INIT_AXIS2_CLIENT_OPTIONS = new QName("initAxis2ClientOptions");
     private static final QName ATT_AXIS2XML = new QName("axis2xml");
     private static final QName ATT_REPOSITORY = new QName("repository");
 
@@ -102,7 +102,7 @@ public class CallMediatorFactory extends AbstractMediatorFactory {
         if (blockingAtt != null) {
             callMediator.setBlocking(Boolean.parseBoolean(blockingAtt.getAttributeValue()));
             if (callMediator.isBlocking()) {
-                OMAttribute initAxis2ClientOptions = elem.getAttribute(ATT_INIT_AXI2_CLIENT_OPTIONS);
+                OMAttribute initAxis2ClientOptions = elem.getAttribute(ATT_INIT_AXIS2_CLIENT_OPTIONS);
                 OMAttribute axis2xmlAttr = elem.getAttribute(ATT_AXIS2XML);
                 OMAttribute repoAttr = elem.getAttribute(ATT_REPOSITORY);
 
