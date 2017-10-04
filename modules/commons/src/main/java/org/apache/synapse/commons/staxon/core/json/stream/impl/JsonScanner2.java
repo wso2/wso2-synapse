@@ -527,7 +527,8 @@ public final class JsonScanner2 implements JsonStreamSourceImpl.Scanner {
             message = ZZ_ERROR_MSG[ZZ_UNKNOWN_ERROR];
         }
 
-        throw new Error(message);
+        // Changing to throw RuntimeException instead of Error as Synapse required exception to be thrown.
+        throw new RuntimeException(message);
     }
 
 

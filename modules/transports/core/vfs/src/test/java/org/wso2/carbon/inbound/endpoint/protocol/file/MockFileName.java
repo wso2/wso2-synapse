@@ -35,7 +35,7 @@ public class MockFileName extends AbstractFileName {
     }
 
     public FileName createName(String path, FileType type) {
-        return new MockFileName(this.getScheme(), this.rootFile, path, type);
+        return new MockFileName(this.getScheme(), "", path, type);
     }
 
     protected void appendRootUri(StringBuilder buffer, boolean addPassword) {
