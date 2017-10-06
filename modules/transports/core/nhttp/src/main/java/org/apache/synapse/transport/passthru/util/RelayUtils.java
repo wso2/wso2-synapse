@@ -147,24 +147,24 @@ public class RelayUtils {
         try {
             element = messageBuilder.getDocument(messageContext,
                     bufferedInputStream != null ? bufferedInputStream : in);
+            if (element != null) {
+                messageContext.setEnvelope(TransportUtils.createSOAPEnvelope(element));
+                messageContext.setProperty(DeferredMessageBuilder.RELAY_FORMATTERS_MAP,
+                        messageBuilder.getFormatters());
+                messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
+
+                earlyBuild = messageContext.getProperty(PassThroughConstants.RELAY_EARLY_BUILD) != null ? (Boolean) messageContext
+                        .getProperty(PassThroughConstants.RELAY_EARLY_BUILD) : earlyBuild;
+
+                if (!earlyBuild) {
+                    processAddressing(messageContext);
+                }
+            }
         } catch (Exception e) {
             //Clearing the buffer when there is an exception occurred.
             consumeAndDiscardMessage(messageContext);
             messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
             handleException("Error while building Passthrough stream", e);
-        }
-        if (element != null) {
-            messageContext.setEnvelope(TransportUtils.createSOAPEnvelope(element));
-            messageContext.setProperty(DeferredMessageBuilder.RELAY_FORMATTERS_MAP,
-                    messageBuilder.getFormatters());
-            messageContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
-
-            earlyBuild = messageContext.getProperty(PassThroughConstants.RELAY_EARLY_BUILD) != null ? (Boolean) messageContext
-                    .getProperty(PassThroughConstants.RELAY_EARLY_BUILD) : earlyBuild;
-
-            if (!earlyBuild) {
-                processAddressing(messageContext);
-            }
         }
         return;
     }
