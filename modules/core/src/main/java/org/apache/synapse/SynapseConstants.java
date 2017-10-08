@@ -360,6 +360,7 @@ public final class SynapseConstants {
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =
             "BLOCKING_SENDER_PRESERVE_REQ_HEADERS";
     public static final String DISABLE_CHUNKING = "DISABLE_CHUNKING";
+    public static final String NO_DEFAULT_CONTENT_TYPE = "NoDefaultContentType";
 
     /** Synapse server instance name */
     public static final String SERVER_NAME = "serverName";

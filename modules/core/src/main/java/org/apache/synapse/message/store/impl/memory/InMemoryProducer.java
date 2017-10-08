@@ -44,7 +44,7 @@ public class InMemoryProducer implements MessageProducer {
     public boolean storeMessage(MessageContext synCtx) {
         boolean result = false;
         if (synCtx != null) {
-            synCtx.getEnvelope().build();
+            synCtx.getEnvelope().buildWithAttachments();
             synchronized (queueLock) {
                 result = queue.offer(synCtx);
             }
