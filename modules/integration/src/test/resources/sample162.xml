@@ -1,0 +1,18 @@
+<synapseSample>
+    <sampleID>162</sampleID>
+    <sampleName>Proxy with Loopback mediator</sampleName>
+    <synapseConfig>
+        <axis2Repo>modules/integration/target/test_repos/synapse</axis2Repo>
+        <axis2Xml>modules/integration/target/test_repos/synapse/conf/axis2_def.xml</axis2Xml>
+        <synapseXml>modules/integration/src/test/resources/extras/synapse_sample_162.xml</synapseXml>
+    </synapseConfig>
+    <backEndServerConfig>
+        <axis2Server id='0'>
+            <axis2Repo>modules/integration/target/test_repos/axis2Server</axis2Repo>
+            <axis2Xml>modules/integration/target/test_repos/axis2Server/conf/axis2_def.xml</axis2Xml>
+        </axis2Server>
+    </backEndServerConfig>
+    <clientConfig>
+        <clientRepo>modules/integration/target/test_repos/axis2Client</clientRepo>
+    </clientConfig>
+</synapseSample>
