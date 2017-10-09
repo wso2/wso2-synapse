@@ -281,7 +281,6 @@
                      class="org.apache.axis2.dispatchers.SOAPActionBasedDispatcher">
                 <order phase="Transport"/>
             </handler>
-            <handler name="EarlyBuilder" class="org.apache.synapse.core.relay.ServiceRequestEarlyBuilder"/>
         </phase>
         <phase name="Addressing">
              <handler name="AddressingBasedDispatcher"
