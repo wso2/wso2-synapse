@@ -59,6 +59,8 @@ public class SynapseProcessController implements ProcessController {
                 SampleConfigConstants.DEFAULT_SYNAPSE_CONF_AXIS2_XML);
         String serverName = "Synapse" + sampleId;
 
+        System.setProperty("http.socket.reuseaddr", String.valueOf(true));
+
         clusteringEnabled = Boolean.parseBoolean(SynapseTestUtils.getParameter(element,
                 SampleConfigConstants.TAG_ENABLE_CLUSTERING, "false"));
 
