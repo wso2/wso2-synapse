@@ -1040,7 +1040,7 @@
       <maven.clean.plugin.version>2.2</maven.clean.plugin.version>
       <maven.resources.plugin.version>2.2</maven.resources.plugin.version>
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
-      <maven.surefire.plugin.version>2.11</maven.surefire.plugin.version>
+      <maven.surefire.plugin.version>2.2</maven.surefire.plugin.version>
       <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
       <jacoco.version>0.7.9</jacoco.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
