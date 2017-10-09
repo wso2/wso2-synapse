@@ -1049,7 +1049,9 @@
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.12.4</maven.surefire.plugin.version>
       <maven.surefire.plugin.version.2.2>2.2</maven.surefire.plugin.version.2.2>
-      <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
+      <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+      <jacoco.version>0.7.9</jacoco.version>
+     <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
       <maven.bundle.plugin.version>1.4.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
       <antlr3.maven.plugin.version>3.4</antlr3.maven.plugin.version>
@@ -1162,6 +1164,9 @@
       <powermock.version>1.7.1</powermock.version>
       <activemq.version>5.2.0</activemq.version>
       <rhino.version>1.7R4</rhino.version>
+      <!-- The Java version used to execute maven-antrun-plugin in the integration module.
+           TODO: Find a way to avoid hardcording this.-->
+      <java.version>1.8</java.version>
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
