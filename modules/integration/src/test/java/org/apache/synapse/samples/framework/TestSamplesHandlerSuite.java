@@ -34,6 +34,7 @@ import org.apache.synapse.samples.framework.tests.advanced.Sample370;
 import org.apache.synapse.samples.framework.tests.advanced.Sample371;
 import org.apache.synapse.samples.framework.tests.advanced.Sample372;
 import org.apache.synapse.samples.framework.tests.advanced.Sample380;
+import org.apache.synapse.samples.framework.tests.advanced.Sample390;
 import org.apache.synapse.samples.framework.tests.advanced.Sample430;
 import org.apache.synapse.samples.framework.tests.advanced.Sample433;
 import org.apache.synapse.samples.framework.tests.advanced.Sample434;
@@ -271,7 +272,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("371", Sample371.class);
         sampleClassRepo.put("372", Sample372.class);
         sampleClassRepo.put("380", Sample380.class);
-//        sampleClassRepo.put("390", Sample390.class);
+        sampleClassRepo.put("390", Sample390.class);
 //        sampleClassRepo.put("391", Sample391.class);
 //        sampleClassRepo.put("420", Sample420.class);
         sampleClassRepo.put("430", Sample430.class);
