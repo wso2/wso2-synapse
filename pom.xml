@@ -1036,6 +1036,7 @@
       <module>modules/distribution</module>
       <module>modules/packaging/package-skeleton</module>
       <module>modules/packaging/package-archetype</module>
+      <module>modules/integration</module>
       <module>modules/coverage-report</module>
    </modules>
    <properties>
