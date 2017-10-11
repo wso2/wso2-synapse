@@ -34,8 +34,8 @@ public class Sample5 extends SynapseTestCase {
     public void testCreateFaultAndChangeDirection() {
         String addUrl = "http://localhost:9000/services/SimpleStockQuoteService";
         String trpUrl = "http://localhost:8280";
-        String expectedError_MSFT = "Error while connecting to the endpoint (Connection Failed)";
-        String expectedError_SUN = "Error while connecting to the endpoint (Connection Failed)";
+        String expectedError_MSFT = "Error connecting to the back end";
+        String expectedError_SUN = "Error connecting to the back end";
 
         StockQuoteSampleClient client = getStockQuoteClient();
 
@@ -47,7 +47,7 @@ public class Sample5 extends SynapseTestCase {
         log.info("Got an error as expected: " + resultEx.getMessage());
         assertTrue("Did not receive expected error", resultEx instanceof AxisFault);
         assertTrue("Did not receive expected error",
-                resultEx.getMessage().indexOf(expectedError_MSFT) != -1);
+                   resultEx.getMessage().contains(expectedError_MSFT));
 
         result = client.requestStandardQuote(addUrl, trpUrl, null, "SUN" ,null);
         assertFalse("Must not get a response", result.responseReceived());
@@ -56,7 +56,7 @@ public class Sample5 extends SynapseTestCase {
         log.info("Got an error as expected: " + resultEx.getMessage());
         assertTrue("Did not receive expected error", resultEx instanceof AxisFault);
         assertTrue("Did not receive expected error",
-                resultEx.getMessage().indexOf(expectedError_SUN) != -1);
+                   resultEx.getMessage().contains(expectedError_SUN));
 
         result = client.requestStandardQuote(addUrl, trpUrl, null, "IBM" ,null);
         assertFalse("Must not get a response", result.responseReceived());
