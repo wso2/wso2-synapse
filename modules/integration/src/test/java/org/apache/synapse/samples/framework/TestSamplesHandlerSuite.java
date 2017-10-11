@@ -22,19 +22,55 @@ package org.apache.synapse.samples.framework;
 import junit.framework.TestSuite;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.samples.framework.tests.advanced.Sample350;
+import org.apache.synapse.samples.framework.tests.advanced.Sample351;
+import org.apache.synapse.samples.framework.tests.advanced.Sample352;
+import org.apache.synapse.samples.framework.tests.advanced.Sample353;
+import org.apache.synapse.samples.framework.tests.advanced.Sample354;
+import org.apache.synapse.samples.framework.tests.advanced.Sample360;
+import org.apache.synapse.samples.framework.tests.advanced.Sample361;
+import org.apache.synapse.samples.framework.tests.advanced.Sample362;
+import org.apache.synapse.samples.framework.tests.advanced.Sample370;
+import org.apache.synapse.samples.framework.tests.advanced.Sample371;
+import org.apache.synapse.samples.framework.tests.advanced.Sample372;
+import org.apache.synapse.samples.framework.tests.advanced.Sample380;
+import org.apache.synapse.samples.framework.tests.advanced.Sample430;
+import org.apache.synapse.samples.framework.tests.advanced.Sample433;
+import org.apache.synapse.samples.framework.tests.advanced.Sample434;
+import org.apache.synapse.samples.framework.tests.advanced.Sample450;
+import org.apache.synapse.samples.framework.tests.advanced.Sample451;
+import org.apache.synapse.samples.framework.tests.advanced.Sample452;
+import org.apache.synapse.samples.framework.tests.advanced.Sample460;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample50;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample51;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample52;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample53;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample54;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample55;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample56;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample58;
+import org.apache.synapse.samples.framework.tests.message.Sample0;
+import org.apache.synapse.samples.framework.tests.message.Sample1;
+import org.apache.synapse.samples.framework.tests.message.Sample10;
+import org.apache.synapse.samples.framework.tests.message.Sample11;
+import org.apache.synapse.samples.framework.tests.message.Sample12;
+import org.apache.synapse.samples.framework.tests.message.Sample13;
+import org.apache.synapse.samples.framework.tests.message.Sample15;
+import org.apache.synapse.samples.framework.tests.message.Sample16;
+import org.apache.synapse.samples.framework.tests.message.Sample2;
+import org.apache.synapse.samples.framework.tests.message.Sample3;
+import org.apache.synapse.samples.framework.tests.message.Sample4;
+import org.apache.synapse.samples.framework.tests.message.Sample6;
+import org.apache.synapse.samples.framework.tests.message.Sample7;
+import org.apache.synapse.samples.framework.tests.message.Sample8;
+import org.apache.synapse.samples.framework.tests.message.Sample9;
+import org.apache.synapse.samples.framework.tests.proxy.Sample151;
+import org.apache.synapse.samples.framework.tests.proxy.Sample152;
+import org.apache.synapse.samples.framework.tests.proxy.Sample154;
+import org.apache.synapse.samples.framework.tests.proxy.Sample161;
 import org.apache.synapse.samples.framework.tests.rest.Sample10002;
-import org.apache.synapse.samples.framework.tests.rest.Sample10003;
-import org.apache.synapse.samples.framework.tests.tasks.*;
 import org.apache.synapse.samples.framework.tests.transport.Sample10101;
 import org.apache.synapse.samples.framework.tests.transport.Sample250;
-import org.apache.synapse.samples.framework.tests.advanced.*;
-import org.apache.synapse.samples.framework.tests.endpoint.*;
-import org.apache.synapse.samples.framework.tests.message.*;
-import org.apache.synapse.samples.framework.tests.proxy.*;
-import org.apache.synapse.samples.framework.tests.qos.Sample100;
-import org.apache.synapse.samples.framework.tests.qos.Sample101;
-import org.apache.synapse.samples.framework.tests.rest.Sample10001;
-import org.apache.synapse.samples.framework.tests.rest.Sample800;
 import org.apache.synapse.samples.framework.tests.transport.Sample251;
 
 import java.util.ArrayList;
@@ -171,7 +207,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("2", Sample2.class);
         sampleClassRepo.put("3", Sample3.class);
         sampleClassRepo.put("4", Sample4.class);
-        sampleClassRepo.put("5", Sample5.class);
+//        sampleClassRepo.put("5", Sample5.class);
         sampleClassRepo.put("6", Sample6.class);
         sampleClassRepo.put("7", Sample7.class);
         sampleClassRepo.put("8", Sample8.class);
@@ -193,21 +229,21 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("56", Sample56.class);
         //sampleClassRepo.put("57", Sample57.class);  // intermittently fail
         sampleClassRepo.put("58", Sample58.class);
-        sampleClassRepo.put("59", Sample59.class);
+//        sampleClassRepo.put("59", Sample59.class);
 
         //QoS
-        sampleClassRepo.put("100", Sample100.class);
+//        sampleClassRepo.put("100", Sample100.class);
 
         //Proxy Service
-        sampleClassRepo.put("150", Sample150.class);
+//        sampleClassRepo.put("150", Sample150.class);
         sampleClassRepo.put("151", Sample151.class);
         sampleClassRepo.put("152", Sample152.class);
         //sampleClassRepo.put("153", Sample153.class); // unable to load the JKS files
         sampleClassRepo.put("154", Sample154.class);
-        sampleClassRepo.put("155", Sample155.class);
-        sampleClassRepo.put("156", Sample156.class);
-        sampleClassRepo.put("157", Sample157.class);
-        sampleClassRepo.put("160", Sample160.class);
+//        sampleClassRepo.put("155", Sample155.class);
+//        sampleClassRepo.put("156", Sample156.class);
+//        sampleClassRepo.put("157", Sample157.class);
+//        sampleClassRepo.put("160", Sample160.class);
         sampleClassRepo.put("161", Sample161.class);
 
         //Transport switching
@@ -215,9 +251,9 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("251", Sample251.class);
 
         //Tasks
-        sampleClassRepo.put("300", Sample300.class);
-        sampleClassRepo.put("301", Sample301.class);
-        sampleClassRepo.put("302", Sample302.class);
+//        sampleClassRepo.put("300", Sample300.class);
+//        sampleClassRepo.put("301", Sample301.class);
+//        sampleClassRepo.put("302", Sample302.class);
 
         //Advanced
         sampleClassRepo.put("350", Sample350.class);
@@ -232,12 +268,12 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("371", Sample371.class);
         sampleClassRepo.put("372", Sample372.class);
         sampleClassRepo.put("380", Sample380.class);
-        sampleClassRepo.put("390", Sample390.class);
-        sampleClassRepo.put("391", Sample391.class);
-        sampleClassRepo.put("420", Sample420.class);
+//        sampleClassRepo.put("390", Sample390.class);
+//        sampleClassRepo.put("391", Sample391.class);
+//        sampleClassRepo.put("420", Sample420.class);
         sampleClassRepo.put("430", Sample430.class);
-        sampleClassRepo.put("431", Sample431.class);
-        sampleClassRepo.put("432", Sample432.class);
+//        sampleClassRepo.put("431", Sample431.class);
+//        sampleClassRepo.put("432", Sample432.class);
         sampleClassRepo.put("433", Sample433.class);
         sampleClassRepo.put("434", Sample434.class);
         sampleClassRepo.put("450", Sample450.class);
@@ -245,10 +281,10 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("452", Sample452.class);
         sampleClassRepo.put("460", Sample460.class);
 
-        sampleClassRepo.put("800", Sample800.class);
-        sampleClassRepo.put("10001", Sample10001.class);
+//        sampleClassRepo.put("800", Sample800.class);
+//        sampleClassRepo.put("10001", Sample10001.class);
         sampleClassRepo.put("10002", Sample10002.class);
-        sampleClassRepo.put("10003", Sample10003.class);
+//        sampleClassRepo.put("10003", Sample10003.class);
 
         sampleClassRepo.put("10101", Sample10101.class);
     }
