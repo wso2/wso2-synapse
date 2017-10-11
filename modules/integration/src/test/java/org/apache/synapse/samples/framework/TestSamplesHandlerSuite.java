@@ -60,6 +60,7 @@ import org.apache.synapse.samples.framework.tests.message.Sample16;
 import org.apache.synapse.samples.framework.tests.message.Sample2;
 import org.apache.synapse.samples.framework.tests.message.Sample3;
 import org.apache.synapse.samples.framework.tests.message.Sample4;
+import org.apache.synapse.samples.framework.tests.message.Sample5;
 import org.apache.synapse.samples.framework.tests.message.Sample6;
 import org.apache.synapse.samples.framework.tests.message.Sample7;
 import org.apache.synapse.samples.framework.tests.message.Sample8;
@@ -207,7 +208,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("2", Sample2.class);
         sampleClassRepo.put("3", Sample3.class);
         sampleClassRepo.put("4", Sample4.class);
-//        sampleClassRepo.put("5", Sample5.class);
+        sampleClassRepo.put("5", Sample5.class);
         sampleClassRepo.put("6", Sample6.class);
         sampleClassRepo.put("7", Sample7.class);
         sampleClassRepo.put("8", Sample8.class);
