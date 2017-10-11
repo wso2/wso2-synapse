@@ -69,6 +69,7 @@ import org.apache.synapse.samples.framework.tests.message.Sample9;
 import org.apache.synapse.samples.framework.tests.proxy.Sample151;
 import org.apache.synapse.samples.framework.tests.proxy.Sample152;
 import org.apache.synapse.samples.framework.tests.proxy.Sample154;
+import org.apache.synapse.samples.framework.tests.proxy.Sample157;
 import org.apache.synapse.samples.framework.tests.proxy.Sample161;
 import org.apache.synapse.samples.framework.tests.rest.Sample10002;
 import org.apache.synapse.samples.framework.tests.transport.Sample10101;
@@ -244,7 +245,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("154", Sample154.class);
 //        sampleClassRepo.put("155", Sample155.class);
 //        sampleClassRepo.put("156", Sample156.class);
-//        sampleClassRepo.put("157", Sample157.class);
+        sampleClassRepo.put("157", Sample157.class);
 //        sampleClassRepo.put("160", Sample160.class);
         sampleClassRepo.put("161", Sample161.class);
 
