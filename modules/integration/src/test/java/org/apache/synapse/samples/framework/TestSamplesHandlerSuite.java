@@ -49,6 +49,7 @@ import org.apache.synapse.samples.framework.tests.endpoint.Sample54;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample55;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample56;
 import org.apache.synapse.samples.framework.tests.endpoint.Sample58;
+import org.apache.synapse.samples.framework.tests.endpoint.Sample59;
 import org.apache.synapse.samples.framework.tests.message.Sample0;
 import org.apache.synapse.samples.framework.tests.message.Sample1;
 import org.apache.synapse.samples.framework.tests.message.Sample10;
@@ -68,6 +69,7 @@ import org.apache.synapse.samples.framework.tests.message.Sample9;
 import org.apache.synapse.samples.framework.tests.proxy.Sample151;
 import org.apache.synapse.samples.framework.tests.proxy.Sample152;
 import org.apache.synapse.samples.framework.tests.proxy.Sample154;
+import org.apache.synapse.samples.framework.tests.proxy.Sample157;
 import org.apache.synapse.samples.framework.tests.proxy.Sample161;
 import org.apache.synapse.samples.framework.tests.rest.Sample10002;
 import org.apache.synapse.samples.framework.tests.transport.Sample10101;
@@ -230,7 +232,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("56", Sample56.class);
         //sampleClassRepo.put("57", Sample57.class);  // intermittently fail
         sampleClassRepo.put("58", Sample58.class);
-//        sampleClassRepo.put("59", Sample59.class);
+        sampleClassRepo.put("59", Sample59.class);
 
         //QoS
 //        sampleClassRepo.put("100", Sample100.class);
@@ -243,7 +245,7 @@ public class TestSamplesHandlerSuite extends TestSuite {
         sampleClassRepo.put("154", Sample154.class);
 //        sampleClassRepo.put("155", Sample155.class);
 //        sampleClassRepo.put("156", Sample156.class);
-//        sampleClassRepo.put("157", Sample157.class);
+        sampleClassRepo.put("157", Sample157.class);
 //        sampleClassRepo.put("160", Sample160.class);
         sampleClassRepo.put("161", Sample161.class);
 
