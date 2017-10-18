@@ -302,6 +302,10 @@ public class TargetHandler implements NHttpClientEventHandler {
 
             if (connState != ProtocolState.REQUEST_DONE) {
                 isError = true;
+                // State is not REQUEST_DONE. i.e the request is not completely written. But the response is started
+                // receiving, therefore informing a write error has occurred. So the thread which is
+                // waiting on writing the request out, will get notified.
+                informWriterError(conn);
                 StatusLine errorStatus = response.getStatusLine();
                 /* We might receive a 404 or a similar type, even before we write the request body. */
                 if (errorStatus != null) {
