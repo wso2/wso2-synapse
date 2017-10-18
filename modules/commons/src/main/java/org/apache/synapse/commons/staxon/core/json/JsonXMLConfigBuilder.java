@@ -168,4 +168,15 @@ public class JsonXMLConfigBuilder {
         return this;
     }
 
+    /**
+     * Set readWriteXmlNil property and return receiver.
+     *
+     * @param readWriteXmlNil
+     * @return this
+     */
+    public JsonXMLConfigBuilder readWriteXmlNil(boolean readWriteXmlNil) {
+        config.setReadWriteXmlNil(readWriteXmlNil);
+        return this;
+    }
+
 }

@@ -110,4 +110,10 @@ public class FIXConstants {
 
     public static final String FIX_IGNORE_ORDER = "transport.fix.IgnoreOrder";
 
+    public static final String FIX_USERNAME = "transport.fix.Username";
+    public static final String FIX_PASSWORD = "transport.fix.Password";
+    public static final String LOGON = "A";
+    public static final int FIX_MESSAGE_TYPE = 35;
+    public static final int USERNAME_TAG = 553;
+    public static final int PASSWORD_TAG = 554;
 }

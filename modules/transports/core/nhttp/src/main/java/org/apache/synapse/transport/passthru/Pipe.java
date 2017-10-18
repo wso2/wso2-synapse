@@ -356,6 +356,8 @@ public class Pipe {
     }
 
     public void forceSetSerializationRest(){
+        // If the pipe is reused to send the message out (ex. Failover endpoint retry), need to reset
+        consumerError = false;
         if(this.serializationComplete){
             this.serializationComplete = false;
         }

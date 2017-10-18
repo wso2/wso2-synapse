@@ -111,8 +111,9 @@ public class TargetRequestFactory {
             }
 
 			String cType = getContentType(msgContext, configuration.isPreserveHttpHeader(HTTP.CONTENT_TYPE));
-			if (cType != null && (!httpMethod.equals("GET") && !httpMethod.equals("DELETE"))) {
-				String messageType = (String) msgContext.getProperty("messageType");
+			if (cType != null && (!httpMethod.equals(HTTPConstants.HTTP_METHOD_GET) &&
+					!RelayUtils.isDeleteRequestWithoutPayload(msgContext))) {
+				String messageType = (String) msgContext.getProperty(NhttpConstants.MESSAGE_TYPE);
 				if (messageType != null) {
 					boolean builderInvoked = false;
 					final Pipe pipe = (Pipe) msgContext
@@ -200,7 +201,14 @@ public class TargetRequestFactory {
 
     private static String getContentType(MessageContext msgCtx, boolean isContentTypePreservedHeader) throws AxisFault {
 
-        if (isContentTypePreservedHeader) {
+        Object trpHeaders = msgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+
+        //If incoming transport isn't HTTP, transport headers can be null. Therefore null check is required
+        // and if headers not null check whether request comes with Content-Type header before preserving Content-Type
+        //Need to avoid this for multipart headers, need to add MIME Boundary property
+        if (trpHeaders != null && trpHeaders instanceof Map && ((Map) trpHeaders).
+                get(HTTPConstants.HEADER_CONTENT_TYPE) != null && isContentTypePreservedHeader && !isMultipartContent
+                (((Map) trpHeaders).get(HTTPConstants.HEADER_CONTENT_TYPE).toString())) {
             if (msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE) != null) {
                 return (String) msgCtx.getProperty(Constants.Configuration.CONTENT_TYPE);
             } else if (msgCtx.getProperty(Constants.Configuration.MESSAGE_TYPE) != null) {
@@ -237,5 +245,19 @@ public class TargetRequestFactory {
     private static void handleException(String s, Exception e) throws AxisFault {
         log.error(s, e);
         throw new AxisFault(s, e);
+    }
+
+    /**
+     * Check whether the content type is multipart or not
+     * @param contentType
+     * @return true for multipart content types
+     */
+    private static boolean isMultipartContent(String contentType) {
+        // Identifying whether the content-type is multipart or not
+        if (contentType.contains(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA) || contentType.contains(HTTPConstants
+                .HEADER_ACCEPT_MULTIPART_RELATED)) {
+            return true;
+        }
+        return false;
     }
 }

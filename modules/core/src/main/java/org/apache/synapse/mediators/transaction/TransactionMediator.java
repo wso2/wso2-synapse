@@ -31,9 +31,6 @@ import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.transaction.Status;
-import javax.transaction.UserTransaction;
-import javax.transaction.TransactionManager;
-import java.util.Hashtable;
 
 /**
  * The Mediator for commit, rollback, suspend, resume jta transactions
@@ -113,17 +110,7 @@ public class TransactionMediator extends AbstractMediator {
                 throw new SynapseException("Require to begin a new transaction, " +
                         "but a transaction already exist");
             }
-
-            try {
-                //tx.begin();
-            	TranscationManger.beginTransaction();
-                org.apache.axis2.context.MessageContext axis2MsgCtx =
-                        ((Axis2MessageContext)synCtx).getAxis2MessageContext();
-                axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION,TranscationManger.getTransaction());
-                axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,TranscationManger.getTransactionManager());
-            } catch (Exception e) {
-                handleException("Unable to begin a new transaction", e, synCtx);
-            }
+            beginNewTransaction(synCtx);
 
         } else if (action.equals(ACTION_USE_EXISTING_OR_NEW)) {
 
@@ -135,12 +122,8 @@ public class TransactionMediator extends AbstractMediator {
                 handleException("Unable to query transaction status", e, synCtx);
             }
 
-            try {
-                if (status == Status.STATUS_NO_TRANSACTION) {
-                   // tx.begin();
-                }
-            } catch (Exception e) {
-                handleException("Unable to begin a new transaction", e, synCtx);
+            if (status == Status.STATUS_NO_TRANSACTION) {
+                beginNewTransaction(synCtx);
             }
 
         } else if (action.equals(ACTION_FAULT_IF_NO_TX)) {
@@ -165,6 +148,19 @@ public class TransactionMediator extends AbstractMediator {
         }
 
         return true;
+    }
+
+    private void beginNewTransaction(MessageContext synCtx) {
+        try {
+            TranscationManger.beginTransaction();
+            org.apache.axis2.context.MessageContext axis2MsgCtx =
+                    ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+            axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION, TranscationManger.getTransaction());
+            axis2MsgCtx.setProperty(NhttpConstants.DISTRIBUTED_TRANSACTION_MANAGER,
+                                    TranscationManger.getTransactionManager());
+        } catch (Exception e) {
+            handleException("Unable to begin a new transaction", e, synCtx);
+        }
     }
 
     public void setAction(String action) {

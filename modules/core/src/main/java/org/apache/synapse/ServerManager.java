@@ -271,16 +271,16 @@ public class ServerManager {
         // if the system is started then stop if not we are not happy
         if (serverState == ServerState.STARTED || serverState == ServerState.MAINTENANCE) {
 
-            // stop the SynapseController
-            synapseController.stop();
-
             // destroy the created Synapse Environment
             synapseController.destroySynapseEnvironment();
             serverContextInformation.setSynapseEnvironment(null);
 
             // destroy the created Synapse Configuration
-            synapseController.destroySynapseConfiguration();
+            synapseController.destroySynapseConfiguration(true);
             serverContextInformation.setSynapseConfiguration(null);
+
+            // stop the SynapseController
+            synapseController.stop();
 
             changeState(ServerState.STOPPED);
         } else {

@@ -22,6 +22,7 @@ package org.apache.synapse.config.xml.endpoints;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.axis2.util.JavaUtils;
@@ -79,6 +80,15 @@ public class FailoverEndpointFactory extends EndpointFactory {
             String dynamicFO = failoverElement.getAttributeValue(new QName("dynamic"));
             if (dynamicFO != null && JavaUtils.isFalseExplicitly(dynamicFO)) {
                 failoverEndpoint.setDynamic(false);
+            }
+
+            //set buildMassage property
+            String  buildMessageAtt = failoverElement.getAttributeValue(new QName(XMLConfigConstants.BUILD_MESSAGE));
+            if (buildMessageAtt != null) {
+                failoverEndpoint.setBuildMessageAttAvailable(true);
+                if (JavaUtils.isTrueExplicitly(buildMessageAtt)) {
+                    failoverEndpoint.setBuildMessageAtt(true);
+                }
             }
             
             // process the parameters

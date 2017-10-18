@@ -27,6 +27,12 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -85,7 +91,7 @@ public class ThrottleFactoryTest extends TestCase {
     private String defaultMudulePolicy = "<wsp:Policy xmlns:wsp=\"http://schemas.xmlsoap.org/ws/" +
             "2004/09/policy\"\n" +
             "            xmlns:throttle=\"http://www.wso2.org/products/wso2commons/throttle\">\n" +
-            "    <throttle:ModuleThrottleAssertion>\n" +             
+            "    <throttle:ModuleThrottleAssertion>\n" +
             "        <wsp:Policy>\n" +
             "            <throttle:ID throttle:type=\"IP\"> other </throttle:ID>\n" +
             "            <wsp:Policy>\n" +
@@ -226,6 +232,7 @@ public class ThrottleFactoryTest extends TestCase {
             "        </wsp:ExactlyOne>\n" +
             "    </wsp:Policy>\n" +
             "</wsp:Policy>";
+    private boolean errorOccured;
 
     public void testModuleThrottleAssertBuilder() throws Exception {
         System.setProperty("carbon.config.dir.path","resources");
@@ -327,6 +334,70 @@ public class ThrottleFactoryTest extends TestCase {
 
     }
 
+    public void testModuleThrottleForConcurrentModification() throws Exception {
+        OMElement policyOM = createOMElement(modulePolicy);
+        Policy policy = PolicyEngine.getPolicy(policyOM);
+        Throttle throttle = ThrottleFactory.createModuleThrottle(policy);
+
+        assertNotNull(throttle);
+        assertNotNull(throttle.getConcurrentAccessController());
+        ThrottleContext throttleContext = throttle.getThrottleContext(ThrottleConstants.IP_BASED_THROTTLE_KEY);
+
+        RoleBasedAccessRateController roleBasedAccessRateController = new RoleBasedAccessRateController();
+        int noOfThreads = 750;
+        ExecutorService executorService = Executors.newFixedThreadPool(noOfThreads * 2);
+        String roleId = "testRoleId";
+        List<String> keys = getRandomKeys(noOfThreads);
+        for (String key : keys) {
+            RequestThread thread = new RequestThread(roleBasedAccessRateController, throttleContext, key, roleId);
+            executorService.submit(thread);
+        }
+        for (String key : keys) {
+            RequestThread thread = new RequestThread(roleBasedAccessRateController, throttleContext, key, roleId);
+            executorService.submit(thread);
+        }
+        executorService.awaitTermination(20, TimeUnit.SECONDS);
+        
+        //checks if any thread has reported an error
+        assertFalse(errorOccured);
+    }
+
+    private List<String> getRandomKeys(int noOfKeys) {
+        List<String> keys = new ArrayList<String>();
+        Random random = new Random();
+        for (int i = 0; i < noOfKeys; i++) {
+            keys.add(String.valueOf(random.nextLong()));
+        }
+        return keys;
+    }
+
+    private class RequestThread implements Runnable {
+        RoleBasedAccessRateController controller;
+        ThrottleContext context;
+        String key;
+        String roleId;
+
+        RequestThread(RoleBasedAccessRateController controller, ThrottleContext context, String key, String roleId) {
+            this.controller = controller;
+            this.context = context;
+            this.key = key;
+            this.roleId = roleId;
+        }
+
+        public void run() {
+            try {
+                this.controller.canAccess(this.context, this.key, this.roleId);
+            } catch (ThrottleException ex) {
+                System.out.println("ThrottleException occured while checking access");
+                ex.printStackTrace();
+                ThrottleFactoryTest.this.setErrorOccured(true);
+            } catch (Throwable throwable) {
+                System.out.println("Throwable occured while checking access");
+                throwable.printStackTrace();
+                ThrottleFactoryTest.this.setErrorOccured(true);
+            }
+        }
+    }
 
     private OMElement createOMElement(String xml) {
         try {
@@ -334,10 +405,13 @@ public class ThrottleFactoryTest extends TestCase {
                     .newInstance().createXMLStreamReader(new StringReader(xml));
             StAXOMBuilder builder = new StAXOMBuilder(reader);
             return builder.getDocumentElement();
-        }
-        catch (XMLStreamException e) {
+        } catch (XMLStreamException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private synchronized void setErrorOccured(boolean errorOccured) {
+        this.errorOccured = errorOccured;
     }
 }
 

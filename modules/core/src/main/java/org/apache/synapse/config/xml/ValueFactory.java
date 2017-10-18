@@ -79,7 +79,7 @@ public class ValueFactory {
                 key = new Value(attributeValue);
             }
         } else {
-            handleException("The 'key' attribute is required for the XSLT mediator");
+            handleException("The '" + name + "' attribute is required for the element '" + elem.getLocalName() + "'");
         }
         return key;
     }
@@ -120,7 +120,7 @@ public class ValueFactory {
                 key = new Value(textValue);
             }
         } else {
-            handleException("The 'key' attribute is required for the XSLT mediator");
+            handleException("Text value is required for the element '" + elem.getLocalName() + "'");
         }
         return key;
     }

@@ -154,6 +154,14 @@ public class PropertyMediator extends AbstractMediator {
                 Object headers = axis2MessageCtx.getProperty(
                         org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
+                /*
+                 * if null is passed as header value at AbstractHTTPSender in Axis2 when header
+                 * value is read causes a null-pointer issue
+                 */
+                if (resultValue == null) {
+                    resultValue = "";
+                }
+
                 if (headers != null && headers instanceof Map) {
                     Map headersMap = (Map) headers;
                     headersMap.put(name, resultValue);
@@ -340,7 +348,8 @@ public class PropertyMediator extends AbstractMediator {
         if (value != null) {
             return value;
         } else if (valueElement != null) {
-            return valueElement;
+            //Need to clone to prevent same reference sharing accross all requests
+            return valueElement.cloneOMElement();
         } else {
             if(expression != null) {
                 return convertValue(expression.stringValueOf(synCtx), type);

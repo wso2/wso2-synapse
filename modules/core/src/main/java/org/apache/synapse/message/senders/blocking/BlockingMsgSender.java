@@ -171,6 +171,10 @@ public class BlockingMsgSender {
                 axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
 		axisOutMsgCtx.setProperty(SynapseConstants.DISABLE_CHUNKING,
                 axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING));
+        //Can't refer to the Axis2 constant 'NO_DEFAULT_CONTENT_TYPE' defined in 1.6.1.wso2v23-SNAPSHOT until
+        //an API change is done.
+        axisOutMsgCtx.setProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE,
+                axisInMsgCtx.getProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE));
 		// Fill MessageContext
         BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
         if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
@@ -210,9 +214,11 @@ public class BlockingMsgSender {
             } else {
                 org.apache.axis2.context.MessageContext result =
                 sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
-                synapseInMsgCtx.setEnvelope(result.getEnvelope());
-                if (JsonUtil.hasAJsonPayload(result)) {
-                	JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                if(result.getEnvelope() != null) {
+                    synapseInMsgCtx.setEnvelope(result.getEnvelope());
+                    if (JsonUtil.hasAJsonPayload(result)) {
+                        JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                    }
                 }
                 final String statusCode =
                                           String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))

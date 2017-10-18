@@ -311,7 +311,8 @@ public class ServerHandler implements NHttpServerEventHandler {
                              + messageSizeSum + " bytes to prevent OOM.");
                     dropServerConnection(conn);
                     conn.getContext().setAttribute(NhttpConstants.CONNECTION_DROPPED, true);
-                    //stopped http chunk stream from here and mark producer complete
+                    //stopped http chunk stream from here and mark end of stream
+                    ((SharedInputBuffer)inBuf).close();
                 }
                 httpContext.setAttribute(NhttpConstants.MESSAGE_SIZE_VALIDATION_SUM, messageSizeSum);
             }
@@ -834,6 +835,7 @@ public class ServerHandler implements NHttpServerEventHandler {
 
             httpProcessor.process(response, httpContext);
 
+            conn.submitResponse(response);
             conn.close();
         } catch (Exception ex) {
             log.error(ex.getMessage(), ex);

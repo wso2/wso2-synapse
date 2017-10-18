@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
 
 
@@ -123,42 +122,46 @@ public class ServerWorker implements Runnable {
     }
 
     public void run() {
-        CustomLogSetter.getInstance().clearThreadLocalContent();
-        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
-        if (tenantInfoInitiator != null) {
-            tenantInfoInitiator.initTenantInfo();
-        }
-        request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME,
-                System.currentTimeMillis());
-        if (log.isDebugEnabled()) {
-            log.debug("Starting a new Server Worker instance");
-        }
-        String method = request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase():"";
+        try {
+            CustomLogSetter.getInstance().clearThreadLocalContent();
+            TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+            if (tenantInfoInitiator != null) {
+                tenantInfoInitiator.initTenantInfo();
+            }
+            request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
+            if (log.isDebugEnabled()) {
+                log.debug("Starting a new Server Worker instance");
+            }
+            String method =
+                    request.getRequest() != null ? request.getRequest().getRequestLine().getMethod().toUpperCase() : "";
 
-        processHttpRequestUri(msgContext, method);
+            processHttpRequestUri(msgContext, method);
 
-        //For requests to fetch wsdl, return the message flow without going through the normal flow
-        if (isRequestToFetchWSDL()) {
-            return;
+            //For requests to fetch wsdl, return the message flow without going through the normal flow
+            if (isRequestToFetchWSDL()) {
+                return;
+            }
+
+            //need special case to handle REST
+            boolean isRest = isRESTRequest(msgContext, method);
+
+            //should be process normally
+            if (!isRest) {
+                if (request.isEntityEnclosing()) {
+                    processEntityEnclosingRequest(msgContext, true);
+                } else {
+                    processNonEntityEnclosingRESTHandler(null, msgContext, true);
+                }
+            } else {
+                String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
+                SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
+                processNonEntityEnclosingRESTHandler(soapEnvelope, msgContext, true);
+            }
+
+            sendAck(msgContext);
+        } finally {
+            cleanup();
         }
-		
-		//need special case to handle REST
-		boolean isRest = isRESTRequest(msgContext, method);
-
-		//should be process normally
-		if (!isRest) {
-			if (request.isEntityEnclosing()) {
-				processEntityEnclosingRequest(msgContext, true);
-			} else {
-				processNonEntityEnclosingRESTHandler(null, msgContext, true);
-			}
-		}else {
-            String contentTypeHeader = request.getHeaders().get(HTTP.CONTENT_TYPE);
-            SOAPEnvelope soapEnvelope = this.handleRESTUrlPost(contentTypeHeader);
-            processNonEntityEnclosingRESTHandler(soapEnvelope,msgContext,true);
-        }
-
-        sendAck(msgContext);
     }
 
     private boolean isRequestToFetchWSDL() {
@@ -680,8 +683,8 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(restUrlPostfix));
         msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
 
-        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
-                                                                                             "OPTIONS".equals(method)) {
+        if (PassThroughConstants.HTTP_GET.equals(method) ||  PassThroughConstants.HTTP_HEAD.equals(method)||
+                PassThroughConstants.HTTP_OPTIONS.equals(method)) {
             HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
                     request.getVersion(), HttpStatus.SC_OK,
                     request.getConnection().getContext());
@@ -704,6 +707,14 @@ public class ServerWorker implements Runnable {
      */
     public SourceConfiguration getSourceConfiguration() {
         return sourceConfiguration;
+    }
+
+    /**
+     * Perform cleanup of ServerWorker
+     */
+    private void cleanup () {
+        //clean threadLocal variables
+        MessageContext.destroyCurrentMessageContext();
     }
 
 }

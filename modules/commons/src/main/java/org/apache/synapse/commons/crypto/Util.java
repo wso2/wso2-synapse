@@ -17,6 +17,7 @@
 */
 package org.apache.synapse.commons.crypto;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -33,22 +34,31 @@ public class Util {
     private static Log log = LogFactory.getLog(Util.class);
 
     /**
+     * <p>
      * Helper method to validate store password and key password
+     * </p>
+     * <p>
+     * <b>Note : </b> this method will validate whether both the private key and the identity store password is
+     * present, if it's not present the validation will fail.
+     * </p>
      *
-     * @param identityStorePass
-     * @param identityKeyPass
+     * @param identityStorePass password of the identity store
+     * @param identityKeyPass   identify store private key password
      * @return if valid true, false otherwise
      */
     public static boolean validatePasswords(String identityStorePass,
-                                      String identityKeyPass) {
+                                            String identityKeyPass) {
         boolean isValid = false;
-        if (identityStorePass != null && !"".equals(identityStorePass) &&
-            identityKeyPass != null && !"".equals(identityKeyPass)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Identity Store Password " +
-                          "and Identity Store private key Password cannot be found.");
-            }
+
+        if (identityStorePass != null && !StringUtils.EMPTY.equals(identityStorePass) &&
+                identityKeyPass != null && !StringUtils.EMPTY.equals(identityKeyPass)) {
             isValid = true;
+        } else {
+            //This fix is done in relation to the jira product-ei-543
+            //The severity of the log will be kept as debug, since the caller will indicate the error to the user
+            if (log.isDebugEnabled()) {
+                log.debug("Identity store password and/or identity store private key password cannot be found.");
+            }
         }
         return isValid;
     }

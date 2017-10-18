@@ -48,7 +48,10 @@ import java.util.regex.Pattern;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
-    private static final String WSTX_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)";
+    private static final String MSG_BUILD_FAILURE_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)|.*MalformedJsonException";
+
+    // Create a Pattern object
+    protected Pattern msgBuildFailureExpattern = Pattern.compile(MSG_BUILD_FAILURE_EXCEPTION_PATTERN);
 
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
@@ -101,27 +104,21 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
             }
         } catch (SynapseException synEx) {
-            // Create a Pattern object
-            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
-
             // Now create matcher object.
-            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
-            if (wstxExMatcher.find()) {
+            Matcher msgBuildFailureExMatcher = msgBuildFailureExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
+            if (msgBuildFailureExMatcher.find()) {
                 consumeInputOnOmException(synCtx);
             }
             throw synEx;
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
-            
-            // Create a Pattern object
-            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
 
             // Now create matcher object.
-            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(ex));
+            Matcher msgBuildFailureExMatcher = msgBuildFailureExpattern.matcher(ExceptionUtils.getStackTrace(ex));
             if (errorMsg == null) {
                 errorMsg = "Runtime error occurred while mediating the message";
             }
-            if (wstxExMatcher.find()) {
+            if (msgBuildFailureExMatcher.find()) {
                 consumeInputOnOmException(synCtx);
             }
             handleException(errorMsg, ex, synCtx);

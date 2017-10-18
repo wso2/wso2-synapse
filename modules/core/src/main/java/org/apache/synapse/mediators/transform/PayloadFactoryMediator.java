@@ -78,10 +78,12 @@ public class PayloadFactoryMediator extends AbstractMediator {
     private final static String ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\n";
     private final static String ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\r";
     private final static String ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES = "\\\\\\\\t";
+    public static final String QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON = "QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON";
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
     private Pattern ctxPattern = Pattern.compile("\\$(ctx.[^,\"'<>\n}\\]]*)");
+    private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
 
@@ -237,13 +239,22 @@ public class PayloadFactoryMediator extends AbstractMediator {
             if(mediaType.equals(JSON_TYPE) && inferReplacementType(replaceValue).equals(XML_TYPE)) {
                 // XML to JSON conversion here
                 try {
-                    replaceValue = "<jsonObject>" + replaceValue + "</jsonObject>";
-                    OMElement omXML = AXIOMUtil.stringToOM(replaceValue);
+                    String xmlReplaceValue = "<jsonObject>" + replaceValue + "</jsonObject>";
+                    OMElement omXML = AXIOMUtil.stringToOM(xmlReplaceValue);
                     replaceValue = JsonUtil.toJsonString(omXML).toString();
                 } catch (XMLStreamException e) {
                     handleException("Error parsing XML for JSON conversion, please check your property values return valid XML: ", synCtx);
                 } catch (AxisFault e) {
                     handleException("Error converting XML to JSON", synCtx);
+                } catch (OMException e) {
+                    //if the logic comes to this means, it was tried as a XML, which means it has
+                    // "<" as starting element and ">" as end element, so basically if the logic comes here, that means
+                    //value is a string value, that means No conversion required, as path evaluates to regular String.
+
+                    // This is to replace " with \" and \\ with \\\\
+                    //replacing other json special characters i.e \b, \f, \n \r, \t
+                    replaceValue = escapeSpecialChars(replaceValue);
+
                 }
             } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
                 // JSON to XML conversion here
@@ -314,6 +325,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
                         handleException("Error parsing XML for JSON conversion, please check your xPath expressions return valid XML: ", synCtx);
                     } catch (AxisFault e) {
                         handleException("Error converting XML to JSON", synCtx);
+                    } catch (OMException e) {
+                        //if the logic comes to this means, it was tried as a XML, which means it has
+                        // "<" as starting element and ">" as end element, so basically if the logic comes here, that means
+                        //value is a string value, that means No conversion required, as path evaluates to regular String.
+                        replacementValue = replacementEntry.getKey();
+
+                        // This is to replace " with \" and \\ with \\\\
+                        //replacing other json special characters i.e \b, \f, \n \r, \t
+                        replacementValue = escapeSpecialChars(replacementValue);
+
                     }
                 } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) {
                     // JSON to XML conversion here
@@ -341,14 +362,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     //replacing other json special characters i.e \b, \f, \n \r, \t
                     if (mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(STRING_TYPE) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
-                        replacementValue = replacementValue
-                                .replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
-                                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
-                                .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
-                                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
+                        replacementValue = escapeSpecialChars(replacementValue);
+                        // Check for following property which will force the string to include quotes
+                        Object force_string_quote = synCtx.getProperty(QUOTE_STRING_IN_PAYLOAD_FACTORY_JSON);
+                        // skip double quotes if replacement is boolean or null or valid json number
+                        if (force_string_quote != null && ((String) force_string_quote).equalsIgnoreCase("true")
+                                && !trimmedReplacementValue.equals("true") && !trimmedReplacementValue.equals("false")
+                                && !trimmedReplacementValue.equals("null")
+                                && !validJsonNumber.matcher(trimmedReplacementValue).matches()) {
+                            replacementValue = "\"" + replacementValue + "\"";
+                        }
                     }
                     else if ((mediaType.equals(JSON_TYPE) && inferReplacementType(replacementEntry).equals(JSON_TYPE)) &&
                             (!trimmedReplacementValue.startsWith("{") && !trimmedReplacementValue.startsWith("["))) {
@@ -362,6 +385,22 @@ public class PayloadFactoryMediator extends AbstractMediator {
             log.error("#replace. Mis-match detected between number of formatters and arguments", e);
         }
         matcher.appendTail(result);
+    }
+
+    /**
+     * Helper method to replace required char values with escape characters.
+     *
+     * @param replaceString
+     * @return replacedString
+     */
+    private String escapeSpecialChars(String replaceString) {
+        return replaceString.replaceAll(Matcher.quoteReplacement("\\\\"), ESCAPE_BACK_SLASH_WITH_SIXTEEN_BACK_SLASHES)
+                .replaceAll("\"", ESCAPE_DOUBLE_QUOTE_WITH_NINE_BACK_SLASHES)
+                .replaceAll("\b", ESCAPE_BACKSPACE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\f", ESCAPE_FORMFEED_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\n", ESCAPE_NEWLINE_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\r", ESCAPE_CRETURN_WITH_EIGHT_BACK_SLASHES)
+                .replaceAll("\t", ESCAPE_TAB_WITH_EIGHT_BACK_SLASHES);
     }
 
     /**
@@ -395,7 +434,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     private String inferReplacementType(String entry) {
-        if(isXML(entry, true)) { //default deepcheck enabled for replacements which are mentioned inside the format
+        if(isXML(entry)) {
             return XML_TYPE;
         } else if(isJson(entry)) {
             return JSON_TYPE;
@@ -484,7 +523,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
             ArgumentDetails details = new ArgumentDetails();
             if (arg.getValue() != null) {
                 value = arg.getValue();
-                details.setXml(isXML(value, arg.isDeepCheck()));
+                details.setXml(isXML(value));
                 if (!details.isXml()) {
                     value = StringEscapeUtils.escapeXml(value);
                 }
@@ -495,7 +534,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 if (value != null) {
                     // XML escape the result of an expression that produces a literal, if the target format
                     // of the payload is XML.
-                    details.setXml(isXML(value, arg.isDeepCheck()));
+                    details.setXml(isXML(value));
                     if (!details.isXml() && !arg.getExpression().getPathType().equals(SynapsePath.JSON_PATH)
                             && XML_TYPE.equals(getType())) {
                         value = StringEscapeUtils.escapeXml(value);
@@ -511,11 +550,9 @@ public class PayloadFactoryMediator extends AbstractMediator {
             valueMap = new HashMap<String, ArgumentDetails>();
             if (null != arg.getExpression()) {
                 details.setPathType(arg.getExpression().getPathType());
-                details.setDeepCheck(arg.isDeepCheck());
                 valueMap.put(value, details);
             } else {
                 details.setPathType(SynapsePath.X_PATH);
-                details.setDeepCheck(arg.isDeepCheck());
                 valueMap.put(value, details);
             }
             argValues[i] = valueMap;
@@ -543,20 +580,16 @@ public class PayloadFactoryMediator extends AbstractMediator {
      * Helper function that returns true if value passed is of XML Type.
      *
      * @param value
-     * @param deepCheck
      * @return
      */
-    private boolean isXML(String value, boolean deepCheck) {
+    private boolean isXML(String value) {
         try {
             AXIOMUtil.stringToOM(value);
+            value = value.trim();
             if (!value.endsWith(">") || value.length() < 4) {
                 return false;
             }
-            if (!deepCheck) {
-                return true;
-            } else {
-                return isWellFormedXMLDeepCheck(value);
-            }
+            return true;
         } catch (XMLStreamException ignore) {
             // means not a xml
             return false;
@@ -564,29 +597,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
             // means not a xml
             return false;
         }
-    }
-
-    /**
-     * Helper method to test whether a given string is an xml or not. This is secured against XXE entity attacks as well
-     *
-     * @param value
-     * @return
-     */
-    private boolean isWellFormedXMLDeepCheck(String value) {
-        try {
-            XMLReader parser = XMLReaderFactory.createXMLReader();
-            parser.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            parser.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            parser.setErrorHandler(null);
-            InputSource source = new InputSource(new ByteArrayInputStream(value.getBytes()));
-            parser.parse(source);
-        } catch (SAXException e) {
-            return  false;
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
     }
 
     public String getType() {

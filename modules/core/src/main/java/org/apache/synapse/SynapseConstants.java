@@ -360,6 +360,7 @@ public final class SynapseConstants {
     public static final String BLOCKING_SENDER_PRESERVE_REQ_HEADERS =
             "BLOCKING_SENDER_PRESERVE_REQ_HEADERS";
     public static final String DISABLE_CHUNKING = "DISABLE_CHUNKING";
+    public static final String NO_DEFAULT_CONTENT_TYPE = "NoDefaultContentType";
 
     /** Synapse server instance name */
     public static final String SERVER_NAME = "serverName";
@@ -502,6 +503,9 @@ public final class SynapseConstants {
 
     //Streaming Json Path
     public static final String STREAMING_JSONPATH_PROCESSING = "synapse.streaming.jsonpath.enabled";
+
+    //Enable message building when doing failover
+    public static final String BUILD_MESSAGE_ON_FAILOVER = "build.message.on.failover.enable";
 
     /**
      * Message content property of incoming transport-in name

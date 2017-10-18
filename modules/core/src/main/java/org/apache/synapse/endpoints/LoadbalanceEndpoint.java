@@ -33,13 +33,16 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.endpoints.algorithms.AlgorithmContext;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -80,6 +83,26 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
      */
     private List<Member> inactiveMembers = null;
 
+    /**
+     * Variable to indicate that LoadbalanceEndpoint is completely initialized
+     * NOTE: This is added (even there is super.initialized exists) since in super.init() it set as true (which indicate
+     * other threads which refer this LoadbalanceEndpoint as initialized) even though LoadbalanceEndpoint initialization
+     * not yet completed. To avoid that
+     */
+    private boolean loadBalanceEPInitialized = false;
+
+    /** check message need to be built before sending */
+    private boolean buildMessage = false;
+
+    /**
+     * Check if buildMessage attribute explicitly mentioned in config
+     */
+    private boolean isBuildMessageAttAvailable = false;
+
+    /**
+     * Overwrite the global synapse property build.message.on.failover.enable. Default false.
+     */
+    private boolean buildMessageAtt = false;
 
     @Override
     public void init(SynapseEnvironment synapseEnvironment) {
@@ -97,6 +120,9 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 ManagedLifecycle lifecycle = (ManagedLifecycle) algorithm;
                 lifecycle.init(synapseEnvironment);
             }
+            loadBalanceEPInitialized = true;
+            buildMessage = Boolean.parseBoolean(
+                    SynapsePropertiesLoader.getPropertyValue(SynapseConstants.BUILD_MESSAGE_ON_FAILOVER, "false"));
         }
     }
 
@@ -110,6 +136,17 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
             ManagedLifecycle lifecycle = (ManagedLifecycle) algorithm;
             lifecycle.destroy();
         }
+    }
+
+    /**
+     * NOTE: Override org.apache.synapse.endpoints.AbstractEndpoint#isInitialized() to ensure return true only after LB
+     * Endpoint get fully initialized. This is done to avoid super.isInitialized return true while LoadbalanceEndpoint
+     * initializing during request burst *at server startup*
+     * @return
+     */
+    @Override
+    public boolean isInitialized() {
+        return loadBalanceEPInitialized;
     }
 
     public void send(MessageContext synCtx) {
@@ -159,7 +196,17 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 // We have to build the envelop when we are supporting failover, as we
                 // may have to retry this message for failover support
                 if (failover) {
-                    synCtx.getEnvelope().build();
+                    //preserving the payload to send next endpoint if needed
+                    // If buildMessage attribute available in LB config it is used, else global property is considered
+                    if (isBuildMessageAttAvailable) {
+                        if (buildMessageAtt) {
+                            buildMessage(synCtx);
+                        }
+                    } else if (buildMessage) {
+                        buildMessage(synCtx);
+                    }
+
+                    synCtx.getEnvelope().buildWithAttachments();
                     //If the endpoint failed during the sending, we need to keep the original envelope and reuse that for other endpoints
                     if (Boolean.TRUE.equals(((Axis2MessageContext) synCtx).getAxis2MessageContext().getProperty(
                             PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
@@ -318,6 +365,10 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
         return failover;
     }
 
+    public boolean isBuildMessageAtt() {
+        return buildMessageAtt;
+    }
+
     public void setFailover(boolean failover) {
         this.failover = failover;
     }
@@ -442,6 +493,27 @@ public class LoadbalanceEndpoint extends AbstractEndpoint {
                 }
             }
             return false;
+        }
+    }
+
+    public void setBuildMessageAtt(boolean build) {
+        this.buildMessageAtt = build;
+    }
+
+    public void setBuildMessageAttAvailable(boolean available) {
+        this.isBuildMessageAttAvailable = available;
+    }
+
+    /**
+     * Build the message
+     * @param synCtx Synapse Context
+     */
+    private void buildMessage(MessageContext synCtx) {
+        try {
+            RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext());
+        } catch (IOException | XMLStreamException ex) {
+            handleException("Error while building the message", ex);
+
         }
     }
 }

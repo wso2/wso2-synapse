@@ -238,6 +238,8 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
     private boolean isEdited;
 
+    private AxisService axisService;
+
     /**
      * Constructor
      *
@@ -259,7 +261,6 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public AxisService buildAxisService(SynapseConfiguration synCfg, AxisConfiguration axisCfg) {
 
         auditInfo("Building Axis service for Proxy service : " + name);
-        AxisService proxyService = null;
 
         if (pinnedServers != null && !pinnedServers.isEmpty()) {
 
@@ -435,13 +436,13 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             // this is for POX... create a dummy service and an operation for which
             // our SynapseDispatcher will properly dispatch to
             if (trace()) trace.info("Did not find a WSDL. Assuming a POX or Legacy service");
-            proxyService = new AxisService();
+            axisService = new AxisService();
             AxisOperation mediateOperation = new InOutAxisOperation(
                     SynapseConstants.SYNAPSE_OPERATION_NAME);
             // Set the names of the two messages so that Axis2 is able to produce a WSDL (see SYNAPSE-366):
             mediateOperation.getMessage(WSDLConstants.MESSAGE_LABEL_IN_VALUE).setName("in");
             mediateOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE).setName("out");
-            proxyService.addOperation(mediateOperation);
+            axisService.addOperation(mediateOperation);
         }
 
         // if a WSDL was found
@@ -534,13 +535,13 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                                 trace.trace("WSDL : " + wsdlElement.toString());
                             }
                         }
-                        proxyService = wsdlToAxisServiceBuilder.populateService();
+                        axisService = wsdlToAxisServiceBuilder.populateService();
 
                         // this is to clear the bindings and ports already in the WSDL so that the
                         // service will generate the bindings on calling the printWSDL otherwise
                         // the WSDL which will be shown is same as the original WSDL except for the
                         // service name
-                        proxyService.getEndpoints().clear();
+                        axisService.getEndpoints().clear();
 
                     } else {
                         handleException("Unknown WSDL format.. not WSDL 1.1 or WSDL 2.0");
@@ -559,16 +560,16 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
         // Set the name and description. Currently Axis2 uses the name as the
         // default Service destination
-        if (proxyService == null) {
+        if (axisService == null) {
             throw new SynapseException("Could not create a proxy service");
         }
-        proxyService.setName(name);
+        axisService.setName(name);
         if (description != null) {
-            proxyService.setDocumentation(description);
+            axisService.setDocumentation(description);
         }
         // Setting file path for axis2 service
         if (filePath != null) {
-            proxyService.setFileName(filePath);
+            axisService.setFileName(filePath);
         }
         // process transports and expose over requested transports. If none
         // is specified, default to all transports using service name as
@@ -577,7 +578,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             // default to all transports using service name as destination
         } else {
             if (trace()) trace.info("Exposing transports : " + transports);
-            proxyService.setExposedTransports(transports);
+            axisService.setExposedTransports(transports);
         }
 
         // process parameters
@@ -593,23 +594,23 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             p.setValue(value);
 
             try {
-                proxyService.addParameter(p);
+                axisService.addParameter(p);
             } catch (AxisFault af) {
                 handleException("Error setting parameter : " + name + "" +
                     "to proxy service as a Parameter", af);
             }
         }
 
-        if (JavaUtils.isTrueExplicitly(proxyService.getParameterValue(ABSOLUTE_SCHEMA_URL_PARAM))) {
-            proxyService.setCustomSchemaNamePrefix("");
+        if (JavaUtils.isTrueExplicitly(axisService.getParameterValue(ABSOLUTE_SCHEMA_URL_PARAM))) {
+            axisService.setCustomSchemaNamePrefix("");
         }
-        if (JavaUtils.isTrueExplicitly(proxyService.getParameterValue(ABSOLUTE_PROXY_SCHEMA_URL_PARAM))) {
-            proxyService.setCustomSchemaNamePrefix("fullschemaurl");
+        if (JavaUtils.isTrueExplicitly(axisService.getParameterValue(ABSOLUTE_PROXY_SCHEMA_URL_PARAM))) {
+            axisService.setCustomSchemaNamePrefix("fullschemaurl");
         }
 
-        if (JavaUtils.isTrueExplicitly(proxyService.getParameterValue("disableOperationValidation"))){
+        if (JavaUtils.isTrueExplicitly(axisService.getParameterValue("disableOperationValidation"))){
             try {
-                AxisOperation defaultOp = processOperationValidation(proxyService);
+                AxisOperation defaultOp = processOperationValidation(axisService);
                 //proxyServiceGroup.setParent(axisCfg);
             } catch (AxisFault axisFault) {
                 // ignore
@@ -635,11 +636,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
                 if (pi.isServicePolicy()) {
 
-                    proxyService.getPolicySubject().attachPolicy(policy);
+                    axisService.getPolicySubject().attachPolicy(policy);
 
                 } else if (pi.isOperationPolicy()) {
 
-                    AxisOperation op = proxyService.getOperation(pi.getOperation());
+                    AxisOperation op = axisService.getOperation(pi.getOperation());
                     if (op != null) {
                         op.getPolicySubject().attachPolicy(policy);
 
@@ -652,7 +653,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
                     if (pi.getOperation() != null) {
 
-                        AxisOperation op = proxyService.getOperation(pi.getOperation());
+                        AxisOperation op = axisService.getOperation(pi.getOperation());
                         if (op != null) {
                             op.getMessage(pi.getMessageLable()).getPolicySubject().attachPolicy(policy);
                         } else {
@@ -662,7 +663,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
                     } else {
                         // operation is not specified and hence apply to all the applicable messages
-                        for (Iterator itr = proxyService.getOperations(); itr.hasNext();) {
+                        for (Iterator itr = axisService.getOperations(); itr.hasNext();) {
                             Object obj = itr.next();
                             if (obj instanceof AxisOperation) {
                                 // check whether the policy is applicable
@@ -689,18 +690,18 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         msgRcvr.setName(name);
         msgRcvr.setProxy(this);
 
-        Iterator iter = proxyService.getOperations();
+        Iterator iter = axisService.getOperations();
         while (iter.hasNext()) {
             AxisOperation op = (AxisOperation) iter.next();
             op.setMessageReceiver(msgRcvr);
         }
 
         try {
-            proxyService.addParameter(
+            axisService.addParameter(
                     SynapseConstants.SERVICE_TYPE_PARAM_NAME, SynapseConstants.PROXY_SERVICE_TYPE);
             if (serviceGroup == null) {
                 auditInfo("Adding service " + name + " to the Axis2 configuration");
-                axisCfg.addService(proxyService);
+                axisCfg.addService(axisService);
             } else {
                 auditInfo("Adding service " + name + " to the service group " + serviceGroup);
                 if (axisCfg.getServiceGroup(serviceGroup) == null) {
@@ -709,21 +710,21 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                     proxyServiceGroup.setServiceGroupName(serviceGroup);
                     proxyServiceGroup.setParent(axisCfg);
                     // Add  the service to the new group and add the group the AxisConfiguration
-                    proxyServiceGroup.addService(proxyService);
+                    proxyServiceGroup.addService(axisService);
                     axisCfg.addServiceGroup(proxyServiceGroup);
                 } else {
                     // Simply add the service to the existing group
-                    proxyService.setParent(axisCfg.getServiceGroup(serviceGroup));
-                    axisCfg.addServiceToExistingServiceGroup(proxyService, serviceGroup);
+                    axisService.setParent(axisCfg.getServiceGroup(serviceGroup));
+                    axisCfg.addServiceToExistingServiceGroup(axisService, serviceGroup);
                 }
             }
             this.setRunning(true);
         } catch (AxisFault axisFault) {
             try {
-                if (axisCfg.getService(proxyService.getName()) != null) {
+                if (axisCfg.getService(axisService.getName()) != null) {
                     if (trace()) trace.info("Removing service " + name + " due to error : "
                         + axisFault.getMessage());
-                    axisCfg.removeService(proxyService.getName());
+                    axisCfg.removeService(axisService.getName());
                 }
             } catch (AxisFault ignore) {}
             handleException("Error adding Proxy service to the Axis2 engine", axisFault);
@@ -733,7 +734,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         if (wsAddrEnabled) {
             auditInfo("WS-Addressing is enabled for service : " + name);
             try {
-                proxyService.engageModule(axisCfg.getModule(
+                axisService.engageModule(axisCfg.getModule(
                     SynapseConstants.ADDRESSING_MODULE_NAME), axisCfg);
             } catch (AxisFault axisFault) {
                 handleException("Error loading WS Addressing module on proxy service : " + name, axisFault);
@@ -745,7 +746,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         if (wsSecEnabled && !isNoSecPolicy) {
             auditInfo("WS-Security is enabled for service : " + name);
             try {
-                proxyService.engageModule(axisCfg.getModule(
+                axisService.engageModule(axisCfg.getModule(
                     SynapseConstants.SECURITY_MODULE_NAME), axisCfg);
                 secModuleEngaged = true;
             } catch (AxisFault axisFault) {
@@ -768,7 +769,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
                     try {
                         AxisModule axisModule = axisCfg.getModule(moduleName);
                         if (axisModule != null) {
-                            proxyService.engageModule(axisModule, axisCfg);
+                            axisService.engageModule(axisModule, axisCfg);
                             moduleEngaged = true;
                         }
                     } catch (AxisFault axisFault) {
@@ -780,7 +781,11 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         }
 
         auditInfo("Successfully created the Axis2 service for Proxy service : " + name);
-        return proxyService;
+        return axisService;
+    }
+
+    public AxisService getAxisService() {
+        return axisService;
     }
 
     private void setUserDefinedResourceResolvers(SynapseConfiguration synCfg,

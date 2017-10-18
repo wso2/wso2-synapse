@@ -31,7 +31,7 @@ import javax.script.ScriptException;
 import javax.xml.stream.XMLStreamException;
 
 /**
- * This class will provide the operation to getPayloadXML and setPayload of ScriptMessageContext to convert
+ * This class will provide the operation to getPayloadXML and setPayload of CommonScriptMessageContext to convert
  * between XML and ScriptXML object
  * since there is an api change in rhino17,This class is provided instead of getting Helper class by
  * XMLHelper.getArgHelper(engine) in bsf

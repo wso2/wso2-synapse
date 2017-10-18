@@ -36,6 +36,7 @@ public class MockFileSystem extends AbstractFileSystem implements FileSystem {
 
     protected FileObject createFile(AbstractFileName name) throws FileSystemException {
         MockFile file =  new MockFile(name, this);
+        MockFileHolder.getInstance().addFile(name.getURI().split("\\?")[0], file);
         return file;
     }
 

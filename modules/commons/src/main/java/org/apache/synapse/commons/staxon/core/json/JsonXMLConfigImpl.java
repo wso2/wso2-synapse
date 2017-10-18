@@ -37,6 +37,7 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
     private String customRegex =JsonXMLConfig.DEFAULT.getCustomRegex();
     private String customReplaceRegex =JsonXMLConfig.DEFAULT.getCustomReplaceRegex();
     private String customReplaceSequence =JsonXMLConfig.DEFAULT.getCustomReplaceSequence();
+    private boolean readWriteXmlNil = JsonXMLConfig.DEFAULT.isReadWriteXmlNil();
 
     @Override
     protected JsonXMLConfigImpl clone() {
@@ -144,6 +145,15 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
 
     public void setCustomReplaceSequence(String customReplaceSequence) {
         this.customReplaceSequence = customReplaceSequence;
+    }
+
+    public void setReadWriteXmlNil(boolean readWriteXmlNil) {
+        this.readWriteXmlNil = readWriteXmlNil;
+    }
+
+    @Override
+    public boolean isReadWriteXmlNil() {
+        return readWriteXmlNil;
     }
 
 }
