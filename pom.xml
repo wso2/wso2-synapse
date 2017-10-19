@@ -976,6 +976,31 @@
               <groupId>org.apache.activemq</groupId>
               <artifactId>activemq-core</artifactId>
               <version>${activemq.version}</version>
+          </dependency>
+          <!--Mockito Dependency-->
+          <dependency>
+              <groupId>org.powermock</groupId>
+              <artifactId>powermock-module-testng</artifactId>
+              <version>${powermock.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.powermock</groupId>
+              <artifactId>powermock-api-mockito2</artifactId>
+              <version>${powermock.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.powermock</groupId>
+              <artifactId>powermock-module-junit4</artifactId>
+              <version>${powermock.version}</version>
+              <scope>test</scope>
+          </dependency>
+          <dependency>
+              <groupId>org.jacoco</groupId>
+              <artifactId>org.jacoco.agent</artifactId>
+              <classifier>runtime</classifier>
+              <version>${jacoco.agent.version}</version>
               <scope>test</scope>
           </dependency>
       </dependencies>
@@ -1043,8 +1068,6 @@
       <maven.resources.plugin.version>2.2</maven.resources.plugin.version>
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.2</maven.surefire.plugin.version>
-      <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
-      <jacoco.version>0.7.9</jacoco.version>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
       <maven.bundle.plugin.version>1.4.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
@@ -1158,6 +1181,11 @@
       <!-- The Java version used to execute maven-antrun-plugin in the integration module.
            TODO: Find a way to avoid hardcording this.-->
       <java.version>1.8</java.version>
+      <maven.jacoco.plugin.version>0.7.2.201409121644</maven.jacoco.plugin.version>
+      <jacoco.agent.version>0.7.2.201409121644</jacoco.agent.version>
+      <jacoco.ant.version>0.7.2.201409121644</jacoco.ant.version>
+      <powermock.version>1.7.1</powermock.version>
+
    </properties>
    <developers>
       <!-- If you are a committer and your name is not listed here, please include/edit -->
