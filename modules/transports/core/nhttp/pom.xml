@@ -97,32 +97,41 @@
                             <name>net.sourceforge.cobertura.datafile</name>
                             <value>target/cobertura.ser</value>
                         </property>
+                        <property>
+                            <name>jacoco-agent.destfile</name>
+                            <value>
+                                target/coverage-reports/jacoco-unit-nhttp.exec
+                            </value>
+                        </property>
                     </systemProperties>
-                    <argLine>${argLine} -javaagent:target/lib/aspectjweaver.jar -Xms64m -Xmx128m</argLine>
+                    <argLine>-javaagent:target/lib/aspectjweaver.jar -Xms64m -Xmx128m</argLine>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <configuration>
-                    <destFile>${basedir}/target/coverage-reports/jacoco-unit-nhttp.exec</destFile>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>jacoco-initialize</id>
+                        <id>default-instrument</id>
                         <goals>
-                            <goal>prepare-agent</goal>
+                            <goal>instrument</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>jacoco-site</id>
-                        <phase>test</phase>
+                        <id>default-restore-instrumented-classes</id>
+                        <goals>
+                            <goal>restore-instrumented-classes</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <phase>prepare-package</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                         <configuration>
-                            <dataFile>${basedir}/target/coverage-reports/jacoco-unit-nhttp.exec</dataFile>
-                            <outputDirectory>${basedir}/target/coverage-reports/site</outputDirectory>
+                            <dataFile>target/coverage-reports/jacoco-unit-nhttp.exec</dataFile>
+                            <outputDirectory>target/coverage-reports/site</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -191,6 +200,12 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.jacoco</groupId>
+            <artifactId>org.jacoco.agent</artifactId>
+            <classifier>runtime</classifier>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
