@@ -1056,6 +1056,7 @@
       <maven.resources.plugin.version>2.2</maven.resources.plugin.version>
       <maven.site.plugin.version>2.0-beta-6</maven.site.plugin.version>
       <maven.surefire.plugin.version>2.2</maven.surefire.plugin.version>
+      <maven.surefire.plugin.version.2.12.4>2.12.4</maven.surefire.plugin.version.2.12.4>
       <maven.assembly.plugin.version>2.2-beta-2</maven.assembly.plugin.version>
       <maven.bundle.plugin.version>1.4.0</maven.bundle.plugin.version>
       <maven.dependency.plugin.version>2.0</maven.dependency.plugin.version>
