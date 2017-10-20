@@ -169,12 +169,6 @@
                 <artifactId>maven-site-plugin</artifactId>
                 <version>${maven.site.plugin.version}</version>
              </plugin>
-
-             <plugin>
-                 <groupId>org.apache.maven.plugins</groupId>
-                 <artifactId>maven-surefire-plugin</artifactId>
-                 <version>${maven.surefire.plugin.version}</version>
-             </plugin>
              <plugin>
                  <groupId>org.apache.maven.plugins</groupId>
                  <artifactId>maven-assembly-plugin</artifactId>
@@ -246,7 +240,7 @@
                  <artifactId>maven-surefire-plugin</artifactId>
                  <version>${maven.surefire.plugin.version}</version>
                  <configuration>
-                     <!--<argLine>${argLine} -Xms128m -Xmx256m</argLine>-->
+                     <argLine>-Xms128m -Xmx256m</argLine>
                  </configuration>
              </plugin>
              <plugin>
