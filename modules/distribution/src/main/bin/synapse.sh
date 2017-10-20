@@ -139,6 +139,10 @@ if [ "$1" = "-xdebug" ]; then
     SYNAPSE_XML=$SYNAPSE_HOME/repository/conf/sample/synapse_sample_$2.xml
     shift 2 # -sample and sample number
 
+  elif [ "$1" = "-synapseConfig" ]; then
+    SYNAPSE_XML=$2
+    shift 2 # -synapseConfig and file path 
+
   elif [ "$1" = "-serverName" ]; then
     SERVER_NAME=$2
     shift 2 # -serverName and actual name
