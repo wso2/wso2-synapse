@@ -19,11 +19,14 @@
 package org.apache.synapse.commons.json;
 
 import junit.framework.TestCase;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.context.MessageContext;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -266,6 +269,29 @@ public class JsonFormatterTest extends TestCase {
 
     public void testCase12() {
         runTest(xmlInput_10, jsonOut_10, null);
+    }
+
+    public void testGetBytesXML() throws AxisFault, XMLStreamException {
+        JsonFormatter formatter = new JsonFormatter();
+        MessageContext messageContext = Util.newMessageContext("<name>WSO2</name>");
+        byte[] bytes = formatter.getBytes(messageContext, null);
+        assertEquals("Invalid content received", "{\"name\":\"WSO2\"}", new String(bytes));
+    }
+
+    public void testGetBytesJson() throws AxisFault {
+        JsonFormatter formatter = new JsonFormatter();
+        MessageContext messageContext = Util.newMessageContext();
+        messageContext.setProperty("JSON_STRING", "{\"name\":\"WSO2\"}");
+        byte[] bytes = formatter.getBytes(messageContext, null);
+        assertEquals("Invalid content received", "{\"name\":\"WSO2\"}", new String(bytes));
+    }
+
+    public void testWriteTo() throws AxisFault, XMLStreamException {
+        JsonFormatter formatter = new JsonFormatter();
+        MessageContext messageContext = Util.newMessageContext("<jsonArray><jsonElement>10</jsonElement><jsonElement>20</jsonElement></jsonArray>");
+        OutputStream out = new ByteArrayOutputStream();
+        formatter.writeTo(messageContext, null, out, true);
+        assertEquals("Formatter output is invalid", "[10,20]", out.toString());
     }
 
     private void runTest(String xmlInput, String jsonOut, InputStream inputStream) {
