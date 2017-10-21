@@ -139,10 +139,6 @@ if [ "$1" = "-xdebug" ]; then
     SYNAPSE_XML=$SYNAPSE_HOME/repository/conf/sample/synapse_sample_$2.xml
     shift 2 # -sample and sample number
 
-  elif [ "$1" = "-synapseConfig" ]; then
-    SYNAPSE_XML=$2
-    shift 2 # -synapseConfig and file path 
-
   elif [ "$1" = "-serverName" ]; then
     SERVER_NAME=$2
     shift 2 # -serverName and actual name
@@ -178,6 +174,8 @@ $JAVA_HOME/bin/java -server -Xms128M -Xmx128M \
     $TEMP_PROPS \
     -Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XMLGrammarCachingConfiguration \
     -Djava.endorsed.dirs=$SYNAPSE_ENDORSED \
+    -Dconf.location=$SYNAPSE_HOME/repository/conf \
+    -Dconf.location=$SYNAPSE_HOME/repository/conf \
     -Djava.io.tmpdir=$SYNAPSE_HOME/work/temp/synapse \
     -classpath $SYNAPSE_CLASSPATH \
     org.apache.synapse.SynapseServer \

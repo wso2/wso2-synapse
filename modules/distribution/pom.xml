@@ -80,6 +80,11 @@
             <type>mar</type>
         </dependency>
         <dependency>
+            <groupId>org.apache.woden</groupId>
+            <artifactId>woden-core</artifactId>
+            <version>${woden.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.axis2</groupId>
             <artifactId>addressing</artifactId>
             <type>mar</type>
