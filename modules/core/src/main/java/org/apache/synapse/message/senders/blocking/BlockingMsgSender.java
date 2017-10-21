@@ -20,7 +20,6 @@ package org.apache.synapse.message.senders.blocking;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
-import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.client.OperationClient;
 import org.apache.axis2.client.Options;
 import org.apache.axis2.context.ConfigurationContext;
@@ -40,13 +39,12 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
-import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.EndpointDefinition;
-import org.apache.synapse.endpoints.IndirectEndpoint;
-import org.apache.synapse.endpoints.TemplateEndpoint;
 import org.apache.synapse.util.MessageHelper;
 
 import javax.xml.namespace.QName;
@@ -99,24 +97,11 @@ public class BlockingMsgSender {
         }
     }
 
-    public MessageContext send(Endpoint endpoint, MessageContext synapseInMsgCtx)
-            throws Exception {
+    public void send(EndpointDefinition endpointDefinition, MessageContext synapseInMsgCtx,
+            org.apache.axis2.context.MessageContext axisOutMsgCtx) throws AxisFault {
 
         if (log.isDebugEnabled()) {
             log.debug("Start Sending the Message ");
-        }
-
-        if (endpoint instanceof  IndirectEndpoint) {
-            String endpointKey = ((IndirectEndpoint) endpoint).getKey();
-            endpoint = synapseInMsgCtx.getEndpoint(endpointKey);
-        }
-        if (endpoint instanceof TemplateEndpoint) {
-            endpoint = ((TemplateEndpoint) endpoint).getRealEndpoint();
-        }
-
-        AbstractEndpoint abstractEndpoint = (AbstractEndpoint) endpoint;
-        if (!abstractEndpoint.isLeafEndpoint()) {
-            handleException("Endpoint Type not supported");
         }
 
         // clear the message context properties related to endpoint in last service invocation
@@ -125,13 +110,8 @@ public class BlockingMsgSender {
             keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
         }
 
-        abstractEndpoint.executeEpTypeSpecificFunctions(synapseInMsgCtx);
-        EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
-
         org.apache.axis2.context.MessageContext axisInMsgCtx =
                 ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext();
-        org.apache.axis2.context.MessageContext axisOutMsgCtx =
-                new org.apache.axis2.context.MessageContext();
 
         String endpointReferenceValue = null;
         if (endpointDefinition.getAddress() != null) {
@@ -141,8 +121,6 @@ public class BlockingMsgSender {
         } else {
             handleException("Service url, Endpoint or 'To' header is required");
         }
-        EndpointReference epr = new EndpointReference(endpointReferenceValue);
-        axisOutMsgCtx.setTo(epr);
 
         AxisService anonymousService;
         if (endpointReferenceValue != null &&
@@ -175,9 +153,7 @@ public class BlockingMsgSender {
         //an API change is done.
         axisOutMsgCtx.setProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE,
                 axisInMsgCtx.getProperty(SynapseConstants.NO_DEFAULT_CONTENT_TYPE));
-		// Fill MessageContext
-        BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
-        if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
+		if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
             JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
         }
 
@@ -186,7 +162,6 @@ public class BlockingMsgSender {
             clientOptions = new Options();
         } else {
             clientOptions = axisInMsgCtx.getOptions();
-            clientOptions.setTo(epr);
         }
         // Fill Client options
         BlockingMsgSenderUtils.fillClientOptions(endpointDefinition, clientOptions, synapseInMsgCtx);
@@ -202,7 +177,7 @@ public class BlockingMsgSender {
         boolean isOutOnly = isOutOnly(synapseInMsgCtx, axisOutMsgCtx);
         try {
             if (isOutOnly) {
-                sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
+                sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx);
                 final String httpStatusCode =
                                            String.valueOf(axisOutMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
                                                                   .trim();
@@ -211,6 +186,7 @@ public class BlockingMsgSender {
                  * response Status code so that others can make use of it.
                  */
                 axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, httpStatusCode);
+                synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
             } else {
                 org.apache.axis2.context.MessageContext result =
                 sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
@@ -236,7 +212,6 @@ public class BlockingMsgSender {
                 }
 
                 synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
-                return synapseInMsgCtx;
             }
         } catch (Exception ex) {
             /*
@@ -244,13 +219,12 @@ public class BlockingMsgSender {
              */
             final String errorStatusCode = extractStatusCodeFromException(ex);
             axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, errorStatusCode);
-            if (!isOutOnly) {
-                //axisOutMsgCtx.getTransportOut().getSender().cleanup(axisOutMsgCtx);
-                synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "true");
-                synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
-                if (ex instanceof AxisFault) {
-                    AxisFault fault = (AxisFault) ex;
-                    setErrorDetails(synapseInMsgCtx, fault);
+            synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "true");
+            synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
+            if (ex instanceof AxisFault) {
+                AxisFault fault = (AxisFault) ex;
+                setErrorDetails(synapseInMsgCtx, fault);
+                if (!isOutOnly) {
                     org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
                     if (faultMC != null) {
                         Object statusCode = faultMC.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
@@ -259,23 +233,32 @@ public class BlockingMsgSender {
                         synapseInMsgCtx.setEnvelope(faultMC.getEnvelope());
                     }
                 }
-                return synapseInMsgCtx;
-            } else {
-                if (ex instanceof AxisFault) {
-                    AxisFault fault = (AxisFault) ex;
-                    setErrorDetails(synapseInMsgCtx, fault);
-                }
+
             }
-            handleException("Error sending Message to url : " +
-                            ((AbstractEndpoint) endpoint).getDefinition().getAddress(), ex);
         }
-        return null;
+        //Check fault occure when send the request to endpoint
+        if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+            // handle the fault
+            synapseInMsgCtx.getFaultStack().pop().handleFault(synapseInMsgCtx,
+                    (Exception) synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+        } else {
+            // if a message was successfully processed to give it a chance to clear up or reset its state to active
+            ((AbstractEndpoint) synapseInMsgCtx.getFaultStack().pop()).onSuccess();
+            //Enpoints in the faultStack will interrupt the next invocation when handle fault,
+            // so remove it from message context
+            synapseInMsgCtx.getFaultStack().removeAllElements();
+            //but the Mediation for the call mediator is not completed in this stage, so need to add the MediatorFaultHandler
+            SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager
+                    .peakContinuationStateStack(synapseInMsgCtx);
+            if (seqContinuationState != null) {
+                ContinuationStackManager.pushFaultHandler(synapseInMsgCtx, seqContinuationState);
+            }
+        }
     }
 
     private void sendRobust(org.apache.axis2.context.MessageContext axisOutMsgCtx,
                             Options clientOptions, AxisService anonymousService,
-                            ServiceContext serviceCtx, MessageContext synapseInMsgCtx) throws AxisFault {
-        this.invokeHandlers(synapseInMsgCtx, false);
+                            ServiceContext serviceCtx) throws AxisFault {
         AxisOperation axisAnonymousOperation =
                 anonymousService.getOperation(new QName(AnonymousServiceFactory.OUT_ONLY_OPERATION));
         OperationClient operationClient =
@@ -302,7 +285,6 @@ public class BlockingMsgSender {
         operationClient.addMessageContext(axisOutMsgCtx);
         axisOutMsgCtx.setAxisMessage(
                 axisAnonymousOperation.getMessage(WSDLConstants.MESSAGE_LABEL_OUT_VALUE));
-        this.invokeHandlers(synapseInMsgCtx, false);
         operationClient.execute(true);
         org.apache.axis2.context.MessageContext resultMsgCtx =
                 operationClient.getMessageContext(WSDLConstants.MESSAGE_LABEL_IN_VALUE);
@@ -394,13 +376,6 @@ public class BlockingMsgSender {
                     SynapseHandler handler = iterator.next();
                     if (!handler.handleResponseInFlow(synCtx)) {
                         log.warn("Synapse not executed in the response in path");
-                    }
-                } while (iterator.hasNext());
-            } else {
-                do {
-                    SynapseHandler handler = iterator.next();
-                    if (!handler.handleRequestOutFlow(synCtx)) {
-                        log.warn("Synapse not executed in the request out path");
                     }
                 } while (iterator.hasNext());
             }
