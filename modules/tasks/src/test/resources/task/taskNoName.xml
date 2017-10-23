@@ -16,7 +16,7 @@
   ~   under the License.
 -->
 <task class="org.apache.synapse.task.impl.CustomTaskTestImpl"
-      name="task" xmlns="http://ws.apache.org/ns/synapse"
+      xmlns="http://ws.apache.org/ns/synapse"
       pinnedServers="192.168.0.10,192.168.0.20"
       group="TestGroup">
 

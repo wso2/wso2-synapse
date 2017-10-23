@@ -15,9 +15,8 @@
   ~   specific language governing permissions and limitations
   ~   under the License.
 -->
-<task class="org.apache.synapse.task.impl.CustomTaskTestImpl"
+<task class="org.apache.synapse.task.impl.NonExistingTaskTestImpl"
       name="task" xmlns="http://ws.apache.org/ns/synapse"
-      pinnedServers="192.168.0.10,192.168.0.20"
       group="TestGroup">
 
     <property name="to" value="http://localhost:9000/services/SimpleStockQuoteService"/>

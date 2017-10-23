@@ -43,9 +43,24 @@ public class TaskDescriptionFactoryTest {
         OMElement taskOme = loadOMElement(path);
         TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(taskOme, SYNAPSE_OMNAMESPACE);
         Assert.assertEquals("Name mismatched", "task", taskDescription.getName());
-        Assert.assertNull("Task Group not null", taskDescription.getTaskGroup());
+        Assert.assertEquals("Task Group mismatched", "TestGroup", taskDescription.getTaskGroup());
         Assert.assertEquals("Task Class Name mismatched", TASK_CLASS_NAME, taskDescription.getTaskImplClassName());
         Assert.assertEquals("Properties not empty", 0, taskDescription.getProperties().size());
+        Assert.assertEquals("Pinned Server count mismatched", 2, taskDescription.getPinnedServers().size());
+    }
+
+    @Test(expected = SynapseTaskException.class)
+    public void createTaskDescriptionWithOutNameTest() throws FileNotFoundException, XMLStreamException {
+        String path = this.getClass().getClassLoader().getResource("task/taskNoName.xml").getFile();
+        OMElement taskOme = loadOMElement(path);
+        TaskDescriptionFactory.createTaskDescription(taskOme, SYNAPSE_OMNAMESPACE);
+    }
+
+    @Test(expected = SynapseTaskException.class)
+    public void createTaskDescriptionNonExistingTaskClassTest() throws FileNotFoundException, XMLStreamException {
+        String path = this.getClass().getClassLoader().getResource("task/taskNonExistingTaskClass.xml").getFile();
+        OMElement taskOme = loadOMElement(path);
+        TaskDescriptionFactory.createTaskDescription(taskOme, SYNAPSE_OMNAMESPACE);
     }
 
     private OMElement loadOMElement(String path) throws FileNotFoundException, XMLStreamException {
