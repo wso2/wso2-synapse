@@ -76,21 +76,23 @@ public class InboundEndpointTestCase extends TestCase {
     public void testCreateValidInboundEP() throws Exception {
         ep = factory.createInboundEndpoint(AXIOMUtil.stringToOM(sampleEP), config);
         Assert.assertNotNull("Inbound Endpoint is null", ep);
-        Assert.assertEquals(ep.getName().equals("HttpListenerEP1"), true);
+        Assert.assertEquals("Invalid EP name for inbound endpoint", "HttpListenerEP1", ep.getName());
     }
 
     public void testSerializeInboundEP() throws Exception {
         ep = factory.createInboundEndpoint(AXIOMUtil.stringToOM(sampleEP2), config);
         OMElement elm = serializer.serializeInboundEndpoint(ep);
         Assert.assertNotNull("Serialized endpoint is null", elm);
-        Assert.assertEquals(ep.getName().equals("HttpListenerEP2"), true);
+        Assert.assertEquals("Invalid EP name for serialized inbound endpoint", "HttpListenerEP2",
+                ep.getName());
     }
 
     public void testSerializeInboundEPWithParent() throws Exception {
         ep = factory.createInboundEndpoint(AXIOMUtil.stringToOM(sampleEP3), config);
         OMElement elm2 = serializer.serializeInboundEndpoint(AXIOMUtil.stringToOM(parentElm), ep);
         Assert.assertNotNull("Serialized endpoint with parent  is null", elm2);
-        Assert.assertEquals(ep.getName().equals("HttpListenerEP3"), true);
+        Assert.assertEquals("Invalid EP name for serialized inbound endpoint", "HttpListenerEP3",
+                ep.getName());
     }
 
     public void testCreateInboundEPWithEmptyName() throws Exception {
