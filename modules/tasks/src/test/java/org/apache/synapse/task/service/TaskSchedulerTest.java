@@ -23,12 +23,11 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.synapse.startup.quartz.QuartzTaskManager;
 import org.apache.synapse.task.TaskDescription;
 import org.apache.synapse.task.TaskDescriptionFactory;
-import org.apache.synapse.task.TaskScheduler;
+import org.apache.synapse.task.TaskManager;
 import org.junit.Test;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import javax.xml.stream.XMLStreamException;
@@ -36,8 +35,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.Properties;
 
-@PrepareForTest(QuartzTaskManager.class)
-public class TestTaskScheduler {
+@PrepareForTest(TaskManager.class)
+public class TaskSchedulerTest {
 
     private final String SYNAPSE_NAMESPACE = "http://ws.apache.org/ns/synapse";
     private final OMNamespace SYNAPSE_OMNAMESPACE =
@@ -47,9 +46,9 @@ public class TestTaskScheduler {
     public void testInitialization() {
 
         Properties properties = new Properties();
-        QuartzTaskManager quartzTaskManager = PowerMockito.mock(QuartzTaskManager.class);
-        PowerMockito.when(quartzTaskManager.isInitialized()).thenReturn(true);
-        TaskScheduler taskScheduler = new TaskScheduler("CheckPrice");
+        TaskManager quartzTaskManager = Mockito.mock(TaskManager.class);
+        Mockito.when(quartzTaskManager.isInitialized()).thenReturn(true);
+        org.apache.synapse.task.TaskScheduler taskScheduler = new org.apache.synapse.task.TaskScheduler("CheckPrice");
         taskScheduler.init(properties, quartzTaskManager);
         Assert.assertTrue("Task Scheduler not initialized.", taskScheduler.isInitialized());
     }
@@ -57,9 +56,9 @@ public class TestTaskScheduler {
     @Test()
     public void testGetRunningTaskCount() {
 
-        QuartzTaskManager quartzTaskManager = PowerMockito.mock(QuartzTaskManager.class);
-        PowerMockito.when(quartzTaskManager.getRunningTaskCount()).thenReturn(1);
-        TaskScheduler taskScheduler = new TaskScheduler("CheckPrice");
+        TaskManager quartzTaskManager = Mockito.mock(TaskManager.class);
+        Mockito.when(quartzTaskManager.getRunningTaskCount()).thenReturn(1);
+        org.apache.synapse.task.TaskScheduler taskScheduler = new org.apache.synapse.task.TaskScheduler("CheckPrice");
         taskScheduler.init(new Properties(), quartzTaskManager);
         Assert.assertEquals("Running task count is not the expected value.", 1, taskScheduler.getRunningTaskCount());
     }
@@ -70,9 +69,9 @@ public class TestTaskScheduler {
         String path = this.getClass().getClassLoader().getResource("task/task_TestScheduler.xml").getFile();
         OMElement taskOme = loadOMElement(path);
         TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(taskOme, SYNAPSE_OMNAMESPACE);
-        QuartzTaskManager quartzTaskManager = PowerMockito.mock(QuartzTaskManager.class);
-        PowerMockito.when(quartzTaskManager.schedule(taskDescription)).thenReturn(true);
-        TaskScheduler taskScheduler = new TaskScheduler("task");
+        TaskManager quartzTaskManager = Mockito.mock(TaskManager.class);
+        Mockito.when(quartzTaskManager.schedule(taskDescription)).thenReturn(true);
+        org.apache.synapse.task.TaskScheduler taskScheduler = new org.apache.synapse.task.TaskScheduler("task");
         Assert.assertFalse("Task cannot be scheduled before initialization.", taskScheduler.scheduleTask(taskDescription));
         taskScheduler.init(new Properties(), quartzTaskManager);
         Assert.assertTrue("Task at file task_TestScheduler.xml not " +
