@@ -31,32 +31,32 @@ import javax.xml.stream.XMLStreamException;
  */
 public class StreamXPathTestCase extends TestCase {
 
-    private static final String element = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "\n" + "<bookstore>\n" + "\n"
+    private static final String ELEMENT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "\n" + "<bookstore>\n" + "\n"
             + "<book category=\"cooking\">\n" + "  <title lang=\"en\">Everyday Italian</title>\n"
             + "  <author>Giada De Laurentiis</author>\n" + "  <year>2005</year>\n" + "  <price>30.00</price>\n"
             + "</book>\n </bookstore>";
 
-    private static final String xpath1 = "/bookstore/book/title";
-    private static final String xpath2 = "/bookstore/book[1]/year";
+    private static final String XPATH1 = "/bookstore/book/title";
+    private static final String XPATH2 = "/bookstore/book[1]/year";
 
     public void testStreamValidXpath() throws StreamingXPATHException, XMLStreamException {
-        StreamingXPATH parser = new StreamingXPATH(xpath1);
-        String result = parser.getStringValue(AXIOMUtil.stringToOM(element));
+        StreamingXPATH parser = new StreamingXPATH(XPATH1);
+        String result = parser.getStringValue(AXIOMUtil.stringToOM(ELEMENT));
         assertNotNull(result, "No result of xpath is provided");
         assertTrue("Invalid result from xpath execution", result.contains("Everyday Italian"));
     }
 
     public void testValidXpathForSingleElement() throws StreamingXPATHException, XMLStreamException {
-        StreamingXPATH parser = new StreamingXPATH(xpath2);
-        String result = parser.getStringValue(AXIOMUtil.stringToOM(element));
+        StreamingXPATH parser = new StreamingXPATH(XPATH2);
+        String result = parser.getStringValue(AXIOMUtil.stringToOM(ELEMENT));
         assertNotNull(result, "No result of xpath is provided");
         assertTrue("Invalid result from xpath execution", result.contains("2005"));
     }
 
     public void testStreamXpathAsInputStream() throws Exception {
 
-        StreamingXPATH parser = new StreamingXPATH(xpath1);
-        String result = parser.getStringValue(IOUtils.toInputStream(element, "UTF-8"));
+        StreamingXPATH parser = new StreamingXPATH(XPATH1);
+        String result = parser.getStringValue(IOUtils.toInputStream(ELEMENT, "UTF-8"));
         assertNotNull(result, "No result of xpath is provided");
         assertTrue("Invalid result from xpath execution", result.contains("Everyday Italian"));
     }
