@@ -18,7 +18,6 @@
 package org.apache.synapse.task;
 
 import junit.framework.Assert;
-import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.xpath.AXIOMXPath;
@@ -37,6 +36,9 @@ public class TaskDescriptionSerializerTest {
     private final String SYNAPSE_NAMESPACE = TaskTestConstant.SYNAPSE_NAMESPACE;
     private final OMNamespace SYNAPSE_OMNAMESPACE = TaskTestConstant.SYNAPSE_OMNAMESPACE;
 
+    /**
+     * Check the TaskDescription object serialization to xml
+     */
     @Test()
     public void createTaskDescriptionTest() throws FileNotFoundException, XMLStreamException, JaxenException {
         String path = this.getClass().getClassLoader().getResource("task/task.xml").getFile();
@@ -54,5 +56,57 @@ public class TaskDescriptionSerializerTest {
         Assert.assertNotNull("soapAction property not found", soapActionProperty);
         String soapAction = soapActionProperty.getAttributeValue(new QName("value"));
         Assert.assertEquals("SOAPAction property mismatched", "urn:getQuote", soapAction);
+    }
+
+    /**
+     * Check the TaskDescription object serialization to xml when the trigger is a cron expression.
+     */
+    @Test()
+    public void createTaskDescriptionTriggerCronTest() throws FileNotFoundException, XMLStreamException, JaxenException {
+        String path = this.getClass().getClassLoader().getResource("task/taskTriggerCron.xml").getFile();
+        OMElement ome = Utils.loadOMElement(path);
+        TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(ome, SYNAPSE_OMNAMESPACE);
+
+        OMElement taskOmeSerialised = TaskDescriptionSerializer
+                .serializeTaskDescription(SYNAPSE_OMNAMESPACE, taskDescription);
+        Assert.assertEquals("Task Name mismatched", "taskCron", taskOmeSerialised.getAttributeValue(new QName("name")));
+        Assert.assertEquals("Task Class mismatched", "org.apache.synapse.task.impl.CustomTaskTestImpl",
+                taskOmeSerialised.getAttributeValue(new QName("class")));
+        AXIOMXPath xpathExpression = new AXIOMXPath("/ns:trigger[@cron]");
+        xpathExpression.addNamespace("ns", SYNAPSE_NAMESPACE);
+        OMElement triggerOme = (OMElement) xpathExpression.selectSingleNode(taskOmeSerialised);
+        Assert.assertNotNull("trigger element not found", triggerOme);
+        String cron = triggerOme.getAttributeValue(new QName("cron"));
+        Assert.assertEquals("Cron expression mismatched", "0 * * * * ?", cron);
+    }
+
+    /**
+     * Check the TaskDescription object serialization to xml when the trigger is once
+     */
+    @Test()
+    public void createTaskDescriptionTriggerOnceTest() throws FileNotFoundException, XMLStreamException, JaxenException {
+        String path = this.getClass().getClassLoader().getResource("task/taskTriggerOnce.xml").getFile();
+        OMElement ome = Utils.loadOMElement(path);
+        TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(ome, SYNAPSE_OMNAMESPACE);
+
+        OMElement taskOmeSerialised = TaskDescriptionSerializer
+                .serializeTaskDescription(SYNAPSE_OMNAMESPACE, taskDescription);
+        Assert.assertEquals("Task Name mismatched", "taskCron", taskOmeSerialised.getAttributeValue(new QName("name")));
+        Assert.assertEquals("Task Class mismatched", "org.apache.synapse.task.impl.CustomTaskTestImpl",
+                taskOmeSerialised.getAttributeValue(new QName("class")));
+        AXIOMXPath xpathExpression = new AXIOMXPath("/ns:trigger[@once]");
+        xpathExpression.addNamespace("ns", SYNAPSE_NAMESPACE);
+        OMElement triggerOme = (OMElement) xpathExpression.selectSingleNode(taskOmeSerialised);
+        Assert.assertNotNull("trigger element not found", triggerOme);
+        String once = triggerOme.getAttributeValue(new QName("once"));
+        Assert.assertEquals("once attribute mismatched", "true", once);
+    }
+
+    /**
+     * Check the Exception class when the TaskDescription is null
+     */
+    @Test(expected = SynapseTaskException.class)
+    public void createTaskDescriptionNullTest() throws FileNotFoundException, XMLStreamException, JaxenException {
+        TaskDescriptionSerializer.serializeTaskDescription(SYNAPSE_OMNAMESPACE, null);
     }
 }
