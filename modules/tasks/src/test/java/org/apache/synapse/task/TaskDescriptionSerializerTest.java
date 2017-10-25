@@ -62,7 +62,8 @@ public class TaskDescriptionSerializerTest {
      * Check the TaskDescription object serialization to xml when the trigger is a cron expression.
      */
     @Test()
-    public void createTaskDescriptionTriggerCronTest() throws FileNotFoundException, XMLStreamException, JaxenException {
+    public void createTaskDescriptionTriggerCronTest()
+            throws FileNotFoundException, XMLStreamException, JaxenException {
         String path = this.getClass().getClassLoader().getResource("task/taskTriggerCron.xml").getFile();
         OMElement ome = Utils.loadOMElement(path);
         TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(ome, SYNAPSE_OMNAMESPACE);
@@ -84,7 +85,8 @@ public class TaskDescriptionSerializerTest {
      * Check the TaskDescription object serialization to xml when the trigger is once
      */
     @Test()
-    public void createTaskDescriptionTriggerOnceTest() throws FileNotFoundException, XMLStreamException, JaxenException {
+    public void createTaskDescriptionTriggerOnceTest()
+            throws FileNotFoundException, XMLStreamException, JaxenException {
         String path = this.getClass().getClassLoader().getResource("task/taskTriggerOnce.xml").getFile();
         OMElement ome = Utils.loadOMElement(path);
         TaskDescription taskDescription = TaskDescriptionFactory.createTaskDescription(ome, SYNAPSE_OMNAMESPACE);
