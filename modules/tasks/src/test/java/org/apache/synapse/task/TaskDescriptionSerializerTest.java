@@ -30,8 +30,8 @@ import java.io.FileNotFoundException;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
-/*
-Test class for TaskDescriptionSerializer.
+/**
+ * Test class for TaskDescriptionSerializer.
  */
 public class TaskDescriptionSerializerTest {
     private final String SYNAPSE_NAMESPACE = TaskTestConstant.SYNAPSE_NAMESPACE;
