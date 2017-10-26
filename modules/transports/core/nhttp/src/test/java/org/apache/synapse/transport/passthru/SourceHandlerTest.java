@@ -66,6 +66,9 @@ public class SourceHandlerTest {
         Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST));
     }
 
+    /**
+     * Test the request ack when Source Handler received a request.
+     */
     @Test
     public void testRequestAck() throws Exception {
         PowerMockito.mockStatic(AxisEngine.class);
