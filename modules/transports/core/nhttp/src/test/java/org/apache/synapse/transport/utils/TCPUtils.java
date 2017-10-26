@@ -42,7 +42,7 @@ public class TCPUtils {
                     socket.close();
                 }
             } catch (IOException e) {
-                //                log.error("Can not close the socket with is used to check the server status ", e);
+                //ignore
             }
         }
         return isPortOpen;
