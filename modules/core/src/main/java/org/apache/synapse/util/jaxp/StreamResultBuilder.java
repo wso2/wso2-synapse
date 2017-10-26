@@ -24,19 +24,20 @@ import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.StAXUtils;
 import org.apache.axiom.soap.impl.builder.StAXSOAPModelBuilder;
 import org.apache.axiom.util.blob.OverflowBlob;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.util.TextFileDataSource;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Result;
 import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.Charset;
 
 /**
  * {@link ResultBuilder} implementation that produces a {@link StreamResult} backed by a
@@ -87,6 +88,26 @@ public class StreamResultBuilder implements ResultBuilder {
                 return new StAXOMBuilder(reader).getDocumentElement();
             }
         }
+    }
+
+    /**
+     * Function to retrieve result for xslt transformation in form of string
+     *
+     * @return result of the transformation
+     */
+    public String getResultAsString() {
+        try {
+            out.close();
+        } catch (IOException e) {
+            handleException("Error while closing output stream", e);
+        }
+        String resultString = null;
+        try {
+            resultString = IOUtils.toString(tmp.getInputStream());
+        } catch (IOException e) {
+            handleException("Error while building input stream to string", e);
+        }
+        return resultString;
     }
 
     public void release() {
