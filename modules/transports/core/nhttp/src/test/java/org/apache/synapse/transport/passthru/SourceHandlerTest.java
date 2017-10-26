@@ -20,8 +20,13 @@ package org.apache.synapse.transport.passthru;
 import junit.framework.Assert;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axis2.context.MessageContext;
+import org.apache.axis2.context.OperationContext;
+import org.apache.axis2.context.ServiceContext;
+import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
+import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.commons.httpclient.HttpClient;
@@ -32,10 +37,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * Test class for PassThroughHttpListener.
@@ -83,6 +92,43 @@ public class SourceHandlerTest {
         int responseCode = client.executeMethod(method);
         method.getResponseBodyAsString();
         Assert.assertEquals("Response code mismatched", 202, responseCode);
+    }
+
+    /**
+     * Test the Source Handler respond to client.
+     * Send a message to http listener and get the same request message as a response using PassThroughHttpSender
+     */
+    @Test
+    public void testRequestAndResponse() throws Exception {
+        PowerMockito.mockStatic(AxisEngine.class);
+        PowerMockito.doAnswer(new Answer<Void>() {
+            public Void answer(InvocationOnMock invocation) throws Exception {
+                MessageContext axis2MessageContext = invocation.getArgument(0);
+                System.out.println(axis2MessageContext.getMessageID());
+                ServiceContext svcCtx = new ServiceContext();
+                OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
+                axis2MessageContext.setServiceContext(svcCtx);
+                axis2MessageContext.setOperationContext(opCtx);
+                axis2MessageContext.getOperationContext()
+                        .setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+                PassThroughHttpSender sender = new PassThroughHttpSender();
+                ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
+                sender.init(cfgCtx, new TransportOutDescription("http"));
+                sender.submitResponse(axis2MessageContext);
+                return null;
+            }
+        }).when(AxisEngine.class, "receive", any(MessageContext.class));
+
+        HttpClient client = new HttpClient();
+        PostMethod method = new PostMethod(getServiceEndpoint("myservice"));
+        method.setRequestHeader("Content-Type", "application/xml");
+        StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello</msg>", "application/xml",
+                "UTF-8");
+        method.setRequestEntity(stringRequestEntity);
+        int responseCode = client.executeMethod(method);
+        String response = method.getResponseBodyAsString();
+        Assert.assertEquals("Response code mismatched", 200, responseCode);
+        Assert.assertEquals("Response", "<msg>hello</msg>", response);
     }
 
     @AfterClass()
