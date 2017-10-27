@@ -32,17 +32,35 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.util.jaxp.*;
+import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.jaxp.DOOMResultBuilderFactory;
+import org.apache.synapse.util.jaxp.DOOMSourceBuilderFactory;
+import org.apache.synapse.util.jaxp.ResultBuilder;
+import org.apache.synapse.util.jaxp.ResultBuilderFactory;
+import org.apache.synapse.util.jaxp.SourceBuilder;
+import org.apache.synapse.util.jaxp.SourceBuilderFactory;
+import org.apache.synapse.util.jaxp.StreamResultBuilder;
+import org.apache.synapse.util.jaxp.StreamResultBuilderFactory;
+import org.apache.synapse.util.jaxp.StreamSourceBuilderFactory;
 import org.apache.synapse.util.resolver.CustomJAXPURIResolver;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.apache.synapse.util.xpath.SourceXPathSupport;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
-import javax.xml.transform.*;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The XSLT mediator performs an XSLT transformation requested, using
@@ -123,6 +141,12 @@ public class XSLTMediator extends AbstractMediator {
      */
     public static final String RESULT_BUILDER_FACTORY =
         "http://ws.apache.org/ns/synapse/transform/attribute/rbf";
+
+    /**
+     * IF the user have set this property, the XSLTMediator does not build the result xml, instead it will be stored as
+     * string property with name givent in "target" attribute
+     */
+    public static final String TRANSFORM_XSLT_RESULT_DISABLE_BUILD = "transform.xslt.result.disableBuild";
 
     /**
      * Two template creation activities
@@ -329,6 +353,25 @@ public class XSLTMediator extends AbstractMediator {
             }
 
             synLog.traceOrDebug("Transformation completed - processing result");
+
+            /**
+             * If user have set transform.xslt.result.disableBuild property to true, we do not build the message to
+             * OMElement,
+             */
+            if (targetPropertyName != null && resultBuilder instanceof StreamResultBuilder &&
+                    synCtx.getProperty(TRANSFORM_XSLT_RESULT_DISABLE_BUILD) != null &&
+                    synCtx.getProperty(TRANSFORM_XSLT_RESULT_DISABLE_BUILD) instanceof String &&
+                    "true".equalsIgnoreCase((String) synCtx.getProperty(TRANSFORM_XSLT_RESULT_DISABLE_BUILD))) {
+
+                    // add result XML string as a message context property to the message
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Adding result string as message context property : " +
+                                targetPropertyName);
+                    }
+
+                    synCtx.setProperty(targetPropertyName, ((StreamResultBuilder) resultBuilder).getResultAsString());
+                    return;
+            }
 
             // get the result OMElement
             OMElement result = null;

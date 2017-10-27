@@ -16,6 +16,7 @@
  */
 package org.apache.synapse.commons.json;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
@@ -23,6 +24,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -117,6 +119,18 @@ public class JsonValueTest extends TestCase {
             assert false;
         } catch (AxisFault ex) {
             assert true;
+        }
+    }
+
+    public void testWriteAsJsonNullElement() throws IOException {
+        OutputStream out = Util.newOutputStream();
+        try {
+            JsonUtil.writeAsJson((OMElement) null, out);
+            Assert.fail("AxisFault expected");
+        } catch (AxisFault axisFault) {
+            Assert.assertEquals("Invalid fault message received", "OMElement is null. Cannot convert to JSON.", axisFault.getMessage());
+        } finally {
+            out.close();
         }
     }
 }
