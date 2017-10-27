@@ -72,21 +72,42 @@ public class XFormURLEncodedBuilderTest extends TestCase {
     }
 
     /**
-     * Test extracting parameters from 'whttp:location'
+     * Test extracting parameter from 'whttp:location'
      * @throws AxisFault
      */
-    public void testExtractParametersUsingHttpLocation() throws AxisFault {
+    public void testExtractMultipleParametersUsingHttpLocation2() throws AxisFault {
         AxisBindingOperation axisBindingOperation = new AxisBindingOperation();
-        axisBindingOperation.setProperty("whttp:location", "stock/{symbol}");
+        axisBindingOperation.setProperty("whttp:location", "books/{name}/");
 
         MessageContext messageContext = Util.newMessageContext();
         messageContext.setProperty("AxisBindingOperation", axisBindingOperation);
-        messageContext.setTo(new EndpointReference("http://localhost:9000/stockquote"));
+        messageContext.setTo(new EndpointReference("http://localhost:9000/store"));
 
         XFormURLEncodedBuilder urlEncodedBuilder = new XFormURLEncodedBuilder();
         urlEncodedBuilder.processDocument(null, "", messageContext);
 
-        assertNotNull("Parameter 'symbol' not found in request parameter map",
-                ((MultipleEntryHashMap)messageContext.getProperty(Constants.REQUEST_PARAMETER_MAP)).get("symbol"));
+        assertNotNull("Parameter 'name' not found in request parameter map",
+                ((MultipleEntryHashMap)messageContext.getProperty(Constants.REQUEST_PARAMETER_MAP)).get("name"));
+    }
+
+    /**
+     * Test extracting multiple parameters from 'whttp:location'
+     * @throws AxisFault
+     */
+    public void testExtractMultipleParametersUsingHttpLocation() throws AxisFault {
+        AxisBindingOperation axisBindingOperation = new AxisBindingOperation();
+        axisBindingOperation.setProperty("whttp:location", "books/{category}/{name}");
+
+        MessageContext messageContext = Util.newMessageContext();
+        messageContext.setProperty("AxisBindingOperation", axisBindingOperation);
+        messageContext.setTo(new EndpointReference("http://localhost:9000/store"));
+
+        XFormURLEncodedBuilder urlEncodedBuilder = new XFormURLEncodedBuilder();
+        urlEncodedBuilder.processDocument(null, "", messageContext);
+
+        assertNotNull("Parameter 'category' not found in request parameter map",
+                ((MultipleEntryHashMap)messageContext.getProperty(Constants.REQUEST_PARAMETER_MAP)).get("category"));
+        assertNotNull("Parameter 'name' not found in request parameter map",
+                ((MultipleEntryHashMap)messageContext.getProperty(Constants.REQUEST_PARAMETER_MAP)).get("name"));
     }
 }
