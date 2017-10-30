@@ -19,6 +19,7 @@ package org.apache.synapse.transport.utils;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 public class TCPUtils {
     /**
@@ -42,6 +43,31 @@ public class TCPUtils {
                     socket.close();
                 }
             } catch (IOException e) {
+                //ignore
+            }
+        }
+        return isPortOpen;
+    }
+
+    /**
+     * Check whether the provided port is open within the given timeout
+     *
+     * @param port The port that needs to be checked
+     * @param host The host address
+     * @param timeOut maximum timeout wait for port to open
+     * @return true if the <code>port</code> is open within given timeout & false otherwise
+     */
+    public static boolean isPortOpen(int port, String host, final int timeOut) {
+        boolean isPortOpen = false;
+        long startTime = System.currentTimeMillis();
+        while (!isPortOpen && (System.currentTimeMillis() - startTime) < timeOut) {
+            isPortOpen = isPortOpen(port, host);
+            if (isPortOpen) {
+                break;
+            }
+            try {
+                TimeUnit.MILLISECONDS.sleep(300);
+            } catch (InterruptedException e) {
                 //ignore
             }
         }
