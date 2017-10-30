@@ -29,6 +29,9 @@ import org.apache.synapse.transport.passthru.PassThroughHttpSender;
 
 import java.io.IOException;
 
+/**
+ * Utility class for service related functions.
+ */
 public class ServiceUtils {
     /**
      * This will return the service endpoint url
