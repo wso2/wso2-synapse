@@ -31,12 +31,13 @@ public class MetricsAggregatorModuleTest extends TestCase {
 
     private MetricsAggregatorModule metricsAggregatorModule = new MetricsAggregatorModule();
 
+    // Initializing metricsAggregationModule and assert for the returned counter obj
     public void testInit() throws AxisFault {
         AxisConfiguration axisConfiguration = new AxisConfiguration();
         ConfigurationContext configurationContext = new ConfigurationContext(axisConfiguration);
         metricsAggregatorModule.init(configurationContext, null);
         Counter counter = (Counter) axisConfiguration.getParameter(MetricsConstants.GLOBAL_REQUEST_COUNTER).getValue();
-        Assert.assertEquals(counter.getCount(), 0);
+        Assert.assertEquals("Counter should be 0",counter.getCount(), 0);
     }
 
     public void testCanSupportAssertion() {

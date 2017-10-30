@@ -20,7 +20,6 @@ package org.apache.synapse.metrics;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.Handler;
@@ -31,7 +30,8 @@ import org.mockito.Mockito;
  */
 public class GlobalRequestCountHandlerTest extends TestCase {
 
-    public void testInvoke() throws AxisFault {
+    //Invoking invoke method and assert for the incremented counter value
+    public void testInvoke() throws Exception {
         GlobalRequestCountHandler globalRequestCountHandler = new GlobalRequestCountHandler();
         MessageContext messageContext;
         Counter counter = new Counter();
@@ -40,7 +40,7 @@ public class GlobalRequestCountHandlerTest extends TestCase {
         messageContext = Mockito.mock(MessageContext.class, Mockito.CALLS_REAL_METHODS);
         Mockito.doReturn(parameter).when(messageContext).getParameter(Mockito.anyString());
         Handler.InvocationResponse response = globalRequestCountHandler.invoke(messageContext);
-        Assert.assertEquals(response, Handler.InvocationResponse.CONTINUE);
-        Assert.assertEquals(counter.getCount(), 1);
+        Assert.assertEquals("Asserting the response of the method",response, Handler.InvocationResponse.CONTINUE);
+        Assert.assertEquals("Counter should be incremented to 1", counter.getCount(), 1);
     }
 }
