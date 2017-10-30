@@ -21,17 +21,14 @@ import junit.framework.Assert;
 import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.MessageContext;
-import org.apache.axis2.context.OperationContext;
-import org.apache.axis2.context.ServiceContext;
-import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
-import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.synapse.transport.utils.ServiceUtils;
 import org.apache.synapse.transport.utils.TCPUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -72,7 +69,7 @@ public class SourceHandlerTest {
         cfgCtx.setContextRoot("/");
         passThroughHttpListener.init(cfgCtx, transportInDescription);
         passThroughHttpListener.start();
-        Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST));
+        Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST, 2000));
     }
 
     /**
@@ -84,7 +81,7 @@ public class SourceHandlerTest {
         PowerMockito.doNothing().doThrow(new RuntimeException()).when(AxisEngine.class);
 
         HttpClient client = new HttpClient();
-        PostMethod method = new PostMethod(getServiceEndpoint("myservice"));
+        PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
         method.setRequestHeader("Content-Type", "application/xml");
         StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello</msg>", "application/xml",
                 "UTF-8");
@@ -104,23 +101,13 @@ public class SourceHandlerTest {
         PowerMockito.doAnswer(new Answer<Void>() {
             public Void answer(InvocationOnMock invocation) throws Exception {
                 MessageContext axis2MessageContext = invocation.getArgument(0);
-                System.out.println(axis2MessageContext.getMessageID());
-                ServiceContext svcCtx = new ServiceContext();
-                OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
-                axis2MessageContext.setServiceContext(svcCtx);
-                axis2MessageContext.setOperationContext(opCtx);
-                axis2MessageContext.getOperationContext()
-                        .setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
-                PassThroughHttpSender sender = new PassThroughHttpSender();
-                ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
-                sender.init(cfgCtx, new TransportOutDescription("http"));
-                sender.submitResponse(axis2MessageContext);
+                ServiceUtils.receive(axis2MessageContext);
                 return null;
             }
         }).when(AxisEngine.class, "receive", any(MessageContext.class));
 
         HttpClient client = new HttpClient();
-        PostMethod method = new PostMethod(getServiceEndpoint("myservice"));
+        PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
         method.setRequestHeader("Content-Type", "application/xml");
         StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello</msg>", "application/xml",
                 "UTF-8");
@@ -135,10 +122,6 @@ public class SourceHandlerTest {
     public static void stopListener() throws Exception {
         passThroughHttpListener.stop();
         Assert.assertFalse("Listener port not closed", TCPUtils.isPortOpen(PORT, HOST));
-    }
-
-    private String getServiceEndpoint(String service) {
-        return "http://" + HOST + ":" + PORT + "/services/" + service;
     }
 
 }

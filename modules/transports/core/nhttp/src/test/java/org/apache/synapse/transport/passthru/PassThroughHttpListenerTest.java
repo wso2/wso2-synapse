@@ -55,7 +55,7 @@ public class PassThroughHttpListenerTest {
         cfgCtx.setContextRoot("/");
         passThroughHttpListener.init(cfgCtx, transportInDescription);
         passThroughHttpListener.start();
-        Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST));
+        Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST, 1000));
     }
 
     @Test
