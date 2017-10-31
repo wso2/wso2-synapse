@@ -108,12 +108,12 @@ public class NHttpTransportListenerTest {
                 endpointReference[0].getAddress());
 
         endpointReference = nHttpListener.getEPRsForService("t/myservice", HOST);
-        Assert.assertNotNull(endpointReference);
+        Assert.assertNotNull("Endpoint references not found", endpointReference);
         Assert.assertEquals("Endpoint reference mismatched", ServiceUtils.getServiceEndpoint("t/myservice", HOST, PORT),
                 endpointReference[0].getAddress());
 
         endpointReference = nHttpListener.getEPRsForService("myservice.endpoint", HOST);
-        Assert.assertNotNull(endpointReference);
+        Assert.assertNotNull("Endpoint references not found", endpointReference);
         Assert.assertEquals("Endpoint reference mismatched",
                 ServiceUtils.getServiceEndpoint("myservice.endpoint", HOST, PORT), endpointReference[0].getAddress());
     }
