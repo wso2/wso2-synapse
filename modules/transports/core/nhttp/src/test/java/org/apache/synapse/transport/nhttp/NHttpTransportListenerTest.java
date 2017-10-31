@@ -25,16 +25,18 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.context.OperationContext;
 import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.context.SessionContext;
+import org.apache.axis2.description.AxisService;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.description.TransportOutDescription;
+import org.apache.axis2.dispatchers.RequestURIBasedDispatcher;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.transport.nhttp.util.RESTUtil;
 import org.apache.synapse.transport.utils.ServiceUtils;
 import org.apache.synapse.transport.utils.TCPUtils;
 import org.junit.AfterClass;
@@ -55,7 +57,7 @@ import static org.mockito.ArgumentMatchers.any;
  * Test class for nhttp Transport Listener.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(AxisEngine.class)
+@PrepareForTest({ AxisEngine.class, RESTUtil.class })
 @PowerMockIgnore("javax.management.*")
 public class NHttpTransportListenerTest {
     private static final String HOST = "127.0.0.1";
@@ -136,6 +138,10 @@ public class NHttpTransportListenerTest {
      */
     @Test
     public void testRequestAndResponse() throws Exception {
+        RequestURIBasedDispatcher requestURIBasedDispatcher = Mockito.mock(RequestURIBasedDispatcher.class);
+        Mockito.when(requestURIBasedDispatcher.findService(any(MessageContext.class)))
+                .thenReturn(new AxisService("myservice"));
+        PowerMockito.whenNew(RequestURIBasedDispatcher.class).withNoArguments().thenReturn(requestURIBasedDispatcher);
         PowerMockito.mockStatic(AxisEngine.class);
         PowerMockito.doAnswer(new Answer<Void>() {
             public Void answer(InvocationOnMock invocation) throws Exception {
@@ -148,7 +154,6 @@ public class NHttpTransportListenerTest {
                         .setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
                 axis2MessageContext.setTo(null);
                 axis2MessageContext.setProperty("synapse.isresponse", true);
-                axis2MessageContext.getOperationContext().getAxisOperation().setControlOperation(true);
                 HttpCoreNIOSender sender = new HttpCoreNIOSender();
                 ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
                 sender.init(cfgCtx, new TransportOutDescription("http"));
@@ -165,6 +170,8 @@ public class NHttpTransportListenerTest {
         method.setRequestEntity(stringRequestEntity);
         int responseCode = client.executeMethod(method);
         Assert.assertEquals("Response code mismatched", 200, responseCode);
+        String response = method.getResponseBodyAsString();
+        Assert.assertEquals("Response", "<msg>hello</msg>", response);
     }
 
     @AfterClass()
