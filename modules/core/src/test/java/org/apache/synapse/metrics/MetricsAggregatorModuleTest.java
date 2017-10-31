@@ -24,14 +24,17 @@ import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.engine.AxisConfiguration;
 
-/*
-    Unit tests for MetricsAggregatorModule
+/**
+ * Unit tests for MetricsAggregatorModule
  */
 public class MetricsAggregatorModuleTest extends TestCase {
 
     private MetricsAggregatorModule metricsAggregatorModule = new MetricsAggregatorModule();
 
-    // Initializing metricsAggregationModule and assert for the returned counter obj
+    /**
+     * Initializing metricsAggregationModule and assert for the returned counter obj
+     * @throws AxisFault
+     */
     public void testInit() throws AxisFault {
         AxisConfiguration axisConfiguration = new AxisConfiguration();
         ConfigurationContext configurationContext = new ConfigurationContext(axisConfiguration);

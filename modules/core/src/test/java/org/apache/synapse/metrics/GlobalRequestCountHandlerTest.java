@@ -30,7 +30,10 @@ import org.mockito.Mockito;
  */
 public class GlobalRequestCountHandlerTest extends TestCase {
 
-    //Invoking invoke method and assert for the incremented counter value
+    /**
+     * Invoking invoke method and assert for the incremented counter value
+     * @throws Exception
+     */
     public void testInvoke() throws Exception {
         GlobalRequestCountHandler globalRequestCountHandler = new GlobalRequestCountHandler();
         MessageContext messageContext;
