@@ -110,6 +110,8 @@ public final class JsonUtil {
 
     private static final boolean xmlNilReadWriteEnabled;
 
+    private static final boolean xmlWriteNullForEmptyElements;
+
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
         if (properties == null) {
@@ -124,6 +126,7 @@ public final class JsonUtil {
             xmloutAutoArray = true;
             xmloutMultiplePI = false;
             xmlNilReadWriteEnabled = false;
+            xmlWriteNullForEmptyElements = true;
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
             String process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, "false").trim();
@@ -169,6 +172,10 @@ public final class JsonUtil {
             xmlNilReadWriteEnabled = Boolean
                     .parseBoolean(properties.getProperty("synapse.commons.enableXmlNilReadWrite", "false"));
 
+            // Used in XML->JSON conversion. Decides whether to set null or "" for an empty XML element w/o nil attrib
+            xmlWriteNullForEmptyElements = Boolean.parseBoolean(
+                    properties.getProperty("synapse.commons.enableXmlNullForEmptyElement", "true"));
+
         }
     }
 
@@ -210,6 +217,7 @@ public final class JsonUtil {
             .customReplaceSequence(jsonoutCustomReplaceSequence)
             .customRegex(jsonoutcustomRegex)
             .readWriteXmlNil(xmlNilReadWriteEnabled)
+            .writeNullForEmptyElement(xmlWriteNullForEmptyElements)
             .build();
     /// End of JSON/XML INPUT OUTPUT Formatting Configuration.
 
