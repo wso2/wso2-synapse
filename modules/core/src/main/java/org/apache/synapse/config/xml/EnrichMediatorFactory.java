@@ -1,4 +1,6 @@
 /*
+ *  Copyright (c) 2005-2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
  *  Licensed to the Apache Software Foundation (ASF) under one
  *  or more contributor license agreements.  See the NOTICE file
  *  distributed with this work for additional information
@@ -21,7 +23,11 @@ package org.apache.synapse.config.xml;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
+import org.apache.synapse.SynapseException;
 import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
@@ -32,8 +38,12 @@ import org.apache.synapse.mediators.elementary.Target;
 
 import java.util.Properties;
 
-
+/**
+ * Factory for {@link EnrichMediator} instances.
+ */
 public class EnrichMediatorFactory extends AbstractMediatorFactory {
+    private static final Log logger = LogFactory.getLog(EnrichMediatorFactory.class.getName());
+
     private static final QName XML_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enrich");
     private static final QName ATT_PROPERTY = new QName("property");
     private static final QName ATT_XPATH = new QName("xpath");
@@ -53,8 +63,8 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     @Override
     protected Mediator createSpecificMediator(OMElement elem, Properties properties) {
         if (!XML_Q.equals(elem.getQName())) {
-            handleException("Unable to create the enrich mediator. " +
-                    "Unexpected element as the enrich mediator configuration");
+            handleException("Unable to create the enrich mediator. "
+                    + "Unexpected element as the enrich mediator configuration");
         }
 
         EnrichMediator enrich = new EnrichMediator();
@@ -74,6 +84,8 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         Target target = new Target();
         enrich.setTarget(target);
 
+        validateTypeCombination(sourceEle, targetEle);
+
         populateSource(source, sourceEle);
         populateTarget(target, targetEle);
 
@@ -82,10 +94,10 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
     private void populateSource(Source source, OMElement sourceEle) {
 
-        // type attribue
+        // type attribute
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
-            source.setSourceType(convertTypeToInit(typeAttr.getAttributeValue()));
+            source.setSourceType(convertTypeToInt(typeAttr.getAttributeValue()));
         }
 
         OMAttribute cloneAttr = sourceEle.getAttribute(ATT_CLONE);
@@ -119,8 +131,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
             if (inlineElem != null) {
                 source.setInlineOMNode(inlineElem);
-            } else if (sourceEle.getText() != null
-                    && (!sourceEle.getText().equals(""))) {
+            } else if (!StringUtils.isBlank(sourceEle.getText())) {
                 source.setInlineOMNode(OMAbstractFactory.getOMFactory().createOMText(sourceEle.getText()));
             } else if (sourceEle.getAttributeValue(ATT_KEY) != null) {
                 source.setInlineKey(sourceEle.getAttributeValue(ATT_KEY));
@@ -133,18 +144,26 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
     private void populateTarget(Target target, OMElement sourceEle) {
         // type attribute
         OMAttribute typeAttr = sourceEle.getAttribute(ATT_TYPE);
+        OMAttribute actionAttr = sourceEle.getAttribute(ATT_ACTION);
+
+        if (actionAttr != null && actionAttr.getAttributeValue() != null) {
+            target.setAction(actionAttr.getAttributeValue());
+        } else {
+            target.setAction("replace");
+        }
+
         if (typeAttr != null && typeAttr.getAttributeValue() != null) {
-            int type = convertTypeToInit(typeAttr.getAttributeValue());
+            int type = convertTypeToInt(typeAttr.getAttributeValue());
             if (type >= 0) {
                 target.setTargetType(type);
+                if (type == 1) {
+                    if (!target.getAction().equals("replace")) {
+                        throw new SynapseException("Invalid target action");
+                    }
+                }
             } else {
                 handleException("Un-expected type : " + typeAttr.getAttributeValue());
             }
-        }
-
-        OMAttribute actionAttr = sourceEle.getAttribute(ATT_ACTION);
-        if (actionAttr != null && actionAttr.getAttributeValue() != null) {
-            target.setAction(actionAttr.getAttributeValue());
         }
 
         if (target.getTargetType() == EnrichMediator.CUSTOM) {
@@ -168,7 +187,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         }
     }
 
-    private int convertTypeToInit(String type) {
+    private int convertTypeToInt(String type) {
         if (type.equals(ENVELOPE)) {
             return EnrichMediator.ENVELOPE;
         } else if (type.equals(BODY)) {
@@ -187,4 +206,62 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
         return XML_Q;
     }
 
+    /**
+     * Check the combination of the source and target types are valid or not and throw proper exception.
+     * Here the integers 0-4 refer as below
+     * 0-custom, 1-envelope, 2-body, 3-property, 4-inline
+     *
+     * @param sourceElement
+     * @param targetElement
+     */
+    private void validateTypeCombination(OMElement sourceElement, OMElement targetElement) {
+        int sourceType = -1;
+        int targetType = -1;
+
+        // source type attribute
+        OMAttribute sourceTypeAttr = sourceElement.getAttribute(ATT_TYPE);
+        if (sourceTypeAttr != null && sourceTypeAttr.getAttributeValue() != null) {
+            sourceType = convertTypeToInt(sourceTypeAttr.getAttributeValue());
+
+            // check if source type is different form the existing
+            if (sourceType < 0) {
+                throw new SynapseException("Un-expected source type");
+            }
+        }
+        // target type attribute
+        OMAttribute targetTypeAttr = targetElement.getAttribute(ATT_TYPE);
+        if (targetTypeAttr != null && targetTypeAttr.getAttributeValue() != null) {
+            targetType = convertTypeToInt(targetTypeAttr.getAttributeValue());
+
+            // check if target type is different form the existing
+            if (targetType < 0) {
+                throw new SynapseException("Un-expected target type");
+            }
+            // check if target type is 4-inline
+            if (targetType == 4) {
+                throw new SynapseException("Inline not support for target attribute");
+            }
+        }
+        /*
+            check the wrong combination such as
+            sourceType = 1-envelope and targetType = 0-custom
+            sourceType = 1-envelope and targetType = 2-body
+            sourceType = 2-body and targetType = 2-body
+            sourceType = 0-custom and targetType = 1-envelope
+            sourceType = 1-envelope and targetType = 1-envelope
+            sourceType = 2-body and targetType = 1-envelope
+
+         */
+        if (sourceType == 1) {
+            if (targetType == 0 || targetType == 1 || targetType == 2) {
+                throw new SynapseException("Wrong combination of source and target type");
+            }
+        } else if (sourceType == 2) {
+            if (targetType == 1 || targetType == 2) {
+                throw new SynapseException("Wrong combination of source and target type");
+            }
+        } else if (sourceType == 0 && targetType == 1) {
+            throw new SynapseException("Wrong combination of source and target type");
+        }
+    }
 }
