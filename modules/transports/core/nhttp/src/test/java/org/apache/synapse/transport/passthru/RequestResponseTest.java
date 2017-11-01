@@ -53,7 +53,7 @@ import static org.mockito.ArgumentMatchers.any;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(AxisEngine.class)
 @PowerMockIgnore("javax.management.*")
-public class SourceHandlerTest {
+public class RequestResponseTest {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8286;
     private static PassThroughHttpListener passThroughHttpListener = new PassThroughHttpListener();
