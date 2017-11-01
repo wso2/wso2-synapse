@@ -39,6 +39,7 @@ import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.synapse.transport.nhttp.util.RESTUtil;
 import org.apache.synapse.transport.utils.ServiceUtils;
 import org.apache.synapse.transport.utils.TCPUtils;
+import org.apache.synapse.transport.utils.http.server.SimpleHttpServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,6 +65,7 @@ public class NHttpTransportListenerTest {
     private static final int PORT = 8486;
     private static HttpCoreNIOListener nHttpListener = new HttpCoreNIOListener();
     private static TransportInDescription transportInDescription = new TransportInDescription("http");
+    private static MessageContext inMsgContext;
 
     @BeforeClass()
     public static void startListener() throws Exception {
@@ -172,6 +174,65 @@ public class NHttpTransportListenerTest {
         Assert.assertEquals("Response code mismatched", 200, responseCode);
         String response = method.getResponseBodyAsString();
         Assert.assertEquals("Response", "<msg>hello</msg>", response);
+    }
+
+    /**
+     * Test the Source Handler respond to client.
+     * Send a message to http listener and get the response from backend server.
+     */
+    @Test
+    public void testBackendResponse() throws Exception {
+        final SimpleHttpServer helloServer = new SimpleHttpServer();
+        try {
+            helloServer.start();
+            RequestURIBasedDispatcher requestURIBasedDispatcher = Mockito.mock(RequestURIBasedDispatcher.class);
+            Mockito.when(requestURIBasedDispatcher.findService(any(MessageContext.class)))
+                    .thenReturn(new AxisService("myservice"));
+            PowerMockito.whenNew(RequestURIBasedDispatcher.class).withNoArguments()
+                    .thenReturn(requestURIBasedDispatcher);
+            PowerMockito.mockStatic(AxisEngine.class);
+            PowerMockito.doAnswer(new Answer<Void>() {
+                public Void answer(InvocationOnMock invocation) throws Exception {
+                    MessageContext axis2MessageContext = invocation.getArgument(0);
+                    if (axis2MessageContext.getServiceContext() == null) {
+                        //request path
+                        ServiceContext svcCtx = new ServiceContext();
+                        OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
+                        axis2MessageContext.setServiceContext(svcCtx);
+                        axis2MessageContext.setOperationContext(opCtx);
+                        axis2MessageContext.setProperty("TransportURL", helloServer.getServerUrl());
+                        inMsgContext = axis2MessageContext;
+                    } else {
+                        //response path
+                        axis2MessageContext.setTo(null);
+                        axis2MessageContext.setProperty("synapse.isresponse", true);
+                        axis2MessageContext.removeProperty("TransportURL");
+                        axis2MessageContext.setProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO,
+                                inMsgContext.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
+                        axis2MessageContext.getOperationContext()
+                                .setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+                    }
+                    HttpCoreNIOSender sender = new HttpCoreNIOSender();
+                    ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
+                    sender.init(cfgCtx, new TransportOutDescription("http"));
+                    sender.invoke(axis2MessageContext);
+                    return null;
+                }
+            }).when(AxisEngine.class, "receive", any(MessageContext.class));
+
+            HttpClient client = new HttpClient();
+            PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
+            method.setRequestHeader("Content-Type", "application/xml");
+            StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello server</msg>",
+                    "application/xml", "UTF-8");
+            method.setRequestEntity(stringRequestEntity);
+            int responseCode = client.executeMethod(method);
+            Assert.assertEquals("Response code mismatched", 200, responseCode);
+            String response = method.getResponseBodyAsString();
+            Assert.assertEquals("Response", "<msg>hello</msg>", response);
+        } finally {
+            helloServer.stop();
+        }
     }
 
     @AfterClass()
