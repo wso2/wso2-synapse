@@ -54,14 +54,15 @@ public class ServiceUtils {
      * @throws HttpException
      */
     public static void receive(MessageContext axis2MessageContext) throws IOException, HttpException {
-        ServiceContext svcCtx = new ServiceContext();
-        OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
-        axis2MessageContext.setServiceContext(svcCtx);
-        axis2MessageContext.setOperationContext(opCtx);
-        axis2MessageContext.getOperationContext().setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+        if (axis2MessageContext.getServiceContext() == null) {
+            ServiceContext svcCtx = new ServiceContext();
+            OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
+            axis2MessageContext.setServiceContext(svcCtx);
+            axis2MessageContext.setOperationContext(opCtx);
+        }
         PassThroughHttpSender sender = new PassThroughHttpSender();
         ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
         sender.init(cfgCtx, new TransportOutDescription("http"));
-        sender.submitResponse(axis2MessageContext);
+        sender.invoke(axis2MessageContext);
     }
 }
