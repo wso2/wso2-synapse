@@ -76,8 +76,10 @@ public class SimpleHttpServer implements HttpServer {
      * @return a port number.
      */
     private int selectAvailablePort() {
-        int port = new Random().nextInt(9999);
-        port = Math.abs(port);
+        //port must be greater than 1024
+        int port = new Random().nextInt(7000);
+        port = Math.abs(port) + 2000;
+
         if (TCPUtils.isPortOpen(port, "localhost")) {
             return selectAvailablePort();
         }
