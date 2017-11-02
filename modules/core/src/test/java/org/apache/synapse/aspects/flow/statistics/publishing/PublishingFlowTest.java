@@ -24,14 +24,14 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * Unit tests for PublishFlow class
+ * Unit tests for PublishFlow class.
  */
 public class PublishingFlowTest {
 
     private PublishingFlow publishingFlow = new PublishingFlow();
 
     /**
-     * initialize publishingFlow and test getObjectAsMap method
+     * initialize publishingFlow and test getObjectAsMap method.
      */
     @Test
     public void testGetObjectAsMap() {

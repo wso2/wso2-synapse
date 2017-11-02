@@ -26,33 +26,34 @@ import org.apache.synapse.eventing.SynapseEventSource;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Unit tests for EventPublisherMediator class
+ * Unit tests for EventPublisherMediator class.
  */
 public class EventPublisherMediatorTest {
 
     private EventPublisherMediator eventPublisherMediator = new EventPublisherMediator();
 
     /**
-     * Testing eventPublisherMediator with mocked event source
+     * Testing eventPublisherMediator with mocked event source.
      */
     @Test
     public void testMediate() {
-        final String EVENT_SOURCE_NAME = "testEventStore";
+        final String EventSourceName = "testEventStore";
         SynapseEnvironment synapseEnvironment = Mockito.mock(SynapseEnvironment.class);
         MessageContext messageContext = new TestMessageContext();
         messageContext.setEnvironment(synapseEnvironment);
         SynapseConfiguration synapseConfiguration = new SynapseConfiguration();
         SynapseEventSource synapseEventSource = Mockito.mock(SynapseEventSource.class);
         Mockito.doNothing().when(synapseEventSource).dispatchEvents(Mockito.any(MessageContext.class));
-        Map<String,SynapseEventSource> eventStoreMap = new HashMap<>();
-        eventStoreMap.put(EVENT_SOURCE_NAME,synapseEventSource);
+        Map<String, SynapseEventSource> eventStoreMap = new HashMap<>();
+        eventStoreMap.put(EventSourceName, synapseEventSource);
         synapseConfiguration.setEventSources(eventStoreMap);
         messageContext.setConfiguration(synapseConfiguration);
-        eventPublisherMediator.setEventSourceName(EVENT_SOURCE_NAME);
-        Assert.assertTrue("mediation successful",eventPublisherMediator.mediate(messageContext));
+        eventPublisherMediator.setEventSourceName(EventSourceName);
+        Assert.assertTrue("mediation successful", eventPublisherMediator.mediate(messageContext));
     }
 }

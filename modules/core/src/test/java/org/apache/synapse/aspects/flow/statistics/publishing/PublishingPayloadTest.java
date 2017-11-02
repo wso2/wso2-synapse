@@ -21,20 +21,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Unit tests for publishingPayload class
+ * Unit tests for publishingPayload class.
  */
 public class PublishingPayloadTest {
 
     private PublishingPayload publishingPayload = new PublishingPayload();
 
     /**
-     * Test adding sample payload event
+     * Test adding sample payload event.
      */
     @Test
     public void testAddEvent() {
         PublishingPayloadEvent payloadEvent = new PublishingPayloadEvent();
         payloadEvent.setAttribute(new Integer(1));
         payloadEvent.setEventIndex(1);
-        Assert.assertTrue("Adding event should be successful",publishingPayload.addEvent(payloadEvent));
+        Assert.assertTrue("Adding event should be successful", publishingPayload.addEvent(payloadEvent));
     }
 }

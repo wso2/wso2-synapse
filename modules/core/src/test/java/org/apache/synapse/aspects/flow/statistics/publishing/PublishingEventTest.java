@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Unit tests for PublishingEvent class
+ * Unit tests for PublishingEvent class.
  */
 public class PublishingEventTest {
 
@@ -54,7 +54,7 @@ public class PublishingEventTest {
     private static final Map<String, Object> PROPERTY_MAP = new HashMap<>();
 
     /**
-     * Initializing PublishingEvent before tests
+     * Initializing PublishingEvent before tests.
      */
     @BeforeClass
     public static void init() {
@@ -77,17 +77,17 @@ public class PublishingEventTest {
     }
 
     /**
-     * Testing the overridden toSting method
+     * Testing the overridden toSting method.
      */
     @Test
     public void testToString() {
-        String expected = "Component Type " + StatisticsConstants.FLOW_STATISTICS_ENDPOINT +
-                " , Component Name " + COMPONENT_NAME;
+        String expected = "Component Type " + StatisticsConstants.FLOW_STATISTICS_ENDPOINT
+                + " , Component Name " + COMPONENT_NAME;
         Assert.assertEquals("toString should return expected string", publishingEvent.toString(), expected);
     }
 
     /**
-     * Testing getObjectList() (order of resulting array objects should be asserted)
+     * Testing getObjectList() (order of resulting array objects should be asserted).
      */
     @Test
     public void testGetObjectList() {
