@@ -19,35 +19,22 @@
 
 package org.apache.synapse.samples.framework.tests.proxy;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.http.HttpStatus;
 import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
-import org.apache.synapse.samples.framework.clients.BasicHttpClient;
-import org.apache.synapse.samples.framework.clients.HttpResponse;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
-public class Sample150 extends SynapseTestCase {
+public class Sample200 extends SynapseTestCase {
 
-    public Sample150() {
-        super(150);
+    public Sample200() {
+        super(200);
     }
 
-    public void testBasicProxy() {
+    public void testCallMediator() throws Exception {
         String addUrl = "http://localhost:8280/services/StockQuoteProxy";
-        log.info("Running test: Introduction to proxy services");
+        String policy = "./repository/conf/sample/resources/policy/client_policy_3.xml";
         StockQuoteSampleClient client = getStockQuoteClient();
-        SampleClientResult result = client.requestStandardQuote(addUrl, null, null, "IBM" ,null);
-        assertTrue("Client did not get run successfully ", result.responseReceived());
+        log.info("Running test: Call Mediator for Non-Blocking Service Invocation");
+        SampleClientResult result = client.requestStandardQuote(addUrl, null, null, "IBM", policy);
+        assertTrue("Invalid result received", result.responseReceived());
     }
-
-    // Test renamed to exclude 'test' prefix since this method fails intermittently
-    public void ignoretestProxyWSDL() throws Exception {
-        BasicHttpClient client = new BasicHttpClient();
-        HttpResponse response = client.doGet("http://localhost:8280/services/StockQuoteProxy?wsdl");
-        assertEquals(response.getStatus(), HttpStatus.SC_OK);
-        OMElement element = response.getBodyAsXML();
-        assertEquals(element.getLocalName(), "definitions");
-    }
-
 }

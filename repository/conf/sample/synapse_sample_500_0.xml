@@ -18,25 +18,27 @@
   ~  under the License.
   -->
 
-<!-- Switching from http/s to JMS -->
+<!-- Simple Eventing configuration -->
 <definitions xmlns="http://ws.apache.org/ns/synapse">
 
-    <proxy name="StockQuoteProxy" transports="http">
-        <target>
-            <endpoint>
-                <address
-                        uri="jms:/SimpleStockQuoteService?transport.jms.ConnectionFactoryJNDIName=QueueConnectionFactory&amp;java.naming.factory.initial=org.apache.activemq.jndi.ActiveMQInitialContextFactory&amp;java.naming.provider.url=tcp://localhost:62626&amp;transport.jms.DestinationType=queue"/>
-            </endpoint>
-            <inSequence>
-                <property action="set" name="transport.jms.ContentTypeProperty" value="Content-Type"
-                          scope="axis2"/>
-            </inSequence>
-            <outSequence>
-                <property action="remove" name="TRANSPORT_HEADERS" scope="axis2"/>
-                <send/>
-            </outSequence>
-        </target>
-        <publishWSDL uri="file:repository/conf/sample/resources/proxy/sample_proxy_1.wsdl"/>
+    <eventSource name="SampleEventSource">
+        <subscriptionManager
+                class="org.apache.synapse.eventing.managers.DefaultInMemorySubscriptionManager">
+            <!--property name="registryURL" value="http://localhost:8180/wso2registry"/>
+          <property name="username" value="admin"/>
+          <property name="password" value="admin"/-->
+            <property name="topicHeaderName" value="Topic"/>
+            <property name="topicHeaderNS" value="http://apache.org/aip"/>
+        </subscriptionManager>
+    </eventSource>
+
+    <sequence name="PublicEventSource">
+        <log level="full"/>
+        <eventPublisher eventSourceName="SampleEventSource"/>
+    </sequence>
+
+    <proxy name="EventingProxy">
+        <target inSequence="PublicEventSource"/>
     </proxy>
 
 </definitions>

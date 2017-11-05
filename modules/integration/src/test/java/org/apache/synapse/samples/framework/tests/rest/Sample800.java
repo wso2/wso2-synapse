@@ -36,7 +36,7 @@ public class Sample800 extends SynapseTestCase {
         HttpResponse response = client.doGet("http://127.0.0.1:8280/stockquote/view/IBM");
         assertEquals(response.getStatus(), HttpStatus.SC_OK);
         OMElement body = response.getBodyAsXML();
-        assertEquals(body.getLocalName(), "getQuoteResponse");
+        assertEquals("getQuoteResponse", body.getFirstElement().getFirstElement().getLocalName());
     }
 
     public void testPlaceOrder() throws Exception {
