@@ -23,12 +23,12 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
-public class Sample460 extends SynapseTestCase {
+public class Sample470 extends SynapseTestCase {
 
     SampleClientResult result;
 
-    public Sample460() {
-        super(460);
+    public Sample470() {
+        super(470);
     }
 
 

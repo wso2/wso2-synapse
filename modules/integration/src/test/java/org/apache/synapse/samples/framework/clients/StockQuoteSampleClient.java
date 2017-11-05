@@ -223,6 +223,7 @@ public class StockQuoteSampleClient {
         return clientResult;
     }
 
+
     public SampleClientResult placeOrder(String addUrl, String trpUrl, String prxUrl, String symbol) {
         log.info("sending fire and forget (place order) request");
         SampleClientResult clientResult = new SampleClientResult();
