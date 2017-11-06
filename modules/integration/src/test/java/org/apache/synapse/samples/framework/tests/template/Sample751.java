@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 751: Message Split Aggregate Using Templates
+ */
 public class Sample751 extends SynapseTestCase {
 
     public Sample751() {

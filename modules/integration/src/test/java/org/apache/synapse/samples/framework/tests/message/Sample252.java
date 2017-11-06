@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.Axis2BackEndServerController;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.JMSSampleClient;
 
+/**
+ * Test case for Sample 252: Pure Text (Binary) and POX Message Support with JMS
+ */
 public class Sample252 extends SynapseTestCase {
 
     public Sample252() {
