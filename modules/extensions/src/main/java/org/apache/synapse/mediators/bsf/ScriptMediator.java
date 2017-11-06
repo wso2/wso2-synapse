@@ -19,9 +19,7 @@
 
 package org.apache.synapse.mediators.bsf;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
@@ -359,14 +357,11 @@ public class ScriptMediator extends AbstractMediator {
         prepareForJSON(scriptMC);
         if (JsonUtil.hasAJsonPayload(messageContext)) {
             try {
-                JsonElement o = jsonParser.parse(new JsonReader(JsonUtil.newJsonPayloadReader(messageContext))); // first, check if the stream is valid.
-                if (o.isJsonNull()) {
-                    logger.error("#processJSONPayload. JSON stream is not valid.");
-                    return;
-                }
-                jsonObject = this.jsEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
-            } catch (Exception e) {
-                handleException("Failed to get the JSON payload from the input stream. Error>>>\n" + e.getLocalizedMessage());
+                String jsonPayload = JsonUtil.jsonPayloadToString(messageContext);
+                String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
+                jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
+            } catch (ScriptException e) {
+                throw new SynapseException("Invalid JSON payload", e);
             }
         } else if (jsonString != null) {
             String jsonPayload = jsonParser.parse(jsonString).toString();
