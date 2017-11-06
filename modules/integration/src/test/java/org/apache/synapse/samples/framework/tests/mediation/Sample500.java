@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 500: Call Mediator for Non-Blocking Service Invocation
+ */
 public class Sample500 extends SynapseTestCase {
 
     public Sample500() {

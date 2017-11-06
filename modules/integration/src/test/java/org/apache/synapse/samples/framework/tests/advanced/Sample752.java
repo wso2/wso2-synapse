@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 752: Load Balancing Between 3 Endpoints With Endpoint Templates
+ */
 public class Sample752 extends SynapseTestCase {
 
     public Sample752() {

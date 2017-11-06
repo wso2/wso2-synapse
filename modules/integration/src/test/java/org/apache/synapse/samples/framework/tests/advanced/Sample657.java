@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 657 : Distributed Transaction Management
+ */
 public class Sample657 extends SynapseTestCase {
 
     public Sample657() {

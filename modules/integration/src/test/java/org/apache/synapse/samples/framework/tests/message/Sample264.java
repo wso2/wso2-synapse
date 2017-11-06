@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 264: Sending Two-Way Messages Using JMS transport
+ */
 public class Sample264 extends SynapseTestCase {
 
     public Sample264() {

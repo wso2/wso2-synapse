@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 17: Transforming / Replacing Message Content with PayloadFactory Mediator
+ */
 public class Sample17 extends SynapseTestCase {
 
     public Sample17() {

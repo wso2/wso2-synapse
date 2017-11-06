@@ -24,6 +24,9 @@ import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.JMSSampleClient;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 253: Bridging from JMS to HTTP and Replying with a 202 Accepted Response
+ */
 public class Sample253 extends SynapseTestCase {
 
     public Sample253() {

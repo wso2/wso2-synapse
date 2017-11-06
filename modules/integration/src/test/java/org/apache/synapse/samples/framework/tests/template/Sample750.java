@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 750: Stereotyping XSLT Transformations with Templates
+ */
 public class Sample750 extends SynapseTestCase {
 
     public Sample750() {

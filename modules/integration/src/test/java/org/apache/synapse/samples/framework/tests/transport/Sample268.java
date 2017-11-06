@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 268: Proxy Services with the Local Transport
+ */
 public class Sample268 extends SynapseTestCase {
 
     public Sample268() {

@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 364: Using Mediators to Execute Database Stored Procedures
+ */
 public class Sample364 extends SynapseTestCase {
 
     public Sample364() {

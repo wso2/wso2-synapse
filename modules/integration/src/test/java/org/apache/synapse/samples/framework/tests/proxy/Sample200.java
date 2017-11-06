@@ -23,6 +23,9 @@ import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 200: Using WS-Security with policy attachments for proxy services
+ */
 public class Sample200 extends SynapseTestCase {
 
     public Sample200() {
