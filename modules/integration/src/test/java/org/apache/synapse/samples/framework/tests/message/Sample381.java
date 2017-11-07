@@ -21,6 +21,9 @@ package org.apache.synapse.samples.framework.tests.message;
 
 import org.apache.synapse.samples.framework.SynapseTestCase;
 
+/**
+ * Test case for Sample 381: Class Mediator to CBR Binary Messages
+ */
 public class Sample381 extends SynapseTestCase {
 
     public Sample381() {
