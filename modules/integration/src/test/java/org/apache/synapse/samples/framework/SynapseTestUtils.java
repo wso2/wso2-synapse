@@ -128,4 +128,25 @@ public class SynapseTestUtils {
         return System.getProperty("user.dir") + File.separator;
     }
 
+    /**
+     * Wait for the message count at the backend service until the timeout reaches
+     * @param backEndServerController Axis2BackEndServerController corresponding to the backend
+     * @param service                 Backend service name
+     * @param operation               Service operation
+     * @param expectedMessageCount    Expected message count
+     * @param timeout                 Waiting time
+     * @return                        True if the expected message count is found within the given timeout, false otherwise
+     * @throws InterruptedException
+     */
+    public static boolean waitForMessageCount(Axis2BackEndServerController  backEndServerController, String service,
+                                              String operation, int expectedMessageCount, long timeout) throws InterruptedException {
+        long elapsedTime = 0;
+        boolean expectedMessageCountReceived = false;
+        while (elapsedTime <= timeout && !expectedMessageCountReceived) {
+            expectedMessageCountReceived = backEndServerController.getMessageCount(service, operation) == expectedMessageCount;
+            Thread.sleep(500);
+            elapsedTime += 500;
+        }
+        return expectedMessageCountReceived;
+    }
 }

@@ -21,6 +21,7 @@ package org.apache.synapse.samples.framework.tests.message;
 
 import org.apache.synapse.samples.framework.Axis2BackEndServerController;
 import org.apache.synapse.samples.framework.SynapseTestCase;
+import org.apache.synapse.samples.framework.SynapseTestUtils;
 import org.apache.synapse.samples.framework.clients.JMSSampleClient;
 
 /**
@@ -43,8 +44,9 @@ public class Sample252 extends SynapseTestCase {
         try {
             client.connect("dynamicQueues/JMSTextProxy");
             client.sendTextMessage("12.33 1000 ACP");
-            Thread.sleep(2000);
-            assertEquals(1, axis2Server.getMessageCount("SimpleStockQuoteService", "placeOrder"));
+            boolean expectedMessageCountReceived = SynapseTestUtils.waitForMessageCount(axis2Server,
+                    "SimpleStockQuoteService", "placeOrder", 1, 2000);
+            assertTrue("Backend service not received the expected message count", expectedMessageCountReceived);
         } finally {
             client.shutdown();
         }
@@ -60,8 +62,9 @@ public class Sample252 extends SynapseTestCase {
         try {
             client.connect("dynamicQueues/JMSPoxProxy");
             client.sendAsPox("MSFT");
-            Thread.sleep(2000);
-            assertEquals(1, axis2Server.getMessageCount("SimpleStockQuoteService", "placeOrder"));
+            boolean expectedMessageCountReceived = SynapseTestUtils.waitForMessageCount(axis2Server,
+                    "SimpleStockQuoteService", "placeOrder", 1, 2000);
+            assertTrue("Backend service not received the expected message count", expectedMessageCountReceived);
         } finally {
             client.shutdown();
         }
