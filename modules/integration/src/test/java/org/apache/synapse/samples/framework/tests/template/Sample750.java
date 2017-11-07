@@ -17,36 +17,26 @@
  *  under the License.
  */
 
-package org.apache.synapse.samples.framework.tests.proxy;
+package org.apache.synapse.samples.framework.tests.template;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.http.HttpStatus;
 import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
-import org.apache.synapse.samples.framework.clients.BasicHttpClient;
-import org.apache.synapse.samples.framework.clients.HttpResponse;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
-public class Sample150 extends SynapseTestCase {
+/**
+ * Test case for Sample 750: Stereotyping XSLT Transformations with Templates
+ */
+public class Sample750 extends SynapseTestCase {
 
-    public Sample150() {
-        super(150);
+    public Sample750() {
+        super(750);
     }
 
-    public void testBasicProxy() {
+    public void testXSLTTransformations() throws Exception {
         String addUrl = "http://localhost:8280/services/StockQuoteProxy";
-        log.info("Running test: Introduction to proxy services");
         StockQuoteSampleClient client = getStockQuoteClient();
-        SampleClientResult result = client.requestStandardQuote(addUrl, null, null, "IBM" ,null);
-        assertTrue("Client did not get run successfully ", result.responseReceived());
-    }
-
-    // Test renamed to exclude 'test' prefix since this method fails intermittently
-    public void ignoretestProxyWSDL() throws Exception {
-        BasicHttpClient client = new BasicHttpClient();
-        HttpResponse response = client.doGet("http://localhost:8280/services/StockQuoteProxy?wsdl");
-        assertEquals(response.getStatus(), HttpStatus.SC_OK);
-        OMElement element = response.getBodyAsXML();
-        assertEquals("Invalid response received", "definitions", element.getLocalName());
+        log.info("Running test: Stereotyping XSLT Transformations with Templates");
+        SampleClientResult result = client.requestCustomQuote(addUrl, null, null, "IBM");
+        assertTrue("Invalid result received", result.responseReceived());
     }
 }

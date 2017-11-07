@@ -17,36 +17,29 @@
  *  under the License.
  */
 
-package org.apache.synapse.samples.framework.tests.proxy;
+package org.apache.synapse.samples.framework.tests.advanced;
 
-import org.apache.axiom.om.OMElement;
-import org.apache.http.HttpStatus;
 import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
-import org.apache.synapse.samples.framework.clients.BasicHttpClient;
-import org.apache.synapse.samples.framework.clients.HttpResponse;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
-public class Sample150 extends SynapseTestCase {
+public class Sample470 extends SynapseTestCase {
 
-    public Sample150() {
-        super(150);
+    SampleClientResult result;
+
+    public Sample470() {
+        super(470);
     }
 
-    public void testBasicProxy() {
-        String addUrl = "http://localhost:8280/services/StockQuoteProxy";
-        log.info("Running test: Introduction to proxy services");
+
+    public void testSpringBeanAsAMediator() {
+        String addUrl = "http://localhost:9000/services/SimpleStockQuoteService";
+        String trpUrl = "http://localhost:8280/";
         StockQuoteSampleClient client = getStockQuoteClient();
-        SampleClientResult result = client.requestStandardQuote(addUrl, null, null, "IBM" ,null);
+
+        log.info("Running test: Spring Bean as a Mediator");
+        result = client.requestStandardQuote(addUrl, trpUrl, null, "IBM" ,null);
         assertTrue("Client did not get run successfully ", result.responseReceived());
     }
 
-    // Test renamed to exclude 'test' prefix since this method fails intermittently
-    public void ignoretestProxyWSDL() throws Exception {
-        BasicHttpClient client = new BasicHttpClient();
-        HttpResponse response = client.doGet("http://localhost:8280/services/StockQuoteProxy?wsdl");
-        assertEquals(response.getStatus(), HttpStatus.SC_OK);
-        OMElement element = response.getBodyAsXML();
-        assertEquals("Invalid response received", "definitions", element.getLocalName());
-    }
 }

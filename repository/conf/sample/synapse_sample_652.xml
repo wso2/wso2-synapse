@@ -18,70 +18,42 @@
   ~  under the License.
   -->
 
-<!--Distributed transacton example  -->
+<!-- Introduction to priority based mediation -->
+<definitions xmlns="http://ws.apache.org/ns/synapse">
 
- <definitions xmlns="http://ws.apache.org/ns/synapse">
+    <priorityExecutor name="exec">
+        <queues>
+            <queue size="100" priority="1"/>
+            <queue size="100" priority="10"/>
+        </queues>
+    </priorityExecutor>
 
-<sequence name="myFaultHandler">
-    <log level="custom">
-        <property name="text" value="** Rollback Transaction**"/>
-    </log>
-    <transaction action="rollback"/>
-    <send/>
-</sequence>
+    <proxy name="StockQuoteProxy">
+        <target>
+            <inSequence>
+                <filter source="$trp:priority" regex="1">
+                    <then>
+                        <enqueue priority="1" sequence="priority_sequence" executor="exec"/>
+                    </then>
+                    <else>
+                        <enqueue priority="10" sequence="priority_sequence" executor="exec"/>
+                    </else>
+                </filter>
+            </inSequence>
+            <outSequence>
+                <send/>
+            </outSequence>
+        </target>
+        <publishWSDL uri="file:repository/conf/sample/resources/proxy/sample_proxy_1.wsdl"/>
+    </proxy>
 
-<sequence name="main" onError="myFaultHandler">
-    <in>
+    <sequence name="priority_sequence">
+        <log level="full"/>
         <send>
             <endpoint>
                 <address uri="http://localhost:9000/services/SimpleStockQuoteService"/>
             </endpoint>
         </send>
-    </in>
+    </sequence>
 
-    <out>
-        <transaction action="new"/>
-
-        <log level="custom">
-            <property name="text" value="** Reporting to the Database esbdb**"/>
-        </log>
-        <dbreport useTransaction="true" xmlns="http://ws.apache.org/ns/synapse">
-            <connection>
-                <pool>
-                    <dsName>java:jdbc/XADerbyDS</dsName>
-                    <icClass>org.jnp.interfaces.NamingContextFactory</icClass>
-                    <url>localhost:1099</url>
-                    <user>synapse</user>
-                    <password>synapse</password>
-                </pool>
-            </connection>
-            <statement>
-                <sql>delete from company where name =?</sql>
-                <parameter expression="//m0:return/m1:symbol/child::text()"
-                           xmlns:m0="http://services.samples" xmlns:m1="http://services.samples/xsd"
-                           type="VARCHAR"/>
-            </statement>
-        </dbreport>
-
-        <log level="custom">
-            <property name="text" value="** Reporting to the Database esbdb1**"/>
-        </log>
-        <dbreport useTransaction="true" xmlns="http://ws.apache.org/ns/synapse">
-            <connection>
-                <pool>
-                    <dsName>java:jdbc/XADerbyDS1</dsName>
-                    <icClass>org.jnp.interfaces.NamingContextFactory</icClass>
-                    <url>localhost:1099</url>
-                    <user>synapse</user>
-                    <password>synapse</password>
-                </pool>
-            </connection>
-            <statement>
-                <sql> INSERT into company values ('IBM','c4',12.0)</sql>
-            </statement>
-        </dbreport>
-        <transaction action="commit"/>
-        <send/>
-    </out>
-</sequence>
-</definitions> 
+</definitions>

@@ -17,29 +17,27 @@
  *  under the License.
  */
 
-package org.apache.synapse.samples.framework.tests.advanced;
+package org.apache.synapse.samples.framework.tests.proxy;
 
 import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
-public class Sample460 extends SynapseTestCase {
+/**
+ * Test case for Sample 200: Using WS-Security with policy attachments for proxy services
+ */
+public class Sample200 extends SynapseTestCase {
 
-    SampleClientResult result;
-
-    public Sample460() {
-        super(460);
+    public Sample200() {
+        super(200);
     }
 
-
-    public void testSpringBeanAsAMediator() {
-        String addUrl = "http://localhost:9000/services/SimpleStockQuoteService";
-        String trpUrl = "http://localhost:8280/";
+    public void testCallMediator() throws Exception {
+        String addUrl = "http://localhost:8280/services/StockQuoteProxy";
+        String policy = "./repository/conf/sample/resources/policy/client_policy_3.xml";
         StockQuoteSampleClient client = getStockQuoteClient();
-
-        log.info("Running test: Spring Bean as a Mediator");
-        result = client.requestStandardQuote(addUrl, trpUrl, null, "IBM" ,null);
-        assertTrue("Client did not get run successfully ", result.responseReceived());
+        log.info("Running test: Call Mediator for Non-Blocking Service Invocation");
+        SampleClientResult result = client.requestStandardQuote(addUrl, null, null, "IBM", policy);
+        assertTrue("Invalid result received", result.responseReceived());
     }
-
 }

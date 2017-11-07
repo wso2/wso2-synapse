@@ -38,7 +38,10 @@
             <dblookup>
                 <connection>
                     <pool>
-                        <dsName>lookupdb</dsName>
+                        <driver>org.apache.derby.jdbc.ClientDriver</driver>
+                        <url>jdbc:derby://localhost:1527/synapsedb;create=false</url>
+                        <user>synapse</user>
+                        <password>synapse</password>
                     </pool>
                 </connection>
                 <statement>
@@ -106,7 +109,10 @@
             <dbreport>
                 <connection>
                     <pool>
-                        <dsName>reportdb</dsName>
+                        <driver>org.apache.derby.jdbc.ClientDriver</driver>
+                        <url>jdbc:derby://localhost:1527/synapsedb;create=false</url>
+                        <user>synapse</user>
+                        <password>synapse</password>
                     </pool>
                 </connection>
                 <statement>
@@ -125,7 +131,10 @@
             <dblookup>
                 <connection>
                     <pool>
-                        <dsName>reportdb</dsName>
+                        <driver>org.apache.derby.jdbc.ClientDriver</driver>
+                        <url>jdbc:derby://localhost:1527/synapsedb;create=false</url>
+                        <user>synapse</user>
+                        <password>synapse</password>
                     </pool>
                 </connection>
                 <statement>

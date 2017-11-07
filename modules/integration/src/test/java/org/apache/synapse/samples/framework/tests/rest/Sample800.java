@@ -22,6 +22,7 @@ package org.apache.synapse.samples.framework.tests.rest;
 import org.apache.axiom.om.OMElement;
 import org.apache.http.HttpStatus;
 import org.apache.synapse.samples.framework.SynapseTestCase;
+import org.apache.synapse.samples.framework.SynapseTestUtils;
 import org.apache.synapse.samples.framework.clients.BasicHttpClient;
 import org.apache.synapse.samples.framework.clients.HttpResponse;
 
@@ -36,7 +37,7 @@ public class Sample800 extends SynapseTestCase {
         HttpResponse response = client.doGet("http://127.0.0.1:8280/stockquote/view/IBM");
         assertEquals(response.getStatus(), HttpStatus.SC_OK);
         OMElement body = response.getBodyAsXML();
-        assertEquals(body.getLocalName(), "getQuoteResponse");
+        assertEquals("Invalid response received", "getQuoteResponse", body.getFirstElement().getFirstElement().getLocalName());
     }
 
     public void testPlaceOrder() throws Exception {
@@ -50,8 +51,9 @@ public class Sample800 extends SynapseTestCase {
                 "</placeOrder>";
         HttpResponse response = client.doPost("http://127.0.0.1:8280/stockquote/order",
                 payload.getBytes(), "application/xml");
-        assertEquals(response.getStatus(), HttpStatus.SC_ACCEPTED);
-        Thread.sleep(2000);
-        assertEquals(1, getAxis2Server().getMessageCount("SimpleStockQuoteService", "placeOrder"));
+        assertEquals("Invalid status received", HttpStatus.SC_ACCEPTED, response.getStatus());
+        boolean expectedMessageCountReceived = SynapseTestUtils.waitForMessageCount(getAxis2Server(),
+                "SimpleStockQuoteService", "placeOrder", 1, 2000);
+        assertTrue("Backend service not received the expected message count", expectedMessageCountReceived);
     }
 }
