@@ -236,6 +236,5 @@ public class SimpleXMLEventFactoryTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testCreateDTD() {
         factory.createDTD("foo");
-        Assert.fail("executed without expected exception");
     }
 }
