@@ -116,6 +116,7 @@ public class EIPUtils {
                                       SynapseXPath expression) throws JaxenException {
 
         OMElement enrichingElement;
+        enricher.toString();
         List elementList = getMatchingElements(envelope, synCtxt, expression);
         List list = getMatchingElements(enricher, synCtxt, expression);
         if ((checkNotEmpty(elementList) && checkNotEmpty(list))
