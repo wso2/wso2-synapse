@@ -19,11 +19,13 @@
 
 package org.apache.synapse.samples.framework.tests.transport;
 
-import org.apache.synapse.samples.framework.Axis2BackEndServerController;
 import org.apache.synapse.samples.framework.SampleClientResult;
 import org.apache.synapse.samples.framework.SynapseTestCase;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
+/**
+ * Test case for Sample 267: Switching from UDP to HTTP/S
+ */
 public class Sample267 extends SynapseTestCase {
 
     public Sample267() {
@@ -31,18 +33,9 @@ public class Sample267 extends SynapseTestCase {
     }
 
     public void testUDPtoHTTP() throws Exception {
-        Axis2BackEndServerController axis2Server = getAxis2Server();
-        if (axis2Server == null) {
-            fail("Failed to load the Axis2BackEndServerController");
-        }
-
-        assertEquals(0, axis2Server.getMessageCount("SimpleStockQuoteService", "placeOrder"));
-
-        String addUrl = "udp://localhost:9999?contentType=text/xml";
+        String trpUrl = "udp://localhost:9999?contentType=text/xml";
         StockQuoteSampleClient client = getStockQuoteClient();
-        client.placeOrder(addUrl, null, null, "IBM");
-
-        Thread.sleep(2000);
-        assertEquals(1, axis2Server.getMessageCount("SimpleStockQuoteService", "placeOrder"));
+        SampleClientResult result = client.placeOrder(null, trpUrl, null, "IBM");
+        assertResponseReceived(result);
     }
 }

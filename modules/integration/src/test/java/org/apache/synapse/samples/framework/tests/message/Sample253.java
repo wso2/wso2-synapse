@@ -21,6 +21,7 @@ package org.apache.synapse.samples.framework.tests.message;
 
 import org.apache.synapse.samples.framework.Axis2BackEndServerController;
 import org.apache.synapse.samples.framework.SynapseTestCase;
+import org.apache.synapse.samples.framework.SynapseTestUtils;
 import org.apache.synapse.samples.framework.clients.JMSSampleClient;
 import org.apache.synapse.samples.framework.clients.StockQuoteSampleClient;
 
@@ -45,8 +46,9 @@ public class Sample253 extends SynapseTestCase {
         StockQuoteSampleClient client = getStockQuoteClient();
         client.placeOrder(null, trpUrl, null, "IBM");
 
-        Thread.sleep(2000);
-        assertEquals(1, axis2Server.getMessageCount("SimpleStockQuoteService", "placeOrder"));
+        boolean expectedMessageCountReceived = SynapseTestUtils.waitForMessageCount(axis2Server,
+                "SimpleStockQuoteService", "placeOrder", 1, 2000);
+        assertTrue("Backend service not received the expected message count", expectedMessageCountReceived);
     }
 
 }
