@@ -28,6 +28,9 @@ import org.junit.Test;
 
 import javax.xml.stream.XMLStreamException;
 
+/**
+ * Test class for EventSourceFactory class.
+ */
 public class EventSourceFactoryTest {
 
     /**
@@ -56,29 +59,35 @@ public class EventSourceFactoryTest {
 
     /**
      * Test to CreateEventSource and asserting EventSource is created.
+     *
      * @throws XMLStreamException - XMLStreamException
      */
     @Test
     public void testCreateEventSource3() throws XMLStreamException {
         String inputXML =
                 "      <eventSource name=\"SampleEventSource\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
-                "            <subscriptionManager class=\"org.apache.synapse.eventing.managers.DefaultInMemorySubscriptionManager\">\n" +
-                "                <property name=\"topicHeaderName\" value=\"Topic\"/>\n" +
-                "                <property name=\"topicHeaderNS\" value=\"http://apache.org/aip\"/>\n" +
-                "            </subscriptionManager>\n" +
-                "            <subscription id=\"mySubscription\">\n" +
-                "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/eventing/dialect/topicFilter\"/>\n" +
-                "                 <endpoint><address uri=\"http://localhost:9000/services/SimpleStockQuoteService\"/></endpoint>\n" +
-                "            </subscription>\n" +
-                "            <subscription id=\"mySubscription2\">\n" +
-                "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/eventing/dialect/topicFilter\"/>\n" +
-                "                 <endpoint><address uri=\"http://localhost:9000/services/SimpleStockQuoteService\"/></endpoint>\n" +
-                "                 <expires>2020-06-27T21:07:00.000-08:00</expires>\n" +
-                "            </subscription>\n" +
-                "      </eventSource>\n" ;
-        OMElement element = AXIOMUtil.stringToOM(  inputXML );
-        SynapseEventSource eventSource =  EventSourceFactory.createEventSource(element, null);
-        Assert.assertNotNull("SynapseEventSource is not created",eventSource);
+                        "            <subscriptionManager class=\"org.apache.synapse.eventing.managers." +
+                        "DefaultInMemorySubscriptionManager\">\n" +
+                        "                <property name=\"topicHeaderName\" value=\"Topic\"/>\n" +
+                        "                <property name=\"topicHeaderNS\" value=\"http://apache.org/aip\"/>\n" +
+                        "            </subscriptionManager>\n" +
+                        "            <subscription id=\"mySubscription\">\n" +
+                        "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache." +
+                        "org/eventing/dialect/topicFilter\"/>\n" +
+                        "                 <endpoint><address uri=\"http://localhost:9000/services/" +
+                        "SimpleStockQuoteService\"/></endpoint>\n" +
+                        "            </subscription>\n" +
+                        "            <subscription id=\"mySubscription2\">\n" +
+                        "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/" +
+                        "eventing/dialect/topicFilter\"/>\n" +
+                        "                 <endpoint><address uri=\"http://localhost:9000/services/" +
+                        "SimpleStockQuoteService\"/></endpoint>\n" +
+                        "                 <expires>2020-06-27T21:07:00.000-08:00</expires>\n" +
+                        "            </subscription>\n" +
+                        "      </eventSource>\n";
+        OMElement element = AXIOMUtil.stringToOM(inputXML);
+        SynapseEventSource eventSource = EventSourceFactory.createEventSource(element, null);
+        Assert.assertNotNull("SynapseEventSource is not created", eventSource);
     }
 
 }
