@@ -53,7 +53,7 @@ public class Sample800 extends SynapseTestCase {
                 payload.getBytes(), "application/xml");
         assertEquals("Invalid status received", HttpStatus.SC_ACCEPTED, response.getStatus());
         boolean expectedMessageCountReceived = SynapseTestUtils.waitForMessageCount(getAxis2Server(),
-                "SimpleStockQuoteService", "placeOrder", 1, 2000);
+                "SimpleStockQuoteService", "placeOrder", 1, 5000);
         assertTrue("Backend service not received the expected message count", expectedMessageCountReceived);
     }
 }

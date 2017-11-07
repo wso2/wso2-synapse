@@ -409,6 +409,16 @@
             <artifactId>wso2caching-core</artifactId>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-transport-tcp</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.axis2</groupId>
+            <artifactId>axis2-transport-udp</artifactId>
+            <version>1.7.5</version>
+        </dependency>
     </dependencies>
 
 </project>
