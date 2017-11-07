@@ -22,28 +22,23 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import org.apache.synapse.commons.staxon.core.json.stream.JsonStreamSource;
 import org.apache.synapse.commons.staxon.core.json.stream.JsonStreamToken;
 import org.apache.synapse.commons.staxon.core.json.stream.util.StreamSourceDelegate;
 
 public class JsonStreamSourceImplTest {
-    @Rule
-    public final ExpectedException expectedException = ExpectedException.none();
 
     void readInvalid(String input, Class<? extends Exception> exceptionClass, String exceptiondMessage) throws IOException {
-        expectedException.expect(exceptionClass);
-        expectedException.expectMessage(exceptiondMessage);
-
         StreamSourceDelegate source =
                 new StreamSourceDelegate(new JsonStreamSourceImpl(new Yylex(new StringReader(input)), true));
         try {
             source.copy(new JsonStreamTargetImpl(new StringWriter(), true));
+            Assert.fail("execution successful without expected exception");
         } catch (Exception ex) {
-            //empty
+            Assert.assertEquals("exception should have expected message",ex.getMessage(),exceptiondMessage);
+            Assert.assertEquals("exception should be of expected class",ex.getClass(),exceptionClass);
         } finally {
             source.close();
         }
