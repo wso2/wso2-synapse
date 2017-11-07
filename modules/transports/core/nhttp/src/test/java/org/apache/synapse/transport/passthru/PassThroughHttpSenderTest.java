@@ -49,6 +49,9 @@ import java.util.HashMap;
 import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 
+/**
+ * Test class for PassThroughHttpSender
+ */
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore("javax.management.*")
 @PrepareForTest({ PassThroughHttpSender.class, SourceContext.class, SourceResponseFactory.class})
@@ -72,6 +75,10 @@ public class PassThroughHttpSenderTest extends TestCase {
     @InjectMocks
     PassThroughHttpSender sender;
 
+    /**
+     * This method tests the initialization of PassThroughHttpSender
+     * @throws Exception
+     */
     @Test
     public void testInit() throws Exception {
         ConfigurationContext configurationContext = new ConfigurationContext(new AxisConfiguration());
@@ -84,6 +91,11 @@ public class PassThroughHttpSenderTest extends TestCase {
         passThroughHttpSender.init(configurationContext, transportOutDescription);
     }
 
+    /**
+     * This method tests the invoke of PassThroughHttpSender when
+     * the endpoint reference is given in the message context
+     * @throws Exception
+     */
     @Test
     public void testInvoke() throws Exception {
         MockitoAnnotations.initMocks(this);
@@ -104,6 +116,10 @@ public class PassThroughHttpSenderTest extends TestCase {
         Assert.assertNotNull("PassThrough Http Sender not invoked!", response);
     }
 
+    /**
+     * This method tests the submitting of response when the source request is null
+     * @throws Exception
+     */
     @Test
     public void testSubmitResponse() throws Exception {
         MockitoAnnotations.initMocks(this);
