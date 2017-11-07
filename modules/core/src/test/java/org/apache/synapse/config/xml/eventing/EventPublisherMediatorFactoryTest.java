@@ -43,17 +43,22 @@ public class EventPublisherMediatorFactoryTest {
         EventPublisherMediatorFactory mediatorFactory = new EventPublisherMediatorFactory();
         String inputXML =
                 "      <eventSource name=\"SampleEventSource\" xmlns=\"http://ws.apache.org/ns/synapse\">\n" +
-                        "            <subscriptionManager class=\"org.apache.synapse.eventing.managers.DefaultInMemorySubscriptionManager\">\n" +
+                        "            <subscriptionManager class=\"org.apache.synapse.eventing.managers." +
+                        "DefaultInMemorySubscriptionManager\">\n" +
                         "                <property name=\"topicHeaderName\" value=\"Topic\"/>\n" +
                         "                <property name=\"topicHeaderNS\" value=\"http://apache.org/aip\"/>\n" +
                         "            </subscriptionManager>\n" +
                         "            <subscription id=\"mySubscription\">\n" +
-                        "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/eventing/dialect/topicFilter\"/>\n" +
-                        "                 <endpoint><address uri=\"http://localhost:9000/services/SimpleStockQuoteService\"/></endpoint>\n" +
+                        "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/" +
+                        "eventing/dialect/topicFilter\"/>\n" +
+                        "                 <endpoint><address uri=\"http://localhost:9000/services/" +
+                        "SimpleStockQuoteService\"/></endpoint>\n" +
                         "            </subscription>\n" +
                         "            <subscription id=\"mySubscription2\">\n" +
-                        "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/eventing/dialect/topicFilter\"/>\n" +
-                        "                 <endpoint><address uri=\"http://localhost:9000/services/SimpleStockQuoteService\"/></endpoint>\n" +
+                        "                 <filter source =\"synapse/event/test\" dialect=\"http://synapse.apache.org/" +
+                        "eventing/dialect/topicFilter\"/>\n" +
+                        "                 <endpoint><address uri=\"http://localhost:9000/services/" +
+                        "SimpleStockQuoteService\"/></endpoint>\n" +
                         "                 <expires>2020-06-27T21:07:00.000-08:00</expires>\n" +
                         "            </subscription>\n" +
                         "      </eventSource>\n";
