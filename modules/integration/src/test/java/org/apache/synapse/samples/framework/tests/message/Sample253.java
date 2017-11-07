@@ -40,7 +40,8 @@ public class Sample253 extends SynapseTestCase {
             fail("Failed to load the Axis2BackEndServerController");
         }
 
-        assertEquals(0, axis2Server.getMessageCount("SimpleStockQuoteService", "placeOrder"));
+        assertEquals("Invalid message count at the backend", 0, axis2Server.getMessageCount(
+                "SimpleStockQuoteService", "placeOrder"));
 
         String trpUrl = "http://localhost:8280/services/OneWayProxy";
         StockQuoteSampleClient client = getStockQuoteClient();
