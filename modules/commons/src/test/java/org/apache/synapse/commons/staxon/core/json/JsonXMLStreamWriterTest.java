@@ -265,7 +265,6 @@ public class JsonXMLStreamWriterTest {
         writer.writeStartElement("foo");
         writer.writeEndElement();
         writer.writeStartElement("bar");
-        Assert.fail("execution successful without expected exception");
     }
 
     @Test

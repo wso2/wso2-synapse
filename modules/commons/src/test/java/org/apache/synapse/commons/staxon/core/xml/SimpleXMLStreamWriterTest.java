@@ -206,7 +206,6 @@ public class SimpleXMLStreamWriterTest {
         writer.writeStartElement("foo");
         writer.writeEndElement();
         writer.writeStartElement("foo");
-        Assert.fail("execution successful without expected exception");
     }
 
     /**
