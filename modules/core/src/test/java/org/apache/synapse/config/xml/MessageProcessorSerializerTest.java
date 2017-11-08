@@ -58,9 +58,9 @@ public class MessageProcessorSerializerTest {
      */
     @Test
     public void testSerializeMessageProcessor3() {
+        Map<String, Object> parameters = new HashMap<>();
         MessageProcessor messageProcessor = new ScheduledMessageForwardingProcessor();
         messageProcessor.setName("testStore");
-        Map<String, Object> parameters = new HashMap<>();
         parameters.put("interval", "1000");
         messageProcessor.setParameters(parameters);
         messageProcessor.setDescription("testMessageProcessor");
