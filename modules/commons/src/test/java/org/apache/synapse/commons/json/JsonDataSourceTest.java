@@ -19,7 +19,7 @@
 package org.apache.synapse.commons.json;
 
 import junit.framework.TestCase;
-import org.apache.axiom.om.OMDataSource;
+import org.apache.axiom.om.OMOutputFormat;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -40,37 +40,63 @@ public class JsonDataSourceTest extends TestCase {
                                                "    ]\n" +
                                                "}\n";
 
-    public static final String expectedXML = "<?xml version='1.0' encoding='UTF-8'?><jsonObject><id>0001</id><ok>true</ok><amount>5250</amount><?xml-multiple url?><url>http://org.wso2.json/32_32</url></jsonObject>";
+    public static final String expectedXML = "<jsonObject>" +
+                                            "<id>0001</id>" +
+                                            "<ok>true</ok>" +
+                                            "<amount>5250</amount>" +
+                                            "<url>http://org.wso2.json/32_32</url>" +
+                                            "</jsonObject>";
 
-    public void testCase() {
-        try {
-            InputStream inputStream = Util.getJson(0);
-            OMDataSource jsonData = Util.newJsonDataSource(inputStream);
-            OutputStream outputStream = Util.newOutputStream();
-            jsonData.serialize(outputStream, null);
-            assertTrue(expectedJSON.equals(outputStream.toString()));
+    public static final String expectedXMLWithDecl = "<?xml version='1.0' encoding='UTF-8'?>" +
+                                            "<jsonObject>" +
+                                            "<id>0001</id>" +
+                                            "<ok>true</ok>" +
+                                            "<amount>5250</amount>" +
+                                            "<url>http://org.wso2.json/32_32</url>" +
+                                            "</jsonObject>";
 
-            inputStream = Util.getJson(0);
-            jsonData = Util.newJsonDataSource(inputStream);
-            Writer stringWriter = new StringWriter();
-            jsonData.serialize(stringWriter, null);
-            assertTrue(expectedJSON.equals(stringWriter.toString()));
+    public void testSerializeJson() throws FileNotFoundException, XMLStreamException {
+        JsonDataSource jsonDataSource = createJsonDatasource();
+        OutputStream outputStream = Util.newOutputStream();
+        jsonDataSource.serialize(outputStream, null);
+        assertEquals("Invalid serialization", expectedJSON, outputStream.toString());
+    }
 
-            inputStream = Util.getJson(0);
-            jsonData = Util.newJsonDataSource(inputStream);
-            outputStream = Util.newOutputStream();
-            XMLStreamWriter xmlWriter = XMLOutputFactory.newFactory().createXMLStreamWriter(outputStream);
-            jsonData.serialize(xmlWriter);
-            assertTrue(expectedXML.equals(outputStream.toString()));
-        } catch (FileNotFoundException e) {
-            System.err.println("Could not create input stream. ERROR>>>\n" + e);
-            assertTrue(false);
-        } catch (XMLStreamException e) {
-            System.err.println("Could not serialize JSON. ERROR>>>\n" + e);
-            assertTrue(false);
-        } catch (Exception e) {
-            System.err.println("Could not run test. ERROR>>>\n" + e);
-            assertTrue(false);
-        }
+    public void testSerializeXml() throws FileNotFoundException, XMLStreamException {
+        JsonDataSource jsonDataSource = createJsonDatasource();
+        OutputStream outputStream = Util.newOutputStream();
+        OMOutputFormat outputFormat = new OMOutputFormat();
+        outputFormat.setContentType("text/xml");
+        jsonDataSource.serialize(outputStream, outputFormat);
+        assertEquals("Invalid serialization", expectedXML, outputStream.toString());
+    }
+
+    public void testSerializeStringWriterJson() throws FileNotFoundException, XMLStreamException {
+        JsonDataSource jsonDataSource = createJsonDatasource();
+        Writer stringWriter = new StringWriter();
+        jsonDataSource.serialize(stringWriter, null);
+        assertEquals("Invalid serialization", expectedJSON, stringWriter.toString());
+    }
+
+    public void testSerializeStringWriterXml() throws FileNotFoundException, XMLStreamException {
+        JsonDataSource jsonDataSource = createJsonDatasource();
+        Writer stringWriter = new StringWriter();
+        OMOutputFormat outputFormat = new OMOutputFormat();
+        outputFormat.setContentType("text/xml");
+        jsonDataSource.serialize(stringWriter, outputFormat);
+        assertEquals("Invalid serialization", expectedXML, stringWriter.toString());
+    }
+
+    public void testSerializeXMLWriter() throws FileNotFoundException, XMLStreamException {
+        JsonDataSource jsonDataSource = createJsonDatasource();
+        OutputStream outputStream = Util.newOutputStream();
+        XMLStreamWriter xmlWriter = XMLOutputFactory.newFactory().createXMLStreamWriter(outputStream);
+        jsonDataSource.serialize(xmlWriter);
+        assertEquals("Invalid serialization", expectedXMLWithDecl, outputStream.toString());
+    }
+
+    private JsonDataSource createJsonDatasource() throws FileNotFoundException {
+        InputStream inputStream = Util.getJson(0);
+        return new JsonDataSource(inputStream);
     }
 }
