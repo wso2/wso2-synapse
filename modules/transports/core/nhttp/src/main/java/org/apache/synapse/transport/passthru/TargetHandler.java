@@ -281,6 +281,17 @@ public class TargetHandler implements NHttpClientEventHandler {
                     conn.requestOutput();
                     return;
                 } else {
+                    log.warn("Tunnel response failed");
+                    // the reason for getting the targetRequest and calling the consumeError() on pipe. Instead of
+                    // calling the informWriterError(NHTTPClientConnection) is, at this point the
+                    // "writeCondition.await()" is already called but the corresponding pipe is not yet set as
+                    // a writer in TargetContext
+                    TargetRequest targetRequest = TargetContext.getRequest(conn);
+                    if (targetRequest != null) {
+                        targetRequest.getPipe().consumerError();
+                    } else {
+                        log.warn("Failed target response, but the target request is null");
+                    }
                     TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
                 }
             }
