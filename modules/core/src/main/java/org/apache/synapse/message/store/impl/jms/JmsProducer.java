@@ -131,9 +131,8 @@ public class JmsProducer implements MessageProducer {
                 logger.debug(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
             }
             return false;
-        } else {
-            store.reset(null, session, false);
         }
+
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + ". Stored MessageID : " + synCtx.getMessageID());
         }
@@ -324,5 +323,9 @@ public class JmsProducer implements MessageProducer {
                 }
             }
         }
+    }
+
+    public Session getSession(){
+        return this.session;
     }
 }

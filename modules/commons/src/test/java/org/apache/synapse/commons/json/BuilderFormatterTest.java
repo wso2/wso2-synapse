@@ -81,6 +81,9 @@ public class BuilderFormatterTest extends TestCase {
 
     private static final String jsonIn18 = "{\"source\":\"\\u003ca href=\\\"http:\\/\\/www.tweetdeck.com\\\" rel=\\\"nofollow\\\"\\u003eTweetDeck\\u003c\\/a\\u003e\",\"truncated\":false}";
 
+    private static final String jsonIn19 = "{\"root\":{\"abc\":null,\"def\":\"\"}}";
+    private static final String xml19 = "<jsonObject><root><abc nil=\"true\" /><def></def></root></jsonObject>";
+
     public void testCase1() {
         runTest(jsonIn1, xml1);
     }
@@ -170,6 +173,11 @@ public class BuilderFormatterTest extends TestCase {
     public void testCase17() {
         //runTest(jsonIn17, xml17);
     }
+
+    public void testCase19() {
+//        runTest(jsonIn19, xml19);
+    }
+
     private Builder jsonBuilder = Util.newJsonBuilder();
     private MessageFormatter formatter = Util.newJsonFormatter();
 

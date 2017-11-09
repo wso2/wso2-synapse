@@ -29,6 +29,9 @@ import org.apache.synapse.config.xml.XMLConfigurationBuilder;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.builtin.DropMediator;
 import org.apache.synapse.mediators.builtin.LogMediator;
+import org.apache.synapse.mediators.builtin.SendMediator;
+import org.apache.synapse.mediators.filters.InMediator;
+import org.apache.synapse.mediators.filters.OutMediator;
 import org.apache.synapse.registry.Registry;
 
 import javax.xml.stream.XMLStreamException;
@@ -52,8 +55,12 @@ public class SynapseConfigurationBuilder {
         // programatically create an empty configuration which just log and drop the messages 
         SynapseConfiguration config = SynapseConfigUtils.newConfiguration();
         SequenceMediator mainMediator = new SequenceMediator();
-        mainMediator.addChild(new LogMediator());
-        mainMediator.addChild(new DropMediator());
+        InMediator inMediator = new InMediator();
+        inMediator.addChild(new LogMediator());
+        mainMediator.addChild(inMediator);
+        OutMediator outMediator = new OutMediator();
+        outMediator.addChild(new SendMediator());
+        mainMediator.addChild(outMediator);
         mainMediator.setName(SynapseConstants.MAIN_SEQUENCE_KEY);
         config.addSequence(SynapseConstants.MAIN_SEQUENCE_KEY, mainMediator);
         SequenceMediator faultMediator = new SequenceMediator();

@@ -27,6 +27,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseFactory;
 import org.apache.http.impl.nio.DefaultNHttpClientConnection;
+import org.apache.http.message.BasicHttpRequest;
 import org.apache.http.nio.NHttpClientEventHandler;
 import org.apache.http.nio.NHttpMessageParser;
 import org.apache.http.nio.NHttpMessageWriter;
@@ -45,6 +46,7 @@ import java.net.SocketAddress;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         implements UpgradableNHttpConnection {
@@ -333,12 +335,26 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             this.writer.reset();
         }
 
+        private void printLog(final HttpRequest message) {
+            headerlog.debug(id + " >> " + message.getRequestLine().toString());
+            Header[] headers = message.getAllHeaders();
+            for (Header header : headers) {
+                headerlog.debug(id + " >> " + header.toString());
+            }
+        }
+
         public void write(final HttpRequest message) throws IOException, HttpException {
             if (message != null && headerlog.isDebugEnabled()) {
-                headerlog.debug(id + " >> " + message.getRequestLine().toString());
-                Header[] headers = message.getAllHeaders();
-                for (int i = 0; i < headers.length; i++) {
-                    headerlog.debug(id + " >> " + headers[i].toString());
+                String skipLogging = System.getProperty("skip.logging");
+                Object request = session.getAttribute("http.request");
+                if ("true".equals(skipLogging) && request != null) {
+                    String uri = ((HttpRequest) request).getRequestLine().toString();
+                    Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                    if (pattern != null && !pattern.matcher(uri).find()) {
+                        printLog(message);
+                    }
+                } else {
+                    printLog(message);
                 }
             }
             if (message != null && accesslog.isInfoEnabled()) {
@@ -368,6 +384,14 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
             this.parser = parser;
         }
 
+        private void printLog(final HttpResponse message) {
+            headerlog.debug(id + " << " + message.getStatusLine().toString());
+            Header[] headers = message.getAllHeaders();
+            for (Header header : headers) {
+                headerlog.debug(id + " << " + header.toString());
+            }
+        }
+
         public void reset() {
             this.parser.reset();
         }
@@ -379,10 +403,16 @@ public class LoggingNHttpClientConnection extends DefaultNHttpClientConnection
         public HttpResponse parse() throws IOException, HttpException {
             HttpResponse message = this.parser.parse();
             if (message != null && headerlog.isDebugEnabled()) {
-                headerlog.debug(id + " << " + message.getStatusLine().toString());
-                Header[] headers = message.getAllHeaders();
-                for (int i = 0; i < headers.length; i++) {
-                    headerlog.debug(id + " << " + headers[i].toString());
+                String skipLogging = System.getProperty("skip.logging");
+                Object request = session.getAttribute("http.request");
+                if ("true".equals(skipLogging) && request != null) {
+                    String uri = ((HttpRequest) request).getRequestLine().toString();
+                    Pattern pattern = LoggingUtils.getSkipLoggingMatcher();
+                    if (pattern != null && !pattern.matcher(uri).find()) {
+                        printLog(message);
+                    }
+                } else {
+                    printLog(message);
                 }
             }
             if (message != null && accesslog.isInfoEnabled()) {

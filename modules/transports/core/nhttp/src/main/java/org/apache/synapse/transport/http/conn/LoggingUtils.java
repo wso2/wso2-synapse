@@ -31,11 +31,23 @@ import org.apache.http.nio.reactor.IOSession;
 import org.apache.http.nio.util.ByteBufferAllocator;
 import org.apache.http.params.HttpParams;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class LoggingUtils {
 
     public final static String HEADER_LOG_ID = "org.apache.synapse.transport.http.headers";
     public final static String WIRE_LOG_ID = "org.apache.synapse.transport.http.wire";
     public final static String ACCESS_LOG_ID = "org.apache.synapse.transport.http.access";
+    private final static Pattern SKIP_LOGGING_PATTERN;
+
+    static {
+        if (System.getProperty("skip.logging.pattern") != null) {
+            SKIP_LOGGING_PATTERN = Pattern.compile(System.getProperty("skip.logging.pattern"));
+        } else {
+            SKIP_LOGGING_PATTERN = null;
+        }
+    }
 
     public static NHttpClientEventHandler decorate(NHttpClientEventHandler handler) {
         Log log = LogFactory.getLog(handler.getClass());
@@ -63,6 +75,10 @@ public class LoggingUtils {
                 responseFactory,
                 allocator,
                 params);
+    }
+
+    public static Pattern getSkipLoggingMatcher() {
+        return SKIP_LOGGING_PATTERN;
     }
 
     public static DefaultNHttpServerConnection createServerConnection(

@@ -78,7 +78,7 @@ public class ResolvingEndpoint extends AbstractEndpoint {
         }
     }
 
-    private Endpoint loadAndInitEndpoint(ConfigurationContext cc, String key) {
+    public Endpoint loadAndInitEndpoint(ConfigurationContext cc, String key) {
         Parameter parameter = cc.getAxisConfiguration().getParameter(
                 SynapseConstants.SYNAPSE_CONFIG);
         Parameter synEnvParameter = cc.getAxisConfiguration().getParameter(
@@ -96,7 +96,9 @@ public class ResolvingEndpoint extends AbstractEndpoint {
             Endpoint ep = synCfg.getEndpoint(key);
             if (ep != null && !ep.isInitialized()) {
                 synchronized (ep) {
-                    ep.init(synapseEnvironment);
+                    if (!ep.isInitialized()) {
+                        ep.init(synapseEnvironment);
+                    }
                 }
             }
             return ep;

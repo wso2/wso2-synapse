@@ -22,15 +22,21 @@ package org.apache.synapse.config.xml.endpoints;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.clustering.Member;
+import org.apache.axis2.util.JavaUtils;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.endpoints.utils.LoadbalanceAlgorithmFactory;
 import org.apache.synapse.config.xml.XMLConfigConstants;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.LoadbalanceEndpoint;
 import org.apache.synapse.endpoints.algorithms.LoadbalanceAlgorithm;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -132,6 +138,15 @@ public final class LoadbalanceEndpointFactory extends EndpointFactory {
             String failover = loadbalanceElement.getAttributeValue(new QName("failover"));
             if (failover != null && failover.equalsIgnoreCase("false")) {
                 loadbalanceEndpoint.setFailover(false);
+            }
+
+            //set buildMessage attribute
+            String  buildMessageAtt = loadbalanceElement.getAttributeValue(new QName(XMLConfigConstants.BUILD_MESSAGE));
+            if (buildMessageAtt != null) {
+                loadbalanceEndpoint.setBuildMessageAttAvailable(true);
+                if (JavaUtils.isTrueExplicitly(buildMessageAtt)) {
+                    loadbalanceEndpoint.setBuildMessageAtt(true);
+                }
             }
 
             // process the parameters

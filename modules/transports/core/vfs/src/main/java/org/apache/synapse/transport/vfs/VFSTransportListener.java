@@ -421,6 +421,11 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
                         log.debug("End Sorting the files.");
                     }                 
                     for (FileObject child : children) {
+                        // Stop processing any further when put to maintenance mode (shutting down or restarting)
+                        // Stop processing when service get undeployed
+                        if (state != BaseConstants.STARTED || !entry.getService().isActive()) {
+                            return;
+                        }
                         /**
                          * Before starting to process another file, see whether the proxy is stopped or not.
                          */

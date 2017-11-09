@@ -41,6 +41,7 @@ import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.mediators.base.SequenceMediator;
 import org.apache.synapse.mediators.template.TemplateMediator;
+import org.apache.synapse.rest.RESTConstants;
 
 import java.util.*;
 
@@ -511,17 +512,22 @@ public class Axis2MessageContext implements MessageContext {
         if (serviceLog != null) {
             return serviceLog;
         } else {
+            String serviceLoggerName;
             String serviceName = (String) getProperty(SynapseConstants.PROXY_SERVICE);
-            if (serviceName != null && synCfg.getProxyService(serviceName) != null) {
-                serviceLog = LogFactory.getLog(
-                        SynapseConstants.SERVICE_LOGGER_PREFIX + serviceName);
-                return serviceLog;
-            } else {
-                serviceLog = LogFactory.getLog(
-                        SynapseConstants.SERVICE_LOGGER_PREFIX.substring(0,
-                                                                         SynapseConstants.SERVICE_LOGGER_PREFIX.length() - 1));
-                return serviceLog;
+            // Added REST API service logger resolver to fix ESBJAVA-5216.
+            if (serviceName == null) {
+                serviceName = (String) getProperty(RESTConstants.SYNAPSE_REST_API);
             }
+            if (serviceName != null && synCfg.getProxyService(serviceName) != null) {
+                serviceLoggerName = SynapseConstants.SERVICE_LOGGER_PREFIX + serviceName;
+            } else if (serviceName != null && synCfg.getAPI(serviceName) != null) {
+                serviceLoggerName = SynapseConstants.API_LOGGER_PREFIX + serviceName;
+            } else {
+                serviceLoggerName = SynapseConstants.SERVICE_LOGGER_PREFIX.substring(0,
+                        SynapseConstants.SERVICE_LOGGER_PREFIX.length() - 1);
+            }
+            serviceLog = LogFactory.getLog(serviceLoggerName);
+            return serviceLog;
         }
     }
 

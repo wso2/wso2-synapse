@@ -1,20 +1,19 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
+ * Copyright (c) 2017, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * WSO2 Inc. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *   * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.synapse.transport.nhttp.util;
@@ -37,6 +36,8 @@ import org.apache.axis2.dispatchers.RequestURIOperationDispatcher;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.util.URIEncoderDecoder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
@@ -44,6 +45,8 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Iterator;
 
 /**
@@ -51,6 +54,28 @@ import java.util.Iterator;
  * going out from the nhttp transport in the HTTP GET method
  */
 public class RESTUtil {
+
+    private static final Log log = LogFactory.getLog(RESTUtil.class);
+    private static RequestURIBasedDispatcher requestDispatcher = new RequestURIBasedDispatcher();
+    private static HTTPLocationBasedDispatcher httpLocationBasedDispatcher =
+            new HTTPLocationBasedDispatcher();
+    private static RequestURIOperationDispatcher requestURIOperationDispatcher =
+            new RequestURIOperationDispatcher();
+    private static Object dispatcherInstance = null;
+    private static Method invokeMethod = null;
+
+    static {
+        String extendedURIBasedDispatcher = System.getProperty("ei.extendedURIBasedDispatcher");
+        try {
+            if (extendedURIBasedDispatcher != null) {
+                Class<?> extendedURIBasedDispatcherClass = RESTUtil.class.getClassLoader().loadClass(extendedURIBasedDispatcher);
+                dispatcherInstance = extendedURIBasedDispatcherClass.newInstance();
+                invokeMethod = extendedURIBasedDispatcherClass.getMethod("invoke", MessageContext.class);
+            }
+        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | ClassNotFoundException e) {
+            log.fatal(e);
+        }
+    }
 
     /**
      * This method will return the URI part for the GET HTTPRequest by converting
@@ -254,7 +279,6 @@ public class RESTUtil {
         boolean reverseProxyMode = Boolean.parseBoolean(System.getProperty("reverseProxyMode"));
         AxisService axisService = null;
         if(!reverseProxyMode){
-            RequestURIBasedDispatcher requestDispatcher = new RequestURIBasedDispatcher();
             axisService = requestDispatcher.findService(msgContext);
         }
 
@@ -282,16 +306,20 @@ public class RESTUtil {
     }
     
     public static void dispatchAndVerify(MessageContext msgContext) throws AxisFault {
-        RequestURIBasedDispatcher requestDispatcher = new RequestURIBasedDispatcher();
-        requestDispatcher.invoke(msgContext);
+        String extendedURIBasedDispatcher = System.getProperty("ei.extendedURIBasedDispatcher");
+        if (extendedURIBasedDispatcher == null) {
+            requestDispatcher.invoke(msgContext);
+        } else {
+            try {
+                invokeMethod.invoke(dispatcherInstance, msgContext);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new AxisFault(e.getMessage());
+            }
+        }
         AxisService axisService = msgContext.getAxisService();
         if (axisService != null) {
-            HTTPLocationBasedDispatcher httpLocationBasedDispatcher =
-                    new HTTPLocationBasedDispatcher();
             httpLocationBasedDispatcher.invoke(msgContext);
             if (msgContext.getAxisOperation() == null) {
-                RequestURIOperationDispatcher requestURIOperationDispatcher =
-                        new RequestURIOperationDispatcher();
                 requestURIOperationDispatcher.invoke(msgContext);
             }
 

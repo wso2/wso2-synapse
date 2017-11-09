@@ -140,7 +140,7 @@ public class PropertyMediatorTest extends TestCase {
         MessageContext synCtx = TestUtils.getTestContext("<getQuote><symbol>IBM</symbol></getQuote>");
         propMediatorOne.mediate(synCtx);
         Object prop = synCtx.getProperty("nameOne");
-        assertEquals(valueOne, prop);
+        assertEquals(valueOne.toString(), prop.toString()); // Objects are not equal, so need to compare the content
 
         // Test XML property retreival
         String exprValue = new SynapseXPath("synapse:get-property('nameOne')").stringValueOf(synCtx);

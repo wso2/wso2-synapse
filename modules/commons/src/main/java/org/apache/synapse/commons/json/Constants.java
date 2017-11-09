@@ -108,4 +108,10 @@ final class Constants {
     // to the outgoing request
     public static final String SET_CONTENT_TYPE_CHARACTER_ENCODING = "setCharacterEncoding";
 
+    /**
+     * Property to inform Staxon library to include xml multiple processing instruction in JSON -> XML transformation
+     */
+    public static final String SYNAPSE_JSON_TO_XML_PROCESS_INSTRUCTION_ENABLE = "synapse.json.to.xml.processing.instruction.enabled";
+
+
 }

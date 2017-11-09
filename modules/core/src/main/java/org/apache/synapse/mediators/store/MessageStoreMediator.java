@@ -27,6 +27,7 @@ import org.apache.synapse.continuation.ContinuationStackManager;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.message.store.MessageStore;
+import org.apache.synapse.message.store.impl.jms.JmsStore;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.util.MessageHelper;
 
@@ -63,9 +64,13 @@ public class MessageStoreMediator extends AbstractMediator{
     private static final String PRODUCER_GUARANTEED_DELIVERY = "store.producer.guaranteed.delivery.enable";
     private static final String FAILOVER_MESSAGE_STORE_NAME = "store.failover.message.store.name";
 
+    /**
+     * Lock for store message operation
+     */
+    private final Object storeMessageLock = new Object();
 
     public boolean mediate(MessageContext synCtx) {
-
+        boolean produceStatus;
         if (synCtx.getEnvironment().isDebuggerEnabled()) {
             if (super.divertMediationRoute(synCtx)) {
                 return true;
@@ -96,22 +101,6 @@ public class MessageStoreMediator extends AbstractMediator{
                     log.debug("Message Store mediator storing the message : \n " + synCtx.getEnvelope());
                 }
 
-                // Here we set the server name in the message context before storing the message.
-                //This can be used by the Processors in a clustering setup.
-                if(synCtx instanceof Axis2MessageContext) {
-
-                    String serverName =
-                                        getAxis2ParameterValue(((Axis2MessageContext)synCtx).
-                                        getAxis2MessageContext().
-                                        getConfigurationContext().getAxisConfiguration(),
-                                        SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME);
-                    if(serverName != null) {
-                        synCtx.setProperty(SynapseConstants.Axis2Param.SYNAPSE_SERVER_NAME,
-                                serverName);
-                    }
-
-                }
-
                 // Ensure that the message is fully read
                 synCtx.getEnvelope().buildWithAttachments();
                 //Clone the message before sending to the producer
@@ -123,8 +112,17 @@ public class MessageStoreMediator extends AbstractMediator{
                 } catch (AxisFault af) {
                     handleException("Error when cloning the message context", af, synCtx);
                 }
-                boolean produceStatus = messageStore.getProducer().storeMessage(newCtx);
+
+                synchronized (storeMessageLock) {
+                   produceStatus = messageStore.getProducer().storeMessage(newCtx);
+                }
+
                 if (!produceStatus) {
+
+                    //Fix ESBJAVA-5011, since connection is already null need to nullify producer also
+                    if (messageStore instanceof JmsStore) {
+                        ((JmsStore) messageStore).setProducer(null);
+                    }
 
                     if (isGuaranteedDeliveryEnabled && failoverMessageStoreName != null && !failoverMessageStoreName
                             .isEmpty()) {
@@ -199,25 +197,4 @@ public class MessageStoreMediator extends AbstractMediator{
         this.onStoreSequence = onStoreSequence;
     }
 
-     /**
-     * Helper method to get a value of a parameters in the AxisConfiguration
-     *
-     * @param axisConfiguration AxisConfiguration instance
-     * @param paramKey The name / key of the parameter
-     * @return The value of the parameter
-     */
-    private static String getAxis2ParameterValue(AxisConfiguration axisConfiguration,
-                                                 String paramKey) {
-
-        Parameter parameter = axisConfiguration.getParameter(paramKey);
-        if (parameter == null) {
-            return null;
-        }
-        Object value = parameter.getValue();
-        if (value != null && value instanceof String) {
-            return (String) parameter.getValue();
-        } else {
-            return null;
-        }
-    }
 }

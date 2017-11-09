@@ -18,16 +18,19 @@
 
 package org.apache.synapse.message.processor.impl.forwarder;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.util.ElementHelper;
+import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.http.HTTPConstants;
@@ -137,10 +140,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
      * Specifies whether the service should be started as deactivated or not
      */
     private boolean isDeactivatedAtStartup= false;
+
+    /**
+     * Specifies whether we should consider the response of the message in determining the success of message forwarding
+     */
+    private boolean isResponseValidationNotRequired = false;
     
-    private boolean isNonHTTP = false;
-    
-    Pattern httpPattern = Pattern.compile("^(http|https):");
+    Pattern httpPattern = Pattern.compile("^(http|https|hl7):");
 	
 	public ForwardingService(MessageProcessor messageProcessor, BlockingMsgSender sender,
 	                         SynapseEnvironment synapseEnvironment, long threshouldInterval) {
@@ -431,9 +437,9 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
 			String endpointReferenceValue = null;
 	        if (endpointDefinition.getAddress() != null) {
-	            endpointReferenceValue = endpointDefinition.getAddress();
-	            isNonHTTP = !isHTTPEndPoint(endpointReferenceValue);
-	        } 
+		        endpointReferenceValue = endpointDefinition.getAddress();
+		        isResponseValidationNotRequired = !isResponseValidationRequiredEndpoint(endpointReferenceValue);
+	        }
 			try {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
@@ -442,6 +448,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 						// actual message. otherwise retry may not
 						// work as expected.
 						messageContext.setEnvelope(MessageHelper.cloneSOAPEnvelope(originalEnvelop));
+                        setSoapHeaderBlock(messageContext);
 						OMElement firstChild = null; //
 						org.apache.axis2.context.MessageContext origAxis2Ctx =
 						                                                       ((Axis2MessageContext) messageContext).getAxis2MessageContext();
@@ -468,7 +475,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 							outCtx = sender.send(ep, messageContext);
 						}
 
-                        if (isNonHTTP) {
+                        if (isResponseValidationNotRequired) {
                             /*
                              * There is no status codes to deal with JMS eps. So
                              * merely set it as a success if there's no any
@@ -499,7 +506,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
                          * If an exception is thrown in a JMS scenario then we
                          * have to consider it as a failure.
                          */
-                        if (isNonHTTP) {
+                        if (isResponseValidationNotRequired) {
                             isSuccessful = false;
 						} else if (outCtx != null && "true".equals(outCtx.getProperty(
 								ForwardingProcessorConstants.BLOCKING_SENDER_ERROR))) {
@@ -819,11 +826,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 	}
     
-    private boolean isHTTPEndPoint(String epAddress) {
+    private boolean isResponseValidationRequiredEndpoint(String epAddress) {
         Matcher match = httpPattern.matcher(epAddress);
         return match.find();
     }
-    
+
     /**
      * + * Used to determine the family of HTTP status codes to which the given
      * code
@@ -855,5 +862,36 @@ public class ForwardingService implements Task, ManagedLifecycle {
     private enum HTTPStatusCodeFamily {
         INFORMATIONAL, SUCCESSFUL, REDIRECTION, CLIENT_ERROR, SERVER_ERROR, OTHER
     }
+
+	private void setSoapHeaderBlock(MessageContext synCtx) {
+		// Send the SOAP Header Blocks to support WS-Addressing
+		if (synCtx.getEnvelope().getHeader() != null) {
+			Iterator iHeader = synCtx.getEnvelope().getHeader().getChildren();
+			SOAPFactory fac;
+			if (SOAP11Constants.SOAP_ENVELOPE_NAMESPACE_URI.equals(synCtx.getEnvelope().getBody()
+					.getNamespace().getNamespaceURI())) {
+				fac = OMAbstractFactory.getSOAP11Factory();
+			} else {
+				fac = OMAbstractFactory.getSOAP12Factory();
+			}
+			List<OMNode> newHeaderNodes = new ArrayList<OMNode>();
+			while (iHeader.hasNext()) {
+				try {
+					Object element = iHeader.next();
+					if (element instanceof OMElement) {
+						newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+					}
+					iHeader.remove();
+				} catch (OMException e) {
+					log.error("Unable to convert to SoapHeader Block", e);
+				} catch (Exception e) {
+					log.error("Unable to convert to SoapHeader Block", e);
+				}
+			}
+			for (OMNode newHeaderNode : newHeaderNodes) {
+				synCtx.getEnvelope().getHeader().addChild(newHeaderNode);
+			}
+		}
+	}
 
 }

@@ -114,6 +114,7 @@ public class XMLConfigConstants {
 
 	public static final String LOADBALANCE_POLICY = "policy";
 	public static final String LOADBALANCE_ALGORITHM = "algorithm";
+	public static final String BUILD_MESSAGE = "buildMessage";
 
     //TODO FIX-RUWAN
     public static final String ALGORITHM_NAME = "policy";

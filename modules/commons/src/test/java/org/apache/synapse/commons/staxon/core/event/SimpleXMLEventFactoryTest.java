@@ -235,10 +235,6 @@ public class SimpleXMLEventFactoryTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testCreateDTD() {
-        try {
-            factory.createDTD("foo");
-        } catch (UnsupportedOperationException ex) {
-            //empty
-        }
+        factory.createDTD("foo");
     }
 }

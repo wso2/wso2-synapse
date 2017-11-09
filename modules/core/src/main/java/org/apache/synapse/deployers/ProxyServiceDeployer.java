@@ -78,10 +78,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Initialized the ProxyService : " + proxy.getName());
                 }
 
+                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
                 AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
                                                   getSynapseConfiguration().getAxisConfiguration());
 
-                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
                 if (axisService == null) {
                     if (log.isDebugEnabled()) {
                         log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());

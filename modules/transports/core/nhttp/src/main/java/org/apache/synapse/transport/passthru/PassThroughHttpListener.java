@@ -265,6 +265,21 @@ public class PassThroughHttpListener implements TransportListener {
         Set<InetSocketAddress> addressSet = new HashSet<InetSocketAddress>();
         addressSet.addAll(connFactory.getBindAddresses());
 
+        InetAddress bindAddress;
+        Parameter bindParam = pttInDescription.getParameter("bind-address");
+        if (bindParam != null) {
+            try {
+                bindAddress = InetAddress.getByName((String) bindParam.getValue());
+            } catch (UnknownHostException ex) {
+                throw AxisFault.makeFault(ex);
+            }
+            if (bindAddress != null) {
+                Parameter portParam = pttInDescription.getParameter("port");
+                int port = Integer.parseInt(portParam.getValue().toString());
+                addressSet.add(new InetSocketAddress(bindAddress, port));
+            }
+        }
+
         if(PassThroughConfiguration.getInstance().getMaxActiveConnections() != -1) {
             addMaxActiveConnectionCountController(PassThroughConfiguration.getInstance().getMaxActiveConnections());
         }
@@ -286,21 +301,6 @@ public class PassThroughHttpListener implements TransportListener {
         });
         for (InetSocketAddress address: addressList) {
             passThroughListeningIOReactorManager.startPTTEndpoint(address, ioReactor, namePrefix);
-        }
-
-        InetAddress bindAddress;
-        Parameter bindParam = pttInDescription.getParameter("bind-address");
-        if (bindParam != null) {
-            try {
-                bindAddress = InetAddress.getByName((String) bindParam.getValue());
-            } catch (UnknownHostException ex) {
-                throw AxisFault.makeFault(ex);
-            }
-            if (bindAddress != null) {
-                Parameter portParam = pttInDescription.getParameter("port");
-                int port = Integer.parseInt(portParam.getValue().toString());
-                addressSet.add(new InetSocketAddress(bindAddress, port));
-            }
         }
     }
 

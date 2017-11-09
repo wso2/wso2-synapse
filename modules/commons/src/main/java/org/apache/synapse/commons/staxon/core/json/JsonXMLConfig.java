@@ -97,6 +97,11 @@ public interface JsonXMLConfig {
             return "";
         }
 
+        @Override
+        public boolean isReadWriteXmlNil() {
+            return false;
+        }
+
     };
 
     /**
@@ -189,5 +194,7 @@ public interface JsonXMLConfig {
     public String getCustomReplaceRegex();
 
     public String getCustomReplaceSequence();
+
+    public boolean isReadWriteXmlNil();
 
 }

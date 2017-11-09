@@ -31,6 +31,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.CallbackReceiver;
 import org.apache.axis2.wsdl.WSDLConstants;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
@@ -50,6 +51,7 @@ import org.apache.synapse.endpoints.AbstractEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 import org.apache.synapse.endpoints.dispatch.Dispatcher;
+import org.apache.synapse.mediators.MediatorFaultHandler;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
@@ -59,6 +61,7 @@ import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 
 import java.util.Stack;
 import java.util.Timer;
+import java.util.regex.Pattern;
 
 /**
  * This is the message receiver that receives the responses for outgoing messages sent out
@@ -176,7 +179,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
-                org.apache.synapse.MessageContext SynapseOutMsgCtx = ((AsyncCallback) callback).getSynapseOutMsgCtx();
+                synchronized (callback) {
+                    if (callback.isMarkedForRemoval()) {
+                        return;
+                    }
+                    callback.setMarkedForRemoval();
+                }
+                org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
                     handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
@@ -305,7 +314,18 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                         (response.getSoapAction() != null ? response.getSoapAction() : "null"));
                 log.debug("WSA-Action: " +
                         (response.getWSAAction() != null ? response.getWSAAction() : "null"));
-                String[] cids = response.getAttachmentMap().getAllContentIDs();
+                String[] cids = null;
+                try {
+                    cids = response.getAttachmentMap().getAllContentIDs();
+                } catch (Exception ex){
+                    //partially read stream could lead to corrupted attachment map and hence this exception
+                    //corrupted attachment map leads to inconsistent runtime exceptions and behavior
+                    //discard the attachment map for the fault handler invocation
+                    //ensure the successful completion for fault handler flow
+                    response.setAttachmentMap(null);
+                    log.error("Synapse encountered an exception when reading attachments from bytes stream. " +
+                            "Hence Attachments map is dropped from the message context.", ex);
+                }
                 if (cids != null && cids.length > 0) {
                     for (String cid : cids) {
                         log.debug("Attachment : " + cid);
@@ -552,8 +572,23 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             // send the response message through the synapse mediation flow
             try {
                 synapseOutMsgCtx.getEnvironment().injectMessage(synapseInMessageContext);
-            } catch (SynapseException syne) {
+            } catch (Exception syne) {
+                //introduced to handle runtime exceptions which are occurred inside Synapse handlers
+                //partially read stream could lead to corrupted attachment map and hence this exception
+                //corrupted attachment map leads to inconsistent runtime exceptions and behavior
+                //discard the attachment map for the fault handler invocation
+                //ensure the successful completion for fault handler flow
+                //even we drop attachment map for both cases messages which have attachment /
+                //messages which do not have attachments it would still not be any impact.
+                //However setting attachment map to null for messages which do not have attachments is not required.
+                //introduced due to the fact conflicts between Axiom exceptions for attachment/ non attachments cases
+                //and performance impact that could cause of regular expression matching of exceptional stack traces.
+                ((Axis2MessageContext) synapseInMessageContext)
+                        .getAxis2MessageContext().setAttachmentMap(null);
                 Stack stack = synapseInMessageContext.getFaultStack();
+                if (stack != null && stack.isEmpty()) {
+                    registerFaultHandler(synapseInMessageContext);
+                }
                 if (stack != null &&
                         !stack.isEmpty()) {
                     ((FaultHandler) stack.pop()).handleFault(synapseInMessageContext, syne);
@@ -610,6 +645,17 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             Options clientOptions = msgCtx.getOptions().getParent().getParent();
             clientOptions.setProperty(SynapseConstants.RAMPART_OUT_POLICY, null);
             clientOptions.setProperty(SynapseConstants.RAMPART_IN_POLICY, null);
+        }
+    }
+
+    private void registerFaultHandler(org.apache.synapse.MessageContext synCtx) {
+        String proxyName = (String) synCtx.getProperty(SynapseConstants.PROXY_SERVICE);
+        if (proxyName == null || "".equals(proxyName)) {
+            synCtx.pushFaultHandler(new MediatorFaultHandler(synCtx.getFaultSequence()));
+        }
+        ProxyService proxyService = synCtx.getConfiguration().getProxyService(proxyName);
+        if (proxyService != null) {
+            proxyService.registerFaultHandler(synCtx);
         }
     }
 }

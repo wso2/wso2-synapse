@@ -18,6 +18,7 @@
 
 package org.apache.synapse.message.store.impl.jms;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -26,10 +27,14 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
+import org.apache.synapse.inbound.InboundEndpoint;
+import org.apache.synapse.mediators.Value;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
 import org.apache.synapse.message.store.AbstractMessageStore;
 import org.apache.synapse.message.store.Constants;
+import org.apache.synapse.util.xpath.SynapseXPath;
+import org.jaxen.JaxenException;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -47,8 +52,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class JmsStore extends AbstractMessageStore {
+    protected static final Log log = LogFactory.getLog(JmsStore.class);
+
     /** JMS Broker username */
     public static final String USERNAME = "store.jms.username";
     /** JMS Broker password */
@@ -111,13 +120,26 @@ public class JmsStore extends AbstractMessageStore {
     /** Preserve session for caching */
     private MessageProducer cachedProducer;
 
+    private MessageProducer producer = null;
+
+    private SynapseEnvironment synapseEnvironment;
+    /** regex for secure vault expression */
+    private static final String SECURE_VAULT_REGEX = "\\{(wso2:vault-lookup\\('(.*?)'\\))\\}";
+
+    private Pattern vaultLookupPattern = Pattern.compile(SECURE_VAULT_REGEX);
+
     public MessageProducer getProducer() {
         if (cacheLevel == 1 && cachedProducer != null) {
             return cachedProducer;
         }
 
-        JmsProducer producer = new JmsProducer(this);
-        producer.setId(nextProducerId());
+        if (this.producer == null) {
+            this.producer = new JmsProducer(this);
+            this.producer.setId(nextProducerId());
+        } else {
+            return producer;
+        }
+
         Throwable throwable = null;
         Session session = null;
         javax.jms.MessageProducer messageProducer;
@@ -131,22 +153,23 @@ public class JmsStore extends AbstractMessageStore {
                     }
                 }
             }
-            try {
-                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
-            } catch (JMSException e) {
-                synchronized (producerLock) {
-                    boolean ok = newWriteConnection();
-                    if (!ok) {
-                        return producer;
+            if (((JmsProducer) this.producer).getSession() == null) {
+                try {
+                    session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                } catch (JMSException e) {
+                    synchronized (producerLock) {
+                        boolean ok = newWriteConnection();
+                        if (!ok) {
+                            return this.producer;
+                        }
                     }
+                    session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
+                    logger.info(nameString() + " established a connection to the broker.");
                 }
-                session = newSession(producerConnection(), Session.AUTO_ACKNOWLEDGE, true);
-                logger.info(nameString() + " established a connection to the broker.");
+                messageProducer = newProducer(session);
+                ((JmsProducer) this.producer).setConnection(producerConnection()).setSession(session).
+                        setProducer(messageProducer);
             }
-            messageProducer = newProducer(session);
-            producer.setConnection(producerConnection())
-                    .setSession(session)
-                    .setProducer(messageProducer);
         } catch (Throwable t) {
             error = true;
             throwable = t;
@@ -159,15 +182,15 @@ public class JmsStore extends AbstractMessageStore {
                 cleanup(producerConnection, session, true);
                 producerConnection = null;
             }
-            return producer;
+            return this.producer;
         }
         if (logger.isDebugEnabled()) {
-            logger.debug(nameString() + " created message producer " + producer.getId());
+            logger.debug(nameString() + " created message producer " + this.producer.getId());
         }
         if (cacheLevel == 1) {
             cachedProducer = producer;
         }
-        return producer;
+        return this.producer;
     }
 
     public MessageConsumer getConsumer() {
@@ -255,6 +278,7 @@ public class JmsStore extends AbstractMessageStore {
     } /** End of unsupported operations. */
 
     public void init(SynapseEnvironment se) {
+        synapseEnvironment = se;
         if (se == null) {
             logger.error("Cannot initialize store.");
             return;
@@ -553,7 +577,8 @@ public class JmsStore extends AbstractMessageStore {
             }
         }
         userName = (String) parameters.get(USERNAME);
-        password = (String) parameters.get(PASSWORD);
+        password = resolveSecureVaultExpressions((String) parameters.get(PASSWORD));
+
         String conCaching = (String) parameters.get(CACHE);
         if ("true".equals(conCaching)) {
             if (logger.isDebugEnabled()) {
@@ -629,6 +654,37 @@ public class JmsStore extends AbstractMessageStore {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Use secure vault to secure password in JMS Message Store.
+     *
+     * @param value Value of password from JMS Message Store
+     * @return the actual password from the Secure Vault Password Management.
+     */
+    private String resolveSecureVaultExpressions(String value) {
+        //Password can be null, it is optional
+        if (value == null) {
+            return null;
+        }
+        Matcher lookupMatcher = vaultLookupPattern.matcher(value);
+        String resolvedValue = value;
+        if (lookupMatcher.find()) {
+            Value expression = null;
+            //getting the expression with out curly brackets
+            String expressionStr = lookupMatcher.group(1);
+            try {
+                expression = new Value(new SynapseXPath(expressionStr));
+            } catch (JaxenException e) {
+                throw new SynapseException("Error while building the expression : " + expressionStr, e);
+            }
+            resolvedValue = expression.evaluateValue(synapseEnvironment.createMessageContext());
+            if (StringUtils.isEmpty(resolvedValue)) {
+                log.warn("Found Empty value for expression : " + expression.getExpression());
+                resolvedValue = "";
+            }
+        }
+        return resolvedValue;
     }
 
     private Destination getDestination(Session session) {
@@ -744,5 +800,9 @@ public class JmsStore extends AbstractMessageStore {
 
     private String nameString() {
         return "Store [" + getName() + "]";
+    }
+
+    public void setProducer(MessageProducer producer) {
+        this.producer = producer;
     }
 }

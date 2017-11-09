@@ -19,7 +19,10 @@
 
 package org.apache.synapse.util.xpath;
 
-import org.apache.axiom.om.*;
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.impl.dom.DOOMAbstractFactory;
 import org.apache.axiom.om.impl.llom.OMDocumentImpl;
@@ -33,26 +36,34 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
+import org.apache.synapse.config.xml.OMElementUtils;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.streaming_xpath.StreamingXPATH;
 import org.apache.synapse.util.streaming_xpath.compiler.exception.StreamingXPATHCompilerException;
 import org.apache.synapse.util.streaming_xpath.custom.components.ParserComponent;
 import org.apache.synapse.util.streaming_xpath.exception.StreamingXPATHException;
-import org.jaxen.*;
+import org.jaxen.BaseXPath;
+import org.jaxen.Context;
+import org.jaxen.ContextSupport;
+import org.jaxen.JaxenException;
+import org.jaxen.UnresolvableException;
 import org.jaxen.util.SingletonList;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import java.io.IOException;
-import java.io.InputStream;
-
-import java.util.*;
 
 
 
@@ -115,6 +126,10 @@ public class SynapseXPath extends SynapsePath {
             getProperty(SynapseConstants.STREAMING_XPATH_PROCESSING);
     private StreamingXPATH streamingXPATH =null;
 
+    /** If the expression is identified as a XPath 2.0 expression in the compile time, we can make this property TRUE
+     * Then it will not try to evaluate the expression in Jaxen (XPath 1) parser but directly evaluate with XPath 2.0*/
+    private Boolean forceFailoverEvaluation = Boolean.FALSE;
+
     public String getEvaluator() {
         return evaluator;
     }
@@ -154,6 +169,16 @@ public class SynapseXPath extends SynapsePath {
         } else {
             contentAware = false;
         }
+        
+	 String propertyScope = getPropertyScope(xpathString);
+	 // skip message building for scope registry, system and transport scopes
+	 // for get-property() method
+	 if (XMLConfigConstants.SCOPE_REGISTRY.equals(propertyScope)
+			|| XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)
+			|| XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)) {
+	    contentAware = false;
+	    return;
+	 }
 
         if(xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2")){
             contentAware = false;
@@ -180,6 +205,68 @@ public class SynapseXPath extends SynapsePath {
                 }
                 contentAware = true;
             }
+        }
+    }
+
+    private String getPropertyScope(String xPathString) {
+       String[] args;
+       String xpath = null;
+       String scope = "";
+       if (xPathString.contains("get-property")) {
+            // extract property args
+            xpath = xPathString.substring(xPathString.indexOf("(") + 1, xPathString.indexOf(")"));
+	    args = xpath.split(",");
+	    if (args != null && args.length == 2) {
+		// remove white space
+		scope = args[0].trim();
+		// remove opening and ending quotes
+		scope = scope.substring(1, scope.length() - 1);
+                }
+	   }
+       return scope;
+    }
+    /**
+     * Evaluate if the expression is compilable in XPath 2.0 format. This will only be used when its failing to
+     * compile in Jaxen
+     *
+     * @param xpathExpr XPath expression
+     * @param elem Expression Configurations
+     * @throws JaxenException will be thrown if the expression is malformed
+     */
+    public SynapseXPath(String xpathExpr, OMElement elem) throws JaxenException {
+        super(xpathExpr, SynapsePath.X_PATH, log);
+
+        /* Setting namespaces */
+        OMElementUtils.addNameSpaces(this, elem, log);
+        this.addNamespacesForFallbackProcessing(elem);
+        domXpath.setNamespaceContext(domNamespaceMap);
+
+        /* Setting Path type */
+        this.setPathType(SynapseXPath.X_PATH);
+
+        /* Compile and see if the expression is valid */
+        try {
+            XPathExpression expr = domXpath.compile(xpathExpr);
+        } catch (XPathExpressionException e) {
+            throw new JaxenException(e);
+        }
+
+        /* Make evaluation of this expression forced to XPath 2.0 */
+        this.forceFailoverEvaluation = Boolean.TRUE;
+
+        PassThroughConfiguration conf = PassThroughConfiguration.getInstance();
+        bufferSizeSupport =conf.getIOBufferSize();
+
+        /* Handle special cases of content aware/unaware scenarios */
+        if (xpathExpr.contains("/") || xpathExpr.contains("get-property('From'") || xpathExpr
+                .contains("get-property('FAULT')")) {
+            contentAware = true;
+        } else {
+            contentAware = false;
+        }
+
+        if (xpathExpr.contains("$trp") || xpathExpr.contains("$ctx") || xpathExpr.contains("$axis2")) {
+            contentAware = false;
         }
     }
 
@@ -265,6 +352,13 @@ public class SynapseXPath extends SynapsePath {
     public String stringValueOf(MessageContext synCtx) {
 
         try {
+            if(forceFailoverEvaluation) {
+                if(log.isDebugEnabled()){
+                    log.debug("Forced evaluation of the expression with the DOM parser by bypassing the Jaxen: "
+                            + getExpression());
+                }
+                throw new UnresolvableException("Forced to evaluate with DOM parser bypassing Jaxen");
+            }
             InputStream inputStream = null;
             Object result = null;
             org.apache.axis2.context.MessageContext axis2MC =null;
@@ -529,7 +623,8 @@ public class SynapseXPath extends SynapsePath {
         domXpath.setNamespaceContext(domNamespaceMap);
         domXpath.setXPathFunctionResolver(new GetPropertyFunctionResolver(synCtx));
         domXpath.setXPathVariableResolver(new DOMSynapseXPathVariableResolver(this.getVariableContext(), synCtx));
-        XPathExpression expr = domXpath.compile(this.getRootExpr().getText());
+        /* Compile the original expression again with Saxon to be evaluated with XPath 2.0 */
+        XPathExpression expr = domXpath.compile(getExpression());
         Object result = expr.evaluate(doomElement);
 
         if (result != null) {
