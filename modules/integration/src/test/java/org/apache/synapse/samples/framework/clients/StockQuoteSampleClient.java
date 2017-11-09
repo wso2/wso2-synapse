@@ -36,6 +36,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.transport.http.HttpTransportProperties;
 import org.apache.axis2.wsdl.WSDLConstants;
+import org.apache.commons.httpclient.Header;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
@@ -50,7 +51,9 @@ import javax.xml.namespace.QName;
 
 import java.io.FileInputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -67,9 +70,11 @@ public class StockQuoteSampleClient {
     private OMElement response;
     private boolean completed;
     private Axis2ClientConfiguration clientConfig;
+    private List<Header> httpHeaders;
 
     public StockQuoteSampleClient(Axis2ClientConfiguration clientConfig) {
         this.clientConfig = clientConfig;
+        httpHeaders = new ArrayList<>();
     }
 
     private void init(String addUrl, String trpUrl, String prxUrl,
@@ -116,7 +121,7 @@ public class StockQuoteSampleClient {
             log.info("setting client timeout to: " + timeout);
             options.setTimeOutInMilliSeconds(timeout);
         }
-
+        options.setProperty(HTTPConstants.HTTP_HEADERS, httpHeaders);
         serviceClient.setOptions(options);
     }
 
@@ -304,6 +309,92 @@ public class StockQuoteSampleClient {
         return clientResult;
     }
 
+    /**
+     * Send standard stock quote request
+     * @param addUrl WS-Addressing URL
+     * @param trpUrl Transport URL
+     * @param prxUrl Proxy URL
+     * @param symbol Stock quote symbol
+     * @param svcPolicy SVC policy
+     * @return Response OMElement
+     */
+    public OMElement sendStandardQuoteRequest(String addUrl, String trpUrl, String prxUrl,
+                                              String symbol, String svcPolicy) {
+        OMElement resultElement = null;
+        log.info("sending standard quote request");
+        try {
+            init(addUrl, trpUrl, prxUrl, svcPolicy, 10000);
+
+            payload = StockQuoteHandler.createStandardQuoteRequest(
+                    symbol, 1);
+            serviceClient.getOptions().setAction("urn:getQuote");
+            resultElement = serviceClient.sendReceive(payload);
+
+        } catch (Exception e) {
+            log.error("Error invoking service", e);
+        } finally {
+            terminate();
+        }
+        return resultElement;
+    }
+
+    /**
+     * Send simple stock quote request
+     * @param addUrl WS-Addressing URL
+     * @param trpUrl Transport URL
+     * @param prxUrl Proxy URL
+     * @param symbol Stock quote symbol
+     * @param soapVersion Soap version
+     * @return SampleClientResult object
+     */
+    public SampleClientResult sendSimpleStockQuoteRequest(String addUrl, String trpUrl, String prxUrl,
+                                                          String symbol, String soapVersion) {
+        log.info("sending standard quote request soap11");
+        SampleClientResult clientResult = new SampleClientResult();
+        try {
+            init(addUrl, trpUrl, prxUrl, null, 10000);
+            payload = StockQuoteHandler.createStandardQuoteRequest(
+                    symbol, 1);
+            serviceClient.getOptions().setAction("urn:getQuote");
+            serviceClient.getOptions().setSoapVersionURI(soapVersion);
+            OMElement resultElement = serviceClient.sendReceive(payload);
+            log.info("Standard :: Stock price = $" +
+                    StockQuoteHandler.parseStandardQuoteResponse(resultElement));
+            clientResult.incrementResponseCount();
+        } catch (Exception e) {
+            log.error("Error invoking service", e);
+            clientResult.setException(e);
+        } finally {
+            terminate();
+        }
+        return clientResult;
+    }
+
+    /**
+     * Send custom quote request
+     * @param addUrl WS-Addressing URL
+     * @param trpUrl Transport URL
+     * @param prxUrl Proxy URL
+     * @param symbol Stock quote symbol
+     * @return response OMElement
+     */
+    public OMElement sendCustomQuoteRequest(String addUrl, String trpUrl, String prxUrl, String symbol) {
+        log.info("sending custom quote request");
+        OMElement resultElement = null;
+        try {
+            init(addUrl, trpUrl, prxUrl, null, 10000);
+
+            payload = StockQuoteHandler.createCustomQuoteRequest(symbol);
+            serviceClient.getOptions().setAction("urn:getQuote");
+            resultElement = serviceClient.sendReceive(payload);
+        } catch (Exception e) {
+            log.error("Error invoking service", e);
+        } finally {
+            terminate();
+        }
+        return resultElement;
+    }
+
     public SampleClientResult statefulClient(String addUrl, String trpUrl, int iterations) {
         boolean infinite = false;
         String session = null;
@@ -379,6 +470,15 @@ public class StockQuoteSampleClient {
     private int getSessionTurn(int max) {
         Random random = new Random();
         return random.nextInt(max);
+    }
+
+    /**
+     * Add HTTP header
+     * @param name  header name
+     * @param value header value
+     */
+    public void addHttpHeader(String name, String value) {
+        httpHeaders.add(new Header(name, value));
     }
 
     protected String getSetCookieHeader(MessageContext axis2MessageContext) {
