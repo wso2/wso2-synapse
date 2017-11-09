@@ -600,7 +600,8 @@ public class SourceHandler implements NHttpServerEventHandler {
             if (sourceConfiguration.getWorkerPool() != null) {
                 sourceConfiguration.getWorkerPool().shutdown(1000);
             }
-        } catch (InterruptedException ignore) {
+        } catch (InterruptedException e) {
+            log.warn("Error while shutting down worker thread pool. " + e.getMessage());
         }
     }
     
