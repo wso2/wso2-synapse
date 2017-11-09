@@ -34,6 +34,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.TargetRequest;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.net.MalformedURLException;
@@ -157,8 +158,8 @@ public class TargetRequestFactory {
             }
 
             // keep alive
-            String noKeepAlie = (String) msgContext.getProperty(PassThroughConstants.NO_KEEPALIVE);
-            if ("true".equals(noKeepAlie)) {
+            String noKeepAlive = (String) msgContext.getProperty(PassThroughConstants.NO_KEEPALIVE);
+            if ("true".equals(noKeepAlive) || PassThroughConfiguration.getInstance().isKeepAliveDisabled()) {
                 request.setKeepAlive(false);
             }
 
@@ -252,10 +253,9 @@ public class TargetRequestFactory {
      * @param contentType
      * @return true for multipart content types
      */
-    private static boolean isMultipartContent(String contentType) {
-        // Identifying whether the content-type is multipart or not
-        if (contentType.contains(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA) || contentType.contains(HTTPConstants
-                .HEADER_ACCEPT_MULTIPART_RELATED)) {
+    public static boolean isMultipartContent(String contentType) {
+        if (contentType.contains(HTTPConstants.MEDIA_TYPE_MULTIPART_FORM_DATA)
+            || contentType.contains(HTTPConstants.HEADER_ACCEPT_MULTIPART_RELATED)) {
             return true;
         }
         return false;

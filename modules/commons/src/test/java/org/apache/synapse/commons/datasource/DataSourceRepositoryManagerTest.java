@@ -120,24 +120,6 @@ public class DataSourceRepositoryManagerTest {
     }
 
     /**
-     * Test getDataSource method with inMemory datasource.
-     */
-    @Test
-    public void testGetDataSourceInMemory() {
-        Assert.assertNotNull("datasource should exist in inMemoryRepository",
-                repositoryManager.getDataSource(DATASOURCE_NAME));
-    }
-
-    /**
-     * Test getDataSource method with Jndi datasource.
-     */
-    @Test
-    public void testGetDataSourceJndi() {
-        Assert.assertNotNull("datasource should exist in jndiRepository",
-                repositoryManager.getDataSource(DATASOURCE_NAME_JNDI));
-    }
-
-    /**
      * Test addDataSourceInformation with null input.
      */
     @Test
@@ -153,7 +135,11 @@ public class DataSourceRepositoryManagerTest {
      * @throws IllegalAccessException
      */
     @Test
-    public void testAddRemoveDataSourceInformation() throws IllegalAccessException {
+    public void testGetAddRemoveDataSourceInformation() throws IllegalAccessException {
+        Assert.assertNotNull("datasource should exist in inMemoryRepository",
+                repositoryManager.getDataSource(DATASOURCE_NAME));
+        Assert.assertNotNull("datasource should exist in jndiRepository",
+                repositoryManager.getDataSource(DATASOURCE_NAME_JNDI));
         int jndiSize = ((List<String>) cachedNameListJndi.get(jndiBasedDataSourceRepository)).size();
         int inMemSize = ((Map<String, DataSource>) dataSources.get(inMemoryDataSourceRepository)).size();
         repositoryManager.addDataSourceInformation(informationJndiSample);

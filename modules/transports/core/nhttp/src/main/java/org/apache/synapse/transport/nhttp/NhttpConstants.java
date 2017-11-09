@@ -257,4 +257,6 @@ public class NhttpConstants {
      * Constant string to define the if the server/client connection is dropped.
      */
     public static final String CONNECTION_DROPPED = "CONNECTION_DROPPED";
+
+    public static final int DEFAULT_SOCKET_TIMEOUT = 60000;
 }

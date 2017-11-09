@@ -70,7 +70,10 @@ public abstract class Node {
             {
                 return matchLength;
             }
-            if (next.getToken().startsWith("{")) {
+            // Below condition is only required to match scenarios where a query parameter is sent without any
+            // value (e.g. "?key1=value1&key2="). Therefore we check for both the presence of a url template as well
+            // as the equal sign, denoting a parameter.
+            if (next.getToken().startsWith("{") && uriFragment.contains("=")) {
                 uriFragment = uriFragment.substring(matchLength);
                 return matchLength + next.matchAll(uriFragment, variables);
             }

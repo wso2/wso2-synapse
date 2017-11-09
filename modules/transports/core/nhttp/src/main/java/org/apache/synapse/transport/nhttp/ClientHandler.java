@@ -62,7 +62,6 @@ import org.apache.http.nio.util.ContentInputBuffer;
 import org.apache.http.nio.util.ContentOutputBuffer;
 import org.apache.http.nio.util.HeapByteBufferAllocator;
 import org.apache.http.nio.util.SharedInputBuffer;
-import org.apache.http.nio.util.SharedOutputBuffer;
 import org.apache.http.params.DefaultedHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.BasicHttpProcessor;
@@ -169,6 +168,9 @@ public class ClientHandler implements NHttpClientEventHandler {
      */
     private static int validMaxMessageSize = Integer.MAX_VALUE;
 
+    private final int bufferSize;
+    private final int socketTimeout;
+
     /**
      * Create an instance of this client connection handler using the Axis2 configuration
      * context and Http protocol parameters given
@@ -227,6 +229,9 @@ public class ClientHandler implements NHttpClientEventHandler {
                 validMaxMessageSize = Integer.MAX_VALUE;
             }
         }
+
+        bufferSize = cfg.getBufferSize();
+        socketTimeout = cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, NhttpConstants.DEFAULT_SOCKET_TIMEOUT);
     }
 
     public void requestReady(final NHttpClientConnection conn) throws IOException, HttpException{
@@ -334,7 +339,7 @@ public class ClientHandler implements NHttpClientEventHandler {
 
             HttpContext context = conn.getContext();
             ContentOutputBuffer outputBuffer
-                    = new SharedOutputBuffer(cfg.getBufferSize(), conn, allocator);
+                    = new NhttpSharedOutputBuffer(bufferSize, conn, allocator, socketTimeout);
             axis2Req.setOutputBuffer(outputBuffer);
             context.setAttribute(REQUEST_SOURCE_BUFFER, outputBuffer);
 
@@ -829,7 +834,7 @@ public class ClientHandler implements NHttpClientEventHandler {
                 context.setAttribute(AXIS2_HTTP_REQUEST, axis2Req);
                 context.setAttribute(OUTGOING_MESSAGE_CONTEXT, axis2Req.getMsgContext());
                 ContentOutputBuffer outputBuffer
-                        = new SharedOutputBuffer(cfg.getBufferSize(), conn, allocator);
+                        = new NhttpSharedOutputBuffer(bufferSize, conn, allocator, socketTimeout);
                 axis2Req.setOutputBuffer(outputBuffer);
                 context.setAttribute(REQUEST_SOURCE_BUFFER, outputBuffer);
                 context.setAttribute(NhttpConstants.DISCARD_ON_COMPLETE, Boolean.TRUE);
@@ -869,7 +874,7 @@ public class ClientHandler implements NHttpClientEventHandler {
             if (!req.isSendingCompleted()) {
                 req.getMsgContext().setProperty(
                         NhttpConstants.ERROR_CODE, NhttpConstants.SEND_ABORT);
-                SharedOutputBuffer outputBuffer = (SharedOutputBuffer)
+                NhttpSharedOutputBuffer outputBuffer = (NhttpSharedOutputBuffer)
                         conn.getContext().getAttribute(REQUEST_SOURCE_BUFFER);
                 if (outputBuffer != null) {
                     outputBuffer.shutdown();
@@ -1265,7 +1270,7 @@ public class ClientHandler implements NHttpClientEventHandler {
         }
 
         HttpContext context = conn.getContext();
-        SharedOutputBuffer outputBuffer = (SharedOutputBuffer)
+        NhttpSharedOutputBuffer outputBuffer = (NhttpSharedOutputBuffer)
                 context.getAttribute(REQUEST_SOURCE_BUFFER);
         if (outputBuffer != null) {
             outputBuffer.close();

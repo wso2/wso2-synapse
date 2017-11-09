@@ -90,6 +90,7 @@
                 <include>providers.xml</include>
                 <include>identity.jks</include>
                 <include>trust.jks</include>
+                <include>providers.xml</include>
             </includes>
         </fileSet>
         <fileSet>
