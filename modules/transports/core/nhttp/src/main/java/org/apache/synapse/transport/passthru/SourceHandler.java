@@ -589,7 +589,20 @@ public class SourceHandler implements NHttpServerEventHandler {
             handleException("IO error submiting response : " + e.getMessage(), e, conn);
         }
     }
-    
+    /**
+     * Shutting down the thread pools.
+     */
+    public void stop() {
+        latencyView.destroy();
+        s2sLatencyView.destroy();
+        threadingView.destroy();
+        try {
+            if (sourceConfiguration.getWorkerPool() != null) {
+                sourceConfiguration.getWorkerPool().shutdown(1000);
+            }
+        } catch (InterruptedException ignore) {
+        }
+    }
     
     // ----------- utility methods -----------
 
