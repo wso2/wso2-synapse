@@ -60,9 +60,6 @@ public class EJBMediatorTest {
     private static EJBMediator ejbMediator = new EJBMediator();
     private static EnterpriseBeanstalk beanstalk;
 
-    @Rule
-    public static ExpectedException thrown = ExpectedException.none();
-
     /**
      * Initializing EJBMediator and Mediating a messageContext
      */
@@ -74,6 +71,7 @@ public class EJBMediatorTest {
         Mockito.when(synapseEnvironment.getServerContextInformation()).thenReturn(contextInformation);
         try {
             ejbMediator.init(synapseEnvironment);
+            Assert.fail("executed successfully when exception is expected");
         } catch (Exception ex) {
             Assert.assertEquals("assert exception class", SynapseException.class, ex.getClass());
             Assert.assertEquals("assert exception message",
@@ -84,6 +82,7 @@ public class EJBMediatorTest {
         contextInformation.addProperty(EnterpriseBeanstalkConstants.BEANSTALK_MANAGER_PROP_NAME, beanstalkManager);
         try {
             ejbMediator.init(synapseEnvironment);
+            Assert.fail("executed successfully when exception is expected");
         } catch (Exception ex) {
             Assert.assertEquals("assert exception class", SynapseException.class, ex.getClass());
             Assert.assertEquals("assert exception message", "Initialization failed. '"
