@@ -347,14 +347,6 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
 
     private MessageFormatter getMessageFormatter(MessageContext msgContext){
 
-        OMElement firstChild = msgContext.getEnvelope().getBody().getFirstElement();
-        if (firstChild != null) {
-            if (BaseConstants.DEFAULT_BINARY_WRAPPER.equals(firstChild.getQName())) {
-                return new BinaryFormatter();
-            } else if (BaseConstants.DEFAULT_TEXT_WRAPPER.equals(firstChild.getQName())) {
-                return new PlainTextFormatter();
-            }
-        }
         try {
            return MessageProcessorSelector.getMessageFormatter(msgContext);
         } catch (AxisFault axisFault) {
