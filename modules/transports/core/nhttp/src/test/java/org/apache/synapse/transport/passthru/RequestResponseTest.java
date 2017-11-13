@@ -26,13 +26,14 @@ import org.apache.axis2.context.ServiceContext;
 import org.apache.axis2.description.InOutAxisOperation;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
-import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.engine.AxisEngine;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
+import org.apache.synapse.transport.utils.ServiceUtils;
 import org.apache.synapse.transport.utils.TCPUtils;
+import org.apache.synapse.transport.utils.http.server.SimpleHttpServer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -52,11 +53,12 @@ import static org.mockito.ArgumentMatchers.any;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(AxisEngine.class)
 @PowerMockIgnore("javax.management.*")
-public class SourceHandlerTest {
+public class RequestResponseTest {
     private static final String HOST = "127.0.0.1";
     private static final int PORT = 8286;
     private static PassThroughHttpListener passThroughHttpListener = new PassThroughHttpListener();
     private static TransportInDescription transportInDescription = new TransportInDescription("http");
+    private static MessageContext inMsgContext;
 
     @BeforeClass()
     public static void startListener() throws Exception {
@@ -72,7 +74,7 @@ public class SourceHandlerTest {
         cfgCtx.setContextRoot("/");
         passThroughHttpListener.init(cfgCtx, transportInDescription);
         passThroughHttpListener.start();
-        Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST));
+        Assert.assertTrue("Listener port not open", TCPUtils.isPortOpen(PORT, HOST, 2000));
     }
 
     /**
@@ -84,7 +86,7 @@ public class SourceHandlerTest {
         PowerMockito.doNothing().doThrow(new RuntimeException()).when(AxisEngine.class);
 
         HttpClient client = new HttpClient();
-        PostMethod method = new PostMethod(getServiceEndpoint("myservice"));
+        PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
         method.setRequestHeader("Content-Type", "application/xml");
         StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello</msg>", "application/xml",
                 "UTF-8");
@@ -104,23 +106,22 @@ public class SourceHandlerTest {
         PowerMockito.doAnswer(new Answer<Void>() {
             public Void answer(InvocationOnMock invocation) throws Exception {
                 MessageContext axis2MessageContext = invocation.getArgument(0);
-                System.out.println(axis2MessageContext.getMessageID());
-                ServiceContext svcCtx = new ServiceContext();
-                OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
-                axis2MessageContext.setServiceContext(svcCtx);
-                axis2MessageContext.setOperationContext(opCtx);
+                axis2MessageContext.setTo(null);
+                if (axis2MessageContext.getServiceContext() == null) {
+                    ServiceContext svcCtx = new ServiceContext();
+                    OperationContext opCtx = new OperationContext(new InOutAxisOperation(), svcCtx);
+                    axis2MessageContext.setServiceContext(svcCtx);
+                    axis2MessageContext.setOperationContext(opCtx);
+                }
                 axis2MessageContext.getOperationContext()
                         .setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
-                PassThroughHttpSender sender = new PassThroughHttpSender();
-                ConfigurationContext cfgCtx = new ConfigurationContext(new AxisConfiguration());
-                sender.init(cfgCtx, new TransportOutDescription("http"));
-                sender.submitResponse(axis2MessageContext);
+                ServiceUtils.receive(axis2MessageContext);
                 return null;
             }
         }).when(AxisEngine.class, "receive", any(MessageContext.class));
 
         HttpClient client = new HttpClient();
-        PostMethod method = new PostMethod(getServiceEndpoint("myservice"));
+        PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
         method.setRequestHeader("Content-Type", "application/xml");
         StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello</msg>", "application/xml",
                 "UTF-8");
@@ -131,14 +132,58 @@ public class SourceHandlerTest {
         Assert.assertEquals("Response", "<msg>hello</msg>", response);
     }
 
+    /**
+     * Test the Source Handler respond to client.
+     * Send a message to http listener and get the response from backend server.
+     */
+    @Test
+    public void testBackendResponse() throws Exception {
+        final SimpleHttpServer helloServer = new SimpleHttpServer();
+        try {
+            helloServer.start();
+            PowerMockito.mockStatic(AxisEngine.class);
+            PowerMockito.doAnswer(new Answer<Void>() {
+                public Void answer(InvocationOnMock invocation) throws Exception {
+                    MessageContext axis2MessageContext = invocation.getArgument(0);
+                    if (axis2MessageContext.getServiceContext() == null) {
+                        //request path
+                        axis2MessageContext
+                                .setProperty("TransportURL", helloServer.getServerUrl());
+                        inMsgContext = axis2MessageContext;
+                    } else {
+                        //response path
+                        axis2MessageContext.removeProperty("TransportURL");
+                        axis2MessageContext.setTo(null);
+                        axis2MessageContext.setProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO,
+                                inMsgContext.getProperty(org.apache.axis2.Constants.OUT_TRANSPORT_INFO));
+                        axis2MessageContext.getOperationContext()
+                                .setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+                    }
+                    ServiceUtils.receive(axis2MessageContext);
+                    return null;
+                }
+            }).when(AxisEngine.class, "receive", any(MessageContext.class));
+
+            HttpClient client = new HttpClient();
+            PostMethod method = new PostMethod(ServiceUtils.getServiceEndpoint("myservice", HOST, PORT));
+            method.setRequestHeader("Content-Type", "application/xml");
+            StringRequestEntity stringRequestEntity = new StringRequestEntity("<msg>hello Server</msg>", "application/xml",
+                    "UTF-8");
+            method.setRequestEntity(stringRequestEntity);
+            int responseCode = client.executeMethod(method);
+            String response = method.getResponseBodyAsString();
+            Assert.assertEquals("Response code mismatched", 200, responseCode);
+            Assert.assertEquals("Response", "<msg>hello</msg>", response);
+        } finally {
+            helloServer.stop();
+        }
+
+    }
+
     @AfterClass()
     public static void stopListener() throws Exception {
         passThroughHttpListener.stop();
         Assert.assertFalse("Listener port not closed", TCPUtils.isPortOpen(PORT, HOST));
-    }
-
-    private String getServiceEndpoint(String service) {
-        return "http://" + HOST + ":" + PORT + "/services/" + service;
     }
 
 }

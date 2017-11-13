@@ -259,16 +259,12 @@ public class JsonXMLStreamWriterTest {
     }
 
     @Test(expected = XMLStreamException.class)
-    public void testElementMultipleRoots() {
-        try {
-            XMLStreamWriter writer = new JsonXMLOutputFactory().createXMLStreamWriter(new StringWriter());
-            writer.writeStartDocument();
-            writer.writeStartElement("foo");
-            writer.writeEndElement();
-            writer.writeStartElement("bar");
-        } catch (XMLStreamException ex) {
-            //empty
-        }
+    public void testElementMultipleRoots() throws XMLStreamException {
+        XMLStreamWriter writer = new JsonXMLOutputFactory().createXMLStreamWriter(new StringWriter());
+        writer.writeStartDocument();
+        writer.writeStartElement("foo");
+        writer.writeEndElement();
+        writer.writeStartElement("bar");
     }
 
     @Test

@@ -201,15 +201,11 @@ public class SimpleXMLStreamWriterTest {
     }
 
     @Test(expected = XMLStreamException.class)
-    public void testWriteElementMultipleRoots() {
-        try {
-            XMLStreamWriter writer = new SimpleXMLStreamWriter(new StringWriter(), false);
-            writer.writeStartElement("foo");
-            writer.writeEndElement();
-            writer.writeStartElement("foo");
-        } catch (XMLStreamException ex) {
-            //empty
-        }
+    public void testWriteElementMultipleRoots() throws XMLStreamException {
+        XMLStreamWriter writer = new SimpleXMLStreamWriter(new StringWriter(), false);
+        writer.writeStartElement("foo");
+        writer.writeEndElement();
+        writer.writeStartElement("foo");
     }
 
     /**

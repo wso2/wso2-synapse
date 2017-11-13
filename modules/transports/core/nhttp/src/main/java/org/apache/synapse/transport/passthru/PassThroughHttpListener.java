@@ -424,6 +424,7 @@ public class PassThroughHttpListener implements TransportListener {
                 passThroughListeningIOReactorManager.shutdownIOReactor(operatingPort);
             }
             serviceTracker.stop();
+            handler.stop();
         } catch (IOException e) {
             handleException("Error shutting down " + namePrefix + " listening IO reactor", e);
         } catch (InterruptedException e) {
