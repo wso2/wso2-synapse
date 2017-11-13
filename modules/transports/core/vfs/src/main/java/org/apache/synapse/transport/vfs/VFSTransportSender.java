@@ -364,7 +364,7 @@ public class VFSTransportSender extends AbstractTransportSender implements Manag
             CountingOutputStream os = new CountingOutputStream(
                     responseFile.getContent().getOutputStream(append));
             try {
-                messageFormatter.writeTo(msgContext, format, os, true);
+                messageFormatter.writeTo(msgContext, format, os, false);
             } finally {
                 os.close();
             }
