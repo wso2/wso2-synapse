@@ -34,6 +34,7 @@ import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.TargetRequest;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 
 import java.net.MalformedURLException;
@@ -157,8 +158,8 @@ public class TargetRequestFactory {
             }
 
             // keep alive
-            String noKeepAlie = (String) msgContext.getProperty(PassThroughConstants.NO_KEEPALIVE);
-            if ("true".equals(noKeepAlie)) {
+            String noKeepAlive = (String) msgContext.getProperty(PassThroughConstants.NO_KEEPALIVE);
+            if ("true".equals(noKeepAlive) || PassThroughConfiguration.getInstance().isKeepAliveDisabled()) {
                 request.setKeepAlive(false);
             }
 
