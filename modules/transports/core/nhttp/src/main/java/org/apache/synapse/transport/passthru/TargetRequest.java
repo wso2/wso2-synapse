@@ -45,6 +45,7 @@ import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
@@ -182,9 +183,17 @@ public class TargetRequest {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
 			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+				if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
+                //If the boundary is already set in the message context, the header specified in the message context
+                // should be added.
+                // Addresses both ESBJAVA-3182 and EI-1329
+                else {
+                    if (trpContentType.contains("boundary=")) {
+                        addHeader(HTTP.CONTENT_TYPE, trpContentType);
+                    }
+                }
 
 			}
 
