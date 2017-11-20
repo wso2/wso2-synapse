@@ -312,7 +312,7 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(request.getUri()));
         msgContext.setServerSide(true);
         msgContext.setDoingREST(true);
-        if(!request.isEntityEnclosing()){
+        if (!(request.isEntityEnclosing())) {
         	msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
         }
         
