@@ -37,7 +37,6 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
 import org.apache.axis2.context.OperationContext;
 import org.apache.bsf.xml.XMLHelper;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
@@ -56,10 +55,10 @@ import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -87,9 +86,22 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /** To keep Script Engine instance. */
     private ScriptEngine scriptEngine;
 
-    public NashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper) {
+    /**
+     * Reference to an empty JSON object.
+     */
+    private Object emptyJsonObject;
+
+    /**
+     * Reference to JSON object which is used to serialize json.
+     */
+    private ScriptObjectMirror jsonSerializer;
+
+    public NashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper, ScriptObjectMirror
+            emptyJsonObject, ScriptObjectMirror jsonSerializer) {
         this.mc = mc;
         this.xmlHelper = xmlHelper;
+        this.emptyJsonObject = emptyJsonObject;
+        this.jsonSerializer = jsonSerializer;
     }
 
     /**
@@ -185,19 +197,11 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         if (messageContext == null) {
             return null;
         }
-        Object o = messageContext.getProperty(JSON_OBJECT);
-        if (o == null) {
-            if (this.scriptEngine == null) {
-                logger.error("Cannot create empty JSON object. ScriptEngine instance not available.");
-                return null;
-            }
-            try {
-                return this.scriptEngine.eval("({})");
-            } catch (ScriptException e) {
-                logger.error("Could not return an empty JSON object.", e);
-            }
+        Object jsonObject = messageContext.getProperty(JSON_OBJECT);
+        if (jsonObject == null) {
+            return emptyJsonObject;
         }
-        return o;
+        return jsonObject;
     }
 
     /**
@@ -637,39 +641,19 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * Saves the payload of this message context as a JSON payload.
      *
      * @param jsonPayload Javascript native object to be set as the message body
-     * @throws ScriptException in case of creating a JSON object out of
-     *                         the javascript native object.
+     * @throws ScriptException in case of creating a JSON object out of the javascript native object.
      */
     public void setPayloadJSON(Object jsonPayload) throws ScriptException {
-        org.apache.axis2.context.MessageContext messageContext;
-        messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
-
-        byte[] json = {'{', '}'};
-        if (jsonPayload instanceof String) {
-            json = jsonPayload.toString().getBytes();
-        } else if (jsonPayload != null) {
-            try {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                serializeJSON(jsonPayload, out);
-                json = out.toByteArray();
-            } catch (IOException | ScriptException e) {
-                logger.error("#setPayloadJSON. Could not retrieve bytes from JSON object.", e);
-            }
-        }
-        // save this JSON object as the new payload.
         try {
-            JsonUtil.getNewJsonPayload(messageContext, json, 0, json.length, true, true);
+            String jsonString = (String) jsonSerializer.callMember("stringify", jsonPayload);
+            InputStream stream = new ByteArrayInputStream(jsonString.getBytes(StandardCharsets.UTF_8));
+            org.apache.axis2.context.MessageContext messageContext;
+            messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
+            JsonUtil.getNewJsonPayload(messageContext, stream, true, true);
+            messageContext.setProperty(JSON_OBJECT, jsonPayload);
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }
-        Object jsonObject = scriptEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
-        setJsonObject(mc, jsonObject);
-    }
-
-    private void serializeJSON(Object obj, OutputStream out) throws IOException, ScriptException {
-        ScriptObjectMirror json = (ScriptObjectMirror) scriptEngine.eval("JSON");
-        String jsonString = (String) json.callMember("stringify", obj);
-        out.write(jsonString.getBytes());
     }
 
     public Mediator getDefaultConfiguration(String arg0) {
