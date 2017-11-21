@@ -48,6 +48,15 @@ public class CallMediatorSerializer extends AbstractMediatorSerializer {
         }
         if (mediator.isBlocking()) {
             call.addAttribute(fac.createOMAttribute("blocking", nullNS, "true"));
+            if (!mediator.getInitClientOptions()) {
+                call.addAttribute(fac.createOMAttribute("initAxis2ClientOptions", nullNS, "false"));
+            }
+            if (mediator.getClientRepository() != null) {
+                call.addAttribute(fac.createOMAttribute("repository", nullNS, mediator.getClientRepository()));
+            }
+            if (mediator.getAxis2xml() != null) {
+                call.addAttribute(fac.createOMAttribute("axis2xml", nullNS, mediator.getAxis2xml()));
+            }
         }
 
         return call;
