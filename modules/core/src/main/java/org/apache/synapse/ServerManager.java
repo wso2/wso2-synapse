@@ -276,7 +276,7 @@ public class ServerManager {
             serverContextInformation.setSynapseEnvironment(null);
 
             // destroy the created Synapse Configuration
-            synapseController.destroySynapseConfiguration(true);
+            synapseController.destroySynapseConfiguration(true, true);
             serverContextInformation.setSynapseConfiguration(null);
 
             // stop the SynapseController

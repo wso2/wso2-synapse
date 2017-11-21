@@ -16,6 +16,16 @@ public interface TaskManager {
 
     public boolean delete(String name);
 
+    /**
+     * Method to delete the task with the specified name, specifying whether or not deleting is being done with the
+     * server shutting down.
+     *
+     * @param taskName name of the task to be deleted
+     * @param isShuttingDown whether or not the server is shutting down
+     * @return whether the deletion was successful
+     */
+    public boolean delete(String taskName, boolean isShuttingDown);
+
     public boolean pause(String name);
 
     public boolean pauseAll();
@@ -117,4 +127,10 @@ public interface TaskManager {
      */
     boolean isTaskExist(final String taskName);
 
+    /**
+     * Method to retieve whether the TaskManager is managing tasks in a cluster.
+     *
+     * @return whether or not the TaskManager is for a cluster
+     */
+    boolean isClusteredTaskManager();
 }

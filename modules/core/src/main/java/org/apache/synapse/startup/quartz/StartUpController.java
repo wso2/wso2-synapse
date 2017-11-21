@@ -49,7 +49,7 @@ public class StartUpController extends AbstractStartup {
         return SimpleQuartzFactory.TASK;
     }
 
-    public void destroy() {
+    public void destroy(boolean isShuttingDown) {
         if (!destroyTask()) {
             return;
         }
@@ -60,13 +60,17 @@ public class StartUpController extends AbstractStartup {
         if (synapseTaskManager.isInitialized()) {
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
             if (taskScheduler != null && taskScheduler.isInitialized()) {
-                taskScheduler.deleteTask(taskDescription.getName(), taskDescription.getTaskGroup());
+                taskScheduler.deleteTask(taskDescription.getName(), taskDescription.getTaskGroup(), isShuttingDown);
             }
             TaskDescriptionRepository repository = synapseTaskManager.getTaskDescriptionRepository();
             if (repository != null) {
                 repository.removeTaskDescription(taskDescription.getName());
             }
         }
+    }
+
+    public void destroy() {
+        this.destroy(false);
     }
 
     public void init(SynapseEnvironment synapseEnvironment) {

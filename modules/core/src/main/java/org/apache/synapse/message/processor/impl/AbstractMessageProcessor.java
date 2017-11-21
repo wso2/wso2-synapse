@@ -189,4 +189,12 @@ public abstract class AbstractMessageProcessor implements MessageProcessor {
      * @param preserveState determine whether to preserve the artifacts state or not
      */
     public void destroy(boolean preserveState){}
+
+    /**
+     * Method to undeploy the artifact, preserving the state as specified and notifying if the undeployment is being
+     * called as part of a server shutdown.
+     * @param preserveState whether or not artifact state needs to be preserved
+     * @param isShuttingDown whether destroy is being called in a server shutdown
+     */
+    public abstract void destroy(boolean preserveState, boolean isShuttingDown);
 }

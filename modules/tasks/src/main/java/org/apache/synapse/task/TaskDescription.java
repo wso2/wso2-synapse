@@ -14,6 +14,11 @@ public final class TaskDescription {
     public static final String INSTANCE = "Instance";
     public static final String DEFAULT_GROUP = "synapse.simple.quartz";
 
+    /**
+     * Constant used to refer to whether or not coordination is enabled where specified explicitly. (eg:- inbound EPs)
+     */
+    public static final String COORDINATION = "COORDINATION";
+
     private String taskName;
 
     private String taskGroup;

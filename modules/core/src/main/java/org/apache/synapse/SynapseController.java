@@ -83,6 +83,12 @@ public interface SynapseController {
     void destroySynapseConfiguration(boolean preserveState);
 
     /**
+     * Destroys the SynapseConfiguration instance, preserving the artifact's state based on preserveState and specifying
+     * whether or not the server is shutting down with isShuttingDown
+     */
+    void destroySynapseConfiguration(boolean preserveState, boolean isShuttingDown);
+
+    /**
      * Destroys the SynapseConfiguration instance
      */
     void destroySynapseConfiguration();
