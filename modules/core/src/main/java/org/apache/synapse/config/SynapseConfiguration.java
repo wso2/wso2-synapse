@@ -26,8 +26,13 @@ import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.Startup;
+import org.apache.synapse.SynapseArtifact;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -1447,10 +1452,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
 
         //destroy inbound endpoint
-		for (InboundEndpoint endpoint : getInboundEndpoints()) {
-			endpoint.destroy();
-		}         
-        
+        for (InboundEndpoint endpoint : getInboundEndpoints()) {
+            // This path trigger from server shutdown hook. So we don't want to remove scheduled inbound tasks
+            // from registry. Only un-deployment should remove task from registry. Ref product-ei#1206
+            endpoint.destroy(false);
+        }
+
         // destroy the managed endpoints
         for (Endpoint endpoint : getDefinedEndpoints().values()) {
             endpoint.destroy();
