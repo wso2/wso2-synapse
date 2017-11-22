@@ -162,23 +162,42 @@ public class Target {
 				Object propertyObj =synContext.getProperty(property);
 				OMElement documentElement = null;
 				try {
-	                 documentElement = AXIOMUtil.stringToOM((String)propertyObj);
+                    if (isOMElement(propertyObj)) {
+                        documentElement = (OMElement) propertyObj;
+                    } else {
+                        documentElement = AXIOMUtil.stringToOM((String) propertyObj);
+                    }
                 } catch (Exception e1) {
-	                //just ignoring the phaser error 
+	                //just ignoring the phaser error
                 }
-				if(documentElement != null && action.equals(ACTION_ADD_CHILD)){
-					//logic should valid only when adding child elements, and other cases
-					//such as sibling and replacement using the else condition
-					insertElement(sourceNodeList, documentElement, synLog);
-					synContext.setProperty(property, documentElement.getText());  
-				}else{
-					synContext.setProperty(property, sourceNodeList);  
-				}
-				
+
+                if (documentElement != null && action.equals(ACTION_ADD_CHILD)) {
+                    //logic should valid only when adding child elements, and other cases
+                    //such as sibling and replacement using the else condition
+                    insertElement(sourceNodeList, documentElement, synLog);
+                    if (isOMElement(propertyObj)) {
+                        synContext.setProperty(property, documentElement);
+                    } else {
+                        synContext.setProperty(property, documentElement.getText());
+                    }
+                } else {
+                    synContext.setProperty(property, sourceNodeList);
+                }
+
 			}else{
 			synContext.setProperty(property, sourceNodeList);  
 			}
         }
+    }
+
+    /**
+     * Checks whether object is instanceof OMElement
+     *
+     * @param propObject Object which needs to be evaluated
+     * @return true if object is is instanceof OMElement else false
+     */
+    private boolean isOMElement(Object propObject) {
+        return propObject instanceof OMElement;
     }
 
     private void insertElement(ArrayList<OMNode> sourceNodeList, OMElement e, SynapseLog synLog) {
