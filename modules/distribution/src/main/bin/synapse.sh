@@ -174,6 +174,8 @@ $JAVA_HOME/bin/java -server -Xms128M -Xmx128M \
     $TEMP_PROPS \
     -Dorg.apache.xerces.xni.parser.XMLParserConfiguration=org.apache.xerces.parsers.XMLGrammarCachingConfiguration \
     -Djava.endorsed.dirs=$SYNAPSE_ENDORSED \
+    -Dconf.location=$SYNAPSE_HOME/repository/conf \
+    -Dconf.location=$SYNAPSE_HOME/repository/conf \
     -Djava.io.tmpdir=$SYNAPSE_HOME/work/temp/synapse \
     -classpath $SYNAPSE_CLASSPATH \
     org.apache.synapse.SynapseServer \

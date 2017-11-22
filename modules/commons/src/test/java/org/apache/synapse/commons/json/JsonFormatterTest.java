@@ -19,11 +19,14 @@
 package org.apache.synapse.commons.json;
 
 import junit.framework.TestCase;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.context.MessageContext;
 
 import javax.xml.stream.XMLStreamException;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -166,12 +169,32 @@ public class JsonFormatterTest extends TestCase {
 
     public static final String jsonOut_6 = "[{\"pizza\":{\"name\":\"Meat Sizzler\",\"price\":500.0,\"toppings\":{\"topping\":{\"id\":9999,\"name\":\"Steak\",\"extraPrice\":4.00,\"category\":\"NONVEG\"}}}},null]";
 
+    // XML nil="true" to Json
     public static final String xmlInput_7 = "<root>\n" +
-                                                "    <abc nil=\"true\"></abc>\n" +
-                                                "    <def></def>\n" +
-                                                "</root>";
+                                            "    <abc nil=\"true\"></abc>\n" +
+                                            "</root>";
 
-    public static final String jsonOut_7 = "{\"root\":{\"abc\":null,\"def\":\"\"}}";
+    public static final String jsonOut_7 = "{\"root\":{\"abc\":{\"@nil\":\"true\"}}}";
+
+    // XML attribute to Json
+    public static final String xmlInput_8 = "<pizza name=\"Meat Sizzler\">\n" +
+                                            "    <price>500.0</price>\n" +
+                                            "</pizza>";
+
+    public static final String jsonOut_8 = "{\"pizza\":{\"@name\":\"Meat Sizzler\",\"price\":500.0}}";
+
+    // XML text node with attribute to Json
+    public static final String xmlInput_9 = "<pizza-topping category=\"NONVEG\">Steak</pizza-topping>";
+
+    public static final String jsonOut_9 = "{\"pizza-topping\":{\"@category\":\"NONVEG\",\"$\":\"Steak\"}}";
+
+    // XML empty node to Json
+    public static final String xmlInput_10 = "<pizza>" +
+                                             "    <name>Meat Sizzler</name>\n" +
+                                             "    <description></description>\n" +
+                                             "</pizza>";
+
+    public static final String jsonOut_10 = "{\"pizza\":{\"name\":\"Meat Sizzler\",\"description\":null}}";
 
     /**
      * NOTE: Under this test class, we cannot test the creation of JSON arrays by giving xml processing instructions to the
@@ -233,7 +256,42 @@ public class JsonFormatterTest extends TestCase {
     }
 
     public void testCase9() {
-//        runTest(xmlInput_7, jsonOut_7, null);
+        runTest(xmlInput_7, jsonOut_7, null);
+    }
+
+    public void testCase10() {
+        runTest(xmlInput_8, jsonOut_8, null);
+    }
+
+    public void testCase11() {
+        runTest(xmlInput_9, jsonOut_9, null);
+    }
+
+    public void testCase12() {
+        runTest(xmlInput_10, jsonOut_10, null);
+    }
+
+    public void testGetBytesXML() throws AxisFault, XMLStreamException {
+        JsonFormatter formatter = new JsonFormatter();
+        MessageContext messageContext = Util.newMessageContext("<name>WSO2</name>");
+        byte[] bytes = formatter.getBytes(messageContext, null);
+        assertEquals("Invalid content received", "{\"name\":\"WSO2\"}", new String(bytes));
+    }
+
+    public void testGetBytesJson() throws AxisFault {
+        JsonFormatter formatter = new JsonFormatter();
+        MessageContext messageContext = Util.newMessageContext();
+        messageContext.setProperty("JSON_STRING", "{\"name\":\"WSO2\"}");
+        byte[] bytes = formatter.getBytes(messageContext, null);
+        assertEquals("Invalid content received", "{\"name\":\"WSO2\"}", new String(bytes));
+    }
+
+    public void testWriteTo() throws AxisFault, XMLStreamException {
+        JsonFormatter formatter = new JsonFormatter();
+        MessageContext messageContext = Util.newMessageContext("<jsonArray><jsonElement>10</jsonElement><jsonElement>20</jsonElement></jsonArray>");
+        OutputStream out = new ByteArrayOutputStream();
+        formatter.writeTo(messageContext, null, out, true);
+        assertEquals("Formatter output is invalid", "[10,20]", out.toString());
     }
 
     private void runTest(String xmlInput, String jsonOut, InputStream inputStream) {

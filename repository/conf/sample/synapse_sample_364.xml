@@ -17,10 +17,8 @@
   ~  specific language governing permissions and limitations
   ~  under the License.
   -->
-
-<!-- Action of dbreport and dblookup mediators together with stored procedures -->
+<!--Using Mediators to Execute Database Stored Procedures-->
 <definitions xmlns="http://ws.apache.org/ns/synapse">
-
     <sequence name="main">
         <in>
             <send>
@@ -29,12 +27,10 @@
                 </endpoint>
             </send>
         </in>
-
         <out>
             <log level="custom">
                 <property name="text" value="** Reporting to the Database **"/>
             </log>
-
             <dbreport>
                 <connection>
                     <pool>
@@ -81,5 +77,4 @@
             <send/>
         </out>
     </sequence>
-
 </definitions>

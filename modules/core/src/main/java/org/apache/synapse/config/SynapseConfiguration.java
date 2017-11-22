@@ -23,10 +23,16 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.*;
+import org.apache.synapse.ManagedLifecycle;
+import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.Startup;
+import org.apache.synapse.SynapseArtifact;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.store.CompletedStructureStore;
 import org.apache.synapse.carbonext.TenantInfoConfigProvider;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -68,9 +74,11 @@ import org.apache.synapse.util.xpath.ext.XpathExtensionUtil;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -183,7 +191,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     private Map<String, Template> endpointTemplates = new ConcurrentHashMap<String, Template>();
 
-    private Map<String, API> apiTable = new ConcurrentHashMap<String, API>();
+    private Map<String, API> apiTable = Collections.synchronizedMap(new LinkedHashMap<String, API>());
 
     private Map<String, InboundEndpoint> inboundEndpointMap = new ConcurrentHashMap<String, InboundEndpoint>();
     
@@ -399,9 +407,13 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
 		} else {
 			handleException("No Inbound Endpoint exists by the name: " + name);
 		}
-	}   
+	}  
+	
+    public synchronized void addAPI(String name, API api) {
+        addAPI(name, api, true);
+    }
     
-    public void addAPI(String name, API api) {
+    public synchronized void addAPI(String name, API api, boolean reOrder) {
         if (!apiTable.containsKey(name)) {
             for (API existingAPI : apiTable.values()) {
                 if (api.getVersion().equals(existingAPI.getVersion()) && existingAPI.getContext().equals(api.getContext())) {
@@ -410,6 +422,9 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }
             apiTable.put(name, api);
+            if (reOrder) {
+                reconstructAPITable();
+            }
             for (SynapseObserver o : observers) {
                 o.apiAdded(api);
             }
@@ -418,7 +433,7 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
     }
 
-    public void updateAPI(String name, API api) {
+    public synchronized void updateAPI(String name, API api) {
         if (!apiTable.containsKey(name)) {
             handleException("No API exists by the name: " + name);
         } else {
@@ -429,21 +444,22 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
                 }
             }        	
             apiTable.put(name, api);
+            reconstructAPITable();
             for (SynapseObserver o : observers) {
                 o.apiUpdated(api);
             }
         }
     }
 
-    public Collection<API> getAPIs() {
+    public synchronized Collection<API> getAPIs() {
         return Collections.unmodifiableCollection(apiTable.values());
     }
 
-    public API getAPI(String name) {
+    public synchronized API getAPI(String name) {
         return apiTable.get(name);
     }
 
-    public void removeAPI(String name) {
+    public synchronized void removeAPI(String name) {
         API api = apiTable.get(name);
         if (api != null) {
             apiTable.remove(name);
@@ -1436,10 +1452,12 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
         }
 
         //destroy inbound endpoint
-		for (InboundEndpoint endpoint : getInboundEndpoints()) {
-			endpoint.destroy();
-		}         
-        
+        for (InboundEndpoint endpoint : getInboundEndpoints()) {
+            // This path trigger from server shutdown hook. So we don't want to remove scheduled inbound tasks
+            // from registry. Only un-deployment should remove task from registry. Ref product-ei#1206
+            endpoint.destroy(false);
+        }
+
         // destroy the managed endpoints
         for (Endpoint endpoint : getDefinedEndpoints().values()) {
             endpoint.destroy();
@@ -2229,6 +2247,38 @@ public class SynapseConfiguration implements ManagedLifecycle, SynapseArtifact {
      */
     public CompletedStructureStore getCompletedStructureStore() {
         return completedStructureStore;
+    }
+    
+    /**
+     * This method reconstructs the apiTable in descending order of context
+     */
+    public synchronized void reconstructAPITable() {
+        if (log.isDebugEnabled()) {
+            log.debug("Start re-constructing the API Table...");
+        }
+
+        Map<String, API> duplicateAPITable = new LinkedHashMap<String, API>();
+        String[] contextValues = new String[apiTable.size()];
+        int i = 0;
+        for (API api : apiTable.values()) {
+            contextValues[i] = api.getContext();
+            i++;
+        }
+        Arrays.sort(contextValues, new java.util.Comparator<String>() {
+            public int compare(String context1, String context2) {
+                return context1.length() - context2.length();
+            }
+        });
+        ArrayUtils.reverse(contextValues);
+        for (String context : contextValues) {
+            for (String mapKeys : apiTable.keySet()) {
+                if (context.equals(apiTable.get(mapKeys).getContext())) {
+                    duplicateAPITable.put(mapKeys, apiTable.get(mapKeys));
+                    break;
+                }
+            }
+        }
+        apiTable = duplicateAPITable;
     }
 
 }

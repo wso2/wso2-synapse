@@ -47,6 +47,7 @@ public class PassThroughConfiguration {
                                                          Runtime.getRuntime().availableProcessors();
     private static final int DEFAULT_MAX_ACTIVE_CON = -1;
     private static final int DEFAULT_LISTENER_SHUTDOWN_WAIT_TIME = 0;
+    private Boolean isKeepAliveDisabled = null;
 
     //additional rest dispatch handlers
     private static final String REST_DISPATCHER_SERVICE="rest.dispatcher.service";
@@ -101,7 +102,10 @@ public class PassThroughConfiguration {
     }
 
     public boolean isKeepAliveDisabled() {
-        return getBooleanProperty(PassThroughConfigPNames.DISABLE_KEEPALIVE, false);
+        if (isKeepAliveDisabled == null) {
+            isKeepAliveDisabled = getBooleanProperty(PassThroughConfigPNames.DISABLE_KEEPALIVE, false);
+        }
+        return isKeepAliveDisabled.booleanValue();
     }
 
     public int getMaxActiveConnections() {

@@ -179,4 +179,15 @@ public class JsonXMLConfigBuilder {
         return this;
     }
 
+    /**
+     * Set writeNullForEmptyElement property and return receiver.
+     *
+     * @param writeNullForEmptyElements true if writing null, false if writing ""
+     * @return this
+     */
+    public JsonXMLConfigBuilder writeNullForEmptyElement(boolean writeNullForEmptyElements){
+        config.setWriteNullForEmptyElement(writeNullForEmptyElements);
+        return this;
+    }
+
 }

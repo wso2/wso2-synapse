@@ -18,10 +18,10 @@
   ~  under the License.
   -->
 
-<!-- Switching from UDP to HTTP/S -->
+<!-- Switching from TCP to HTTP/S -->
 <definitions xmlns="http://ws.apache.org/ns/synapse">
 
-    <proxy name="StockQuoteProxy" transports="udp">
+    <proxy name="StockQuoteProxy" transports="tcp">
         <target>
             <endpoint>
                 <address uri="http://localhost:9000/services/SimpleStockQuoteService"/>
@@ -31,9 +31,6 @@
                 <property name="OUT_ONLY" value="true"/>
             </inSequence>
         </target>
-        <parameter name="transport.udp.port">9999</parameter>
-        <parameter name="transport.udp.contentType">text/xml</parameter>
-        <publishWSDL uri="file:repository/conf/sample/resources/proxy/sample_proxy_1.wsdl"/>
     </proxy>
 
 </definitions>

@@ -77,8 +77,16 @@ public class DatasourceMBeanRepository implements MBeanRepository {
     public void removeMBean(String name) {
 
         dataSourcesMBeans.remove(name);
-        MBeanRegistrar.getInstance().unRegisterMBean(
-                MBEAN_CATEGORY_DATABASE_CONNECTION_POOL, name);
+        unregisterMBean(name);
+    }
+
+    /**
+     * Unregisters an MBean related to datasources without removing it from the datasource MBean map.
+     *
+     * @param name the name of the datasource Mbean to be unregistered.
+     */
+    private void unregisterMBean(String name) {
+        MBeanRegistrar.getInstance().unRegisterMBean(MBEAN_CATEGORY_DATABASE_CONNECTION_POOL, name);
     }
 
     public void clear() {
@@ -87,7 +95,7 @@ public class DatasourceMBeanRepository implements MBeanRepository {
             log.info("UnRegistering DBPool MBeans");
             for (DBPoolView dbPoolView : dataSourcesMBeans.values()) {
                 if (dbPoolView != null) {
-                    removeMBean(dbPoolView.getName());
+                    unregisterMBean(dbPoolView.getName());
                 }
             }
             dataSourcesMBeans.clear();

@@ -38,6 +38,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.config.xml.OMElementUtils;
 import org.apache.synapse.config.xml.SynapsePath;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.util.streaming_xpath.StreamingXPATH;
@@ -168,6 +169,16 @@ public class SynapseXPath extends SynapsePath {
         } else {
             contentAware = false;
         }
+        
+	 String propertyScope = getPropertyScope(xpathString);
+	 // skip message building for scope registry, system and transport scopes
+	 // for get-property() method
+	 if (XMLConfigConstants.SCOPE_REGISTRY.equals(propertyScope)
+			|| XMLConfigConstants.SCOPE_SYSTEM.equals(propertyScope)
+			|| XMLConfigConstants.SCOPE_TRANSPORT.equals(propertyScope)) {
+	    contentAware = false;
+	    return;
+	 }
 
         if(xpathString.contains("$trp") || xpathString.contains("$ctx") || xpathString.contains("$axis2")){
             contentAware = false;
@@ -197,6 +208,23 @@ public class SynapseXPath extends SynapsePath {
         }
     }
 
+    private String getPropertyScope(String xPathString) {
+       String[] args;
+       String xpath = null;
+       String scope = "";
+       if (xPathString.contains("get-property")) {
+            // extract property args
+            xpath = xPathString.substring(xPathString.indexOf("(") + 1, xPathString.indexOf(")"));
+	    args = xpath.split(",");
+	    if (args != null && args.length == 2) {
+		// remove white space
+		scope = args[0].trim();
+		// remove opening and ending quotes
+		scope = scope.substring(1, scope.length() - 1);
+                }
+	   }
+       return scope;
+    }
     /**
      * Evaluate if the expression is compilable in XPath 2.0 format. This will only be used when its failing to
      * compile in Jaxen
