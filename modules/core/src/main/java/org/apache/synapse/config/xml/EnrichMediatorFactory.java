@@ -24,8 +24,6 @@ import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.jaxen.JaxenException;
@@ -42,7 +40,6 @@ import java.util.Properties;
  * Factory for {@link EnrichMediator} instances.
  */
 public class EnrichMediatorFactory extends AbstractMediatorFactory {
-    private static final Log logger = LogFactory.getLog(EnrichMediatorFactory.class.getName());
 
     private static final QName XML_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enrich");
     private static final QName ATT_PROPERTY = new QName("property");
@@ -225,7 +222,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
             // check if source type is different form the existing
             if (sourceType < 0) {
-                throw new SynapseException("Un-expected source type");
+                throw new SynapseException("Unexpected source type");
             }
         }
         // target type attribute
@@ -235,7 +232,7 @@ public class EnrichMediatorFactory extends AbstractMediatorFactory {
 
             // check if target type is different form the existing
             if (targetType < 0) {
-                throw new SynapseException("Un-expected target type");
+                throw new SynapseException("Unexpected target type");
             }
             // check if target type is 4-inline
             if (targetType == 4) {
