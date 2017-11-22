@@ -164,13 +164,21 @@ public class Target {
 				try {
 	                 documentElement = AXIOMUtil.stringToOM((String)propertyObj);
                 } catch (Exception e1) {
-	                //just ignoring the phaser error 
+	                //just ignoring the phaser error
+                }
+                if(documentElement ==null){
+                    //read property value if property is an OMElement.
+                    try {
+                        documentElement = (OMElement) propertyObj;
+                    }catch (Exception e1){
+                        //just ignoring the phaser error
+                    }
                 }
 				if(documentElement != null && action.equals(ACTION_ADD_CHILD)){
 					//logic should valid only when adding child elements, and other cases
 					//such as sibling and replacement using the else condition
 					insertElement(sourceNodeList, documentElement, synLog);
-					synContext.setProperty(property, documentElement.getText());  
+					synContext.setProperty(property, documentElement);
 				}else{
 					synContext.setProperty(property, sourceNodeList);  
 				}
