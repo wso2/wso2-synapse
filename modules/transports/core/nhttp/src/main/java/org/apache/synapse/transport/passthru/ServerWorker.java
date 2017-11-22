@@ -105,9 +105,7 @@ public class ServerWorker implements Runnable {
         this.httpGetRequestProcessor = sourceConfiguration.getHttpGetRequestProcessor();
         
         this.os = os;
-        
-      
-        
+
         // set these properties to be accessed by the engine
         msgContext.setProperty(
                 PassThroughConstants.PASS_THROUGH_SOURCE_REQUEST, request);
@@ -126,7 +124,7 @@ public class ServerWorker implements Runnable {
             CustomLogSetter.getInstance().clearThreadLocalContent();
             TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
             if (tenantInfoInitiator != null) {
-                tenantInfoInitiator.initTenantInfo();
+                tenantInfoInitiator.initTenantInfo(request.getUri());
             }
             request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
             if (log.isDebugEnabled()) {
@@ -312,7 +310,7 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(request.getUri()));
         msgContext.setServerSide(true);
         msgContext.setDoingREST(true);
-        if(!request.isEntityEnclosing()){
+        if (!(request.isEntityEnclosing())) {
         	msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
         }
         
@@ -332,7 +330,7 @@ public class ServerWorker implements Runnable {
                 " request for : " + request.getUri(), axisFault);
         } catch (Exception e) {
             handleException(
-                    "Error processing " + request.getMethod() + " reguest for : "
+                    "Error processing " + request.getMethod() + " request for : "
                             + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);          
         }
     }
@@ -410,7 +408,7 @@ public class ServerWorker implements Runnable {
                 " request for : " + request.getUri(), axisFault);
         } catch (Exception e) {
             handleException(
-                    "Error processing " + request.getMethod() + " reguest for : "
+                    "Error processing " + request.getMethod() + " request for : "
                             + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);
         }
     }
@@ -715,6 +713,12 @@ public class ServerWorker implements Runnable {
     private void cleanup () {
         //clean threadLocal variables
         MessageContext.destroyCurrentMessageContext();
+        //clean tenantInfo
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        if (tenantInfoInitiator != null) {
+            tenantInfoInitiator.cleanTenantInfo();
+        }
+
     }
 
 }

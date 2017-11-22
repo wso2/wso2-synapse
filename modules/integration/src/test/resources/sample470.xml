@@ -19,12 +19,12 @@ under the License.
 -->
 
 <synapseSample>
-    <sampleID>460</sampleID>
+    <sampleID>470</sampleID>
     <sampleName>How to initialize and use a Spring Bean as a Mediator</sampleName>
     <synapseConfig>
         <axis2Repo>modules/integration/target/test_repos/synapse</axis2Repo>
         <axis2Xml>modules/integration/target/test_repos/synapse/conf/axis2_def.xml</axis2Xml>
-        <synapseXml>repository/conf/sample/synapse_sample_460.xml</synapseXml>
+        <synapseXml>repository/conf/sample/synapse_sample_470.xml</synapseXml>
     </synapseConfig>
     <backEndServerConfig>
         <axis2Server id='0'>

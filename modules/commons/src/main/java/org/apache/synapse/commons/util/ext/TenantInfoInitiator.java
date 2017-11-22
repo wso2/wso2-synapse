@@ -21,4 +21,15 @@ package org.apache.synapse.commons.util.ext;
 public interface TenantInfoInitiator {
 
     public void initTenantInfo();
+
+    /**
+     * initialize tenant information of the current thread based on the request URI
+     * @param uri request URI
+     */
+    public void initTenantInfo(String uri);
+
+    /**
+     * Clean tenant information in the current thread
+     */
+    public void cleanTenantInfo();
 }

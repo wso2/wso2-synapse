@@ -95,6 +95,16 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      */
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
 
+        if (getServerContextInformation().getServerState() != ServerState.STARTED) {
+            // synapse server has not yet being started
+            if (log.isDebugEnabled()) {
+                log.debug("Skipped the artifact deployment (since the Synapse " +
+                          "server doesn't seem to be started yet), from file : "
+                          + deploymentFileData.getAbsolutePath());
+            }
+            return;
+        }
+
 //        CustomLogSetter.getInstance().setLogAppender(customLogContent);
         if (!isHotDeploymentEnabled()) {
             if (log.isDebugEnabled()) {
@@ -107,16 +117,6 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                 deploymentFileData.getAbsolutePath());
         if (log.isDebugEnabled()) {
             log.debug("Deployment of the synapse artifact from file : " + filename + " : STARTED");
-        }
-
-        if (getServerContextInformation().getServerState() != ServerState.STARTED) {
-            // synapse server has not yet being started
-            if (log.isDebugEnabled()) {
-                log.debug("Skipped the artifact deployment (since the Synapse " +
-                        "server doesn't seem to be started yet), from file : "
-                        + deploymentFileData.getAbsolutePath());
-            }
-            return;
         }
 
         SynapseArtifactDeploymentStore deploymentStore =
