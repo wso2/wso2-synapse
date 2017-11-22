@@ -26,13 +26,13 @@ import javax.script.ScriptException;
 
 /**
  * ScriptMessageContext decorates the MessageContext interface by adding methods to use when
- * deals with message payload XML/Json, in a way natural to the scripting languageS.
+ * deals with message payload XML/Json, in a way natural to the scripting languages.
  */
 public interface ScriptMessageContext extends MessageContext {
 
     /**
      * Get the XML representation of SOAP Body payload.
-     * The payload is the first element inside the SOAP <Body> tags
+     * The payload is the first element inside the SOAP <Body> tags.
      *
      * @return the XML SOAP Body
      * @throws ScriptException in-case of an error in getting
@@ -74,6 +74,7 @@ public interface ScriptMessageContext extends MessageContext {
 
     /**
      * Saves the JavaScript Object to the message context.
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript Object which is passed to be saved in message context
      * @return true
@@ -82,6 +83,7 @@ public interface ScriptMessageContext extends MessageContext {
 
     /**
      * Saves the JSON String to the message context.
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript string which is passed to be saved in message context
      * @return false if messageContext is null return true otherwise
@@ -102,20 +104,50 @@ public interface ScriptMessageContext extends MessageContext {
      */
     void setScriptEngine(ScriptEngine scriptEngine);
 
+    /**
+     * Add a new SOAP header to the message.
+     *
+     * @param mustUnderstand the value for the <code>soapenv:mustUnderstand</code> attribute
+     * @param content the XML for the new header
+     * @throws ScriptException if an error occurs when converting the XML to OM
+     */
     void addHeader(boolean mustUnderstand, Object content) throws ScriptException;
 
+    /**
+     * Get the XML representation of the complete SOAP envelope.
+     *
+     * @return return an object that represents the payload in the current scripting language
+     * @throws ScriptException in-case of an error in getting
+     * the XML representation of SOAP envelope
+     */
     Object getEnvelopeXML() throws ScriptException;
 
     /**
-     * Helpers to set EPRs from a script string.
+     * This is used to set the value which specifies the receiver of the message.
      *
+     * @param reference specifies the receiver of the message
      */
     void setTo(String reference);
 
+    /**
+     * This is used to set the value which specifies the receiver of the faults relating to the message.
+     *
+     * @param reference specifies the specifies the receiver of the faults relating to the message
+     */
     void setFaultTo(String reference);
 
+    /**
+     * This is used to set the value which specifies the sender of the message.
+     *
+     * @param reference specifies the sender of the message
+     */
     void setFrom(String reference);
 
+    /**
+     * This is used to set the value which specifies the receiver of the replies to the message.
+     *
+     * @param reference specifies the receiver of the replies to the message
+     */
     void setReplyTo(String reference);
 
     /**
@@ -124,7 +156,6 @@ public interface ScriptMessageContext extends MessageContext {
      * @param key unique identifier of property
      * @param value value of property
      * @param scope scope of the property
-     * @throws ScriptException if an error occurs when converting the XML to OM
      */
     void setProperty(String key, Object value, String scope);
 
@@ -133,7 +164,6 @@ public interface ScriptMessageContext extends MessageContext {
      *
      * @param key unique identifier of property
      * @param scope scope of the property
-     * @throws ScriptException if an error occurs when converting the XML to OM
      */
     void removeProperty(String key, String scope);
 
