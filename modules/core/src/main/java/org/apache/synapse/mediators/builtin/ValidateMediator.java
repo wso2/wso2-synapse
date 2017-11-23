@@ -187,21 +187,21 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             }
             
             /*
-			 * Fixing ESBJAVA-4958, Implementation has done assuming that the
-			 * artifacts are added and removed via a .car file. When a schema is
-			 * getting removed since the .car file is redeploying, the deleted
-			 * items will be removed from the map.
-			 */
+             * Fixing ESBJAVA-4958, Implementation has done assuming that the
+             * artifacts are added and removed via a .car file. When a schema is
+             * getting removed since the .car file is redeploying, the deleted
+             * items will be removed from the map.
+             */
 
-			/*
-			 * Check for the cached schema in the map and if it's available get
-			 * the cached schema else re initialize the schema
-			 */
-			if (cachedJsonSchemaMap.containsKey(combinedPropertyKey.toString())) {
-				cachedJsonSchema = cachedJsonSchemaMap.get(combinedPropertyKey.toString());
-			} else {
-				reCreate = true;
-			}
+            /*
+             * Check for the cached schema in the map and if it's available get
+             * the cached schema else re initialize the schema
+             */
+            if (cachedJsonSchemaMap.containsKey(combinedPropertyKey.toString())) {
+                cachedJsonSchema = cachedJsonSchemaMap.get(combinedPropertyKey.toString());
+            } else {
+                reCreate = true;
+            }
 
             // do not re-initialize schema unless required
             synchronized (validatorLock) {
@@ -242,22 +242,22 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         }
                         cachedJsonSchema = jsonSchemaFactory.getJsonSchema(jsonSchemaNode);
                         
-						/*
-						 * Initially adds the cached schema to the map if it's
-						 * not available
-						 */
-						if (!cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
-							cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
-							/*
-							 * Removes the existing cached schema and adds the
-							 * new cached schema This is used when editing a
-							 * registry resource or when the cache expires
-							 */
-						} else if (cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
+                        /*
+                         * Initially adds the cached schema to the map if it's
+                         * not available
+                         */
+                        if (!cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
+                            cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
+                            /*
+                             * Removes the existing cached schema and adds the
+                             * new cached schema This is used when editing a
+                             * registry resource or when the cache expires
+                             */
+                        } else if (cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
 
-							cachedJsonSchemaMap.remove(cachedJsonSchemaKey.toString());
-							cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
-						}
+                            cachedJsonSchemaMap.remove(cachedJsonSchemaKey.toString());
+                            cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
+                        }
                     } catch (ProcessingException | IOException e) {
                         handleException("Error while validating the JSON Schema", e, synCtx);
                     }
@@ -348,22 +348,22 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 }
             }
             
-			/*
-			 * Fixing ESBJAVA-4958, Implementation has done assuming that the
-			 * artifacts are added and removed via a .car file. When a schema is
-			 * getting removed since the .car file is redeploying, the deleted
-			 * items will be removed from the map.
-			 */
+            /*
+             * Fixing ESBJAVA-4958, Implementation has done assuming that the
+             * artifacts are added and removed via a .car file. When a schema is
+             * getting removed since the .car file is redeploying, the deleted
+             * items will be removed from the map.
+             */
 
-			/*
-			 * Check for the cached schema in the map and if it's available get
-			 * the cached schema else re initialize the schema
-			 */
-			if (cachedSchemaMap.containsKey(combinedPropertyKey.toString())) {
-				cachedSchema = cachedSchemaMap.get(combinedPropertyKey.toString());
-			} else {
-				reCreate = true;
-			}
+            /*
+             * Check for the cached schema in the map and if it's available get
+             * the cached schema else re initialize the schema
+             */
+            if (cachedSchemaMap.containsKey(combinedPropertyKey.toString())) {
+                cachedSchema = cachedSchemaMap.get(combinedPropertyKey.toString());
+            } else {
+                reCreate = true;
+            }
 
             // This is the reference to the DefaultHandler instance
             ValidateMediatorErrorHandler errorHandler = new ValidateMediatorErrorHandler();
@@ -396,21 +396,21 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         cachedSchema = factory.newSchema(sources);
                         
                         /*
-						 * Initially adds the cached schema to the map if it's
-						 * not available
-						 */
-						if (!cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
-							cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
-							/*
-							 * Removes the existing cached schema and adds the
-							 * new cached schema This is used when editing a
-							 * registry resource or when the cache expires
-							 */
-						} else if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
+                         * Initially adds the cached schema to the map if it's
+                         * not available
+                         */
+                        if (!cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
+                            cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
+                            /*
+                             * Removes the existing cached schema and adds the
+                             * new cached schema This is used when editing a
+                             * registry resource or when the cache expires
+                             */
+                        } else if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
 
-							cachedSchemaMap.remove(cachedSchemaKey.toString());
-							cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
-						}
+                            cachedSchemaMap.remove(cachedSchemaKey.toString());
+                            cachedSchemaMap.put(cachedSchemaKey.toString(), cachedSchema);
+                        }
                     } catch (SAXException e) {
                         handleException("Error creating a new schema objects for " +
                                         "schemas : " + schemaKeys.toString(), e, synCtx);
@@ -424,9 +424,9 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         errorHandler.setValidationError(false);
                         cachedSchema = null;
                         // Removes the erroneous cached schema from the map
-						if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
-							cachedSchemaMap.remove(cachedSchemaKey.toString());
-						}
+                        if (cachedSchemaMap.containsKey(cachedSchemaKey.toString())) {
+                            cachedSchemaMap.remove(cachedSchemaKey.toString());
+                        }
                         handleException("Error creating a new schema objects for schemas : "
                                         + schemaKeys.toString(), errorHandler.getSaxParseException(), synCtx);
                     }
