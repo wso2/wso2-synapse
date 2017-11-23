@@ -24,22 +24,25 @@ package org.apache.synapse.mediators.eip;
  */
 public class SharedDataHolder {
 
-    private boolean isTimeoutOccurred = false;
+    /**
+     * Variable to track whether aggregation is completed.
+     */
+    private boolean isAggregationCompleted = false;
 
     /**
-     * Check whether timeout is exceeded for aggregates
+     * Check whether aggregation has been completed.
      *
-     * @return whether timeout is exceeded for aggregates
+     * @return whether completion has happened for aggregates
      */
-    public boolean isTimeoutOccurred() {
-        return isTimeoutOccurred;
+    public boolean isAggregationCompleted() {
+        return isAggregationCompleted;
     }
 
     /**
-     * Mark timeout for aggregates
+     * Mark completion for aggregates.
      */
-    public void markTimeoutState() {
-        this.isTimeoutOccurred = true;
+    public void markAggregationCompletion() {
+        isAggregationCompleted = true;
     }
 
 }

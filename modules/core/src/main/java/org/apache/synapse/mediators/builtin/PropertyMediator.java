@@ -214,8 +214,7 @@ public class PropertyMediator extends AbstractMediator {
                     pros.remove(name);
                 }
 
-            } else if ((XMLConfigConstants.SCOPE_AXIS2.equals(scope) ||
-                XMLConfigConstants.SCOPE_CLIENT.equals(scope))
+            } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)
                 && synCtx instanceof Axis2MessageContext) {
                 
                 //Removing property from the Axis2 Message Context
@@ -223,6 +222,17 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2MessageCtx.removeProperty(name);
+
+            } else if (XMLConfigConstants.SCOPE_CLIENT.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+
+                //Removing property from the Axis2-client Message Context
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                org.apache.axis2.context.MessageContext axis2MessageCtx =
+                        axis2smc.getAxis2MessageContext();
+                //Property value is set to null since axis2MessageCtx.getOptions()
+                //does not have an option to remove properties
+                axis2MessageCtx.getOptions().setProperty(name, null);
 
             } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)
                     && synCtx instanceof Axis2MessageContext) {

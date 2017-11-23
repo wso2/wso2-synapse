@@ -135,4 +135,15 @@ public class SynapseXPathTest extends TestCase {
         xpath.setVariableContext(variableContext);
         assertEquals("myvalue", xpath.evaluate(TestUtils.getTestContext("<test/>")));
     }
+    
+    public void testContentAwareness() throws Exception {
+    	assertEquals(false, new SynapseXPath("$trp:xxx" ).isContentAware());
+    	assertEquals(true, new SynapseXPath("/test/cdaea" ).isContentAware());
+    	assertEquals(false, new SynapseXPath("get-property('SYSTEM_TIME')" ).isContentAware());
+    	assertEquals(false, new SynapseXPath("get-property('registry', 'gov:/apimgt/metadata/log')" ).isContentAware());
+    	//test for get-property with ',' with whitespase 
+    	assertEquals(false, new SynapseXPath("get-property('registry' , 'gov:/apimgt/metadata/log')" ).isContentAware());
+    	assertEquals(false, new SynapseXPath("get-property('transport', 'Content-Type')" ).isContentAware());
+    	assertEquals(false, new SynapseXPath("get-property('system', 'JAVA_HOME')" ).isContentAware());
+    }  
 }

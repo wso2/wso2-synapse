@@ -27,12 +27,21 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.util.PropertyHelper;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.startup.AbstractStartup;
-import org.apache.synapse.task.*;
+import org.apache.synapse.task.SynapseTaskManager;
+import org.apache.synapse.task.Task;
+import org.apache.synapse.task.TaskConstants;
+import org.apache.synapse.task.TaskDescription;
+import org.apache.synapse.task.TaskDescriptionRepository;
+import org.apache.synapse.task.TaskManager;
+import org.apache.synapse.task.TaskScheduler;
 
 import javax.xml.namespace.QName;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class StartUpController extends AbstractStartup {
     private static final Log logger = LogFactory.getLog(StartUpController.class.getName());
@@ -49,7 +58,15 @@ public class StartUpController extends AbstractStartup {
         return SimpleQuartzFactory.TASK;
     }
 
-    public void destroy() {
+    /**
+     * Remove the scheduled task completely. So only un-deployment will remove the task. Server node shutdown will keep
+     * task intact in the registry.
+     * <p>
+     * This was introduced as a fix for product-ei#1206.
+     *
+     * @param removeTask whether keep the task or not.
+     */
+    public void destroy(boolean removeTask) {
         if (!destroyTask()) {
             return;
         }
@@ -59,7 +76,7 @@ public class StartUpController extends AbstractStartup {
         }        
         if (synapseTaskManager.isInitialized()) {
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
-            if (taskScheduler != null && taskScheduler.isInitialized()) {
+            if (taskScheduler != null && taskScheduler.isInitialized() && removeTask) {
                 taskScheduler.deleteTask(taskDescription.getName(), taskDescription.getTaskGroup());
             }
             TaskDescriptionRepository repository = synapseTaskManager.getTaskDescriptionRepository();
@@ -67,6 +84,10 @@ public class StartUpController extends AbstractStartup {
                 repository.removeTaskDescription(taskDescription.getName());
             }
         }
+    }
+
+    public void destroy() {
+        destroy(true);
     }
 
     public void init(SynapseEnvironment synapseEnvironment) {
@@ -93,7 +114,7 @@ public class StartUpController extends AbstractStartup {
             taskDescription.addResource(TaskDescription.CLASSNAME, task.getClass().getName());
         }
         try {
-            Map<String, Object> map = new HashMap<String, Object>();
+            Map<String, Object> map = new HashMap<>();
             map.put(TaskConstants.SYNAPSE_ENV, synapseEnvironment);
             TaskScheduler taskScheduler = synapseTaskManager.getTaskScheduler();
             TaskManager taskManager = synapseTaskManager.getTaskManagerImpl();

@@ -29,7 +29,7 @@ public class MockFileNameParser extends GenericFileNameParser {
 
     public FileName parseUri(VfsComponentContext context, FileName base, String filename) throws FileSystemException {
         StringBuilder name = new StringBuilder();
-        String scheme = UriParser.extractScheme(filename, name);
+        String scheme = UriParser.extractScheme(filename.split("\\?")[0], name);
         if (scheme == null) {
             scheme = "test";
         }
@@ -39,6 +39,6 @@ public class MockFileNameParser extends GenericFileNameParser {
         String rootFile = this.extractRootPrefix(filename, name);
         FileType fileType = UriParser.normalisePath(name);
         String path = name.toString();
-        return new MockFileName(scheme, "/", path, fileType);
+        return new MockFileName(scheme, "", path, fileType);
     }
 }

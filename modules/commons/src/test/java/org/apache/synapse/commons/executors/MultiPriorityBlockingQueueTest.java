@@ -19,6 +19,8 @@
 
 package org.apache.synapse.commons.executors;
 
+import java.util.ArrayList;
+
 /**
  * Test the MultiPriorityBlockingQueue operations in a single threaded enviorenment.
  */
@@ -194,7 +196,8 @@ public class MultiPriorityBlockingQueueTest extends MultiPriorityBlockingQueueAb
         DummyTask task = new DummyTask(10);
         fixedQueue.offer(task);
 
-        assertTrue(fixedQueue.remove(task));
+        assertTrue("Invoking remove() on an existing task should return true", fixedQueue.remove(task));
+        assertFalse("Invoking remove() on a non-existing task should return false", fixedQueue.remove(new DummyTask(10)));
         fixedQueue.clear();
 
 
@@ -203,10 +206,74 @@ public class MultiPriorityBlockingQueueTest extends MultiPriorityBlockingQueueAb
         task = new DummyTask(10);
         unboundedQueue.offer(task);
 
-        assertTrue(unboundedQueue.remove(task));
+        assertTrue("Invoking remove() on an existing task should return true", unboundedQueue.remove(task));
+        assertFalse("Invoking remove() on a non-existing task should return false", unboundedQueue.remove(new DummyTask(10)));
 
         unboundedQueue.clear();
-        assertEquals(0, fixedQueue.size());
+        assertEquals("Empty queue expected", 0, fixedQueue.size());
+    }
+
+    public void testPoll() {
+        DummyTask task1 = new DummyTask(10);
+        task1.setMark(3);
+        fixedQueue.offer(task1);
+        DummyTask task2 = new DummyTask(10);
+        task2.setMark(4);
+        fixedQueue.offer(task2);
+        DummyTask dummyTask = (DummyTask) fixedQueue.poll();
+        assertEquals("Invalid object returned, DummyTask with mark=3 expected", 3, dummyTask.getMark());
+        fixedQueue.clear();
+        assertEquals("Empty queue expected", 0, fixedQueue.size());
+    }
+
+    public void testPeek() {
+        DummyTask task1 = new DummyTask(10);
+        task1.setMark(3);
+        fixedQueue.offer(task1);
+        DummyTask task2 = new DummyTask(10);
+        task2.setMark(4);
+        fixedQueue.offer(task2);
+        DummyTask dummyTask = (DummyTask) fixedQueue.peek();
+        assertEquals("Invalid object returned, DummyTask with mark=3 expected", 3, dummyTask.getMark());
+        fixedQueue.clear();
+        assertEquals("Empty queue expected", 0, fixedQueue.size());
+    }
+
+    public void testDrain() {
+        MultiPriorityBlockingQueue queue = createFixedQueue(2, new int[]{2, 2}, priorities);
+        queue.offer(new DummyTask(10));
+        queue.offer(new DummyTask(10));
+        queue.offer(new DummyTask(1));
+        queue.offer(new DummyTask(1));
+        int noOfElements = queue.drainTo(new ArrayList());
+        assertEquals("Invalid no of elements", 4, noOfElements);
+    }
+
+    public void testDrainGivenMax() {
+        MultiPriorityBlockingQueue queue = createFixedQueue(2, new int[]{2, 2}, priorities);
+        queue.offer(new DummyTask(10));
+        queue.offer(new DummyTask(10));
+        queue.offer(new DummyTask(1));
+        queue.offer(new DummyTask(1));
+        int noOfElementGivenMax = queue.drainTo(new ArrayList(), 3);
+        assertEquals("Invalid no of elements", 3, noOfElementGivenMax);
+    }
+
+    public void testIsEmpty() {
+        performOffer(fixedQueue, sizes, priorities);
+        assertFalse("Non empty queue expected", fixedQueue.isEmpty());
+        fixedQueue.clear();
+        assertEquals("Empty queue expected", 0, fixedQueue.size());
+    }
+
+    public void testIsFixedSize() {
+        MultiPriorityBlockingQueue queue1 = createFixedQueue(2, sizes, priorities);
+        assertTrue("'queue1' should contain fixed queues", queue1.isFixedSizeQueues());
+    }
+
+    public void testToString() {
+        MultiPriorityBlockingQueue queue1 = createFixedQueue(2, sizes, priorities);
+        assertEquals("String representation is incorrect", "[]10[]1", queue1.toString());
     }
 
     private void waitForThreadState(Thread t, Thread.State state) {
@@ -221,7 +288,7 @@ public class MultiPriorityBlockingQueueTest extends MultiPriorityBlockingQueueAb
     }
 
     private void performPut(MultiPriorityBlockingQueue queue,
-                                    int []items, int []priorites) throws InterruptedException {
+                            int []items, int []priorites) throws InterruptedException {
         for (int priority = 0; priority < priorites.length; priority++) {
             for (int i = 0; i < items[priority]; i++) {
                 queue.put(new DummyTask(priorites[priority]));
@@ -230,7 +297,7 @@ public class MultiPriorityBlockingQueueTest extends MultiPriorityBlockingQueueAb
     }
 
     private void performOffer(MultiPriorityBlockingQueue queue,
-                                    int []items, int []priorites) {
+                              int []items, int []priorites) {
         for (int priority = 0; priority < priorites.length; priority++) {
             for (int i = 0; i < items[priority]; i++) {
                 queue.offer(new DummyTask(priorites[priority]));

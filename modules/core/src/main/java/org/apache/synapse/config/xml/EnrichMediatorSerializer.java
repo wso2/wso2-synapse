@@ -56,10 +56,7 @@ public class EnrichMediatorSerializer extends AbstractMediatorSerializer {
                     intTypeToString(source.getSourceType())));
         }
 
-        if (source.isClone()) {
-            sourceEle.addAttribute(fac.createOMAttribute("clone", nullNS,
-                    Boolean.toString(source.isClone())));
-        }
+        sourceEle.addAttribute(fac.createOMAttribute("clone", nullNS, Boolean.toString(source.isClone())));
 
         if (source.getSourceType() == EnrichMediator.PROPERTY) {
             sourceEle.addAttribute(fac.createOMAttribute("property", nullNS, source.getProperty()));

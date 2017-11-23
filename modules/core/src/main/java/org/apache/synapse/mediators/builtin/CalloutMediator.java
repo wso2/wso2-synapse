@@ -27,6 +27,7 @@ import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.context.ConfigurationContext;
@@ -308,10 +309,13 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
             while (iHeader.hasNext()) {
                 try {
                     Object element = iHeader.next();
-                    if (element instanceof  OMElement) {
-                        newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac).cloneOMElement());
+                    /* Convert only OMElements. Skip SOAPHeaderBlock elements*/
+                    if (!(element instanceof SOAPHeaderBlock)) {
+                        if (element instanceof OMElement) {
+                            newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac).cloneOMElement());
+                        }
+                        iHeader.remove();
                     }
-                    iHeader.remove();
                 } catch (OMException e) {
                     log.error("Unable to convert to SoapHeader Block", e);
                 } catch (Exception e) {
