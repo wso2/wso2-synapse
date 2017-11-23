@@ -254,7 +254,6 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                              * registry resource or when the cache expires
                              */
                         } else if (cachedJsonSchemaMap.containsKey(cachedJsonSchemaKey.toString())) {
-
                             cachedJsonSchemaMap.remove(cachedJsonSchemaKey.toString());
                             cachedJsonSchemaMap.put(cachedJsonSchemaKey.toString(), cachedJsonSchema);
                         }
