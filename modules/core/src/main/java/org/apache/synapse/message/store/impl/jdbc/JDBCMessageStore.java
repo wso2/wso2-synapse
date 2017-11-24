@@ -1,13 +1,13 @@
-/**
+/*
  * Copyright (c) 2014, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
- *
+ * <p>
  * WSO2 Inc. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License.
  * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,6 +43,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -69,6 +70,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
     private final ReentrantLock removeLock = new ReentrantLock();
     private final ReentrantLock cleanUpOfferLock = new ReentrantLock();
     private final AtomicBoolean cleaningFlag = new AtomicBoolean(false);
+    protected static final String MESSAGE_COLUMN_NAME = "message";
 
     /**
      * Initializes the JDBC Message Store
@@ -89,6 +91,10 @@ public class JDBCMessageStore extends AbstractMessageStore {
         jdbcConfiguration.buildDataSource(parameters);
 
 //        JDBCMessageConverter.setSynapseEnvironment(synapseEnvironment);
+    }
+
+    protected JDBCConfiguration getJdbcConfiguration() {
+        return jdbcConfiguration;
     }
 
     /**
@@ -133,72 +139,107 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
-     * Process a given Statement object
+     * Process a given SQL statement.
      *
-     * @param stmt - Statement to process
-     * @return - Results as a List of MessageContexts
+     * @param statement - Statement to process.
+     * @return - MessageContext which will hold the content of the message.
      */
-    private MessageContext processResultingStatement(Statement stmt) throws SynapseException {
-        MessageContext resultMsg = null;
+    private MessageContext getResultMessageContextFromDatabase(Statement statement) throws SynapseException {
+        List<Map> processedRows = getProcessedRows(statement);
+        final int firstRowIndex = 0;
+        MessageContext messageContext = null;
+        if (processedRows.size() > 0) {
+            Map messageContentRow = processedRows.get(firstRowIndex);
+            messageContext = (MessageContext) messageContentRow.get(MESSAGE_COLUMN_NAME);
+            if(logger.isDebugEnabled()){
+                logger.debug("Number of rows processed:"+processedRows+" calling the statement "
+                        +statement.getStatement());
+                logger.debug("Message content with mid:"+messageContext.getMessageID()+" will be returned");
+            }
+        }
+        return messageContext;
+    }
 
-        // Execute the prepared statement, and return list of messages as an ArrayList
+    /**
+     * Will return the list of processed message rows.
+     *
+     * @param statement the statement executed in the DB.
+     * @return the rows which contains the column data wrapped inside a map.
+     */
+    protected List<Map> getProcessedRows(Statement statement) {
         Connection con = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
-
+        List<Map> elements;
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
+            ps = con.prepareStatement(statement.getStatement());
             int index = 1;
-            for (Object param : stmt.getParameters()) {
+            for (Object param : statement.getParameters()) {
                 if (param instanceof String) {
                     ps.setString(index, (String) param);
+                } else if (param instanceof Long) {
+                    ps.setLong(index, (Long) param);
                 } else if (param instanceof Integer) {
                     ps.setInt(index, (Integer) param);
                 }
                 index++;
             }
             rs = ps.executeQuery();
-            while (rs.next()) {
-                byte[] msgObj;
-                try {
-                    msgObj = rs.getBytes("message");
-                } catch (SQLException e) {
-                    throw new SynapseException("Error executing statement : " + stmt.getRawStatement() +
-                                               " against DataSource : " + jdbcConfiguration.getDSName(), e);
-                }
-                if (msgObj != null) {
-                    ObjectInputStream ios = null;
-                    try {
-                        // Convert back to MessageContext and add to list
-                        ios = new ObjectInputStream(new ByteArrayInputStream(msgObj));
-                        Object msg = ios.readObject();
-                        if (msg instanceof StorableMessage) {
-                            StorableMessage jdbcMsg = (StorableMessage) msg;
-                            org.apache.axis2.context.MessageContext axis2Mc = this.newAxis2Mc();
-                            MessageContext synapseMc = this.newSynapseMc(axis2Mc);
-                            resultMsg = MessageConverter.toMessageContext(jdbcMsg, axis2Mc, synapseMc);
-                        }
-                    } catch (Exception e) {
-                        throw new SynapseException("Error reading object input stream", e);
-                    } finally {
-                        try {
-                            ios.close();
-                        } catch (IOException e) {
-                            logger.error("Error while closing object input stream", e);
-                        }
-                    }
-                } else {
-                    throw new SynapseException("Retrieved Object is null");
-                }
-            }
+            elements = statement.getResult(rs);
         } catch (SQLException e) {
-            throw new SynapseException("Processing Statement failed : " + stmt.getRawStatement() +
-                                       " against DataSource : " + jdbcConfiguration.getDSName(), e);
+            throw new SynapseException("Processing Statement failed : " + statement.getStatement() +
+                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
         }
-        return resultMsg;
+        return elements;
+    }
+
+    /**
+     * Will convert the byte[] message to store-able message.
+     *
+     * @param msgObj serialized message read from the database.
+     * @return converted message context.
+     */
+    protected MessageContext deserializeMessage(byte[] msgObj) {
+        MessageContext messageContext = null;
+        if (msgObj != null) {
+            ObjectInputStream ios = null;
+            try {
+                // Convert back to MessageContext and add to list
+                ios = new ObjectInputStream(new ByteArrayInputStream(msgObj));
+                Object msg = ios.readObject();
+                if (msg instanceof StorableMessage) {
+                    StorableMessage jdbcMsg = (StorableMessage) msg;
+                    org.apache.axis2.context.MessageContext axis2Mc = this.newAxis2Mc();
+                    MessageContext synapseMc = this.newSynapseMc(axis2Mc);
+                    messageContext = MessageConverter.toMessageContext(jdbcMsg, axis2Mc, synapseMc);
+                }
+            } catch (IOException e) {
+                throw new SynapseException("Error reading object input stream", e);
+            } catch (ClassNotFoundException e) {
+                throw new SynapseException("Could not find the class", e);
+            } finally {
+                closeStream(ios);
+            }
+        } else {
+            throw new SynapseException("Retrieved Object is null");
+        }
+        return messageContext;
+    }
+
+    /**
+     * Closes the object stream after completing the DB operations.
+     *
+     * @param ios stream which should be closed.
+     */
+    private void closeStream(ObjectInputStream ios) {
+        try {
+            ios.close();
+        } catch (IOException e) {
+            logger.error("Error while closing object input stream", e);
+        }
     }
 
     private org.apache.axis2.context.MessageContext newAxis2Mc() {
@@ -213,49 +254,70 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
+     * On database update failure tries to rollback
+     *
+     * @param connection database connection
+     * @param task       explanation of the task done when the rollback was triggered
+     */
+    private void rollback(Connection connection, String task) {
+        if (connection != null) {
+            try {
+                connection.rollback();
+            } catch (SQLException e) {
+                logger.warn("Rollback failed on " + task, e);
+            }
+        }
+    }
+
+    /**
      * Process statements that do not give a ResultSet
      *
-     * @param stmnt - Statement to process
+     * @param statements - Statement to process
      * @return - Success or Failure of the process
      */
-    private boolean processNonResultingStatement(Statement stmnt) throws SynapseException {
-        Connection con = null;
-        boolean result = false;
-        PreparedStatement ps = null;
-
+    private boolean processNonResultingStatement(List<Statement> statements) throws SynapseException {
+        Connection connection = null;
+        boolean result;
+        PreparedStatement preparedStatement = null;
         try {
-            con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmnt.getRawStatement());
-            int index = 1;
-            for (Object param : stmnt.getParameters()) {
-                if (param instanceof String) {
-                    ps.setString(index, (String) param);
-                } else if (param instanceof StorableMessage) {
-                    //Serialize the object into byteArray and update the statement
-                    ps.setBytes(index, serialize(param));
+            connection = jdbcConfiguration.getConnection();
+            connection.setAutoCommit(false);
+            for(Statement statement : statements) {
+                preparedStatement = connection.prepareStatement(statement.getStatement());
+                int index = 1;
+                for (Object param : statement.getParameters()) {
+                    if (param instanceof String) {
+                        preparedStatement.setString(index, (String) param);
+                    } else if (param instanceof Long) {
+                        preparedStatement.setLong(index, (Long) param);
+                    } else if (param instanceof StorableMessage) {
+                        //Serialize the object into byteArray and update the statement
+                        preparedStatement.setBytes(index, serialize(param));
+                    }
+                    index++;
                 }
-                index++;
+                if(logger.isDebugEnabled()){
+                    logger.debug("Executing statement:"+preparedStatement);
+                }
+                preparedStatement.execute();
             }
-            ps.execute();
+            connection.commit();
             result = true;
-        } catch (SQLException e) {
-            throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
-                                       " against DataSource : " + jdbcConfiguration.getDSName(), e);
-        } catch(IOException ex) {
-            throw new SynapseException("Processing Statement failed : " + stmnt.getRawStatement() +
-                    " against DataSource : " + jdbcConfiguration.getDSName(), ex);
-        }
-        finally {
-            if (ps != null) {
+        } catch (SQLException | IOException e) {
+            rollback(connection,"deleting message");
+            throw new SynapseException("Processing Statement failed against DataSource : "
+                    + jdbcConfiguration.getDSName(), e);
+        } finally {
+            if (preparedStatement != null) {
                 try {
-                    ps.close();
+                    preparedStatement.close();
                 } catch (SQLException e) {
                     logger.error("Error while closing prepared statement", e);
                 }
             }
-            if (con != null) {
+            if (connection != null) {
                 try {
-                    con.close();
+                    connection.close();
                 } catch (SQLException e) {
                     logger.error("Error while closing connection", e);
                 }
@@ -301,14 +363,10 @@ public class JDBCMessageStore extends AbstractMessageStore {
                     logger.error("Message Cleanup lock released unexpectedly", e);
                 }
             }
-            StorableMessage persistentMessage =
-                    MessageConverter.toStorableMessage(messageContext);
-            String msgId = persistentMessage.getAxis2message().getMessageID();
-            Statement stmt =
-                    new Statement("INSERT INTO " + jdbcConfiguration.getTableName() + " (msg_id,message) VALUES (?,?)");
-            stmt.addParameter(msgId);
-            stmt.addParameter(persistentMessage);
-            return processNonResultingStatement(stmt);
+            ArrayList<Statement> statements = new ArrayList<>();
+            Statement statement = getStoreMessageStatement(messageContext, null);
+            statements.add(statement);
+            return processNonResultingStatement(statements);
         } catch (Exception e) {
             throw new SynapseException("Error while creating StorableMessage", e);
         } finally {
@@ -319,18 +377,67 @@ public class JDBCMessageStore extends AbstractMessageStore {
     }
 
     /**
+     * <p>
+     * Generates the statement to store message in database.
+     * </p>
+     * <p>
+     * If the sequence id is specified the corresponding sequence id will be stored, sequence id will be specified if
+     * re-sequence message store is being used. In other times this value will be null.
+     * </p>
+     *
+     * @param messageContext the content of the message.
+     * @param sequenceId        the sequence id of the message (optional).
+     * @return SQL statement for insertion of value to store.
+     * @throws StoreException at an event there's an exception when generating the statement.
+     * @see org.apache.synapse.message.store.impl.resequencer.ResequenceMessageStore
+     */
+    protected Statement getStoreMessageStatement(MessageContext messageContext, Long sequenceId) throws StoreException {
+        StorableMessage persistentMessage = MessageConverter.toStorableMessage(messageContext);
+        String msgId = persistentMessage.getAxis2message().getMessageID();
+        Statement statement;
+        if (null == sequenceId) {
+            String insertMessageStatement = "INSERT INTO " + jdbcConfiguration.getTableName()
+                    + " (msg_id,message) VALUES (?,?)";
+            statement = new Statement(insertMessageStatement) {
+                @Override
+                public List<Map> getResult(ResultSet resultSet) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            statement.addParameter(msgId);
+            statement.addParameter(persistentMessage);
+        } else {
+            String insertMessageWithSequenceIdStatement =
+                    "INSERT INTO " + jdbcConfiguration.getTableName() + " (msg_id,seq_id,message) VALUES (?,?,?)";
+            statement = new Statement(insertMessageWithSequenceIdStatement) {
+                @Override
+                public List<Map> getResult(ResultSet resultSet) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            statement.addParameter(msgId);
+            statement.addParameter(sequenceId);
+            statement.addParameter(persistentMessage);
+        }
+        return statement;
+    }
+
+    /**
      * Select and return the first element in current table
      *
      * @return - Select and return the first element from the table
      */
     public MessageContext peek() throws SynapseException {
-        Statement stmt =
-                new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() +
-                              " WHERE indexId=(SELECT min(indexId) from " + jdbcConfiguration.getTableName() + ")");
-        MessageContext msg = null;
-
+        MessageContext msg;
         try {
-            msg = processResultingStatement(stmt);
+        Statement statement = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() +
+                        " WHERE indexId=(SELECT min(indexId) from " + jdbcConfiguration.getTableName() + ")") {
+                    @Override
+                    public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                        return messageContentResultSet(resultSet, this.getStatement());
+                    }
+                };
+            msg = getResultMessageContextFromDatabase(statement);
         } catch (SynapseException se) {
             throw new SynapseException("Error while peek the message", se);
         }
@@ -341,7 +448,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      * Removes the first element from table
      *
      * @return MessageContext - first message context
-     * @throws java.util.NoSuchElementException
+     * @throws NoSuchElementException if there was not element to be removed.
      */
     @Override
     public MessageContext remove() throws NoSuchElementException {
@@ -362,7 +469,7 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public MessageContext remove(String msgId) throws SynapseException {
-        MessageContext result = null;
+        MessageContext result;
         boolean cleaningState = false;
         try {
             if (cleaningFlag.get()) {
@@ -374,9 +481,8 @@ public class JDBCMessageStore extends AbstractMessageStore {
                 }
             }
             result = get(msgId);
-            Statement stmt = new Statement("DELETE FROM " + jdbcConfiguration.getTableName() + " WHERE msg_id=?");
-            stmt.addParameter(msgId);
-            processNonResultingStatement(stmt);
+            List<Statement> statements = removeMessageStatement(msgId);
+            processNonResultingStatement(statements);
         } catch (Exception e) {
             throw new SynapseException("Removing message with id = " + msgId + " failed !", e);
         } finally {
@@ -385,6 +491,25 @@ public class JDBCMessageStore extends AbstractMessageStore {
             }
         }
         return result;
+    }
+
+    /**
+     * Statement to remove the message once a response is received.
+     *
+     * @param msgId message id of the statement which should be removed.
+     * @return the sql remove message statement.
+     */
+    protected List<Statement> removeMessageStatement(String msgId) {
+        ArrayList<Statement> statements = new ArrayList<>();
+        Statement statement = new Statement("DELETE FROM " + jdbcConfiguration.getTableName() + " WHERE msg_id=?") {
+            @Override
+            public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                throw new UnsupportedOperationException();
+            }
+        };
+        statement.addParameter(msgId);
+        statements.add(statement);
+        return statements;
     }
 
     /**
@@ -397,8 +522,15 @@ public class JDBCMessageStore extends AbstractMessageStore {
             removeLock.lock();
             cleanUpOfferLock.lock();
             cleaningFlag.set(true);
-            Statement stmt = new Statement("DELETE FROM " + jdbcConfiguration.getTableName());
-            processNonResultingStatement(stmt);
+            Statement statement = new Statement("DELETE FROM " + jdbcConfiguration.getTableName()) {
+                @Override
+                public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                    throw new UnsupportedOperationException();
+                }
+            };
+            List<Statement> statements = new ArrayList<>();
+            statements.add(statement);
+            processNonResultingStatement(statements);
         } catch (Exception e) {
             logger.error("Clearing store failed !", e);
         } finally {
@@ -420,10 +552,17 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (position < 0) {
             throw new IllegalArgumentException("Index:" + position + " out of table bound");
         }
-        // Gets the minimum value of the sub-table which contains indexId values greater than given position ('position' has minimum of 0 while indexId has minimum of 1)
-        Statement stmt = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName() + " ORDER BY indexId ASC LIMIT ?,1 ");
-        stmt.addParameter(position);
-        return processResultingStatement(stmt);
+        // Gets the minimum value of the sub-table which contains indexId values greater than given position
+        // ('position' has minimum of 0 while indexId has minimum of 1)
+        Statement statement = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName()
+                + " ORDER BY indexId ASC LIMIT ?,1 ") {
+            @Override
+            public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                return messageContentResultSet(resultSet, this.getStatement());
+            }
+        };
+        statement.addParameter(position);
+        return getResultMessageContextFromDatabase(statement);
     }
 
     /**
@@ -436,10 +575,15 @@ public class JDBCMessageStore extends AbstractMessageStore {
         if (logger.isDebugEnabled()) {
             logger.debug(getNameString() + " retrieving all messages from the store.");
         }
-        Statement stmt = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName());
-        MessageContext result = processResultingStatement(stmt);
+        Statement statement = new Statement("SELECT message FROM " + jdbcConfiguration.getTableName()) {
+            @Override
+            public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                return messageContentResultSet(resultSet, this.getStatement());
+            }
+        };
+        MessageContext result = getResultMessageContextFromDatabase(statement);
         if (result != null) {
-            List<MessageContext> msgs = new ArrayList<MessageContext>();
+            List<MessageContext> msgs = new ArrayList<>();
             msgs.add(result);
             return msgs;
         } else {
@@ -455,9 +599,43 @@ public class JDBCMessageStore extends AbstractMessageStore {
      */
     @Override
     public MessageContext get(String msgId) {
-        Statement stmt = new Statement("SELECT indexId,message FROM " + jdbcConfiguration.getTableName() + " WHERE msg_id=?");
-        stmt.addParameter(msgId);
-        return processResultingStatement(stmt);
+        Statement statement = new Statement("SELECT indexId,message FROM " + jdbcConfiguration.getTableName()
+                + " WHERE msg_id=?") {
+            @Override
+            public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                return messageContentResultSet(resultSet, this.getStatement());
+            }
+        };
+        statement.addParameter(msgId);
+        return getResultMessageContextFromDatabase(statement);
+    }
+
+    /**
+     *<p>
+     * Return the messages corresponding to the provided statement.
+     *</p>
+     *
+     * @param resultSet the result-set obtained from the statement.
+     * @param statement the SQL statement results are obtained for.
+     * @return the content of the messages.
+     * @throws SQLException during an error encountered when accessing the database.
+     */
+    protected List<Map> messageContentResultSet(ResultSet resultSet, String statement) throws SQLException {
+        ArrayList<Map> elements = new ArrayList<>();
+        while (resultSet.next()) {
+            try {
+                HashMap<String, Object> rowData = new HashMap<>();
+                byte[] msgObj = resultSet.getBytes(MESSAGE_COLUMN_NAME);
+                MessageContext responseMessageContext = deserializeMessage(msgObj);
+                rowData.put(MESSAGE_COLUMN_NAME, responseMessageContext);
+                elements.add(rowData);
+            } catch (SQLException e) {
+                String message = "Error executing statement : " + statement + " against DataSource : "
+                        + jdbcConfiguration.getDSName();
+                throw new SynapseException(message, e);
+            }
+        }
+        return elements;
     }
 
     /**
@@ -471,24 +649,29 @@ public class JDBCMessageStore extends AbstractMessageStore {
         ResultSet rs = null;
         PreparedStatement ps = null;
         int size = 0;
-        Statement stmt = new Statement("SELECT COUNT(*) FROM " + jdbcConfiguration.getTableName());
+        Statement statement = new Statement("SELECT COUNT(*) FROM " + jdbcConfiguration.getTableName()) {
+            @Override
+            public List<Map> getResult(ResultSet resultSet) throws SQLException {
+                return messageContentResultSet(resultSet, this.getStatement());
+            }
+        };
         try {
             con = jdbcConfiguration.getConnection();
-            ps = con.prepareStatement(stmt.getRawStatement());
+            ps = con.prepareStatement(statement.getStatement());
             con = ps.getConnection();
             rs = ps.executeQuery();
             while (rs.next()) {
                 try {
                     size = rs.getInt(1);
                 } catch (Exception e) {
-                    logger.error("Error executing statement : " + stmt.getRawStatement() +
-                                 " against DataSource : " + jdbcConfiguration.getDSName(), e);
+                    logger.error("Error executing statement : " + statement.getStatement() +
+                            " against DataSource : " + jdbcConfiguration.getDSName(), e);
                     break;
                 }
             }
         } catch (SQLException e) {
-            logger.error("Error executing statement : " + stmt.getRawStatement() +
-                         " against DataSource : " + jdbcConfiguration.getDSName(), e);
+            logger.error("Error executing statement : " + statement.getStatement() +
+                    " against DataSource : " + jdbcConfiguration.getDSName(), e);
         } finally {
             close(con, ps, rs);
         }
