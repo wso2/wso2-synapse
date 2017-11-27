@@ -219,11 +219,6 @@ public class XSLTMediator extends AbstractMediator {
      * The result builder factory to use.
      */
     private ResultBuilderFactory resultBuilderFactory = new StreamResultBuilderFactory();
-    
-    /**
-     * Determine if cache is used or not
-     */
-    private boolean useCache = true;
 
     /**
      * Transforms this message (or its element specified as the source) using the
@@ -470,10 +465,8 @@ public class XSLTMediator extends AbstractMediator {
                 // if cached template creation failed
                 handleException("Error compiling the XSLT with key : " + xsltKey, synCtx);
             } else {
-                if (useCache) {
-                    // if cached template is created then put it in to cachedTemplatesMap
-                    cachedTemplatesMap.put(generatedXsltKey, cachedTemplates);
-                }
+                // if cached template is created then put it in to cachedTemplatesMap
+                cachedTemplatesMap.put(generatedXsltKey, cachedTemplates);
             }
         } catch (Exception e) {
             handleException("Error creating XSLT transformer using : " + xsltKey, e, synCtx);
@@ -488,25 +481,22 @@ public class XSLTMediator extends AbstractMediator {
      * @return true if it is needed to create a new XSLT template
      */
     private boolean isCreationOrRecreationRequired(MessageContext synCtx) {
-        if (!useCache){
+
+        // Derive actual key from message context
+        String generatedXsltKey = xsltKey.evaluateValue(synCtx);
+
+        // if there are no cachedTemplates inside cachedTemplatesMap or
+        // if the template related to this generated key is not cached
+        // then it need to be cached
+        if (cachedTemplatesMap.isEmpty() || !cachedTemplatesMap.containsKey(generatedXsltKey)) {
+            // this is a creation case
             return true;
         } else {
-            // Derive actual key from message context
-            String generatedXsltKey = xsltKey.evaluateValue(synCtx);
-
-            // if there are no cachedTemplates inside cachedTemplatesMap or
-            // if the template related to this generated key is not cached
-            // then it need to be cached
-            if (cachedTemplatesMap.isEmpty() || !cachedTemplatesMap.containsKey(generatedXsltKey)) {
-                // this is a creation case
-                return true;
-            } else {
-                // build transformer - if necessary
-                Entry dp = synCtx.getConfiguration().getEntryDefinition(generatedXsltKey);
-                // if the xsltKey refers to a dynamic resource, and if it has been expired
-                // it is a recreation case
-                return dp != null && dp.isDynamic() && (!dp.isCached() || dp.isExpired());
-            }
+            // build transformer - if necessary
+            Entry dp = synCtx.getConfiguration().getEntryDefinition(generatedXsltKey);
+            // if the xsltKey refers to a dynamic resource, and if it has been expired
+            // it is a recreation case
+            return dp != null && dp.isDynamic() && (!dp.isCached() || dp.isExpired());
         }
     }
 
@@ -688,14 +678,6 @@ public class XSLTMediator extends AbstractMediator {
     @Override
     public boolean isContentAltering() {
         return true;
-    }
-    
-    public boolean isUseCache() {
-        return useCache;
-    }
-  
-    public void setUseCache(boolean useCache) {
-        this.useCache = useCache;
     }
 
 }
