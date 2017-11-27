@@ -35,7 +35,7 @@ import java.util.Properties;
  * <p>
  * Configuration syntax:
  * <pre>
- * &lt;xslt key="property-key" [source="xpath"] [target="string"] [useCache="boolean"]&gt;
+ * &lt;xslt key="property-key" [source="xpath"] [target="string"]&gt;
  *   &lt;property name="string" (value="literal" | expression="xpath")/&gt;*
  *   &lt;feature name="string" value="true| false" /&gt;*
  *   &lt;attribute name="string" value="string" /&gt;*
@@ -49,7 +49,6 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
                 = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "xslt");
     private static final QName ATTRIBUTE_Q
                 = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "attribute");
-    private static final QName ATT_USECACHE = new QName("useCache");
 
     public QName getTagQName() {
         return TAG_NAME;
@@ -62,7 +61,6 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
         OMAttribute attXslt   = elem.getAttribute(ATT_KEY);
         OMAttribute attSource = elem.getAttribute(ATT_SOURCE);
         OMAttribute attTarget = elem.getAttribute(ATT_TARGET);
-        OMAttribute attUseCache = elem.getAttribute(ATT_USECACHE);
 
         if (attXslt != null) {
             // ValueFactory for creating dynamic or static Value
@@ -90,10 +88,6 @@ public class XSLTMediatorFactory extends AbstractMediatorFactory {
 
         if (attTarget != null) {
             transformMediator.setTargetPropertyName(attTarget.getAttributeValue());    
-        }
-        
-        if (attUseCache != null) {
-            transformMediator.setUseCache(Boolean.parseBoolean(attUseCache.getAttributeValue()));
         }
 
         // after successfully creating the mediator
