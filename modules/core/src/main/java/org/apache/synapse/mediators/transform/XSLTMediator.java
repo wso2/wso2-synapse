@@ -223,7 +223,7 @@ public class XSLTMediator extends AbstractMediator {
     /**
      * Determine if cache is used or not
      */
-    private boolean useCache = false;
+    private boolean useCache = true;
 
     /**
      * Transforms this message (or its element specified as the source) using the
