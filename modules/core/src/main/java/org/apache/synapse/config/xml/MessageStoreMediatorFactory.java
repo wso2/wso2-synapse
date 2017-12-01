@@ -22,6 +22,7 @@ import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.mediators.store.MessageStoreMediator;
+import org.jaxen.JaxenException;
 
 import javax.xml.namespace.QName;
 import java.util.Properties;
@@ -52,8 +53,19 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
 
         OMAttribute messageStoreNameAtt = elem.getAttribute(ATT_MESSAGE_STORE);
 
-        if(messageStoreNameAtt != null) {
-            messageStoreMediator.setMessageStoreName(messageStoreNameAtt.getAttributeValue());
+        if (messageStoreNameAtt != null) {
+            if (checkForExpression(messageStoreNameAtt)) {
+                String path = messageStoreNameAtt.getAttributeValue().substring(1, messageStoreNameAtt.getAttributeValue().length()-1);
+                try {
+                    messageStoreMediator.setMessageStoreExp(SynapsePathFactory.getSynapsePath(elem, path));
+                } catch (JaxenException e) {
+                    String msg = "Invalid XPath expression for attribute 'messageStore' : " + messageStoreNameAtt
+                            .getAttributeValue();
+                    throw new SynapseException(msg, e);
+                }
+            } else {
+                messageStoreMediator.setMessageStoreName(messageStoreNameAtt.getAttributeValue());
+            }
         } else {
             throw new SynapseException("Message Store mediator must have a Message store defined");
         }
@@ -69,5 +81,17 @@ public class MessageStoreMediatorFactory extends AbstractMediatorFactory{
 
     public QName getTagQName() {
        return STORE_Q;
+    }
+
+    /**
+     * Checks whether the value of the attribute is enclosed by curly braces.
+     * If yes, the value is taken as an expression.
+     * Else, it will be a string value.
+     *
+     * @param atr the atrribute whose value is checked for enclosing curly braces.
+     * @return true if the value is enclosed by curly braces.
+     */
+    private boolean checkForExpression(OMAttribute atr){
+        return ((atr.getAttributeValue().startsWith("{")) && (atr.getAttributeValue().endsWith("}")));
     }
 }

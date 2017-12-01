@@ -23,6 +23,7 @@ import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import com.sun.script.groovy.GroovyScriptEngineFactory;
 import com.sun.script.jruby.JRubyScriptEngineFactory;
 import com.sun.script.jython.JythonScriptEngineFactory;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMText;
 import org.apache.bsf.xml.XMLHelper;
@@ -38,14 +39,6 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.mozilla.javascript.Context;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Map;
-import java.util.Properties;
-import java.util.TreeMap;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import javax.activation.DataHandler;
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -55,6 +48,14 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TreeMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A Synapse mediator that calls a function in any scripting language supported by the BSF.
@@ -88,10 +89,13 @@ public class ScriptMediator extends AbstractMediator {
     private static final String JAVA_SCRIPT = "js";
 
     /**
-     * Name of the java script language with usage of nashorn engine
+     * Name of the java script language with usage of nashorn engine.
      */
     private static final String NASHORN_JAVA_SCRIPT = "nashornJs";
 
+    /**
+     * Name of the nashorn java script engine.
+     */
     private static final String NASHORN = "nashorn";
     /**
      * The registry entry key for a script loaded from the registry
@@ -126,6 +130,15 @@ public class ScriptMediator extends AbstractMediator {
      * Does the ScriptEngine support multi-threading
      */
     private boolean multiThreadedEngine;
+    /**
+     * Reference to an empty JSON object.
+     */
+    private ScriptObjectMirror emptyJsonObject;
+
+    /**
+     * Reference to JSON object which is used to serialize json.
+     */
+    private ScriptObjectMirror jsonSerializer;
     /**
      * The compiled script. Only used for inline scripts
      */
@@ -205,6 +218,7 @@ public class ScriptMediator extends AbstractMediator {
             throw new SynapseException("Script engine is not an Invocable" +
                     " engine for language: " + language);
         }
+
     }
 
     /**
@@ -341,7 +355,7 @@ public class ScriptMediator extends AbstractMediator {
     private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper) {
         ScriptMessageContext scriptMC;
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
-            scriptMC = new NashornJavaScriptMessageContext(synCtx, helper);
+            scriptMC = new NashornJavaScriptMessageContext(synCtx, helper, emptyJsonObject, jsonSerializer);
         } else {
             scriptMC = new CommonScriptMessageContext(synCtx, helper);
         }
@@ -583,6 +597,12 @@ public class ScriptMediator extends AbstractMediator {
         }
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.jsEngine = engineManager.getEngineByName(NASHORN);
+            try {
+                emptyJsonObject = (ScriptObjectMirror) scriptEngine.eval("({})");
+                jsonSerializer = (ScriptObjectMirror) scriptEngine.eval("JSON");
+            } catch (ScriptException e) {
+                throw new SynapseException("Error occurred while evaluating empty json object", e);
+            }
         } else {
             this.jsEngine = engineManager.getEngineByExtension("jsEngine");
         }

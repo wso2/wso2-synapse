@@ -126,6 +126,7 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
     private String customReplaceRegex;
     private String customReplaceSequence;
     private boolean xmlNilReadWriteEnabled;
+    private boolean xmlWriteNullForEmptyElement;
 
     public JsonXMLOutputFactory() throws FactoryConfigurationError {
         this(JsonXMLConfig.DEFAULT);
@@ -152,6 +153,7 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
         this.customReplaceRegex = config.getCustomReplaceRegex();
         this.customReplaceSequence = config.getCustomReplaceSequence();
         this.xmlNilReadWriteEnabled = config.isReadWriteXmlNil();
+        this.xmlWriteNullForEmptyElement = config.isWriteNullForEmptyElements();
 
 		/*
          * initialize standard properties
@@ -192,7 +194,8 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
         boolean repairNamespaces = Boolean.TRUE.equals(getProperty(IS_REPAIRING_NAMESPACES));
         try {
             return new JsonXMLStreamWriter(decorate(streamFactory.createJsonStreamTarget(stream, prettyPrint)),
-                    repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations, xmlNilReadWriteEnabled);
+                    repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations, xmlNilReadWriteEnabled,
+                    xmlWriteNullForEmptyElement);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }
@@ -203,7 +206,8 @@ public class JsonXMLOutputFactory extends AbstractXMLOutputFactory {
         boolean repairNamespaces = Boolean.TRUE.equals(getProperty(IS_REPAIRING_NAMESPACES));
         try {
             return new JsonXMLStreamWriter(decorate(streamFactory.createJsonStreamTarget(stream, prettyPrint)),
-                    repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations, xmlNilReadWriteEnabled);
+                    repairNamespaces, multiplePI, namespaceSeparator, namespaceDeclarations, xmlNilReadWriteEnabled,
+                    xmlWriteNullForEmptyElement);
         } catch (IOException e) {
             throw new XMLStreamException(e);
         }

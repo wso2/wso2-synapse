@@ -69,7 +69,7 @@ import javax.script.ScriptException;
 
 /**
  * CommonScriptMessageContext decorates the Synapse MessageContext adding methods to use the
- * message payload XML in a way natural to the scripting languageS.
+ * message payload XML in a way natural to the scripting languages.
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class CommonScriptMessageContext implements ScriptMessageContext {
@@ -291,23 +291,40 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
-     * Helpers to set EPRs from a script string.
+     * This is used to set the value which specifies the receiver of the message.
+     *
+     * @param reference specifies the receiver of the message
      */
     @Override
     public void setTo(String reference) {
         mc.setTo(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the receiver of the faults relating to the message.
+     *
+     * @param reference specifies the specifies the receiver of the faults relating to the message
+     */
     @Override
     public void setFaultTo(String reference) {
         mc.setFaultTo(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the sender of the message.
+     *
+     * @param reference specifies the sender of the message
+     */
     @Override
     public void setFrom(String reference) {
         mc.setFrom(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the receiver of the replies to the message.
+     *
+     * @param reference specifies the receiver of the replies to the message
+     */
     @Override
     public void setReplyTo(String reference) {
         mc.setReplyTo(new EndpointReference(reference));

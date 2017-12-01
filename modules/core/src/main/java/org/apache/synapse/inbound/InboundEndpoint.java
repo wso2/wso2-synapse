@@ -140,11 +140,33 @@ public class InboundEndpoint implements AspectConfigurable, ManagedLifecycle {
         return inboundProcessorParams;
     }
 
-    public void destroy() {
+    /**
+     * Remove inbound endpoints.
+     * <p>
+     * This was introduced as a fix for product-ei#1206.
+     *
+     * @param removeTask Whether to remove scheduled task or not.
+     */
+    public void destroy(boolean removeTask) {
         log.info("Destroying Inbound Endpoint: " + getName());
         if (inboundRequestProcessor != null) {
-            inboundRequestProcessor.destroy();
+            try {
+                if (inboundRequestProcessor instanceof InboundTaskProcessor) {
+                    ((InboundTaskProcessor) inboundRequestProcessor).destroy(removeTask);
+                } else {
+                    inboundRequestProcessor.destroy();
+                }
+            } catch (Exception e) {
+                log.error("Unable to destroy Inbound endpoint", e);
+            }
         }
+    }
+
+    /**
+     * Remove inbound endpoints.
+     */
+    public void destroy() {
+        destroy(true);
     }
 
     public String getName() {
