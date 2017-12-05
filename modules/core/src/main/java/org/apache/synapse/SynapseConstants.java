@@ -540,6 +540,11 @@ public final class SynapseConstants {
     public static final String SYNAPSE_CONCURRENT_ACCESS_REPLICATOR =
             "synapse.concurrent.access.replicator";
 
+    /**
+     * Keeps the state whether the request is accepted or not
+     */
+    public static final String SYNAPSE_IS_CONCURRENT_ACCESS_ALLOWED = "synapse.is.concurrent.access.allowed";
+
     //String constants to identity the type of the timeout
     public enum ENDPOINT_TIMEOUT_TYPE { ENDPOINT_TIMEOUT, GLOBAL_TIMEOUT, HTTP_CONNECTION_TIMEOUT};
 

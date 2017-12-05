@@ -538,29 +538,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 }
             }
 
-            Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMsgCtx
-                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
-
-            if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
-                ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController)
-                        synapseOutMsgCtx
-                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
-                int available = concurrentAccessController.incrementAndGet();
-                int concurrentLimit = concurrentAccessController.getLimit();
-                if (log.isDebugEnabled()) {
-                    log.debug("Concurrency Throttle : Connection returned" + " :: " +
-                            available + " of available of " + concurrentLimit + " connections");
-                }
-                ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator)
-                        synapseOutMsgCtx
-                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
-                String throttleKey = (String) synapseOutMsgCtx
-                        .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
-                if (concurrentAccessReplicator != null) {
-                    concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
-                }
-            }
-
             // If this response is related to session affinity endpoints -Server initiated session
             Dispatcher dispatcher =
                     (Dispatcher) synapseOutMsgCtx.getProperty(
