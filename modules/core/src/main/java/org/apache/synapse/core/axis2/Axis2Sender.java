@@ -36,6 +36,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.endpoints.EndpointDefinition;
 import org.apache.synapse.inbound.InboundEndpointConstants;
 import org.apache.synapse.inbound.InboundResponseSender;
@@ -211,6 +213,9 @@ public class Axis2Sender {
 
             doSOAPFormatConversion(smc);
 
+            // handles concurrent throttling based on the messagecontext.
+            handleConcurrentThrottleCount(smc);
+
             // If the request arrives through an inbound endpoint
             if (smc.getProperty(SynapseConstants.IS_INBOUND) != null
                 && (Boolean) smc.getProperty(SynapseConstants.IS_INBOUND)) {
@@ -380,5 +385,39 @@ public class Axis2Sender {
         }
         responseCtx.setDoingREST(false);
 
+    }
+
+    /**
+     * handles the concurrent access limits
+     *
+     * @param smc SynapseMessageContext
+     */
+    private static void handleConcurrentThrottleCount(org.apache.synapse.MessageContext smc) {
+        Boolean isConcurrencyThrottleEnabled = (Boolean) smc.getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+        Boolean isAccessAllowed = (Boolean) smc.getProperty(SynapseConstants.SYNAPSE_IS_CONCURRENT_ACCESS_ALLOWED);
+
+        if (isAccessAllowed != null && isAccessAllowed && isConcurrencyThrottleEnabled != null
+                && isConcurrencyThrottleEnabled) {
+
+            ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController)
+                    smc.getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+
+            int available = concurrentAccessController.incrementAndGet();
+            int concurrentLimit = concurrentAccessController.getLimit();
+
+            if (log.isDebugEnabled()) {
+                log.debug("Concurrency Throttle : Connection returned" + " :: " +
+                        available + " of available of " + concurrentLimit + " connections");
+            }
+
+            ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator)
+                    smc.getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+
+            String throttleKey = (String) smc.getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+
+            if (concurrentAccessReplicator != null) {
+                concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+            }
+        }
     }
 }
