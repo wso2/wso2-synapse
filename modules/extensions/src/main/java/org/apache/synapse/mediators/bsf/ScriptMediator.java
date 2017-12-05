@@ -63,7 +63,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <p/>
  * <pre>
  *    &lt;script [key=&quot;entry-key&quot;]
- *      [function=&quot;script-function-name&quot;] language="javascript|groovy|ruby"&gt
+ *      [function=&quot;script-function-name&quot;] language="nashornJs|javascript|groovy|ruby"&gt
  *      (text | xml)?
  *    &lt;/script&gt;
  * </pre>
@@ -352,6 +352,13 @@ public class ScriptMediator extends AbstractMediator {
         return obj;
     }
 
+    /**
+     * Get script message context according to scripting language.
+     *
+     * @param synCtx message context
+     * @param helper Object which help to convert xml into OMelemnt
+     * @return Nashorn or Common script message context according to language attribute
+     */
     private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper) {
         ScriptMessageContext scriptMC;
         if (language.equals(NASHORN_JAVA_SCRIPT)) {

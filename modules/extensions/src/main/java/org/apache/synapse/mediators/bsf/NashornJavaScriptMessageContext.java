@@ -68,7 +68,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 /**
- * NashornJavaScriptMessageContext impliments the ScriptMessageContext specific to Nashorn java script engine.
+ * NashornJavaScriptMessageContext implements the ScriptMessageContext specific to Nashorn java script engine.
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class NashornJavaScriptMessageContext implements ScriptMessageContext {
@@ -170,6 +170,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JavaScript Object to the message context.
+     * 
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript Object which is passed to be saved in message context
      * @return true
@@ -181,6 +182,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JSON String to the message context.
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript string which is passed to be saved in message context
      * @return false if messageContext is null return true otherwise
@@ -195,6 +197,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the JavaScript Object saved in this message context.
+     *
      * @param messageContext The message context of the sequence
      * @return o JavaScript Object saved in this message context
      */
@@ -220,6 +223,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the parsed xml document.
+     *
      * @param text xml string or document needed to be parser
      * @return parsed document
      */
@@ -242,6 +246,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the parsed xml document.
+     *
      * @param stream input stream of xml string or document needed to be parsed
      * @return parsed document
      */
@@ -252,6 +257,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the Axiom xpath.
+     *
      * @param expression Xpath expression
      * @return Axiom xpath is returned
      */
@@ -293,6 +299,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Get the XML representation of the complete SOAP envelope.
+     *
      * @return return an object that represents the payload in the current scripting language
      * @throws ScriptException in-case of an error in getting
      * the XML representation of SOAP envelope
@@ -314,7 +321,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /**
      * This is used to set the value which specifies the receiver of the faults relating to the message.
      *
-     * @param reference specifies the specifies the receiver of the faults relating to the message
+     * @param reference specifies the receiver of the faults relating to the message
      */
     public void setFaultTo(String reference) {
         mc.setFaultTo(new EndpointReference(reference));
@@ -339,7 +346,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
-     * All the remainder just use the underlying MessageContext.
+     * {@inheritDoc}
      */
     public SynapseConfiguration getConfiguration() {
         return mc.getConfiguration();
@@ -495,7 +502,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
-     * Add content type to the headers.
+     * Add special properties such as content type to the message context.
      *
      * @param key unique identifier of property
      * @param value value of property
@@ -825,7 +832,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * {@inheritDoc}
      */
     public Stack<ContinuationState> getContinuationStateStack() {
-        return null;
+        return mc.getContinuationStateStack();
     }
 
     /**
