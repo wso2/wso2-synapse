@@ -45,7 +45,7 @@ import org.powermock.api.mockito.PowerMockito;
 import javax.xml.stream.XMLStreamException;
 
 /**
- * Test for HttpEndpoint
+ * Test for HttpEndpoint's uri-template combinations
  */
 public class HttpEndpointTest {
 
@@ -55,6 +55,11 @@ public class HttpEndpointTest {
         httpEndpoint.init(getMockedSynapseEnvironment());
     }
 
+    /**
+     * Tests sending sample reserved characters(@,:) as query parameter content
+     * @throws AxisFault
+     * @throws XMLStreamException
+     */
     @Test
     public void testQueryParamsAsReservedChars() throws AxisFault, XMLStreamException {
 
@@ -83,6 +88,9 @@ public class HttpEndpointTest {
 
     }
 
+    /**
+     * Tests sending sample characters that may be unreserved (@,: etc) as query parameter content
+     */
     @Test
     public void testQueryParamsAsUnreservedChars() throws AxisFault, XMLStreamException {
 
@@ -111,7 +119,11 @@ public class HttpEndpointTest {
 
     }
 
-
+    /**
+     * Test usage of legacy-encoding property where encoded values will be decoded
+     * @throws AxisFault
+     * @throws XMLStreamException
+     */
     @Test
     public void testQueryParamsWithLegacyEncoding() throws AxisFault, XMLStreamException {
 
