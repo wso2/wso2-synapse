@@ -882,8 +882,10 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
 
             AxisService as = axisConfig.getServiceForActivation(this.getName());
             //If an active AxisService is found
-            if (as != null && as.isActive()) {
-                as.setActive(false);
+            if (as != null) {
+                if (as.isActive()) {
+                    as.setActive(false);
+                }
                 axisConfig.notifyObservers(new AxisEvent(AxisEvent.SERVICE_STOP, as), as);
             }
             this.setRunning(false);

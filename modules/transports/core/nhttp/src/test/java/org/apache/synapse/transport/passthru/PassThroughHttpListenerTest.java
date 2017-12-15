@@ -26,6 +26,8 @@ import org.apache.axis2.context.SessionContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportInDescription;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
+import org.apache.synapse.transport.passthru.util.PassThroughTestUtils;
 import org.apache.synapse.transport.utils.TCPUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -40,10 +42,12 @@ public class PassThroughHttpListenerTest {
     private static final int PORT = 8285;
     private static PassThroughHttpListener passThroughHttpListener = new PassThroughHttpListener();
     private static TransportInDescription transportInDescription = new TransportInDescription("http");
+    private static PassThroughConfiguration conf = PassThroughTestUtils.getPassThroughConfiguration();
 
     @BeforeClass()
     public static void startListener() throws Exception {
         Assert.assertFalse("Port already occupied. Can not execute test", TCPUtils.isPortOpen(PORT, HOST));
+        Assert.assertNotNull("PassThroughConfiguration is null", conf);
         Parameter portParam = new Parameter("port", PORT);
         portParam.setParameterElement(
                 AXIOMUtil.stringToOM("<parameter name=\"port\" locked=\"false\">" + PORT + "</parameter>"));
