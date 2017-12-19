@@ -363,12 +363,14 @@ public class SynapseXPath extends SynapsePath {
             Object result = null;
             org.apache.axis2.context.MessageContext axis2MC =null;
 
-            if (!forceDisableStreamXpath && "true".equals(enableStreamingXpath)&& streamingXPATH != null && (((Axis2MessageContext)synCtx).getEnvelope() == null ||  ((Axis2MessageContext)synCtx).getEnvelope().getBody().getFirstElement() == null)) {
+            if (!forceDisableStreamXpath && "true".equals(enableStreamingXpath) && streamingXPATH != null &&
+                    (((Axis2MessageContext) synCtx).getEnvelope() == null ||
+                            ((Axis2MessageContext) synCtx).getEnvelope().getBody().getFirstElement() == null)) {
                 try {
-                    axis2MC = ((Axis2MessageContext)synCtx).getAxis2MessageContext();//((Axis2MessageContext) context).getAxis2MessageContext();
-                    inputStream=getMessageInputStreamPT(axis2MC);
+                    axis2MC = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                    inputStream = getMessageInputStreamPT(axis2MC);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error("Error occurred while obtaining input stream from the message context", e);
                 }
                 if (inputStream != null) {
                     try {
