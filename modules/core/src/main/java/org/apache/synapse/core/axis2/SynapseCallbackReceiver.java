@@ -31,6 +31,7 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.CallbackReceiver;
 import org.apache.axis2.wsdl.WSDLConstants;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -560,8 +561,12 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                 //However setting attachment map to null for messages which do not have attachments is not required.
                 //introduced due to the fact conflicts between Axiom exceptions for attachment/ non attachments cases
                 //and performance impact that could cause of regular expression matching of exceptional stack traces.
-                ((Axis2MessageContext) synapseInMessageContext)
-                        .getAxis2MessageContext().setAttachmentMap(null);
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synapseInMessageContext;
+                org.apache.axis2.context.MessageContext axis2MessageCtx =
+                        axis2smc.getAxis2MessageContext();
+                //Set correct status code
+                axis2MessageCtx.setProperty(PassThroughConstants.HTTP_SC, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                axis2MessageCtx.setAttachmentMap(null);
                 Stack stack = synapseInMessageContext.getFaultStack();
                 if (stack != null && stack.isEmpty()) {
                     registerFaultHandler(synapseInMessageContext);
