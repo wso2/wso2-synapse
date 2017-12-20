@@ -181,6 +181,9 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             // onwards mediation flow branches to either accept sequence or reject sequence
             if (canAccess) {
                 //accept case
+                // property is set to identify whether a request is accepted or rejected looking at
+                // the throttling controller outcome.
+                synCtx.setProperty(SynapseConstants.SYNAPSE_IS_CONCURRENT_ACCESS_ALLOWED, true);
                 if (onAcceptSeqKey != null) {
                     Mediator mediator = synCtx.getSequence(onAcceptSeqKey);
                     if (mediator != null) {
@@ -205,6 +208,9 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
 
             } else {
                 //reject case
+                // property is set to identify whether a request is accepted or rejected looking at
+                // the throttling controller outcome.
+                synCtx.setProperty(SynapseConstants.SYNAPSE_IS_CONCURRENT_ACCESS_ALLOWED, false);
                 if (onRejectSeqKey != null) {
                     Mediator mediator = synCtx.getSequence(onRejectSeqKey);
                     if (mediator != null) {

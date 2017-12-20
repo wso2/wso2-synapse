@@ -186,15 +186,6 @@ public class TargetRequest {
 				if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
-                //If the boundary is already set in the message context, the header specified in the message context
-                // should be added.
-                // Addresses both ESBJAVA-3182 and EI-1329
-                else {
-                    if (trpContentType.contains("boundary=")) {
-                        addHeader(HTTP.CONTENT_TYPE, trpContentType);
-                    }
-                }
-
 			}
 
 		}

@@ -264,7 +264,7 @@ public class Aggregate extends TimerTask {
         public void run() {
             MessageContext messageContext = aggregate.getLastMessage();
             try {
-                log.warn("Aggregate Mediator Time out occurred.");
+                log.warn("Aggregate mediator timeout occurred.");
                 aggregateMediator.completeAggregate(aggregate);
             } catch (Exception ex) {
                 if (faultHandler != null && messageContext != null) {
