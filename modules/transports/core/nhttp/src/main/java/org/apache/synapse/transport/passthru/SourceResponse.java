@@ -248,13 +248,14 @@ public class SourceResponse {
             String contentType = headers.get(HTTP.CONTENT_TYPE) != null ?
                     headers.get(HTTP.CONTENT_TYPE).toString() : null;
             // Stream should be preserved to support disable chunking for SOAP based responses. This checks
-            // whether chunking is disabled and response Content-Type is SOAP.
-            boolean shouldPreserve = isChunkingDisabled && isSOAPContentType(contentType);
+            // whether chunking is disabled and response Content-Type is SOAP or FORCE_HTTP_1.0 is true.
+            boolean preserveStream =
+                    (isChunkingDisabled && isSOAPContentType(contentType)) || "true".equals(forceHttp10);
 
             MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(responseMsgContext);
             OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            formatter.writeTo(responseMsgContext, format, out, shouldPreserve);
+            formatter.writeTo(responseMsgContext, format, out, preserveStream);
             TreeSet<String> header = new TreeSet<String>();
             header.add(String.valueOf(out.toByteArray().length));
             headers.put(HTTP.CONTENT_LEN, header);
@@ -379,8 +380,8 @@ public class SourceResponse {
      */
     private boolean isSOAPContentType(String contentType) {
         return contentType != null &&
-                contentType.indexOf(SOAP11Constants.SOAP_11_CONTENT_TYPE) != -1 &&
-                contentType.indexOf(SOAP12Constants.SOAP_12_CONTENT_TYPE) != -1;
+                (contentType.indexOf(SOAP11Constants.SOAP_11_CONTENT_TYPE) != -1 ||
+                contentType.indexOf(SOAP12Constants.SOAP_12_CONTENT_TYPE) != -1);
     }
 
 }
