@@ -375,4 +375,15 @@ public class ParserTest extends TestCase {
         URITemplate template = new URITemplate("/admin/{a}");
         assertTrue(template.matches("/admin/param1", var));
     }
+
+    public void testEmptyUrlPath() throws Exception {
+        Map<String, String> var = new HashMap<>();
+
+        URITemplate defaultTemplate = new URITemplate("/");
+        URITemplate customTemplate = new URITemplate("/{first}/{second}");
+
+        assertTrue(defaultTemplate.matches("/", var));
+        var.clear();
+        assertFalse(customTemplate.matches("/", var));
+    }
 }

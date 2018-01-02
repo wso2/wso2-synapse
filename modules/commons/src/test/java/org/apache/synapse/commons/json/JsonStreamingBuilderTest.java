@@ -18,20 +18,37 @@
 
 package org.apache.synapse.commons.json;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.axiom.om.OMElement;
+import org.apache.axis2.AxisFault;
+import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.builder.Builder;
 import org.apache.axis2.context.MessageContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.io.InputStream;
 
 public class JsonStreamingBuilderTest extends TestCase {
 
-    private static final Log log = LogFactory.getLog(JsonStreamingBuilderTest.class);
+    public void testCase() throws AxisFault {
 
-    public void testCase() {
+        String jsonPayload = "{\n" +
+                "\"account_number\":\"1234567890\",\n" +
+                "\"routing_number\":\"09100001\",\n" +
+                "\"image_type\":\"COMMERCIAL_DEPOSIT\"\n" +
+                "}";
+
+        String expectedXml = "<jsonObject>" +
+                "<account_number>1234567890</account_number>" +
+                "<routing_number>09100001</routing_number>" +
+                "<image_type>COMMERCIAL_DEPOSIT</image_type>" +
+                "</jsonObject>";
+
+        MessageContext messageContext = Util.newMessageContext();
+        InputStream inputStream = Util.newInputStream(jsonPayload.getBytes());
+        Builder jsonBuilder = Util.newJsonStreamBuilder();
+        OMElement element = jsonBuilder.processDocument(inputStream, "application/json", messageContext);
+        assertEquals("Invalid content received", expectedXml, element.toString());
     }
 
     /**
@@ -50,9 +67,33 @@ public class JsonStreamingBuilderTest extends TestCase {
             Builder jsonBuilder = Util.newJsonStreamBuilder();
             OMElement element = jsonBuilder.processDocument(inputStream, "application/json", message);
             message.getEnvelope().getBody().addChild(element);
-            log.info(message.getEnvelope().getBody().toString());
         } catch (Exception e) {
             assertTrue("Not a RuntimeException instance", e instanceof RuntimeException);
         }
+    }
+
+    public void testProcessDocumentInputStreamNull() {
+
+        try {
+            MessageContext messageContext = Util.newMessageContext();
+            Builder jsonBuilder = Util.newJsonStreamBuilder();
+            jsonBuilder.processDocument(null, "application/json", messageContext);
+            Assert.fail("AxisFault expected");
+        } catch (AxisFault axisFault) {
+            assertEquals("Cannot build payload without a valid EPR.", axisFault.getMessage());
+        }
+    }
+
+    public void testProcessDocumentNoJsonPayload() throws AxisFault {
+
+        String defaultEnvelope = "<?xml version='1.0' encoding='utf-8'?>" +
+                "<soapenv:Envelope xmlns:soapenv=\"http://www.w3.org/2003/05/soap-envelope\">" +
+                "<soapenv:Body />" +
+                "</soapenv:Envelope>";
+        MessageContext messageContext = Util.newMessageContext();
+        messageContext.setTo(new EndpointReference("http://localhost:8000"));
+        Builder jsonBuilder = Util.newJsonStreamBuilder();
+        OMElement element = jsonBuilder.processDocument(null, "application/json", messageContext);
+        assertEquals("Default envelope expected", defaultEnvelope, element.toString());
     }
 }

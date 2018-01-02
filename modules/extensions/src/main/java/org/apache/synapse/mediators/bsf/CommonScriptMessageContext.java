@@ -69,7 +69,7 @@ import javax.script.ScriptException;
 
 /**
  * CommonScriptMessageContext decorates the Synapse MessageContext adding methods to use the
- * message payload XML in a way natural to the scripting languageS.
+ * message payload XML in a way natural to the scripting languages.
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class CommonScriptMessageContext implements ScriptMessageContext {
@@ -135,6 +135,11 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         return jsonObject(mc);
     }
 
+    /**
+     * Get the Message Payload as a text.
+     *
+     * @return Payload as text
+     */
     @Override
     public Object getJsonText() {
         if (mc == null) {
@@ -186,6 +191,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JavaScript Object to the message context.
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript Object saved in this message context
      * @return true
@@ -198,6 +204,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JSON String to the message context.
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript Object saved in this message context
      * @return false if messageContext is null return true otherwise
@@ -213,6 +220,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the JavaScript Object saved in this message context.
+     *
      * @param messageContext The message context of the sequence
      * @return o JavaScript Object saved in this message context
      */
@@ -281,6 +289,7 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
     
     /**
      * Get the XML representation of the complete SOAP envelope.
+     *
      * @return return an object that represents the payload in the current scripting language
      * @throws ScriptException in-case of an error in getting
      * the XML representation of SOAP envelope
@@ -291,23 +300,40 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
-     * Helpers to set EPRs from a script string.
+     * This is used to set the value which specifies the receiver of the message.
+     *
+     * @param reference specifies the receiver of the message
      */
     @Override
     public void setTo(String reference) {
         mc.setTo(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the receiver of the faults relating to the message.
+     *
+     * @param reference specifies the receiver of the faults relating to the message
+     */
     @Override
     public void setFaultTo(String reference) {
         mc.setFaultTo(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the sender of the message.
+     *
+     * @param reference specifies the sender of the message
+     */
     @Override
     public void setFrom(String reference) {
         mc.setFrom(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the receiver of the replies to the message.
+     *
+     * @param reference specifies the receiver of the replies to the message
+     */
     @Override
     public void setReplyTo(String reference) {
         mc.setReplyTo(new EndpointReference(reference));
@@ -315,44 +341,74 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
 
 
     /**
-     * All the remainder just use the underlying MessageContext.
+     * {@inheritDoc}
      */
     public SynapseConfiguration getConfiguration() {
         return mc.getConfiguration();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setConfiguration(SynapseConfiguration cfg) {
         mc.setConfiguration(cfg);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public SynapseEnvironment getEnvironment() {
         return mc.getEnvironment();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setEnvironment(SynapseEnvironment se) {
         mc.setEnvironment(se);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Map<String, Object> getContextEntries() {
         return mc.getContextEntries();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setContextEntries(Map<String, Object> entries) {
         mc.setContextEntries(entries);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Object getProperty(String key) {
         return mc.getProperty(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Object getEntry(String key) {
         return mc.getEntry(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Object getLocalEntry(String key) {
         return mc.getLocalEntry(key);
     }
 
+    /**
+     * Add a new property to the message.
+     *
+     * @param key unique identifier of property
+     * @param value value of property
+     */
     public void setProperty(String key, Object value) {
         if (value instanceof XMLObject) {
             OMElement omElement = null;
@@ -369,6 +425,13 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+    /**
+     * Add a new property to the message.
+     *
+     * @param key unique identifier of property
+     * @param value value of property
+     * @param scope scope of the property
+     */
     @Override
     public void setProperty(String key, Object value, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
@@ -402,6 +465,12 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+    /**
+     * Remove property from the message.
+     *
+     * @param key unique identifier of property
+     * @param scope scope of the property
+     */
     @Override
     public void removeProperty(String key, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
@@ -434,6 +503,13 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
 
     }
 
+    /**
+     * Add special properties such as content type to the message context.
+     *
+     * @param key unique identifier of property
+     * @param value value of property
+     * @param messageContext Axis2 message context
+     */
     private void handleSpecialProperties(String key, Object value,
             org.apache.axis2.context.MessageContext messageContext) {
         if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(key)) {
@@ -446,201 +522,354 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Set getPropertyKeySet() {
         return mc.getPropertyKeySet();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getMainSequence() {
         return mc.getMainSequence();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getFaultSequence() {
         return mc.getFaultSequence();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getSequence(String key) {
         return mc.getSequence(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public OMElement getFormat(String s) {
         return mc.getFormat(s);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Endpoint getEndpoint(String key) {
         return mc.getEndpoint(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public SOAPEnvelope getEnvelope() {
         return mc.getEnvelope();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setEnvelope(SOAPEnvelope envelope) throws AxisFault {
         mc.setEnvelope(envelope);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getFaultTo() {
         return mc.getFaultTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setFaultTo(EndpointReference reference) {
         mc.setFaultTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getFrom() {
         return mc.getFrom();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setFrom(EndpointReference reference) {
         mc.setFrom(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getMessageID() {
         return mc.getMessageID();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setMessageID(String string) {
         mc.setMessageID(string);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public RelatesTo getRelatesTo() {
         return mc.getRelatesTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setRelatesTo(RelatesTo[] reference) {
         mc.setRelatesTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getReplyTo() {
         return mc.getReplyTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setReplyTo(EndpointReference reference) {
         mc.setReplyTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getTo() {
         return mc.getTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setTo(EndpointReference reference) {
         mc.setTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setWSAAction(String actionURI) {
         mc.setWSAAction(actionURI);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getWSAAction() {
         return mc.getWSAAction();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getSoapAction() {
         return mc.getSoapAction();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setSoapAction(String string) {
         mc.setSoapAction(string);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setWSAMessageID(String messageID) {
         mc.setWSAMessageID(messageID);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getWSAMessageID() {
         return mc.getWSAMessageID();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingMTOM() {
         return mc.isDoingMTOM();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingSWA() {
         return mc.isDoingSWA();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingMTOM(boolean b) {
         mc.setDoingMTOM(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingSWA(boolean b) {
         mc.setDoingSWA(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingPOX() {
         return mc.isDoingPOX();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingPOX(boolean b) {
         mc.setDoingPOX(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingGET() {
         return mc.isDoingGET();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingGET(boolean b) {
         mc.setDoingGET(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isSOAP11() {
         return mc.isSOAP11();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setResponse(boolean b) {
         mc.setResponse(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isResponse() {
         return mc.isResponse();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setFaultResponse(boolean b) {
         mc.setFaultResponse(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isFaultResponse() {
         return mc.isFaultResponse();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public int getTracingState() {
         return mc.getTracingState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setTracingState(int tracingState) {
         mc.setTracingState(tracingState);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Stack<FaultHandler> getFaultStack() {
         return mc.getFaultStack();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void pushFaultHandler(FaultHandler fault) {
         mc.pushFaultHandler(fault);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void pushContinuationState(ContinuationState continuationState) {
+        mc.pushContinuationState(continuationState);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Stack<ContinuationState> getContinuationStateStack() {
-        return null;
+        return mc.getContinuationStateStack();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isContinuationEnabled() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setContinuationEnabled(boolean contStateStackEnabled) {
         mc.setContinuationEnabled(contStateStackEnabled);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Log getServiceLog() {
         return LogFactory.getLog(CommonScriptMessageContext.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getSequenceTemplate(String key) {
         return mc.getSequenceTemplate(key);
     }
 
+    /**
+     * Serialize json payload.
+     *
+     * @param obj Json object which required to be serialized
+     */
     private String serializeJSON(Object obj) {
         StringWriter json = new StringWriter();
         if (obj instanceof Wrapper) {
@@ -708,6 +937,12 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         return json.toString();
     }
 
+    /**
+     * Saves the payload of this message context as a JSON payload.
+     *
+     * @param jsonPayload Javascript native object to be set as the message body
+     * @throws ScriptException in case of creating a JSON object out of the javascript native object.
+     */
     @Override
     public void setPayloadJSON(Object jsonPayload) throws ScriptException {
         org.apache.axis2.context.MessageContext messageContext;
@@ -736,6 +971,12 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         setJsonObject(mc, jsonObject);
     }
 
+    /**
+     * Serialize json payload and writes to output stream.
+     *
+     * @param obj Json object which required to be serialized
+     * @param out Output stream which is required to be written with serialized json
+     */
     private void serializeJson(Object obj, OutputStream out) throws IOException {
         if (out == null) {
             logger.warn("#serializeJson. Did not serialize JSON object. Object: " + obj + "  Stream: " + out);
@@ -821,18 +1062,31 @@ public class CommonScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
 	public Mediator getDefaultConfiguration(String arg0) {
 	   return mc.getDefaultConfiguration(arg0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getMessageString() {
         return mc.getMessageString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setMessageFlowTracingState(int state) {
         mc.setMessageFlowTracingState(state);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public int getMessageFlowTracingState() {
         return SynapseConstants.TRACING_OFF;
     }

@@ -320,18 +320,26 @@ public class Resource extends AbstractRESTProcessor implements ManagedLifecycle,
             int queryIndex = path.indexOf('?');
             if (queryIndex != -1) {
                 String query = path.substring(queryIndex + 1);
-                String[] entries = query.split("&");
+                String[] entries = query.split(RESTConstants.QUERY_PARAM_DELIMITER);
+                String name = null, value ;
                 for (String entry : entries) {
                     int index = entry.indexOf('=');
                     if (index != -1) {
                         try {
-                            String name = entry.substring(0, index);
-                            String value = URLDecoder.decode(entry.substring(index + 1),
+                            name = entry.substring(0, index);
+                            value = URLDecoder.decode(entry.substring(index + 1),
                                     RESTConstants.DEFAULT_ENCODING);
                             synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, value);
                         } catch (UnsupportedEncodingException ignored) {
 
                         }
+                    } else {
+                        // If '=' sign isn't presnet in the entry means that the '&' character is part of
+                        // the query parameter value. If so query parameter value should be updated appending
+                        // the remaining characters.
+                        String existingValue = (String) synCtx.getProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name);
+                        value = RESTConstants.QUERY_PARAM_DELIMITER + entry;
+                        synCtx.setProperty(RESTConstants.REST_QUERY_PARAM_PREFIX + name, existingValue + value);
                     }
                 }
             }

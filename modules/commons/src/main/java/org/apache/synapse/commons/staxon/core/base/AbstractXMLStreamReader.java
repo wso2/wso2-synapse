@@ -352,7 +352,6 @@ public abstract class AbstractXMLStreamReader<T> implements XMLStreamReader {
      */
     protected void readData(String text, Object data, int type) throws XMLStreamException {
         if (hasData(type)) {
-            ensureStartTagClosed();
             queue.add(new Event(type, scope, text, data));
         } else {
             throw new XMLStreamException("Unexpected event type " + getEventName(), locationProvider);
