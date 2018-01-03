@@ -131,12 +131,14 @@ public class TemplateEndpoint extends AbstractEndpoint {
      */
     private synchronized void reLoadAndInitEndpoint(SynapseEnvironment se) {
         SynapseConfiguration synCfg = se.getSynapseConfiguration();
-
+        long previousEntryVersion = -1;//used to keep track of template changes in registry
         //always do reloading at init
         boolean reLoad = (realEndpoint == null);
+        Entry entry = synCfg.getEntryDefinition(template);
         if (!reLoad) {
-            Entry entry = synCfg.getEntryDefinition(template);
             if (entry != null && entry.isDynamic()) {
+                //get previous entry version to track template changes
+                previousEntryVersion = entry.getVersion();
                 if (!entry.isCached() || entry.isExpired()) {
                     MBeanRegistrar.getInstance().unRegisterMBean("Endpoint", this.getName());
                     reLoad = true;
@@ -158,7 +160,10 @@ public class TemplateEndpoint extends AbstractEndpoint {
             Template eprTemplate = synCfg.getEndpointTemplate(template);
 
             if (eprTemplate != null) {
-                realEndpoint = eprTemplate.create(this, synCfg.getProperties());
+                //create real EP if not already created or if there is any change in template
+                if (realEndpoint == null || previousEntryVersion != entry.getVersion()) {
+                    realEndpoint = eprTemplate.create(this, synCfg.getProperties());
+                }
             } else {
                 log.warn("Couldn't retrieve the endpoint template with the key:" + template);
             }
