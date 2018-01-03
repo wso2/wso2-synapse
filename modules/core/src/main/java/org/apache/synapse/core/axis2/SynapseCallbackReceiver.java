@@ -44,8 +44,6 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
-import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
-import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -59,6 +57,7 @@ import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
+import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
 import java.util.Stack;
 import java.util.Timer;
@@ -180,13 +179,16 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
             }
 
             if (callback != null) {
+                org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
+                ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(SynapseOutMsgCtx);
+
                 synchronized (callback) {
                     if (callback.isMarkedForRemoval()) {
                         return;
                     }
                     callback.setMarkedForRemoval();
                 }
-                org.apache.synapse.MessageContext SynapseOutMsgCtx = callback.getSynapseOutMsgCtx();
+
                 if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                     CallbackStatisticCollector.updateParentsForCallback(SynapseOutMsgCtx, messageID);
                     handleMessage(messageID, messageCtx, SynapseOutMsgCtx, (AsyncCallback) callback);
