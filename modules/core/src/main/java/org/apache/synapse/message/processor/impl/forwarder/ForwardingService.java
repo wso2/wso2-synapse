@@ -612,7 +612,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 			log.error("Neither targetEndpoint defined in the MessageProcessor configuration nor " +
 			          "Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
-			          " found in the message context, hence deactivating the MessageProcessor");
+			          " is found in the message context, hence deactivating the MessageProcessor");
 			deactivateMessageProcessor(messageContext);
 		}
 		return;
