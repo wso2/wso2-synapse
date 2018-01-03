@@ -434,6 +434,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 		if (targetEndpoint != null) {
 			Endpoint ep = messageContext.getEndpoint(targetEndpoint);
+			if (ep == null) {
+				log.error("Endpoint does not exists. Deactivating the message processor");
+				deactivateMessageProcessor(messageContext);
+				return;
+			}
 			AbstractEndpoint abstractEndpoint = (AbstractEndpoint) ep;
 			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
 			String endpointReferenceValue = null;
@@ -605,9 +610,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			 * mechanism.
 			 */
 
-			log.warn("Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
-			         " not found in the message context , Hence removing the message ");
-			messageConsumer.ack();
+			log.error("targetEndpoint not defined in the MessageProcessor configuration and " +
+			          "Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
+			          " not found in the message context, hence deactivating the MessageProcessor");
+			deactivateMessageProcessor(messageContext);
 		}
 		return;
 	}
