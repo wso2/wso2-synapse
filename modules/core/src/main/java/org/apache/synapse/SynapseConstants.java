@@ -128,6 +128,15 @@ public final class SynapseConstants {
     public final static String SOAP11_CONTENT_TYPE  = "text/xml";
     /** Content-type of soap12 request **/
     public final static String SOAP12_CONTENT_TYPE  = "application/soap+xml";
+    
+    /**
+     * Content-Type of XML request
+     */
+    public static final String XML_CONTENT_TYPE = "application/xml";
+    /**
+     * Content-Type property of Axis2MessageContext
+     */
+    public static final String AXIS2_PROPERTY_CONTENT_TYPE = "ContentType";
 
     /** Parameter names in the axis2.xml that can be used to configure the synapse */
     public static final class Axis2Param {
