@@ -151,6 +151,27 @@ public class Value {
         }
     }
 
+    /**
+     * Resolve the object defined in the Value
+     *
+     * @param synCtx Message Context
+     * @return Object defined in the Value
+     */
+    public Object resolveObject(MessageContext synCtx) {
+        if (keyValue != null) {
+            return keyValue;
+        } else if (expression != null) {
+            try {
+                return expression.selectSingleNode(synCtx);
+            } catch (JaxenException e) {
+                handleException("Failed to evaluate the XPath expression: " + expression, e);
+            }
+        } else {
+            handleException("Unable to resolve the object: " + toString());
+        }
+        return null;
+    }
+
     private Object getObjectValue(MessageContext synCtx) {
         try {
             Object result = expression.selectSingleNode(synCtx);
