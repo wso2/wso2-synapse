@@ -410,7 +410,8 @@ public class ScriptMediator extends AbstractMediator {
                     jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
                 }
             } catch (ScriptException e) {
-                throw new SynapseException("Invalid JSON payload", e);
+                throw new ScriptException("Invalid JSON payload", e.getFileName(), e.getLineNumber(),
+                        e.getColumnNumber());
             }
         } else if (jsonString != null) {
             String jsonPayload = jsonParser.parse(jsonString).toString();
