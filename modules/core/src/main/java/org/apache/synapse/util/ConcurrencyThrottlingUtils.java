@@ -47,10 +47,10 @@ public class ConcurrencyThrottlingUtils {
         if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
             ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController) synCtx
                     .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+            int available = concurrentAccessController.incrementAndGet();
+            int concurrentLimit = concurrentAccessController.getLimit();
             if (log.isDebugEnabled()) {
-                int available = concurrentAccessController.incrementAndGet();
-                int concurrentLimit = concurrentAccessController.getLimit();
-                log.debug("Concurrency Throttle : Connection returned" + " :: " + +available + " of available of"
+                log.debug("Concurrency Throttle : Connection returned" + " :: " + available + " of available of"
                         + concurrentLimit + " connections");
             }
             ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator) synCtx
