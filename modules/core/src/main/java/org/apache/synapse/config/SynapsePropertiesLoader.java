@@ -95,4 +95,25 @@ public class SynapsePropertiesLoader {
     public static String getPropertyValue(String key, String defaultValue) {
         return MiscellaneousUtil.getProperty(loadSynapseProperties(), key, defaultValue);
     }
+
+    /**
+     * Get the boolean value of the property from the synapse properties.
+     *
+     * @param name name of the config property
+     * @param def  default value to return if the property is not set
+     * @return the value of the property to be used
+     */
+    public static Boolean getBooleanProperty(String name, Boolean def) {
+        String val = MiscellaneousUtil.getProperty(loadSynapseProperties(), name, String.valueOf(def));
+        if (val == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Parameter : " + name + " is not defined in the synapse.properties file.");
+            }
+            return def;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("synapse.properties parameter : " + name + " = " + val);
+        }
+        return Boolean.valueOf(val);
+    }
 }
