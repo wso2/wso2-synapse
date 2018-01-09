@@ -403,10 +403,15 @@ public class ScriptMediator extends AbstractMediator {
         if (JsonUtil.hasAJsonPayload(messageContext)) {
             try {
                 String jsonPayload = JsonUtil.jsonPayloadToString(messageContext);
-                String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
-                jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
+                if (NASHORN_JAVA_SCRIPT.equals(language)) {
+                    jsonObject = jsonSerializer.callMember("parse", jsonPayload);
+                } else {
+                    String scriptWithJsonParser = "JSON.parse(JSON.stringify(" + jsonPayload + "))";
+                    jsonObject = this.jsEngine.eval('(' + scriptWithJsonParser + ')');
+                }
             } catch (ScriptException e) {
-                throw new SynapseException("Invalid JSON payload", e);
+                throw new ScriptException("Invalid JSON payload", e.getFileName(), e.getLineNumber(),
+                        e.getColumnNumber());
             }
         } else if (jsonString != null) {
             String jsonPayload = jsonParser.parse(jsonString).toString();
