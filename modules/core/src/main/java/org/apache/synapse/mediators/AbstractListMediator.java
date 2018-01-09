@@ -26,10 +26,12 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -58,6 +60,12 @@ public abstract class AbstractListMediator extends AbstractMediator
 
     private boolean sequenceContentAware = false;
 
+    /**
+     * Whether Streaming Xpath is enabled in synapse.properties file.
+     */
+    private static boolean isStreamXpathEnabled = SynapsePropertiesLoader.
+            getBooleanProperty(SynapseConstants.STREAMING_XPATH_PROCESSING, Boolean.FALSE);
+
     public boolean mediate(MessageContext synCtx) {
         return  mediate(synCtx,0);
     }
@@ -81,7 +89,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 // ensure correct trace state after each invocation of a mediator
                 Mediator mediator = mediators.get(i);
 
-                if (sequenceContentAware && mediator.isContentAware() &&
+                if (sequenceContentAware && (mediator.isContentAware() || isStreamXpathEnabled) &&
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
                     buildMessage(synCtx, synLog);
                 }
