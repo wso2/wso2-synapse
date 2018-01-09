@@ -33,6 +33,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -379,7 +380,11 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     for (Value schemaKey : schemaKeys) {
                         // Derive actual key from message context
                         String propName = schemaKey.evaluateValue(synCtx);
-                        sources[i++] = SynapseConfigUtils.getStreamSource(synCtx.getEntry(propName));
+                        Object schemaObject = synCtx.getEntry(propName);
+                        if (schemaObject == null) {
+                            throw new SynapseException("No Schema is available with the key  : " + propName);
+                        }
+                        sources[i++] = SynapseConfigUtils.getStreamSource(schemaObject);
                         // Generating a cached schema key
                         cachedSchemaKey.append(propName);
                     }
