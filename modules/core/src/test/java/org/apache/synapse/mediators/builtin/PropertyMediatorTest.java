@@ -20,8 +20,8 @@
 package org.apache.synapse.mediators.builtin;
 
 import junit.framework.TestCase;
+import org.apache.http.protocol.HTTP;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.mediators.MediatorProperty;
@@ -62,7 +62,6 @@ public class PropertyMediatorTest extends TestCase {
         assertNull((new SynapseXPath("synapse:get-property('name')")).stringValueOf(synCtx));
         assertTrue("valueTwo".equals((new SynapseXPath(
             "synapse:get-property('nameTwo')")).stringValueOf(synCtx)));
-                
     }
 
     public void testTypeAwarePropertyHandling() throws Exception {
@@ -126,7 +125,29 @@ public class PropertyMediatorTest extends TestCase {
         assertEquals(new Long(123456), valueFive);
         assertEquals(new Short("12345"), valueSix);
         assertEquals(new Float(123.456), valueSeven);
-        System.out.println("All property values are correctly in place - Test SUCCESSFUL");
+    }
+
+    public void testSpecialPropertiesHandling() throws Exception {
+
+        MessageContext synCtx = TestUtils.createLightweightSynapseMessageContext("<empty/>");
+
+        PropertyMediator propMediatorEight = new PropertyMediator();
+        propMediatorEight.setName(HTTP.CONTENT_TYPE);
+        propMediatorEight.setValue("application/xml");
+        propMediatorEight.setScope(XMLConfigConstants.SCOPE_TRANSPORT);
+
+        PropertyMediator propMediatorNine = new PropertyMediator();
+        propMediatorNine.setName(org.apache.axis2.Constants.Configuration.MESSAGE_TYPE);
+        propMediatorNine.setValue("application/json");
+        propMediatorNine.setScope(XMLConfigConstants.SCOPE_AXIS2);
+
+        propMediatorEight.mediate(synCtx);
+        propMediatorNine.mediate(synCtx);
+
+        org.apache.axis2.context.MessageContext axisCtx = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        Map transportHeaders = (Map) axisCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        assertNotNull(transportHeaders);
+        assertTrue("application/json".equals(transportHeaders.get(HTTP.CONTENT_TYPE)));
     }
 
     public void testXMLPropertyHandling() throws Exception {
