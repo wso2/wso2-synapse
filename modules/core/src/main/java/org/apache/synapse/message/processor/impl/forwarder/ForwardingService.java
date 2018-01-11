@@ -31,6 +31,7 @@ import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAP11Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.SOAPHeaderBlock;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.engine.AxisConfiguration;
 import org.apache.axis2.transport.http.HTTPConstants;
@@ -433,6 +434,11 @@ public class ForwardingService implements Task, ManagedLifecycle {
 
 		if (targetEndpoint != null) {
 			Endpoint ep = messageContext.getEndpoint(targetEndpoint);
+			if (ep == null) {
+				log.error("Endpoint does not exists. Deactivating the message processor");
+				deactivateMessageProcessor(messageContext);
+				return;
+			}
 			AbstractEndpoint abstractEndpoint = (AbstractEndpoint) ep;
 			EndpointDefinition endpointDefinition = abstractEndpoint.getDefinition();
 			String endpointReferenceValue = null;
@@ -604,9 +610,10 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			 * mechanism.
 			 */
 
-			log.warn("Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
-			         " not found in the message context , Hence removing the message ");
-			messageConsumer.ack();
+			log.error("Neither targetEndpoint defined in the MessageProcessor configuration nor " +
+			          "Property " + ForwardingProcessorConstants.TARGET_ENDPOINT +
+			          " is found in the message context, hence deactivating the MessageProcessor");
+			deactivateMessageProcessor(messageContext);
 		}
 		return;
 	}
@@ -878,10 +885,13 @@ public class ForwardingService implements Task, ManagedLifecycle {
 			while (iHeader.hasNext()) {
 				try {
 					Object element = iHeader.next();
-					if (element instanceof OMElement) {
+					// If the element is already a SOAPHeaderBlock, we do not need to convert it. Doing so will incur
+					// a removal of the element based on OMAbstractIterator, and sets the
+					// OMSourcedElementImpl.datasource to null, causing an NPE when serializing in future.
+					if (element instanceof  OMElement && !(element instanceof SOAPHeaderBlock)) {
 						newHeaderNodes.add(ElementHelper.toSOAPHeaderBlock((OMElement) element, fac));
+						iHeader.remove();
 					}
-					iHeader.remove();
 				} catch (OMException e) {
 					log.error("Unable to convert to SoapHeader Block", e);
 				} catch (Exception e) {

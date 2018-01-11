@@ -52,7 +52,8 @@ public class FailoverEndpointSerializer extends EndpointSerializer {
         serializeCommonAttributes(endpoint,endpointElement);
 
         if (failoverEndpoint.isBuildMessageAtt()) {
-            failoverElement.addAttribute(XMLConfigConstants.BUILD_MESSAGE, Boolean.toString(failoverEndpoint.isBuildMessageAtt()), null);
+            failoverElement.addAttribute(XMLConfigConstants.BUILD_MESSAGE,
+                    Boolean.toString(failoverEndpoint.isBuildMessageAtt()), null);
         }
 
         for (Endpoint childEndpoint : failoverEndpoint.getChildren()) {

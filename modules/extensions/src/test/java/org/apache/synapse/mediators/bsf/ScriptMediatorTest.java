@@ -57,6 +57,11 @@ public class ScriptMediatorTest extends TestCase {
         assertTrue(responese);
     }
 
+    /**
+     * Test functionality of mediate with inline script in nashornJS.
+     *
+     * @throws Exception
+     */
     public void testInlineMediatorOnNashornEngine() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("nashornJs", inlinescript,null);
@@ -75,6 +80,11 @@ public class ScriptMediatorTest extends TestCase {
                 Integer.parseInt(randomno) * 2);
     }
 
+    /**
+     * Test functionality of mediate with multiple threads in nashornJS.
+     *
+     * @throws Exception
+     */
     public void testThreadSafetyOnNashornEngine() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<randomNo/>", null);
         Random rand = new Random();
@@ -86,6 +96,11 @@ public class ScriptMediatorTest extends TestCase {
                 Integer.parseInt(randomno) * 2);
     }
 
+    /**
+     * Test functionality of mediate with external script in js.
+     *
+     * @throws Exception
+     */
     public void testExternalScriptWithComments() throws Exception {
         String request = "{\n" 
                 + "    \"results\": [\n" 

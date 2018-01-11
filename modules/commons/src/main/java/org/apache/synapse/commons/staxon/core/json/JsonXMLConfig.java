@@ -102,6 +102,11 @@ public interface JsonXMLConfig {
             return false;
         }
 
+        @Override
+        public boolean isWriteNullForEmptyElements() {
+            return true;
+        }
+
     };
 
     /**
@@ -196,5 +201,13 @@ public interface JsonXMLConfig {
     public String getCustomReplaceSequence();
 
     public boolean isReadWriteXmlNil();
+
+    /**
+     * Used in XML->JSON conversion. Decides whether to set null
+     * or "" for an empty XML element without nil attribute
+     *
+     * @return true if null is written, false if "" is written
+     */
+    public boolean isWriteNullForEmptyElements();
 
 }

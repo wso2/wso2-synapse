@@ -17,6 +17,8 @@
 package org.apache.synapse.transport.passthru;
 
 import org.apache.axiom.om.OMOutputFormat;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.context.MessageContext;
 import org.apache.axis2.transport.MessageFormatter;
@@ -217,7 +219,9 @@ public class SourceResponse {
      */
     private void calculateContentlengthForChunckDisabledResponse(MessageContext responseMsgContext) throws IOException {
         String forceHttp10 = (String) responseMsgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
-        if ("true".equals(forceHttp10) || responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false)) {
+        boolean isChunkingDisabled = responseMsgContext.isPropertyTrue(PassThroughConstants.DISABLE_CHUNKING, false);
+
+        if ("true".equals(forceHttp10) || isChunkingDisabled) {
             if (!responseMsgContext.isPropertyTrue(PassThroughConstants.MESSAGE_BUILDER_INVOKED,
                     false)) {
                 try {
@@ -241,10 +245,17 @@ public class SourceResponse {
                 return;
             }
 
+            String contentType = headers.get(HTTP.CONTENT_TYPE) != null ?
+                    headers.get(HTTP.CONTENT_TYPE).toString() : null;
+            // Stream should be preserved to support disable chunking for SOAP based responses. This checks
+            // whether chunking is disabled and response Content-Type is SOAP or FORCE_HTTP_1.0 is true.
+            boolean preserveStream =
+                    (isChunkingDisabled && isSOAPContentType(contentType)) || "true".equals(forceHttp10);
+
             MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(responseMsgContext);
             OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(responseMsgContext);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            formatter.writeTo(responseMsgContext, format, out, false);
+            formatter.writeTo(responseMsgContext, format, out, preserveStream);
             TreeSet<String> header = new TreeSet<String>();
             header.add(String.valueOf(out.toByteArray().length));
             headers.put(HTTP.CONTENT_LEN, header);
@@ -360,5 +371,17 @@ public class SourceResponse {
 	public void setKeepAlive(boolean keepAlive) {
 		this.keepAlive = keepAlive;
 	}
+
+    /**
+     * Checks whether Content-Type header related to a SOAP message
+     *
+     * @param contentType Content-Type string
+     * @return true if Content-Type is related to Soap.
+     */
+    private boolean isSOAPContentType(String contentType) {
+        return contentType != null &&
+                (contentType.indexOf(SOAP11Constants.SOAP_11_CONTENT_TYPE) != -1 ||
+                contentType.indexOf(SOAP12Constants.SOAP_12_CONTENT_TYPE) != -1);
+    }
 
 }

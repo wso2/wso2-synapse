@@ -41,6 +41,11 @@ public class NashornJavaScriptMediatorTest extends TestCase {
 
     private static final String INLINE_SCRIPT = "var state=5;";
 
+    /**
+     * Test functionality of mediate with external script in nashornJS.
+     *
+     * @throws Exception
+     */
     public void testExternalScriptWithCommentsOnNashornEngine() throws Exception {
         String request = "{\n"
                 + "    \"results\": [\n"
@@ -140,6 +145,11 @@ public class NashornJavaScriptMediatorTest extends TestCase {
         assertEquals(true, result);
     }
 
+    /**
+     * Test functionality of mediate with inline script in nashornJS.
+     *
+     * @throws Exception
+     */
     public void testInlineMediatorOnNashornEngine() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("nashornJs", INLINE_SCRIPT,null);

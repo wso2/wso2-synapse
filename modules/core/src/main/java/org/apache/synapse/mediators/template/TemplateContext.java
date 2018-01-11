@@ -18,6 +18,10 @@
  */
 package org.apache.synapse.mediators.template;
 
+import org.apache.axiom.om.OMAttribute;
+import org.apache.axiom.om.OMDocument;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMText;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.eip.EIPUtils;
@@ -88,7 +92,7 @@ public class TemplateContext {
                 	}
                     return expression.getExpression();
                 } else {
-                    return expression.evaluateValue(synCtx);
+                    return resolveExpressionValue(synCtx, expression);
                 }
             } else if (expression.getKeyValue() != null) {
                 return expression.evaluateValue(synCtx);
@@ -97,6 +101,19 @@ public class TemplateContext {
         return null;
     }
 
+    private Object resolveExpressionValue(MessageContext synCtx, Value expression) {
+
+        Object result = expression.resolveObject(synCtx);
+
+        // Extract string values from axiom objects which has only texts
+        if (result instanceof OMText) {
+            return ((OMText) result).getText();
+        } else if (result instanceof OMAttribute) {
+            return ((OMAttribute) result).getAttributeValue();
+        } else {
+            return result;
+        }
+    }
 
     private void removeProperty(MessageContext synCtxt, String deletedMapping) {
         //Removing property from the  Synapse Context

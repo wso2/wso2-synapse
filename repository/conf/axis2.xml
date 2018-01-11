@@ -136,21 +136,21 @@
     <!--Following content type to message formatter mapping can be used to implement support for different message -->
     <!--format  serialization in Axis2. These message formats are expected to be resolved based on the content type. -->
     <messageFormatters>
-        <messageFormatter contentType="application/x-www-form-urlencoded"
+        <!--messageFormatter contentType="application/x-www-form-urlencoded"
                           class="org.apache.synapse.core.relay.ExpandingMessageFormatter"/>
         <messageFormatter contentType="multipart/form-data"
                           class="org.apache.synapse.core.relay.ExpandingMessageFormatter"/>
         <messageFormatter contentType="application/xml"
                           class="org.apache.synapse.core.relay.ExpandingMessageFormatter"/>
         <messageFormatter contentType="text/xml"
-                          class="org.apache.synapse.core.relay.ExpandingMessageFormatter"/>
+                          class="org.apache.synapse.core.relay.ExpandingMessageFormatter"/-->
 
-        <!--messageFormatter contentType="application/x-www-form-urlencoded"
+        <messageFormatter contentType="application/x-www-form-urlencoded"
                          class="org.apache.axis2.transport.http.XFormURLEncodedFormatter"/>
         <messageFormatter contentType="multipart/form-data"
                          class="org.apache.axis2.transport.http.MultipartFormDataFormatter"/>
         <messageFormatter contentType="application/xml"
-                         class="org.apache.axis2.transport.http.ApplicationXMLFormatter"/-->
+                         class="org.apache.axis2.transport.http.ApplicationXMLFormatter"/>
         <!--<messageFormatter contentType="x-application/hessian"
                          class="org.apache.synapse.format.hessian.HessianMessageFormatter"/>-->
         <!--<messageFormatter contentType=""
@@ -166,21 +166,21 @@
     <!--Following content type to builder mapping can be used to implement support for different message -->
     <!--formats in Axis2. These message formats are expected to be resolved based on the content type. -->
     <messageBuilders>
-        <messageBuilder contentType="application/xml"
+        <!--messageBuilder contentType="application/xml"
                         class="org.apache.synapse.core.relay.BinaryRelayBuilder"/>
         <messageBuilder contentType="application/x-www-form-urlencoded"
                         class="org.apache.synapse.core.relay.BinaryRelayBuilder"/>
         <messageBuilder contentType="multipart/form-data"
                         class="org.apache.synapse.core.relay.BinaryRelayBuilder"/>
         <messageBuilder contentType="text/xml"
-                        class="org.apache.synapse.core.relay.BinaryRelayBuilder"/>
+                        class="org.apache.synapse.core.relay.BinaryRelayBuilder"/-->
 
-        <!--messageBuilder contentType="application/xml"
+        <messageBuilder contentType="application/xml"
                          class="org.apache.axis2.builder.ApplicationXMLBuilder"/>
         <messageBuilder contentType="application/x-www-form-urlencoded"
                          class="org.apache.axis2.builder.XFormURLEncodedBuilder"/>
         <messageBuilder contentType="multipart/form-data"
-                         class="org.apache.axis2.builder.MultipartFormDataBuilder"/-->
+                         class="org.apache.axis2.builder.MultipartFormDataBuilder"/>
         <!--<messageBuilder contentType="x-application/hessian"
                          class="org.apache.synapse.format.hessian.HessianMessageBuilder"/>-->
         <!--<messageBuilder contentType=""

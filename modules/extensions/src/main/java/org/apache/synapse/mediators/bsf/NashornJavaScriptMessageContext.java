@@ -37,7 +37,6 @@ import org.apache.axis2.addressing.EndpointReference;
 import org.apache.axis2.addressing.RelatesTo;
 import org.apache.axis2.context.OperationContext;
 import org.apache.bsf.xml.XMLHelper;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.protocol.HTTP;
@@ -56,10 +55,10 @@ import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -69,7 +68,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
 /**
- * NashornJavaScriptMessageContext impliments the ScriptMessageContext specific to Nashorn java script engine.
+ * NashornJavaScriptMessageContext implements the ScriptMessageContext specific to Nashorn java script engine.
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class NashornJavaScriptMessageContext implements ScriptMessageContext {
@@ -87,9 +86,22 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     /** To keep Script Engine instance. */
     private ScriptEngine scriptEngine;
 
-    public NashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper) {
+    /**
+     * Reference to an empty JSON object.
+     */
+    private Object emptyJsonObject;
+
+    /**
+     * Reference to JSON object which is used to serialize json.
+     */
+    private ScriptObjectMirror jsonSerializer;
+
+    public NashornJavaScriptMessageContext(MessageContext mc, XMLHelper xmlHelper, ScriptObjectMirror
+            emptyJsonObject, ScriptObjectMirror jsonSerializer) {
         this.mc = mc;
         this.xmlHelper = xmlHelper;
+        this.emptyJsonObject = emptyJsonObject;
+        this.jsonSerializer = jsonSerializer;
     }
 
     /**
@@ -130,6 +142,11 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         return jsonObject(mc);
     }
 
+    /**
+     * Get the Message Payload as a text.
+     *
+     * @return Payload as text
+     */
     public Object getJsonText() {
         if (mc == null) {
             return "";
@@ -153,6 +170,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JavaScript Object to the message context.
+     * 
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript Object which is passed to be saved in message context
      * @return true
@@ -164,6 +182,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Saves the JSON String to the message context.
+     *
      * @param messageContext The message context of the sequence
      * @param jsonObject JavaScript string which is passed to be saved in message context
      * @return false if messageContext is null return true otherwise
@@ -178,6 +197,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the JavaScript Object saved in this message context.
+     *
      * @param messageContext The message context of the sequence
      * @return o JavaScript Object saved in this message context
      */
@@ -185,19 +205,11 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         if (messageContext == null) {
             return null;
         }
-        Object o = messageContext.getProperty(JSON_OBJECT);
-        if (o == null) {
-            if (this.scriptEngine == null) {
-                logger.error("Cannot create empty JSON object. ScriptEngine instance not available.");
-                return null;
-            }
-            try {
-                return this.scriptEngine.eval("({})");
-            } catch (ScriptException e) {
-                logger.error("Could not return an empty JSON object.", e);
-            }
+        Object jsonObject = messageContext.getProperty(JSON_OBJECT);
+        if (jsonObject == null) {
+            return emptyJsonObject;
         }
-        return o;
+        return jsonObject;
     }
 
     /**
@@ -211,6 +223,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the parsed xml document.
+     *
      * @param text xml string or document needed to be parser
      * @return parsed document
      */
@@ -233,6 +246,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the parsed xml document.
+     *
      * @param stream input stream of xml string or document needed to be parsed
      * @return parsed document
      */
@@ -243,6 +257,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Returns the Axiom xpath.
+     *
      * @param expression Xpath expression
      * @return Axiom xpath is returned
      */
@@ -284,6 +299,7 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     /**
      * Get the XML representation of the complete SOAP envelope.
+     *
      * @return return an object that represents the payload in the current scripting language
      * @throws ScriptException in-case of an error in getting
      * the XML representation of SOAP envelope
@@ -294,65 +310,110 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
     }
 
     /**
+     * This is used to set the value which specifies the receiver of the message.
      *
-     * Helpers to set EPRs from a script string.
-     *
+     * @param reference specifies the receiver of the message
      */
     public void setTo(String reference) {
         mc.setTo(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the receiver of the faults relating to the message.
+     *
+     * @param reference specifies the receiver of the faults relating to the message
+     */
     public void setFaultTo(String reference) {
         mc.setFaultTo(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the sender of the message.
+     *
+     * @param reference specifies the sender of the message
+     */
     public void setFrom(String reference) {
         mc.setFrom(new EndpointReference(reference));
     }
 
+    /**
+     * This is used to set the value which specifies the receiver of the replies to the message.
+     *
+     * @param reference specifies the receiver of the replies to the message
+     */
     public void setReplyTo(String reference) {
         mc.setReplyTo(new EndpointReference(reference));
     }
 
     /**
-     * All the remainder just use the underlying MessageContext.
+     * {@inheritDoc}
      */
     public SynapseConfiguration getConfiguration() {
         return mc.getConfiguration();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setConfiguration(SynapseConfiguration cfg) {
         mc.setConfiguration(cfg);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public SynapseEnvironment getEnvironment() {
         return mc.getEnvironment();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setEnvironment(SynapseEnvironment se) {
         mc.setEnvironment(se);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Map<String, Object> getContextEntries() {
         return mc.getContextEntries();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setContextEntries(Map<String, Object> entries) {
         mc.setContextEntries(entries);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Object getProperty(String key) {
         return mc.getProperty(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Object getEntry(String key) {
         return mc.getEntry(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Object getLocalEntry(String key) {
         return mc.getLocalEntry(key);
     }
 
+    /**
+     * Add a new property to the message.
+     *
+     * @param key unique identifier of property
+     * @param value value of property
+     */
     public void setProperty(String key, Object value) {
         try {
             OMElement omElement = xmlHelper.toOMElement(value);
@@ -364,6 +425,13 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+    /**
+     * Add a new property to the message.
+     *
+     * @param key unique identifier of property
+     * @param value value of property
+     * @param scope scope of the property
+     */
     public void setProperty(String key, Object value, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
             setProperty(key, value);
@@ -396,6 +464,12 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+    /**
+     * Remove property from the message.
+     *
+     * @param key unique identifier of property
+     * @param scope scope of the property
+     */
     public void removeProperty(String key, String scope) {
         if (scope == null || XMLConfigConstants.SCOPE_DEFAULT.equals(scope)) {
             Set pros = mc.getPropertyKeySet();
@@ -427,6 +501,13 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
 
     }
 
+    /**
+     * Add special properties such as content type to the message context.
+     *
+     * @param key unique identifier of property
+     * @param value value of property
+     * @param messageContext Axis2 message context
+     */
     private void handleSpecialProperties(String key, Object value,
                                          org.apache.axis2.context.MessageContext messageContext) {
         if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(key)) {
@@ -439,196 +520,344 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Set getPropertyKeySet() {
         return mc.getPropertyKeySet();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getMainSequence() {
         return mc.getMainSequence();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getFaultSequence() {
         return mc.getFaultSequence();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getSequence(String key) {
         return mc.getSequence(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public OMElement getFormat(String s) {
        return mc.getFormat(s);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Endpoint getEndpoint(String key) {
         return mc.getEndpoint(key);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public SOAPEnvelope getEnvelope() {
         return mc.getEnvelope();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setEnvelope(SOAPEnvelope envelope) throws AxisFault {
         mc.setEnvelope(envelope);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getFaultTo() {
         return mc.getFaultTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setFaultTo(EndpointReference reference) {
         mc.setFaultTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getFrom() {
         return mc.getFrom();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setFrom(EndpointReference reference) {
         mc.setFrom(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getMessageID() {
         return mc.getMessageID();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setMessageID(String string) {
         mc.setMessageID(string);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public RelatesTo getRelatesTo() {
         return mc.getRelatesTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setRelatesTo(RelatesTo[] reference) {
         mc.setRelatesTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getReplyTo() {
         return mc.getReplyTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setReplyTo(EndpointReference reference) {
         mc.setReplyTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public EndpointReference getTo() {
         return mc.getTo();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setTo(EndpointReference reference) {
         mc.setTo(reference);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setWSAAction(String actionURI) {
         mc.setWSAAction(actionURI);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getWSAAction() {
         return mc.getWSAAction();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getSoapAction() {
         return mc.getSoapAction();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setSoapAction(String string) {
         mc.setSoapAction(string);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setWSAMessageID(String messageID) {
         mc.setWSAMessageID(messageID);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getWSAMessageID() {
         return mc.getWSAMessageID();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingMTOM() {
         return mc.isDoingMTOM();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingSWA() {
         return mc.isDoingSWA();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingMTOM(boolean b) {
         mc.setDoingMTOM(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingSWA(boolean b) {
         mc.setDoingSWA(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingPOX() {
         return mc.isDoingPOX();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingPOX(boolean b) {
         mc.setDoingPOX(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isDoingGET() {
         return mc.isDoingGET();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDoingGET(boolean b) {
         mc.setDoingGET(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isSOAP11() {
         return mc.isSOAP11();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setResponse(boolean b) {
         mc.setResponse(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isResponse() {
         return mc.isResponse();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setFaultResponse(boolean b) {
         mc.setFaultResponse(b);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isFaultResponse() {
         return mc.isFaultResponse();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public int getTracingState() {
         return mc.getTracingState();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setTracingState(int tracingState) {
         mc.setTracingState(tracingState);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Stack<FaultHandler> getFaultStack() {
         return mc.getFaultStack();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void pushFaultHandler(FaultHandler fault) {
         mc.pushFaultHandler(fault);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void pushContinuationState(ContinuationState continuationState) {
+        mc.pushContinuationState(continuationState);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Stack<ContinuationState> getContinuationStateStack() {
-        return null;
+        return mc.getContinuationStateStack();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public boolean isContinuationEnabled() {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setContinuationEnabled(boolean contStateStackEnabled) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Log getServiceLog() {
         return LogFactory.getLog(NashornJavaScriptMessageContext.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getSequenceTemplate(String key) {
         return mc.getSequenceTemplate(key);
     }
@@ -637,53 +866,45 @@ public class NashornJavaScriptMessageContext implements ScriptMessageContext {
      * Saves the payload of this message context as a JSON payload.
      *
      * @param jsonPayload Javascript native object to be set as the message body
-     * @throws ScriptException in case of creating a JSON object out of
-     *                         the javascript native object.
+     * @throws ScriptException in case of creating a JSON object out of the javascript native object.
      */
     public void setPayloadJSON(Object jsonPayload) throws ScriptException {
-        org.apache.axis2.context.MessageContext messageContext;
-        messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
-
-        byte[] json = {'{', '}'};
-        if (jsonPayload instanceof String) {
-            json = jsonPayload.toString().getBytes();
-        } else if (jsonPayload != null) {
-            try {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                serializeJSON(jsonPayload, out);
-                json = out.toByteArray();
-            } catch (IOException | ScriptException e) {
-                logger.error("#setPayloadJSON. Could not retrieve bytes from JSON object.", e);
-            }
-        }
-        // save this JSON object as the new payload.
         try {
-            JsonUtil.getNewJsonPayload(messageContext, json, 0, json.length, true, true);
+            String jsonString = (String) jsonSerializer.callMember("stringify", jsonPayload);
+            InputStream stream = new ByteArrayInputStream(jsonString.getBytes(StandardCharsets.UTF_8));
+            org.apache.axis2.context.MessageContext messageContext;
+            messageContext = ((Axis2MessageContext) mc).getAxis2MessageContext();
+            JsonUtil.getNewJsonPayload(messageContext, stream, true, true);
+            messageContext.setProperty(JSON_OBJECT, jsonPayload);
         } catch (AxisFault axisFault) {
             throw new ScriptException(axisFault);
         }
-        Object jsonObject = scriptEngine.eval(JsonUtil.newJavaScriptSourceReader(messageContext));
-        setJsonObject(mc, jsonObject);
     }
 
-    private void serializeJSON(Object obj, OutputStream out) throws IOException, ScriptException {
-        ScriptObjectMirror json = (ScriptObjectMirror) scriptEngine.eval("JSON");
-        String jsonString = (String) json.callMember("stringify", obj);
-        out.write(jsonString.getBytes());
-    }
-
+    /**
+     * {@inheritDoc}
+     */
     public Mediator getDefaultConfiguration(String arg0) {
         return mc.getDefaultConfiguration(arg0);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public String getMessageString() {
         return mc.getMessageString();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setMessageFlowTracingState(int state) {
         mc.setMessageFlowTracingState(state);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public int getMessageFlowTracingState() {
         return SynapseConstants.TRACING_OFF;
     }

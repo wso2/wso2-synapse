@@ -218,7 +218,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                                 + (completionTimeoutMillis / 1000) + "secs" :
                                                 "without expiry time"));
                             }
-                            if (isAlreadyTimedOut(synCtx)) {
+                            if (isAggregationCompleted(synCtx)) {
                                 return false;
                             }
 
@@ -272,7 +272,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
                                                     "without expiry time"));
                                 }
 
-                                if (isAlreadyTimedOut(synCtx)) {
+                                if (isAggregationCompleted(synCtx)) {
                                     return false;
                                 }
 
@@ -361,9 +361,10 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
     }
 
     /*
-     * Check whether aggregate is already timed-out and we are receiving a message after the timeout interval
+     * Check whether aggregation is already completed by time-out/receiving required number of min/max messages,
+      * and we are receiving a message after the aggregation is completed.
      */
-    private boolean isAlreadyTimedOut(MessageContext synCtx) {
+    private boolean isAggregationCompleted(MessageContext synCtx) {
 
         Object aggregateTimeoutHolderObj =
                 synCtx.getProperty(id != null ? EIPConstants.EIP_SHARED_DATA_HOLDER + "." + id :
@@ -371,9 +372,9 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
         if (aggregateTimeoutHolderObj != null) {
             SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
-            if (sharedDataHolder.isTimeoutOccurred()) {
+            if (sharedDataHolder.isAggregationCompleted()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Received a response for already timed-out Aggregate");
+                    log.debug("Received a response for already completed Aggregate");
                 }
                 return true;
             }
@@ -442,7 +443,7 @@ public class AggregateMediator extends AbstractMediator implements ManagedLifecy
 
                     if (aggregateTimeoutHolderObj != null) {
                         SharedDataHolder sharedDataHolder = (SharedDataHolder) aggregateTimeoutHolderObj;
-                        sharedDataHolder.markTimeoutState();
+                        sharedDataHolder.markAggregationCompletion();
                     }
                 }
                 markedCompletedNow = true;

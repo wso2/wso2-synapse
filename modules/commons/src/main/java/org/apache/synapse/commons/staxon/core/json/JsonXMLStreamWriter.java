@@ -112,6 +112,7 @@ public class JsonXMLStreamWriter extends AbstractXMLStreamWriter<JsonXMLStreamWr
     private final char namespaceSeparator;
     private final boolean namespaceDeclarations;
     private final boolean xmlNilReadWriteEnabled;
+    private final boolean xmlWriteNullForEmptyElement;
 
     private boolean documentArray = false;
 
@@ -122,6 +123,7 @@ public class JsonXMLStreamWriter extends AbstractXMLStreamWriter<JsonXMLStreamWr
      * @param multiplePI            whether to consume <code>&lt;xml-multiple?&gt;</code> PIs to trigger array start
      * @param namespaceSeparator    namespace prefix separator
      * @param namespaceDeclarations whether to write namespace declarations
+     * @param repairNamespaces      repair Namespaces
      */
     public JsonXMLStreamWriter(JsonStreamTarget target, boolean repairNamespaces, boolean multiplePI, char namespaceSeparator, boolean namespaceDeclarations) {
         super(new ScopeInfo(), repairNamespaces);
@@ -131,7 +133,8 @@ public class JsonXMLStreamWriter extends AbstractXMLStreamWriter<JsonXMLStreamWr
         this.namespaceDeclarations = namespaceDeclarations;
         this.autoEndArray = true;
         this.skipSpace = true;
-        xmlNilReadWriteEnabled = false;
+        this.xmlNilReadWriteEnabled = false;
+        this.xmlWriteNullForEmptyElement = true;
     }
 
     /**
@@ -142,9 +145,11 @@ public class JsonXMLStreamWriter extends AbstractXMLStreamWriter<JsonXMLStreamWr
      * @param namespaceSeparator    namespace prefix separator
      * @param namespaceDeclarations whether to write namespace declarations
      * @param xmlNilReadWriteEnabled    Supports reading and writing of XML Nil elements as defined by http://www.w3.org/TR/xmlschema-1/#xsi_nil when the XML/JSON inputs contains nil/null values.
+     * @param repairNamespaces      repair Namespaces
+     * @param xmlWriteNullForEmptyElement   write null or "" for XML empty elements without nil attribute
      */
     public JsonXMLStreamWriter(JsonStreamTarget target, boolean repairNamespaces, boolean multiplePI, char namespaceSeparator, boolean namespaceDeclarations,
-                               boolean xmlNilReadWriteEnabled) {
+                               boolean xmlNilReadWriteEnabled, boolean xmlWriteNullForEmptyElement) {
         super(new ScopeInfo(), repairNamespaces);
         this.target = target;
         this.multiplePI = multiplePI;
@@ -153,6 +158,7 @@ public class JsonXMLStreamWriter extends AbstractXMLStreamWriter<JsonXMLStreamWr
         this.autoEndArray = true;
         this.skipSpace = true;
         this.xmlNilReadWriteEnabled = xmlNilReadWriteEnabled;
+        this.xmlWriteNullForEmptyElement = xmlWriteNullForEmptyElement;
     }
 
     private String getFieldName(String prefix, String localName) {
@@ -223,10 +229,10 @@ public class JsonXMLStreamWriter extends AbstractXMLStreamWriter<JsonXMLStreamWr
             if (getScope().getInfo().startObjectWritten) {
                 target.endObject();
             } else if (!getScope().getInfo().hasData()) {
-                if (xmlNilReadWriteEnabled) {
-                    target.value("");
-                } else {
+                if (xmlWriteNullForEmptyElement) {
                     target.value(null);
+                } else {
+                    target.value("");
                 }
             }
         } catch (IOException e) {

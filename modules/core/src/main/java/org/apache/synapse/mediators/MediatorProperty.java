@@ -24,7 +24,7 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
-import org.apache.synapse.util.xpath.SynapseXPath;
+import org.apache.synapse.util.MediatorPropertyUtils;
 
 import javax.xml.namespace.QName;
 import java.util.HashMap;
@@ -74,6 +74,7 @@ public class MediatorProperty {
             org.apache.axis2.context.MessageContext axis2MessageCtx =
                     axis2smc.getAxis2MessageContext();
             axis2MessageCtx.setProperty(name, result);
+            MediatorPropertyUtils.handleSpecialProperties(name, result, axis2MessageCtx);
         } else if (XMLConfigConstants.SCOPE_CLIENT.equals(scope)) {
             //Setting property into the  Axis2 Message Context client options
             Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;

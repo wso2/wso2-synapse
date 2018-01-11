@@ -29,6 +29,8 @@ import org.apache.axiom.om.impl.llom.OMDocumentImpl;
 import org.apache.axiom.om.impl.llom.OMElementImpl;
 import org.apache.axiom.om.impl.llom.OMTextImpl;
 import org.apache.axiom.om.impl.llom.util.AXIOMUtil;
+import org.apache.axiom.soap.SOAP11Constants;
+import org.apache.axiom.soap.SOAP12Constants;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axiom.soap.impl.dom.factory.DOMSOAPFactory;
 import org.apache.commons.logging.Log;
@@ -40,7 +42,9 @@ import org.apache.synapse.config.xml.OMElementUtils;
 import org.apache.synapse.config.xml.SynapsePath;
 import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
+import org.apache.synapse.transport.passthru.util.RelayUtils;
 import org.apache.synapse.util.streaming_xpath.StreamingXPATH;
 import org.apache.synapse.util.streaming_xpath.compiler.exception.StreamingXPATHCompilerException;
 import org.apache.synapse.util.streaming_xpath.custom.components.ParserComponent;
@@ -363,12 +367,22 @@ public class SynapseXPath extends SynapsePath {
             Object result = null;
             org.apache.axis2.context.MessageContext axis2MC =null;
 
-            if (!forceDisableStreamXpath && "true".equals(enableStreamingXpath)&& streamingXPATH != null && (((Axis2MessageContext)synCtx).getEnvelope() == null ||  ((Axis2MessageContext)synCtx).getEnvelope().getBody().getFirstElement() == null)) {
+            if (!forceDisableStreamXpath && "true".equals(enableStreamingXpath) && streamingXPATH != null &&
+                    (((Axis2MessageContext) synCtx).getEnvelope() == null ||
+                            ((Axis2MessageContext) synCtx).getEnvelope().getBody().getFirstElement() == null)) {
                 try {
-                    axis2MC = ((Axis2MessageContext)synCtx).getAxis2MessageContext();//((Axis2MessageContext) context).getAxis2MessageContext();
-                    inputStream=getMessageInputStreamPT(axis2MC);
+                    axis2MC = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+                    String contentType = (String) axis2MC.getProperty(SynapseConstants.AXIS2_PROPERTY_CONTENT_TYPE);
+                    if (!isStreamingXpathSupportedContentType(contentType) &&
+                            !Boolean.TRUE.equals(PassThroughConstants.MESSAGE_BUILDER_INVOKED)) {
+                        RelayUtils.buildMessage(axis2MC);
+                    } else {
+                        inputStream = getMessageInputStreamPT(axis2MC);
+                    }
+                } catch (XMLStreamException e) {
+                    handleException("Error occurred while building the message from the message context", e);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.error("Error occurred while obtaining input stream from the message context", e);
                 }
                 if (inputStream != null) {
                     try {
@@ -640,6 +654,19 @@ public class SynapseXPath extends SynapsePath {
         OMFactory doomFactory = DOOMAbstractFactory.getOMFactory();
         StAXOMBuilder doomBuilder = new StAXOMBuilder(doomFactory, llomReader);
         return doomBuilder.getDocumentElement();
+    }
+
+    /**
+     * Checks whether Streaming Xpath supported Content-Type
+     *
+     * @param contentType Content-Type string
+     * @return true if Content-Type is Streaming Xpath supported.
+     */
+    private boolean isStreamingXpathSupportedContentType(String contentType) {
+        return contentType != null &&
+                (contentType.indexOf(SOAP11Constants.SOAP_11_CONTENT_TYPE) != -1 ||
+                        contentType.indexOf(SOAP12Constants.SOAP_12_CONTENT_TYPE) != -1 ||
+                        contentType.indexOf(SynapseConstants.XML_CONTENT_TYPE) != -1);
     }
 
 //    private InputStream getMessageInputStreamBR(MessageContext context) throws IOException {

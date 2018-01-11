@@ -696,7 +696,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
         getAspectConfiguration().setUniqueId(cloneId);
         if (endpointKey != null) {
             String childId = StatisticIdentityGenerator.getIdReferencingComponent(endpointKey, ComponentType.ENDPOINT, holder);
-            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.SEQUENCE, holder);
+            StatisticIdentityGenerator.reportingEndEvent(childId, ComponentType.ENDPOINT, holder);
         } else if (endpoint != null) {
             endpoint.setComponentStatisticsId(holder);
         }
