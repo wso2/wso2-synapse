@@ -137,7 +137,7 @@ public class TimeoutHandler extends TimerTask {
                             toRemove.add(key);
                         }
 
-                        if (callback.getTimeOutAction() == SynapseConstants.DISCARD_AND_FAULT) {
+                        if (callback.getTimeOutAction() != SynapseConstants.NONE) {
 
                             // activate the fault sequence of the current sequence mediator
                             MessageContext msgContext = callback.getSynapseOutMsgCtx();
