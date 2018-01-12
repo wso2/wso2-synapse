@@ -197,7 +197,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
      */
     private void scanFileOrDirectory(final PollTableEntry entry, String fileURI) {
         if (log.isDebugEnabled()) {
-            log.debug("Polling: " + fileURI);
+            log.debug("Polling: " + VFSUtils.maskURLPassword(fileURI));
         }
         if (entry.isClusterAware()) {
             boolean leader = true;
@@ -243,7 +243,7 @@ public class VFSTransportListener extends AbstractPollingTransportListener<PollT
 
         //TODO : Trying to make the correct URL out of the malformed one.
         if(fileURI.contains("vfs:")){
-            fileURI=fileURI.substring(fileURI.indexOf("vfs:")+4);
+            fileURI = fileURI.substring(fileURI.indexOf("vfs:") + 4);
         }
 
         if (log.isDebugEnabled()) {
