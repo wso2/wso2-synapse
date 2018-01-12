@@ -177,10 +177,10 @@ public class ValidateMediatorTest extends TestCase {
         validate.addChild(testMediator);
         validate.mediate(synCtx);
         if (expectFail) {
-            assertTrue("Expected ValidateMediator to trigger fail sequence",
+            assertTrue("Expected ValidateMediator to trigger on-fail sequence",
                     onFailInvoked.intValue() == 1);
         } else {
-            assertTrue("ValidateMediator unexpectedly triggered fail sequence",
+            assertTrue("ValidateMediator unexpectedly triggered on-fail sequence",
                     onFailInvoked.intValue() == 0);
         }
     }
@@ -252,6 +252,28 @@ public class ValidateMediatorTest extends TestCase {
                 .setBodyFromString(IN_VALID_ENVELOPE).build();
 
         // test validate mediator, with static enveope
+        test(validate, synCtx, true);
+    }
+
+    /**
+     * This method tests the mediator when an invalid source xpath is given.
+     * Test gets passed if mediator invokes on-fail sequence.
+     * @throws Exception
+     */
+    public void testValidateMediatorInvalidSource() throws Exception {
+        // create a validate mediator
+        ValidateMediator validate = new ValidateMediator();
+
+        // set the schema url, invalid source xpath and any name spaces
+        validate.setSchemaKeys(createKeyListFromStaticKey("xsd-key-1"));
+        validate.setSource(createXPath("//m0:CheckPriceRequest/m0:price"));
+
+        MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
+                .addFileEntry("xsd-key-1", "./../../repository/conf/sample/resources/validate/validate.xsd")
+                .setBodyFromString(VALID_ENVELOPE).build();
+
+        // test validate mediator, with static envelope
         test(validate, synCtx, true);
     }
 
@@ -345,6 +367,29 @@ public class ValidateMediatorTest extends TestCase {
                 .setJsonBodyFromString(INVALID_JSON_MESSAGE1).build();
 
         // test validate mediator, with static enveope
+        test(validate, synCtx, true);
+    }
+
+    /**
+     * This method tests the mediator when an invalid source json-path is given.
+     * Test gets passed if mediator invokes on-fail sequence.
+     * @throws Exception
+     */
+    public void testValidateMediatorJSONSchemaWithInvalidSourceValidCase() throws Exception {
+        // create a validate mediator
+        ValidateMediator validate = new ValidateMediator();
+
+        // set the schema url, source json-path and any name spaces
+        validate.setSchemaKeys(createKeyListFromStaticKey("JSON-key"));
+        // set invalid json-path
+        validate.setSource(createJSONPath("$.msg.get"));
+
+        MessageContext synCtx = new TestMessageContextBuilder()
+                .setRequireAxis2MessageContext(true)
+                .addFileEntry("JSON-key", "./../../repository/conf/sample/resources/validate/StockQuoteSchema.json")
+                .setJsonBodyFromString(VALID_JSON_MESSAGE1).build();
+
+        // test validate mediator, with static envelope
         test(validate, synCtx, true);
     }
 

@@ -311,13 +311,8 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                         synCtx.setProperty(SynapseConstants.ERROR_DETAIL, "Error while validating Json message "
                                 + errorMessage);
                     }
-                    // super.mediate() invokes the "on-fail" sequence of mediators
-                    ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
-                    boolean result = super.mediate(synCtx);
-                    if (result) {
-                        ContinuationStackManager.removeReliantContinuationState(synCtx);
-                    }
-                    return result;
+                    // invokes the "on-fail" sequence of mediator
+                    return invokeOnFailSequence(synCtx);
                 }
             } catch (ProcessingException | IOException e) {
                 String msg = "";
@@ -327,8 +322,39 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                 handleException("Error while validating the JSON Schema" + msg, e, synCtx);
             }
         } else {
-            // Input source for the validation
-            Source validateSrc = getValidationSource(synCtx, synLog);
+
+            Source validateSrc;
+            try {
+                // Input source for the validation
+                validateSrc = getValidationSource(synCtx, synLog);
+
+            } catch (SynapseException e) {
+                /* Catches the exception here to forward to 'on-fail' sequence.
+                   The 'on-fail' sequence will get invoked when the given xpath source is not available
+                   in the message.
+                 */
+
+                String errorMessage = "Error occurred while accessing source element: " + source;
+
+                if (synLog.isTraceOrDebugEnabled()) {
+                    String msg = "Error occurred while accessing source element : " + source +
+                            "with error : '" + e.getMessage() + "'. Executing 'on-fail' sequence";
+                    synLog.traceOrDebug(msg);
+
+                    // write a warning to the service log
+                    synCtx.getServiceLog().warn(msg);
+
+                    if (synLog.isTraceTraceEnabled()) {
+                        synLog.traceTrace("Failed message envelope : " + synCtx.getEnvelope());
+                    }
+                }
+
+                synCtx.setProperty(SynapseConstants.ERROR_MESSAGE, errorMessage);
+                synCtx.setProperty(SynapseConstants.ERROR_DETAIL, e.getMessage());
+
+                // invokes the "on-fail" sequence of mediator
+                return invokeOnFailSequence(synCtx);
+            }
 
             // flag to check if we need to initialize/re-initialize the schema
             boolean reCreate = false;
@@ -470,13 +496,8 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
                     synCtx.setProperty(SynapseConstants.ERROR_DETAIL,
                                        FaultHandler.getStackTrace(errorHandler.getSaxParseException()));
 
-                    // super.mediate() invokes the "on-fail" sequence of mediators
-                    ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
-                    boolean result = super.mediate(synCtx);
-                    if (result) {
-                        ContinuationStackManager.removeReliantContinuationState(synCtx);
-                    }
-                    return result;
+                    // invokes the "on-fail" sequence of the mediator
+                    return invokeOnFailSequence(synCtx);
                 }
             } catch (SAXException e) {
                 handleException("Error validating " + source + " element", e, synCtx);
@@ -550,6 +571,20 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
             handleException(msg, e, synCtx);
         }
     }
+
+    /**
+     * This method invokes the on-fail sequence of the mediator.
+     * @param synCtx the current message for mediation
+     * @return true if further mediation should continue
+     */
+    private boolean invokeOnFailSequence(MessageContext synCtx) {
+        ContinuationStackManager.addReliantContinuationState(synCtx, 0, getMediatorPosition());
+        boolean result = super.mediate(synCtx);
+        if (result) {
+            ContinuationStackManager.removeReliantContinuationState(synCtx);
+        }
+        return result;
+    }
     
     /**
      * Get the validation Source for the message context
@@ -558,20 +593,12 @@ public class ValidateMediator extends AbstractListMediator implements FlowContin
      * @param synLog  SynapseLog instance
      * @return the validation Source for the current message
      */
-    private Source getValidationSource(MessageContext synCtx, SynapseLog synLog) {
-
-        try {
-            OMNode validateSource = source.selectOMNode(synCtx, synLog);
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebug("Validation source : " + validateSource.toString());
-            }
-
-            return AXIOMUtils.asSource(validateSource);
-
-        } catch (Exception e) {
-            handleException("Error accessing source element : " + source, e, synCtx);
+    private Source getValidationSource(MessageContext synCtx, SynapseLog synLog) throws SynapseException {
+        OMNode validateSource = source.selectOMNode(synCtx, synLog);
+        if (synLog.isTraceOrDebugEnabled()) {
+            synLog.traceOrDebug("Validation source : " + validateSource.toString());
         }
-        return null; // never reaches here
+        return AXIOMUtils.asSource(validateSource);
     }
 
     /**
