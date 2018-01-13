@@ -76,4 +76,9 @@ public final class ForwardingProcessorConstants {
      * used for forward in case of scheduled message processor deactivation
      */
     public static final String DEACTIVATE_SEQUENCE = "message.processor.deactivate.sequence";
+
+    /**
+     * Message store to keep un-processable messages of message processor
+     */
+    public static final String FAIL_MESSAGES_STORE = "message.processor.failMessagesStore";
 }

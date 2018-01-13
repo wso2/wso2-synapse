@@ -25,5 +25,5 @@ public interface Task {
     /**
      * Execute method will be invoked by the QuartzJOb.
      */
-    public void execute();
+    void execute();
 }

@@ -21,8 +21,10 @@ package org.apache.synapse.message.store.impl.jms;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.message.MessageProducer;
+import org.apache.synapse.message.StoreForwardException;
 import org.apache.synapse.message.store.impl.commons.MessageConverter;
 import org.apache.synapse.message.store.impl.commons.StorableMessage;
 
@@ -125,7 +127,11 @@ public class JmsProducer implements MessageProducer {
                               + ". Could not store message to store ["
                               + store.getName() + "]. Error:" + throwable.getLocalizedMessage();
             logger.error(errorMsg, throwable);
-            store.closeWriteConnection();
+            try {
+                store.closeWriteConnection();
+            } catch (JMSException e) {
+                logger.error("Error while closing connection  to store " + store.getName(), e);
+            }
             connection = null;
             if (logger.isDebugEnabled()) {
                 logger.debug(getId() + ". Ignored MessageID : " + synCtx.getMessageID());
@@ -141,7 +147,12 @@ public class JmsProducer implements MessageProducer {
     }
 
     public boolean cleanup() {
-        return store.cleanup(null, session, false);
+        try {
+            store.cleanup(null, session);
+            return true;
+        } catch (JMSException e) {
+            throw new SynapseException("Error while cleaning up connection to store " + store.getName(), e);
+        }
     }
 
     public JmsProducer setConnection(Connection connection) {
