@@ -34,12 +34,17 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.commons.throttle.core.*;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 
@@ -347,6 +352,41 @@ public class ThrottleMediatorTest extends TestCase {
 
     }
 
+    /**
+     * Test the XForwarded header based throttling.
+     * @throws Exception
+     */
+    public void testMediateWithXForwardedHeader() throws Exception {
+        ByteArrayInputStream in = new ByteArrayInputStream(NEW_POLICY.getBytes());
+        StAXOMBuilder build = new StAXOMBuilder(in);
+        ThrottleTestMediator throttleMediator = new ThrottleTestMediator();
+        throttleMediator.setInLinePolicy(build.getDocumentElement());
+        MessageContext synCtx = createLightweightSynapseMessageContext("<empty/>");
+        synCtx.setProperty(REMOTE_ADDR, "192.168.5.500");
+        Map<String, String> headers = new TreeMap<String, String>(new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                return o1.compareToIgnoreCase(o2);
+            }
+        });
+        headers.put(NhttpConstants.HEADER_X_FORWARDED_FOR, "192.168..215");
+        SynapseConfiguration synCfg = new SynapseConfiguration();
+        synCtx.setConfiguration(synCfg);
+        for (int i = 0; i < 6; i++) {
+            try {
+                throttleMediator.mediate(synCtx);
+                Thread.sleep(1000);
+            } catch (Exception e) {
+
+                if (i == 3) {
+                    assertTrue(e.getMessage().lastIndexOf("IP_BASE") > 0);
+                } else if (i == 4) {
+                    assertTrue(e.getMessage().lastIndexOf("IP_BASE") > 0);
+                } else if (i == 5) {
+                    assertTrue(e.getMessage().lastIndexOf("IP_BASE") > 0);
+                }
+            }
+        }
+    }
 
     class ConcurrentMediationFlow extends Thread {
         private ConcurrencyThrottleTestMediator throttleMediator;
