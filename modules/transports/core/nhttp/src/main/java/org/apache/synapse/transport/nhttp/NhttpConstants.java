@@ -180,6 +180,9 @@ public class NhttpConstants {
 	
 	/** Ref X-Forwaded-For header*/
     public static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
+
+    /** Ref X-Forwaded-Host header */
+    public static final String HEADER_X_FORWARDED_HOST = "X-Forwarded-Host";
     
     /** Ref X-Originating-IP Form 1*/
     public static final String HEADER_X_ORIGINATING_IP_FORM_1 = "X-Originating-IP";
