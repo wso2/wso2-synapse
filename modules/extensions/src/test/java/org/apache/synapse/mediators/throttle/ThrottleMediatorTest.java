@@ -377,14 +377,10 @@ public class ThrottleMediatorTest extends TestCase {
                 Thread.sleep(1000);
             } catch (Exception e) {
 
-                if (i == 3) {
-                    assertTrue(e.getMessage().lastIndexOf("IP_BASE") > 0);
-                } else if (i == 4) {
-                    assertTrue(e.getMessage().lastIndexOf("IP_BASE") > 0);
-                } else if (i == 5) {
-                    assertTrue(e.getMessage().lastIndexOf("IP_BASE") > 0);
+                if (i == 3 || i == 4 || i == 5) {
+                    assertTrue("X-forwarded header based throttling failed",
+                            e.getMessage().lastIndexOf("IP_BASE") > 0);
                 }
-            }
         }
     }
 
