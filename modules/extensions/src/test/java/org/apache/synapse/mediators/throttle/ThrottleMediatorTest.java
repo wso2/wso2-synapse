@@ -357,29 +357,36 @@ public class ThrottleMediatorTest extends TestCase {
      * @throws Exception
      */
     public void testMediateWithXForwardedHeader() throws Exception {
-        ByteArrayInputStream in = new ByteArrayInputStream(NEW_POLICY.getBytes());
-        StAXOMBuilder build = new StAXOMBuilder(in);
-        in.close();
-        ThrottleTestMediator throttleMediator = new ThrottleTestMediator();
-        throttleMediator.setInLinePolicy(build.getDocumentElement());
-        MessageContext synCtx = createLightweightSynapseMessageContext("<empty/>");
-        synCtx.setProperty(REMOTE_ADDR, "192.168.5.500");
-        Map<String, String> headers = new TreeMap<String, String>(new Comparator<String>() {
-            public int compare(String o1, String o2) {
-                return o1.compareToIgnoreCase(o2);
-            }
-        });
-        headers.put(NhttpConstants.HEADER_X_FORWARDED_FOR, "192.168..215");
-        SynapseConfiguration synCfg = new SynapseConfiguration();
-        synCtx.setConfiguration(synCfg);
-        for (int i = 0; i < 6; i++) {
-            try {
-                throttleMediator.mediate(synCtx);
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                if (i == 3 || i == 4 || i == 5) {
-                    assertTrue("X-forwarded header based throttling failed", e.getMessage().lastIndexOf("IP_BASE") > 0);
+        ByteArrayInputStream in = null;
+        try {
+            in = new ByteArrayInputStream(NEW_POLICY.getBytes());
+            StAXOMBuilder build = new StAXOMBuilder(in);
+
+            ThrottleTestMediator throttleMediator = new ThrottleTestMediator();
+            throttleMediator.setInLinePolicy(build.getDocumentElement());
+            MessageContext synCtx = createLightweightSynapseMessageContext("<empty/>");
+            synCtx.setProperty(REMOTE_ADDR, "192.168.5.500");
+            Map<String, String> headers = new TreeMap<String, String>(new Comparator<String>() {
+                public int compare(String o1, String o2) {
+                    return o1.compareToIgnoreCase(o2);
                 }
+            });
+            headers.put(NhttpConstants.HEADER_X_FORWARDED_FOR, "192.168..215");
+            SynapseConfiguration synCfg = new SynapseConfiguration();
+            synCtx.setConfiguration(synCfg);
+            for (int i = 0; i < 6; i++) {
+                try {
+                    throttleMediator.mediate(synCtx);
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                    if (i == 3 || i == 4 || i == 5) {
+                        assertTrue("X-forwarded header based throttling failed", e.getMessage().lastIndexOf("IP_BASE") > 0);
+                    }
+                }
+            }
+        } finally {
+            if (in != null) {
+                in.close();
             }
         }
     }
