@@ -359,6 +359,7 @@ public class ThrottleMediatorTest extends TestCase {
     public void testMediateWithXForwardedHeader() throws Exception {
         ByteArrayInputStream in = new ByteArrayInputStream(NEW_POLICY.getBytes());
         StAXOMBuilder build = new StAXOMBuilder(in);
+        in.close();
         ThrottleTestMediator throttleMediator = new ThrottleTestMediator();
         throttleMediator.setInLinePolicy(build.getDocumentElement());
         MessageContext synCtx = createLightweightSynapseMessageContext("<empty/>");
@@ -376,11 +377,10 @@ public class ThrottleMediatorTest extends TestCase {
                 throttleMediator.mediate(synCtx);
                 Thread.sleep(1000);
             } catch (Exception e) {
-
                 if (i == 3 || i == 4 || i == 5) {
-                    assertTrue("X-forwarded header based throttling failed",
-                            e.getMessage().lastIndexOf("IP_BASE") > 0);
+                    assertTrue("X-forwarded header based throttling failed", e.getMessage().lastIndexOf("IP_BASE") > 0);
                 }
+            }
         }
     }
 
