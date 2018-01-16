@@ -19,7 +19,6 @@
 
 package org.apache.synapse.core.axis2;
 
-import org.apache.axiom.om.OMException;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
 import org.apache.axis2.addressing.AddressingConstants;
@@ -32,7 +31,6 @@ import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.CallbackReceiver;
 import org.apache.axis2.wsdl.WSDLConstants;
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.nio.NHttpServerConnection;
@@ -40,7 +38,6 @@ import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.ServerContextInformation;
 import org.apache.synapse.SynapseConstants;
-import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
@@ -56,12 +53,11 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.Pipe;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
-import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 import org.apache.synapse.util.ConcurrencyThrottlingUtils;
+import org.apache.synapse.util.ResponseAcceptEncodingProcessor;
 
 import java.util.Stack;
 import java.util.Timer;
-import java.util.regex.Pattern;
 
 /**
  * This is the message receiver that receives the responses for outgoing messages sent out
@@ -279,14 +275,13 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
                     log.debug("[Failed Request Message ID : " + messageID + "]" +
                             " [New to be Retried Request Message ID : " +
                             synapseOutMsgCtx.getMessageID() + "]");
-                }  
-                
-                int errorCode = (Integer)response.getProperty(SynapseConstants.ERROR_CODE);
+                }
 
+                int errorCode = (Integer)response.getProperty(SynapseConstants.ERROR_CODE);
                 //If a timeout has occured and the timeout action of the callback is to discard the message
-                if(errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT &&
-                   callback.getTimeOutAction() == SynapseConstants.DISCARD){
-                        //Do not execute any fault sequences. Discard message
+                if (errorCode == SynapseConstants.NHTTP_CONNECTION_TIMEOUT && callback.getTimeOutAction()
+                        == SynapseConstants.DISCARD) {
+                    //Do not execute any fault sequences. Discard message
                         if(log.isWarnEnabled()){
                             log.warn("Synapse timed out for the request with Message ID : " + messageID +
                                       ". Ignoring fault handlers since the timeout action is DISCARD");
