@@ -19,6 +19,7 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.mediators.Value;
@@ -75,6 +76,10 @@ public class ValidateMediatorSerializer extends AbstractListMediatorSerializer {
         }
         OMElement onFail = fac.createOMElement("on-fail", synNS, validate);
         serializeChildren(onFail, mediator.getList());
+
+        OMAttribute cacheSchemaAtt = fac.createOMAttribute("cache-schema", nullNS,
+                String.valueOf(mediator.isCacheSchema()));
+        validate.addAttribute(cacheSchemaAtt);
 
         return validate;
     }

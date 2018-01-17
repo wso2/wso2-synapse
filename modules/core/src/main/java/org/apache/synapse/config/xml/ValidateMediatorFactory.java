@@ -35,7 +35,7 @@ import java.util.*;
  * <p>
  * Configuration syntax:
  * <pre>
- * &lt;validate [source="xpath"]>
+ * &lt;validate [source="xpath"] [cache-schema = "true|false"]>
  *   &lt;schema key="string">+
  *   &lt;resource location="&lt;external-schema>" key="string">+
  *   &lt;feature name="&lt;validation-feature-name>" value="true|false"/>
@@ -50,6 +50,7 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
     private static final QName VALIDATE_Q = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "validate");
     private static final QName ON_FAIL_Q  = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "on-fail");
     private static final QName SCHEMA_Q   = new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "schema");
+    private static final QName ATT_CACHE_SCHEMA = new QName("cache-schema");
 
     public Mediator createSpecificMediator(OMElement elem, Properties properties) {
 
@@ -95,6 +96,16 @@ public class ValidateMediatorFactory extends AbstractListMediatorFactory {
             } catch (JaxenException e) {
                 handleException("Invalid XPath expression specified for attribute 'source'", e);
             }
+        }
+
+        // process schema cacheability.
+        OMAttribute attSchemaCache = elem.getAttribute(ATT_CACHE_SCHEMA);
+        if (attSchemaCache != null) {
+            final boolean cacheSchema = Boolean.parseBoolean(attSchemaCache.getAttributeValue());
+            if (log.isDebugEnabled()) {
+                log.debug("Schema cached: " + cacheSchema);
+            }
+            validateMediator.setCacheSchema(cacheSchema);
         }
 
         //process external schema resources
