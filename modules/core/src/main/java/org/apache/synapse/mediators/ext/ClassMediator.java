@@ -24,10 +24,14 @@ import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.config.xml.PropertyHelper;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.apache.synapse.mediators.MediatorProperty;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,8 +49,8 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 
     /** The reference to the actual class that implments the Mediator interface */
     private Mediator mediator = null;
-    /** A list of simple properties that would be set on the class before being used */
-    private final Map<String, Object> properties = new HashMap<String, Object>();
+    /** The holder for the custom properties */
+    private final List<MediatorProperty> properties = new ArrayList<MediatorProperty>();
 
     /**
 	 * Don't use a new instance... do one instance of the object per instance of
@@ -81,7 +85,12 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
         boolean result;
 
         try {
-			result = mediator.mediate(synCtx);
+            for (MediatorProperty property : properties) {
+                String propertyValue =
+                        property.getValue() != null ? property.getValue() : property.getEvaluatedExpression(synCtx);
+                PropertyHelper.setInstanceProperty(property.getName(), propertyValue, mediator);
+            }
+            result = mediator.mediate(synCtx);
         } catch (Exception e) {
             // throw Synapse Exception for any exception in class meditor
             // so that the fault handler will be invoked
@@ -124,11 +133,15 @@ public class ClassMediator extends AbstractMediator implements ManagedLifecycle 
 		return mediator;
 	}
 
-    public void addProperty(String name, Object value) {
-        properties.put(name, value);
+    public void addProperty(MediatorProperty property) {
+        properties.add(property);
     }
 
-    public Map getProperties() {
+    public void addAllProperties(List<MediatorProperty> propertyList) {
+	    properties.addAll(propertyList);
+    }
+
+    public List<MediatorProperty> getProperties() {
         return this.properties;
     }
 

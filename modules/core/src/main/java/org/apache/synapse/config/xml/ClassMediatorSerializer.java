@@ -51,20 +51,7 @@ public class ClassMediatorSerializer extends AbstractMediatorSerializer  {
             handleException("Invalid class mediator. The class name is required");
         }
 
-        Iterator itr = mediator.getProperties().keySet().iterator();
-        while(itr.hasNext()) {
-            String propName = (String) itr.next();
-            Object o = mediator.getProperties().get(propName);
-            OMElement prop = fac.createOMElement(PROP_Q, clazz);
-            prop.addAttribute(fac.createOMAttribute("name", nullNS, propName));
-
-            if (o instanceof String) {
-                prop.addAttribute(fac.createOMAttribute("value", nullNS, (String) o));
-            } else {
-                prop.addChild((OMNode) o);
-            }
-            clazz.addChild(prop);
-        }
+        super.serializeProperties(clazz, mediator.getProperties());
 
         return clazz;
     }
