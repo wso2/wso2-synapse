@@ -42,6 +42,7 @@ import org.apache.http.Header;
 import org.apache.synapse.transport.nhttp.NHttpConfiguration;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 
+import javax.xml.namespace.QName;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -63,6 +64,7 @@ public class RESTUtil {
             new RequestURIOperationDispatcher();
     private static Object dispatcherInstance = null;
     private static Method invokeMethod = null;
+
 
     static {
         String extendedURIBasedDispatcher = System.getProperty("ei.extendedURIBasedDispatcher");
@@ -298,10 +300,16 @@ public class RESTUtil {
 				axisService = msgContext.getConfigurationContext().getAxisConfiguration().getService(defaultSvcName);
 			}
 			msgContext.setAxisService(axisService);
-		} else {
+            //When receiving rest request axis2 checks whether axis operation is set in the message context to build
+            // the request message. Therefore we have to set axis operation before we handed over request to axis
+            // engine. If axis operation is already set in the message context take it from there. If not take the
+            // axis operation from axis service.
+            setAxisOperation(msgContext, axisService);
+        } else {
             String multiTenantDispatchService = NHttpConfiguration.getInstance().getRESTDispatchService();
             axisService = msgContext.getConfigurationContext().getAxisConfiguration().getService(multiTenantDispatchService);
             msgContext.setAxisService(axisService);
+            setAxisOperation(msgContext, axisService);
         }
     }
     
@@ -335,5 +343,48 @@ public class RESTUtil {
                 msgContext.setAxisOperation(axisOperation);
             }
         }
+    }
+
+    /**
+     * Sets the axis operation to the message context. If axis operation is already set in the message context take it
+     * from there. If not take the axis operation from axis service.
+     *
+     * @param msgContext  messageContext message context
+     * @param axisService axis service
+     */
+    private static void setAxisOperation(MessageContext msgContext, AxisService axisService) {
+        if (msgContext.getAxisOperation() == null && axisService != null) {
+            AxisOperation axisOperation = findOperation(axisService, msgContext);
+            msgContext.setAxisOperation(axisOperation);
+        }
+    }
+
+    /**
+     * Get the axis operation from the operation name used by the Synapse service (for message mediation).
+     *
+     * @param svc axis service
+     * @param mc  messageContext message context
+     * @return axis operation for the message context
+     */
+    public static AxisOperation findOperation(AxisService svc, MessageContext mc) {
+        AxisOperation operation = svc.getOperation(NhttpConstants.SYNAPSE_OPERATION_NAME);
+        if (operation == null && mc.getAxisService() != null) {
+            operation = processOperationValidation(svc);
+        }
+        return operation;
+    }
+
+    /**
+     * Get the default mediation operation from axis service.
+     *
+     * @param svc axis service which should check for axis operation
+     * @return axis operation if service contains default mediate operation otherwise null
+     */
+    private static AxisOperation processOperationValidation(AxisService svc) {
+        Object operationObj = svc.getParameterValue(NhttpConstants.DEFAULT_MEDIATE_OPERATION);
+        if (operationObj != null) {
+            return (AxisOperation) operationObj;
+        }
+        return null;
     }
 }
