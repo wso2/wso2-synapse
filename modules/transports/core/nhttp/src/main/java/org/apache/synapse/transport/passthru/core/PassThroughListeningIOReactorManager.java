@@ -25,6 +25,7 @@ import org.apache.http.nio.reactor.ListenerEndpoint;
 import org.apache.http.nio.reactor.ListeningIOReactor;
 import org.apache.log4j.Logger;
 import org.apache.synapse.transport.http.conn.ServerConnFactory;
+import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.synapse.transport.passthru.ServerIODispatch;
 import org.apache.synapse.transport.passthru.config.PassThroughConfiguration;
 import org.apache.synapse.transport.passthru.config.SourceConfiguration;
@@ -34,6 +35,7 @@ import org.apache.synapse.transport.passthru.core.ssl.SSLConnectionUtils;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,6 +100,10 @@ public class PassThroughListeningIOReactorManager {
 
     private AtomicBoolean isSharedSSLIOReactorInitiated;
 
+    /**
+     * Default value for verification timeout to validate whether port is closed successfully.
+     */
+    private static final int DEFAULT_PORT_CLOSE_VERIFY_TIMEOUT = 10;
 
     private PassThroughListeningIOReactorManager() {
         portServerHandlerMapper = new ConcurrentHashMap<Integer, NHttpServerEventHandler>();
@@ -277,10 +283,14 @@ public class PassThroughListeningIOReactorManager {
      * @return Is endpoint closed
      */
     public boolean closeDynamicPTTEndpoint(int port) {
+        int portCloseVerifyTimeout =
+                System.getProperty(PassThroughConstants.SYSTEMPROP_PORT_CLOSE_VERIFY_TIMEOUT) == null ?
+                        DEFAULT_PORT_CLOSE_VERIFY_TIMEOUT :
+                        Integer.parseInt(
+                                System.getProperty(PassThroughConstants.SYSTEMPROP_PORT_CLOSE_VERIFY_TIMEOUT));
         try {
             log.info("Closing Endpoint Listener for port "+port);
             dynamicPTTListeningEndpointMapper.get(port).close();
-            log.info("Successfully closed Endpoint Listener for port "+port);
         } catch (Exception e) {
             log.error("Cannot close  Endpoint relevant to port " + port, e);
             return false;
@@ -288,7 +298,27 @@ public class PassThroughListeningIOReactorManager {
             if(serverConnectionFactoryMapper.containsKey(port)){
                 serverConnectionFactoryMapper.remove(port);
             }
-                dynamicPTTListeningEndpointMapper.remove(port);
+
+            /*
+             * validate whether port is closed successfully. Here we wait till port is successfully get closed
+             * iteratively trying to bind a ServerSocket to the relevant port. As default time check for 10s and log
+             * warning and move on.
+             *
+             * We need to do this since even though we close the
+             * org.apache.http.nio.reactor.ListenerEndpoint above, on some operating systems it takes time to release
+             * the port. And at redeployment of a inbound endpoint redeployment happens immediately and in some environments
+             * redeployment fails due to this issue.
+             *
+             * If 10s timeout is not enough (depends on the environment) the timeout can be tuned using
+             * "synapse.transport.portCloseVerifyTimeout" system property
+             */
+            if (isPortCloseSuccess(port, portCloseVerifyTimeout)) {
+                log.info("Successfully closed Endpoint Listener for port " + port);
+            } else {
+                log.warn("Port close verify timeout " + portCloseVerifyTimeout
+                        + "s exceeded. Endpoint Listener for port " + port + " still bound to the ListenerEndpoint.");
+            }
+            dynamicPTTListeningEndpointMapper.remove(port);
         }
         return true;
     }
@@ -652,5 +682,40 @@ public class PassThroughListeningIOReactorManager {
      */
     public boolean isDynamicEndpointRunning(int port) {
         return dynamicPTTListeningEndpointMapper.get(port) != null ;
+    }
+
+    /**
+     * Function to wait and verify iteratively whether port is successfully closed, till timeout reaches
+     *
+     * @param port target port
+     * @param portCloseVerifyTimeout iterative verification timeout
+     * @return
+     */
+    private boolean isPortCloseSuccess(int port, int portCloseVerifyTimeout) {
+        boolean portCloseSuccess = false;
+        for (int i = 0; i < portCloseVerifyTimeout; i++) {
+            try {
+                if (log.isDebugEnabled()) {
+                    log.debug("Verify port [" + port +"] close status. Attempt: " + i);
+                }
+                //Try to bind ServerSocket to port and verify whether port is successfully closed
+                ServerSocket srv = new ServerSocket(port);
+                srv.close();
+                srv = null;
+                //If reach here, port close successful
+                portCloseSuccess = true;
+                break;
+            } catch (IOException e) {
+                if (log.isDebugEnabled()) {
+                    log.debug("The port " + port + " is not closed yet, verify again after waiting 1s", e);
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException interruptException) {
+                    //log and ignore
+                }
+            }
+        }
+        return portCloseSuccess;
     }
 }
