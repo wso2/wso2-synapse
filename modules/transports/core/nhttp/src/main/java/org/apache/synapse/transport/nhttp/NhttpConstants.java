@@ -19,6 +19,8 @@
 
 package org.apache.synapse.transport.nhttp;
 
+import javax.xml.namespace.QName;
+
 public class NhttpConstants {
     public static final String TRUE = "TRUE";
     /**
@@ -262,4 +264,15 @@ public class NhttpConstants {
     public static final String CONNECTION_DROPPED = "CONNECTION_DROPPED";
 
     public static final int DEFAULT_SOCKET_TIMEOUT = 60000;
+
+    /**
+     * The operation name used by the Synapse service (for message mediation)
+     */
+    public static final QName SYNAPSE_OPERATION_NAME = new QName("mediate");
+
+    /**
+     * The default operation name used by the axis service
+     */
+    public static final String DEFAULT_MEDIATE_OPERATION = "_default_mediate_operation_";
+
 }
