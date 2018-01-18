@@ -213,8 +213,13 @@ public class PassThroughConstants {
     public static final String MESSAGE_SIZE_VALIDATION_SUM = "MESSAGE_SIZE_VALIDATION_SUM";
     public static final String SOURCE_CONNECTION_DROPPED = "SOURCE_CONNECTION_DROPPED";
 
-    /**
+    /*
      * Denotes application/octet-stream content-type
      */
     public static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
+
+    /*
+     * System property to configure verification timeout (iterative verification) in seconds for port.
+     */
+    public static final String SYSTEMPROP_PORT_CLOSE_VERIFY_TIMEOUT = "synapse.transport.portCloseVerifyTimeout";
 }
