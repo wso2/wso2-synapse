@@ -53,10 +53,12 @@ import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.stream.XMLInputFactory;
