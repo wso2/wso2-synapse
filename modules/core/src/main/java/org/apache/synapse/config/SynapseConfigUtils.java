@@ -479,16 +479,19 @@ public class SynapseConfigUtils {
                                 "HostName verification disabled");
                     }
 
-                    connection.setHostnameVerifier(new javax.net.ssl.HostnameVerifier() {
-                        public boolean verify(String hostname, javax.net.ssl.SSLSession session) {
+                    HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                        @Override
+                        public boolean verify(String hostname, SSLSession sslSession) {
                             if (log.isTraceEnabled()) {
                                 log.trace("HostName verification disabled");
                                 log.trace("Host:   " + hostname);
-                                log.trace("Peer Host:  " + session.getPeerHost());
+                                log.trace("Peer Host:  " + sslSession.getPeerHost());
                             }
                             return true;
                         }
-                    });
+                    };
+                    connection.setHostnameVerifier(hostnameVerifier);
+
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("Using default HostName verifier...");
