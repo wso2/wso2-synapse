@@ -113,7 +113,11 @@ public class SourceResponse {
                 request.getConnection().getContext());
 
         if (statusLine != null) {
-            response.setStatusLine(version, status, statusLine);
+            if (versionChangeRequired) {
+                response.setStatusLine(version, status, statusLine);
+            } else {
+                response.setStatusLine(request.getVersion(), status, statusLine);
+            }
         } else if (versionChangeRequired){
         	response.setStatusLine(version, status);
         } else {
