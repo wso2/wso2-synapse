@@ -544,8 +544,7 @@ public final class JsonUtil {
         boolean isArray = false;
         boolean isValue = false;
         if (inputStream != null) {
-            InputStream json = toReadOnlyStream(inputStream);
-            messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
+            InputStream json = setJsonStream(messageContext, inputStream);
             // read ahead few characters to see if the stream is valid...
             boolean isEmptyPayload = true;
             boolean valid = false;
@@ -697,6 +696,18 @@ public final class JsonUtil {
             return elem;
         }
         return null;
+    }
+
+    /**
+     * Sets the input JSON stream as a property of the MessageContext
+     * @param messageContext the axis2MessageContext
+     * @param inputStream the JSON inputStream
+     * @return a readonly InputStream
+     */
+    public static InputStream setJsonStream(MessageContext messageContext, InputStream inputStream) {
+        InputStream json = toReadOnlyStream(inputStream);
+        messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
+        return json;
     }
 
     /**
