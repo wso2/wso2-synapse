@@ -85,7 +85,6 @@ final class JsonDataSource implements OMDataSource {
 
     public void serialize(XMLStreamWriter xmlWriter) throws XMLStreamException {
         XMLStreamReader reader = getReader();
-        xmlWriter.writeStartDocument();
         while (reader.hasNext()) {
             int x = reader.next();
             switch (x) {
@@ -117,7 +116,6 @@ final class JsonDataSource implements OMDataSource {
                     xmlWriter.writeEndElement();
                     break;
                 case XMLStreamConstants.END_DOCUMENT:
-                    xmlWriter.writeEndDocument();
                     break;
                 case XMLStreamConstants.SPACE:
                     break;
@@ -138,9 +136,7 @@ final class JsonDataSource implements OMDataSource {
                     throw new OMException();
             }
         }
-        xmlWriter.writeEndDocument();
         xmlWriter.flush();
-        xmlWriter.close();
     }
 
     public XMLStreamReader getReader() throws XMLStreamException {

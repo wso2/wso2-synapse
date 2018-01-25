@@ -47,13 +47,8 @@ public class JsonDataSourceTest extends TestCase {
                                             "<url>http://org.wso2.json/32_32</url>" +
                                             "</jsonObject>";
 
-    public static final String expectedXMLWithDecl = "<?xml version='1.0' encoding='UTF-8'?>" +
-                                            "<jsonObject>" +
-                                            "<id>0001</id>" +
-                                            "<ok>true</ok>" +
-                                            "<amount>5250</amount>" +
-                                            "<url>http://org.wso2.json/32_32</url>" +
-                                            "</jsonObject>";
+    public static final String expectedXMLWithDecl =
+            "<jsonObject><id>0001</id><ok>true</ok><amount>5250</amount><url>http://org.wso2.json/32_32</url></jsonObject>";
 
     public void testSerializeJson() throws FileNotFoundException, XMLStreamException {
         JsonDataSource jsonDataSource = createJsonDatasource();
