@@ -36,6 +36,7 @@ import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.commons.util.MiscellaneousUtil;
 import org.apache.synapse.config.Entry;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.deployers.SynapseArtifactDeploymentException;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.apache.synapse.mediators.Value;
 import org.mozilla.javascript.Context;
@@ -593,7 +594,14 @@ public class ScriptMediator extends AbstractMediator {
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.scriptEngine = engineManager.getEngineByName(NASHORN);
         } else {
-            this.scriptEngine = engineManager.getEngineByExtension(language);
+            try {
+                this.scriptEngine = engineManager.getEngineByExtension(language);
+            } finally {
+                if (scriptEngine == null ) {
+                    throw new SynapseArtifactDeploymentException("Failed to create ScriptMediator with language "
+                            + "attribute: " + language);
+                }
+            }
         }
 
         pool = new LinkedBlockingQueue<ScriptEngineWrapper>(poolSize);
