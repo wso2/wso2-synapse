@@ -20,6 +20,8 @@ package org.apache.synapse.transport.http.conn;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLEngine;
@@ -162,7 +164,16 @@ public class ClientSSLSetupHandler implements SSLSetupHandler {
     public void verify(IOSession iosession, SSLSession sslsession) throws SSLException {
         SocketAddress remoteAddress = iosession.getRemoteAddress();
         String address;
-        if (remoteAddress instanceof InetSocketAddress) {
+        String endpoint = (String) iosession.getAttribute(SynapseHTTPRequestFactory.ENDPOINT_URL);
+        if (endpoint != null && !endpoint.isEmpty()) {
+            try {
+                URI endpointURI = new URI(endpoint);
+                address = endpointURI.getHost();
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException("Invalid endpointURI: "+ endpoint, e);
+            }
+
+        } else if (remoteAddress instanceof InetSocketAddress) {
             address = ((InetSocketAddress) remoteAddress).getHostName();
         } else {
             address = remoteAddress.toString();
