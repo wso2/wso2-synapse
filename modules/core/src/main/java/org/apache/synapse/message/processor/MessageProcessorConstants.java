@@ -63,4 +63,19 @@ public final class MessageProcessorConstants {
      */
     public static final int INITIAL_EXECUTION_DELAY = 2000;
 
+    /**
+     * Constant to define maximum number of connection attempts to store
+     */
+    public static final String MAX_STORE_CONNECT_ATTEMPTS = "max.store.connection.attempts";
+
+    /**
+     * Constant to define connection retry interval to associated message store
+     */
+    public static final String STORE_CONNECTION_RETRY_INTERVAL = "store.connection.retry.interval";
+
+    /**
+     * Constant to identify an issue with connecting to store
+     */
+    public static final String STORE_CONNECTION_ERROR = "STORE_CONNECTION_ERROR";
+
 }
