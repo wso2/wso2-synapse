@@ -164,7 +164,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
             if (proxy != null) {
                 config.addProxyService(proxy.getName(), proxy);
             }
-        } catch (Exception e) {
+        } catch (Exception | NoClassDefFoundError e) {
             String msg = "Proxy Service configuration: " + elem.getAttributeValue((
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "name"))) + " cannot be built";
             handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_PROXY_SERVICES, msg, e);
@@ -481,7 +481,7 @@ public class SynapseXMLConfigurationFactory implements ConfigurationFactory {
         }
     }
 
-    private static void handleConfigurationError(String componentType, String msg, Exception e) {
+    private static void handleConfigurationError(String componentType, String msg, Throwable e) {
         if (SynapseConfigUtils.isFailSafeEnabled(componentType)) {
             log.warn(msg + " - Continue in fail-safe mode", e);
         } else {
