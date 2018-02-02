@@ -83,6 +83,8 @@ public class ResourceFactory {
                     handleException("Invalid or duplicate method definition for resource");
                 }
             }
+        } else {
+            handleException("API resource methods cannot be empty. Specify at least one method for each resource.");
         }
     }
 
