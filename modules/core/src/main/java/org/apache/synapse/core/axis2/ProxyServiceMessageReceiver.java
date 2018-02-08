@@ -262,6 +262,7 @@ public class ProxyServiceMessageReceiver extends SynapseMessageReceiver {
                 CloseEventCollector.tryEndFlow(synCtx, this.name, ComponentType.PROXYSERVICE,
                         statisticReportingIndex, true);
             }
+            doPostInjectUpdates(synCtx);
             if(synCtx.getEnvironment().isDebuggerEnabled()) {
                 SynapseDebugManager debugManager = synCtx.getEnvironment().getSynapseDebugManager();
                 debugManager.advertiseMediationFlowTerminatePoint(synCtx);
