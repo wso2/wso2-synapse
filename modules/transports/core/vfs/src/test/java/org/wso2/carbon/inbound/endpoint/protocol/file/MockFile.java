@@ -37,7 +37,7 @@ import java.io.OutputStream;
 /**
  * Mock file implementation
  */
-public class MockFile extends AbstractFileObject implements FileObject {
+public class MockFile extends AbstractFileObject {
 
     private static Log log = LogFactory.getLog(MockFile.class);
     private byte[] buff = { 't', 'e', 's', 't' };

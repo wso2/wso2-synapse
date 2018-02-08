@@ -44,11 +44,11 @@ public class VFSFileChannel implements AxisServiceConfigurator {
     }
 
     public EndpointReference getEndpointReference() throws Exception {
-        return new EndpointReference("vfs:" + requestFile.getAbsoluteFile().toURL());
+        return new EndpointReference("vfs:" + requestFile.getAbsoluteFile().toURI().toURL());
     }
 
     public void setupService(AxisService service, boolean isClientSide) throws Exception {
-        service.addParameter("transport.vfs.FileURI", "vfs:" + requestFile.toURL());
+        service.addParameter("transport.vfs.FileURI", "vfs:" + requestFile.toURI().toURL());
         service.addParameter("transport.PollInterval", "50ms");
         service.addParameter("transport.vfs.ActionAfterProcess", "DELETE");
     }

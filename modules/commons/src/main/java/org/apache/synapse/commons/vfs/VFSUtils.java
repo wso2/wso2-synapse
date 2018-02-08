@@ -477,7 +477,7 @@ public class VFSUtils {
 
         if (options.get(VFSConstants.FILE_TYPE) != null) {
             delegate.setConfigString(opts, options.get(VFSConstants.SCHEME), VFSConstants.FILE_TYPE,
-                    String.valueOf(getFileType(options.get(VFSConstants.FILE_TYPE))));
+                    options.get(VFSConstants.FILE_TYPE));
         }
 
         return opts;
