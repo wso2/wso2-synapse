@@ -100,24 +100,8 @@ public class Axis2Sender {
     public static void sendBack(org.apache.synapse.MessageContext smc) {
         Object responseStateObj = smc.getProperty(SynapseConstants.RESPONSE_STATE);
 
-        // Prevent two responses for a single request message
-        if (responseStateObj != null) {
-            if (responseStateObj instanceof ResponseState) {
-                ResponseState responseState = (ResponseState) responseStateObj;
-                synchronized (responseState) {
-                    if (responseState.isRespondDone()) {
-                        log.warn("Trying to send a response to an already responded client request - " +
-                                getInputInfo(smc));
-                        return;
-                    } else {
-                        responseState.setRespondDone();
-                    }
-                }
-            } else {
-                // This can happen only if the user has used the SynapseConstants.RESPONSE_STATE as a user property
-                handleException("Response State must be of type : " + ResponseState.class +
-                        ". " + SynapseConstants.RESPONSE_STATE + " must not be used as an user property name", null);
-            }
+        if (preventMultipleResponses(smc)) {
+            return;
         }
 
         MessageContext messageContext = ((Axis2MessageContext) smc).getAxis2MessageContext();
@@ -260,6 +244,41 @@ public class Axis2Sender {
                         return true;
                     }
                 }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * This will ensure only one response is sent for a single request.
+     * In HTTP request-response paradigm only a one response is allowed for a single request.
+     * Due to synapse configuration issues, there is a chance of multiple response getting sent for a single request
+     * Calling this method from all the places where we sent out a response message from engine
+     * will prevent that from happening
+     *
+     * @param messageContext Synapse message context
+     * @return whether a response is already sent
+     */
+    public static boolean preventMultipleResponses(org.apache.synapse.MessageContext messageContext) {
+        Object responseStateObj = messageContext.getProperty(SynapseConstants.RESPONSE_STATE);
+
+        // Prevent two responses for a single request message
+        if (responseStateObj != null) {
+            if (responseStateObj instanceof ResponseState) {
+                ResponseState responseState = (ResponseState) responseStateObj;
+                synchronized (responseState) {
+                    if (responseState.isRespondDone()) {
+                        log.warn("Trying to send a response to an already responded client request - " +
+                                getInputInfo(messageContext));
+                        return true;
+                    } else {
+                        responseState.setRespondDone();
+                    }
+                }
+            } else {
+                // This can happen only if the user has used the SynapseConstants.RESPONSE_STATE as a user property
+                handleException("Response State must be of type : " + ResponseState.class +
+                        ". " + SynapseConstants.RESPONSE_STATE + " must not be used as an user property name", null);
             }
         }
         return false;
