@@ -237,7 +237,6 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
 
 
             synCtx.setEnvironment(this);
-            setResponseState(synCtx);
 
             if (!invokeHandlers(synCtx)) {
                 return false;
@@ -1124,17 +1123,5 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
      */
     public void setDebugEnabled(boolean isDebugEnabled) {
         this.isDebugEnabled = isDebugEnabled;
-    }
-
-    /**
-     * Set the response state of the context
-     *
-     * @param synCtx synapse message context
-     * */
-    private void setResponseState(MessageContext synCtx) {
-        Boolean isContinuationCall = (Boolean) synCtx.getProperty(SynapseConstants.CONTINUATION_CALL);
-        if (!(synCtx.isResponse() || (isContinuationCall != null && isContinuationCall))) {
-            synCtx.setProperty(SynapseConstants.RESPONSE_STATE, new ResponseState());
-        }
     }
 }
