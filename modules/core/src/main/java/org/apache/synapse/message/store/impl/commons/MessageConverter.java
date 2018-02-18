@@ -20,6 +20,7 @@ package org.apache.synapse.message.store.impl.commons;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.impl.builder.StAXBuilder;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axiom.om.util.AXIOMUtil;
@@ -354,6 +355,11 @@ public final class MessageConverter {
                         fac.createOMNamespace(soapHeader.getNamespace().getNamespaceURI(),
                                 soapHeader.getNamespace().getPrefix()));
                 hb.setText(soapHeader.getText());
+				// Add the child elements of the header (if any)
+                Iterator elements = soapHeader.getChildElements();
+                while (elements.hasNext()) {
+                    hb.addChild((OMNode) elements.next());
+                }
             }
             response.getFirstElement().detach();
         }
