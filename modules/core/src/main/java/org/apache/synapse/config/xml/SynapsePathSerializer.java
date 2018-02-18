@@ -107,6 +107,25 @@ public class SynapsePathSerializer {
 		return elem;
 	}
 
+    public static OMElement serializePathWithBraces(SynapsePath path, OMElement elem, String attribName) {
+
+        OMNamespace nullNS = elem.getOMFactory()
+                .createOMNamespace(XMLConfigConstants.NULL_NAMESPACE, "");
+
+        if (path != null) {
+
+            elem.addAttribute(elem.getOMFactory().createOMAttribute(
+                    attribName, nullNS, '{'+path.toString()+'}'));
+
+            serializeNamespaces(elem, path);
+
+        } else {
+            handleException("Couldn't find the xpath in the SynapseXPath");
+        }
+
+        return elem;
+    }
+
 
     private static void serializeNamespaces(OMElement elem, SynapsePath path) {
 

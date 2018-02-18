@@ -127,6 +127,10 @@ public class ServerHandler implements NHttpServerEventHandler {
      */
     public static final String HTTP_REQUEST = "http.request";
 
+    private final int bufferSize;
+    private final int socketTimeout;
+
+
     public ServerHandler(
             final ConfigurationContext cfgCtx,
             final Scheme scheme,
@@ -180,6 +184,9 @@ public class ServerHandler implements NHttpServerEventHandler {
                 validMaxMessageSize = Integer.MAX_VALUE;
             }
         }
+
+        this.bufferSize = cfg.getBufferSize();
+        this.socketTimeout = cfg.getProperty(NhttpConstants.SO_TIMEOUT_SENDER, NhttpConstants.DEFAULT_SOCKET_TIMEOUT);
     }
 
     /**
@@ -222,7 +229,7 @@ public class ServerHandler implements NHttpServerEventHandler {
             }
             
             ContentOutputBuffer outputBuffer
-                    = new SharedOutputBuffer(cfg.getBufferSize(), conn, allocator);
+                    = new NhttpSharedOutputBuffer(bufferSize, conn, allocator, socketTimeout);
             context.setAttribute(RESPONSE_SOURCE_BUFFER, outputBuffer);
             OutputStream os = new ContentOutputStream(outputBuffer);
 
@@ -698,7 +705,7 @@ public class ServerHandler implements NHttpServerEventHandler {
      * @param errorMsg error message if shutdown happens on error
      */
     private void shutdownConnection(final NHttpServerConnection conn, boolean isError, String errorMsg) {
-        SharedOutputBuffer outputBuffer = (SharedOutputBuffer)
+        NhttpSharedOutputBuffer outputBuffer = (NhttpSharedOutputBuffer)
                 conn.getContext().getAttribute(RESPONSE_SOURCE_BUFFER);
         if (outputBuffer != null) {
             outputBuffer.close();

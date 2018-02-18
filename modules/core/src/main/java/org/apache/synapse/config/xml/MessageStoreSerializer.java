@@ -29,9 +29,12 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.store.MessageStore;
 import org.apache.synapse.message.store.impl.memory.InMemoryStore;
+import org.apache.synapse.util.xpath.SynapseXPath;
 
 import javax.xml.namespace.QName;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Serialize an instance of the given Message Store, and sets properties on it.
@@ -74,11 +77,7 @@ public class MessageStoreSerializer {
             Iterator iter = messageStore.getParameters().keySet().iterator();
             while (iter.hasNext()) {
                 String name = (String) iter.next();
-                String value = (String) messageStore.getParameters().get(name);
-                OMElement property = fac.createOMElement("parameter", synNS);
-                property.addAttribute(fac.createOMAttribute(
-                        "name", nullNS, name));
-                property.setText(value.trim());
+                OMElement property = getParameter(messageStore, name);
                 store.addChild(property);
             }
         }
@@ -92,6 +91,38 @@ public class MessageStoreSerializer {
             parent.addChild(store);
         }
         return store;
+    }
+
+    /**
+     * Will get the parameter OMElement.
+     *
+     * @param messageStore the message store definition metadata.
+     * @param name         the parameter key.
+     * @return the parameter OMElement.
+     */
+    private static OMElement getParameter(MessageStore messageStore, String name) {
+        Object paramValue = messageStore.getParameters().get(name);
+        OMElement property = null;
+        if (paramValue instanceof String) {
+            String value = (String) paramValue;
+            property = fac.createOMElement("parameter", synNS);
+            property.addAttribute(fac.createOMAttribute("name", nullNS, name));
+            property.setText(value.trim());
+        } else if (paramValue instanceof SynapseXPath) {
+            SynapseXPath value = (SynapseXPath) paramValue;
+            String expression = value.getExpression();
+            Map namespaces = value.getNamespaces();
+            property = fac.createOMElement("parameter", synNS);
+            property.addAttribute(fac.createOMAttribute("name", nullNS, name));
+            property.addAttribute(fac.createOMAttribute("expression", nullNS, expression));
+            Set<Map.Entry<String, String>> nameSpaceAttributes = namespaces.entrySet();
+            for (Map.Entry<String, String> nameSpaceElement : nameSpaceAttributes) {
+                String prefix = nameSpaceElement.getKey();
+                String uri = nameSpaceElement.getValue();
+                property.declareNamespace(uri, prefix);
+            }
+        }
+        return property;
     }
 
     private static OMElement getSerializedDescription(MessageStore messageStore) {

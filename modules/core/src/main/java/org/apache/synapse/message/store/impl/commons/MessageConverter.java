@@ -364,7 +364,9 @@ public final class MessageConverter {
             response.getFirstElement().detach();
         }
 
-        soapEnvelope.getBody().addChild(response.getFirstElement().getFirstElement());
+        if (response.getFirstElement().getFirstElement() != null) {
+            soapEnvelope.getBody().addChild(response.getFirstElement().getFirstElement());
+        }
 
         return soapEnvelope;
     }

@@ -16,6 +16,7 @@
  */
 package org.apache.synapse.commons.json;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
@@ -23,9 +24,13 @@ import org.apache.axis2.context.MessageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * Tests if certain json values are processed correctly.
+ */
 public class JsonValueTest extends TestCase {
     private static Log logger = LogFactory.getLog(JsonValueTest.class.getName());
 
@@ -43,35 +48,61 @@ public class JsonValueTest extends TestCase {
     private static final String failTestVal5 = "-abc";
     private static final String failTestVal6 = "\"Hello world!";
 
+    /**
+     * Tests JSON value enclosed in double quotes.
+     */
     public void testCase1() {
         runTest(stringVal);
     }
 
+    /**
+     * Tests JSON value null.
+     */
     public void testCase2() {
         runTest(nullVal);
     }
 
+    /**
+     * Tests JSON value true.
+     */
     public void testCase3() {
         runTest(trueVal);
     }
 
+    /**
+     * Tests JSON value false.
+     */
     public void testCase4() {
         runTest(falseVal);
     }
 
+    /**
+     * Tests JSON value number with a decimal point.
+     */
     public void testCase5() {
         runTest(numberVal1);
     }
 
+    /**
+     * Tests JSON value negative number with a decimal point.
+     */
     public void testCase6() {
         runTest(numberVal2);
     }
 
+    /**
+     * Tests JSON value number.
+     */
     public void testCase7() {
         runTest(numberVal3);
     }
 
-    public void runTest(String value) {
+    /**
+     * Convenient function to test correct JSON values.
+     *
+     * @param value the {@link String} value to be tested
+     */
+    private void runTest(String value) {
         try {
             InputStream inputStream = Util.newInputStream(value.getBytes());
             MessageContext messageContext = Util.newMessageContext();
@@ -85,38 +116,74 @@ public class JsonValueTest extends TestCase {
         }
     }
 
+    /**
+     * Tests incorrect JSON value: text starting with number without quotes.
+     */
     public void testCase8() {
         runFailTest(failTestVal1);
     }
 
+    /**
+     * Tests incorrect JSON value: text starting with t without quotes.
+     */
     public void testCase9() {
         runFailTest(failTestVal2);
     }
 
+    /**
+     * Tests incorrect JSON value: text starting with f without quotes.
+     */
     public void testCase10() {
         runFailTest(failTestVal3);
     }
 
+    /**
+     * Tests incorrect JSON value: text without quotes.
+     */
     public void testCase11() {
         runFailTest(failTestVal4);
     }
 
+    /**
+     * Tests incorrect JSON value: text starting with - without quotes.
+     */
     public void testCase12() {
         runFailTest(failTestVal5);
     }
 
+    /**
+     * Tests incorrect JSON value: text not having a closing quote.
+     */
     public void testCase13() {
         runFailTest(failTestVal6);
     }
 
-    public void runFailTest(String value) {
+    /**
+     * Convenient function to test incorrect JSON values
+     *
+     * @param value the {@link String} value to be tested
+     */
+    private void runFailTest(String value) {
         try {
             InputStream inputStream = Util.newInputStream(value.getBytes());
             MessageContext messageContext = Util.newMessageContext();
             JsonUtil.getNewJsonPayload(messageContext, inputStream, true, true);
-            assert false;
+            fail("AxisFault exception has to be thrown");
         } catch (AxisFault ex) {
-            assert true;
+            //Test succeeds
+        }
+    }
+
+    public void testWriteAsJsonNullElement() throws IOException {
+        OutputStream out = Util.newOutputStream();
+        try {
+            JsonUtil.writeAsJson((OMElement) null, out);
+            Assert.fail("AxisFault expected");
+        } catch (AxisFault axisFault) {
+            Assert.assertEquals("Invalid fault message received", "OMElement is null. Cannot convert to JSON.",
+                                axisFault.getMessage());
+        } finally {
+            out.close();
         }
     }
 }

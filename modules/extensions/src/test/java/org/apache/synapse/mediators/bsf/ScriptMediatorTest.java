@@ -43,13 +43,30 @@ public class ScriptMediatorTest extends TestCase {
 
     private static final String inlinescript = "var state=5;";
 
-    private String threadsafetyscript = "var rno = mc.getPayloadXML().toString(); rno=rno*2; mc.setPayloadXML" +
-            "(<randomNo>{rno}</randomNo>)";
+    private String threadsafetyscript = "var rno = mc.getPayloadXML().toString(); rno=rno*2; mc.setPayloadXML"
+            + "(<randomNo>{rno}</randomNo>)";
+
+    private String threadSafetyScriptForNashorn = "var rno = mc.getPayloadXML().toString(); var st1 = mc.getEnvelope"
+            + "().getBody().getFirstElement().getText();mc.getEnvelope().getBody().getFirstElement().setText"
+            + "(st1 * 2);";
 
     public void testInlineMediator() throws Exception {
         MessageContext mc = TestUtils.getTestContext("<foo/>", null);
         ScriptMediator mediator = new ScriptMediator("js", inlinescript,null);
-        assertTrue(mediator.mediate(mc));
+        boolean responese = mediator.mediate(mc);
+        assertTrue(responese);
+    }
+
+    /**
+     * Test functionality of mediate with inline script in nashornJS.
+     *
+     * @throws Exception
+     */
+    public void testInlineMediatorOnNashornEngine() throws Exception {
+        MessageContext mc = TestUtils.getTestContext("<foo/>", null);
+        ScriptMediator mediator = new ScriptMediator("nashornJs", inlinescript,null);
+        boolean responese = mediator.mediate(mc);
+        assertTrue(responese);
     }
 
     public void testThreadSafety() throws Exception {
@@ -63,84 +80,105 @@ public class ScriptMediatorTest extends TestCase {
                 Integer.parseInt(randomno) * 2);
     }
 
+    /**
+     * Test functionality of mediate with multiple threads in nashornJS.
+     *
+     * @throws Exception
+     */
+    public void testThreadSafetyOnNashornEngine() throws Exception {
+        MessageContext mc = TestUtils.getTestContext("<randomNo/>", null);
+        Random rand = new Random();
+        String randomno = Integer.toString(rand.nextInt(200));
+        mc.getEnvelope().getBody().getFirstElement().setText(randomno);
+        ScriptMediator mediator = new ScriptMediator("nashornJs", threadSafetyScriptForNashorn,null);
+        mediator.mediate(mc);
+        assertEquals(Integer.parseInt(mc.getEnvelope().getBody().getFirstElement().getText()),
+                Integer.parseInt(randomno) * 2);
+    }
+
+    /**
+     * Test functionality of mediate with external script in js.
+     *
+     * @throws Exception
+     */
     public void testExternalScriptWithComments() throws Exception {
-        String request = "{\n" +
-                "    \"results\": [\n" +
-                "        {\n" +
-                "            \"geometry\": {\n" +
-                "                \"location\": {\n" +
-                "                    \"lat\": -33.86726,\n" +
-                "                    \"lng\": 151.195813\n" +
-                "                }\n" +
-                "            },\n" +
-                "            \"icon\": \"bar-71.png\",\n" +
-                "            \"id\": \"7eaf7\",\n" +
-                "            \"name\": \"Biaggio Cafe\",\n" +
-                "            \"opening_hours\": {\n" +
-                "                \"open_now\": true\n" +
-                "            },\n" +
-                "            \"photos\": [\n" +
-                "                {\n" +
-                "                    \"height\": 600,\n" +
-                "                    \"html_attributions\": [],\n" +
-                "                    \"photo_reference\": \"CoQBegAAAI\",\n" +
-                "                    \"width\": 900\n" +
-                "                }\n" +
-                "            ],\n" +
-                "            \"price_level\": 1,\n" +
-                "            \"reference\": \"CnRqAAAAtz\",\n" +
-                "            \"types\": [\n" +
-                "                \"bar\",\n" +
-                "                \"restaurant\",\n" +
-                "                \"food\",\n" +
-                "                \"establishment\"\n" +
-                "            ],\n" +
-                "            \"vicinity\": \"48 Pirrama Road, Pyrmont\"\n" +
-                "        },\n" +
-                "        {\n" +
-                "            \"geometry\": {\n" +
-                "                \"location\": {\n" +
-                "                    \"lat\": -33.866804,\n" +
-                "                    \"lng\": 151.195579\n" +
-                "                }\n" +
-                "            },\n" +
-                "            \"icon\": \"generic_business-71.png\",\n" +
-                "            \"id\": \"3ef98\",\n" +
-                "            \"name\": \"Doltone House\",\n" +
-                "            \"photos\": [\n" +
-                "                {\n" +
-                "                    \"height\": 600,\n" +
-                "                    \"html_attributions\": [],\n" +
-                "                    \"photo_reference\": \"CqQBmgAAAL\",\n" +
-                "                    \"width\": 900\n" +
-                "                }\n" +
-                "            ],\n" +
-                "            \"reference\": \"CnRrAAAAV\",\n" +
-                "            \"types\": [\n" +
-                "                \"food\",\n" +
-                "                \"establishment\"\n" +
-                "            ],\n" +
-                "            \"vicinity\": \"48 Pirrama Road, Pyrmont\"\n" +
-                "        }\n" +
-                "    ],\n" +
-                "    \"status\": \"OK\"\n" +
-                "}";
+        String request = "{\n" 
+                + "    \"results\": [\n" 
+                + "        {\n" 
+                + "            \"geometry\": {\n" 
+                + "                \"location\": {\n" 
+                + "                    \"lat\": -33.86726,\n" 
+                + "                    \"lng\": 151.195813\n" 
+                + "                }\n" 
+                + "            },\n" 
+                + "            \"icon\": \"bar-71.png\",\n" 
+                + "            \"id\": \"7eaf7\",\n" 
+                + "            \"name\": \"Biaggio Cafe\",\n" 
+                + "            \"opening_hours\": {\n" 
+                + "                \"open_now\": true\n" 
+                + "            },\n" 
+                + "            \"photos\": [\n" 
+                + "                {\n" 
+                + "                    \"height\": 600,\n" 
+                + "                    \"html_attributions\": [],\n" 
+                + "                    \"photo_reference\": \"CoQBegAAAI\",\n" 
+                + "                    \"width\": 900\n" 
+                + "                }\n" 
+                + "            ],\n" 
+                + "            \"price_level\": 1,\n" 
+                + "            \"reference\": \"CnRqAAAAtz\",\n" 
+                + "            \"types\": [\n" 
+                + "                \"bar\",\n" 
+                + "                \"restaurant\",\n" 
+                + "                \"food\",\n" 
+                + "                \"establishment\"\n" 
+                + "            ],\n" 
+                + "            \"vicinity\": \"48 Pirrama Road, Pyrmont\"\n" 
+                + "        },\n" 
+                + "        {\n" 
+                + "            \"geometry\": {\n" 
+                + "                \"location\": {\n" 
+                + "                    \"lat\": -33.866804,\n" 
+                + "                    \"lng\": 151.195579\n" 
+                + "                }\n" 
+                + "            },\n" 
+                + "            \"icon\": \"generic_business-71.png\",\n" 
+                + "            \"id\": \"3ef98\",\n" 
+                + "            \"name\": \"Doltone House\",\n" 
+                + "            \"photos\": [\n" 
+                + "                {\n" 
+                + "                    \"height\": 600,\n" 
+                + "                    \"html_attributions\": [],\n" 
+                + "                    \"photo_reference\": \"CqQBmgAAAL\",\n" 
+                + "                    \"width\": 900\n" 
+                + "                }\n" 
+                + "            ],\n" 
+                + "            \"reference\": \"CnRrAAAAV\",\n" 
+                + "            \"types\": [\n" 
+                + "                \"food\",\n" 
+                + "                \"establishment\"\n" 
+                + "            ],\n" 
+                + "            \"vicinity\": \"48 Pirrama Road, Pyrmont\"\n" 
+                + "        }\n" 
+                + "    ],\n" 
+                + "    \"status\": \"OK\"\n" 
+                + "}";
         MessageContext mc = TestUtils.getTestContextJson(request, null);
-        String scriptSrc = "function transform(mc) {\n" +
-                "    payload = mc.getPayloadJSON();\n" +
-                "    results = payload.results;\n" +
-                "    var response = new Array();\n" +
-                "    for (i = 0; i < results.length; ++i) {\n" +
-                "        // this is a comment\n" +
-                "        location_object = results[i];\n" +
-                "        l = new Object();\n" +
-                "        l.name = location_object.name;\n" +
-                "        l.tags = location_object.types;\n" +
-                "        l.id = \"ID:\" + (location_object.id);\n" +
-                "        response[i] = l;\n" +
-                "    }\n" +
-                "    mc.setPayloadJSON(response);\n" +
-                "}";
+        String scriptSrc = "function transform(mc) {\n" 
+                + "    payload = mc.getPayloadJSON();\n" 
+                + "    results = payload.results;\n" 
+                + "    var response = new Array();\n" 
+                + "    for (i = 0; i < results.length; ++i) {\n" 
+                + "        // this is a comment\n" 
+                + "        location_object = results[i];\n" 
+                + "        l = new Object();\n" 
+                + "        l.name = location_object.name;\n" 
+                + "        l.tags = location_object.types;\n" 
+                + "        l.id = \"ID:\" + (location_object.id);\n" 
+                + "        response[i] = l;\n" 
+                + "    }\n" 
+                + "    mc.setPayloadJSON(response);\n" 
+                + "}";
         String scriptSrcKey = "conf:/repository/esb/transform.js";
         Entry e = new Entry();
         DataSource dataSource = new ByteArrayDataSource(scriptSrc.getBytes());
@@ -153,18 +191,19 @@ public class ScriptMediatorTest extends TestCase {
         ScriptMediator mediator = new ScriptMediator("js", new LinkedHashMap<Value, Object>(), v, "transform", null);
         boolean result = mediator.mediate(mc);
         String response = JsonUtil.jsonPayloadToString(((Axis2MessageContext) mc).getAxis2MessageContext());
-        String expectedResponse = "[{\"name\":\"Biaggio Cafe\", \"tags\":[\"bar\", \"restaurant\", \"food\", \"establishment\"], \"id\":\"ID:7eaf7\"}, {\"name\":\"Doltone House\", \"tags\":[\"food\", \"establishment\"], \"id\":\"ID:3ef98\"}]";
+        String expectedResponse = "[{\"name\":\"Biaggio Cafe\", \"tags\":[\"bar\", \"restaurant\", \"food\","
+                + " \"establishment\"], \"id\":\"ID:7eaf7\"}, {\"name\":\"Doltone House\", \"tags\":[\"food\","
+                + " \"establishment\"], \"id\":\"ID:3ef98\"}]";
+
         assertEquals(expectedResponse, response);
         assertEquals(true, result);
     }
-
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
         for (int i = 0; i < 10; i++) {
             suite.addTest(new RepeatedTest(new ScriptMediatorTest("testThreadSafety"), 10));
         }
-        suite.addTest(new ScriptMediatorTest("testExternalScriptWithComments"));
         return suite;
     }
 

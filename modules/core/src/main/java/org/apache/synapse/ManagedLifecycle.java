@@ -20,6 +20,9 @@
 package org.apache.synapse;
 
 import org.apache.synapse.core.SynapseEnvironment;
+import org.apache.synapse.message.StoreForwardException;
+
+import javax.jms.JMSException;
 
 /**
  * This interface defines all the managed stateful parts of Synapse
@@ -33,11 +36,11 @@ public interface ManagedLifecycle {
      *
      * @param se SynapseEnvironment to be used for initialization
      */
-    public void init(SynapseEnvironment se);
+     void init(SynapseEnvironment se);
 
     /**
      * This method should implement the destroying of the
      * implemented parts of the configuration.
      */
-    public void destroy();
+     void destroy();
 }

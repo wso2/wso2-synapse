@@ -252,6 +252,21 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     msgContext.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
                     msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
                 }
+
+                // NOTE:this a special case where, when the backend service expects content-length but,there is no
+                // desire that the message should be build, if FORCE_HTTP_CONTENT_LENGTH and
+                // COPY_CONTENT_LENGTH_FROM_INCOMING, we assume that the content coming from the client side has not
+                // been changed
+                boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
+                boolean forceContentLengthCopy = msgContext
+                        .isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
+
+                if (forceContentLength && forceContentLengthCopy
+                        && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
+                    msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong(
+                            (String) msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH)));
+                }
+
                 deliveryAgent.submit(msgContext, epr);
                 sendRequestContent(msgContext);
             } else {
@@ -321,16 +336,6 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
 	private void sendRequestContent(final MessageContext msgContext) throws AxisFault {
 
-        //NOTE:this a special case where, when the backend service expects content-length but,there is no desire that the message
-        //should be build, if FORCE_HTTP_CONTENT_LENGTH and COPY_CONTENT_LENGTH_FROM_INCOMING, we assume that the content
-        //comming from the client side has not been changed
-        boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
-        boolean forceContentLengthCopy = msgContext.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
-
-        if (forceContentLength && forceContentLengthCopy && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
-            msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong((String) msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH)));
-        }
-
         if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
             synchronized (msgContext) {
                 while (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE)) &&
@@ -371,7 +376,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     }
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+                    if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
                         pipe.setSerializationCompleteWithoutData(true);
                     } else if (messageSize == 0 &&
                             (msgContext.getProperty(PassThroughConstants.FORCE_POST_PUT_NOBODY) != null &&
@@ -384,7 +390,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 } else {
                     //if HTTP MEHOD = GET we need to write down the HEADER information to the wire and need
                     //to ignore any entity enclosed methods available.
-                    if (("GET").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) || ("DELETE").equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD))) {
+                    if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(Constants.Configuration.HTTP_METHOD)) ||
+                            RelayUtils.isDeleteRequestWithoutPayload(msgContext)) {
                         pipe.setSerializationCompleteWithoutData(true);
                         return;
                     }
@@ -540,7 +547,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                 //This is to support MTOM in response path for requests sent without a SOAPAction. The reason is
                 //axis2 selects application/xml formatter as the formatter for formatting the ESB to client response
                 //when there is no SOAPAction.
-                if (Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_MTOM))) {
+                if (Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_MTOM)) ||
+                        Constants.VALUE_TRUE.equals(msgContext.getProperty(Constants.Configuration.ENABLE_SWA))) {
                     msgContext.setProperty(Constants.Configuration.CONTENT_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
                     msgContext.setProperty(Constants.Configuration.MESSAGE_TYPE, PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED);
                 }
@@ -585,15 +593,18 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
                 try {
                     formatter.writeTo(msgContext, format, out, false);
-                }catch (RemoteException fault){
+                } catch (RemoteException fault) {
                     IOUtils.closeQuietly(out);
                     throw fault;
+                } finally {
+                    //Serialization should be set as complete so that the state of the socket can be
+                    // reset to readable
+                    pipe.setSerializationComplete(true);
                 }
-                pipe.setSerializationComplete(true);
                 out.close();
             }
             
-             conn.requestOutput();
+            conn.requestOutput();
         } else {
             // nothing much to do as we have started the response already
             if (errorCode != null) {

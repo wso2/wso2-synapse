@@ -24,6 +24,7 @@ import org.apache.axis2.clustering.ClusteringAgent;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.neethi.PolicyEngine;
 import org.apache.synapse.*;
+import org.apache.synapse.MessageContext;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
@@ -52,6 +53,8 @@ import org.apache.synapse.commons.throttle.core.ThrottleException;
 import org.apache.synapse.commons.throttle.core.ThrottleContext;
 import org.apache.synapse.commons.throttle.core.AccessInformation;
 import org.apache.synapse.commons.throttle.core.ThrottleFactory;
+
+import java.util.Map;
 
 /**
  * The Mediator for the throttling - Throttling will occur according to the ws-policy
@@ -181,6 +184,9 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             // onwards mediation flow branches to either accept sequence or reject sequence
             if (canAccess) {
                 //accept case
+                // property is set to identify whether a request is accepted or rejected looking at
+                // the throttling controller outcome.
+                synCtx.setProperty(SynapseConstants.SYNAPSE_IS_CONCURRENT_ACCESS_ALLOWED, true);
                 if (onAcceptSeqKey != null) {
                     Mediator mediator = synCtx.getSequence(onAcceptSeqKey);
                     if (mediator != null) {
@@ -205,6 +211,9 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
 
             } else {
                 //reject case
+                // property is set to identify whether a request is accepted or rejected looking at
+                // the throttling controller outcome.
+                synCtx.setProperty(SynapseConstants.SYNAPSE_IS_CONCURRENT_ACCESS_ALLOWED, false);
                 if (onRejectSeqKey != null) {
                     Mediator mediator = synCtx.getSequence(onRejectSeqKey);
                     if (mediator != null) {
@@ -331,10 +340,20 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
         String callerId = null;
         boolean canAccess = true;
         //remote ip of the caller
-        String remoteIP = (String) axisMC.getPropertyNonReplicable(
-                org.apache.axis2.context.MessageContext.REMOTE_ADDR);
+        String remoteIP = (String) axisMC.getPropertyNonReplicable(org.apache.axis2.context.MessageContext.REMOTE_ADDR);
         //domain name of the caller
         String domainName = (String) axisMC.getPropertyNonReplicable(NhttpConstants.REMOTE_HOST);
+
+        Map headers = (Map) axisMC.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+
+        if (headers != null) {
+            String xForwardHeader = (String) headers.get(NhttpConstants.HEADER_X_FORWARDED_FOR);
+            String xForwardHost = (String) headers.get(NhttpConstants.HEADER_X_FORWARDED_HOST);
+
+            remoteIP = (xForwardHeader != null) ? xForwardHeader : remoteIP;
+            domainName = (xForwardHost != null) ? xForwardHost : domainName;
+        }
+
         //Using remote caller domain name , If there is a throttle configuration for
         // this domain name ,then throttling will occur according to that configuration
         if (domainName != null) {

@@ -19,8 +19,11 @@
 package org.apache.synapse.mediators.elementary;
 
 import org.apache.axiom.om.OMNode;
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseLog;
+import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.jaxen.JaxenException;
 
@@ -95,6 +98,14 @@ public class EnrichMediator extends AbstractMediator {
             }
         } catch (JaxenException e) {
             handleException("Failed to get the source for Enriching", e, synCtx);
+        }
+
+        //If enrich mediator modifies JSON payload update JSON stream in the axis2MessageContext
+        org.apache.axis2.context.MessageContext axis2MsgCtx =
+                ((Axis2MessageContext) synCtx).getAxis2MessageContext();
+        if (JsonUtil.hasAJsonPayload(axis2MsgCtx)) {
+            JsonUtil.setJsonStream(axis2MsgCtx,
+                                   JsonUtil.toJsonStream(axis2MsgCtx.getEnvelope().getBody().getFirstElement()));
         }
 
         synLog.traceOrDebug("End : Enrich mediator");

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~  Copyright (c) 2017, WSO2 Inc. (http://wso2.com) All Rights Reserved.
+  ~
+  ~  WSO2 Inc. licenses this file to you under the Apache License,
+  ~  Version 2.0 (the "License"); you may not use this file except
+  ~  in compliance with the License.
+  ~  You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~  Unless required by applicable law or agreed to in writing,
+  ~  software distributed under the License is distributed on an
+  ~  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~  KIND, either express or implied.  See the License for the
+  ~  specific language governing permissions and limitations
+  ~  under the License.
+  ~
+  -->
+
+<definitions xmlns="http://ws.apache.org/ns/synapse">
+    <proxy name="xQueryCustomVariableAsByteTestProxy" transports="https http"
+           startOnLoad="true" trace="disable">
+        <description/>
+        <target>
+            <inSequence>
+                <property name="body" expression="$body/child::*[position()=1]"/>
+                <log level="full"/>
+                <xquery xmlns:m="http://services.samples" key="xquery-byte"
+                        target="//m:getQuote/m:request/m:symbols">
+                    <variable name="symbol" type="BYTE" value="100"/>
+                </xquery>
+                <log level="full"/>
+                <send>
+                    <endpoint>
+                        <address uri="http://localhost:9000/services/SimpleStockQuoteService"/>
+                    </endpoint>
+                </send>
+            </inSequence>
+            <outSequence>
+                <out>
+                    <send/>
+                </out>
+            </outSequence>
+            <faultSequence>
+                <makefault version="soap11">
+                    <code xmlns:tns="http://www.w3.org/2003/05/soap-envelope" value="tns:Receiver"/>
+                    <reason expression="get-property('ERROR_MESSAGE')"/>
+                </makefault>
+                <property name="RESPONSE" value="true"/>
+                <header name="To" expression="get-property('ReplyTo')"/>
+                <send/>
+            </faultSequence>
+        </target>
+    </proxy>
+    <localEntry key="xquery-byte">
+        <x xmlns="">
+            declare variable $symbol as xs:byte external;
+            &lt;m:symbol xmlns:m="http://services.samples"&gt;{$symbol}&lt;/m:symbol&gt;
+        </x>
+    </localEntry>
+</definitions>

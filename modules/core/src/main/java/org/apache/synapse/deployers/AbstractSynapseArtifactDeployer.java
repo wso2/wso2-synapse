@@ -40,7 +40,10 @@ import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.core.SynapseEnvironment;
 
 import javax.xml.stream.XMLStreamException;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Properties;
 
 /**
@@ -95,6 +98,16 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
      */
     public void deploy(DeploymentFileData deploymentFileData) throws DeploymentException {
 
+        if (getServerContextInformation().getServerState() != ServerState.STARTED) {
+            // synapse server has not yet being started
+            if (log.isDebugEnabled()) {
+                log.debug("Skipped the artifact deployment (since the Synapse " +
+                          "server doesn't seem to be started yet), from file : "
+                          + deploymentFileData.getAbsolutePath());
+            }
+            return;
+        }
+
 //        CustomLogSetter.getInstance().setLogAppender(customLogContent);
         if (!isHotDeploymentEnabled()) {
             if (log.isDebugEnabled()) {
@@ -107,16 +120,6 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                 deploymentFileData.getAbsolutePath());
         if (log.isDebugEnabled()) {
             log.debug("Deployment of the synapse artifact from file : " + filename + " : STARTED");
-        }
-
-        if (getServerContextInformation().getServerState() != ServerState.STARTED) {
-            // synapse server has not yet being started
-            if (log.isDebugEnabled()) {
-                log.debug("Skipped the artifact deployment (since the Synapse " +
-                        "server doesn't seem to be started yet), from file : "
-                        + deploymentFileData.getAbsolutePath());
-            }
-            return;
         }
 
         SynapseArtifactDeploymentStore deploymentStore =
@@ -193,12 +196,15 @@ public abstract class AbstractSynapseArtifactDeployer extends AbstractDeployer {
                         } else {
                             artifactName = deploySynapseArtifact(element, filename, properties);
                         }
-                    } catch (SynapseArtifactDeploymentException sade) {
+
+                        //To avoid deployment of service when NoClassDefFoundError thrown while creating a mediator
+
+                    } catch (SynapseArtifactDeploymentException | NoClassDefFoundError e) {
                         log.error("Deployment of the Synapse Artifact from file : "
-                                + filename + " : Failed!", sade);
+                                + filename + " : Failed!", e);
                         log.info("The file has been backed up into : "
                                 + backupFile(deploymentFileData.getFile()));
-                        throw new DeploymentException(sade);
+                        throw new DeploymentException(e);
                     }
                 }
                 if (artifactName != null) {

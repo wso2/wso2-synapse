@@ -78,10 +78,10 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                     log.debug("Initialized the ProxyService : " + proxy.getName());
                 }
 
+                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
                 AxisService axisService = proxy.buildAxisService(getSynapseConfiguration(),
                                                   getSynapseConfiguration().getAxisConfiguration());
 
-                getSynapseConfiguration().addProxyService(proxy.getName(), proxy);
                 if (axisService == null) {
                     if (log.isDebugEnabled()) {
                         log.debug("Skipping proxy Startup for ProxyService : " + proxy.getName());
@@ -97,7 +97,7 @@ public class ProxyServiceDeployer extends AbstractSynapseArtifactDeployer {
                 log.info("ProxyService named '" + proxy.getName()
                         + "' has been deployed from file : " + filePath);
 
-                if (!proxy.isStartOnLoad()) {
+                if (!proxy.isStartOnLoad() || !axisService.isActive()) {
                     proxy.stop(getSynapseConfiguration());
                     log.info("ProxyService named '" + proxy.getName()
                              + "' has been stopped as startOnLoad parameter is set to false");

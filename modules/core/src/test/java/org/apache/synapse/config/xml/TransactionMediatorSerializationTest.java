@@ -19,6 +19,11 @@
 
 package org.apache.synapse.config.xml;
 
+import org.apache.synapse.SynapseException;
+import org.apache.synapse.mediators.builtin.LogMediator;
+
+import java.util.Properties;
+
 public class TransactionMediatorSerializationTest extends AbstractTestCase {
 
     TransactionMediatorFactory transactionMediatorFactory;
@@ -37,4 +42,34 @@ public class TransactionMediatorSerializationTest extends AbstractTestCase {
         assertTrue(serialization(inputXml, transactionMediatorSerializer));
     }
 
+    /**
+     * Test for creation of transaction mediator with an invalid OMElement
+     *
+     * @throws Exception
+     */
+    public void testCreatingMediatorWithInvalidOMElement() throws Exception {
+        try {
+            transactionMediatorFactory.createSpecificMediator(
+                    createOMElement("<transaction xmlns=\"http://ws.apache.org/ns/synapse\" />"), new Properties());
+            fail("Test for creating transaction mediator with an invalid OMElement fails.");
+        } catch (SynapseException e) {
+            assertEquals("The 'action' attribute is required for Transaction mediator definition",
+                                e.getMessage());
+        }
+    }
+
+    /**
+     * Test for transaction mediator serialization with an invalid mediator instance
+     *
+     * @throws Exception
+     */
+    public void testCreatingMediatorWithInvalidInstance() throws Exception {
+        try {
+            LogMediator logMediator = new LogMediator();
+            transactionMediatorSerializer.serializeSpecificMediator(logMediator);
+            fail("Test for transaction mediator serialization with an invalid mediator instance fails.");
+        } catch (SynapseException e) {
+            assertEquals("Unsupported mediator passed in for serialization : LogMediator", e.getMessage());
+        }
+    }
 }

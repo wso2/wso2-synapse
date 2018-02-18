@@ -34,10 +34,11 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
     private char namespaceSeparator = JsonXMLConfig.DEFAULT.getNamespaceSeparator();
 
     private boolean repairingNamespaces = JsonXMLConfig.DEFAULT.isRepairingNamespaces();
-    private String customRegex =JsonXMLConfig.DEFAULT.getCustomRegex();
-    private String customReplaceRegex =JsonXMLConfig.DEFAULT.getCustomReplaceRegex();
-    private String customReplaceSequence =JsonXMLConfig.DEFAULT.getCustomReplaceSequence();
+    private String customRegex = JsonXMLConfig.DEFAULT.getCustomRegex();
+    private String customReplaceRegex = JsonXMLConfig.DEFAULT.getCustomReplaceRegex();
+    private String customReplaceSequence = JsonXMLConfig.DEFAULT.getCustomReplaceSequence();
     private boolean readWriteXmlNil = JsonXMLConfig.DEFAULT.isReadWriteXmlNil();
+    private boolean writeNullForEmptyElement = JsonXMLConfig.DEFAULT.isWriteNullForEmptyElements();
 
     @Override
     protected JsonXMLConfigImpl clone() {
@@ -125,8 +126,8 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
         return customRegex;
     }
 
-    public void setCustomRegex(String customRegex){
-        this.customRegex =customRegex;
+    public void setCustomRegex(String customRegex) {
+        this.customRegex = customRegex;
     }
 
     @Override
@@ -151,9 +152,18 @@ public class JsonXMLConfigImpl implements JsonXMLConfig, Cloneable {
         this.readWriteXmlNil = readWriteXmlNil;
     }
 
+    public void setWriteNullForEmptyElement(boolean writeNullForEmptyElement) {
+        this.writeNullForEmptyElement = writeNullForEmptyElement;
+    }
+
     @Override
     public boolean isReadWriteXmlNil() {
         return readWriteXmlNil;
+    }
+
+    @Override
+    public boolean isWriteNullForEmptyElements() {
+        return writeNullForEmptyElement;
     }
 
 }

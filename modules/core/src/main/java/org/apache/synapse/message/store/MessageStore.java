@@ -1,4 +1,4 @@
-/**
+/*
  *  Copyright (c) 2005-2010, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
  *
  *  WSO2 Inc. licenses this file to you under the Apache License,
@@ -22,6 +22,7 @@ import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.Nameable;
 import org.apache.synapse.SynapseArtifact;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
 
@@ -30,67 +31,72 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifact {
+
     /**
      * Returns a Message Producer for this message store. <br/>
-     * @return  A non-null message producer that can produce messages to this message store.
+     *
+     * @return A non-null message producer that can produce messages to this message store.
      */
-    MessageProducer getProducer();
+    MessageProducer getProducer() throws SynapseException;
 
     /**
      * Returns a Message Consumer for this message store. <br/>
+     *
      * @return A non-null message consumer that can read messages from this message store.<br/>
      */
-    MessageConsumer getConsumer();
+    MessageConsumer getConsumer() throws SynapseException;
 
     /**
      * set the implementation specific parameters
+     *
      * @param parameters A map of parameters or null
      */
-    public void setParameters(Map<String,Object> parameters);
+    void setParameters(Map<String, Object> parameters);
 
     /**
      * get the implementation specific parameters of the Message store
+     *
      * @return a properties map
      */
-    public Map<String,Object> getParameters();
+    Map<String, Object> getParameters();
 
     /**
      * Set the name of the file that the Message store is configured
      *
      * @param filename Name of the file where this artifact is defined
      */
-    public void setFileName(String filename);
+    void setFileName(String filename);
 
     /**
      * get the file name that the message store is configured
      *
      * @return Name of the file where this artifact is defined
      */
-    public String getFileName();
+    String getFileName();
 
     /**
      * Returns the type of this message store. <br/>
      * The type of a message store can be one of following types, <br/>
      * {@link Constants#JMS_MS}, {@link Constants#INMEMORY_MS},
      * or {@link Constants#JDBC_MS}
+     *
      * @return Type of the message store.
      */
-    public int getType();
+    int getType();
 
     /**
      * Retrieves and removes the first Message in this store.
      * Message ordering will depend on the underlying implementation
      *
      * @return first message context in the store
-     * @throws java.util.NoSuchElementException
-     *          if store is empty
+     * @throws java.util.NoSuchElementException if store is empty
      */
-    public MessageContext remove() throws NoSuchElementException;
+    MessageContext remove() throws NoSuchElementException;
 
     /**
      * Delete all the Messages in the Message Store
      */
-    public void clear();
+    void clear();
 
     /**
      * Delete and return the MessageContext with given Message id
@@ -98,14 +104,14 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      * @param messageID message id of the Message
      * @return MessageContext instance
      */
-    public MessageContext remove(String messageID);
+    MessageContext remove(String messageID);
 
     /**
      * Returns the number of Messages  in this store.
      *
      * @return the number of Messages in this Store
      */
-    public int size();
+    int size();
 
     /**
      * Return the Message in given index position
@@ -114,14 +120,14 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      * @param index position of the message
      * @return Message in given index position
      */
-    public MessageContext get(int index);
+    MessageContext get(int index);
 
     /**
      * Get the All messages in the Message store without removing them from the queue
      *
      * @return List of all Messages
      */
-    public List<MessageContext> getAll();
+    List<MessageContext> getAll();
 
     /**
      * Get the Message with the given ID from the Message store without removing it
@@ -129,29 +135,33 @@ public interface MessageStore extends ManagedLifecycle, Nameable, SynapseArtifac
      * @param messageId A message ID string
      * @return Message with given ID
      */
-    public MessageContext get(String messageId);
+    MessageContext get(String messageId);
 
     /**
      * Whether the message store edited through the management console
-     * @return
+     *
+     * @return true if Message Store config is locally edited
      */
-    public boolean isEdited();
+    boolean isEdited();
 
     /**
      * Set whether the message store edited through the management console
-     * @param isEdited
+     *
+     * @param isEdited true if Message Store config is locally edited
      */
-    public void setIsEdited(boolean isEdited);
+    void setIsEdited(boolean isEdited);
 
     /**
      * Get the name of the artifact container from which the message store deployed
-     * @return
+     *
+     * @return Name of artifact container
      */
-    public String getArtifactContainerName();
+    String getArtifactContainerName();
 
     /**
      * Set the name of the artifact container from which the message store deployed
-     * @param artifactContainerName
+     *
+     * @param artifactContainerName name of artifact container
      */
-    public void setArtifactContainerName(String artifactContainerName);
+    void setArtifactContainerName(String artifactContainerName);
 }

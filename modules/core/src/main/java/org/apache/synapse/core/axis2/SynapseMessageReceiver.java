@@ -27,6 +27,7 @@ import org.apache.synapse.FaultHandler;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.transport.nhttp.NhttpConstants;
 
 /**
  * This message receiver should be configured in the Axis2 configuration as the
@@ -85,7 +86,9 @@ public class SynapseMessageReceiver implements MessageReceiver {
         synCtx.setProperty(SynapseConstants.IS_CLIENT_DOING_SOAP11, mc.isSOAP11());
 
         try {
-            // invoke synapse message mediation through the main sequence
+            // set response state for the request incoming via main sequence or API
+            synCtx.setProperty(SynapseConstants.RESPONSE_STATE, new ResponseState());
+            // invoke synapse message mediation through the APIs/main sequence
             synCtx.getEnvironment().injectMessage(synCtx);
 
         } catch (SynapseException syne) {
@@ -98,6 +101,8 @@ public class SynapseMessageReceiver implements MessageReceiver {
                 warn(traceOn, "Exception encountered but no fault handler found - " +
                     "message dropped", synCtx);
             }
+        } finally {
+            doPostInjectUpdates(synCtx);
         }
     }
 
@@ -121,4 +126,22 @@ public class SynapseMessageReceiver implements MessageReceiver {
             msgContext.getServiceLog().warn(msg);
         }
     }
+
+    /**
+     * Do the cleanup work, metadata updates in the return path of Message Receiver tread
+     * after injecting the message to the engine
+     *
+     * @param messageContext Synapse Message Context
+     */
+    public static void doPostInjectUpdates(MessageContext messageContext) {
+
+        org.apache.axis2.context.MessageContext axis2Ctx = ((Axis2MessageContext) messageContext)
+                .getAxis2MessageContext();
+        // If FORCE_SC_ACCEPTED is set, mark response is sent and prevent multiple response being sent
+        if (axis2Ctx.isPropertyTrue(NhttpConstants.FORCE_SC_ACCEPTED) && Axis2Sender
+                .preventMultipleResponses(messageContext)) {
+            throw new SynapseException("Trying to send a 202 Accepted response to an already responded client request");
+        }
+    }
+
 }

@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.ws.rs.HttpMethod;
 import javax.xml.parsers.FactoryConfigurationError;
 
 
@@ -106,9 +105,7 @@ public class ServerWorker implements Runnable {
         this.httpGetRequestProcessor = sourceConfiguration.getHttpGetRequestProcessor();
         
         this.os = os;
-        
-      
-        
+
         // set these properties to be accessed by the engine
         msgContext.setProperty(
                 PassThroughConstants.PASS_THROUGH_SOURCE_REQUEST, request);
@@ -127,7 +124,7 @@ public class ServerWorker implements Runnable {
             CustomLogSetter.getInstance().clearThreadLocalContent();
             TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
             if (tenantInfoInitiator != null) {
-                tenantInfoInitiator.initTenantInfo();
+                tenantInfoInitiator.initTenantInfo(request.getUri());
             }
             request.getConnection().getContext().setAttribute(NhttpConstants.SERVER_WORKER_START_TIME, System.currentTimeMillis());
             if (log.isDebugEnabled()) {
@@ -186,10 +183,15 @@ public class ServerWorker implements Runnable {
 	 */
 	public SOAPEnvelope handleRESTUrlPost(String contentTypeHdr) throws FactoryConfigurationError {
 	    SOAPEnvelope soapEnvelope = null;
-	    String contentType = contentTypeHdr!=null?TransportUtils.getContentType(contentTypeHdr, msgContext):null;
-	    if (contentType == null || "".equals(contentType) || HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType)) {
-	        contentType = contentTypeHdr != null ? contentTypeHdr:HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
-	        msgContext.setTo(new EndpointReference(request.getRequest().getRequestLine().getUri()));
+        String contentType = contentTypeHdr != null ? TransportUtils.getContentType(contentTypeHdr, msgContext) : null;
+        // When POST request doesn't contain a Content-Type,
+        // recipient should consider it as application/octet-stream (rfc2616)
+        if (contentType == null || contentType.isEmpty()) {
+            contentType = PassThroughConstants.APPLICATION_OCTET_STREAM;
+        }
+        if (HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType) ||
+                (PassThroughConstants.APPLICATION_OCTET_STREAM.equals(contentType) && contentTypeHdr == null)) {
+            msgContext.setTo(new EndpointReference(request.getRequest().getRequestLine().getUri()));
 	        msgContext.setProperty(Constants.Configuration.CONTENT_TYPE,contentType);
 	        String charSetEncoding = BuilderUtil.getCharSetEncoding(contentType);
 		    msgContext.setProperty(Constants.Configuration.CHARACTER_SET_ENCODING, charSetEncoding);
@@ -313,7 +315,7 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(request.getUri()));
         msgContext.setServerSide(true);
         msgContext.setDoingREST(true);
-        if(!request.isEntityEnclosing()){
+        if (!(request.isEntityEnclosing())) {
         	msgContext.setProperty(PassThroughConstants.NO_ENTITY_BODY, Boolean.TRUE);
         }
         
@@ -333,7 +335,7 @@ public class ServerWorker implements Runnable {
                 " request for : " + request.getUri(), axisFault);
         } catch (Exception e) {
             handleException(
-                    "Error processing " + request.getMethod() + " reguest for : "
+                    "Error processing " + request.getMethod() + " request for : "
                             + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);          
         }
     }
@@ -411,7 +413,7 @@ public class ServerWorker implements Runnable {
                 " request for : " + request.getUri(), axisFault);
         } catch (Exception e) {
             handleException(
-                    "Error processing " + request.getMethod() + " reguest for : "
+                    "Error processing " + request.getMethod() + " request for : "
                             + request.getUri() + ". Error detail: " + e.getMessage() + ". ", e);
         }
     }
@@ -684,8 +686,8 @@ public class ServerWorker implements Runnable {
         msgContext.setTo(new EndpointReference(restUrlPostfix));
         msgContext.setProperty(PassThroughConstants.REST_URL_POSTFIX, restUrlPostfix);
 
-        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)  ||  HttpMethod.HEAD.equals(method)||
-                                                                                             "OPTIONS".equals(method)) {
+        if (PassThroughConstants.HTTP_GET.equals(method) ||  PassThroughConstants.HTTP_HEAD.equals(method)||
+                PassThroughConstants.HTTP_OPTIONS.equals(method)) {
             HttpResponse response = sourceConfiguration.getResponseFactory().newHttpResponse(
                     request.getVersion(), HttpStatus.SC_OK,
                     request.getConnection().getContext());
@@ -716,6 +718,12 @@ public class ServerWorker implements Runnable {
     private void cleanup () {
         //clean threadLocal variables
         MessageContext.destroyCurrentMessageContext();
+        //clean tenantInfo
+        TenantInfoInitiator tenantInfoInitiator = TenantInfoInitiatorProvider.getTenantInfoInitiator();
+        if (tenantInfoInitiator != null) {
+            tenantInfoInitiator.cleanTenantInfo();
+        }
+
     }
 
 }

@@ -43,7 +43,8 @@ public class VersionStrategyFactory {
         }
 
         OMAttribute versionTypeAtt = apiElt.getAttribute(new QName("version-type"));
-        if (versionAtt != null && (versionTypeAtt == null || "".equals(versionTypeAtt.getAttributeValue()))) {
+        if ((versionAtt != null && !versionAtt.getAttributeValue().isEmpty()) &&
+                (versionTypeAtt == null || "".equals(versionTypeAtt.getAttributeValue()))) {
             handleException("Attribute 'version-type' is required for an API definition");
         }
 

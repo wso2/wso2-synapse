@@ -578,7 +578,7 @@ public class MultiXMLConfigurationBuilder {
                 File file = (File) apiIterator.next();
                 try {
                     OMElement document = getOMElement(file);
-                    API api = SynapseXMLConfigurationFactory.defineAPI(synapseConfig, document, properties);
+                    API api = SynapseXMLConfigurationFactory.defineAPI(synapseConfig, document, properties, false);
                     if (api != null) {
                         api.setFileName(file.getName());
                         synapseConfig.getArtifactDeploymentStore().addArtifact(file.getAbsolutePath(),
@@ -588,6 +588,13 @@ public class MultiXMLConfigurationBuilder {
                     String msg = "API configuration cannot be built from : " + file.getName();
                     handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
                 }
+            }
+            // order the apis based on context descending order
+            try {
+                SynapseXMLConfigurationFactory.reOrderAPIs(synapseConfig);
+            } catch (Exception e) {
+                String msg = "Error while re-ordering apis";
+                handleConfigurationError(SynapseConstants.FAIL_SAFE_MODE_API, msg, e);
             }
         }
     }

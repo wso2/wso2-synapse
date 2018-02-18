@@ -15,28 +15,28 @@
     limitations under the License.
 -->
 <providers>
-    <default-provider class-name="org.apache.commons.vfs.provider.url.UrlFileProvider">
+    <default-provider class-name="org.apache.commons.vfs2.provider.url.UrlFileProvider">
     </default-provider>
-    <provider class-name="org.apache.commons.vfs.provider.local.DefaultLocalFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.local.DefaultLocalFileProvider">
         <scheme name="file"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.zip.ZipFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.zip.ZipFileProvider">
         <scheme name="zip"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.tar.TarFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.tar.TarFileProvider">
         <scheme name="tar"/>
-        <if-available class-name="org.apache.commons.vfs.provider.tar.TarInputStream"/>
+        <if-available class-name="org.apache.commons.vfs2.provider.tar.TarInputStream"/>
     </provider>
 
-    <provider class-name="org.apache.commons.vfs.provider.bzip2.Bzip2FileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.bzip2.Bzip2FileProvider">
         <scheme name="bz2"/>
-        <if-available class-name="org.apache.commons.vfs.provider.bzip2.CBZip2InputStream"/>
+        <if-available class-name="org.apache.commons.vfs2.provider.bzip2.CBZip2InputStream"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.gzip.GzipFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.gzip.GzipFileProvider">
         <scheme name="gz"/>
     </provider>
 
-    <provider class-name="org.apache.commons.vfs.provider.jar.JarFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.jar.JarFileProvider">
         <scheme name="jar"/>
         <scheme name="sar"/>
         <scheme name="ear"/>
@@ -44,63 +44,63 @@
         <scheme name="ejb3"/>
         <scheme name="war"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.temp.TemporaryFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.temp.TemporaryFileProvider">
         <scheme name="tmp"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.ftp.FtpFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.ftp.FtpFileProvider">
         <scheme name="ftp"/>
         <if-available class-name="org.apache.commons.net.ftp.FTPFile"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.http.HttpFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.http.HttpFileProvider">
         <scheme name="http"/>
         <if-available class-name="org.apache.commons.httpclient.HttpClient"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.https.HttpsFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.https.HttpsFileProvider">
         <scheme name="https"/>
         <if-available class-name="org.apache.commons.httpclient.HttpClient"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.sftp.SftpFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.sftp.SftpFileProvider">
         <scheme name="sftp"/>
         <if-available class-name="javax.crypto.Cipher"/>
         <if-available class-name="com.jcraft.jsch.JSch"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.res.ResourceFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.res.ResourceFileProvider">
         <scheme name="res"/>
     </provider>
-        <provider class-name="org.apache.commons.vfs.provider.webdav.WebdavFileProvider">
+        <provider class-name="org.apache.commons.vfs2.provider.webdav.WebdavFileProvider">
         <scheme name="webdav"/>
         <if-available class-name="org.apache.commons.httpclient.HttpClient"/>
         <if-available class-name="org.apache.jackrabbit.webdav.client.methods.DavMethod"/>
     </provider>
     <!--
-    <provider class-name="org.apache.commons.vfs.provider.svn.SvnFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.svn.SvnFileProvider">
         <scheme name="svnhttps"/>
     </provider>
     -->
     <!--
-        <provider class-name="org.apache.commons.vfs.provider.tar.TgzFileProvider">
+        <provider class-name="org.apache.commons.vfs2.provider.tar.TgzFileProvider">
             <scheme name="tgz"/>
             <if-available scheme="gz"/>
             <if-available scheme="tar"/>
         </provider>
-        <provider class-name="org.apache.commons.vfs.provider.tar.Tbz2FileProvider">
+        <provider class-name="org.apache.commons.vfs2.provider.tar.Tbz2FileProvider">
             <scheme name="tbz2"/>
             <if-available scheme="bz2"/>
             <if-available scheme="tar"/>
         </provider>
     -->
-    <provider class-name="org.apache.commons.vfs.provider.tar.TarFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.tar.TarFileProvider">
         <scheme name="tgz"/>
         <if-available scheme="gz"/>
         <if-available scheme="tar"/>
     </provider>
-    <provider class-name="org.apache.commons.vfs.provider.tar.TarFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.tar.TarFileProvider">
         <scheme name="tbz2"/>
         <if-available scheme="bz2"/>
         <if-available scheme="tar"/>
     </provider>
 
-    <provider class-name="org.apache.commons.vfs.provider.ram.RamFileProvider">
+    <provider class-name="org.apache.commons.vfs2.provider.ram.RamFileProvider">
         <scheme name="ram"/>
     </provider>
     
@@ -123,12 +123,12 @@
     <extension-map extension="tbz2" scheme="tar"/>
 
     <!--
-    <filter-map class-name="org.apache.commons.vfs.content.bzip2.Bzip2Compress">
+    <filter-map class-name="org.apache.commons.vfs2.content.bzip2.Bzip2Compress">
         <extension name="bz2"/>
         <extension name="tbz2"/>
         <if-available class-name="org.apache.commons.compress.bzip2.CBZip2InputStream"/>
     </filter-map>
-    <filter-map class-name="org.apache.commons.vfs.content.gzip.GzipCompress">
+    <filter-map class-name="org.apache.commons.vfs2.content.gzip.GzipCompress">
         <extension name="gz"/>
         <extension name="tgz"/>
         <mime-type name="application/x-tgz" />

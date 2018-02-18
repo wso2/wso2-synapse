@@ -45,6 +45,7 @@ import org.apache.synapse.transport.nhttp.util.MessageFormatterDecoratorFactory;
 import org.apache.synapse.transport.passthru.config.TargetConfiguration;
 import org.apache.synapse.transport.passthru.util.PassThroughTransportUtils;
 import org.apache.synapse.transport.passthru.util.RelayUtils;
+import org.apache.synapse.transport.passthru.util.TargetRequestFactory;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayOutputStream;
@@ -153,8 +154,8 @@ public class TargetRequest {
         
         
         //fix GET request empty body
-		if ((("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
-				|| (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))) {
+		if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
+				(RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
 			hasEntityBody = false;
 			MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
 			OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
@@ -182,10 +183,9 @@ public class TargetRequest {
 			Map _headers = (Map) o;
 			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
 			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!trpContentType.contains(PassThroughConstants.CONTENT_TYPE_MULTIPART_RELATED)) {
+				if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
 					addHeader(HTTP.CONTENT_TYPE, trpContentType);
 				}
-
 			}
 
 		}
@@ -264,9 +264,10 @@ public class TargetRequest {
         request.setParams(new DefaultedHttpParams(request.getParams(),
                 targetConfiguration.getHttpParams()));
 
-        //Chucking is not performed for request has "http 1.0" and "GET" http method
+        //Chunking is not performed for request has "http 1.0" and "GET" http method
        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
-                              (("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))))) {
+               (PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
+               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx) || !(hasEntityBody))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
@@ -446,5 +447,8 @@ public class TargetRequest {
     public HttpRoute getRoute(){
         return route;
     }
-    
+
+    public Pipe getPipe() {
+        return pipe;
+    }
 }

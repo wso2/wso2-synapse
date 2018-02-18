@@ -26,10 +26,12 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
@@ -48,12 +50,21 @@ import java.util.regex.Pattern;
 public abstract class AbstractListMediator extends AbstractMediator
         implements ListMediator {
 
-    private static final String WSTX_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)";
+    private static final String MSG_BUILD_FAILURE_EXCEPTION_PATTERN = ".*(Wstx)(.*Exception)|.*MalformedJsonException";
+
+    // Create a Pattern object
+    protected Pattern msgBuildFailureExpattern = Pattern.compile(MSG_BUILD_FAILURE_EXCEPTION_PATTERN);
 
     /** the list of child mediators held. These are executed sequentially */
     protected final List<Mediator> mediators = new ArrayList<Mediator>();
 
     private boolean sequenceContentAware = false;
+
+    /**
+     * Whether Streaming Xpath is enabled in synapse.properties file.
+     */
+    private static boolean isStreamXpathEnabled = SynapsePropertiesLoader.
+            getBooleanProperty(SynapseConstants.STREAMING_XPATH_PROCESSING, Boolean.FALSE);
 
     public boolean mediate(MessageContext synCtx) {
         return  mediate(synCtx,0);
@@ -78,7 +89,7 @@ public abstract class AbstractListMediator extends AbstractMediator
                 // ensure correct trace state after each invocation of a mediator
                 Mediator mediator = mediators.get(i);
 
-                if (sequenceContentAware && mediator.isContentAware() &&
+                if (sequenceContentAware && (mediator.isContentAware() || isStreamXpathEnabled) &&
                         (!Boolean.TRUE.equals(synCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED)))) {
                     buildMessage(synCtx, synLog);
                 }
@@ -101,27 +112,21 @@ public abstract class AbstractListMediator extends AbstractMediator
                 }
             }
         } catch (SynapseException synEx) {
-            // Create a Pattern object
-            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
-
             // Now create matcher object.
-            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
-            if (wstxExMatcher.find()) {
+            Matcher msgBuildFailureExMatcher = msgBuildFailureExpattern.matcher(ExceptionUtils.getStackTrace(synEx));
+            if (msgBuildFailureExMatcher.find()) {
                 consumeInputOnOmException(synCtx);
             }
             throw synEx;
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
-            
-            // Create a Pattern object
-            Pattern wstxExpattern = Pattern.compile(WSTX_EXCEPTION_PATTERN);
 
             // Now create matcher object.
-            Matcher wstxExMatcher = wstxExpattern.matcher(ExceptionUtils.getStackTrace(ex));
+            Matcher msgBuildFailureExMatcher = msgBuildFailureExpattern.matcher(ExceptionUtils.getStackTrace(ex));
             if (errorMsg == null) {
                 errorMsg = "Runtime error occurred while mediating the message";
             }
-            if (wstxExMatcher.find()) {
+            if (msgBuildFailureExMatcher.find()) {
                 consumeInputOnOmException(synCtx);
             }
             handleException(errorMsg, ex, synCtx);

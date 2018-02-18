@@ -116,6 +116,7 @@ public class EIPUtils {
                                       SynapseXPath expression) throws JaxenException {
 
         OMElement enrichingElement;
+        enricher.toString();
         List elementList = getMatchingElements(envelope, synCtxt, expression);
         List list = getMatchingElements(enricher, synCtxt, expression);
         if ((checkNotEmpty(elementList) && checkNotEmpty(list))
@@ -141,9 +142,15 @@ public class EIPUtils {
                 }
             }
             enrichingElement = envelope.getBody();
-            if (list != null) {
-                addChildren(list, enrichingElement);
+            //This has to introduce because if on complete expression written to extract SOAPEnvelop ex: "."
+            // then StAXOMBuilder end up in while loop that never exit. This cause to OOM the ESB. Hence the fix is to
+            // validate child element is a SOAPEnvelop
+            for (Object child : list) {
+                if (child instanceof SOAPEnvelope) {
+                    throw new SynapseException("Could not add SOAPEnvelope as child element.");
+                }
             }
+            addChildren(list, enrichingElement);
         } else {
             throw new SynapseException("Could not find matching elements to aggregate.");
         }

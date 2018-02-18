@@ -21,7 +21,10 @@ package org.apache.synapse.message.store.impl.jms;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.message.MessageConsumer;
+import org.apache.synapse.message.StoreForwardException;
+import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.store.Constants;
 import org.apache.synapse.message.store.impl.commons.MessageConverter;
 import org.apache.synapse.message.store.impl.commons.StorableMessage;
@@ -33,6 +36,7 @@ import javax.jms.ObjectMessage;
 import javax.jms.Session;
 
 public class JmsConsumer implements MessageConsumer {
+
     private static final Log logger = LogFactory.getLog(JmsConsumer.class.getName());
 
     private Connection connection;
@@ -46,11 +50,18 @@ public class JmsConsumer implements MessageConsumer {
     private String idString;
 
     private boolean isInitialized;
+
     /** Holds the last message read from the message store. */
     private CachedMessage cachedMessage;
+
     /** Did last receive() call cause an error? */
     private boolean isReceiveError;
 
+    /**
+     * Constructor for JMS consumer
+     *
+     * @param store JMSStore associated to this JMS consumer
+     */
     public JmsConsumer(JmsStore store) {
         if (store == null) {
             logger.error("Cannot initialize.");
@@ -63,67 +74,56 @@ public class JmsConsumer implements MessageConsumer {
     }
 
     public MessageContext receive() {
-        boolean error;
-        JMSException exception;
-        if (!checkConnection()) {
-            if (!reconnect()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(getId()
-                            + " cannot receive message from store. Cannot reconnect.");
-                }
-                return null;
-            } else {
-                logger.info(getId() + " reconnected to store.");
-                isReceiveError = false;
-            }
 
+        boolean connectionSuccess = checkAndTryConnect();
+
+        if (!connectionSuccess) {
+            throw new SynapseException(idString + "Error while connecting to JMS provider. "
+                    + MessageProcessorConstants.STORE_CONNECTION_ERROR);
         }
-        if (!checkConnection()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(getId() + " cannot receive message from store.");
-            }
-            return null;
-        }
+
         try {
             Message message = consumer.receive(1);
             if (message == null) {
                 return null;
             }
             if (!(message instanceof ObjectMessage)) {
-                logger.warn(getId() + ". Did not receive a javax.jms.ObjectMessage");
-                message.acknowledge(); // TODO:
+                logger.warn("JMS Consumer " + getId() + " did not receive a javax.jms.ObjectMessage");
+                //we just discard this message as we only store Object messages via JMS Message store
+                message.acknowledge();
                 return null;
             }
             ObjectMessage msg = (ObjectMessage) message;
             String messageId = msg.getStringProperty(Constants.OriginalMessageID);
             if (!(msg.getObject() instanceof StorableMessage)) {
-                logger.warn(getId() + ". Did not receive a valid message.");
+                logger.warn("JMS Consumer " + getId() + " did not receive a valid message.");
                 message.acknowledge();
                 return null;
             }
+
+            //create a ,essage context back from the stored message
             StorableMessage storableMessage = (StorableMessage) msg.getObject();
             org.apache.axis2.context.MessageContext axis2Mc = store.newAxis2Mc();
             MessageContext synapseMc = store.newSynapseMc(axis2Mc);
             synapseMc = MessageConverter.toMessageContext(storableMessage, axis2Mc, synapseMc);
+
+            //cache the message
             updateCache(message, synapseMc, messageId, false);
+
             if (logger.isDebugEnabled()) {
                 logger.debug(getId() + " Received MessageId:" + messageId + " priority:" + message.getJMSPriority());
             }
+
             return synapseMc;
+
         } catch (JMSException e) {
-            error = true;
-            exception = e;
-        }
-        if (error) {
-            if (!isReceiveError) {
-                logger.error(getId() + " cannot receive message from store. Error:"
-                             + exception.getLocalizedMessage());//, exception);
-            }
+            logger.error("Cannot fetch messages from Store " + store.getName());
             updateCache(null, null, "", true);
             cleanup();
-            return null;
+            /* try connecting and receiving again. Try to connect will happen configured number of times
+            and give up with a SynapseException */
+            return receive();
         }
-        return null;
     }
 
     public boolean ack() {
@@ -134,18 +134,21 @@ public class JmsConsumer implements MessageConsumer {
         return result;
     }
 
-    public boolean cleanup() {
+    public boolean cleanup() throws SynapseException {
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " cleaning up...");
         }
-        boolean result =  store.cleanup(connection, session, true);
-        if (result) {
+        try {
+            store.cleanup(connection, session);
+            return true;
+        } catch (JMSException e) {
+            throw new SynapseException("Error while connecting to store to close created connections. JMS provider "
+                    + "might not be accessible" + store.getName(), e);
+        } finally {
             connection = null;
             session = null;
             consumer = null;
-            return true;
         }
-        return false;
     }
 
     public boolean isAlive() {
@@ -208,47 +211,46 @@ public class JmsConsumer implements MessageConsumer {
         return idString;
     }
 
-    private boolean checkConnection() {
-        if (consumer == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(getId() + " cannot proceed. Message consumer is null.");
+    /**
+     * Check if connection, session and consumer is created successfully, if not try to connect
+     *
+     * @return true if connection to JMS provider is successfully made
+     */
+    private boolean checkAndTryConnect() {
+
+        boolean connectionSuccess = false;
+
+        if (consumer != null && session != null && connection != null) {
+            connectionSuccess = true;
+        } else {
+            try {
+                reconnect();
+                connectionSuccess = true;
+            } catch (StoreForwardException | SynapseException e) {
+                logger.error("Error while connecting to JMS store and initializing consumer", e);
             }
-            return false;
         }
-        if (session == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(getId() + " cannot proceed. JMS Session is null.");
-            }
-            return false;
-        }
-        if (connection == null) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(getId() + " cannot proceed. JMS Connection is null.");
-            }
-            return false;
-        }
-        return true;
+        return connectionSuccess;
     }
 
     private void writeToFileSystem() {
     }
 
-    private void updateCache(Message message, MessageContext synCtx, String messageId,
-                        boolean receiveError) {
+    private void updateCache(Message message, MessageContext synCtx, String messageId, boolean receiveError) {
         isReceiveError = receiveError;
         cachedMessage.setMessage(message);
         cachedMessage.setMc(synCtx);
         cachedMessage.setId(messageId);
     }
 
-    private boolean reconnect() {
+    private void reconnect() throws StoreForwardException {
+        logger.info("Trying to reconnect to JMS store " + store.getName());
         JmsConsumer consumer = (JmsConsumer) store.getConsumer();
-
+        logger.info("Successfully connected to JMS store " + store.getName());
         if (consumer.getConsumer() == null) {
             if (logger.isDebugEnabled()) {
                 logger.debug(getId() + " could not reconnect to the broker.");
             }
-            return false;
         }
         connection = consumer.getConnection();
         session = consumer.getSession();
@@ -256,8 +258,6 @@ public class JmsConsumer implements MessageConsumer {
         if (logger.isDebugEnabled()) {
             logger.debug(getId() + " ===> " + consumer.getId());
         }
-        //setStringId(consumer.getId());
-        return true;
     }
 
     private final class CachedMessage {
@@ -270,6 +270,12 @@ public class JmsConsumer implements MessageConsumer {
             return this;
         }
 
+        /**
+         * Acknowledge the message
+         *
+         * @return true if ack is processed successfully. If there was some issue,
+         * we call recover on session will return false
+         */
         public boolean ack() {
             try {
                 if (message != null) {
@@ -289,7 +295,7 @@ public class JmsConsumer implements MessageConsumer {
                 return false;
             } catch (JMSException e) {
                 logger.error(getId() + " cannot ack last read message. Error:"
-                             + e.getLocalizedMessage(), e);
+                        + e.getLocalizedMessage(), e);
                 return false;
             }
             return true;

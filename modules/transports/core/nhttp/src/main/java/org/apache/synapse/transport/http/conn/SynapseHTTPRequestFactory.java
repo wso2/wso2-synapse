@@ -22,9 +22,16 @@ public class SynapseHTTPRequestFactory implements HttpRequestFactory {
     private static final String[] RFC2616_SPECIAL_METHODS = {
             "HEAD",
             "OPTIONS",
-            "DELETE",
             "TRACE",
             "CONNECT"
+    };
+
+    /**
+     * To provide payload support for HTTP DELETE requests
+     * Since DELETE may/may not contain payload, consider as possible enclosing method
+    **/
+    private static final String[] RFC2616_POSSIBLE_ENTITY_ENC_METHODS = {
+            "DELETE"
     };
 
     public static final String ENDPOINT_URL = "endPointURI";
@@ -50,6 +57,8 @@ public class SynapseHTTPRequestFactory implements HttpRequestFactory {
         String method = requestline.getMethod();
         if (isOneOf(RFC2616_COMMON_METHODS, method)) {
             return new BasicHttpRequest(requestline);
+        } else if (isOneOf(RFC2616_POSSIBLE_ENTITY_ENC_METHODS, method)) {
+            return new BasicHttpEntityPossibleEnclosingRequest(requestline);
         } else if (isOneOf(RFC2616_ENTITY_ENC_METHODS, method)) {
             return new BasicHttpEntityEnclosingRequest(requestline);
         } else if (isOneOf(RFC2616_SPECIAL_METHODS, method)) {
@@ -63,6 +72,8 @@ public class SynapseHTTPRequestFactory implements HttpRequestFactory {
             throws MethodNotSupportedException {
         if (isOneOf(RFC2616_COMMON_METHODS, method)) {
             return new BasicHttpRequest(method, uri);
+        } else if (isOneOf(RFC2616_POSSIBLE_ENTITY_ENC_METHODS, method)) {
+            return new BasicHttpEntityPossibleEnclosingRequest(method, uri);
         } else if (isOneOf(RFC2616_ENTITY_ENC_METHODS, method)) {
             return new BasicHttpEntityEnclosingRequest(method, uri);
         } else if (isOneOf(RFC2616_SPECIAL_METHODS, method)) {

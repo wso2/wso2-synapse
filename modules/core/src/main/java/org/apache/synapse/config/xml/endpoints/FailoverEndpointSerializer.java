@@ -22,6 +22,7 @@ package org.apache.synapse.config.xml.endpoints;
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMElement;
 import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.config.xml.XMLConfigConstants;
 import org.apache.synapse.endpoints.Endpoint;
 import org.apache.synapse.endpoints.FailoverEndpoint;
 
@@ -49,6 +50,11 @@ public class FailoverEndpointSerializer extends EndpointSerializer {
         endpointElement.addChild(failoverElement);
 
         serializeCommonAttributes(endpoint,endpointElement);
+
+        if (failoverEndpoint.isBuildMessageAtt()) {
+            failoverElement.addAttribute(XMLConfigConstants.BUILD_MESSAGE,
+                    Boolean.toString(failoverEndpoint.isBuildMessageAtt()), null);
+        }
 
         for (Endpoint childEndpoint : failoverEndpoint.getChildren()) {
             failoverElement.addChild(EndpointSerializer.getElementFromEndpoint(childEndpoint));

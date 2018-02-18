@@ -58,6 +58,14 @@ public class EnterpriseBeanstalkManager {
      */
     public void init(Properties props) {
 
+        scheduler = Executors.newSingleThreadScheduledExecutor(
+                new ThreadFactory() {
+                    public Thread newThread(Runnable r) {
+                        return new Thread(r, "enterprise-beanstalk-cleaner");
+                    }
+                }
+        );
+
         if (props == null) {
             if (log.isDebugEnabled()) {
                 log.debug("Beanstalk properties cannot be found.");
@@ -83,13 +91,6 @@ public class EnterpriseBeanstalkManager {
             return;
         }
 
-        scheduler = Executors.newSingleThreadScheduledExecutor(
-                new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        return new Thread(r, "enterprise-beanstalk-cleaner");
-                    }
-                }
-        );
 
         for (String beanstalkName : beanstalkNames) {
 

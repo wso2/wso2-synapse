@@ -526,8 +526,13 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
      * @param synCtx the message at hand
      */
     public void onFault(MessageContext synCtx) {
-        logSetter();
-        invokeNextFaultHandler(synCtx);
+        EndpointDefinition endpointDefinition = getDefinition();
+        if (endpointDefinition != null && endpointDefinition.getTimeoutAction() == SynapseConstants.DISCARD) {
+            log.info("Ignoring fault handlers since the timeout action is set to DISCARD");
+        } else {
+            logSetter();
+            invokeNextFaultHandler(synCtx);
+        }
     }
 
     /**

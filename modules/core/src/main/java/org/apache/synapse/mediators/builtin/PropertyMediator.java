@@ -33,6 +33,7 @@ import org.apache.synapse.transport.passthru.PassThroughConstants;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.util.JavaUtils;
 import org.apache.http.protocol.HTTP;
+import org.apache.synapse.util.MediatorPropertyUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -135,7 +136,7 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2MessageCtx.setProperty(name, resultValue);
-                handleSpecialProperties(resultValue, axis2MessageCtx);
+                MediatorPropertyUtils.handleSpecialProperties(name, resultValue, axis2MessageCtx);
 
             } else if (XMLConfigConstants.SCOPE_CLIENT.equals(scope)
                     && synCtx instanceof Axis2MessageContext) {
@@ -214,8 +215,7 @@ public class PropertyMediator extends AbstractMediator {
                     pros.remove(name);
                 }
 
-            } else if ((XMLConfigConstants.SCOPE_AXIS2.equals(scope) ||
-                XMLConfigConstants.SCOPE_CLIENT.equals(scope))
+            } else if (XMLConfigConstants.SCOPE_AXIS2.equals(scope)
                 && synCtx instanceof Axis2MessageContext) {
                 
                 //Removing property from the Axis2 Message Context
@@ -223,6 +223,17 @@ public class PropertyMediator extends AbstractMediator {
                 org.apache.axis2.context.MessageContext axis2MessageCtx =
                         axis2smc.getAxis2MessageContext();
                 axis2MessageCtx.removeProperty(name);
+
+            } else if (XMLConfigConstants.SCOPE_CLIENT.equals(scope)
+                    && synCtx instanceof Axis2MessageContext) {
+
+                //Removing property from the Axis2-client Message Context
+                Axis2MessageContext axis2smc = (Axis2MessageContext) synCtx;
+                org.apache.axis2.context.MessageContext axis2MessageCtx =
+                        axis2smc.getAxis2MessageContext();
+                //Property value is set to null since axis2MessageCtx.getOptions()
+                //does not have an option to remove properties
+                axis2MessageCtx.getOptions().setProperty(name, null);
 
             } else if (XMLConfigConstants.SCOPE_TRANSPORT.equals(scope)
                     && synCtx instanceof Axis2MessageContext) {
@@ -446,20 +457,6 @@ public class PropertyMediator extends AbstractMediator {
         }
         return contentAware;
     }
-
-    private void handleSpecialProperties(Object resultValue,
-                                         org.apache.axis2.context.MessageContext axis2MessageCtx) {
-		if (org.apache.axis2.Constants.Configuration.MESSAGE_TYPE.equals(name)) {
-			axis2MessageCtx.setProperty(org.apache.axis2.Constants.Configuration.CONTENT_TYPE, resultValue);
-			Object o = axis2MessageCtx.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-			Map _headers = (Map) o;
-			if (_headers != null) {
-				_headers.remove(HTTP.CONTENT_TYPE);
-				_headers.put(HTTP.CONTENT_TYPE, resultValue);
-			}
-		}
-    }
-
 
     private OMElement buildOMElement(String xml) {
         // intentionally building the resulting OMElement. See ESBJAVA-3478.

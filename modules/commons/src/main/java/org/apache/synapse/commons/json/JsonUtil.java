@@ -110,6 +110,8 @@ public final class JsonUtil {
 
     private static final boolean xmlNilReadWriteEnabled;
 
+    private static final boolean xmlWriteNullForEmptyElements;
+
     static {
         Properties properties = MiscellaneousUtil.loadProperties("synapse.properties");
         if (properties == null) {
@@ -124,6 +126,7 @@ public final class JsonUtil {
             xmloutAutoArray = true;
             xmloutMultiplePI = false;
             xmlNilReadWriteEnabled = false;
+            xmlWriteNullForEmptyElements = true;
         } else {
             // Preserve the namespace declarations() in the JSON output in the XML -> JSON transformation.
             String process = properties.getProperty(Constants.SYNAPSE_COMMONS_JSON_PRESERVE_NAMESPACE, "false").trim();
@@ -169,6 +172,10 @@ public final class JsonUtil {
             xmlNilReadWriteEnabled = Boolean
                     .parseBoolean(properties.getProperty("synapse.commons.enableXmlNilReadWrite", "false"));
 
+            // Used in XML->JSON conversion. Decides whether to set null or "" for an empty XML element w/o nil attrib
+            xmlWriteNullForEmptyElements = Boolean.parseBoolean(
+                    properties.getProperty("synapse.commons.enableXmlNullForEmptyElement", "true"));
+
         }
     }
 
@@ -210,6 +217,7 @@ public final class JsonUtil {
             .customReplaceSequence(jsonoutCustomReplaceSequence)
             .customRegex(jsonoutcustomRegex)
             .readWriteXmlNil(xmlNilReadWriteEnabled)
+            .writeNullForEmptyElement(xmlWriteNullForEmptyElements)
             .build();
     /// End of JSON/XML INPUT OUTPUT Formatting Configuration.
 
@@ -536,8 +544,7 @@ public final class JsonUtil {
         boolean isArray = false;
         boolean isValue = false;
         if (inputStream != null) {
-            InputStream json = toReadOnlyStream(inputStream);
-            messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
+            InputStream json = setJsonStream(messageContext, inputStream);
             // read ahead few characters to see if the stream is valid...
             boolean isEmptyPayload = true;
             boolean valid = false;
@@ -547,33 +554,38 @@ public final class JsonUtil {
                 * loop exits if one of the valid literals is found. If no valid literal is found the it will loop to
                 * the end of the stream and the next if statement after the loop makes sure that valid will remain false
                 * */
-                int c = json.read();
-                while (c != -1 && c != '{' && c != '[' && c != '"' && c != 't' && c != 'n' && c != 'f' && c != '-' &&
-                        c != '0' && c != '1' && c != '2' && c != '3' && c != '4' && c != '5' && c != '6' && c != '7' &&
-                        c != '8' && c != '9') {
-                    if (c != 32) {
+                int character = json.read();
+                while (character != -1 && character != '{' && character != '[' && character != '"' &&
+                        character != 't' && character != 'n' && character != 'f' && character != '-' &&
+                        character != '0' && character != '1' && character != '2' && character != '3' &&
+                        character != '4' && character != '5' && character != '6' && character != '7' &&
+                        character != '8' && character != '9') {
+                    if (character != 32) {
                         isEmptyPayload = false;
                     }
-                    c = json.read();
+                    character = json.read();
                 }
-                if (c != -1) {
+                if (character != -1) {
                     valid = true;
                 }
                 /*
                 * A valid JSON can be an object, array or a value (http://json.org/). The following conditions check
                 * the beginning char to see if the json stream could fall into one of this category
                 * */
-                if (c == '{') {
+                if (character == '{') {
                     isObject = true;
                     isArray = false;
                     isValue = false;
-                } else if (c == '[') {
+                } else if (character == '[') {
                     isArray = true;
                     isObject = false;
                     isValue = false;
-                } else if (c == '"' || c == 't' || c == 'n' || c == 'f' || c == '-' || c == '0' || c == '1' ||
-                        c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' ||
-                        c == '8' || c == '9') {
+                } else if (character == '"' || character == 't' || character == 'n' || character == 'f' ||
+                        character == '-' || character == '0' || character == '1' ||
+                        character == '2' || character == '3' || character == '4' || character == '5' ||
+                        character == '6' || character == '7' ||
+                        character == '8' || character == '9') { //a value can be a quoted string (") true (t),
+                    // false (f), null (n) or a number (- or any digit and cannot start with a +)
                     isArray = false;
                     isObject = false;
                     isValue = true;
@@ -605,8 +617,8 @@ public final class JsonUtil {
                      */
                     if (isValidPayloadRequired(messageContext)) {
                         throw new AxisFault(
-                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. Payload" +
-                                        " is not a JSON string.");
+                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. Payload"
+                                        + " is not a JSON string.");
                     } else {
                         return null;
                     }
@@ -628,16 +640,16 @@ public final class JsonUtil {
                         jsonElement = JSON_VALUE;
                     } else {
                         throw new AxisFault(
-                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. Payload" +
-                                        " is not a JSON string.");
+                                "#getNewJsonPayload. Could not save JSON payload. Invalid input stream found. Payload"
+                                        + " is not a JSON string.");
                     }
                     OMElement element = OMAbstractFactory.getOMFactory().createOMElement(jsonElement, null);
                     element.addChild(OMAbstractFactory.getOMFactory().createOMText(jsonString));
                     return element;
                 } catch (IOException e) {
                     throw new AxisFault(
-                            "#Can not parse stream. MessageID: " +
-                                    messageContext.getMessageID() + ". Error>>> " + e.getLocalizedMessage(), e);
+                            "#Can not parse stream. MessageID: " + messageContext.getMessageID() + ". Error>>> "
+                                    + e.getLocalizedMessage(), e);
                 }
             }
             if (isArray) {
@@ -684,6 +696,18 @@ public final class JsonUtil {
             return elem;
         }
         return null;
+    }
+
+    /**
+     * Sets the input JSON stream as a property of the MessageContext
+     * @param messageContext the axis2MessageContext
+     * @param inputStream the JSON inputStream
+     * @return a readonly InputStream
+     */
+    public static InputStream setJsonStream(MessageContext messageContext, InputStream inputStream) {
+        InputStream json = toReadOnlyStream(inputStream);
+        messageContext.setProperty(ORG_APACHE_SYNAPSE_COMMONS_JSON_JSON_INPUT_STREAM, json);
+        return json;
     }
 
     /**

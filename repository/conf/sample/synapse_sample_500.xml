@@ -18,27 +18,35 @@
   ~  under the License.
   -->
 
-<!-- Simple Eventing configuration -->
 <definitions xmlns="http://ws.apache.org/ns/synapse">
-
-    <eventSource name="SampleEventSource">
-        <subscriptionManager
-                class="org.apache.synapse.eventing.managers.DefaultInMemorySubscriptionManager">
-            <!--property name="registryURL" value="http://localhost:8180/wso2registry"/>
-          <property name="username" value="admin"/>
-          <property name="password" value="admin"/-->
-            <property name="topicHeaderName" value="Topic"/>
-            <property name="topicHeaderNS" value="http://apache.org/aip"/>
-        </subscriptionManager>
-    </eventSource>
-
-    <sequence name="PublicEventSource">
-        <log level="full"/>
-        <eventPublisher eventSourceName="SampleEventSource"/>
-    </sequence>
-
-    <proxy name="EventingProxy">
-        <target inSequence="PublicEventSource"/>
+    <proxy name="StockQuoteProxy"
+           transports="https http"
+           startOnLoad="true"
+           trace="disable">
+        <target>
+            <inSequence>
+                <call>
+                    <endpoint key="StockQuoteService"/>
+                </call>
+                <header name="Action" value="urn:getQuote"/>
+                <payloadFactory>
+                    <format>
+                        <m0:getQuote xmlns:m0="http://services.samples">
+                            <m0:request>
+                                <m0:symbol>WSO2</m0:symbol>
+                            </m0:request>
+                        </m0:getQuote>
+                    </format>
+                    <args/>
+                </payloadFactory>
+                <call>
+                    <endpoint key="StockQuoteService"/>
+                </call>
+                <respond/>
+            </inSequence>
+        </target>
     </proxy>
-
+    <endpoint name="StockQuoteService">
+        <address uri="http://localhost:9000/services/SimpleStockQuoteService"/>
+    </endpoint>
 </definitions>

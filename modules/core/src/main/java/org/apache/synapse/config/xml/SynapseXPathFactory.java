@@ -23,7 +23,9 @@ import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
+import org.apache.synapse.config.SynapsePropertiesLoader;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
 
@@ -43,8 +45,21 @@ public class SynapseXPathFactory {
         OMAttribute xpathAttrib = elem.getAttribute(attribName);
 
         if (xpathAttrib != null && xpathAttrib.getAttributeValue() != null) {
-
-            xpath = new SynapseXPath(xpathAttrib.getAttributeValue());
+            try {
+                xpath = new SynapseXPath(xpathAttrib.getAttributeValue());
+            } catch (org.jaxen.XPathSyntaxException ex) {
+                    /* Try and see whether the expression can be compiled with XPath 2.0
+                     * This will only be done if the failover DOM XPath 2.0 is enabled */
+                if (Boolean.parseBoolean(SynapsePropertiesLoader.loadSynapseProperties().
+                        getProperty(SynapseConstants.FAIL_OVER_DOM_XPATH_PROCESSING))) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Trying to compile the expression in XPath 2.0:" + xpathAttrib.getAttributeValue());
+                    }
+                    xpath = new SynapseXPath(xpathAttrib.getAttributeValue(), elem);
+                } else {
+                    throw ex;
+                }
+            }
             OMElementUtils.addNameSpaces(xpath, elem, log);
             xpath.addNamespacesForFallbackProcessing(elem);
 

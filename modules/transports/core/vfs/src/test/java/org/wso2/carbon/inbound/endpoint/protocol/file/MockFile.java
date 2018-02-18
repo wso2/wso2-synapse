@@ -18,18 +18,33 @@
 
 package org.wso2.carbon.inbound.endpoint.protocol.file;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.vfs2.FileContent;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileType;
 import org.apache.commons.vfs2.provider.AbstractFileName;
 import org.apache.commons.vfs2.provider.AbstractFileObject;
 import org.apache.commons.vfs2.provider.AbstractFileSystem;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 
+/**
+ * Mock file implementation
+ */
 public class MockFile extends AbstractFileObject implements FileObject {
 
+    private static Log log = LogFactory.getLog(MockFile.class);
     private byte[] buff = { 't', 'e', 's', 't' };
+    private ByteArrayOutputStream fileContent = new ByteArrayOutputStream();
+
+    //indicate that lock file has been created
+    private boolean lockFileCreated = false;
 
     protected MockFile(AbstractFileName name, AbstractFileSystem fs) {
         super(name, fs);
@@ -39,9 +54,16 @@ public class MockFile extends AbstractFileObject implements FileObject {
         if(getName().getPath().endsWith(".fail")) {
             return FileType.IMAGINARY;
         }
-        if(getName().getPath().endsWith(".lock")) {
+
+        if(getName().getPath().endsWith(".lock") && !lockFileCreated) {
             return FileType.IMAGINARY;
         }
+
+        //If file name ends with file separator, it is mocked as folder
+        if(getName().getPath().endsWith(File.separator)) {
+            return FileType.FOLDER;
+        }
+
         return getName().getType();
     }
 
@@ -76,10 +98,51 @@ public class MockFile extends AbstractFileObject implements FileObject {
     }
 
     protected InputStream doGetInputStream() throws Exception {
-        return new ByteArrayInputStream(buff);
+        return new ByteArrayInputStream(fileContent.toByteArray());
+    }
+
+    @Override
+    public InputStream getInputStream() throws FileSystemException {
+        return super.getInputStream();
+    }
+
+    @Override
+    protected OutputStream doGetOutputStream(boolean bAppend) throws Exception {
+        return fileContent;
     }
 
     protected void doDelete() throws Exception {
         //Done
+    }
+
+    @Override
+    public void createFile() throws FileSystemException {
+        log.info("Mocking create file:" + getName());
+
+        //if creating mock lock file
+        if(getName().getPath().endsWith(".lock") && !lockFileCreated) {
+            lockFileCreated = true;
+        }
+    }
+
+    @Override
+    public FileContent getContent() throws FileSystemException {
+        return super.getContent();
+    }
+
+    @Override
+    protected void doRename(FileObject newfile) throws Exception {
+        super.doRename(newfile);
+        /*MockFile newMockFile = (MockFile) FileObjectUtils.getAbstractFileObject(newfile);
+        MockFileHolder.getInstance().addFile(newfile.getName().getURI().split("\\?")[0], newMockFile);*/
+    }
+
+    @Override
+    public boolean delete() throws FileSystemException {
+        if (super.delete()) {
+            //delete the file from mock file holder
+            return MockFileHolder.getInstance().deleteMockFile(this.getName().getURI().split("\\?")[0]);
+        }
+        return false;
     }
 }

@@ -19,6 +19,8 @@
 
 package org.apache.synapse.transport.nhttp;
 
+import javax.xml.namespace.QName;
+
 public class NhttpConstants {
     public static final String TRUE = "TRUE";
     /**
@@ -180,6 +182,9 @@ public class NhttpConstants {
 	
 	/** Ref X-Forwaded-For header*/
     public static final String HEADER_X_FORWARDED_FOR = "X-Forwarded-For";
+
+    /** Ref X-Forwaded-Host header */
+    public static final String HEADER_X_FORWARDED_HOST = "X-Forwarded-Host";
     
     /** Ref X-Originating-IP Form 1*/
     public static final String HEADER_X_ORIGINATING_IP_FORM_1 = "X-Originating-IP";
@@ -257,4 +262,17 @@ public class NhttpConstants {
      * Constant string to define the if the server/client connection is dropped.
      */
     public static final String CONNECTION_DROPPED = "CONNECTION_DROPPED";
+
+    public static final int DEFAULT_SOCKET_TIMEOUT = 60000;
+
+    /**
+     * The operation name used by the Synapse service (for message mediation)
+     */
+    public static final QName SYNAPSE_OPERATION_NAME = new QName("mediate");
+
+    /**
+     * The default operation name used by the axis service
+     */
+    public static final String DEFAULT_MEDIATE_OPERATION = "_default_mediate_operation_";
+
 }

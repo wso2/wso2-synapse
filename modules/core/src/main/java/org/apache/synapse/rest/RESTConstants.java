@@ -50,4 +50,9 @@ public class RESTConstants {
     
     public static final String NO_MATCHING_RESOURCE_HANDLER = "_resource_mismatch_handler_";
 
+    /**
+     * Delimiter of an url  query string
+     */
+    public static final String QUERY_PARAM_DELIMITER = "&";
+
 }

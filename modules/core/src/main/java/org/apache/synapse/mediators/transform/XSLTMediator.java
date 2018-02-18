@@ -23,6 +23,8 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.soap.SOAPEnvelope;
 import org.apache.axis2.AxisFault;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
@@ -30,17 +32,35 @@ import org.apache.synapse.config.Entry;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.apache.synapse.mediators.Value;
 import org.apache.synapse.mediators.MediatorProperty;
-import org.apache.synapse.util.jaxp.*;
+import org.apache.synapse.mediators.Value;
+import org.apache.synapse.util.jaxp.DOOMResultBuilderFactory;
+import org.apache.synapse.util.jaxp.DOOMSourceBuilderFactory;
+import org.apache.synapse.util.jaxp.ResultBuilder;
+import org.apache.synapse.util.jaxp.ResultBuilderFactory;
+import org.apache.synapse.util.jaxp.SourceBuilder;
+import org.apache.synapse.util.jaxp.SourceBuilderFactory;
+import org.apache.synapse.util.jaxp.StreamResultBuilder;
+import org.apache.synapse.util.jaxp.StreamResultBuilderFactory;
+import org.apache.synapse.util.jaxp.StreamSourceBuilderFactory;
 import org.apache.synapse.util.resolver.CustomJAXPURIResolver;
 import org.apache.synapse.util.resolver.ResourceMap;
 import org.apache.synapse.util.xpath.SourceXPathSupport;
 import org.apache.synapse.util.xpath.SynapseXPath;
 
-import javax.xml.transform.*;
+import javax.xml.transform.ErrorListener;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Templates;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The XSLT mediator performs an XSLT transformation requested, using
@@ -64,25 +84,41 @@ public class XSLTMediator extends AbstractMediator {
     private static class ErrorListenerImpl implements ErrorListener {
         private final SynapseLog synLog;
         private final String activity;
-        
+        private static final Log logger = LogFactory.getLog(XSLTMediator.class);
+
+
         public ErrorListenerImpl(SynapseLog synLog, String activity) {
-            this.synLog = synLog;
             this.activity = activity;
+            if (XSLT_TRANSFORMATION_ACTIVITY.equals(activity)) {
+                this.synLog = synLog;
+            } else {
+                this.synLog = null;
+            }
         }
         
         public void warning(TransformerException e) throws TransformerException {
-            if (synLog.isTraceOrDebugEnabled()) {
-                synLog.traceOrDebugWarn("Warning encountered during " + activity + " : " + e);
+            if (XSLT_TRANSFORMATION_ACTIVITY.equals(this.activity) && synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebugWarn("Warning encountered during " + this.activity + " : " + e);
+            } else if (STYLESHEET_PARSING_ACTIVITY.equals(this.activity)) {
+                logger.warn("Warning encountered during " + this.activity + " : " + e);
             }
         }
         
         public void error(TransformerException e) throws TransformerException {
-            synLog.error("Error occurred in " + activity + " : " + e);
+            if(XSLT_TRANSFORMATION_ACTIVITY.equals(this.activity)) {
+                this.synLog.error("Error occurred in " + this.activity + " : " + e);
+            } else {
+                logger.error("Error occurred in " + this.activity + ". ", e);
+            }
             throw e;
         }
         
         public void fatalError(TransformerException e) throws TransformerException {
-            synLog.error("Fatal error occurred in " + activity + " : " + e);
+            if(XSLT_TRANSFORMATION_ACTIVITY.equals(this.activity)) {
+                this.synLog.error("Fatal error occurred in " + this.activity + " : " + e);
+            } else {
+                logger.error("Fatal error occurred in " + this.activity + ". ", e);
+            }
             throw e;
         }
     }
@@ -105,6 +141,19 @@ public class XSLTMediator extends AbstractMediator {
      */
     public static final String RESULT_BUILDER_FACTORY =
         "http://ws.apache.org/ns/synapse/transform/attribute/rbf";
+
+    /**
+     * IF the user have set this property, the XSLTMediator does not build the result xml, instead it will be stored as
+     * string property with name givent in "target" attribute
+     */
+    public static final String TRANSFORM_XSLT_RESULT_DISABLE_BUILD = "transform.xslt.result.disableBuild";
+
+    /**
+     * Two template creation activities
+     */
+    public static final String XSLT_TRANSFORMATION_ACTIVITY = "XSLT transformation";
+
+    public static final String STYLESHEET_PARSING_ACTIVITY = "stylesheet parsing";
     
     /**
      * The resource key which refers to the XSLT to be used for the transformation
@@ -170,6 +219,11 @@ public class XSLTMediator extends AbstractMediator {
      * The result builder factory to use.
      */
     private ResultBuilderFactory resultBuilderFactory = new StreamResultBuilderFactory();
+    
+    /**
+     * Determine if cache is used or not
+     */
+    private boolean useCache = true;
 
     /**
      * Transforms this message (or its element specified as the source) using the
@@ -266,7 +320,7 @@ public class XSLTMediator extends AbstractMediator {
                 applyProperties(transformer, synCtx, synLog);
             }
 
-            transformer.setErrorListener(new ErrorListenerImpl(synLog, "XSLT transformation"));
+            transformer.setErrorListener(new ErrorListenerImpl(synLog, XSLT_TRANSFORMATION_ACTIVITY));
             
             String outputMethod = transformer.getOutputProperty(OutputKeys.METHOD);
             String encoding = transformer.getOutputProperty(OutputKeys.ENCODING);
@@ -304,6 +358,25 @@ public class XSLTMediator extends AbstractMediator {
             }
 
             synLog.traceOrDebug("Transformation completed - processing result");
+
+            /**
+             * If user have set transform.xslt.result.disableBuild property to true, we do not build the message to
+             * OMElement,
+             */
+            if (targetPropertyName != null && resultBuilder instanceof StreamResultBuilder &&
+                    synCtx.getProperty(TRANSFORM_XSLT_RESULT_DISABLE_BUILD) != null &&
+                    synCtx.getProperty(TRANSFORM_XSLT_RESULT_DISABLE_BUILD) instanceof String &&
+                    "true".equalsIgnoreCase((String) synCtx.getProperty(TRANSFORM_XSLT_RESULT_DISABLE_BUILD))) {
+
+                    // add result XML string as a message context property to the message
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Adding result string as message context property : " +
+                                targetPropertyName);
+                    }
+
+                    synCtx.setProperty(targetPropertyName, ((StreamResultBuilder) resultBuilder).getResultAsString());
+                    return;
+            }
 
             // get the result OMElement
             OMElement result = null;
@@ -385,7 +458,7 @@ public class XSLTMediator extends AbstractMediator {
         Templates cachedTemplates = null;
 
         // Set an error listener (SYNAPSE-307).
-        transFact.setErrorListener(new ErrorListenerImpl(synLog, "stylesheet parsing"));
+        transFact.setErrorListener(new ErrorListenerImpl(synLog, STYLESHEET_PARSING_ACTIVITY));
         // Allow xsl:import and xsl:include resolution
         transFact.setURIResolver(new CustomJAXPURIResolver(resourceMap,
                 synCtx.getConfiguration()));
@@ -397,8 +470,10 @@ public class XSLTMediator extends AbstractMediator {
                 // if cached template creation failed
                 handleException("Error compiling the XSLT with key : " + xsltKey, synCtx);
             } else {
-                // if cached template is created then put it in to cachedTemplatesMap
-                cachedTemplatesMap.put(generatedXsltKey, cachedTemplates);
+                if (useCache) {
+                    // if cached template is created then put it in to cachedTemplatesMap
+                    cachedTemplatesMap.put(generatedXsltKey, cachedTemplates);
+                }
             }
         } catch (Exception e) {
             handleException("Error creating XSLT transformer using : " + xsltKey, e, synCtx);
@@ -413,22 +488,25 @@ public class XSLTMediator extends AbstractMediator {
      * @return true if it is needed to create a new XSLT template
      */
     private boolean isCreationOrRecreationRequired(MessageContext synCtx) {
-
-        // Derive actual key from message context
-        String generatedXsltKey = xsltKey.evaluateValue(synCtx);
-
-        // if there are no cachedTemplates inside cachedTemplatesMap or
-        // if the template related to this generated key is not cached
-        // then it need to be cached
-        if (cachedTemplatesMap.isEmpty() || !cachedTemplatesMap.containsKey(generatedXsltKey)) {
-            // this is a creation case
+        if (!useCache){
             return true;
         } else {
-            // build transformer - if necessary
-            Entry dp = synCtx.getConfiguration().getEntryDefinition(generatedXsltKey);
-            // if the xsltKey refers to a dynamic resource, and if it has been expired
-            // it is a recreation case
-            return dp != null && dp.isDynamic() && (!dp.isCached() || dp.isExpired());
+            // Derive actual key from message context
+            String generatedXsltKey = xsltKey.evaluateValue(synCtx);
+
+            // if there are no cachedTemplates inside cachedTemplatesMap or
+            // if the template related to this generated key is not cached
+            // then it need to be cached
+            if (cachedTemplatesMap.isEmpty() || !cachedTemplatesMap.containsKey(generatedXsltKey)) {
+                // this is a creation case
+                return true;
+            } else {
+                // build transformer - if necessary
+                Entry dp = synCtx.getConfiguration().getEntryDefinition(generatedXsltKey);
+                // if the xsltKey refers to a dynamic resource, and if it has been expired
+                // it is a recreation case
+                return dp != null && dp.isDynamic() && (!dp.isCached() || dp.isExpired());
+            }
         }
     }
 
@@ -610,6 +688,14 @@ public class XSLTMediator extends AbstractMediator {
     @Override
     public boolean isContentAltering() {
         return true;
+    }
+    
+    public boolean isUseCache() {
+        return useCache;
+    }
+  
+    public void setUseCache(boolean useCache) {
+        this.useCache = useCache;
     }
 
 }

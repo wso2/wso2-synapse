@@ -82,7 +82,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
 
     private List<Argument> pathArgumentList = new ArrayList<Argument>();
     private Pattern pattern = Pattern.compile("\\$(\\d)+");
-    private Pattern ctxPattern = Pattern.compile("\\$(ctx.[^,\"'<>\n}\\]]*)");
     private static Pattern validJsonNumber = Pattern.compile("^-?(0|([1-9]\\d*))(\\.\\d+)?([eE][+-]?\\d+)?$");
 
     private static final Log log = LogFactory.getLog(PayloadFactoryMediator.class);
@@ -152,9 +151,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
         }
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) synCtx).getAxis2MessageContext();
         StringBuffer result = new StringBuffer();
-        StringBuffer resultCTX = new StringBuffer();
-        regexTransformCTX(resultCTX, synCtx, format);
-        replace(resultCTX.toString(),result, synCtx);
+        regexTransform(result, synCtx, format);
         String out = result.toString().trim();
         if (log.isDebugEnabled()) {
             log.debug("#mediate. Transformed payload format>>> " + out);
@@ -186,17 +183,18 @@ public class PayloadFactoryMediator extends AbstractMediator {
     }
 
     /**
-     * Calls the replaceCTX function. isFormatDynamic check is used to remove indentations which come from registry based
+     * Calls the replace function. isFormatDynamic check is used to remove indentations which come from registry based
      * configurations.
-     * @param resultCTX
+     *
+     * @param result
      * @param synCtx
      * @param format
      */
-    private void regexTransformCTX(StringBuffer resultCTX, MessageContext synCtx, String format) {
+    private void regexTransform(StringBuffer result, MessageContext synCtx, String format) {
         if (isFormatDynamic()) {
             String key = formatKey.evaluateValue(synCtx);
             Object entry = synCtx.getEntry(key);
-            if(entry == null){
+            if (entry == null) {
                 handleException("Key " + key + " not found ", synCtx);
             }
             String text = "";
@@ -205,78 +203,14 @@ public class PayloadFactoryMediator extends AbstractMediator {
                 removeIndentations(e);
                 text = e.toString();
             } else if (entry instanceof OMText) {
-                text =  ((OMText) entry).getText();
+                text = ((OMText) entry).getText();
             } else if (entry instanceof String) {
                 text = (String) entry;
             }
-            replaceCTX(text, resultCTX, synCtx);
-            } else {
-            replaceCTX(format, resultCTX, synCtx);
-        }
-    }
-
-    /**
-     * Replaces the payload format with property values from messageContext.
-     *
-     * @param format
-     * @param resultCTX
-     * @param synCtx
-     */
-    private void replaceCTX(String format, StringBuffer resultCTX, MessageContext synCtx) {
-        Matcher ctxMatcher;
-
-        if (mediaType != null && (mediaType.equals(JSON_TYPE) || mediaType.equals(TEXT_TYPE))) {
-            ctxMatcher=ctxPattern.matcher(format);
+            replace(text, result, synCtx);
         } else {
-            ctxMatcher=ctxPattern.matcher("<pfPadding>" + format + "</pfPadding>");
+            replace(format, result, synCtx);
         }
-        while (ctxMatcher.find()) {
-            String ctxMatchSeq = ctxMatcher.group();
-            String expressionTxt = ctxMatchSeq.substring(5, ctxMatchSeq.length());
-
-            String replaceValue = synCtx.getProperty(expressionTxt).toString();
-
-            if(mediaType.equals(JSON_TYPE) && inferReplacementType(replaceValue).equals(XML_TYPE)) {
-                // XML to JSON conversion here
-                try {
-                    String xmlReplaceValue = "<jsonObject>" + replaceValue + "</jsonObject>";
-                    OMElement omXML = AXIOMUtil.stringToOM(xmlReplaceValue);
-                    replaceValue = JsonUtil.toJsonString(omXML).toString();
-                } catch (XMLStreamException e) {
-                    handleException("Error parsing XML for JSON conversion, please check your property values return valid XML: ", synCtx);
-                } catch (AxisFault e) {
-                    handleException("Error converting XML to JSON", synCtx);
-                } catch (OMException e) {
-                    //if the logic comes to this means, it was tried as a XML, which means it has
-                    // "<" as starting element and ">" as end element, so basically if the logic comes here, that means
-                    //value is a string value, that means No conversion required, as path evaluates to regular String.
-
-                    // This is to replace " with \" and \\ with \\\\
-                    //replacing other json special characters i.e \b, \f, \n \r, \t
-                    replaceValue = escapeSpecialChars(replaceValue);
-
-                }
-            } else if(mediaType.equals(XML_TYPE) && inferReplacementType(replaceValue).equals(JSON_TYPE)) {
-                // JSON to XML conversion here
-                try {
-                    OMElement omXML = JsonUtil.toXml(IOUtils.toInputStream(replaceValue), false);
-                    if (JsonUtil.isAJsonPayloadElement(omXML)) { // remove <jsonObject/> from result.
-                        Iterator children = omXML.getChildElements();
-                        String childrenStr = "";
-                        while (children.hasNext()) {
-                            childrenStr += (children.next()).toString().trim();
-                        }
-                        replaceValue = childrenStr;
-                    } else {
-                        replaceValue = omXML.toString();
-                    }
-                } catch (AxisFault e) {
-                    handleException("Error converting JSON to XML, please check your property values return valid JSON: ", synCtx);
-                }
-            }
-            ctxMatcher.appendReplacement(resultCTX, replaceValue);
-        }
-        ctxMatcher.appendTail(resultCTX);
     }
 
     /**
@@ -293,7 +227,11 @@ public class PayloadFactoryMediator extends AbstractMediator {
         String replacementValue = null;
         Matcher matcher;
 
-        matcher = pattern.matcher(format);
+        if (JSON_TYPE.equals(mediaType) || TEXT_TYPE.equals(mediaType)) {
+            matcher = pattern.matcher(format);
+        } else {
+            matcher = pattern.matcher("<pfPadding>" + format + "</pfPadding>");
+        }
         try {
             while (matcher.find()) {
                 String matchSeq = matcher.group();
@@ -427,18 +365,6 @@ public class PayloadFactoryMediator extends AbstractMediator {
             return JSON_TYPE;
         } else if(entry.getValue().getPathType().equals(SynapsePath.JSON_PATH)
                   && !isJson((entry.getKey()))) {
-            return STRING_TYPE;
-        } else {
-            return STRING_TYPE;
-        }
-    }
-
-    private String inferReplacementType(String entry) {
-        if(isXML(entry)) {
-            return XML_TYPE;
-        } else if(isJson(entry)) {
-            return JSON_TYPE;
-        } else if(!isJson((entry))) {
             return STRING_TYPE;
         } else {
             return STRING_TYPE;

@@ -19,23 +19,25 @@
 
 package org.apache.synapse.config;
 
-import org.apache.axiom.om.*;
-import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axiom.om.OMAbstractFactory;
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.OMException;
+import org.apache.axiom.om.OMFactory;
+import org.apache.axiom.om.OMNode;
+import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.axis2.context.ConfigurationContext;
+import org.apache.axiom.om.util.AXIOMUtil;
 import org.apache.axis2.engine.AxisConfiguration;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.synapse.*;
+import org.apache.synapse.SynapseConstants;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.StatisticSynapseConfigurationObserver;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
-import org.wso2.securevault.definition.IdentityKeyStoreInformation;
-import org.wso2.securevault.definition.KeyStoreInformation;
-import org.wso2.securevault.definition.KeyStoreInformationFactory;
-import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.mediators.MediatorProperty;
 import org.apache.synapse.mediators.base.SequenceMediator;
@@ -44,19 +46,45 @@ import org.apache.synapse.mediators.builtin.LogMediator;
 import org.apache.synapse.util.SynapseBinaryDataSource;
 import org.apache.synapse.util.xpath.SynapseXPath;
 import org.jaxen.JaxenException;
+import org.wso2.securevault.definition.IdentityKeyStoreInformation;
+import org.wso2.securevault.definition.KeyStoreInformation;
+import org.wso2.securevault.definition.KeyStoreInformationFactory;
+import org.wso2.securevault.definition.TrustKeyStoreInformation;
 import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
-import javax.net.ssl.*;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.stream.StreamSource;
-import java.io.*;
-import java.net.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -295,7 +323,9 @@ public class SynapseConfigUtils {
 
                 connection = getURLConnection(newUrl);
 
-                String encoding = new String(new Base64().encode(url.getUserInfo().getBytes()));
+                String encoding = StringUtils.removeEnd(new String(new Base64().encode(URLDecoder.decode(url
+                        .getUserInfo(), "UTF8").getBytes())), "\r\n");
+
                 connection.setRequestProperty("Authorization", "Basic " + encoding);
             }
             else{

@@ -29,11 +29,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.Mediator;
 import org.apache.synapse.MessageContext;
+import org.apache.synapse.SynapseException;
 import org.apache.synapse.commons.json.JsonUtil;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.message.MessageConsumer;
 import org.apache.synapse.message.MessageProducer;
+import org.apache.synapse.message.StoreForwardException;
 import org.apache.synapse.message.processor.MessageProcessor;
 import org.apache.synapse.message.processor.MessageProcessorConstants;
 import org.apache.synapse.message.store.MessageStore;
@@ -151,8 +153,13 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
 		 * Initialize only if it is NOT already done. This will make sure that
 		 * the initialization is done only once.
 		 */
-        if (!initialized) {
-            this.init(synapseEnvironment);
+        try {
+            if (!initialized) {
+                this.init(synapseEnvironment);
+            }
+        } catch (SynapseException e) {
+            throw new SynapseException("Error while initializing forwarding service "
+                    + this.targetMessageStoreName, e);
         }
         do {
             resetService();
@@ -247,9 +254,14 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
         }
     }
 
-    public void init(SynapseEnvironment se) {
+    public void init(SynapseEnvironment se) throws SynapseException {
         // Setting up the JMS consumer/Producer here.
-        setMessageConsumerAndProducer();
+        try {
+            setMessageConsumerAndProducer();
+        } catch (StoreForwardException e) {
+            throw new SynapseException("Error while initializing Message Consumer " + messageProcessor.getName()
+                    + "and Message Producer " + targetMessageStoreName, e);
+        }
         // Defaults to -1.
         Map<String, Object> parametersMap = messageProcessor.getParameters();
         if (parametersMap.get(MessageProcessorConstants.MAX_DELIVER_ATTEMPTS) != null) {
@@ -303,7 +315,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
      * @return {@link MessageContext} of the last message received from the
      * store.
      */
-    public MessageContext fetch(MessageConsumer msgConsumer) {
+    public MessageContext fetch(MessageConsumer msgConsumer) throws StoreForwardException {
         return messageConsumer.receive();
     }
 
@@ -537,7 +549,7 @@ public class FailoverForwardingService implements Task, ManagedLifecycle {
                  this.messageProcessor.getName() + "]");
     }
 
-    private boolean setMessageConsumerAndProducer() {
+    private boolean setMessageConsumerAndProducer() throws StoreForwardException {
         final String messageStoreName = messageProcessor.getMessageStoreName();
         MessageStore messageStore = synapseEnvironment.getSynapseConfiguration().getMessageStore(messageStoreName);
         messageConsumer = messageStore.getConsumer();

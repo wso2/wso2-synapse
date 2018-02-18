@@ -33,6 +33,7 @@ import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.endpoints.dispatch.SALSessions;
 import org.apache.synapse.rest.RESTConstants;
 import org.apache.synapse.transport.passthru.PassThroughConstants;
+import org.apache.synapse.util.ConcurrencyThrottlingUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -136,7 +137,7 @@ public class TimeoutHandler extends TimerTask {
                             toRemove.add(key);
                         }
 
-                        if (callback.getTimeOutAction() == SynapseConstants.DISCARD_AND_FAULT) {
+                        if (callback.getTimeOutAction() != SynapseConstants.NONE) {
 
                             // activate the fault sequence of the current sequence mediator
                             MessageContext msgContext = callback.getSynapseOutMsgCtx();
@@ -209,6 +210,8 @@ public class TimeoutHandler extends TimerTask {
                                                                          callback.getAxis2OutMsgCtx()) +
                                  ", " + getServiceLogMessage(callback.getSynapseOutMsgCtx())) ;
                     }
+                    org.apache.synapse.MessageContext synapseOutMsgCtx = callback.getSynapseOutMsgCtx();
+                    ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(synapseOutMsgCtx);
                     callbackStore.remove(key);
                     if (RuntimeStatisticCollector.isStatisticsEnabled()) {
                         CallbackStatisticCollector.callbackCompletionEvent(callback.getSynapseOutMsgCtx(), (String) key);

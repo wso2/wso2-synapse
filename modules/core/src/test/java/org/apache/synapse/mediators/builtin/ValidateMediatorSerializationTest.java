@@ -34,7 +34,7 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorFactory = new ValidateMediatorFactory();
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
-        String validateConfiguration = "<syn:validate xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"//regRequest\">" +
+        String validateConfiguration = "<syn:validate xmlns:syn=\"http://ws.apache.org/ns/synapse\" source=\"//regRequest\" cache-schema=\"true\">" +
                                        "<syn:schema key=\"file:synapse_repository/conf/sample/validate.xsd\"/>" +
                                        "<syn:feature name=\"http://javax.xml.XMLConstants/feature/secure-processing\" value=\"true\"/>" +
                                        "<syn:on-fail>" +
@@ -51,7 +51,7 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
         String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                                       "source=\"//regRequest\">" +
+                                       "source=\"//regRequest\" cache-schema=\"true\">" +
                                        "<schema key=\"file:synapse_repository/conf/sample/validate.xsd\" />" +
                                        "<resource location=\"resource2.xsd\" key=\"resource2_xsd\" />" +
                                        "<resource location=\"resource1.xsd\" key=\"resource1_xsd\" />" +
@@ -68,7 +68,7 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
         String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" " +
-                                       "source=\"//regRequest\">" +
+                                       "source=\"//regRequest\" cache-schema=\"true\">" +
                                        "<schema key=\"file:synapse_repository/conf/sample/validate.xsd\" />" +
                                        "<resource location=\"resource2.xsd\" key=\"resource2_xsd\" />" +
                                        "<resource location=\"resource1.xsd\" key=\"resource1_xsd\" />" +
@@ -84,7 +84,7 @@ public class ValidateMediatorSerializationTest extends AbstractTestCase {
         validateMediatorFactory = new ValidateMediatorFactory();
         validateMediatorSerializer = new ValidateMediatorSerializer();
 
-        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" source=\"json-eval($.msg)\">" +
+        String validateConfiguration = "<validate xmlns=\"http://ws.apache.org/ns/synapse\" source=\"json-eval($.msg)\" cache-schema=\"true\">" +
                                        "<schema key=\"stockQuoteSchema\"/>" +
                                        "<on-fail><!-- if the request does not validate againt schema throw a fault -->" +
                                        "<makefault version=\"soap12\">" +
