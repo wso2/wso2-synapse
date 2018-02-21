@@ -259,52 +259,50 @@ public class ProxyServiceFactory {
             proxy.setResourceMap(ResourceMapFactory.createResourceMap(wsdl));
         }
 
-        Iterator policies = elem.getChildrenWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy"));
-        while (policies.hasNext()) {
-            Object o = policies.next();
-            if (o instanceof OMElement) {
-                OMElement policy = (OMElement) o;
-                OMAttribute key = policy.getAttribute(
-                        new QName(XMLConfigConstants.NULL_NAMESPACE, "key"));
-                OMAttribute type = policy.getAttribute(
-                        new QName(XMLConfigConstants.NULL_NAMESPACE, "type"));
-                OMAttribute operationName = policy.getAttribute(
-                        new QName(XMLConfigConstants.NULL_NAMESPACE, "operationName"));
-                OMAttribute operationNS = policy.getAttribute(
-                        new QName(XMLConfigConstants.NULL_NAMESPACE, "operationNamespace"));
+        if (isSecured(elem) && (getPolicies(elem) != null)) {
+            Iterator policies = getPolicies(elem);
+            while (policies.hasNext()) {
+                Object policyObj = policies.next();
+                if (policyObj instanceof OMElement) {
+                    OMElement policy = (OMElement) policyObj;
+                    OMAttribute key = policy.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "key"));
+                    OMAttribute type = policy.getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "type"));
+                    OMAttribute operationName = policy
+                            .getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "operationName"));
+                    OMAttribute operationNS = policy
+                            .getAttribute(new QName(XMLConfigConstants.NULL_NAMESPACE, "operationNamespace"));
 
-                if (key != null) {
+                    if (key != null) {
 
-                    PolicyInfo pi = new PolicyInfo(key.getAttributeValue());
+                        PolicyInfo pi = new PolicyInfo(key.getAttributeValue());
 
-                    if (type != null && type.getAttributeValue() != null) {
-                        if ("in".equals(type.getAttributeValue())) {
-                            pi.setType(PolicyInfo.MESSAGE_TYPE_IN);
-                        } else if ("out".equals(type.getAttributeValue())) {
-                            pi.setType(PolicyInfo.MESSAGE_TYPE_OUT);
-                        } else {
-                            handleException("Undefined policy type for the policy with key : "
-                                    + key.getAttributeValue());
+                        if (type != null && type.getAttributeValue() != null) {
+                            if ("in".equals(type.getAttributeValue())) {
+                                pi.setType(PolicyInfo.MESSAGE_TYPE_IN);
+                            } else if ("out".equals(type.getAttributeValue())) {
+                                pi.setType(PolicyInfo.MESSAGE_TYPE_OUT);
+                            } else {
+                                handleException("Undefined policy type for the policy with key : " + key.getAttributeValue());
+                            }
                         }
-                    }
 
-                    if (operationName != null && operationName.getAttributeValue() != null) {
-                        if (operationNS != null && operationNS.getAttributeValue() != null) {
-                            pi.setOperation(new QName(operationNS.getAttributeValue(),
-                                    operationName.getAttributeValue()));
-                        } else {
-                            pi.setOperation(new QName(operationName.getAttributeValue()));
+                        if (operationName != null && operationName.getAttributeValue() != null) {
+                            if (operationNS != null && operationNS.getAttributeValue() != null) {
+                                pi.setOperation(new QName(operationNS.getAttributeValue(), operationName.getAttributeValue()));
+                            } else {
+                                pi.setOperation(new QName(operationName.getAttributeValue()));
+                            }
                         }
+
+                        proxy.addPolicyInfo(pi);
+                        proxy.setWsSecEnabled(true);
+
+                    } else {
+                        handleException("Policy element does not specify the policy key");
                     }
-
-                    proxy.addPolicyInfo(pi);
-
                 } else {
-                    handleException("Policy element does not specify the policy key");
+                    handleException("Invalid 'policy' element found under element 'policies'");
                 }
-            } else {
-                handleException("Invalid 'policy' element found under element 'policies'");
             }
         }
 
@@ -365,12 +363,18 @@ public class ProxyServiceFactory {
             proxy.setWsAddrEnabled(true);
         }
 
-        if (elem.getFirstChildWithName(
-                new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableSec")) != null) {
-            proxy.setWsSecEnabled(true);
-        }
-
         return proxy;
+    }
+
+    private static boolean isSecured(OMElement elem) {
+        return (elem.getFirstChildWithName(new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "enableSec")) != null);
+    }
+
+    private static Iterator getPolicies(OMElement elem) {
+        if (elem.getChildrenWithName(new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy")) != null) {
+            return elem.getChildrenWithName(new QName(XMLConfigConstants.SYNAPSE_NAMESPACE, "policy"));
+        }
+        return null;
     }
 
     private static void handleException(String msg) {
