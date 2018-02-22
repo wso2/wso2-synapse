@@ -140,8 +140,12 @@ public class PassThroughTransportUtils {
         Iterator iter = headers.keySet().iterator();
         while (iter.hasNext()) {
             String headerName = (String) iter.next();
-            if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName) ||
-                HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName)) {
+            if (HTTP.TRANSFER_ENCODING.equalsIgnoreCase(headerName)) {
+                iter.remove();
+            }
+
+            if (HTTP.CONN_DIRECTIVE.equalsIgnoreCase(headerName)
+                && !targetConfiguration.isPreserveHttpHeader(HTTP.CONN_DIRECTIVE)) {
                 iter.remove();
             }
 
