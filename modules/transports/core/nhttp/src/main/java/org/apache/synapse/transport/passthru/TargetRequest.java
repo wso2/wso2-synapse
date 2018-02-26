@@ -193,7 +193,8 @@ public class TargetRequest {
         
   
                                                             
-        if (hasEntityBody) {
+        if (hasEntityBody || !((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
+                (("GET").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (("DELETE").equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))))) {
             request = new BasicHttpEntityEnclosingRequest(method, path,
                     version != null ? version : HttpVersion.HTTP_1_1);
 
