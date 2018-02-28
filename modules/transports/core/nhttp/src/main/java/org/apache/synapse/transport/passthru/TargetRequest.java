@@ -127,7 +127,6 @@ public class TargetRequest {
         String contentLengthHeader = null;
         LinkedHashSet<String> httpContentLengthHeader = headers.get(HTTP.CONTENT_LEN);
          
-	
 	    if(httpContentLengthHeader != null && httpContentLengthHeader.iterator().hasNext()) {   
 	    	contentLengthHeader = httpContentLengthHeader.iterator().next();
 	    }
@@ -143,15 +142,11 @@ public class TargetRequest {
         if(requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) != null){
         	contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
         }
-        
        
         //fix for  POST_TO_URI
         if(requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)){
         	path = url.toString();
         }
-
-     
-        
         
         //fix GET request empty body
 		if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
@@ -177,7 +172,6 @@ public class TargetRequest {
 			}
 		}        
         
-        
 		Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
 		if (o != null && o instanceof TreeMap) {
 			Map _headers = (Map) o;
@@ -189,52 +183,43 @@ public class TargetRequest {
 			}
 
 		}
-        
-        
-  
                                                             
-            request = new BasicHttpEntityEnclosingRequest(method, path,
-                    version != null ? version : HttpVersion.HTTP_1_1);
-
-            BasicHttpEntity entity = new BasicHttpEntity();
-
-
-            boolean forceContentLength = requestMsgCtx.isPropertyTrue(
-                                                                   NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
-            boolean forceContentLengthCopy = requestMsgCtx.isPropertyTrue(
-                                                                   PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
-                                
-            if (forceContentLength) {
-                entity.setChunked(false);
-                if (forceContentLengthCopy && contentLength > 0) {
-                    entity.setContentLength(contentLength);
-                } 
-            }else{
-             if (contentLength != -1) {
+        request = new BasicHttpEntityEnclosingRequest(method, path,
+                version != null ? version : HttpVersion.HTTP_1_1);
+        
+        BasicHttpEntity entity = new BasicHttpEntity();
+        
+        boolean forceContentLength = requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
+        boolean forceContentLengthCopy = requestMsgCtx.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
+                            
+        if (forceContentLength) {
+            entity.setChunked(false);
+            if (forceContentLengthCopy && contentLength > 0) {
+                entity.setContentLength(contentLength);
+            } 
+        }else{
+            if (contentLength != -1) {
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
                 entity.setChunked(chunk);
             }
-            }
-            
-            
-            ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
-
+        }
+        
+        ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
 
         Set<Map.Entry<String, LinkedHashSet<String>>> entries = headers.entrySet();
         for (Map.Entry<String, LinkedHashSet<String>> entry : entries) {
-             if (entry.getKey() != null) {
+            if (entry.getKey() != null) {
                 Iterator<String> i = entry.getValue().iterator();
-                 while(i.hasNext()) {
-                        request.addHeader(entry.getKey(), i.next());
-                 }
-             }
-         }
+                while(i.hasNext()) {
+                    request.addHeader(entry.getKey(), i.next());
+                }
+            }
+        }
         
         //setup wsa action..
         if(request != null){
-        	
     		String soapAction = requestMsgCtx.getSoapAction();
             if (soapAction == null) {
                 soapAction = requestMsgCtx.getWSAAction();
@@ -269,8 +254,6 @@ public class TargetRequest {
         if (!keepAlive) {
             request.setHeader(HTTP.CONN_DIRECTIVE, HTTP.CONN_CLOSE);
         }
-        
-       
 
         // Pre-process HTTP request
         HttpContext httpContext = conn.getContext();
@@ -302,10 +285,6 @@ public class TargetRequest {
             TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
         }
     }
-    
-    
-   
-    
 
 	/**
 	 * Handles the chuking messages in Passthough context, create a temporary buffer and calculate the message
@@ -317,8 +296,7 @@ public class TargetRequest {
 	 * @throws IOException
 	 * @throws AxisFault
 	 */
-	private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) throws IOException,
-	                                                                                                        AxisFault {
+	private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) throws IOException, AxisFault {
 		String disableChunking = (String) requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING);
 		String forceHttp10 = (String) requestMsgCtx.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
 	    if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
@@ -349,7 +327,6 @@ public class TargetRequest {
 				
 				}
 			}
-
 		}  
     }
 
@@ -377,13 +354,11 @@ public class TargetRequest {
         }
         
         return bytes;
-
     }
 
     public boolean hasEntityBody() {
         return hasEntityBody;
     }
-    
     
     public void setHasEntityBody(boolean hasEntityBody) {
 		this.hasEntityBody = hasEntityBody;
