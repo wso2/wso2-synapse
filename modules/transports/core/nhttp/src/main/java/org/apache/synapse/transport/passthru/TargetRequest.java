@@ -193,7 +193,6 @@ public class TargetRequest {
         
   
                                                             
-        if (hasEntityBody) {
             request = new BasicHttpEntityEnclosingRequest(method, path,
                     version != null ? version : HttpVersion.HTTP_1_1);
 
@@ -221,11 +220,7 @@ public class TargetRequest {
             
             
             ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
-           
-        } else {
-            request = new BasicHttpRequest(method, path,
-                    version != null ? version : HttpVersion.HTTP_1_1);
-        }
+
 
         Set<Map.Entry<String, LinkedHashSet<String>>> entries = headers.entrySet();
         for (Map.Entry<String, LinkedHashSet<String>> entry : entries) {
@@ -267,7 +262,7 @@ public class TargetRequest {
         //Chunking is not performed for request has "http 1.0" and "GET" http method
        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
                (PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
-               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx) || !(hasEntityBody))) {
+               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
