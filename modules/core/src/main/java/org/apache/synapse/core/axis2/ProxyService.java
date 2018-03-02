@@ -19,6 +19,7 @@
 
 package org.apache.synapse.core.axis2;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNamespace;
 import org.apache.axiom.om.OMNode;
@@ -59,6 +60,7 @@ import org.apache.synapse.util.resolver.UserDefinedWSDLLocator;
 import org.apache.synapse.util.resolver.UserDefinedXmlSchemaURIResolver;
 import org.xml.sax.InputSource;
 
+import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -78,7 +80,7 @@ import java.util.*;
  *       <outSequence>...</outSequence>
  *       <faultSequence>...</faultSequence>
  *    </target>?
- *    <publishWSDL uri=".." key="string" endpoint="string">
+ *    <publishWSDL preservePolicy="true|false"  uri=".." key="string" endpoint="string">
  *       <wsdl:definition>...</wsdl:definition>?
  *       <wsdl20:description>...</wsdl20:description>?
  *       <resource location="..." key="..."/>*
@@ -103,6 +105,9 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     public static final String ABSOLUTE_PROXY_SCHEMA_URL_PARAM = "showProxySchemaURL";
     public static final String ENGAGED_MODULES = "engagedModules";
     private static final String NO_SECURITY_POLICY = "NoSecurity";
+    private static final String SEC_POLICY_ELEMENT = "Policy";
+    private static final String PORT_ELEMENT = "portType";
+    private static final String PORT_SECURITY_ATTRIBUTE="PolicyURIs";
 
     /**
      * The name of the proxy service
@@ -160,6 +165,18 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
      * The key for the base WSDL
      */
     private String wsdlKey;
+    /**
+     * Option to preserve security policy/policies of the publish wsdl URL
+     */
+    private String preservePolicy;
+
+    public String getPreservePolicy() {
+        return preservePolicy;
+    }
+
+    public void setPreservePolicy(String preservePolicy) {
+        this.preservePolicy = preservePolicy;
+    }
     /**
      * The URI for the base WSDL, if defined as a URL
      */
@@ -448,6 +465,29 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
         // if a WSDL was found
         if (wsdlElement != null) {
             OMNamespace wsdlNamespace = wsdlElement.getNamespace();
+            // if preservePolicy is set to 'false', remove the security policy content of publish wsdl
+            if (preservePolicy != null && preservePolicy.equals("false")) {
+                if (org.apache.axis2.namespace.Constants.NS_URI_WSDL11.
+                        equals(wsdlNamespace.getNamespaceURI())) {
+                    Iterator<OMElement> iterator = (Iterator<OMElement>) wsdlElement
+                            .getChildElements();
+                    while (iterator.hasNext()) {
+                        OMElement child = iterator.next();
+                        if (child.getQName().getLocalPart().equals(SEC_POLICY_ELEMENT)) {
+                            child.detach();
+                        }
+                        if (child.getQName().getLocalPart().equals(PORT_ELEMENT)) {
+                            QName policyURIs = new QName(
+                                    org.apache.axis2.namespace.Constants.URI_POLICY,
+                                    PORT_SECURITY_ATTRIBUTE);
+                            if (child.getAttribute(policyURIs) != null) {
+                                OMAttribute attr = child.getAttribute(policyURIs);
+                                child.removeAttribute(attr);
+                            }
+                        }
+                    }
+                }
+            }
 
             // serialize and create an input stream to read WSDL
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
