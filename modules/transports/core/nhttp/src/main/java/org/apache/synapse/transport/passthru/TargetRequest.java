@@ -127,9 +127,9 @@ public class TargetRequest {
         String contentLengthHeader = null;
         LinkedHashSet<String> httpContentLengthHeader = headers.get(HTTP.CONTENT_LEN);
          
-	    if(httpContentLengthHeader != null && httpContentLengthHeader.iterator().hasNext()) {   
-	    	contentLengthHeader = httpContentLengthHeader.iterator().next();
-	    }
+        if(httpContentLengthHeader != null && httpContentLengthHeader.iterator().hasNext()) {
+            contentLengthHeader = httpContentLengthHeader.iterator().next();
+        }
          
         if (contentLengthHeader != null) {
             contentLength = Long.parseLong(contentLengthHeader);
@@ -140,49 +140,49 @@ public class TargetRequest {
         
         
         if(requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) != null){
-        	contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
+            contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
         }
        
         //fix for  POST_TO_URI
         if(requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)){
-        	path = url.toString();
+            path = url.toString();
         }
         
         //fix GET request empty body
-		if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
-				(RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
-			hasEntityBody = false;
-			MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
-			OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
-			if (formatter != null && format != null) {
-				URL _url = formatter.getTargetAddress(requestMsgCtx, format, url);
-				if (_url != null && !_url.toString().isEmpty()) {
-					if (requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI) != null
-							&& Boolean.TRUE.toString().equals(requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI))) {
-						path = _url.toString();
-					} else {
-						path = _url.getPath()
-								+ ((_url.getQuery() != null && !_url.getQuery().isEmpty())
-										? ("?" + _url.getQuery())
-										: "");
-					}
+        if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
+                (RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+            hasEntityBody = false;
+            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
+            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
+            if (formatter != null && format != null) {
+                URL _url = formatter.getTargetAddress(requestMsgCtx, format, url);
+                if (_url != null && !_url.toString().isEmpty()) {
+                    if (requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI) != null
+                            && Boolean.TRUE.toString().equals(requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI))) {
+                        path = _url.toString();
+                    } else {
+                        path = _url.getPath()
+                                + ((_url.getQuery() != null && !_url.getQuery().isEmpty())
+                                        ? ("?" + _url.getQuery())
+                                        : "");
+                    }
 
-				}
-				headers.remove(HTTP.CONTENT_TYPE);
-			}
-		}        
+                }
+                headers.remove(HTTP.CONTENT_TYPE);
+            }
+        }
         
-		Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
-		if (o != null && o instanceof TreeMap) {
-			Map _headers = (Map) o;
-			String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
-			if (trpContentType != null && !trpContentType.equals("")) {
-				if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
-					addHeader(HTTP.CONTENT_TYPE, trpContentType);
-				}
-			}
+        Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (o != null && o instanceof TreeMap) {
+            Map _headers = (Map) o;
+            String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
+            if (trpContentType != null && !trpContentType.equals("")) {
+                if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
+                    addHeader(HTTP.CONTENT_TYPE, trpContentType);
+                }
+            }
 
-		}
+        }
                                                             
         request = new BasicHttpEntityEnclosingRequest(method, path,
                 version != null ? version : HttpVersion.HTTP_1_1);
@@ -197,7 +197,7 @@ public class TargetRequest {
             if (forceContentLengthCopy && contentLength > 0) {
                 entity.setContentLength(contentLength);
             } 
-        }else{
+        } else {
             if (contentLength != -1) {
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
@@ -220,7 +220,7 @@ public class TargetRequest {
         
         //setup wsa action..
         if(request != null){
-    		String soapAction = requestMsgCtx.getSoapAction();
+            String soapAction = requestMsgCtx.getSoapAction();
             if (soapAction == null) {
                 soapAction = requestMsgCtx.getWSAAction();
                 requestMsgCtx.getAxisOperation().getInputAction();
@@ -229,9 +229,9 @@ public class TargetRequest {
             if (requestMsgCtx.isSOAP11() && soapAction != null &&
                     soapAction.length() > 0) {
                 Header existingHeader =
-                	request.getFirstHeader(HTTPConstants.HEADER_SOAP_ACTION);
+                    request.getFirstHeader(HTTPConstants.HEADER_SOAP_ACTION);
                 if (existingHeader != null) {
-                	request.removeHeader(existingHeader);
+                    request.removeHeader(existingHeader);
                 }
                 MessageFormatter messageFormatter =
                     MessageFormatterDecoratorFactory.createMessageFormatterDecorator(requestMsgCtx);
@@ -239,7 +239,7 @@ public class TargetRequest {
                         messageFormatter.formatSOAPAction(requestMsgCtx, null, soapAction));
                 //request.setHeader(HTTPConstants.USER_AGENT,"Synapse-PT-HttpComponents-NIO");
             }
-    	}
+        }
 
         request.setParams(new DefaultedHttpParams(request.getParams(),
                 targetConfiguration.getHttpParams()));
@@ -286,48 +286,46 @@ public class TargetRequest {
         }
     }
 
-	/**
-	 * Handles the chuking messages in Passthough context, create a temporary buffer and calculate the message
-	 * size before writing to the external buffer, which is required the context of handling DISABLED chunking 
-	 * messages
-	 * 
-	 * @param conn
-	 * @param requestMsgCtx
-	 * @throws IOException
-	 * @throws AxisFault
-	 */
-	private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) throws IOException, AxisFault {
-		String disableChunking = (String) requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING);
-		String forceHttp10 = (String) requestMsgCtx.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
-	    if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
-	    	if (requestMsgCtx.getEnvelope().getBody().getFirstElement() == null) {
-				BasicHttpEntity entity = (BasicHttpEntity) ((BasicHttpEntityEnclosingRequest) request).getEntity();    
-				try {
-					RelayUtils.buildMessage(requestMsgCtx);
-					this.hasEntityBody = true;
-					Pipe pipe = (Pipe) requestMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-					if (pipe != null) {
-						pipe.attachConsumer(conn);
-						this.connect(pipe);
-						if (Boolean.TRUE.equals(requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
-							ByteArrayOutputStream out = new ByteArrayOutputStream();
-							MessageFormatter formatter =  MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
-							OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
-							formatter.writeTo(requestMsgCtx, format, out, false);
-							OutputStream _out = pipe.getOutputStream();
-							IOUtils.write(out.toByteArray(), _out);
-						
-							entity.setContentLength(new Long(out.toByteArray().length));
-							entity.setChunked(false);
-						}
-					}
-					// pipe.setSerializationComplete(true);
-				} catch (XMLStreamException e) {
-					 e.printStackTrace();
-				
-				}
-			}
-		}  
+    /**
+     * Handles the chuking messages in Passthough context, create a temporary buffer and calculate the message
+     * size before writing to the external buffer, which is required the context of handling DISABLED chunking
+     * messages
+     *
+     * @param conn
+     * @param requestMsgCtx
+     * @throws IOException
+     * @throws AxisFault
+     */
+    private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) throws IOException, AxisFault {
+        String disableChunking = (String) requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING);
+        String forceHttp10 = (String) requestMsgCtx.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+        if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
+            if (requestMsgCtx.getEnvelope().getBody().getFirstElement() == null) {
+                BasicHttpEntity entity = (BasicHttpEntity) ((BasicHttpEntityEnclosingRequest) request).getEntity();
+                try {
+                    RelayUtils.buildMessage(requestMsgCtx);
+                    this.hasEntityBody = true;
+                    Pipe pipe = (Pipe) requestMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+                    if (pipe != null) {
+                        pipe.attachConsumer(conn);
+                        this.connect(pipe);
+                        if (Boolean.TRUE.equals(requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                            ByteArrayOutputStream out = new ByteArrayOutputStream();
+                            MessageFormatter formatter =  MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
+                            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
+                            formatter.writeTo(requestMsgCtx, format, out, false);
+                            OutputStream _out = pipe.getOutputStream();
+                            IOUtils.write(out.toByteArray(), _out);
+                            entity.setContentLength(new Long(out.toByteArray().length));
+                            entity.setChunked(false);
+                        }
+                    }
+                    // pipe.setSerializationComplete(true);
+                } catch (XMLStreamException e) {
+                     e.printStackTrace();
+                }
+            }
+        }
     }
 
     /**
@@ -361,30 +359,30 @@ public class TargetRequest {
     }
     
     public void setHasEntityBody(boolean hasEntityBody) {
-		this.hasEntityBody = hasEntityBody;
-	}
+        this.hasEntityBody = hasEntityBody;
+    }
 
-	public void addHeader(String name, String value) {
-		if (headers.get(name) == null) {
-			LinkedHashSet<String> values = new LinkedHashSet<String>();
-			values.add(value);
-			if (HTTP.CONTENT_TYPE.equalsIgnoreCase(name)) {
-				headers.put(HTTP.CONTENT_TYPE, values);
-			} else {
-				headers.put(name, values);
-			}
-		} else {
-			if (HTTP.CONTENT_TYPE.equalsIgnoreCase(name)) {
-				headers.remove(HTTP.CONTENT_TYPE);
-				LinkedHashSet<String> values = new LinkedHashSet<String>();
-				values.add(value);
-				headers.put(HTTP.CONTENT_TYPE, values);
-			} else {
-				LinkedHashSet<String> values = headers.get(name);
-				values.add(value);
-			}
-		}
-	}
+    public void addHeader(String name, String value) {
+        if (headers.get(name) == null) {
+            LinkedHashSet<String> values = new LinkedHashSet<String>();
+            values.add(value);
+            if (HTTP.CONTENT_TYPE.equalsIgnoreCase(name)) {
+                headers.put(HTTP.CONTENT_TYPE, values);
+            } else {
+                headers.put(name, values);
+            }
+        } else {
+            if (HTTP.CONTENT_TYPE.equalsIgnoreCase(name)) {
+                headers.remove(HTTP.CONTENT_TYPE);
+                LinkedHashSet<String> values = new LinkedHashSet<String>();
+                values.add(value);
+                headers.put(HTTP.CONTENT_TYPE, values);
+            } else {
+                LinkedHashSet<String> values = headers.get(name);
+                values.add(value);
+            }
+        }
+    }
 
     public String getMethod() {
         return method;
@@ -410,9 +408,9 @@ public class TargetRequest {
         this.keepAlive = keepAlive;
     }
 
-	public HttpRequest getRequest() {
-		return request;
-	}
+    public HttpRequest getRequest() {
+        return request;
+    }
 
     public HttpRoute getRoute(){
         return route;
