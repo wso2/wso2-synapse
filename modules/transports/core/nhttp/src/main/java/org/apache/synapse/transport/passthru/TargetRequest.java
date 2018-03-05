@@ -66,7 +66,7 @@ import java.util.TreeMap;
  */
 public class TargetRequest {
 
-	private static final Log log = LogFactory.getLog(TargetRequest.class);
+    private static final Log log = LogFactory.getLog(TargetRequest.class);
     /** Configuration of the sender */
     private TargetConfiguration targetConfiguration;
     private HttpRoute route;
@@ -241,7 +241,6 @@ public class TargetRequest {
                 }
                 MessageFormatter messageFormatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(requestMsgCtx);
                 request.setHeader(HTTPConstants.HEADER_SOAP_ACTION, messageFormatter.formatSOAPAction(requestMsgCtx, null, soapAction));
-                //request.setHeader(HTTPConstants.USER_AGENT,"Synapse-PT-HttpComponents-NIO");
             }
         }
 
@@ -328,7 +327,6 @@ public class TargetRequest {
                             entity.setChunked(false);
                         }
                     }
-                    // pipe.setSerializationComplete(true);
                 } catch (XMLStreamException e) {
                     log.error("Error while process chunking", e);
                 }
