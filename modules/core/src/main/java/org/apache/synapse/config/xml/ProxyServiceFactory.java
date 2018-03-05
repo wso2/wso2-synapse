@@ -247,8 +247,7 @@ public class ProxyServiceFactory {
                         log.error(msg);
                         handleException(msg, e);
                     }
-                }
-                 else {
+                } else {
                     OMElement wsdl11 = wsdl.getFirstChildWithName(
                             new QName(WSDLConstants.WSDL1_1_NAMESPACE, "definitions"));
                     if (wsdl11 != null) {

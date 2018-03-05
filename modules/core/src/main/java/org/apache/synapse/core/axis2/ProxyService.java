@@ -269,6 +269,28 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
     }
 
     /**
+     * Remove security policy content from published wsdl
+     * @param wsdlElement
+     */
+    private void removePolicyOfWSDL(OMElement wsdlElement) {
+        Iterator<OMElement> iterator = (Iterator<OMElement>) wsdlElement.getChildElements();
+        while (iterator.hasNext()) {
+            OMElement child = iterator.next();
+            if (child.getQName().getLocalPart().equals(SEC_POLICY_ELEMENT)) {
+                child.detach();
+            }
+            if (child.getQName().getLocalPart().equals(PORT_ELEMENT)) {
+                QName policyURIs = new QName(org.apache.axis2.namespace.Constants.URI_POLICY,
+                        PORT_SECURITY_ATTRIBUTE);
+                if (child.getAttribute(policyURIs) != null) {
+                    OMAttribute attr = child.getAttribute(policyURIs);
+                    child.removeAttribute(attr);
+                }
+            }
+        }
+    }
+
+    /**
      * Build the underlying Axis2 service from the Proxy service definition
      *
      * @param synCfg  the Synapse configuration
@@ -469,23 +491,7 @@ public class ProxyService implements AspectConfigurable, SynapseArtifact {
             if (preservePolicy != null && preservePolicy.equals("false")) {
                 if (org.apache.axis2.namespace.Constants.NS_URI_WSDL11.
                         equals(wsdlNamespace.getNamespaceURI())) {
-                    Iterator<OMElement> iterator = (Iterator<OMElement>) wsdlElement
-                            .getChildElements();
-                    while (iterator.hasNext()) {
-                        OMElement child = iterator.next();
-                        if (child.getQName().getLocalPart().equals(SEC_POLICY_ELEMENT)) {
-                            child.detach();
-                        }
-                        if (child.getQName().getLocalPart().equals(PORT_ELEMENT)) {
-                            QName policyURIs = new QName(
-                                    org.apache.axis2.namespace.Constants.URI_POLICY,
-                                    PORT_SECURITY_ATTRIBUTE);
-                            if (child.getAttribute(policyURIs) != null) {
-                                OMAttribute attr = child.getAttribute(policyURIs);
-                                child.removeAttribute(attr);
-                            }
-                        }
-                    }
+                    removePolicyOfWSDL(wsdlElement);
                 }
             }
 

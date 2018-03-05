@@ -121,4 +121,21 @@ public class ProxyServiceSerializationTest extends AbstractTestCase {
         OMElement resultOM = ProxyServiceSerializer.serializeProxy(null, proxy);
         assertTrue(compare(resultOM, inputOM));
     }
+
+    /**
+     * Serialization of 'preserveProxy' attribute in PublishWSDL
+     *
+     * @throws Exception
+     */
+    public void testProxyServiceSerializationWithPreserveProxy() throws Exception {
+        String inputXml = "<proxy xmlns=\"http://ws.apache.org/ns/synapse\" startOnLoad=\"true\" "
+                + "name=\"name\"  transports=\"http\"><description>description</description><target>"
+                + "<endpoint><address uri=\"http://www.example.com/testepr\"/></endpoint><outSequence><send/>"
+                + "</outSequence></target><publishWSDL preservePolicy=\"true\" endpoint=\"wsdl_ep\"></publishWSDL><policy key=\"key\"/>"
+                + "<parameter name=\"para\">text</parameter></proxy>";
+        OMElement inputOM = createOMElement(inputXml);
+        ProxyService proxy = ProxyServiceFactory.createProxy(inputOM, new Properties());
+        OMElement resultOM = ProxyServiceSerializer.serializeProxy(null, proxy);
+        assertTrue(compare(resultOM, inputOM));
+    }
 }
