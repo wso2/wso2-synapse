@@ -24,6 +24,8 @@ import org.apache.axis2.transport.MessageFormatter;
 import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.util.MessageProcessorSelector;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -63,6 +65,8 @@ import java.util.TreeMap;
  * This is a class for representing a request to be sent to a target.
  */
 public class TargetRequest {
+
+	private static final Log log = LogFactory.getLog(TargetRequest.class);
     /** Configuration of the sender */
     private TargetConfiguration targetConfiguration;
     private HttpRoute route;
@@ -96,13 +100,11 @@ public class TargetRequest {
      * @param method the HTTP method
      * @param hasEntityBody weather request has an entity body
      */
-    public TargetRequest(TargetConfiguration targetConfiguration, HttpRoute route, URL url,
-                         String method, boolean hasEntityBody) {
+    public TargetRequest(TargetConfiguration targetConfiguration, HttpRoute route, URL url, String method, boolean hasEntityBody) {
         this(targetConfiguration, route, method, url, hasEntityBody);
     }
 
-    public TargetRequest(TargetConfiguration targetConfiguration, HttpRoute route, String method,
-                         URL url, boolean hasEntityBody) {
+    public TargetRequest(TargetConfiguration targetConfiguration, HttpRoute route, String method, URL url, boolean hasEntityBody) {
         this.route = route;
         this.method = method;
         this.url = url;
@@ -119,15 +121,16 @@ public class TargetRequest {
             TargetContext.get(conn).setWriter(pipe);
         }
 
-        String path = fullUrl || (route.getProxyHost() != null && !route.isTunnelled()) ?
-                    url.toString() : url.getPath() +
-                    (url.getQuery() != null ? "?" + url.getQuery() : "");
+        String path = fullUrl || (route.getProxyHost() != null && !route.isTunnelled()) ? url.toString() : url.getPath() + (url.getQuery() != null ? "?" + url.getQuery() : "");
 
         long contentLength = -1;
         String contentLengthHeader = null;
         LinkedHashSet<String> httpContentLengthHeader = headers.get(HTTP.CONTENT_LEN);
          
         if (httpContentLengthHeader != null && httpContentLengthHeader.iterator().hasNext()) {
+            if (log.isDebugEnabled()) {
+                log.debug("Set contentLength from Header");
+            }
             contentLengthHeader = httpContentLengthHeader.iterator().next();
         }
          
@@ -138,8 +141,10 @@ public class TargetRequest {
         
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         
-        
         if (requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) != null) {
+            if (log.isDebugEnabled()) {
+                log.debug("Set contentLength from " + PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH + " property");
+            }
             contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
         }
        
@@ -149,24 +154,18 @@ public class TargetRequest {
         }
         
         //fix GET request empty body
-        if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
-                (RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+        if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
             hasEntityBody = false;
             MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
             OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
             if (formatter != null && format != null) {
                 URL _url = formatter.getTargetAddress(requestMsgCtx, format, url);
                 if (_url != null && !_url.toString().isEmpty()) {
-                    if (requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI) != null
-                            && Boolean.TRUE.toString().equals(requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI))) {
+                    if (requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI) != null && Boolean.TRUE.toString().equals(requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI))) {
                         path = _url.toString();
                     } else {
-                        path = _url.getPath()
-                                + ((_url.getQuery() != null && !_url.getQuery().isEmpty())
-                                        ? ("?" + _url.getQuery())
-                                        : "");
+                        path = _url.getPath() + ((_url.getQuery() != null && !_url.getQuery().isEmpty()) ? ("?" + _url.getQuery()) : "");
                     }
-
                 }
                 headers.remove(HTTP.CONTENT_TYPE);
             }
@@ -181,11 +180,9 @@ public class TargetRequest {
                     addHeader(HTTP.CONTENT_TYPE, trpContentType);
                 }
             }
-
         }
                                                             
-        request = new BasicHttpEntityEnclosingRequest(method, path,
-                version != null ? version : HttpVersion.HTTP_1_1);
+        request = new BasicHttpEntityEnclosingRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
         
         BasicHttpEntity entity = new BasicHttpEntity();
         
@@ -195,13 +192,22 @@ public class TargetRequest {
         if (forceContentLength) {
             entity.setChunked(false);
             if (forceContentLengthCopy && contentLength > 0) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Set ContentLength : " + contentLength);
+                }
                 entity.setContentLength(contentLength);
             } 
         } else {
             if (contentLength != -1) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Set ContentLength : " + contentLength);
+                }
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
+                if (log.isDebugEnabled()) {
+                    log.debug("Set chunked : " + chunk);
+                }
                 entity.setChunked(chunk);
             }
         }
@@ -233,21 +239,16 @@ public class TargetRequest {
                 if (existingHeader != null) {
                     request.removeHeader(existingHeader);
                 }
-                MessageFormatter messageFormatter =
-                    MessageFormatterDecoratorFactory.createMessageFormatterDecorator(requestMsgCtx);
-                request.setHeader(HTTPConstants.HEADER_SOAP_ACTION,
-                        messageFormatter.formatSOAPAction(requestMsgCtx, null, soapAction));
+                MessageFormatter messageFormatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(requestMsgCtx);
+                request.setHeader(HTTPConstants.HEADER_SOAP_ACTION, messageFormatter.formatSOAPAction(requestMsgCtx, null, soapAction));
                 //request.setHeader(HTTPConstants.USER_AGENT,"Synapse-PT-HttpComponents-NIO");
             }
         }
 
-        request.setParams(new DefaultedHttpParams(request.getParams(),
-                targetConfiguration.getHttpParams()));
+        request.setParams(new DefaultedHttpParams(request.getParams(), targetConfiguration.getHttpParams()));
 
         //Chunking is not performed for request has "http 1.0" and "GET" http method
-       if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) ||
-               (PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) ||
-               RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) || (PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
@@ -266,14 +267,12 @@ public class TargetRequest {
         }
 
         conn.getContext().setAttribute(ExecutionContext.HTTP_REQUEST, request);
-        httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST,
-                requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
+        httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST, requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
 
         // start the request
         targetConfiguration.getHttpProcessor().process(request, httpContext);
 
-        if (targetConfiguration.getProxyAuthenticator() != null 
-                && route.getProxyHost() != null && !route.isTunnelled()) {
+        if (targetConfiguration.getProxyAuthenticator() != null && route.getProxyHost() != null && !route.isTunnelled()) {
             targetConfiguration.getProxyAuthenticator().authenticatePreemptively(request, httpContext);
         }
         
@@ -299,8 +298,14 @@ public class TargetRequest {
     private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) throws IOException, AxisFault {
         String disableChunking = (String) requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING);
         String forceHttp10 = (String) requestMsgCtx.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
+        if (log.isDebugEnabled()) {
+            log.debug("Process Chungking (disableChunking : " + disableChunking + ", forceHttp10 : " + forceHttp10 + ")");
+        }
         if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
             if (requestMsgCtx.getEnvelope().getBody().getFirstElement() == null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Envelope Body is empty");
+                }
                 BasicHttpEntity entity = (BasicHttpEntity) ((BasicHttpEntityEnclosingRequest) request).getEntity();
                 try {
                     RelayUtils.buildMessage(requestMsgCtx);
@@ -316,13 +321,16 @@ public class TargetRequest {
                             formatter.writeTo(requestMsgCtx, format, out, false);
                             OutputStream _out = pipe.getOutputStream();
                             IOUtils.write(out.toByteArray(), _out);
+                            if (log.isDebugEnabled()) {
+                                log.debug("Set ContentLength : " + new Long(out.toByteArray().length));
+                            }
                             entity.setContentLength(new Long(out.toByteArray().length));
                             entity.setChunked(false);
                         }
                     }
                     // pipe.setSerializationComplete(true);
                 } catch (XMLStreamException e) {
-                     e.printStackTrace();
+                    log.error("Error while process chunking", e);
                 }
             }
         }
@@ -341,16 +349,12 @@ public class TargetRequest {
         if (pipe != null) {
             bytes = pipe.consume(encoder);
         }
-
         if (encoder.isCompleted()) {
-          conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-          conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
-            targetConfiguration.getMetrics().
-                    notifySentMessageSize(conn.getMetrics().getSentBytesCount());
-
+            conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
+            conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
+            targetConfiguration.getMetrics().notifySentMessageSize(conn.getMetrics().getSentBytesCount());
             TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
         }
-        
         return bytes;
     }
 
@@ -363,6 +367,9 @@ public class TargetRequest {
     }
 
     public void addHeader(String name, String value) {
+        if (log.isDebugEnabled()) {
+            log.debug("Add Header - " + name + " : " + value);
+        }
         if (headers.get(name) == null) {
             LinkedHashSet<String> values = new LinkedHashSet<String>();
             values.add(value);
