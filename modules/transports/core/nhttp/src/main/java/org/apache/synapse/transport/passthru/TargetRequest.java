@@ -139,12 +139,12 @@ public class TargetRequest {
         MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         
         
-        if (requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) != null){
+        if (requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH) != null) {
             contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
         }
        
         //fix for  POST_TO_URI
-        if (requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)){
+        if (requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)) {
             path = url.toString();
         }
         
@@ -219,7 +219,7 @@ public class TargetRequest {
         }
         
         //setup wsa action..
-        if (request != null){
+        if (request != null) {
             String soapAction = requestMsgCtx.getSoapAction();
             if (soapAction == null) {
                 soapAction = requestMsgCtx.getWSAAction();
@@ -412,7 +412,7 @@ public class TargetRequest {
         return request;
     }
 
-    public HttpRoute getRoute(){
+    public HttpRoute getRoute() {
         return route;
     }
 
