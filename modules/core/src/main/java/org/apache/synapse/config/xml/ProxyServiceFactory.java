@@ -227,6 +227,11 @@ public class ProxyServiceFactory {
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "endpoint"));
             OMAttribute wsdlKey = wsdl.getAttribute(
                     new QName(XMLConfigConstants.NULL_NAMESPACE, "key"));
+            OMAttribute preservePolicy = wsdl.getAttribute(
+                    new QName(XMLConfigConstants.NULL_NAMESPACE, "preservePolicy"));
+            if (preservePolicy != null) {
+                proxy.setPreservePolicy(preservePolicy.getAttributeValue());
+            }
             if (wsdlEndpoint != null) {
                 proxy.setPublishWSDLEndpoint(wsdlEndpoint.getAttributeValue());
             } else if (wsdlKey != null) {

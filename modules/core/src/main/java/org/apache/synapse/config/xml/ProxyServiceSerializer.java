@@ -151,6 +151,7 @@ public class ProxyServiceSerializer {
 
         String wsdlKey = service.getWSDLKey();
         String wsdlEndpoint = service.getPublishWSDLEndpoint();
+        String preservePolicy = service.getPreservePolicy();
         URI wsdlUri = service.getWsdlURI();
         Object inLineWSDL = service.getInLineWSDL();
         if (wsdlKey != null || wsdlUri != null || inLineWSDL != null || wsdlEndpoint != null) {
@@ -165,6 +166,9 @@ public class ProxyServiceSerializer {
             } else if (wsdlUri != null) {
                 wsdl.addAttribute(fac.createOMAttribute(
                         "uri", nullNS, wsdlUri.toString()));
+            }
+            if (preservePolicy != null) {
+                wsdl.addAttribute(fac.createOMAttribute("preservePolicy", nullNS, preservePolicy));
             }
             ResourceMapSerializer.serializeResourceMap(wsdl, service.getResourceMap());
             proxy.addChild(wsdl);
