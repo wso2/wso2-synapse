@@ -194,7 +194,7 @@
             <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>org.wso2.org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
         </dependency>
         <dependency>
