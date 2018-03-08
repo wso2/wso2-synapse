@@ -124,6 +124,10 @@ public class PassThroughConfiguration {
         return getBooleanProperty(PassThroughConfigPNames.SERVER_HEADER_PRESERVE, false);
     }
 
+    public boolean isForcedXmlMessageValidationEnabled() {
+        return getBooleanProperty(PassThroughConstants.FORCE_XML_MESSAGE_VALIDATION, false);
+    }
+
     public String getPreserveHttpHeaders() {
         return getStringProperty(PassThroughConfigPNames.HTTP_HEADERS_PRESERVE, "");
     }

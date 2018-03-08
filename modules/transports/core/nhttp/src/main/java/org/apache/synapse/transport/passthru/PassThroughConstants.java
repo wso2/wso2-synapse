@@ -222,4 +222,7 @@ public class PassThroughConstants {
      * System property to configure verification timeout (iterative verification) in seconds for port.
      */
     public static final String SYSTEMPROP_PORT_CLOSE_VERIFY_TIMEOUT = "synapse.transport.portCloseVerifyTimeout";
+
+    //Validate the bad formed xml message by building the whole xml document.
+    public static final String FORCE_XML_MESSAGE_VALIDATION = "force.xml.message.validation";
 }

@@ -57,6 +57,8 @@ public class RelayUtils {
 
     private static Boolean forcePTBuild = null;
 
+    private static boolean forceXmlValidation = false;
+
     static {
         if (forcePTBuild == null) {
             forcePTBuild = PassThroughConfiguration.getInstance().getBooleanProperty(
@@ -67,6 +69,7 @@ public class RelayUtils {
             // this to keep track ignore the builder operation eventhough
             // content level is enable.
         }
+        forceXmlValidation = PassThroughConfiguration.getInstance().isForcedXmlMessageValidationEnabled();
     }
 
     public static void buildMessage(org.apache.axis2.context.MessageContext msgCtx)
@@ -155,6 +158,11 @@ public class RelayUtils {
 
                 if (!earlyBuild) {
                     processAddressing(messageContext);
+                }
+                //force validation makes sure that the xml is well formed(not having multi root element).
+                if (forceXmlValidation) {
+                    messageContext.getEnvelope().buildWithAttachments();
+                    messageContext.getEnvelope().getBody().getFirstElement().buildNext();
                 }
             }
         } catch (Exception e) {
