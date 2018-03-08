@@ -49,28 +49,24 @@ public class ConcurrentAccessController implements Serializable {
 	 *
 	 * @return the previous value
 	 */
-	public int getAndDecrement() {
-		int ret = this.counter.getAndDecrement();
-		if (ret <= 0) {
-			this.counter.incrementAndGet();
-			return 0;
-		} else {
-			return ret;
-		}
-	}
+    public int getAndDecrement() {
+        if (counter.get() <= 0) {
+            return 0;
+        }
+        return counter.getAndDecrement();
+    }
 
 	/**
 	 * Increments by one the current value and Returns the the updated value
 	 *
 	 * @return the updated value
 	 */
-	public int incrementAndGet() {
-		int ret = this.counter.incrementAndGet();
-		if (ret < 0) {
-			return 0;
-		}
-		return ret;
-	}
+    public int incrementAndGet() {
+        if (counter.get() >= limit) {
+            return limit;
+        }
+        return this.counter.incrementAndGet();
+    }
 
 	/**
 	 * Gets  the Max number of access - access limit
@@ -91,4 +87,16 @@ public class ConcurrentAccessController implements Serializable {
 		this.limit = newValue;
 	}
 
+	public void updateCounter(boolean isIncrement) {
+		if (isIncrement) {
+			incrementAndGet();
+		} else {
+			getAndDecrement();
+		}
+
+	}
+
+	public int get() {
+		return counter.get();
+	}
 }

@@ -433,7 +433,7 @@ public class Axis2Sender {
             String throttleKey = (String) smc.getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
 
             if (concurrentAccessReplicator != null) {
-                concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+                concurrentAccessReplicator.replicate(throttleKey, true);
             }
         }
     }

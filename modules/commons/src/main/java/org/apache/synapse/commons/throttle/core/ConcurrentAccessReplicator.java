@@ -33,7 +33,7 @@ public class ConcurrentAccessReplicator {
         this.configContext = configContext;
     }
 
-    public void replicate(String key, ConcurrentAccessController concurrentAccessController) {
+    public void replicate(String key, Boolean action) {
         try {
             ClusteringAgent clusteringAgent =
                     configContext.getAxisConfiguration().getClusteringAgent();
@@ -42,9 +42,7 @@ public class ConcurrentAccessReplicator {
                     log.debug("Replicating ConcurrentAccessController " + key +
                             " in a ClusterMessage.");
                 }
-                clusteringAgent.sendMessage(
-                        new ConcurrentAccessUpdateClusterMessage(key, concurrentAccessController),
-                        true);
+                clusteringAgent.sendMessage(new ConcurrentAccessUpdateClusterMessage(key, action), true);
             }
         } catch (ClusteringFault e) {
             if (log.isErrorEnabled()) {

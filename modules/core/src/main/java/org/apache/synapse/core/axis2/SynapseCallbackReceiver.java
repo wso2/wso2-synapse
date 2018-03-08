@@ -41,6 +41,8 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.aspects.flow.statistics.collectors.CallbackStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.carbonext.TenantInfoConfigurator;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.config.SynapseConfigUtils;
 import org.apache.synapse.config.SynapseConfiguration;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -225,6 +227,30 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
         if (configurator != null) {
             configurator.applyTenantInfo(synapseOutMsgCtx);
         }
+
+        Boolean isConcurrencyThrottleEnabled = (Boolean) synapseOutMsgCtx
+                .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+
+        if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
+            ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController)
+                    synapseOutMsgCtx
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+            int available = concurrentAccessController.incrementAndGet();
+            int concurrentLimit = concurrentAccessController.getLimit();
+            if (log.isDebugEnabled()) {
+                log.debug("Concurrency Throttle : Connection returned" + " :: " +
+                        available + " of available of " + concurrentLimit + " connections");
+            }
+            ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator)
+                    synapseOutMsgCtx
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+            String throttleKey = (String) synapseOutMsgCtx
+                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+            if (concurrentAccessReplicator != null) {
+                concurrentAccessReplicator.replicate(throttleKey, true);
+            }
+        }
+
         Object o = response.getProperty(SynapseConstants.SENDING_FAULT);
         if (o != null && Boolean.TRUE.equals(o)) {
             //This path hits with a fault. Sequence mediator threads should not remove faultSequence.

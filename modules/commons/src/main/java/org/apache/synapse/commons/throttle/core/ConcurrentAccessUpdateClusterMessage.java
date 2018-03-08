@@ -29,12 +29,11 @@ public class ConcurrentAccessUpdateClusterMessage extends ClusteringMessage {
 
     private static final Log log = LogFactory.getLog(ConcurrentAccessUpdateClusterMessage.class);
     private String key;
-    private ConcurrentAccessController concurrentAccessController;
+    private Boolean action;
 
-    public ConcurrentAccessUpdateClusterMessage(String key,
-                                           ConcurrentAccessController concurrentAccessController) {
+    public ConcurrentAccessUpdateClusterMessage(String key, Boolean action) {
         this.key = key;
-        this.concurrentAccessController = concurrentAccessController;
+        this.action = action;
         log.debug("Initializing with ConcurrentAccessController : " + key + " " + this.getUuid());
     }
 
@@ -59,23 +58,7 @@ public class ConcurrentAccessUpdateClusterMessage extends ClusteringMessage {
             if (log.isDebugEnabled()) {
                 log.debug("Getting local ConcurrentAccessController for key : " + key);
             }
-            if (localAccessController == null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Local ConcurrentAccessController for key : " + key +
-                            " is not present in ThrottleDataHolder");
-                }
-                synchronized (key.intern()) {
-                    localAccessController = throttleDataHolder.getConcurrentAccessController(key);
-                    if (localAccessController == null) {
-                        throttleDataHolder
-                                .setConcurrentAccessController(key, concurrentAccessController);
-                    }
-                }
-                if (log.isDebugEnabled()) {
-                    log.debug("Replicated the ConcurrentAccessController for key : " + key +
-                            " in ThrottleDataHolder");
-                }
-            } else {
+            if (localAccessController != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Local ConcurrentAccessController for key : " + key +
                             " is already present in ThrottleDataHolder");
@@ -83,9 +66,7 @@ public class ConcurrentAccessUpdateClusterMessage extends ClusteringMessage {
                 synchronized (key.intern()) {
                     localAccessController = throttleDataHolder.getConcurrentAccessController(key);
                     if (localAccessController != null) {
-                        throttleDataHolder.removeConcurrentAccessController(key);
-                        throttleDataHolder
-                                .setConcurrentAccessController(key, concurrentAccessController);
+                        localAccessController.updateCounter(action);
                     }
                 }
                 if (log.isDebugEnabled()) {
@@ -95,21 +76,6 @@ public class ConcurrentAccessUpdateClusterMessage extends ClusteringMessage {
             }
             if (log.isTraceEnabled()) {
                 log.trace("Finished executing ClusterMessage : " + this.getUuid());
-            }
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("ThrottleDataHolder is not present in current ConfigurationContext");
-            }
-            synchronized (configContext) {
-                throttleDataHolder = (ThrottleDataHolder) configContext
-                        .getProperty(ThrottleConstants.THROTTLE_INFO_KEY);
-                if (throttleDataHolder == null) {
-                    throttleDataHolder = new ThrottleDataHolder();
-                    throttleDataHolder
-                            .setConcurrentAccessController(key, concurrentAccessController);
-                    configContext.setNonReplicableProperty(ThrottleConstants.THROTTLE_INFO_KEY,
-                            throttleDataHolder);
-                }
             }
         }
     }

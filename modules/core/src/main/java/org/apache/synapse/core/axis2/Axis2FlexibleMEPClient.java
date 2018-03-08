@@ -587,7 +587,7 @@ public class Axis2FlexibleMEPClient {
                 String throttleKey = (String) synapseOutMessageContext
                         .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
                 if (concurrentAccessReplicator != null) {
-                    concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+                    concurrentAccessReplicator.replicate(throttleKey, true);
                 }
             }
         }
