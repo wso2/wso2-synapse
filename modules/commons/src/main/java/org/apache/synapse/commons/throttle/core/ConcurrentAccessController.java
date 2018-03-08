@@ -95,8 +95,4 @@ public class ConcurrentAccessController implements Serializable {
 		}
 
 	}
-
-	public int get() {
-		return counter.get();
-	}
 }
