@@ -336,37 +336,35 @@ public class TargetRequest {
             log.debug("Process Chungking (disableChunking : " 
                     + disableChunking + ", forceHttp10 : " + forceHttp10 + ")");
         }
-        if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
-            if (requestMsgCtx.getEnvelope().getBody().getFirstElement() == null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Envelope Body is empty");
-                }
-                BasicHttpEntity entity = (BasicHttpEntity) ((BasicHttpEntityEnclosingRequest) request).getEntity();
-                try {
-                    RelayUtils.buildMessage(requestMsgCtx);
-                    this.hasEntityBody = true;
-                    Pipe pipe = (Pipe) requestMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-                    if (pipe != null) {
-                        pipe.attachConsumer(conn);
-                        this.connect(pipe);
-                        if (Boolean.TRUE.equals(
-                                requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
-                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                            MessageFormatter formatter =  MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
-                            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
-                            formatter.writeTo(requestMsgCtx, format, out, false);
-                            OutputStream _out = pipe.getOutputStream();
-                            IOUtils.write(out.toByteArray(), _out);
-                            if (log.isDebugEnabled()) {
-                                log.debug("Set ContentLength : " + new Long(out.toByteArray().length));
-                            }
-                            entity.setContentLength(new Long(out.toByteArray().length));
-                            entity.setChunked(false);
+        if (("true".equals(disableChunking) || "true".equals(forceHttp10))
+                && (requestMsgCtx.getEnvelope().getBody().getFirstElement() == null)) {
+            if (log.isDebugEnabled()) {
+                log.debug("Envelope Body is empty");
+            }
+            BasicHttpEntity entity = (BasicHttpEntity) ((BasicHttpEntityEnclosingRequest) request).getEntity();
+            try {
+                RelayUtils.buildMessage(requestMsgCtx);
+                this.hasEntityBody = true;
+                Pipe pipe = (Pipe) requestMsgCtx.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
+                if (pipe != null) {
+                    pipe.attachConsumer(conn);
+                    this.connect(pipe);
+                    if (Boolean.TRUE.equals(
+                            requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        MessageFormatter formatter =  MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
+                        OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
+                        formatter.writeTo(requestMsgCtx, format, out, false);
+                        IOUtils.write(out.toByteArray(), pipe.getOutputStream());
+                        if (log.isDebugEnabled()) {
+                            log.debug("Set ContentLength : " + new Long(out.toByteArray().length));
                         }
+                        entity.setContentLength(new Long(out.toByteArray().length));
+                        entity.setChunked(false);
                     }
-                } catch (XMLStreamException e) {
-                    log.error("Error while process chunking", e);
                 }
+            } catch (XMLStreamException e) {
+                log.error("Error while process chunking", e);
             }
         }
     }
