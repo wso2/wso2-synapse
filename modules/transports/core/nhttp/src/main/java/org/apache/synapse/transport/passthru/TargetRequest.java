@@ -100,11 +100,13 @@ public class TargetRequest {
      * @param method the HTTP method
      * @param hasEntityBody weather request has an entity body
      */
-    public TargetRequest(TargetConfiguration targetConfiguration, HttpRoute route, URL url, String method, boolean hasEntityBody) {
+    public TargetRequest(TargetConfiguration targetConfiguration, 
+            HttpRoute route, URL url, String method, boolean hasEntityBody) {
         this(targetConfiguration, route, method, url, hasEntityBody);
     }
 
-    public TargetRequest(TargetConfiguration targetConfiguration, HttpRoute route, String method, URL url, boolean hasEntityBody) {
+    public TargetRequest(TargetConfiguration targetConfiguration, 
+            HttpRoute route, String method, URL url, boolean hasEntityBody) {
         this.route = route;
         this.method = method;
         this.url = url;
@@ -115,14 +117,8 @@ public class TargetRequest {
     public void connect(Pipe pipe) {
         this.pipe = pipe;
     }
-
-    public void start(NHttpClientConnection conn) throws IOException, HttpException {
-        if (pipe != null) {
-            TargetContext.get(conn).setWriter(pipe);
-        }
-
-        String path = fullUrl || (route.getProxyHost() != null && !route.isTunnelled()) ? url.toString() : url.getPath() + (url.getQuery() != null ? "?" + url.getQuery() : "");
-
+    
+    protected long getContentLength(NHttpClientConnection conn) {
         long contentLength = -1;
         String contentLengthHeader = null;
         LinkedHashSet<String> httpContentLengthHeader = headers.get(HTTP.CONTENT_LEN);
@@ -147,47 +143,24 @@ public class TargetRequest {
             }
             contentLength = (Long)requestMsgCtx.getProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH);
         }
-       
-        //fix for  POST_TO_URI
-        if (requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)) {
-            path = url.toString();
-        }
         
-        //fix GET request empty body
-        if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || (RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
-            hasEntityBody = false;
-            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
-            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
-            if (formatter != null && format != null) {
-                URL _url = formatter.getTargetAddress(requestMsgCtx, format, url);
-                if (_url != null && !_url.toString().isEmpty()) {
-                    if (requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI) != null && Boolean.TRUE.toString().equals(requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI))) {
-                        path = _url.toString();
-                    } else {
-                        path = _url.getPath() + ((_url.getQuery() != null && !_url.getQuery().isEmpty()) ? ("?" + _url.getQuery()) : "");
-                    }
-                }
-                headers.remove(HTTP.CONTENT_TYPE);
-            }
-        }
+        return contentLength;
+    }
+    
+    protected HttpRequest getHttpRequest(NHttpClientConnection conn, String path) {
+        long contentLength = getContentLength(conn);
         
-        Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
-        if (o != null && o instanceof TreeMap) {
-            Map _headers = (Map) o;
-            String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
-            if (trpContentType != null && !trpContentType.equals("")) {
-                if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
-                    addHeader(HTTP.CONTENT_TYPE, trpContentType);
-                }
-            }
-        }
-                                                            
-        request = new BasicHttpEntityEnclosingRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
+        MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
         
+        HttpRequest request = 
+                new BasicHttpEntityEnclosingRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
+
         BasicHttpEntity entity = new BasicHttpEntity();
         
-        boolean forceContentLength = requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
-        boolean forceContentLengthCopy = requestMsgCtx.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
+        boolean forceContentLength = 
+                requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
+        boolean forceContentLengthCopy = 
+                requestMsgCtx.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
                             
         if (forceContentLength) {
             entity.setChunked(false);
@@ -224,6 +197,60 @@ public class TargetRequest {
             }
         }
         
+        return request;
+    }
+
+    public void start(NHttpClientConnection conn) throws IOException, HttpException {
+        if (pipe != null) {
+            TargetContext.get(conn).setWriter(pipe);
+        }
+
+        String path = fullUrl || 
+                (route.getProxyHost() != null && !route.isTunnelled()) ? 
+                        url.toString() : url.getPath() + (url.getQuery() != null ? "?" + url.getQuery() : "");
+
+        MessageContext requestMsgCtx = TargetContext.get(conn).getRequestMsgCtx();
+       
+        //fix for  POST_TO_URI
+        if (requestMsgCtx.isPropertyTrue(NhttpConstants.POST_TO_URI)) {
+            path = url.toString();
+        }
+        
+        //fix GET request empty body
+        if ((PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD)))
+                || (RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+            hasEntityBody = false;
+            MessageFormatter formatter = MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
+            OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
+            if (formatter != null && format != null) {
+                URL _url = formatter.getTargetAddress(requestMsgCtx, format, url);
+                if (_url != null && !_url.toString().isEmpty()) {
+                    if (requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI) != null 
+                            && Boolean.TRUE.toString().equals(requestMsgCtx.getProperty(NhttpConstants.POST_TO_URI))) {
+                        path = _url.toString();
+                    } else {
+                        path = _url.getPath() 
+                                + ((_url.getQuery() != null && !_url.getQuery().isEmpty()) ? 
+                                        ("?" + _url.getQuery()) : "");
+                    }
+                }
+                headers.remove(HTTP.CONTENT_TYPE);
+            }
+        }
+        
+        Object o = requestMsgCtx.getProperty(MessageContext.TRANSPORT_HEADERS);
+        if (o != null && o instanceof TreeMap) {
+            Map _headers = (Map) o;
+            String trpContentType = (String) _headers.get(HTTP.CONTENT_TYPE);
+            if (trpContentType != null && !trpContentType.equals("")) {
+                if (!TargetRequestFactory.isMultipartContent(trpContentType)) {
+                    addHeader(HTTP.CONTENT_TYPE, trpContentType);
+                }
+            }
+        }
+                                                            
+        request = getHttpRequest(conn, path);
+
         //setup wsa action..
         if (request != null) {
             String soapAction = requestMsgCtx.getSoapAction();
@@ -239,15 +266,20 @@ public class TargetRequest {
                 if (existingHeader != null) {
                     request.removeHeader(existingHeader);
                 }
-                MessageFormatter messageFormatter = MessageFormatterDecoratorFactory.createMessageFormatterDecorator(requestMsgCtx);
-                request.setHeader(HTTPConstants.HEADER_SOAP_ACTION, messageFormatter.formatSOAPAction(requestMsgCtx, null, soapAction));
+                MessageFormatter messageFormatter = 
+                        MessageFormatterDecoratorFactory.createMessageFormatterDecorator(requestMsgCtx);
+                request.setHeader(HTTPConstants.HEADER_SOAP_ACTION, 
+                        messageFormatter.formatSOAPAction(requestMsgCtx, null, soapAction));
             }
         }
 
         request.setParams(new DefaultedHttpParams(request.getParams(), targetConfiguration.getHttpParams()));
 
         //Chunking is not performed for request has "http 1.0" and "GET" http method
-        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) || (PassThroughConstants.HTTP_GET.equals(requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+        if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) 
+                || (PassThroughConstants.HTTP_GET.equals(
+                        requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) 
+                || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
             this.processChunking(conn, requestMsgCtx);
         }
 
@@ -266,12 +298,14 @@ public class TargetRequest {
         }
 
         conn.getContext().setAttribute(ExecutionContext.HTTP_REQUEST, request);
-        httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST, requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
+        httpContext.setAttribute(PassThroughConstants.PROXY_PROFILE_TARGET_HOST, 
+                requestMsgCtx.getProperty(PassThroughConstants.PROXY_PROFILE_TARGET_HOST));
 
         // start the request
         targetConfiguration.getHttpProcessor().process(request, httpContext);
 
-        if (targetConfiguration.getProxyAuthenticator() != null && route.getProxyHost() != null && !route.isTunnelled()) {
+        if (targetConfiguration.getProxyAuthenticator() != null 
+                && route.getProxyHost() != null && !route.isTunnelled()) {
             targetConfiguration.getProxyAuthenticator().authenticatePreemptively(request, httpContext);
         }
         
@@ -294,11 +328,13 @@ public class TargetRequest {
      * @throws IOException
      * @throws AxisFault
      */
-    private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) throws IOException, AxisFault {
+    private void processChunking(NHttpClientConnection conn, MessageContext requestMsgCtx) 
+            throws IOException, AxisFault {
         String disableChunking = (String) requestMsgCtx.getProperty(PassThroughConstants.DISABLE_CHUNKING);
         String forceHttp10 = (String) requestMsgCtx.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
         if (log.isDebugEnabled()) {
-            log.debug("Process Chungking (disableChunking : " + disableChunking + ", forceHttp10 : " + forceHttp10 + ")");
+            log.debug("Process Chungking (disableChunking : " 
+                    + disableChunking + ", forceHttp10 : " + forceHttp10 + ")");
         }
         if ("true".equals(disableChunking) || "true".equals(forceHttp10)) {
             if (requestMsgCtx.getEnvelope().getBody().getFirstElement() == null) {
@@ -313,7 +349,8 @@ public class TargetRequest {
                     if (pipe != null) {
                         pipe.attachConsumer(conn);
                         this.connect(pipe);
-                        if (Boolean.TRUE.equals(requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
+                        if (Boolean.TRUE.equals(
+                                requestMsgCtx.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                             MessageFormatter formatter =  MessageProcessorSelector.getMessageFormatter(requestMsgCtx);
                             OMOutputFormat format = PassThroughTransportUtils.getOMOutputFormat(requestMsgCtx);
@@ -349,7 +386,8 @@ public class TargetRequest {
         }
         if (encoder.isCompleted()) {
             conn.getContext().setAttribute(PassThroughConstants.REQ_DEPARTURE_TIME, System.currentTimeMillis());
-            conn.getContext().setAttribute(PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
+            conn.getContext().setAttribute(
+                    PassThroughConstants.REQ_TO_BACKEND_WRITE_END_TIME,System.currentTimeMillis());
             targetConfiguration.getMetrics().notifySentMessageSize(conn.getMetrics().getSentBytesCount());
             TargetContext.updateState(conn, ProtocolState.REQUEST_DONE);
         }
