@@ -66,6 +66,8 @@ public class PassThroughConstants {
     public static final String ERROR_DETAIL = "ERROR_DETAIL";
     /** The message context property name which holds the exception (if any) for the last encountered exception */
     public static final String ERROR_EXCEPTION = "ERROR_EXCEPTION";
+    /** An Axis2 message context property that hols the raw payload when an error occurs while building message */
+    public static final String RAW_PAYLOAD = "RAW_PAYLOAD";
 
     // ********** DO NOT CHANGE THESE UNLESS CORRESPONDING SYNAPSE CONSTANT ARE CHANGED ************
 
