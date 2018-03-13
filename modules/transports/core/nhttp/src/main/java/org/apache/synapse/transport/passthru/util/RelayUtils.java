@@ -130,13 +130,8 @@ public class RelayUtils {
             //read input stream to store raw data and create inputStream again.
             //then the raw data can be logged after an error while building the message.
             byteArrayOutputStream = new ByteArrayOutputStream();
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = in.read(buffer)) > -1 ) {
-                byteArrayOutputStream.write(buffer, 0, len);
-            }
+            IOUtils.copy(in, byteArrayOutputStream);
             byteArrayOutputStream.flush();
-
             // Open new InputStreams using the recorded bytes and assign to in
             in =  new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
         }
