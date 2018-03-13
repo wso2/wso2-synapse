@@ -45,7 +45,7 @@ public class ConcurrencyThrottlingUtilsTest extends TestCase {
         ConcurrencyThrottlingUtils.decrementConcurrencyThrottleAccessController(mc);
         //getAndDecrement - decrement by 1 and return previous value
         int newValue = controller.getAndDecrement();
-        Assert.assertEquals("connection count after increment should be 6", 6, newValue);
+        Assert.assertEquals("connection count after increment should be 5", 5, newValue);
         Assert.assertFalse("flag should be cleared to avoid further executions of the method",
                 (boolean) mc.getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE));
     }
