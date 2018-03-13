@@ -30,25 +30,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConcurrentAccessController implements Serializable {
 
-	private static Log log = LogFactory.getLog(ConcurrentAccessController.class.getName());
+    private static Log log = LogFactory.getLog(ConcurrentAccessController.class.getName());
 
-	/* The Max number of concurrent access */
-	private int limit;
-	/* The counter variable - hold current access count */
-	private AtomicInteger counter;
+    /* The Max number of concurrent access */
+    private int limit;
+    /* The counter variable - hold current access count */
+    private AtomicInteger counter;
 
-	private static final long serialVersionUID = -6857325377726757251L;
+    private static final long serialVersionUID = -6857325377726757251L;
 
-	public ConcurrentAccessController(int limit) {
-		this.limit = limit;
-		this.counter = new AtomicInteger(limit);
-	}
+    public ConcurrentAccessController(int limit) {
+        this.limit = limit;
+        this.counter = new AtomicInteger(limit);
+    }
 
-	/**
-	 * Decrements by one the current value and Returns the previous value
-	 *
-	 * @return the previous value
-	 */
+    /**
+     * Decrements by one the current value and Returns the previous value
+     *
+     * @return the previous value
+     */
     public int getAndDecrement() {
         if (counter.get() <= 0) {
             return 0;
@@ -56,11 +56,11 @@ public class ConcurrentAccessController implements Serializable {
         return counter.getAndDecrement();
     }
 
-	/**
-	 * Increments by one the current value and Returns the the updated value
-	 *
-	 * @return the updated value
-	 */
+    /**
+     * Increments by one the current value and Returns the the updated value
+     *
+     * @return the updated value
+     */
     public int incrementAndGet() {
         if (counter.get() >= limit) {
             return limit;
@@ -68,31 +68,31 @@ public class ConcurrentAccessController implements Serializable {
         return this.counter.incrementAndGet();
     }
 
-	/**
-	 * Gets  the Max number of access - access limit
-	 *
-	 * @return the limit
-	 */
-	public int getLimit() {
-		return this.limit;
-	}
+    /**
+     * Gets  the Max number of access - access limit
+     *
+     * @return the limit
+     */
+    public int getLimit() {
+        return this.limit;
+    }
 
-	/**
-	 * Resets the counter and the limit
-	 *
-	 * @param newValue The new Value
-	 */
-	public void set(int newValue) {
-		this.counter.set(newValue);
-		this.limit = newValue;
-	}
+    /**
+     * Resets the counter and the limit
+     *
+     * @param newValue The new Value
+     */
+    public void set(int newValue) {
+        this.counter.set(newValue);
+        this.limit = newValue;
+    }
 
-	public void updateCounter(boolean isIncrement) {
-		if (isIncrement) {
-			incrementAndGet();
-		} else {
-			getAndDecrement();
-		}
+    public void updateCounter(boolean isIncrement) {
+        if (isIncrement) {
+            incrementAndGet();
+        } else {
+            getAndDecrement();
+        }
 
-	}
+    }
 }

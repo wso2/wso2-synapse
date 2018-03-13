@@ -73,9 +73,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
 
     private static final Log log = LogFactory.getLog(SynapseCallbackReceiver.class);
 
-    /** This is the synchronized callbackStore that maps outgoing messageID's to callback objects */
-//    private final Map<String, AxisCallback> callbackStore;  // will made thread safe in the constructor
-
     /**
      * Create the *single* instance of this class that would be used by all anonymous services
      * used for outgoing messaging.
@@ -84,8 +81,6 @@ public class SynapseCallbackReceiver extends CallbackReceiver {
      */
     public SynapseCallbackReceiver(SynapseConfiguration synCfg,
                                    ServerContextInformation contextInformation) {
-
-//        callbackStore = Collections.synchronizedMap(new HashMap<String, AxisCallback>());
 
         // create the Timer object and a TimeoutHandler task
         TimeoutHandler timeoutHandler = new TimeoutHandler(callbackStore, contextInformation);
