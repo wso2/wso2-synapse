@@ -144,7 +144,7 @@ public abstract class AbstractListMediator extends AbstractMediator
             }
             RelayUtils.buildMessage(((Axis2MessageContext) synCtx).getAxis2MessageContext(), false);
         } catch (Exception e) {
-            handleException("Error while building message", e, synCtx);
+            handleException("Error while building message. " + e.getMessage(), e, synCtx);
         }
     }
 

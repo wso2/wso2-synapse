@@ -66,6 +66,8 @@ public class PassThroughConstants {
     public static final String ERROR_DETAIL = "ERROR_DETAIL";
     /** The message context property name which holds the exception (if any) for the last encountered exception */
     public static final String ERROR_EXCEPTION = "ERROR_EXCEPTION";
+    /** An Axis2 message context property that hols the raw payload when an error occurs while building message */
+    public static final String RAW_PAYLOAD = "RAW_PAYLOAD";
 
     // ********** DO NOT CHANGE THESE UNLESS CORRESPONDING SYNAPSE CONSTANT ARE CHANGED ************
 
@@ -222,4 +224,7 @@ public class PassThroughConstants {
      * System property to configure verification timeout (iterative verification) in seconds for port.
      */
     public static final String SYSTEMPROP_PORT_CLOSE_VERIFY_TIMEOUT = "synapse.transport.portCloseVerifyTimeout";
+
+    //Validate the bad formed xml message by building the whole xml document.
+    public static final String FORCE_XML_MESSAGE_VALIDATION = "force.xml.message.validation";
 }
