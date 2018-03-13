@@ -132,13 +132,6 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             //reference throttling only applies for request flow mediation
             doInitializeThrottleDynamicPolicy(synCtx, synLog);
 
-            //in cluster environment local reference to concurrent access controller should be
-            //updated, local reference kept inside Throttle mediator maybe expired as a
-            //consequence of global concurrent access change with
-            //respect to controller we maintain at configuration context
-            if (isClusteringEnable) {
-                reloadDistributedConcurrentAccessController(synLog);
-            }
             //throttle by concurrency is given the highest priority, if another throttling
             // scheme fails eg :- rate based from this point onward Eg:- access rate
             // checks we need to rollback the previous
@@ -153,17 +146,6 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                 org.apache.axis2.context.MessageContext axisMC =
                         ((Axis2MessageContext) synCtx).getAxis2MessageContext();
                 canAccess = doThrottleByAccessRate(synCtx, axisMC, configContext, synLog);
-            }
-            // all the replication functionality of the access rate and concurrency based
-            // throttling handles by itself at throttle core level but for the the concurrency case
-            // this is done explicitly forcing as we make concurrent global state change available
-            // to other cluster nodes as synchronous manner
-            if (isClusteringEnable && concurrentAccessController != null) {
-                if (synLog.isTraceOrDebugEnabled()) {
-                    synLog.traceOrDebug("Going to replicates the  " +
-                            "states of the ConcurrentAccessController with key : " + key);
-                }
-                concurrentAccessReplicator.replicate(key, concurrentAccessController);
             }
 
             if (concurrentAccessController != null) {
@@ -183,6 +165,17 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             //depending on the subsequent throttling controller outcome from this point
             // onwards mediation flow branches to either accept sequence or reject sequence
             if (canAccess) {
+                // all the replication functionality of the access rate and concurrency based
+                // throttling handles by itself at throttle core level but for the the concurrency case
+                // this is done explicitly forcing as we make concurrent global state change available
+                // to other cluster nodes as synchronous manner
+                if (isClusteringEnable && concurrentAccessController != null) {
+                    if (synLog.isTraceOrDebugEnabled()) {
+                        synLog.traceOrDebug("Going to replicates the  " +
+                                "states of the ConcurrentAccessController with key : " + key);
+                    }
+                    concurrentAccessReplicator.replicate(key, false);
+                }
                 //accept case
                 // property is set to identify whether a request is accepted or rejected looking at
                 // the throttling controller outcome.
@@ -551,8 +544,6 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
                                     if (concurrentAccessController != null) {
                                         dataHolder.setConcurrentAccessController
                                                 (key, concurrentAccessController);
-                                    } else {
-                                        dataHolder.removeConcurrentAccessController(key);
                                     }
                                 }
                             }
@@ -565,19 +556,6 @@ public class ThrottleMediator extends AbstractMediator implements ManagedLifecyc
             }
         }
 
-    }
-
-    /**
-     * Helper method that handles the update the local reference to the concurrent controller
-     *
-     * @param synLog the Synapse log to use
-     */
-    private void reloadDistributedConcurrentAccessController(SynapseLog synLog) {
-        if (synLog.isTraceOrDebugEnabled()) {
-            synLog.traceOrDebug("Throttle mediator : Updating local " +
-                    "reference to the Concurrent Access controller");
-        }
-        concurrentAccessController = dataHolder.getConcurrentAccessController(key);
     }
 
     public void init(SynapseEnvironment se) {

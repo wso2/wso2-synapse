@@ -57,7 +57,7 @@ public class ConcurrencyThrottlingUtils {
                     .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
             String throttleKey = (String) synCtx.getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
             if (concurrentAccessReplicator != null) {
-                concurrentAccessReplicator.replicate(throttleKey, concurrentAccessController);
+                concurrentAccessReplicator.replicate(throttleKey, true);
             }
             //once decremented, clear the flag since we no longer required to decrement the value
             //concurrency throttle access controller

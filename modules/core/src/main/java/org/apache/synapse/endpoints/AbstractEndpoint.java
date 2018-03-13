@@ -37,6 +37,8 @@ import org.apache.synapse.aspects.flow.statistics.collectors.CloseEventCollector
 import org.apache.synapse.aspects.flow.statistics.collectors.OpenEventCollector;
 import org.apache.synapse.aspects.flow.statistics.collectors.RuntimeStatisticCollector;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessController;
+import org.apache.synapse.commons.throttle.core.ConcurrentAccessReplicator;
 import org.apache.synapse.transport.customlogsetter.CustomLogSetter;
 import org.apache.synapse.aspects.AspectConfiguration;
 import org.apache.synapse.aspects.ComponentType;
@@ -653,6 +655,29 @@ public abstract class AbstractEndpoint extends FaultHandler implements Endpoint,
     }
 
     protected void informFailure(MessageContext synCtx, int errorCode, String errorMsg) {
+
+        Boolean isConcurrencyThrottleEnabled = (Boolean) synCtx
+                .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE);
+
+        if (isConcurrencyThrottleEnabled != null && isConcurrencyThrottleEnabled) {
+            ConcurrentAccessController concurrentAccessController = (ConcurrentAccessController)
+                    synCtx
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_CONTROLLER);
+            int available = concurrentAccessController.incrementAndGet();
+            int concurrentLimit = concurrentAccessController.getLimit();
+            if (log.isDebugEnabled()) {
+                log.debug("Concurrency Throttle : Connection returned" + " :: " +
+                        available + " of available of " + concurrentLimit + " connections");
+            }
+            ConcurrentAccessReplicator concurrentAccessReplicator = (ConcurrentAccessReplicator)
+                    synCtx
+                            .getProperty(SynapseConstants.SYNAPSE_CONCURRENT_ACCESS_REPLICATOR);
+            String throttleKey = (String) synCtx
+                    .getProperty(SynapseConstants.SYNAPSE_CONCURRENCY_THROTTLE_KEY);
+            if (concurrentAccessReplicator != null) {
+                concurrentAccessReplicator.replicate(throttleKey, true);
+            }
+        }
 
         if (synCtx.getProperty(SynapseConstants.LAST_ENDPOINT) == null) {
             setErrorOnMessage(synCtx, errorCode, errorMsg);
