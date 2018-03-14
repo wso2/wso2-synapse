@@ -122,6 +122,11 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
             final TransportOutDescription transportOut) throws AxisFault {
         return new ClientConnFactoryBuilder(transportOut);
     }
+    protected ClientConnFactoryBuilder initConnFactoryBuilder(
+            final TransportOutDescription transportOut, final ConfigurationContext configurationContext) throws
+            AxisFault {
+        return new ClientConnFactoryBuilder(transportOut,configurationContext);
+    }
     
     public void init(ConfigurationContext configurationContext,
                      TransportOutDescription transportOutDescription) throws AxisFault {
@@ -156,8 +161,9 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 
         configurationContext.setProperty(PassThroughConstants.PASS_THROUGH_TRANSPORT_WORKER_POOL,
                 targetConfiguration.getWorkerPool());
-        
-        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportOutDescription);
+
+        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transportOutDescription,
+                targetConfiguration.getConfigurationContext());
         connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
         
         try {
@@ -651,7 +657,8 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     public void reloadDynamicSSLConfig(TransportOutDescription transport) throws AxisFault {
         log.info("PassThroughHttpSender reloading SSL Config..");
 
-        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport);
+        ClientConnFactoryBuilder connFactoryBuilder = initConnFactoryBuilder(transport, targetConfiguration
+                .getConfigurationContext());
         connFactory = connFactoryBuilder.createConnFactory(targetConfiguration.getHttpParams());
 
         //Set new configurations
