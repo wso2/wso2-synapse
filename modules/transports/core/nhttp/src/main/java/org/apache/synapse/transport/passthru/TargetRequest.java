@@ -291,7 +291,8 @@ public class TargetRequest {
         if (!((request.getProtocolVersion().equals(HttpVersion.HTTP_1_0)) 
                 || (PassThroughConstants.HTTP_GET.equals(
                         requestMsgCtx.getProperty(Constants.Configuration.HTTP_METHOD))) 
-                || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))) {
+                || RelayUtils.isDeleteRequestWithoutPayload(requestMsgCtx))
+            && request instanceof BasicHttpEntityEnclosingRequest) {
             this.processChunking(conn, requestMsgCtx);
         }
 
