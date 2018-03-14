@@ -128,6 +128,11 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
         return new ClientConnFactoryBuilder(transportOut);
     }
 
+    protected ClientConnFactoryBuilder initConnFactoryBuilder(final TransportOutDescription transportOut, final
+    ConfigurationContext configurationContext) throws AxisFault {
+        return new ClientConnFactoryBuilder(transportOut, configurationContext);
+    }
+
     /**
      * Initialize the transport sender, and execute reactor in new separate thread
      * @param cfgCtx the Axis2 configuration context
@@ -151,8 +156,8 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
 //                        cfg.getStringValue(CoreProtocolPNames.HTTP_ELEMENT_CHARSET,HTTP.DEFAULT_PROTOCOL_CHARSET)); //TODO:This does not works with HTTPCore 4.3
 
         name = transportOut.getName().toUpperCase(Locale.US) + " Sender";
-        
-        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+
+        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut, configurationContext);
         connFactory = contextBuilder.createConnFactory(params);
 
         connpool = new ConnectionPool();
@@ -1022,7 +1027,7 @@ public class HttpCoreNIOSender extends AbstractHandler implements TransportSende
     public void reload(TransportOutDescription transportOut) throws AxisFault {
         log.info("HttpCoreNIOSender reloading SSL Config..");
         //create new connection factory
-        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut);
+        ClientConnFactoryBuilder contextBuilder = initConnFactoryBuilder(transportOut, configurationContext);
         connFactory = contextBuilder.createConnFactory(params);
 
         //set new connection factory

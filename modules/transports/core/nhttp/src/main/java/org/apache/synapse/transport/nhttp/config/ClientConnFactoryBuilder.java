@@ -39,9 +39,11 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
+import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.Parameter;
 import org.apache.axis2.description.TransportOutDescription;
 import org.apache.axis2.transport.base.ParamUtils;
@@ -49,12 +51,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecureVaultException;
 
 public class ClientConnFactoryBuilder {
 
@@ -62,13 +67,22 @@ public class ClientConnFactoryBuilder {
 
     private final TransportOutDescription transportOut;
     private final String name;
+    private ConfigurationContext configurationContext;
 
     private SSLContextDetails ssl = null;
     private Map<String, SSLContext> sslByHostMap = null;
-    
+
     public ClientConnFactoryBuilder(final TransportOutDescription transportOut) {
         super();
         this.transportOut = transportOut;
+        this.name = transportOut.getName().toUpperCase(Locale.US);
+    }
+
+    public ClientConnFactoryBuilder(final TransportOutDescription transportOut, final ConfigurationContext
+            configurationContext) {
+        super();
+        this.transportOut = transportOut;
+        this.configurationContext = configurationContext;
         this.name = transportOut.getName().toUpperCase(Locale.US);
     }
     
@@ -276,8 +290,8 @@ public class ClientConnFactoryBuilder {
         if (keyStoreElt != null) {
             String location      = keyStoreElt.getFirstChildWithName(new QName("Location")).getText();
             String type          = keyStoreElt.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = keyStoreElt.getFirstChildWithName(new QName("Password")).getText();
-            String keyPassword   = keyStoreElt.getFirstChildWithName(new QName("KeyPassword")).getText();
+            String storePassword = getSecureVaultValue(keyStoreElt.getFirstChildWithName(new QName("Password")));
+            String keyPassword = getSecureVaultValue(keyStoreElt.getFirstChildWithName(new QName("KeyPassword")));
 
             FileInputStream fis = null;
             try {
@@ -315,7 +329,7 @@ public class ClientConnFactoryBuilder {
 
             String location      = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
             String type          = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
-            String storePassword = trustStoreElt.getFirstChildWithName(new QName("Password")).getText();
+            String storePassword = getSecureVaultValue(trustStoreElt.getFirstChildWithName(new QName("Password")));
 
             FileInputStream fis = null;
             try {
@@ -416,5 +430,27 @@ public class ClientConnFactoryBuilder {
             log.error("Exception - Could not load customSSLProfiles from file path: " + path, ex);
         }
         return null;
+    }
+
+    private String getSecureVaultValue(OMElement paramElement) {
+        SecretResolver secretResolver = configurationContext.getAxisConfiguration().getSecretResolver();
+        String value = null;
+        if (paramElement != null) {
+            OMAttribute attribute = paramElement.getAttribute(new QName(CryptoConstants.SECUREVAULT_NAMESPACE,
+                    CryptoConstants.SECUREVAULT_ALIAS_ATTRIBUTE));
+            if (attribute != null && attribute.getAttributeValue() != null && !attribute.getAttributeValue().isEmpty
+                    ()) {
+                if (secretResolver == null) {
+                    throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                            "is null");
+                }
+                if (secretResolver.isTokenProtected(attribute.getAttributeValue())) {
+                    value = secretResolver.resolve(attribute.getAttributeValue());
+                }
+            } else {
+                value = paramElement.getText();
+            }
+        }
+        return value;
     }
 }
