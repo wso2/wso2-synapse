@@ -157,6 +157,8 @@ public class TargetRequest {
 
         BasicHttpEntity entity = new BasicHttpEntity();
         
+        ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
+        
         boolean forceContentLength = 
                 requestMsgCtx.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
         boolean forceContentLengthCopy = 
@@ -164,12 +166,17 @@ public class TargetRequest {
                             
         if (forceContentLength) {
             entity.setChunked(false);
-            if (forceContentLengthCopy && contentLength > 0) {
+            if (forceContentLengthCopy && contentLength != -1) {
                 if (log.isDebugEnabled()) {
                     log.debug("Set ContentLength : " + contentLength);
                 }
                 entity.setContentLength(contentLength);
-            } 
+            } else if (!hasEntityBody) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Set BasicHttpRequest Object");
+                }
+                request = new BasicHttpRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
+            }
         } else {
             if (contentLength != -1) {
                 if (log.isDebugEnabled()) {
@@ -178,14 +185,19 @@ public class TargetRequest {
                 entity.setChunked(false);
                 entity.setContentLength(contentLength);
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Set chunked : " + chunk);
+                if (hasEntityBody) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Set chunked : " + chunk);
+                    }
+                    entity.setChunked(chunk);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Set BasicHttpRequest Object");
+                    }
+                    request = new BasicHttpRequest(method, path, version != null ? version : HttpVersion.HTTP_1_1);
                 }
-                entity.setChunked(chunk);
             }
         }
-        
-        ((BasicHttpEntityEnclosingRequest) request).setEntity(entity);
 
         Set<Map.Entry<String, LinkedHashSet<String>>> entries = headers.entrySet();
         for (Map.Entry<String, LinkedHashSet<String>> entry : entries) {
