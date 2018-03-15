@@ -190,12 +190,10 @@ public class ServerWorker implements Runnable {
         // recipient should consider it as application/octet-stream (rfc2616)
         if (contentType == null || contentType.isEmpty()) {
             contentType = PassThroughConstants.APPLICATION_OCTET_STREAM;
-        }
-        // Temp fix for https://github.com/wso2/product-ei/issues/2001
-        // This need to be fixed properly , with out this fix , the query parameters of the dataServices get request
-        // got null if it is not given content type header
-        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD))) {
-            contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
+            // Temp fix for https://github.com/wso2/product-ei/issues/2001
+            if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD))) {
+                contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
+            }
         }
         if (HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType) ||
                 (PassThroughConstants.APPLICATION_OCTET_STREAM.equals(contentType) && contentTypeHdr == null)) {
