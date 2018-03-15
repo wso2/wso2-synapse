@@ -194,9 +194,7 @@ public class ServerWorker implements Runnable {
         // Temp fix for https://github.com/wso2/product-ei/issues/2001
         // This need to be fixed properly , with out this fix , the query parameters of the dataServices get request
         // got null if it is not given content type header
-        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD)) || (
-                HTTPConstants.HEADER_DELETE.equals(msgContext.getProperty(HTTP_METHOD)) && ("0")
-                        .equals(msgContext.getProperty(PassThroughConstants.HTTP_CONTENT_LENGTH).toString()))) {
+        if (HTTPConstants.HTTP_METHOD_GET.equals(msgContext.getProperty(HTTP_METHOD))) {
             contentType = HTTPConstants.MEDIA_TYPE_X_WWW_FORM;
         }
         if (HTTPConstants.MEDIA_TYPE_X_WWW_FORM.equals(contentType) ||
