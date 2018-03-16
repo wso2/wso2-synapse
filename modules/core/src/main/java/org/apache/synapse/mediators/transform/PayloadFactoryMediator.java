@@ -461,7 +461,7 @@ public class PayloadFactoryMediator extends AbstractMediator {
                     // XML escape the result of an expression that produces a literal, if the target format
                     // of the payload is XML.
                     details.setXml(isXML(value));
-                    if (!details.isXml() && XML_TYPE.equals(getType())) {
+                    if (!details.isXml() && XML_TYPE.equals(getType()) && !isJson(value)) {
                         value = StringEscapeUtils.escapeXml(value);
                     }
                     value = Matcher.quoteReplacement(value);
