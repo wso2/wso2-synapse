@@ -362,6 +362,12 @@ public class ScriptMediator extends AbstractMediator {
     private ScriptMessageContext getScriptMessageContext(MessageContext synCtx, XMLHelper helper) {
         ScriptMessageContext scriptMC;
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
+            try {
+                emptyJsonObject = (ScriptObjectMirror) scriptEngine.eval("({})");
+                jsonSerializer = (ScriptObjectMirror) scriptEngine.eval("JSON");
+            } catch (ScriptException e) {
+                throw new SynapseException("Error occurred while evaluating empty json object", e);
+            }
             scriptMC = new NashornJavaScriptMessageContext(synCtx, helper, emptyJsonObject, jsonSerializer);
         } else {
             scriptMC = new CommonScriptMessageContext(synCtx, helper);
@@ -609,12 +615,6 @@ public class ScriptMediator extends AbstractMediator {
         }
         if (language.equals(NASHORN_JAVA_SCRIPT)) {
             this.jsEngine = engineManager.getEngineByName(NASHORN);
-            try {
-                emptyJsonObject = (ScriptObjectMirror) scriptEngine.eval("({})");
-                jsonSerializer = (ScriptObjectMirror) scriptEngine.eval("JSON");
-            } catch (ScriptException e) {
-                throw new SynapseException("Error occurred while evaluating empty json object", e);
-            }
         } else {
             this.jsEngine = engineManager.getEngineByExtension("jsEngine");
         }
