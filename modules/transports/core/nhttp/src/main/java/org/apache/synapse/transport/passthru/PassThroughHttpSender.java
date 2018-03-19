@@ -252,6 +252,20 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
                     msgContext.setProperty(PassThroughConstants.PASS_THROUGH_PIPE, pipe);
                     msgContext.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
                 }
+
+                // NOTE:this a special case where, when the backend service expects content-length but,there is no
+                // desire that the message should be build, if FORCE_HTTP_CONTENT_LENGTH and
+                // COPY_CONTENT_LENGTH_FROM_INCOMING, we assume that the content comming from the client side has not
+                // been changed
+                boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
+                boolean forceContentLengthCopy = msgContext
+                        .isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
+                if (forceContentLength && forceContentLengthCopy
+                        && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
+                    msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong(
+                            (String) msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH)));
+                }
+
                 deliveryAgent.submit(msgContext, epr);
                 sendRequestContent(msgContext);
             } else {
@@ -320,17 +334,7 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
     }
 
 	private void sendRequestContent(final MessageContext msgContext) throws AxisFault {
-		
-		//NOTE:this a special case where, when the backend service expects content-length but,there is no desire that the message
-		//should be build, if FORCE_HTTP_CONTENT_LENGTH and COPY_CONTENT_LENGTH_FROM_INCOMING, we assume that the content
-		//comming from the client side has not been changed
-		boolean forceContentLength = msgContext.isPropertyTrue(NhttpConstants.FORCE_HTTP_CONTENT_LENGTH);
-	    boolean forceContentLengthCopy = msgContext.isPropertyTrue(PassThroughConstants.COPY_CONTENT_LENGTH_FROM_INCOMING);
-	            
-		if (forceContentLength && forceContentLengthCopy && msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
-			 msgContext.setProperty(PassThroughConstants.PASSTROUGH_MESSAGE_LENGTH, Long.parseLong((String)msgContext.getProperty(PassThroughConstants.ORGINAL_CONTEN_LENGTH) ));
-		}
-		
+
 		if (Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED))) {
 			synchronized (msgContext) {
 				while (!Boolean.TRUE.equals(msgContext.getProperty(PassThroughConstants.WAIT_BUILDER_IN_STREAM_COMPLETE)) &&
@@ -346,14 +350,14 @@ public class PassThroughHttpSender extends AbstractHandler implements TransportS
 			if (Boolean.TRUE.equals(msgContext.getProperty("PASSTHRU_CONNECT_ERROR"))) {
 				return;
 			}
-			
-			
+
+
 			OutputStream out = (OutputStream) msgContext.getProperty(PassThroughConstants.BUILDER_OUTPUT_STREAM);
 			if (out != null) {
 				String disableChunking = (String) msgContext.getProperty(PassThroughConstants.DISABLE_CHUNKING);
 				String forceHttp10 = (String) msgContext.getProperty(PassThroughConstants.FORCE_HTTP_1_0);
 				Pipe pipe = (Pipe) msgContext.getProperty(PassThroughConstants.PASS_THROUGH_PIPE);
-				
+
 				if("true".equals(disableChunking) || "true".equals(forceHttp10) ){
 
 					MessageFormatter formatter =  MessageFormatterDecoratorFactory.createMessageFormatterDecorator(msgContext);
