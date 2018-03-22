@@ -23,10 +23,15 @@ import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.OMNode;
 import org.apache.axiom.om.OMText;
 import org.apache.axiom.om.util.AXIOMUtil;
+import org.apache.axiom.om.util.ElementHelper;
 import org.apache.axiom.soap.SOAPBody;
 import org.apache.axiom.soap.SOAPEnvelope;
+import org.apache.axiom.soap.SOAPFactory;
+import org.apache.axiom.soap.impl.llom.SOAPHeaderImpl;
 import org.apache.axis2.AxisFault;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseLog;
@@ -78,6 +83,8 @@ public class Target {
 
     public static final String XPATH_PROPERTY_PATTERN = "'[^']*'";
 
+    private static final Log log = LogFactory.getLog(Target.class);
+
     public void insert(MessageContext synContext,
                        ArrayList<OMNode> sourceNodeList, SynapseLog synLog) throws JaxenException {
 
@@ -94,7 +101,22 @@ public class Target {
             if (xpath.getExpression().startsWith(SynapseXPathConstants.GET_PROPERTY_FUNCTION)) {
                 this.handleProperty(xpath, synContext, sourceNodeList, synLog);
             } else {
-                if (targetObj instanceof OMElement) {
+                if (targetObj instanceof SOAPHeaderImpl) {
+                    OMElement targetElem = (OMElement) targetObj;
+                    ArrayList<OMNode> headerSourceNodeList = new ArrayList<>();
+                    for (OMNode o : sourceNodeList) {
+                        OMElement ins = ((OMElement) o).cloneOMElement();
+                        SOAPFactory fac = (SOAPFactory) synContext.getEnvelope().getOMFactory();
+                        try {
+                            headerSourceNodeList.add(ElementHelper.toSOAPHeaderBlock(ins, fac));
+                        } catch (Exception e) {
+                            log.error("Error occurred while transforming the OMElement to SOAPHeaderBlock ", e);
+                            throw new JaxenException(e);
+                        }
+                    }
+                    insertElement(headerSourceNodeList, targetElem, synLog);
+
+                } else if (targetObj instanceof OMElement) {
                     OMElement targetElem = (OMElement) targetObj;
                     insertElement(sourceNodeList, targetElem, synLog);
                 } else if (targetObj instanceof OMText) {
