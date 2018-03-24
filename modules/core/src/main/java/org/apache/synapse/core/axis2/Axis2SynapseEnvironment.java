@@ -875,11 +875,15 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
     public synchronized void updateCallMediatorCount(boolean isIncrement) {
         if (isIncrement) {
             callMediatorCount++;
+            if (!continuation) {
+                log.info("Continuation call is set to true");
+            }
             continuation = true;
         } else {
             callMediatorCount--;
             if (callMediatorCount == 0) {
                 continuation = false;
+                log.info("Continuation call is set to false");
             }
         }
     }
