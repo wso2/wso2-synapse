@@ -307,7 +307,9 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
         if (endpoint != null) {
             endpoint.destroy();
         }
-        synapseEnv.updateCallMediatorCount(false);
+        if (!blocking) {
+            synapseEnv.updateCallMediatorCount(false);
+        }
     }
 
     @Override
