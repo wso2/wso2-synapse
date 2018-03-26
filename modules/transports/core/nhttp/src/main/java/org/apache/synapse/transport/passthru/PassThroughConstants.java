@@ -54,6 +54,8 @@ public class PassThroughConstants {
     public static final String CONTENT_TYPE_MULTIPART_RELATED = "multipart/related";
     public static final String CONTENT_TYPE_MULTIPART_FORM_DATA = "multipart/form-data";
 
+    public final static String JSON_CONTENT_TYPE = "application/json";
+
     public static final String HIDDEN_SERVICE_PARAM_NAME = "hiddenService";
 
     /** An Axis2 message context property indicating a transport send failure */
@@ -227,4 +229,7 @@ public class PassThroughConstants {
 
     //Validate the bad formed xml message by building the whole xml document.
     public static final String FORCE_XML_MESSAGE_VALIDATION = "force.xml.message.validation";
+
+    //Check for invalid json message by parsing the input message
+    public static final String FORCE_JSON_MESSAGE_VALIDATION = "force.json.message.validation";
 }

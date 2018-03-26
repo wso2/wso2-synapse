@@ -18,6 +18,7 @@
 
 package org.apache.synapse.transport.passthru.util;
 
+import com.google.gson.JsonParser;
 import org.apache.axiom.om.OMElement;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.Constants;
@@ -30,7 +31,6 @@ import org.apache.axis2.engine.Handler;
 import org.apache.axis2.engine.Phase;
 import org.apache.axis2.transport.RequestResponseTransport;
 import org.apache.axis2.transport.TransportUtils;
-import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.NullOutputStream;
 import org.apache.commons.logging.Log;
@@ -61,6 +61,8 @@ public class RelayUtils {
 
     private static boolean forceXmlValidation = false;
 
+    private static boolean forceJSONValidation = false;
+
     static {
         if (forcePTBuild == null) {
             forcePTBuild = PassThroughConfiguration.getInstance().getBooleanProperty(
@@ -72,6 +74,7 @@ public class RelayUtils {
             // content level is enable.
         }
         forceXmlValidation = PassThroughConfiguration.getInstance().isForcedXmlMessageValidationEnabled();
+        forceJSONValidation = PassThroughConfiguration.getInstance().isForcedJSONMessageValidationEnabled();
     }
 
     public static void buildMessage(org.apache.axis2.context.MessageContext msgCtx)
@@ -126,7 +129,7 @@ public class RelayUtils {
     public static void builldMessage(MessageContext messageContext, boolean earlyBuild,
                                      InputStream in) throws IOException, AxisFault {
         ByteArrayOutputStream byteArrayOutputStream = null;
-        if (forceXmlValidation) {
+        if (forceXmlValidation || forceJSONValidation) {
             //read input stream to store raw data and create inputStream again.
             //then the raw data can be logged after an error while building the message.
             byteArrayOutputStream = new ByteArrayOutputStream();
@@ -172,19 +175,29 @@ public class RelayUtils {
                     processAddressing(messageContext);
                 }
 
-                //force validation makes sure that the xml is well formed(not having multi root element).
-                if (forceXmlValidation) {
+                //force validation makes sure that the xml is well formed (not having multi root element), and the json
+                // message is valid (not having any content after the final enclosing bracket)
+                if (forceXmlValidation || forceJSONValidation) {
+                    String rawData = null;
                     try {
+                        String contentType = (String) messageContext.getProperty(Constants.Configuration.CONTENT_TYPE);
+
+                        if (PassThroughConstants.JSON_CONTENT_TYPE.equals(contentType) && forceJSONValidation) {
+                            rawData = byteArrayOutputStream.toString();
+                            JsonParser jsonParser = new JsonParser();
+                            jsonParser.parse(rawData);
+                        }
+
                         messageContext.getEnvelope().buildWithAttachments();
                         if (messageContext.getEnvelope().getBody().getFirstElement() != null) {
                             messageContext.getEnvelope().getBody().getFirstElement().buildNext();
                         }
                     } catch (Exception e) {
-                        if (byteArrayOutputStream != null) {
-                            String rawData = byteArrayOutputStream.toString();
-                            log.error("Error while building the message.\n" + rawData);
-                            messageContext.setProperty(PassThroughConstants.RAW_PAYLOAD, rawData);
+                        if (rawData == null) {
+                            rawData = byteArrayOutputStream.toString();
                         }
+                        log.error("Error while building the message.\n" + rawData);
+                        messageContext.setProperty(PassThroughConstants.RAW_PAYLOAD, rawData);
                         throw e;
                     }
                 }
