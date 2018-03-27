@@ -35,6 +35,7 @@ import org.apache.synapse.mediators.template.TemplateMediator;
 
 import javax.xml.namespace.QName;
 import java.io.File;
+import java.util.Map;
 import java.util.Properties;
 
 public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
@@ -214,22 +215,18 @@ public class TemplateDeployer extends AbstractSynapseArtifactDeployer {
 
         try {
             Template st = null;
-            try {
+            Map<String, Template> templates = getSynapseConfiguration().getEndpointTemplates();
+            if (templates.containsKey(artifactName)) {
                 st = getSynapseConfiguration().getEndpointTemplate(artifactName);
-            } catch (SynapseException e) {
-                //could not locate an endpoint template for this particular un-delpoyment. This name refers
-                //probably to a sequence tempalte. Thus if  throws a Synapse exception with following message
-                //catch n log that and continue this process for undeployment of a sequence template
-                if (e.getMessage().indexOf("Cannot locate an either local or remote entry for key") != -1) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Undeploying template is not of endpoint type. Undeployer will now check " +
-                                  "for sequence template for the key: " + artifactName);
-                    }
-                } else {
-                    //different error hence stop undeployment/report failure
-                    throw e;
+            } else {
+                //the undeployed template is not an endpoint template
+                //therefore, it must be a sequence template
+                if (log.isDebugEnabled()) {
+                    log.debug("Undeploying template is not of endpoint type. Undeployer will now check "
+                            + "for sequence template for the key: " + artifactName);
                 }
             }
+
             if (st != null) {
                 getSynapseConfiguration().removeEndpointTemplate(artifactName);
                 if (log.isDebugEnabled()) {
