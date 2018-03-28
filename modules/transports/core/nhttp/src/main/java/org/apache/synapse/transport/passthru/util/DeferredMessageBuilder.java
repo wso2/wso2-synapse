@@ -178,6 +178,7 @@ public class DeferredMessageBuilder {
                      * then we consider as a DELETE request without payload
                      */
                     msgCtx.setProperty(PassThroughConstants.DELETE_REQUEST_WITH_PAYLOAD, false);
+                    ((SOAPEnvelope) element).getBody().getFirstElement().detach();
 
                 } else {
                     //If the request HTTP DELETE with payload, we have to treat as special case. Hence setting property
