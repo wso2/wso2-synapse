@@ -31,7 +31,7 @@ import org.apache.axis2.description.TransportOutDescription;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-
+import org.apache.synapse.ContinuationState;
 import org.apache.synapse.FaultHandler;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.Mediator;
@@ -751,6 +751,15 @@ public class Axis2SynapseEnvironment implements SynapseEnvironment {
             // ideally this should never happens
             log.warn("ContinuationStateStack empty. No ContinuationState to mediate the response ");
             return false;
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Start : Contents of Continuation Stack");
+                for (ContinuationState state : synCtx.getContinuationStateStack()) {
+                    SeqContinuationState seqstate = (SeqContinuationState) state;
+                    log.debug("Sequence Type : " + seqstate.getSeqType() + " Sequence Name : " + seqstate.getSeqName());
+                }
+                log.debug("End : Contents of Continuation Stack");
+            }
         }
 
         if (RuntimeStatisticCollector.isStatisticsEnabled()) {
