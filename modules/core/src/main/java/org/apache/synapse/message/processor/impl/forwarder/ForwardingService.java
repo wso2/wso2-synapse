@@ -504,6 +504,7 @@ public class ForwardingService implements Task, ManagedLifecycle {
 				// Send message to the client
 				while (!isSuccessful && !isTerminated) {
 					tryToDispatchToEndpoint(messageContext, endpoint);
+					isTerminated = messageProcessor.isDeactivated();
 					if (!isSuccessful) {
 						prepareToRetry(messageContext);
 					}
