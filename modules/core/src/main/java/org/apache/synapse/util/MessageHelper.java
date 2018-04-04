@@ -712,6 +712,14 @@ public class MessageHelper {
                     itr.remove();
                     newEnvelope.getBody().addChild(node);
                 }
+                /**
+                 * Copy the namespaces declared in envelope , Fix for
+                 * https://wso2.org/jira/browse/CARBON-16086
+                 */
+                Iterator allDeclaredNamespaces = envelope.getAllDeclaredNamespaces();
+                while (allDeclaredNamespaces.hasNext()) {
+                    newEnvelope.declareNamespace((OMNamespace) allDeclaredNamespaces.next());
+                }
             }
         }
 
