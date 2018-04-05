@@ -20,6 +20,7 @@
 package org.apache.synapse.mediators.builtin;
 
 import org.apache.axis2.AxisFault;
+import org.apache.synapse.ContinuationState;
 import org.apache.synapse.ManagedLifecycle;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SequenceType;
@@ -30,6 +31,7 @@ import org.apache.synapse.aspects.ComponentType;
 import org.apache.synapse.aspects.flow.statistics.StatisticIdentityGenerator;
 import org.apache.synapse.aspects.flow.statistics.data.artifact.ArtifactHolder;
 import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.SynapseEnvironment;
 import org.apache.synapse.endpoints.DefaultEndpoint;
 import org.apache.synapse.endpoints.Endpoint;
@@ -195,6 +197,21 @@ public class CallMediator extends AbstractMediator implements ManagedLifecycle {
      */
     private boolean handleNonBlockingCall(MessageContext synInCtx) {
         SynapseLog synLog = getLog(synInCtx);
+
+        if (synInCtx.getContinuationStateStack().isEmpty()) {
+            //ideally this place should not be reached
+            throw new SynapseException("Continuation Stack Empty! Cannot proceed with the call");
+        } else {
+            if (synLog.isTraceOrDebugEnabled()) {
+                synLog.traceOrDebug("Start : Contents of Continuation Stack");
+                for (ContinuationState state : synInCtx.getContinuationStateStack()) {
+                    SeqContinuationState seqstate = (SeqContinuationState) state;
+                    synLog.traceOrDebug(
+                            "Sequence Type : " + seqstate.getSeqType() + " Sequence Name : " + seqstate.getSeqName());
+                }
+                synLog.traceOrDebug("End : Contents of Continuation Stack");
+            }
+        }
 
         if (synLog.isTraceOrDebugEnabled()) {
             synLog.traceOrDebug("Start : Call mediator - Non Blocking Call");
