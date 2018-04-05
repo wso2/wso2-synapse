@@ -187,7 +187,7 @@ public class ProxyServiceTest extends TestCase {
         ProxyService proxyService = new ProxyService
                 ("unreachableWsdlUriWithPublishWSDLSafeModeEnabledProxy");
         proxyService.addParameter("enablePublishWSDLSafeMode", true);
-        URI wsdlUri = new URI("http://localhost/SimpleStockService.wsdl");
+        URI wsdlUri = new URI("http://invalid-host/SimpleStockService.wsdl");
         proxyService.setWsdlURI(wsdlUri);
         Assert.assertNull("Axis service returned should be null", proxyService.buildAxisService(synCfg, axisCfg));
     }
@@ -203,7 +203,7 @@ public class ProxyServiceTest extends TestCase {
         AxisConfiguration axisCfg = new AxisConfiguration();
         ProxyService proxyService = new ProxyService("unreachableWsdlUriWithPublishWSDLSafeModeDisabledProxy");
         proxyService.addParameter("enablePublishWSDLSafeMode", false);
-        URI wsdlUri = new URI("http://localhost/SimpleStockService.wsdl");
+        URI wsdlUri = new URI("http://invalid-host/SimpleStockService.wsdl");
         proxyService.setWsdlURI(wsdlUri);
         try {
             proxyService.buildAxisService(synCfg, axisCfg);
@@ -261,7 +261,7 @@ public class ProxyServiceTest extends TestCase {
 
         AddressEndpoint wsdlEndpoint = new AddressEndpoint();
         EndpointDefinition endpointDefinition = new EndpointDefinition();
-        endpointDefinition.setAddress((new URI("http://localhost/SimpleStockService.wsdl")).toString());
+        endpointDefinition.setAddress((new URI("http://invalid-host/SimpleStockService.wsdl")).toString());
         wsdlEndpoint.setDefinition(endpointDefinition);
         proxyService.addParameter("enablePublishWSDLSafeMode", false);
         synCfg.addEndpoint("wsdlEndPoint", wsdlEndpoint);
@@ -290,7 +290,7 @@ public class ProxyServiceTest extends TestCase {
 
         AddressEndpoint wsdlEndpoint = new AddressEndpoint();
         EndpointDefinition endpointDefinition = new EndpointDefinition();
-        endpointDefinition.setAddress((new URI("http://localhost/SimpleStockService.wsdl")).toString());
+        endpointDefinition.setAddress((new URI("http://invalid-host/SimpleStockService.wsdl")).toString());
         wsdlEndpoint.setDefinition(endpointDefinition);
         proxyService.addParameter("enablePublishWSDLSafeMode", true);
         synCfg.addEndpoint("wsdlEndPoint", wsdlEndpoint);
