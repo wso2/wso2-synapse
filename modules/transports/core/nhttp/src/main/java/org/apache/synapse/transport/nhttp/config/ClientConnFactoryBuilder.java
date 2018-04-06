@@ -388,11 +388,9 @@ public class ClientConnFactoryBuilder {
                     ("Password")));
             String keyPassword = getSecureVaultValue(secretResolver, keyStoreElt.getFirstChildWithName(new QName
                     ("KeyPassword")));
-
-            FileInputStream fis = null;
-            try {
-                KeyStore keyStore = KeyStore.getInstance(type);
-                fis = new FileInputStream(location);
+         
+            try (FileInputStream fis = new FileInputStream(location)) { 
+                KeyStore keyStore = KeyStore.getInstance(type);             
                 if (log.isInfoEnabled()) {
                     log.info(name + " Loading Identity Keystore from : " + location);
                 }
@@ -409,14 +407,7 @@ public class ClientConnFactoryBuilder {
             } catch (IOException ioe) {
                 log.error(name + " Error opening Keystore : " + location, ioe);
                 throw new AxisFault("Error opening Keystore : " + location, ioe);
-            } finally {
-                if (fis != null) {
-                    try {
-                        fis.close();
-                    } catch (IOException ignore) {
-                    }
-                }
-            }
+            } 
         }
 
         if (trustStoreElt != null) {
@@ -428,11 +419,10 @@ public class ClientConnFactoryBuilder {
             String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
             String storePassword = getSecureVaultValue(secretResolver, trustStoreElt.getFirstChildWithName(new QName
                     ("Password")));
-
-            FileInputStream fis = null;
-            try {
+       
+            try (FileInputStream fis = new FileInputStream(location)) {
                 KeyStore trustStore = KeyStore.getInstance(type);
-                fis = new FileInputStream(location);
+        
                 if (log.isInfoEnabled()) {
                     log.info(name + " Loading Trust Keystore from : " + location);
                 }
@@ -449,14 +439,7 @@ public class ClientConnFactoryBuilder {
             } catch (IOException ioe) {
                 log.error(name + " Error opening Key store : " + location, ioe);
                 throw new AxisFault("Error opening Key store : " + location, ioe);
-            } finally {
-                if (fis != null) {
-                    try {
-                        fis.close();
-                    } catch (IOException ignore) {
-                    }
-                }
-            }
+            } 
         } else if (novalidatecert) {
             if (log.isWarnEnabled()) {
                 log.warn(name + " Server certificate validation (trust) has been disabled. " +
