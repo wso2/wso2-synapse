@@ -39,6 +39,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.axiom.om.OMAttribute;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
 import org.apache.axis2.AxisFault;
@@ -49,12 +50,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.params.HttpParams;
+import org.apache.synapse.commons.crypto.CryptoConstants;
 import org.apache.synapse.transport.certificatevalidation.RevocationVerificationManager;
 import org.apache.synapse.transport.http.conn.ClientConnFactory;
 import org.apache.synapse.transport.http.conn.ClientSSLSetupHandler;
 import org.apache.synapse.transport.http.conn.SSLContextDetails;
 import org.apache.synapse.transport.nhttp.NhttpConstants;
 import org.apache.synapse.transport.nhttp.NoValidateCertTrustManager;
+import org.wso2.securevault.SecretResolver;
+import org.wso2.securevault.SecretResolverFactory;
+import org.wso2.securevault.SecureVaultException;
 
 public class ClientConnFactoryBuilder {
 
@@ -73,8 +78,8 @@ public class ClientConnFactoryBuilder {
     }
     
     public ClientConnFactoryBuilder parseSSL() throws AxisFault {
-        Parameter keyParam    = transportOut.getParameter("keystore");
-        Parameter trustParam  = transportOut.getParameter("truststore");
+        Parameter keyParam = transportOut.getParameter("keystore");
+        Parameter trustParam = transportOut.getParameter("truststore");
         Parameter httpsProtocolsParam = transportOut.getParameter("HttpsProtocols");
         Parameter preferredCiphersParam = transportOut.getParameter(NhttpConstants.PREFERRED_CIPHERS);
 
@@ -86,7 +91,7 @@ public class ClientConnFactoryBuilder {
         }
 
         boolean novalidatecert = ParamUtils.getOptionalParamBoolean(transportOut,
-                                                                    "novalidatecert", false);
+                "novalidatecert", false);
 
         if (trustParam != null) {
             if (novalidatecert) {
@@ -116,12 +121,13 @@ public class ClientConnFactoryBuilder {
 
         final Parameter cvp = transportOut.getParameter("CertificateRevocationVerifier");
         final String cvEnable = cvp != null ?
-                                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
+                cvp.getParameterElement().getAttribute(new QName("enable")).getAttributeValue() : null;
         RevocationVerificationManager revocationVerifier = null;
 
         if ("true".equalsIgnoreCase(cvEnable)) {
             String cacheSizeString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheSize")).getText();
-            String cacheDelayString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheDelay")).getText();
+            String cacheDelayString = cvp.getParameterElement().getFirstChildWithName(new QName("CacheDelay"))
+                    .getText();
             Integer cacheSize = null;
             Integer cacheDelay = null;
             try {
@@ -184,7 +190,7 @@ public class ClientConnFactoryBuilder {
     /**
      * Looks for a transport parameter named customSSLProfiles and initializes zero or more
      * custom SSLContext instances. The syntax for defining custom SSL profiles is as follows.
-     *
+     * <p>
      * <parameter name="customSSLProfiles>
      *      <profile>
      *          <servers>www.test.org:80, www.test2.com:9763</servers>
@@ -201,7 +207,7 @@ public class ClientConnFactoryBuilder {
      *          </TrustStore>
      *      </profile>
      * </parameter>
-     *
+     * <p>
      * Any number of profiles can be defined under the customSSLProfiles parameter.
      *
      * @param transportOut transport out description
@@ -223,6 +229,7 @@ public class ClientConnFactoryBuilder {
         }
 
         OMElement customProfilesElt = customProfilesParam.getParameterElement();
+        SecretResolver secretResolver = SecretResolverFactory.create(customProfilesElt, true);
         Iterator<?> profiles = customProfilesElt.getChildrenWithName(new QName("profile"));
         Map<String, SSLContext> contextMap = new HashMap<String, SSLContext>();
 
@@ -231,7 +238,7 @@ public class ClientConnFactoryBuilder {
             OMElement serversElt = profile.getFirstChildWithName(new QName("servers"));
             if (serversElt == null || serversElt.getText() == null) {
                 String msg = "Each custom SSL profile must define at least one host:port " +
-                             "pair under the servers element";
+                        "pair under the servers element";
                 log.error(name + " " + msg);
                 throw new AxisFault(msg);
             }
@@ -241,7 +248,7 @@ public class ClientConnFactoryBuilder {
             OMElement trElt = profile.getFirstChildWithName(new QName("TrustStore"));
             String noValCert = profile.getAttributeValue(new QName("novalidatecert"));
             boolean novalidatecert = "true".equals(noValCert);
-            SSLContext sslContext = createSSLContext(ksElt, trElt, novalidatecert);
+            SSLContext sslContext = createSSLContext(ksElt, trElt, novalidatecert, secretResolver);
 
             for (String server : servers) {
                 server = server.trim();
@@ -250,7 +257,7 @@ public class ClientConnFactoryBuilder {
                 } else {
                     if (log.isWarnEnabled()) {
                         log.warn(name + " Multiple SSL profiles were found for the server : " +
-                                 server + ". Ignoring the excessive profiles.");
+                                server + ". Ignoring the excessive profiles.");
                     }
                 }
             }
@@ -259,7 +266,7 @@ public class ClientConnFactoryBuilder {
         if (contextMap.size() > 0) {
             if (log.isInfoEnabled()) {
                 log.info(name + " Custom SSL profiles initialized for " + contextMap.size() +
-                         " servers");
+                        " servers");
             }
             return contextMap;
         }
@@ -269,15 +276,15 @@ public class ClientConnFactoryBuilder {
     private SSLContext createSSLContext(OMElement keyStoreElt, OMElement trustStoreElt,
                                         boolean novalidatecert) throws AxisFault {
 
-        KeyManager[] keymanagers  = null;
+        KeyManager[] keymanagers = null;
         TrustManager[] trustManagers = null;
 
 
         if (keyStoreElt != null) {
-            String location      = keyStoreElt.getFirstChildWithName(new QName("Location")).getText();
-            String type          = keyStoreElt.getFirstChildWithName(new QName("Type")).getText();
+            String location = keyStoreElt.getFirstChildWithName(new QName("Location")).getText();
+            String type = keyStoreElt.getFirstChildWithName(new QName("Type")).getText();
             String storePassword = keyStoreElt.getFirstChildWithName(new QName("Password")).getText();
-            String keyPassword   = keyStoreElt.getFirstChildWithName(new QName("KeyPassword")).getText();
+            String keyPassword = keyStoreElt.getFirstChildWithName(new QName("KeyPassword")).getText();
 
             FileInputStream fis = null;
             try {
@@ -289,7 +296,7 @@ public class ClientConnFactoryBuilder {
 
                 keyStore.load(fis, storePassword.toCharArray());
                 KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
-                    KeyManagerFactory.getDefaultAlgorithm());
+                        KeyManagerFactory.getDefaultAlgorithm());
                 kmfactory.init(keyStore, keyPassword.toCharArray());
                 keymanagers = kmfactory.getKeyManagers();
 
@@ -303,7 +310,8 @@ public class ClientConnFactoryBuilder {
                 if (fis != null) {
                     try {
                         fis.close();
-                    } catch (IOException ignore) {}
+                    } catch (IOException ignore) {
+                    }
                 }
             }
         }
@@ -313,8 +321,8 @@ public class ClientConnFactoryBuilder {
                 log.warn(name + " Ignoring novalidatecert parameter since a truststore has been specified");
             }
 
-            String location      = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
-            String type          = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
+            String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
+            String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
             String storePassword = trustStoreElt.getFirstChildWithName(new QName("Password")).getText();
 
             FileInputStream fis = null;
@@ -327,7 +335,7 @@ public class ClientConnFactoryBuilder {
 
                 trustStore.load(fis, storePassword.toCharArray());
                 TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
-                    TrustManagerFactory.getDefaultAlgorithm());
+                        TrustManagerFactory.getDefaultAlgorithm());
                 trustManagerfactory.init(trustStore);
                 trustManagers = trustManagerfactory.getTrustManagers();
 
@@ -341,15 +349,103 @@ public class ClientConnFactoryBuilder {
                 if (fis != null) {
                     try {
                         fis.close();
-                    } catch (IOException ignore) {}
+                    } catch (IOException ignore) {
+                    }
                 }
             }
         } else if (novalidatecert) {
             if (log.isWarnEnabled()) {
                 log.warn(name + " Server certificate validation (trust) has been disabled. " +
-                    "DO NOT USE IN PRODUCTION!");
-            }            
-            trustManagers = new TrustManager[] { new NoValidateCertTrustManager() };
+                        "DO NOT USE IN PRODUCTION!");
+            }
+            trustManagers = new TrustManager[]{new NoValidateCertTrustManager()};
+        }
+
+        try {
+            final Parameter sslpParameter = transportOut.getParameter("SSLProtocol");
+            final String sslProtocol = sslpParameter != null ? sslpParameter.getValue().toString() : "TLS";
+            SSLContext sslcontext = SSLContext.getInstance(sslProtocol);
+            sslcontext.init(keymanagers, trustManagers, null);
+            return sslcontext;
+
+        } catch (GeneralSecurityException gse) {
+            log.error(name + " Unable to create SSL context with the given configuration", gse);
+            throw new AxisFault("Unable to create SSL context with the given configuration", gse);
+        }
+    }
+
+    private SSLContext createSSLContext(OMElement keyStoreElt, OMElement trustStoreElt,
+                                        boolean novalidatecert, SecretResolver secretResolver) throws AxisFault {
+
+        KeyManager[] keymanagers = null;
+        TrustManager[] trustManagers = null;
+
+
+        if (keyStoreElt != null) {
+            String location = keyStoreElt.getFirstChildWithName(new QName("Location")).getText();
+            String type = keyStoreElt.getFirstChildWithName(new QName("Type")).getText();
+            String storePassword = getSecureVaultValue(secretResolver, keyStoreElt.getFirstChildWithName(new QName
+                    ("Password")));
+            String keyPassword = getSecureVaultValue(secretResolver, keyStoreElt.getFirstChildWithName(new QName
+                    ("KeyPassword")));
+         
+            try (FileInputStream fis = new FileInputStream(location)) { 
+                KeyStore keyStore = KeyStore.getInstance(type);             
+                if (log.isInfoEnabled()) {
+                    log.info(name + " Loading Identity Keystore from : " + location);
+                }
+
+                keyStore.load(fis, storePassword.toCharArray());
+                KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
+                        KeyManagerFactory.getDefaultAlgorithm());
+                kmfactory.init(keyStore, keyPassword.toCharArray());
+                keymanagers = kmfactory.getKeyManagers();
+
+            } catch (GeneralSecurityException gse) {
+                log.error(name + " Error loading Keystore : " + location, gse);
+                throw new AxisFault("Error loading Keystore : " + location, gse);
+            } catch (IOException ioe) {
+                log.error(name + " Error opening Keystore : " + location, ioe);
+                throw new AxisFault("Error opening Keystore : " + location, ioe);
+            } 
+        }
+
+        if (trustStoreElt != null) {
+            if (novalidatecert && log.isWarnEnabled()) {
+                log.warn(name + " Ignoring novalidatecert parameter since a truststore has been specified");
+            }
+
+            String location = trustStoreElt.getFirstChildWithName(new QName("Location")).getText();
+            String type = trustStoreElt.getFirstChildWithName(new QName("Type")).getText();
+            String storePassword = getSecureVaultValue(secretResolver, trustStoreElt.getFirstChildWithName(new QName
+                    ("Password")));
+       
+            try (FileInputStream fis = new FileInputStream(location)) {
+                KeyStore trustStore = KeyStore.getInstance(type);
+        
+                if (log.isInfoEnabled()) {
+                    log.info(name + " Loading Trust Keystore from : " + location);
+                }
+
+                trustStore.load(fis, storePassword.toCharArray());
+                TrustManagerFactory trustManagerfactory = TrustManagerFactory.getInstance(
+                        TrustManagerFactory.getDefaultAlgorithm());
+                trustManagerfactory.init(trustStore);
+                trustManagers = trustManagerfactory.getTrustManagers();
+
+            } catch (GeneralSecurityException gse) {
+                log.error(name + " Error loading Key store : " + location, gse);
+                throw new AxisFault("Error loading Key store : " + location, gse);
+            } catch (IOException ioe) {
+                log.error(name + " Error opening Key store : " + location, ioe);
+                throw new AxisFault("Error opening Key store : " + location, ioe);
+            } 
+        } else if (novalidatecert) {
+            if (log.isWarnEnabled()) {
+                log.warn(name + " Server certificate validation (trust) has been disabled. " +
+                        "DO NOT USE IN PRODUCTION!");
+            }
+            trustManagers = new TrustManager[]{new NoValidateCertTrustManager()};
         }
 
         try {
@@ -379,7 +475,7 @@ public class ClientConnFactoryBuilder {
      * @param transportOut TransportOut Configuration of the connection
      * @return TransportOut configuration with extracted Dynamic SSL profiles information
      */
-    public TransportOutDescription loadDynamicSSLConfig (TransportOutDescription transportOut) {
+    public TransportOutDescription loadDynamicSSLConfig(TransportOutDescription transportOut) {
         Parameter profilePathParam = transportOut.getParameter("dynamicSSLProfilesConfig");
         //No Separate configuration file configured. Therefore using Axis2 Configuration
         if (profilePathParam == null) {
@@ -392,7 +488,7 @@ public class ClientConnFactoryBuilder {
         try {
             if (path != null) {
                 String separator = path.startsWith(System.getProperty("file.separator")) ?
-                                   "" : System.getProperty("file.separator");
+                        "" : System.getProperty("file.separator");
                 String fullPath = System.getProperty("user.dir") + separator + path;
 
                 OMElement profileEl = new StAXOMBuilder(fullPath).getDocumentElement();
@@ -416,5 +512,26 @@ public class ClientConnFactoryBuilder {
             log.error("Exception - Could not load customSSLProfiles from file path: " + path, ex);
         }
         return null;
+    }
+
+    private String getSecureVaultValue(SecretResolver secretResolver, OMElement paramElement) {
+        String value = null;
+        if (paramElement != null) {
+            OMAttribute attribute = paramElement.getAttribute(new QName(CryptoConstants.SECUREVAULT_NAMESPACE,
+                    CryptoConstants.SECUREVAULT_ALIAS_ATTRIBUTE));
+            if (attribute != null && attribute.getAttributeValue() != null && !attribute.getAttributeValue().isEmpty
+                    ()) {
+                if (secretResolver == null) {
+                    throw new SecureVaultException("Cannot resolve secret password because axis2 secret resolver " +
+                            "is null");
+                }
+                if (secretResolver.isTokenProtected(attribute.getAttributeValue())) {
+                    value = secretResolver.resolve(attribute.getAttributeValue());
+                }
+            } else {
+                value = paramElement.getText();
+            }
+        }
+        return value;
     }
 }
