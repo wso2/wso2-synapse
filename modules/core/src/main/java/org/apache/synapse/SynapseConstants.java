@@ -370,6 +370,8 @@ public final class SynapseConstants {
             "BLOCKING_SENDER_PRESERVE_REQ_HEADERS";
     public static final String DISABLE_CHUNKING = "DISABLE_CHUNKING";
     public static final String NO_DEFAULT_CONTENT_TYPE = "NoDefaultContentType";
+    // Synapse property to store Blocking Message Sender to do blocking invocation
+    public static final String BLOCKING_MSG_SENDER = "blockingMsgSender";
 
     /** Synapse server instance name */
     public static final String SERVER_NAME = "serverName";

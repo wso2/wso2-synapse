@@ -218,28 +218,20 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             }
 
-            MessageContext resultMsgCtx = null;
-            try {
-                if ("true".equals(synCtx.getProperty(SynapseConstants.OUT_ONLY))) {
-                    blockingMsgSender.send(endpoint, synapseOutMsgCtx);
-                } else {
-                    resultMsgCtx = blockingMsgSender.send(endpoint, synapseOutMsgCtx);
-                    setResponseHttpSc(resultMsgCtx, synCtx);
-                    if ("true".equals(resultMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
-                        handleFault(synCtx, (Exception) resultMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+            synapseOutMsgCtx.setProperty(SynapseConstants.BLOCKING_MSG_SENDER, blockingMsgSender);
+            endpoint.send(synapseOutMsgCtx);
+
+
+            if ("false".equals(synapseOutMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+                if (synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY) == null || "false"
+                        .equals(synapseOutMsgCtx.getProperty(SynapseConstants.OUT_ONLY))) {
+                    setResponseHttpSc(synapseOutMsgCtx, synCtx);
+                    if (synLog.isTraceTraceEnabled()) {
+                        synLog.traceTrace("Response payload received : " + synapseOutMsgCtx.getEnvelope());
                     }
-                }
-            } catch (Exception ex) {
-                handleFault(synCtx, ex);
-            }
-
-            if (synLog.isTraceTraceEnabled()) {
-                synLog.traceTrace("Response payload received : " + resultMsgCtx.getEnvelope());
-            }
-
-            if (resultMsgCtx != null && resultMsgCtx.getEnvelope() != null) {
+                    if (synapseOutMsgCtx.getEnvelope() != null) {
                 org.apache.axis2.context.MessageContext resultAxisMsgCtx =
-                        ((Axis2MessageContext) resultMsgCtx).getAxis2MessageContext();
+                        ((Axis2MessageContext) synapseOutMsgCtx).getAxis2MessageContext();
                 org.apache.axis2.context.MessageContext inAxisMsgCtx =
                                         ((Axis2MessageContext) synCtx).getAxis2MessageContext();
                 if (JsonUtil.hasAJsonPayload(resultAxisMsgCtx)) {
@@ -247,7 +239,7 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 } else {
                     if (targetXPath != null) {
                         Object o = targetXPath.evaluate(synCtx);
-                        OMElement result = resultMsgCtx.getEnvelope().getBody().getFirstElement();
+                        OMElement result = synapseOutMsgCtx.getEnvelope().getBody().getFirstElement();
                         if (o != null && o instanceof OMElement) {
                             OMNode tgtNode = (OMElement) o;
                             tgtNode.insertSiblingAfter(result);
@@ -262,10 +254,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                                     targetXPath.toString() + " did not yeild an OMNode", synCtx);
                         }
                     } else if (targetKey != null) {
-                        OMElement result = resultMsgCtx.getEnvelope().getBody().getFirstElement();
+                        OMElement result = synapseOutMsgCtx.getEnvelope().getBody().getFirstElement();
                         synCtx.setProperty(targetKey, result);
                     } else {
-                    	synCtx.setEnvelope(resultMsgCtx.getEnvelope());
+                    	synCtx.setEnvelope(synapseOutMsgCtx.getEnvelope());
                     }
                 }
                 // Set HTTP Status code
@@ -280,6 +272,11 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                 }
             } else {
                 synLog.traceOrDebug("Service returned a null response");
+            }
+                }
+            } else {
+                log.info("Error while performing the callout operation");
+                return false;
             }
 
         } catch (AxisFault e) {
@@ -442,6 +439,10 @@ public class CalloutMediator extends AbstractMediator implements ManagedLifecycl
                         endpointDefinition.setOutboundWsSecPolicyKey(outboundWsSecPolicyKey);
                     }
                 }
+            }
+
+            if (endpoint != null) {
+                endpoint.init(synEnv);
             }
         } catch (AxisFault e) {
             String msg = "Error initializing callout mediator : " + e.getMessage();

@@ -40,6 +40,8 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.SynapseHandler;
 import org.apache.synapse.commons.json.JsonUtil;
+import org.apache.synapse.continuation.ContinuationStackManager;
+import org.apache.synapse.continuation.SeqContinuationState;
 import org.apache.synapse.core.axis2.AnonymousServiceFactory;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.endpoints.AbstractEndpoint;
@@ -280,6 +282,190 @@ public class BlockingMsgSender {
                             ((AbstractEndpoint) endpoint).getDefinition().getAddress(), ex);
         }
         return null;
+    }
+
+    /**
+     * Blocking Invocation
+     *
+     * @param endpointDefinition the endpoint being sent to.
+     * @param synapseInMsgCtx the outgoing synapse message.
+     * @throws AxisFault on errors.
+     */
+    public void send(EndpointDefinition endpointDefinition, MessageContext synapseInMsgCtx) throws AxisFault {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Start Sending the Message ");
+        }
+
+        // clear the message context properties related to endpoint in last service invocation
+        Set keySet = synapseInMsgCtx.getPropertyKeySet();
+        if (keySet != null) {
+            keySet.remove(EndpointDefinition.DYNAMIC_URL_VALUE);
+        }
+
+        org.apache.axis2.context.MessageContext axisInMsgCtx =
+                ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext();
+        org.apache.axis2.context.MessageContext axisOutMsgCtx =
+                new org.apache.axis2.context.MessageContext();
+
+        String endpointReferenceValue = null;
+        if (endpointDefinition.getAddress() != null) {
+            endpointReferenceValue = endpointDefinition.getAddress();
+        } else if (axisInMsgCtx.getTo() != null) {
+            endpointReferenceValue = axisInMsgCtx.getTo().getAddress();
+        } else {
+            handleException("Service url, Endpoint or 'To' header is required");
+        }
+        EndpointReference epr = new EndpointReference(endpointReferenceValue);
+        axisOutMsgCtx.setTo(epr);
+
+        AxisService anonymousService;
+        if (endpointReferenceValue != null &&
+                endpointReferenceValue.startsWith(Constants.TRANSPORT_LOCAL)) {
+            configurationContext = axisInMsgCtx.getConfigurationContext();
+            anonymousService =
+                    AnonymousServiceFactory.getAnonymousService(
+                            configurationContext.getAxisConfiguration(),
+                            LOCAL_ANON_SERVICE);
+        } else {
+            anonymousService =
+                    AnonymousServiceFactory.getAnonymousService(
+                            null,
+                            configurationContext.getAxisConfiguration(),
+                            endpointDefinition.isAddressingOn() | endpointDefinition.isReliableMessagingOn(),
+                            endpointDefinition.isReliableMessagingOn(),
+                            endpointDefinition.isSecurityOn(),
+                            false);
+        }
+
+        axisOutMsgCtx.setConfigurationContext(configurationContext);
+        axisOutMsgCtx.setEnvelope(axisInMsgCtx.getEnvelope());
+        axisOutMsgCtx.setProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES,
+                axisInMsgCtx.getProperty(HTTPConstants.NON_ERROR_HTTP_STATUS_CODES));
+        axisOutMsgCtx.setProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES,
+                axisInMsgCtx.getProperty(HTTPConstants.ERROR_HTTP_STATUS_CODES));
+        axisOutMsgCtx.setProperty(SynapseConstants.DISABLE_CHUNKING,
+                axisInMsgCtx.getProperty(SynapseConstants.DISABLE_CHUNKING));
+        // Fill MessageContext
+        BlockingMsgSenderUtils.fillMessageContext(endpointDefinition, axisOutMsgCtx, synapseInMsgCtx);
+        if (JsonUtil.hasAJsonPayload(axisInMsgCtx)) {
+            JsonUtil.cloneJsonPayload(axisInMsgCtx, axisOutMsgCtx);
+        }
+
+        Options clientOptions;
+        if (initClientOptions) {
+            clientOptions = new Options();
+        } else {
+            clientOptions = axisInMsgCtx.getOptions();
+            clientOptions.setTo(epr);
+        }
+        // Fill Client options
+        BlockingMsgSenderUtils.fillClientOptions(endpointDefinition, clientOptions, synapseInMsgCtx);
+
+        anonymousService.getParent().addParameter(SynapseConstants.HIDDEN_SERVICE_PARAM, "true");
+        ServiceGroupContext serviceGroupContext =
+                new ServiceGroupContext(configurationContext,
+                        (AxisServiceGroup) anonymousService.getParent());
+        ServiceContext serviceCtx = serviceGroupContext.getServiceContext(anonymousService);
+        axisOutMsgCtx.setServiceContext(serviceCtx);
+
+        // Invoke
+        boolean isOutOnly = isOutOnly(synapseInMsgCtx, axisOutMsgCtx);
+        try {
+            if (isOutOnly) {
+                sendRobust(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
+                final String httpStatusCode =
+                        String.valueOf(axisOutMsgCtx.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
+                                .trim();
+                /*
+                 * Though this is OUT_ONLY operation, we need to set the
+                 * response Status code so that others can make use of it.
+                 */
+                axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, httpStatusCode);
+                synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
+            } else {
+                org.apache.axis2.context.MessageContext result =
+                        sendReceive(axisOutMsgCtx, clientOptions, anonymousService, serviceCtx, synapseInMsgCtx);
+                synapseInMsgCtx.setEnvelope(result.getEnvelope());
+                if (JsonUtil.hasAJsonPayload(result)) {
+                    JsonUtil.cloneJsonPayload(result, ((Axis2MessageContext) synapseInMsgCtx).getAxis2MessageContext());
+                }
+                final String statusCode =
+                        String.valueOf(result.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE))
+                                .trim();
+                /*
+                 * We need to set the response status code so that users can
+                 * fetch it later.
+                 */
+                axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                if ("false".equals(synapseInMsgCtx.getProperty(
+                        SynapseConstants.BLOCKING_SENDER_PRESERVE_REQ_HEADERS))) {
+                    axisInMsgCtx.setProperty(
+                            org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS,
+                            result.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS));
+                }
+                synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "false");
+            }
+        } catch (Exception ex) {
+            /*
+             * Extract the HTTP status code from the Exception message.
+             */
+            final String errorStatusCode = extractStatusCodeFromException(ex);
+            axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, errorStatusCode);
+            synapseInMsgCtx.setProperty(SynapseConstants.BLOCKING_SENDER_ERROR, "true");
+            synapseInMsgCtx.setProperty(SynapseConstants.ERROR_EXCEPTION, ex);
+            if (ex instanceof AxisFault) {
+                AxisFault fault = (AxisFault) ex;
+
+                int errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                if (fault.getFaultCode() != null && fault.getFaultCode().getLocalPart() != null &&
+                        !"".equals(fault.getFaultCode().getLocalPart())) {
+                    try {
+                        errorCode = Integer.parseInt(fault.getFaultCode().getLocalPart());
+                    } catch (NumberFormatException e) {
+                        errorCode = SynapseConstants.BLOCKING_SENDER_OPERATION_FAILED;
+                    }
+                }
+                synapseInMsgCtx.setProperty(SynapseConstants.ERROR_CODE, errorCode);
+
+                synapseInMsgCtx.setProperty(SynapseConstants.ERROR_MESSAGE, fault.getMessage());
+                synapseInMsgCtx.setProperty(SynapseConstants.ERROR_DETAIL,
+                        fault.getDetail() != null ?
+                                fault.getDetail().getText() : "");
+                if (!isOutOnly) {
+                    org.apache.axis2.context.MessageContext faultMC = fault.getFaultMessageContext();
+                    if (faultMC != null) {
+                        Object statusCode = faultMC.getProperty(SynapseConstants.HTTP_SENDER_STATUSCODE);
+                        synapseInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                        axisInMsgCtx.setProperty(SynapseConstants.HTTP_SC, statusCode);
+                        synapseInMsgCtx.setEnvelope(faultMC.getEnvelope());
+                    }
+                }
+            }
+        }
+        // Check fault occure when send the request to endpoint
+        if ("true".equals(synapseInMsgCtx.getProperty(SynapseConstants.BLOCKING_SENDER_ERROR))) {
+            // Handle the fault
+            synapseInMsgCtx.getFaultStack().pop().handleFault(synapseInMsgCtx,
+                    (Exception) synapseInMsgCtx.getProperty(SynapseConstants.ERROR_EXCEPTION));
+        } else {
+            if (!synapseInMsgCtx.getFaultStack().empty()) {
+                // If a message was successfully processed to give it a chance to clear up or reset its state to active
+                if (endpointDefinition.getAddress() != null) {
+                    ((AbstractEndpoint) synapseInMsgCtx.getFaultStack().pop()).onSuccess();
+                }
+                // Enpoints in the faultStack will interrupt the next invocation when handle fault,
+                // So remove it from message context
+                synapseInMsgCtx.getFaultStack().removeAllElements();
+                // But the Mediation for the call mediator is not completed in this stage,
+                // so need to add the MediatorFaultHandler
+                SeqContinuationState seqContinuationState = (SeqContinuationState) ContinuationStackManager
+                        .peakContinuationStateStack(synapseInMsgCtx);
+                if (seqContinuationState != null) {
+                    ContinuationStackManager.pushFaultHandler(synapseInMsgCtx, seqContinuationState);
+                }
+            }
+        }
     }
 
     private void sendRobust(org.apache.axis2.context.MessageContext axisOutMsgCtx,
