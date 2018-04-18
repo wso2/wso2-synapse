@@ -71,7 +71,7 @@ public class SourceResponse {
     /** Keep alive request */
     private boolean keepAlive = true;    
     private SourceRequest request = null;
-    
+
     /** If version change required default HTTP 1.1 will be overridden*/
     private boolean versionChangeRequired =false;
 
@@ -177,10 +177,11 @@ public class SourceResponse {
         // the backend response is set as the content length.
         if (entity == null &&
             PassThroughConstants.HTTP_HEAD.equalsIgnoreCase(request.getRequest().getRequestLine().getMethod())) {
-            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null && response.getFirstHeader(
-		            HTTP.CONTENT_LEN).getValue() != null && (response.getFirstHeader(HTTP.CONTENT_LEN).getValue().equals("0"))) {
+            if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) == null
+                    && (response.getFirstHeader(HTTP.CONTENT_LEN)) != null && (response.getFirstHeader(HTTP.CONTENT_LEN)
+                    .getValue().equals("0"))) {
                 response.removeHeaders(HTTP.CONTENT_LEN);
-            } else {
+            } else if (response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH) != null) {
                 response.removeHeaders(HTTP.CONTENT_LEN);
                 response.addHeader(HTTP.CONTENT_LEN,
                                    response.getFirstHeader(PassThroughConstants.ORGINAL_CONTEN_LENGTH).getValue());
