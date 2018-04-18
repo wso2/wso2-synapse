@@ -422,13 +422,25 @@ public class SynapseXPath extends SynapsePath {
                     if (o instanceof OMTextImpl) {
                         textValue.append(((OMTextImpl) o).getText());
                     } else if (o instanceof OMElementImpl) {
-                        String s = ((OMElementImpl) o).getText();
+                        if (list.size() == 1) {
+                            String s = ((OMElementImpl) o).getText();
 
-                        // We use StringUtils.trim as String.trim does not remove U+00A0 (int 160) (No-break space)
-                        if (s.replace(String.valueOf((char) 160), " ").trim().length() == 0) {
-                            s = o.toString();
+                            // We use StringUtils.trim as String.trim does not remove U+00A0 (int 160) (No-break space)
+                            if (s.replace(String.valueOf((char) 160), " ").trim().length() == 0) {
+                                s = o.toString();
+                            }
+                            textValue.append(s);
+                        } else {
+                            String tmp = ((OMElementImpl) o).getText();
+                            String trimmedText = tmp.replace(String.valueOf((char) 160), " ").trim();
+                            String s = o.toString();
+                            s = s.replace(tmp, trimmedText);
+                            // We use StringUtils.trim as String.trim does not remove U+00A0 (int 160) (No-break space)
+                            if (trimmedText.length() == 0) {
+                                s = o.toString();
+                            }
+                            textValue.append(s);
                         }
-                        textValue.append(s);
 
                     } else if (o instanceof OMDocumentImpl) {
 
