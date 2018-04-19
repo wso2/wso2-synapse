@@ -202,9 +202,9 @@ public class TargetRequest {
         Set<Map.Entry<String, LinkedHashSet<String>>> entries = headers.entrySet();
         for (Map.Entry<String, LinkedHashSet<String>> entry : entries) {
             if (entry.getKey() != null) {
-                Iterator<String> i = entry.getValue().iterator();
-                while(i.hasNext()) {
-                    request.addHeader(entry.getKey(), i.next());
+                Iterator<String> entryValues = entry.getValue().iterator();
+                while (entryValues.hasNext()) {
+                    request.addHeader(entry.getKey(), entryValues.next());
                 }
             }
         }
